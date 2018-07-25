@@ -32,6 +32,8 @@
 #ifdef LBANN_HAS_GPU
 
 #include <cuda.h>
+#include <thrust/memory.h>
+#include <thrust/detail/allocator/tagged_allocator.h>
 
 // Error utility macros
 #define LBANN_CUDA_SYNC(async)                                  \
@@ -66,6 +68,70 @@
 #else
 #define CHECK_CUDA(cuda_call) (cuda_call)
 #endif // #ifdef LBANN_DEBUG
+
+namespace lbann {
+namespace cuda {
+
+namespace thrust {
+
+/** GPU memory allocator that can interact with Thrust.
+ *  Uses Hydrogen's CUB memory pool if available.
+ */
+template <typename T = El::byte>
+class allocator
+  : public ::thrust::detail::tagged_allocator<
+      T,
+      ::thrust::system::cuda::tag,
+      ::thrust::pointer<T, ::thrust::system::cuda::tag>> {
+private:
+  typedef typename ::thrust::detail::tagged_allocator<
+    T,
+    ::thrust::system::cuda::tag,
+    ::thrust::pointer<T, ::thrust::system::cuda::tag>> parent_class;
+
+  /** Active CUDA stream. */
+  cudaStream_t m_stream;
+
+public:
+  typedef typename parent_class::value_type value_type;
+  typedef typename parent_class::pointer    pointer;
+  typedef typename parent_class::size_type  size_type;
+
+  allocator(cudaStream_t stream = El::GPUManager::Stream())
+    : m_stream(stream) {}
+
+  /** Allocate GPU buffer. */
+  pointer allocate(size_type size) {
+    value_type* buffer = nullptr;
+#ifdef HYDROGEN_HAVE_CUB
+    auto& memory_pool = El::cub::MemoryPool();
+    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
+                                          size * sizeof(value_type),
+                                          m_stream));
+#else
+    CHECK_CUDA(cudaMalloc(&buffer, size * sizeof(value_type)));
+#endif // HYDROGEN_HAVE_CUB
+    return pointer(buffer);
+  }
+
+  /** Deallocate GPU buffer.
+   *  'size' is unused and maintained for compatibility with Thrust.
+   */
+  void deallocate(pointer buffer, size_type size = 0) {
+#ifdef HYDROGEN_HAVE_CUB
+    auto& memory_pool = El::cub::MemoryPool();
+    CHECK_CUDA(memory_pool.DeviceFree(buffer.get()));
+#else
+    CHECK_CUDA(cudaFree(buffer.get()));
+#endif // HYDROGEN_HAVE_CUB
+  }
+
+};
+
+} // namespace thrust
+
+} // namespace cuda
+} // namespace lbann
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_CUDA_HPP

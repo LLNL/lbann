@@ -166,7 +166,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
       || moment2_ldim != local_height
       || old_gradient_ldim != local_height) {
     // Non-contiguous data.
-#pragma omp taskloop collapse(2) default(shared)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (int j = 0; j < local_width; ++j) {
       for (int i = 0; i < local_height; ++i) {
         DataType& x = values_buffer[i+j*values_ldim];
@@ -182,7 +182,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
     }
   } else {
     // Contiguous data.
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int i = 0; i < local_height * local_width; ++i) {
       DataType& x = values_buffer[i];
       // Add eps here to avoid denormalized floats.

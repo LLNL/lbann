@@ -99,7 +99,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
 
   /// Allow each thread to perform any preprocessing necessary on the
   /// data source prior to fetching data
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int t = 0; t < nthreads; t++) {
     preprocess_data_source(omp_get_thread_num());
   }
@@ -114,7 +114,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
   El::Zeros(X, X.Height(), X.Width());
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
 
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int s = 0; s < mb_size; s++) {
     // Catch exceptions within the OpenMP thread.
     try {
@@ -137,7 +137,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
 
   /// Allow each thread to perform any postprocessing necessary on the
   /// data source prior to fetching data
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int t = 0; t < nthreads; t++) {
     postprocess_data_source(omp_get_thread_num());
   }
@@ -171,7 +171,7 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
  // }
 
 //  else {
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int s = 0; s < mb_size; s++) {
       // Catch exceptions within the OpenMP thread.
       try {

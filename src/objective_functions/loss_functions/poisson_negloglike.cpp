@@ -44,7 +44,7 @@ EvalType poisson_negloglike::finish_evaluate_compute(
   EvalType sum = 0;
   int nthreads = omp_get_num_threads();
   std::vector<EvalType> local_sum(nthreads, EvalType(0));
-#pragma omp taskloop collapse(2) default(shared)
+  LBANN_OMP_TASKLOOP_COLLAPSE2
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
@@ -78,7 +78,7 @@ void poisson_negloglike::differentiate_compute(const AbsDistMat& predictions,
   const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-#pragma omp taskloop collapse(2) default(shared)
+  LBANN_OMP_TASKLOOP_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

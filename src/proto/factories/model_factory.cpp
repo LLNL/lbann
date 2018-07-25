@@ -83,7 +83,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
     names_to_layers[name] = l;
   }
 
-  // Assign evaluation layers to layer terms in objective function
+  // Assign layers to layer terms in objective function
   auto&& obj_terms = obj->get_terms();
   int num_layer_terms = 0;
   for (size_t i = 0; i < obj_terms.size(); ++i) {
@@ -92,16 +92,23 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
       ++num_layer_terms;
       if (num_layer_terms > proto_obj.layer_term_size()) { continue; }
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
-      auto&& eval = names_to_layers[params.layer()];
-      term->set_evaluation_layer(eval);
+      auto* l = names_to_layers[params.layer()];
+      if (l == nullptr) {
+        err << "attempted to set objective function layer term "
+            << "to correspond to layer \"" << params.layer() << "\", "
+            << "but no such layer exists";
+        LBANN_ERROR(err.str());
+      }
+      term->set_layer(*l);
     }
   }
 
   // Check that layer terms in objective function match prototext
   if (num_layer_terms != proto_obj.layer_term_size()) {
-    err << "number of layer terms in objective function does not match prototext "
-        << "(expected " << proto_obj.layer_term_size() << ", "
-        << "found " << num_layer_terms << ")";
+    err << "recieved " << num_layer_terms << " "
+        << "objective function layer terms, "
+        << "but there are " << proto_obj.layer_term_size() << " "
+        << "in the prototext";
     LBANN_ERROR(err.str());
   }
   
@@ -123,13 +130,20 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
     names_to_layers[name] = l;
   }
 
-  // Assign evaluation layers to layer metrics
+  // Assign layers to layer metrics
   for (int i=0; i<proto_model.metric_size(); ++i) {
     auto&& m = dynamic_cast<layer_metric*>(metric_list[i]);
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
-      auto&& eval = names_to_layers[params.layer()];
-      m->set_evaluation_layer(eval);
+      auto* l = names_to_layers[params.layer()];
+      if (l == nullptr) {
+        std::stringstream err;
+        err << "attempted to set layer metric \"" << m->name() << "\" "
+            << "to correspond to layer \"" << params.layer() << "\", "
+            << "but no such layer exists";
+        LBANN_ERROR(err.str());
+      }
+      m->set_layer(*l);
     }
   }
   
@@ -156,12 +170,18 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
     auto& layer_weights = layer_list[i]->get_weights();
+    const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
       if (w == nullptr) {
         err << "could not find weights named \"" << name << "\", "
             << "which are expected by layer " << layer_list[i]->get_name();
         LBANN_ERROR(err.str());
+      }
+      if (is_frozen) {
+        w->freeze();
+      } else if (w->is_frozen()) {
+        w->unfreeze();
       }
       layer_weights.push_back(w);
     }
@@ -172,11 +192,11 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
 } // namespace
 
 model* construct_model(lbann_comm* comm,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model) {
 
-  // Add layer graph
+  // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
                                             proto_model);
@@ -185,38 +205,41 @@ model* construct_model(lbann_comm* comm,
   const auto& proto_obj = proto_model.objective_function();
   auto&& obj = construct_objective_function(proto_obj);
   assign_layers_to_objective_function(layer_list, obj, proto_obj);
-  
-  // Instantiate model
-  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
-  for (auto&& l : layer_list) { m->add_layer(l); }
 
-  // Add weights and assign to layers
+  // Construct weights
+  std::vector<weights*> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
-    m->add_weights(construct_weights(comm,
-                                     proto_opt,
-                                     proto_model.weights(i)));
+    weights_list.push_back(construct_weights(comm,
+                                             proto_opt,
+                                             proto_model.weights(i)));
   }
-  auto weights_list = m->get_weights();
   assign_weights_to_layers(layer_list, weights_list, proto_model);
 
-  // Add metrics
+  // Construct metrics
+  std::vector<metric*> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    m->add_metric(construct_metric(comm, proto_model.metric(i)));
+    metric_list.push_back(construct_metric(comm, proto_model.metric(i)));
   }
-  auto metric_list = m->get_metrics();
   assign_layers_to_metrics(layer_list, metric_list, proto_model);
 
-  // Add callbacks
+  // Construct callbacks
+  std::vector<lbann_callback*> callback_list;
   auto&& summarizer = construct_summarizer(comm, proto_model);
   for (int i=0; i<proto_model.callback_size(); i++) {
-    m->add_callback(construct_callback(comm,
-                                       proto_model.callback(i),
-                                       data_readers,
-                                       layer_list,
-                                       weights_list,
-                                       summarizer));
+    callback_list.push_back(construct_callback(comm,
+                                               proto_model.callback(i),
+                                               data_readers,
+                                               layer_list,
+                                               weights_list,
+                                               summarizer));
   }
 
+  // Instantiate model
+  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
+  for (auto&& l   : layer_list   ) { m->add_layer(l);     }
+  for (auto&& w   : weights_list ) { m->add_weights(w);   }
+  for (auto&& met : metric_list  ) { m->add_metric(met);  }
+  for (auto&& cb  : callback_list) { m->add_callback(cb); }
   return m;
 
 }

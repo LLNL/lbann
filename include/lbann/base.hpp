@@ -125,6 +125,15 @@ std::string get_pool_mode_name(pool_mode m);
 // NA - Not applicable, used for input layers that don't produce a second output
 enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
 
+#define LBANN_OMP_TASKLOOP_HELPER(arg) #arg
+#define LBANN_OMP_TASKLOOP_TEXT(arg) LBANN_OMP_TASKLOOP_HELPER(omp taskloop default(shared) num_tasks(omp_get_num_threads()) arg)
+#define LBANN_OMP_TASKLOOP_ARGS(arg) _Pragma(LBANN_OMP_TASKLOOP_TEXT(arg))
+
+#define LBANN_OMP_TASKLOOP _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_TASKLOOP_COLLAPSE2 _Pragma("omp taskloop collapse(2) default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_TASKLOOP_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_TASKLOOP_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared) num_tasks(omp_get_num_threads())")
+
 namespace lbann {
 
 // Forward-declaration.

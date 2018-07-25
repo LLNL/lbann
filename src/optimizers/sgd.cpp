@@ -112,7 +112,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       || gradient_ldim != local_height
       || velocity_ldim != local_height) {
     // (Nesterov) momentum SGD for non-contiguous data
-#pragma omp taskloop collapse(2) default(shared)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (int j=0; j<local_width; ++j) {
       for (int i=0; i<local_height; ++i) {
         const DataType g = gradient_buffer[i+j*gradient_ldim];
@@ -127,7 +127,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   } else {
     if (m_nesterov) {
       // Nesterov's accelerated gradient descent for contiguous data
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (int i=0; i<local_height*local_width; ++i) {
         DataType& x = values_buffer[i];
         const DataType g = gradient_buffer[i];
@@ -137,7 +137,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       }
     } else {
       // Momentum SGD for contiguous data
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (int i=0; i<local_height*local_width; ++i) {
         DataType& x = values_buffer[i];
         const DataType g = gradient_buffer[i];

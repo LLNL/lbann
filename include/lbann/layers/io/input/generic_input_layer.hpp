@@ -130,51 +130,22 @@ class generic_input_layer : public io_layer {
            + " (" + s + ")";
   }
 
-  std::vector<int> get_neuron_dims(int child_index = 0) const override {
-    return get_data_dims(child_index);
-  }
-
-  int get_num_neurons(int child_index = 0) const override {
-    auto&& neuron_dims = get_neuron_dims(child_index);
-    return std::accumulate(neuron_dims.begin(),
-                           neuron_dims.end(),
-                           1,
-                           std::multiplies<int>());
-  }
-
-  std::vector<int> fp_output_dims(const Layer* next_layer) const override {
-
-    // Return all neurons if input is null
-    if(next_layer == nullptr) {
-      return m_neuron_dims;
-    }
-
-    // Check if input is in the list of child layers
-    const int child_index = (std::find(this->m_child_layers.begin(),
-                                       this->m_child_layers.end(),
-                                       next_layer)
-                             - this->m_child_layers.begin());
-    if(child_index >= (int) this->m_child_layers.size()) {
-      return m_neuron_dims;
-    }
-
-    // Return slice dimensions
-    return get_neuron_dims(child_index);
-
-  }
-
   void setup_dims() override {
     io_layer::setup_dims();
-    this->m_neuron_dims = get_data_dims();
-    this->m_num_neuron_dims = this->m_neuron_dims.size();
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    for (int i = 0; i < get_num_children(); ++i) {
+      set_output_dims(get_data_dims(i), i);
+    }
   }
 
   void setup_data() override {
     io_layer::setup_data();
+
+    // Resize output to maximum mini-batch size
+    const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
+    for (int i = 0; i < get_num_children(); ++i) {
+      auto& output = get_activations(i);
+      output.Resize(output.Height(), max_mb_size);
+    }
 
     /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
@@ -191,7 +162,6 @@ class generic_input_layer : public io_layer {
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
 
-    int max_mb_size = this->m_model->get_max_mini_batch_size();
     if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
@@ -214,14 +184,16 @@ class generic_input_layer : public io_layer {
       default:
         linearized_target_size = 0;
       }
-      io_buffer->setup_data(this->m_num_neurons, linearized_target_size, max_mb_size);
+      io_buffer->setup_data(get_output_size(0),
+                            linearized_target_size,
+                            max_mb_size);
     }
   }
 
-  /** Define the standard view of the matrix -- and set it for the model
-   * Setup the effective (global) mini-batch size so that gradients are properly
-   * averaged across models. */
-  void fp_setup_data(int mini_batch_size) override {
+  /** Setup output tensors.
+   *  Sets up the effective (global) mini-batch size.
+   */
+  void fp_setup_outputs(El::Int mini_batch_size) override {
 
     // Determine model mini-batch size and effective mini-batch size
     // Note: If inter-model communication is activated, the effective
@@ -241,7 +213,7 @@ class generic_input_layer : public io_layer {
     this->m_model->set_effective_mini_batch_size(effective_mini_batch_size);
 
     // Initialize matrices
-    io_layer::fp_setup_data(mini_batch_size);
+    io_layer::fp_setup_outputs(mini_batch_size);
 
     // Local matrix bypass is only allowed it there is only a single io_buffer
     if(m_io_buffers.size() == 1) {
@@ -341,16 +313,6 @@ class generic_input_layer : public io_layer {
     /// Only update the active buffer index once the entire FP, BP, update phases are completed
     m_active_buffer++;
     omp_unset_lock(&dr_lock);
-  }
-
-  void bp_compute() override {
-  }
-
-  void setup_next_io_buffer(generic_io_buffer* io_buffer) {
-    int mini_batch_size = get_current_mini_batch_size();
-    for (int i = 0; i < get_num_children(); ++i) {
-      io_buffer->fp_setup_data(mini_batch_size, i);
-    }
   }
 
   /**
@@ -620,7 +582,7 @@ class generic_input_layer : public io_layer {
     std::stringstream ss;
     const size_t num_children = get_num_children();
     for (size_t i = 0; i < num_children; ++i) {
-      const auto& dims = get_neuron_dims(i);
+      const auto& dims = get_output_dims(i);
       if (i > 0) { ss << ", "; }
       ss << "activations";
       if (num_children > 1) { ss << "[" << i << "]"; }

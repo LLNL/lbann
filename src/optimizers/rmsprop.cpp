@@ -101,7 +101,7 @@ void rmsprop::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       || gradient_ldim != local_height
       || cache_ldim != local_height) {
     // Update with non-contiguous data
-#pragma omp taskloop collapse(2) default(shared)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (int j=0; j<local_width; ++j) {
       for (int i=0; i<local_height; ++i) {
         DataType& x = values_buffer[i+j*values_ldim];
@@ -113,7 +113,7 @@ void rmsprop::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     }
   } else {
     // Update with contiguous data
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int i=0; i<local_height*local_width; ++i) {
       DataType& x = values_buffer[i];
       const DataType g = gradient_buffer[i];

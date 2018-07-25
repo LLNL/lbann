@@ -235,6 +235,8 @@ class batch_normalization : public regularizer_layer {
 
   void setup_data() override {
     regularizer_layer::setup_data();
+    const auto& output_dims = get_output_dims();
+    const auto& num_channels = output_dims[0];
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 4) {
@@ -272,10 +274,10 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Setup weights
-    this->m_weights[0]->setup(this->m_neuron_dims[0], Dev);
-    this->m_weights[1]->setup(this->m_neuron_dims[0], Dev);
-    this->m_weights[2]->setup(this->m_neuron_dims[0], Dev);
-    this->m_weights[3]->setup(this->m_neuron_dims[0], Dev);
+    this->m_weights[0]->setup(num_channels, Dev);
+    this->m_weights[1]->setup(num_channels, Dev);
+    this->m_weights[2]->setup(num_channels, Dev);
+    this->m_weights[3]->setup(num_channels, Dev);
 
     if (m_frozen) {
       this->m_weights[0]->freeze();
@@ -290,12 +292,12 @@ class batch_normalization : public regularizer_layer {
     }
 
     // Initialize matrices
-    El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_var, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_mean_gradient, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_var_gradient, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_scale_gradient, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_bias_gradient, this->m_neuron_dims[0], 1);
+    El::Zeros(*m_mean,           num_channels, 1);
+    El::Zeros(*m_var,            num_channels, 1);
+    El::Zeros(*m_mean_gradient,  num_channels, 1);
+    El::Zeros(*m_var_gradient,   num_channels, 1);
+    El::Zeros(*m_scale_gradient, num_channels, 1);
+    El::Zeros(*m_bias_gradient,  num_channels, 1);
 
   }
 
@@ -328,8 +330,9 @@ class batch_normalization : public regularizer_layer {
     // Compute statistics during training
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
     if (is_training) {
-      const int num_channels = this->m_neuron_dims[0];
-      const int channel_size = this->m_num_neurons / num_channels;
+      const auto& output_dims = get_output_dims();
+      const int num_channels = output_dims[0];
+      const int channel_size = get_output_size() / num_channels;
       batch_normalization_cuda::channel_sums(num_channels,
                                              local_input,
                                              m_mean->Matrix(),
@@ -451,8 +454,9 @@ class batch_normalization : public regularizer_layer {
     // Matrix parameters
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
-    const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int channel_size = get_output_size() / num_channels;
 
     // Compute statistics
     if (is_training) {
@@ -468,7 +472,7 @@ class batch_normalization : public regularizer_layer {
       auto& local_new_running_var = m_var_gradient->Matrix();
 
       // Compute sums and sums of squares
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (int channel = 0; channel < num_channels; ++channel) {
         DataType sum = zero;
         DataType sqsum = zero;
@@ -499,7 +503,7 @@ class batch_normalization : public regularizer_layer {
       if (num_per_sum <= 1) {
         El::Fill(local_var, one);
       } else {
-#pragma omp taskloop default(shared)
+	LBANN_OMP_TASKLOOP
         for (int channel = 0; channel < num_channels; ++channel) {
           const DataType mean = local_mean(channel, 0) / num_per_sum;
           const DataType sqmean = local_var(channel, 0) / num_per_sum;
@@ -530,7 +534,7 @@ class batch_normalization : public regularizer_layer {
                              this->m_weights[3]->get_values().LockedMatrix());
 
     // Iterate through channels
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int channel = 0; channel < num_channels; ++channel) {
 
       // Get channel parameters
@@ -582,11 +586,12 @@ class batch_normalization : public regularizer_layer {
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
-    const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int channel_size = get_output_size() / num_channels;
 
     // Compute local gradients
-#pragma omp taskloop default(shared)
+    LBANN_OMP_TASKLOOP
     for (int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
@@ -656,7 +661,7 @@ class batch_normalization : public regularizer_layer {
     if (num_per_sum <= 1) {
       El::Zero(local_gradient_wrt_input);
     } else {
-#pragma omp taskloop default(shared)
+      LBANN_OMP_TASKLOOP
       for (int channel = 0; channel < num_channels; ++channel) {
 
         // Initialize channel parameters and gradients

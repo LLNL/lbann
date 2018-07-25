@@ -150,25 +150,31 @@ int main(int argc, char *argv[]) {
 
       // Report build settings
       std::cout << "Build settings" << std::endl;
-      std::cout << "  Type  : ";
+      std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
       std::cout << "Debug" << std::endl;
 #else
       std::cout << "Release" << std::endl;
 #endif // LBANN_DEBUG
-      std::cout << "  CUDA  : ";
+      std::cout << "  Aluminum : ";
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_ALUMINUM
+      std::cout << "  CUDA     : ";
 #ifdef LBANN_HAS_GPU
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN : ";
+      std::cout << "  cuDNN    : ";
 #ifdef LBANN_HAS_CUDNN
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB   : ";
+      std::cout << "  CUB      : ";
 #ifdef HYDROGEN_HAVE_CUB
       std::cout << "detected" << std::endl;
 #else
@@ -193,6 +199,17 @@ int main(int argc, char *argv[]) {
       const auto* env = std::getenv("MV2_USE_CUDA");
       std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
       std::cout << std::endl;
+
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "Aluminum Features:" << std::endl;
+      std::cout << "  NCCL : ";
+#ifdef AL_HAS_NCCL
+      std::cout << "enabled" << std::endl;
+#else
+      std::cout << "disabled" << std::endl;
+#endif // AL_HAS_NCCL
+      std::cout << std::endl;
+#endif // LBANN_HAS_ALUMINUM
 
       // Report model settings
       const auto& grid = comm->get_model_grid();
@@ -230,6 +247,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "\nUSING DATA STORE!\n\n";
       }
       for (auto r : data_readers) {
+        if (!r.second) continue;
         r.second->setup_data_store(model);
       }
     }
@@ -261,8 +279,8 @@ int main(int argc, char *argv[]) {
       // Under normal conditions, reinitialize the random number generator so
       // that regularization techniques (e.g. dropout) generate unique patterns
       // on different ranks.
-      // Do not do this if current epoch/iter is not 0. 
-      // Signifies a restart has occured and rng state has been loaded in. 
+      // Do not do this if current epoch/iter is not 0.
+      // Signifies a restart has occured and rng state has been loaded in.
       if(model->get_cur_epoch() == 0 && model->get_cur_step() == 0){
         init_random(random_seed + comm->get_rank_in_world());
       }

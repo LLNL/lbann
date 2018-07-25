@@ -162,7 +162,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                 21000)
                     CACHE_DATASET=NO
                     CACHE_DIR=
-                    IMAGENET_DIR=/p/lscratche/brainusr/datasets
+                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets
                     TRAIN_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
                     TRAIN_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
                     TEST_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/

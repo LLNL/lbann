@@ -34,19 +34,19 @@ namespace proto {
 
 /** Construct a model specified with a prototext. */
 model* construct_model(lbann_comm* comm,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          std::map<execution_mode, generic_data_reader *>& data_readers,
+                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
                                           const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        int num_parallel_readers,
                        const lbann_data::Layer& proto_layer);
 
@@ -58,7 +58,7 @@ weights* construct_weights(lbann_comm* comm,
 /** Construct a callback specified with prototext. */
 lbann_callback* construct_callback(lbann_comm* comm,
                                    const lbann_data::Callback& proto_cb,
-                                   std::map<execution_mode, generic_data_reader*>& data_readers,
+                                   const std::map<execution_mode, generic_data_reader*>& data_readers,
                                    std::vector<Layer*> layer_list,
                                    std::vector<weights*> weights_list,
                                    lbann_summary* summarizer);

@@ -36,14 +36,40 @@
 #include <exception>
 
 // Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                            \
+#define LBANN_ERROR(message)                                    \
+  do {                                                          \
+    std::stringstream ss_LBANN_ERROR;                           \
+    ss_LBANN_ERROR << "LBANN error ";                           \
+    int initialized_LBANN_ERROR = 0, finalized_LBANN_ERROR = 1; \
+    MPI_Initialized(&initialized_LBANN_ERROR);                  \
+    MPI_Finalized(&finalized_LBANN_ERROR);                      \
+    if (initialized_LBANN_ERROR && !finalized_LBANN_ERROR) {    \
+      int rank_LBANN_ERROR = 0;                                 \
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank_LBANN_ERROR);         \
+      ss_LBANN_ERROR << "on rank " << rank_LBANN_ERROR << " ";  \
+    }                                                           \
+    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
+                     << ": " << (message);                      \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());         \
+  } while (0)
+
+// Macro to print a warning to standard error stream.
+#define LBANN_WARNING(message)                                          \
   do {                                                                  \
-    std::stringstream ss_LBANN_ERROR;                                   \
-    ss_LBANN_ERROR << "LBANN error"                                     \
-                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
-                   << ": " << (message);                                \
-    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
-  } while(0)
+    std::stringstream ss_LBANN_WARNING;                                 \
+    ss_LBANN_WARNING << "LBANN warning ";                               \
+    int initialized_LBANN_WARNING = 0, finalized_LBANN_WARNING = 1;     \
+    MPI_Initialized(&initialized_LBANN_WARNING);                        \
+    MPI_Finalized(&finalized_LBANN_WARNING);                            \
+    if (initialized_LBANN_WARNING && !finalized_LBANN_WARNING) {        \
+      int rank_LBANN_WARNING = 0;                                       \
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank_LBANN_WARNING);               \
+      ss_LBANN_WARNING << "on rank " << rank_LBANN_WARNING << " ";      \
+    }                                                                   \
+    ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"       \
+                     << ": " << (message) << std::endl;                 \
+    std::cerr << ss_LBANN_WARNING.str();                                \
+  } while (0)
 
 namespace lbann {
 

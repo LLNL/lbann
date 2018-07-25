@@ -80,6 +80,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_global_last_mini_batch_size(0),
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
+    m_max_files_to_load(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
@@ -88,7 +89,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_num_global_indices(0)
+    m_is_partitioned(false),
+    m_partition_overlap(0),
+    m_partition_mode(0),
+    m_procs_per_partition(1)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -119,6 +123,14 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Set base directory for your locally cached (e.g, on ssd) data.
    */
   void set_local_file_dir(std::string s);
+
+  /**
+   * for some data readers (jag_conduit) we load from multiple files;
+   * for testing we want to be able to restrict that number
+   */
+  void set_max_files_to_load(int n) {
+    m_max_files_to_load = n;
+  }
 
   /**
    * Returns the base directory for your data.
@@ -243,7 +255,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  void setup();
+  virtual void setup();
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
@@ -501,11 +513,20 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void select_subset_of_data();
 
+  /// called by select_subset_of_data() if data set is partitioned
+  void select_subset_of_data_partitioned();
+
   /**
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
   void use_unused_index_set();
+
+  /// partition the dataset amongst the models
+  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);
+
+  /// returns true if the data set is partitioned
+  bool is_partitioned() const { return m_is_partitioned; }
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
@@ -664,13 +685,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  /**
-   * Returns the number of global indices. For train and validation,
-   * this is the sum of their numbers
-   */
-  size_t get_num_global_indices() {
-    return m_num_global_indices;
-  }
  protected:
 
    int m_rank;
@@ -762,6 +776,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_num_parallel_readers; /// How many parallel readers are being used
 
   int m_rank_in_model;  /// What is the rank of the data reader within a given model
+  int m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
   std::string m_data_fn;
@@ -796,8 +811,32 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
-   /// added to support data store functionality
-   size_t m_num_global_indices;
+   /// if true, dataset is partitioned amongst several models,
+   /// with options overlap (yeah, I know, if there's overlap its
+   /// not technically a partition)
+   bool m_is_partitioned;
+
+   /// if m_is_partitioned, this determines the amount of overlap
+   /// Has no effect if m_is_partitioned = false
+   double m_partition_overlap;
+
+   /// mode = 1: share overlap_percent/2 with left and right nabors
+   /// mode = 2: there's a set of overlap indices common to all models
+   int m_partition_mode;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->num_models()
+   int m_num_partitions;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->get_model_rank())
+   int m_my_partition;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->get_procs_per_model)
+   int m_procs_per_partition;
+
+  std::vector<std::vector<char>> m_thread_buffer;
 };
 
 template<typename T>

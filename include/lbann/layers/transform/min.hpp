@@ -69,19 +69,21 @@ class min_layer : public transform_layer {
 
   void setup_dims() override {
     transform_layer::setup_dims();
-    for (const auto& parent : this->m_parent_layers) {
-      const auto& parent_dims = parent->fp_output_dims(this);
-      if (m_neuron_dims != parent_dims) {
+    const auto& output_dims = get_output_dims();
+    for (int i = 0; i < get_num_parents(); ++i) {
+      const auto& input_dims = get_input_dims(i);
+      if (input_dims != output_dims) {
         std::stringstream err;
-        err << "layer " << get_name() << " expects inputs with "
-            << "dimensions ";
-        for (size_t i = 0; i < m_neuron_dims.size(); ++i) {
-          err << (i > 0 ? "x" : "") << m_neuron_dims[i];
+        err << get_type() << " layer \"" << get_name() << "\" "
+            << "expects input tensors with dimensions ";
+        for (size_t j = 0; j < output_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << output_dims[j];
         }
-        err << ", but layer " << parent->get_name() << " outputs with "
-            << "dimensions ";
-        for (size_t i = 0; i < parent_dims.size(); ++i) {
-          err << (i > 0 ? "x" : "") << parent_dims[i];
+        err << ", but parent layer "
+            << "\"" << m_parent_layers[i]->get_name() << "\" "
+            << "outputs with dimensions ";
+        for (size_t j = 0; j < input_dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << input_dims[j];
         }
         LBANN_ERROR(err.str());
       }
@@ -106,7 +108,7 @@ class min_layer : public transform_layer {
     const int local_width = local_output.Width();
 
     // Minimum of first two inputs
-#pragma omp taskloop collapse(2) default(shared)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         local_output(row, col) = std::min(local_input0(row, col),
@@ -117,7 +119,7 @@ class min_layer : public transform_layer {
     // Handle case with more than two parents
     for (int i = 2; i < num_parents; ++i) {
       const auto& local_input = get_local_prev_activations(i);
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for (int col = 0; col < local_width; ++col) {
         for (int row = 0; row < local_height; ++row) {
           const auto& x = local_input(row, col);
@@ -152,7 +154,7 @@ class min_layer : public transform_layer {
         const auto& local_input1 = get_local_prev_activations(1);
         auto& local_gradient_wrt_input0 = get_local_error_signals(0);
         auto& local_gradient_wrt_input1 = get_local_error_signals(1);
-#pragma omp taskloop collapse(2) default(shared)
+	LBANN_OMP_TASKLOOP_COLLAPSE2
         for (int col = 0; col < local_width; ++col) {
           for (int row = 0; row < local_height; ++row) {
             const auto& x0 = local_input0(row, col);
@@ -175,7 +177,7 @@ class min_layer : public transform_layer {
       }
       break;
     default:
-#pragma omp taskloop collapse(2) default(shared)
+      LBANN_OMP_TASKLOOP_COLLAPSE2
       for (int col = 0; col < local_width; ++col) {
         for (int row = 0; row < local_height; ++row) {
           const auto& dy = local_gradient_wrt_output(row, col);

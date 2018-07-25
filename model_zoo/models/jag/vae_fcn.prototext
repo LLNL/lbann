@@ -209,7 +209,7 @@ model {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
     name: "kl_full"
     data_layout: "model_parallel"
-    sum {
+    weighted_sum {
       scaling_factors: "-0.5 -0.5 0.5 0.5"
     }
   }
@@ -236,7 +236,7 @@ model {
     parents: "z_log_sigma"
     name: "sample_half"
     data_layout: "model_parallel"
-    sum {
+    weighted_sum {
       scaling_factors: "0.5"
     }
   }

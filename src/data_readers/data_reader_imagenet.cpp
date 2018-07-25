@@ -90,7 +90,7 @@ bool imagenet_reader::replicate_processor(const cv_process& pp) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int i = 0; i < nthreads; ++i) {
     //auto ppu = std::make_unique<cv_process>(pp); // c++14
     std::unique_ptr<cv_process> ppu(new cv_process(pp));
@@ -137,7 +137,7 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
     m_data_store->get_data_buf(data_id, image_buf, 0);
     ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
   } else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
   }
 
   if(!ret) {

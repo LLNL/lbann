@@ -84,12 +84,8 @@ class repeated_input_layer : public input_layer<partitioned_io_buffer, data_layo
     input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>::setup_dims();
     const auto& data_size = get_linearized_data_size();
     const auto& label_size = get_linearized_label_size();
-    this->m_neuron_dims.assign(1, m_num_steps * (data_size + label_size));
-    this->m_num_neuron_dims = this->m_neuron_dims.size();
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    std::vector<int> dims(1, m_num_steps * (data_size + label_size));
+    set_output_dims(dims);
   }
 
   void setup_data() override {

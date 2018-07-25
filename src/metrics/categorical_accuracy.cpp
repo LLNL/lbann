@@ -121,7 +121,7 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
   m_prediction_indices.resize(local_width);
 
   // Find largest value in each column of prediction matrix
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int col = 0; col < local_width; ++col) {
     DataType max_val;
     int max_index;
@@ -147,7 +147,7 @@ EvalType categorical_accuracy_metric::evaluate_compute(const AbsDistMat& predict
                        El::mpi::MAX);
 
   // Find first index corresponding to maximum prediction matrix values
-#pragma omp taskloop default(shared)
+  LBANN_OMP_TASKLOOP
   for (int col = 0; col < local_width; ++col) {
     const int row = m_prediction_indices[col];
     if (local_height > 0
