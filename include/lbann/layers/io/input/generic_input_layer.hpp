@@ -315,6 +315,13 @@ class generic_input_layer : public io_layer {
     omp_unset_lock(&dr_lock);
   }
 
+  void setup_next_io_buffer(generic_io_buffer* io_buffer) {
+    int mini_batch_size = get_current_mini_batch_size();
+    for (int i = 0; i < get_num_children(); ++i) {
+      io_buffer->fp_setup_data(mini_batch_size, i);
+    }
+  }
+
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
