@@ -35,11 +35,11 @@ using namespace lbann;
 
 const int lbann_default_random_seed = 42;
 
-model * build_model_from_prototext(int argc, char **argv, 
+model * build_model_from_prototext(int argc, char **argv,
                                    lbann_data::LbannPB &pb,
                                    lbann_comm *comm,
                                    bool first_model);
-          
+
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -79,13 +79,13 @@ int main(int argc, char *argv[]) {
       model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
                                            comm, false);
     }
-    
+
     const lbann_data::Model pb_model = pbs[0]->model();
     const lbann_data::Model pb_model_2 = pbs[1]->model();
     const lbann_data::Model pb_model_3 = pbs[2]->model();
-    
+
     int super_step = 1;
-    int max_super_step = pb_model.super_steps(); 
+    int max_super_step = pb_model.super_steps();
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator (D1 & D2) models at step " << super_step <<"\n\n";
       model_1->train( super_step*pb_model.num_epochs(),pb_model_2.num_batches());
@@ -111,11 +111,11 @@ int main(int argc, char *argv[]) {
       if(master) std::cout << " Update generator2 weights " << std::endl;
       auto model3_weights = model_3->get_weights();
       model_1->copy_trained_weights_from(model3_weights);
-      super_step++;          
+      super_step++;
     }
 
-   
-   
+
+
     delete model_1;
     if (model_2 != nullptr) {
       delete model_2;
@@ -137,8 +137,8 @@ int main(int argc, char *argv[]) {
   finalize(comm);
   return 0;
 }
-   
-model * build_model_from_prototext(int argc, char **argv, 
+
+model * build_model_from_prototext(int argc, char **argv,
                                    lbann_data::LbannPB &pb,
                                    lbann_comm *comm,
                                    bool first_model) {
@@ -222,25 +222,31 @@ model * build_model_from_prototext(int argc, char **argv,
 
       // Report build settings
       std::cout << "Build settings" << std::endl;
-      std::cout << "  Type  : ";
+      std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
       std::cout << "Debug" << std::endl;
 #else
       std::cout << "Release" << std::endl;
+      std::cout << "  Aluminum : ";
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_ALUMINUM
 #endif // LBANN_DEBUG
-      std::cout << "  CUDA  : ";
+      std::cout << "  CUDA     : ";
 #ifdef LBANN_HAS_GPU
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN : ";
+      std::cout << "  cuDNN    : ";
 #ifdef LBANN_HAS_CUDNN
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB   : ";
+      std::cout << "  CUB      : ";
 #ifdef HYDROGEN_HAVE_CUB
       std::cout << "detected" << std::endl;
 #else
@@ -265,6 +271,17 @@ model * build_model_from_prototext(int argc, char **argv,
       const auto* env = std::getenv("MV2_USE_CUDA");
       std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
       std::cout << std::endl;
+
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "Aluminum Features:" << std::endl;
+      std::cout << "  NCCL : ";
+#ifdef AL_HAS_NCCL
+      std::cout << "enabled" << std::endl;
+#else
+      std::cout << "disabled" << std::endl;
+#endif // AL_HAS_NCCL
+      std::cout << std::endl;
+#endif // LBANN_HAS_ALUMINUM
 
       // Report model settings
       const auto& grid = comm->get_model_grid();
@@ -320,7 +337,7 @@ model * build_model_from_prototext(int argc, char **argv,
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
