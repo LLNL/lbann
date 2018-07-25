@@ -199,8 +199,8 @@ class softmax_layer : public activation_layer {
     m_workspace->Resize(1, mini_batch_size);
   }
 
-  void fp_setup_data(int mini_batch_size) override {
-    activation_layer::fp_setup_data(mini_batch_size);
+  void fp_setup_outputs(El::Int mini_batch_size) override {
+    activation_layer::fp_setup_outputs(mini_batch_size);
     m_workspace->Resize(1, mini_batch_size);
   }
 
