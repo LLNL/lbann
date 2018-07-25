@@ -222,7 +222,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
 
     } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
+      reader = new data_reader_synthetic(
+        readme.num_samples(), proto::parse_list<int>(readme.synth_dimensions()),
+        readme.num_labels(), shuffle);
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
     } else {
@@ -342,10 +344,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
-        /*
-        } else if (name == "synthetic") {
-        reader_validation = new data_reader_synthetic(shuffle);
-        */
+      } else if (name == "synthetic") {
+        reader_validation = new data_reader_synthetic(*(data_reader_synthetic *)reader);
+        (*(data_reader_synthetic *) reader_validation) = (*(data_reader_synthetic *)reader);
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);

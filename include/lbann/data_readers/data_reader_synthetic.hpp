@@ -31,10 +31,17 @@
 #include "data_reader.hpp"
 
 namespace lbann {
+
+/**
+ * Data reader for generating random samples.
+ * Samples are different every time.
+ */
 class data_reader_synthetic : public generic_data_reader {
  public:
   //@todo: add what data distribution to use
   data_reader_synthetic(int num_samples, int num_features, bool shuffle = true);
+  data_reader_synthetic(int num_samples, std::vector<int> dims,
+                        int num_labels, bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() override {}
@@ -47,27 +54,28 @@ class data_reader_synthetic : public generic_data_reader {
 
   void load() override;
 
-  int get_num_samples() const {
-    return m_num_samples;
-  }
-  int get_num_features() const {
-    return m_num_features;
-  }
-
+  int get_num_labels() const override { return m_num_labels; }
+  
   int get_linearized_data_size() const override {
-    return m_num_features;
+    return std::accumulate(m_dimensions.begin(), m_dimensions.end(), 1,
+                           std::multiplies<int>());
   }
 
   const std::vector<int> get_data_dims() const override {
-    return {m_num_features};
+    return m_dimensions;
   }
 
  protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
-  int  m_num_samples; //rows
-  int  m_num_features; //cols
+  /** Number of samples in the dataset. */
+  int m_num_samples;
+  /** Number of labels in the dataset. */
+  int m_num_labels;
+  /** Shape of the data. */
+  std::vector<int> m_dimensions;
 };
 
 }  // namespace lbann

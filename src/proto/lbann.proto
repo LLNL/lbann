@@ -50,9 +50,9 @@ message Reader {
   int32 max_files_to_load = 1000;
   //------------------  end of only for jag_conduit  -----------------------
 
-  int32 num_labels = 99; //for imagenet
+  int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
-  int64 num_features = 101; //only for synthetic
+  string synth_dimensions = 101; //only for synthetic
   //csv attributes
   string separator = 102;
   int32 skip_cols = 103;
