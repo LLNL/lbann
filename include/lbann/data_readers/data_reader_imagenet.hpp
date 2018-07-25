@@ -31,6 +31,7 @@
 
 #include "data_reader_image.hpp"
 #include "cv_process.hpp"
+#include "opencv_extensions.hpp"
 
 namespace lbann {
 class imagenet_reader : public image_data_reader {

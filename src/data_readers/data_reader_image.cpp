@@ -136,6 +136,13 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
+void image_data_reader::setup() {
+  generic_data_reader::setup();
+
+  using InputBuf_T = lbann::cv_image_type<uint8_t>;
+  m_thread_cv_buffer.resize(omp_get_max_threads(), cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1)));
+}
+
 std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
