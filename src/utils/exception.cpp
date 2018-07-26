@@ -30,7 +30,7 @@
 
 namespace lbann {
   
-exception::exception(std::string message)
+exception::exception(std::string message, bool print)
   : m_message(message),
     m_stack_trace(stack_trace::get()) {
 
@@ -43,7 +43,10 @@ exception::exception(std::string message)
     }
     m_message = ss.str();
   }
-      
+
+  // Print report to standard error stream
+  if (print) { print_report(std::cerr); }
+  
 }
 
 const char* exception::what() const noexcept {
