@@ -122,7 +122,8 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    e.print_report();
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   }
 
   finalize(comm);
