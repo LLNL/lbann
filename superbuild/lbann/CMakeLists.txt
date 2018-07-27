@@ -79,6 +79,8 @@ endif ()
 if (TARGET PROTOBUF)
   list(APPEND _LBANN_DEPENDS PROTOBUF)
   set(LBANN_SB_FWD_LBANN_PROTOBUF_DIR "${PROTOBUF_DIR}")
+  set(LBANN_SB_FWD_LBANN_protobuf_MODULE_COMPATIBLE ON)
+  set(LBANN_SB_FWD_LBANN_protobuf_BUILD_SHARED_LIBS ON)
 endif ()
 
 # Get the list of LBANN variables
