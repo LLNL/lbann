@@ -24,7 +24,7 @@ def resnet(prototext_file, version):
 %sdata_layout: "data_parallel"
 %smini_batch_size: 256
 %sblock_size: 256
-%snum_epochs: 20
+%snum_epochs: 70
 """ % ((tab,)*5))
   else:
     raise Exception('Invalid version %d' % version)
