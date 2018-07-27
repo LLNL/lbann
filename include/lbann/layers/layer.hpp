@@ -68,7 +68,12 @@ class Layer {
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
-  virtual ~Layer() = default;
+  virtual ~Layer() {
+    for (size_t i = 0; i < m_async_HtoD_copy_events.size(); ++i) {
+      // Clean up the event (only needs to be done on LBANN exit).
+      cudaEventDestroy(m_async_HtoD_copy_events[i]);
+    }
+  }
 
   /** Copy function.
    *  This function dynamically allocates memory for a layer instance
@@ -503,6 +508,9 @@ class Layer {
    */
   std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
+  // API reference: https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html
+  std::vector<cudaEvent_t> m_async_HtoD_copy_events;
+  std::vector<bool> m_async_HtoD_copy_event_flags;
 };
 
 } // namespace lbann

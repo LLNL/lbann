@@ -47,7 +47,6 @@ Layer::Layer(lbann_comm *comm)
 
   // Reset timing counters
   reset_counters();
-
 }
 
 Layer::Layer(const Layer& other) :
@@ -609,7 +608,7 @@ void Layer::setup_dims() {
     }
   }
 }
-  
+
 void Layer::setup_matrices(const El::Grid& grid) {
 
   // Destroy previously setup matrices
@@ -617,14 +616,25 @@ void Layer::setup_matrices(const El::Grid& grid) {
   m_outputs.clear();
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
+  for (size_t i = 0; i < m_async_HtoD_copy_events.size(); ++i) {
+    // Clean up the events
+    cudaEventDestroy(m_async_HtoD_copy_events[i]);
+  }
+  m_async_HtoD_copy_events.clear();
+  m_async_HtoD_copy_event_flags.clear();
 
   // Construct matrices
   m_inputs.resize(get_num_parents());
   m_outputs.resize(get_num_children());
   m_gradient_wrt_outputs.resize(get_num_children());
   m_gradient_wrt_inputs.resize(get_num_parents());
+  m_async_HtoD_copy_events.resize(get_num_parents());
+  m_async_HtoD_copy_event_flags.resize(get_num_parents());
   for (int i = 0; i < get_num_parents(); ++i) {
     m_inputs[i] = construct_matrix(grid, "input", i);
+    // Initialize event. Disabling timing results in a more efficient event.
+    cudaEventCreateWithFlags(&m_async_HtoD_copy_events[i], cudaEventDisableTiming);
+    m_async_HtoD_copy_event_flags[i] = false;
   }
   for (int i = 0; i < get_num_children(); ++i) {
     m_outputs[i] = construct_matrix(grid, "output", i);
@@ -637,7 +647,6 @@ void Layer::setup_matrices(const El::Grid& grid) {
     m_gradient_wrt_inputs[i]
       = construct_matrix(grid, "gradient_wrt_input", i);
   }
-
 }
 
 std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
@@ -666,7 +675,7 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
   std::unique_ptr<AbsDistMat> mat;
   mat.reset(AbsDistMat::Instantiate(grid, 0,
                                     col_dist, row_dist, wrap, device));
-  
+
 #ifdef LBANN_HAS_GPU
   // Allocate GPU memory with the CUDA API
   if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
@@ -867,7 +876,25 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
     } else {
-      El::Copy(parent_output, input);
+      // If we are going from Host to Device and have the same distribution
+      // then we can use asynchronous local I/O
+      if(parent_output.GetLocalDevice() == El::Device::CPU &&
+         input.GetLocalDevice() == El::Device::GPU &&
+         parent_output.ColDist() == input.ColDist() &&
+         parent_output.RowDist() == input.RowDist()) {
+        if(m_async_HtoD_copy_event_flags[i]) {
+          // Wait for the event to complete.
+          // After this returns, all work on the stream prior to the event record has completed.
+          cudaEventSynchronize(m_async_HtoD_copy_events[i]);
+          m_async_HtoD_copy_event_flags[i] = false;
+        }
+        El::CopyAsync(parent_output, input);
+        // Record the asynchrnonous copy on the stream.
+        cudaEventRecord(m_async_HtoD_copy_events[i], El::GPUManager::Stream());
+        m_async_HtoD_copy_event_flags[i] = true;
+      }else {
+        El::Copy(parent_output, input);
+      }
     }
 
     // Check input matrix dimensions
@@ -884,7 +911,7 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     }
 
   }
-  
+
 }
 
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {
