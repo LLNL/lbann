@@ -67,7 +67,12 @@ namespace lbann {
  */
 class exception : public std::exception {
 public:
-  exception(std::string message="");
+
+  /** Constructor.
+   *  By default, a human-readable report is immediately printed to
+   *  the standard error stream.
+   */
+  exception(std::string message = "", bool print = true);
   const char* what() const noexcept override;
 
   /** Print human-readable report to stream.

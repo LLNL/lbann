@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
+      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
+      LBANN_ERROR(err.str());
     }
     El::SetBlocksize(pb_model->block_size());
 
@@ -319,8 +319,7 @@ int main(int argc, char *argv[]) {
     // for freeing dynamically allocated memory
     delete model;
 
-  } catch (lbann_exception& e) {
-    e.print_report();
+  } catch (exception& e) {
     if (options::get()->has_bool("stack_trace_to_file")) {
       std::stringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
@@ -329,9 +328,9 @@ int main(int argc, char *argv[]) {
       std::ofstream fs(ss.str().c_str());
       e.print_report(fs);
     }
-    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
+    El::ReportException(e);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   // free all resources by El and MPI
