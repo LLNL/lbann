@@ -251,7 +251,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                       params.mat_interval());
   }
   if (proto_cb.has_profiler()) {
-    return new lbann_callback_profiler();
+    return new lbann_callback_profiler(proto_cb.profiler().sync());
   }
   if (proto_cb.has_sync_layers()) {
     const auto& params = proto_cb.sync_layers();
