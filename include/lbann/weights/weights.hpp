@@ -58,12 +58,12 @@ class optimizer;
 class weights {
   friend class optimizer;
 
- public:
+public:
   weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
-  virtual ~weights();
-
+  virtual ~weights() = default;
+  
   /** Set weights name.
    *  Each set of weights in a model should have a unique,
    *  human-readable name.
@@ -155,9 +155,9 @@ class weights {
   void set_initializer(weights_initializer* initializer);
 
   /** Get weights optimizer. */
-  optimizer* get_optimizer() { return (m_frozen? nullptr : m_optimizer); }
+  optimizer* get_optimizer() { return (m_frozen? nullptr : m_optimizer.get()); }
   /** Get weights optimizer (const). */
-  const optimizer* get_optimizer() const { return (m_frozen? nullptr : m_optimizer); }
+  const optimizer* get_optimizer() const { return (m_frozen? nullptr : m_optimizer.get()); }
   /** Set weights optimizer.
    *  This takes ownership of the optimizer and deallocates it during
    *  destruction.
@@ -178,12 +178,6 @@ class weights {
   /** Set an entry in the weight matrix. */
   void set_value(DataType value, int row, int col);
 
-  /** Get a view into the weight matrix.
-   *  If values_v has a different matrix distribution than the weight
-   *  matrix, the matrix values are copied into values_v.
-   */
-  void get_values_view(AbsDistMat& values_v);
-
   void freeze() { m_frozen = true; }
   void unfreeze() { m_frozen = false; }
   bool is_frozen() const { return m_frozen; }
@@ -197,7 +191,8 @@ class weights {
 
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const;
- private:
+
+private:
 
   /** Weights name.
    *  See get_name function.
@@ -216,27 +211,20 @@ class weights {
    */
   std::vector<int> m_matrix_width_dims;
 
+  /** Avoid weight update if frozen */
+  bool m_frozen;
+
   /** Weights matrix. */
-  AbsDistMat* m_values = nullptr;
+  std::unique_ptr<AbsDistMat> m_values;
 
   /** Weights initializer.
    *  Default is zero initialization.
    */
-  weights_initializer* m_initializer = nullptr;
+  std::unique_ptr<weights_initializer> m_initializer;
   /** Weights optimizer.
    *  Default is nullptr, which corresponds to no optimizer.
    */
-  optimizer* m_optimizer = nullptr;
-
-  /** Avoid weight update if frozen */
-  bool m_frozen;
-
-  /** Get string describing weight tensor dimensions.
-   *  height_dims and width_dims are the dimensions of the weight
-   *  matrix.
-   */
-  static std::string get_dims_string(const std::vector<int>& height_dims,
-                                     const std::vector<int>& width_dims);
+  std::unique_ptr<optimizer> m_optimizer;
 
 };
 
