@@ -143,26 +143,50 @@ class slice_layer : public transform_layer {
   }
 
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
+    std::stringstream err;
 
-    // Set first and last slice points if needed
-    if(m_slice_points.size() == m_child_layers.size() - 1) {
-      m_slice_points.insert(m_slice_points.begin(), 0);
-      m_slice_points.push_back(this->m_neuron_dims[m_slice_axis]);
-    }
+    const auto& input_dims = get_input_dims();
+    const auto& num_outputs = get_num_children();
 
-    // Check that slice points are valid
-    if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      LBANN_ERROR("slice points are not sorted");
-    }
-    if (m_slice_points.size() != m_child_layers.size() + 1) {
-      std::stringstream err;
-      err << "number of slice points (" << m_slice_points.size() << ") "
-          << "!= number of children (" << m_child_layers.size() << ") + 1"
-          << " {" << get_layer_names(m_child_layers) << "}";
+    // Check that slice parameters are valid
+    if (m_slice_axis >= (int) input_dims.size()) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "cannot slice along axis " << m_slice_axis << " "
+          << "since it only has " << input_dims.size() << " dimensions";
       LBANN_ERROR(err.str());
+    }
+    if ((int) m_slice_points.size() <= num_outputs) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "requires more slice points than output tensors "
+          << "(found " << m_slice_points.size() << " slice points "
+          << "and " << m_child_layers.size() << " output tensors)";
+      LBANN_ERROR(err.str());
+    }
+    if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has unsorted slice points";
+      LBANN_ERROR(err.str());
+    }
+    if (m_slice_points.front() < 0
+        || m_slice_points.back() > input_dims[m_slice_axis]) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects slice points in the range "
+          << "[0, " << input_dims[m_slice_axis] << "], "
+          << "but found an invalid slice point ";
+      if (m_slice_points.front() < 0) {
+        err << "(" << m_slice_points.front() << ")";
+      } else {
+        err << "(" << m_slice_points.back() << ")";
+      }
+      LBANN_ERROR(err.str());
+    }
+
+    // Set output tensor dimensions
+    auto output_dims = input_dims;
+    for (int i = 0; i < num_outputs; ++i) {
+      output_dims[m_slice_axis] = m_slice_points[i+1] - m_slice_points[i];
+      set_output_dims(output_dims, i);
     }
 
   }
@@ -181,7 +205,7 @@ class slice_layer : public transform_layer {
     const int width = input.Width();
 
     // Get number of contiguous regions in a tensor slice of width 1
-    const auto& input_dims = this->m_prev_neuron_dims;
+    const auto& input_dims = get_input_dims();
     const int num_regions = std::accumulate(input_dims.begin(),
                                             input_dims.begin() + m_slice_axis,
                                             1,
@@ -232,7 +256,7 @@ class slice_layer : public transform_layer {
     auto& gradient_wrt_input = get_error_signals();
 
     // Get number of contiguous regions in a tensor slice of width 1
-    const auto& input_dims = this->m_prev_neuron_dims;
+    const auto& input_dims = get_input_dims();
     const int num_regions = std::accumulate(input_dims.begin(),
                                             input_dims.begin() + m_slice_axis,
                                             1,
@@ -274,41 +298,6 @@ class slice_layer : public transform_layer {
       }
 
     }
-
-  }
-
-  std::vector<int> get_neuron_dims(int child_index = 0) const override {
-    std::vector<int> neuron_dims = m_neuron_dims;
-    neuron_dims[m_slice_axis] = m_slice_points[child_index+1] - m_slice_points[child_index];
-    return neuron_dims;
-  }
-
-  int get_num_neurons(int child_index = 0) const override {
-    auto&& neuron_dims = get_neuron_dims(child_index);
-    return std::accumulate(neuron_dims.begin(),
-                           neuron_dims.end(),
-                           1,
-                           std::multiplies<int>());
-  }
-
-  std::vector<int> fp_output_dims(const Layer* next_layer) const override {
-
-    // Return all neurons if input is null
-    if(next_layer == nullptr) {
-      return m_neuron_dims;
-    }
-
-    // Check if input is in the list of child layers
-    const int child_index = (std::find(this->m_child_layers.begin(),
-                                       this->m_child_layers.end(),
-                                       next_layer)
-                             - this->m_child_layers.begin());
-    if(child_index >= (int) this->m_child_layers.size()) {
-      return m_neuron_dims;
-    }
-
-    // Return slice dimensions
-    return get_neuron_dims(child_index);
 
   }
 

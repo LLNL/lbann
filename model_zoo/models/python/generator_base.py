@@ -53,10 +53,10 @@ def callbacks(f, tab, checkpoint_dir=None):
 """ % ((tab,)*14))
 
 ### Activation Layers ##########################################################
-def relu(f, tab, name, parents):
+def relu(f, tab, name, index_num, parents):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_relu'
+  name = 'index_%d_%s_relu' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -67,12 +67,12 @@ def relu(f, tab, name, parents):
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
-def softmax(f, tab, name, parents):
+def softmax(f, tab, name, index_num, parents):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_softmax'
+  name = 'index_%d_%s_softmax' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -83,15 +83,15 @@ def softmax(f, tab, name, parents):
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
 ### Regularization Layers ######################################################
-def norm(f, tab, name, parents, decay=None, scale_init=None, bias_init=None, epsilon=None):
+def norm(f, tab, name, index_num, parents, decay=None, scale_init=None, bias_init=None, epsilon=None):
   if len(parents) > 1:
     raise Exception('norm must have no more than one parent, but was given %d: %s' % (len(parents), str(parents)))
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_norm'
+  name = 'index_%d_%s_norm' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -110,14 +110,14 @@ def norm(f, tab, name, parents, decay=None, scale_init=None, bias_init=None, eps
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
 ### Input Layers ###############################################################
 # input() is a Python built-in function, so this function cannot have that name.
-def input_layer(f, tab, name, parents, io_buffer=None, shared_data_reader=None):
+def input_layer(f, tab, name, index_num, parents, io_buffer=None, shared_data_reader=None):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_input'
+  name = 'index_%d_%s_input' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -130,13 +130,13 @@ def input_layer(f, tab, name, parents, io_buffer=None, shared_data_reader=None):
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
 ### Transform Layers ###########################################################
-def pool(f, tab, name, parents, num_dims=None, pool_dims_i=None, pool_pads_i=None, pool_strides_i=None, pool_mode=None):
+def pool(f, tab, name, index_num, parents, num_dims=None, pool_dims_i=None, pool_pads_i=None, pool_strides_i=None, pool_mode=None):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_pool'
+  name = 'index_%d_%s_pool' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -157,12 +157,12 @@ def pool(f, tab, name, parents, num_dims=None, pool_dims_i=None, pool_pads_i=Non
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
-def concatenation(f, tab, name, parents):
+def concatenation(f, tab, name, index_num, parents):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_concatenation'
+  name = 'index_%d_%s_concatenation' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -173,17 +173,18 @@ def concatenation(f, tab, name, parents):
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
 # sum() is a Python built-in function, so this function cannot have that name. 
-def sum_layer(f, tab, name, parents):
-  if len(parents) != 2:
-    raise Exception('sum must have exactly two parents, but was given %d: %s' % (len(parents), str(parents)))
+def sum_layer(f, tab, name, index_num, parents):
+  #if len(parents) != 2:
+  #  raise Exception('sum must have exactly two parents, but was given %d: %s' % (len(parents), str(parents)))
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_sum'
+  name = 'index_%d_%s_sum' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
-  f.write('%sparents: "%s %s"\n' % (tab, parents[0], parents[1]))
+  if parents != []:
+    f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
   f.write('%sdata_layout: "data_parallel"\n' % tab)
   f.write('%ssum {\n' % tab)
   tab +=2*' '
@@ -191,13 +192,13 @@ def sum_layer(f, tab, name, parents):
   f.write('%s}\n' % tab )
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
 ### Learning Layers ############################################################
-def fully_connected(f, tab, name, parents, num_neurons=None, has_bias=None):
+def fully_connected(f, tab, name, index_num, parents, num_neurons=None, has_bias=None):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_fc'
+  name = 'index_%d_%s_fc' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -212,13 +213,13 @@ def fully_connected(f, tab, name, parents, num_neurons=None, has_bias=None):
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
-def convolution(f, tab, name, parents, num_dims=None, num_output_channels=None,
+def convolution(f, tab, name, index_num, parents, num_dims=None, num_output_channels=None,
   conv_dims_i=None, conv_pads_i=None, conv_strides_i=None, has_bias=None):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_conv'
+  name = 'index_%d_%s_conv' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -241,13 +242,13 @@ def convolution(f, tab, name, parents, num_dims=None, num_output_channels=None,
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)
 
 ### Target Layers ##############################################################
-def target(f, tab, name, parents, io_buffer=None, shared_data_reader=None):
+def target(f, tab, name, index_num, parents, io_buffer=None, shared_data_reader=None):
   f.write('%slayer {\n' % tab)
   tab += 2*' '
-  name += '_target'
+  name = 'index_%d_%s_target' % (index_num, name)
   f.write('%sname: "%s"\n' % (tab, name))
   if parents != []:
     f.write('%sparents: "%s"\n' % (tab, ' '.join(parents)))
@@ -262,4 +263,4 @@ def target(f, tab, name, parents, io_buffer=None, shared_data_reader=None):
   f.write('%s}\n' % tab)
   tab = tab[:-2]
   f.write('%s}\n' % tab)
-  return name
+  return (name, index_num + 1)

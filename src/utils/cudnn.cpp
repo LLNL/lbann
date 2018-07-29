@@ -395,7 +395,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_activation
     LBANN_ERROR("tensor manager is not managing a layer");
   }
   const auto& local_data = m_layer->get_local_prev_activations(parent_index);
-  const auto& dims = m_layer->get_prev_neuron_dims(parent_index);
+  const auto& dims = m_layer->get_input_dims(parent_index);
   set_num_parents(m_layer->get_num_parents());
   auto& desc = m_prev_activations[parent_index];
   set_data_parallel_tensor_desc(desc, dims, local_data);
@@ -407,7 +407,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_activations(int
     LBANN_ERROR("tensor manager is not managing a layer");
   }
   const auto& local_data = m_layer->get_local_activations(child_index);
-  const auto& dims = m_layer->get_neuron_dims(child_index);
+  const auto& dims = m_layer->get_output_dims(child_index);
   set_num_children(m_layer->get_num_children());
   auto& desc = m_activations[child_index];
   set_data_parallel_tensor_desc(desc, dims, local_data);
@@ -419,7 +419,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_prev_error_sign
     LBANN_ERROR("tensor manager is not managing a layer");
   }
   const auto& local_data = m_layer->get_local_prev_error_signals(child_index);
-  const auto& dims = m_layer->get_neuron_dims(child_index);
+  const auto& dims = m_layer->get_output_dims(child_index);
   set_num_children(m_layer->get_num_children());
   auto& desc = m_prev_error_signals[child_index];
   set_data_parallel_tensor_desc(desc, dims, local_data);
@@ -431,7 +431,7 @@ cudnnTensorDescriptor_t& data_parallel_layer_tensor_manager::get_error_signals(i
     LBANN_ERROR("tensor manager is not managing a layer");
   }
   const auto& local_data = m_layer->get_local_error_signals(parent_index);
-  const auto& dims = m_layer->get_prev_neuron_dims(parent_index);
+  const auto& dims = m_layer->get_input_dims(parent_index);
   set_num_parents(m_layer->get_num_parents());
   auto& desc = m_error_signals[parent_index];
   set_data_parallel_tensor_desc(desc, dims, local_data);

@@ -110,7 +110,7 @@ class sigmoid_layer : public entrywise_activation_layer {
 #ifndef LBANN_HAS_GPU
     LBANN_ERROR("CUDA not detected");
 #else
-    sigmoid_cuda::fp(get_num_neurons(),
+    sigmoid_cuda::fp(get_output_size(),
                      get_prev_activations().LocalWidth(),
                      get_prev_activations().LockedBuffer(),
                      get_prev_activations().LDim(),
@@ -124,7 +124,7 @@ class sigmoid_layer : public entrywise_activation_layer {
 #ifndef LBANN_HAS_GPU
     LBANN_ERROR("CUDA not detected");
 #else
-    sigmoid_cuda::bp(get_num_neurons(),
+    sigmoid_cuda::bp(get_output_size(),
                      get_prev_activations().LocalWidth(),
                      get_prev_activations().LockedBuffer(),
                      get_prev_activations().LDim(),

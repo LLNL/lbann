@@ -67,6 +67,7 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -93,6 +94,7 @@
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/max.hpp"
 #include "lbann/layers/transform/min.hpp"
+#include "lbann/layers/transform/in_top_k.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -211,7 +213,6 @@
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/glob.hpp"
-#include "lbann/params.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/compiler_control.hpp"

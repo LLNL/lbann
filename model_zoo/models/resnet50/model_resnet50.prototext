@@ -12,7 +12,7 @@ model {
   ###################################################
 
   objective_function {
-    layer_term { layer: "cross_entropy_eval" }
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -22,10 +22,18 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy"
+      unit: "%"
     }
   }
 
@@ -63,7 +71,7 @@ model {
   layer {
     name: "labels"
     parents: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
 
@@ -1865,28 +1873,27 @@ model {
   layer {
     parents: "fc1000"
     name: "prob"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     softmax {
     }
   }
   layer {
     name: "cross_entropy"
     parents: "prob labels"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     cross_entropy {}    
   }
   layer {
-    name: "cross_entropy_eval"
-    parents: "cross_entropy"
-    data_layout: "model_parallel"
-    evaluation {}    
+    name: "top1_accuracy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 1 }
   }
   layer {
+    name: "top5_accuracy"
     parents: "prob labels"
-    name: "target"
     data_layout: "data_parallel"
-    target {}
+    top_k_categorical_accuracy { k: 5 }
   }
-  
 
 }

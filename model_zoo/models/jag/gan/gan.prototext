@@ -355,7 +355,7 @@ model {
     name: "gsample_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4 image_data_dummy"
-    sum {
+   weighted_sum {
       scaling_factors: "1 -1"
     }
   }

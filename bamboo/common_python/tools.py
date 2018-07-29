@@ -239,7 +239,7 @@ def get_command(cluster,
     # If there is no regex match, then re.sub keeps the original string
     if data_filedir_default != None:
         if cluster in ['catalyst', 'pascal', 'surface']:
-            # option_data_filedir = data_filedir_default # lscratche, presumably
+            # option_data_filedir = data_filedir_default # lscratchh, presumably
             pass # No need to pass in a parameter
         elif cluster == 'quartz':
             option_data_filedir = ' --data_filedir=%s' % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filedir_default)
