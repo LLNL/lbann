@@ -1186,6 +1186,12 @@ void lbann_comm::broadcast(const int root, T* data, const int count, const El::m
 template<>
 void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm c);
 
+/** Get the current rank within MPI_COMM_WORLD.
+ *  This function is safe to call even if MPI has not initialized or
+ *  has been finalized. In either case it returns a negative value.
+ */
+int get_rank_in_world();
+
 } // namespace lbann
 
 #endif  // LBANN_COMM_HPP_INCLUDED

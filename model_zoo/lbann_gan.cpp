@@ -114,10 +114,8 @@ int main(int argc, char *argv[]) {
       delete t;
     }
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   // free all resources by El and MPI
@@ -146,8 +144,8 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
+      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
+      LBANN_ERROR(err.str());
     }
     El::SetBlocksize(pb_model->block_size());
 
@@ -325,10 +323,8 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       }
 #endif
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   return model;

@@ -38,7 +38,8 @@ namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_frozen(false) {
+    m_frozen(false),
+    m_issue_async_HtoD_copy_event(false) {
 
   // Initialize layer name
   static int num_layers = 0;
@@ -48,6 +49,8 @@ Layer::Layer(lbann_comm *comm)
   // Reset timing counters
   reset_counters();
 
+  // Initialize event. Disabling timing results in a more efficient event.
+  cudaEventCreateWithFlags(&m_async_HtoD_copy_event, cudaEventDisableTiming);
 }
 
 Layer::Layer(const Layer& other) :
@@ -65,7 +68,8 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_output_dims_list(other.m_output_dims_list) {
+  m_output_dims_list(other.m_output_dims_list),
+  m_issue_async_HtoD_copy_event(other.m_issue_async_HtoD_copy_event) {
 
   // Deep matrix copies
   m_inputs.reserve(other.m_inputs.size());
@@ -105,6 +109,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_update_time = other.m_update_time;
   m_name = other.m_name;
   m_output_dims_list = other.m_output_dims_list;
+  m_issue_async_HtoD_copy_event = other.m_issue_async_HtoD_copy_event;
 
   // Deep matrix copies
   m_inputs.clear();
@@ -609,7 +614,7 @@ void Layer::setup_dims() {
     }
   }
 }
-  
+
 void Layer::setup_matrices(const El::Grid& grid) {
 
   // Destroy previously setup matrices
@@ -637,7 +642,6 @@ void Layer::setup_matrices(const El::Grid& grid) {
     m_gradient_wrt_inputs[i]
       = construct_matrix(grid, "gradient_wrt_input", i);
   }
-
 }
 
 std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
@@ -666,7 +670,7 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
   std::unique_ptr<AbsDistMat> mat;
   mat.reset(AbsDistMat::Instantiate(grid, 0,
                                     col_dist, row_dist, wrap, device));
-  
+
 #ifdef LBANN_HAS_GPU
   // Allocate GPU memory with the CUDA API
   if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
@@ -855,6 +859,13 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
   const auto& alignment_dist
     = m_parent_layers.front()->get_activations(*this).DistData();
 
+  if(m_issue_async_HtoD_copy_event) {
+    // Wait for the event to complete.
+    // After this returns, all work on the stream prior to the event record has completed.
+    cudaEventSynchronize(m_async_HtoD_copy_event);
+    m_issue_async_HtoD_copy_event = false;
+  }
+
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
@@ -867,7 +878,17 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
     } else {
-      El::Copy(parent_output, input);
+      // If we are going from Host to Device and have the same distribution
+      // then we can use asynchronous local I/O
+      if(parent_output.GetLocalDevice() == El::Device::CPU &&
+         input.GetLocalDevice() == El::Device::GPU &&
+         parent_output.ColDist() == input.ColDist() &&
+         parent_output.RowDist() == input.RowDist()) {
+        El::CopyAsync(parent_output, input);
+        m_issue_async_HtoD_copy_event = true;
+      }else {
+        El::Copy(parent_output, input);
+      }
     }
 
     // Check input matrix dimensions
@@ -884,7 +905,11 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     }
 
   }
-  
+
+  if(m_issue_async_HtoD_copy_event) {
+    // Record the asynchronous copy on the stream.
+    cudaEventRecord(m_async_HtoD_copy_event, El::GPUManager::Stream());
+  }
 }
 
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {

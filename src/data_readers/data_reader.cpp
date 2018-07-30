@@ -107,25 +107,18 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
 
   else {
+    std::string error_message;
     LBANN_OMP_TASKLOOP
     for (int s = 0; s < mb_size; s++) {
-      // Catch exceptions within the OpenMP thread.
-      try {
-        int n = m_current_pos + (s * m_sample_stride);
-        int index = m_shuffled_indices[n];
-        bool valid = fetch_datum(X, index, s, omp_get_thread_num());
-        if (!valid) {
-          throw lbann_exception(
-            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-            " :: generic data reader load error: datum not valid");
-        }
-        m_indices_fetched_per_mb.Set(s, 0, index);
-      } catch (lbann_exception& e) {
-        lbann_report_exception(e);
-      } catch (std::exception& e) {
-        El::ReportException(e);
+      int n = m_current_pos + (s * m_sample_stride);
+      int index = m_shuffled_indices[n];
+      bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+      if (!valid) {
+#pragma omp critical
+        error_message = "invalid datum (index " + std::to_string(index) + ")";
       }
     }
+    if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
@@ -160,25 +153,18 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
  // }
 
 //  else {
+    std::string error_message;
     LBANN_OMP_TASKLOOP
     for (int s = 0; s < mb_size; s++) {
-      // Catch exceptions within the OpenMP thread.
-      try {
-        int n = m_current_pos + (s * m_sample_stride);
-        int index = m_shuffled_indices[n];
-
-        bool valid = fetch_label(Y, index, s, omp_get_thread_num());
-        if (!valid) {
-          throw lbann_exception(
-            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-            " :: generic data reader load error: label not valid");
-        }
-      } catch (lbann_exception& e) {
-        lbann_report_exception(e);
-      } catch (std::exception& e) {
-        El::ReportException(e);
+      int n = m_current_pos + (s * m_sample_stride);
+      int index = m_shuffled_indices[n];
+      bool valid = fetch_label(Y, index, s, omp_get_thread_num());
+      if (!valid) {
+#pragma omp critical
+        error_message = "invalid label (index " + std::to_string(index) + ")";
       }
     }
+    if (!error_message.empty()) { LBANN_ERROR(error_message); }
   //}
   return mb_size;
 }
@@ -198,25 +184,18 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
     Y.Width());
 
   El::Zeros(Y, Y.Height(), Y.Width());
+  std::string error_message;
   LBANN_OMP_TASKLOOP
   for (int s = 0; s < mb_size; s++) {
-    // Catch exceptions within the OpenMP thread.
-    try {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-
-      bool valid = fetch_response(Y, index, s, omp_get_thread_num());
-      if (!valid) {
-        throw lbann_exception(
-          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-          " :: generic data reader load error: response not valid");
-      }
-    } catch (lbann_exception& e) {
-      lbann_report_exception(e);
-    } catch (std::exception& e) {
-      El::ReportException(e);
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_response(Y, index, s, omp_get_thread_num());
+    if (!valid) {
+#pragma omp critical
+      error_message = "invalid response (index " + std::to_string(index) + ")";
     }
   }
+  if (!error_message.empty()) { LBANN_ERROR(error_message); }
   return mb_size;
 }
 
@@ -720,6 +699,10 @@ void generic_data_reader::init_minibatch() {
 }
 
 void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {
+  if (m_comm->get_num_models() == 1 || m_comm->get_procs_in_world() == 1) {
+    m_is_partitioned = false;
+    return;
+  }
   m_is_partitioned = partitioned_yes;
   //n.b. the following params have no affect if m_is_partitioned is false
   m_partition_overlap = overlap;

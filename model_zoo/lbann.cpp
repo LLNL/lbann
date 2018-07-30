@@ -29,6 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/stack_trace.hpp"
 #include "lbann/utils/stack_profiler.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
 #include <cstdlib>
@@ -67,12 +68,11 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-
-
     //this must be called after call to opts->init();
-    //must also specify "--catch-signals" on cmd line
-    stack_trace::register_handler();
-
+    if (!opts->has_bool("disable_signal_handler")) {
+      stack_trace::register_signal_handler(opts->has_bool("stack_trace_to_file"));
+    }
+    
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
+      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
+      LBANN_ERROR(err.str());
     }
     El::SetBlocksize(pb_model->block_size());
 
@@ -319,10 +319,18 @@ int main(int argc, char *argv[]) {
     // for freeing dynamically allocated memory
     delete model;
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+  } catch (exception& e) {
+    if (options::get()->has_bool("stack_trace_to_file")) {
+      std::stringstream ss("stack_trace");
+      const auto& rank = get_rank_in_world();
+      if (rank >= 0) { ss << "_rank" << rank; }
+      ss << ".txt";
+      std::ofstream fs(ss.str().c_str());
+      e.print_report(fs);
+    }
+    El::ReportException(e);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   // free all resources by El and MPI
