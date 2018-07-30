@@ -272,7 +272,7 @@ case ${SCHEDULER} in
         case ${HAS_GPU} in
             YES|yes|TRUE|true|ON|on|1)
                 case ${CLUSTER} in
-                    surface|ray)
+                    surface|pascal|ray)
                         MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
                         ;;
                 esac
