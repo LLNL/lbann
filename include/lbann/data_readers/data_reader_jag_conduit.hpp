@@ -197,7 +197,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_dependent_variable_type(const variable_t dependent);
 
   /// Check if a key is in the black lists to filter out
-  bool filter(const std::set<std::string>& filter,
+  bool filter(const std::set<std::string>& key_filter,
               const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
 
   /// Return the linearized size of a particular JAG variable type

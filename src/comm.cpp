@@ -1235,4 +1235,14 @@ void lbann_comm::lbann_comm_abort(std::string msg) {
   throw lbann_exception(msg);
 }
 
+int get_rank_in_world() {
+  int initialized = 0, finalized = 1, rank = -1;
+  MPI_Initialized(&initialized);
+  MPI_Finalized(&finalized);
+  if (initialized && !finalized) {
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  }
+  return rank;
+}
+
 }  // namespace lbann

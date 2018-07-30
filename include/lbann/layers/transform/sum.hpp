@@ -85,10 +85,9 @@ class sum_layer : public transform_layer {
 
   void fp_compute() override {
     auto& output = get_activations();
-    switch (get_num_parents()) {
-    case 0: El::Zero(output); break;
-    case 1: El::LockedView(output, get_prev_activations(0)); break;
-    default:
+    if (get_num_parents() < 1) {
+      El::Zero(output);
+    } else {
       El::Copy(get_prev_activations(0), output);
       for (int i = 1; i < get_num_parents(); ++i) {
         El::Axpy(DataType(1), get_prev_activations(i), output);
@@ -96,12 +95,14 @@ class sum_layer : public transform_layer {
     }
   }
 
-  void bp_compute() override {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     const auto& gradient_wrt_output = get_prev_error_signals();
     for (int i = 0; i < get_num_parents(); ++i) {
       El::LockedView(get_error_signals(i), gradient_wrt_output);
     }
   }
+
+  void bp_compute() override {}
 
 };
 

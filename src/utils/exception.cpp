@@ -23,37 +23,48 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_UTILS_STACK_TRACE_HPP_INCLUDED
-#define LBANN_UTILS_STACK_TRACE_HPP_INCLUDED
 
-#include <string>
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/stack_trace.hpp"
+#include "lbann/comm.hpp"
 
 namespace lbann {
-namespace stack_trace {
+  
+exception::exception(std::string message, bool print)
+  : m_message(message),
+    m_stack_trace(stack_trace::get()) {
 
-/** Get human-readable stack trace.
- *  Ignores stack frames within the lbann::stack_trace and
- *  lbann::lbann_exception namespaces. Calls non-reentrant functions,
- *  so behaviour may be undefined if used within a signal handler.
- */
-std::string get();
+  // Construct default message if none is provided
+  if (m_message.empty()) {
+    std::stringstream ss("LBANN exception");
+    const auto& rank = get_rank_in_world();
+    if (rank >= 0) {
+      ss << " on rank " << rank;
+    }
+    m_message = ss.str();
+  }
 
-/** Register signal handler.
- *  Initializes a signal handler that prints an error message and
- *  stack trace to the standard error stream when a signal is
- *  detected. If desired, it also writes to the file
- *  "stack_trace_rank<MPI rank>.txt". 
- *  
- *  This functionality is somewhat risky since the handler calls
- *  non-reentrant functions, which can result in undefined behavior
- *  (see https://www.ibm.com/developerworks/library/l-reent/). That
- *  said, it is possible (likely?) that our handler will work
- *  correctly. And if there's a SIGSEV and it doesn't, nothing much is
- *  lost (IMO).
- */
-void register_signal_handler(bool write_to_file = false);
+  // Print report to standard error stream
+  if (print) { print_report(std::cerr); }
+  
+}
 
-} //namespace stack_trace 
-} //namespace lbann
+const char* exception::what() const noexcept {
+  return m_message.c_str();
+}
 
-#endif // LBANN_UTILS_STACK_TRACE_HPP_INCLUDED
+void exception::print_report(std::ostream& os) const {
+  std::stringstream ss;
+  ss << "****************************************************************"
+     << std::endl
+     << m_message << std::endl;
+  if (!m_stack_trace.empty()) {
+    ss << "Stack trace:" << std::endl
+       << m_stack_trace;
+  }
+  ss << "****************************************************************"
+     << std::endl;
+  os << ss.str();
+}
+
+} // namespace lbann

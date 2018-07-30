@@ -44,7 +44,7 @@ namespace lbann {
  */
 template <data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer {
- public:
+public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
           EvalType keep_prob = EvalType(0.5))
@@ -119,12 +119,15 @@ class dropout : public regularizer_layer {
            + " dataLayout: " + get_data_layout_string(get_data_layout());
   }
 
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+
+protected:
+
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     m_mask = std::unique_ptr<AbsDistMat>(get_activations().Copy());
   }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
@@ -132,46 +135,10 @@ class dropout : public regularizer_layer {
     LBANN_ERROR("cuDNN not detected");
 #else
 
-#ifdef HYDROGEN_HAVE_CUB
-    // Use CUB GPU memory pool for some matrices
-    // Note: Activation matrix owns data during training and is a
-    // matrix view during evaluation. To avoid expensive GPU memory
-    // allocation and deallocation, we use CUB's GPU memory pool.
-    if (Dev == El::Device::GPU) {
-      get_local_activations().SetMemoryMode(1);
-      get_local_error_signals().SetMemoryMode(1);
-      m_reserve_space.SetMemoryMode(1);
-    }
-#endif // HYDROGEN_HAVE_CUB
-
     // Initialize cuDNN objects
     setup_dropout_cudnn_desc();
 
 #endif // LBANN_HAVE_CUDNN
-  }
-
- protected:
-
-  void fp_setup_data(int mini_batch_size) override {
-    // If needed, reset matrix view without deallocating memory
-    // Note: Activation matrix owns data during training and is a
-    // matrix view during evaluation.
-    const auto& mode = this->m_model->get_execution_mode();
-    if (mode == execution_mode::training && m_keep_prob < EvalType(0)) {
-      get_activations().Empty(false);
-    }
-    regularizer_layer::fp_setup_data(mini_batch_size);
-  }
-
-  void bp_setup_data(int mini_batch_size) override {
-    // If needed, reset matrix view without deallocating memory
-    // Note: Activation matrix owns data during training and is a
-    // matrix view during evaluation.
-    const auto& mode = this->m_model->get_execution_mode();
-    if (mode == execution_mode::training && m_keep_prob < EvalType(0)) {
-      get_error_signals().Empty(false);
-    }
-    regularizer_layer::bp_setup_data(mini_batch_size);
   }
 
   void fp_compute () override {
@@ -201,7 +168,7 @@ class dropout : public regularizer_layer {
     // Do nothing if dropout is disabled
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::LockedView(output, input);
+      El::Copy(input, output);
       return;
     }
 
@@ -234,7 +201,7 @@ class dropout : public regularizer_layer {
     auto& gradient_wrt_input = get_error_signals();
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+      El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
       El::Hadamard(gradient_wrt_output, *m_mask, gradient_wrt_input);
     }
@@ -254,7 +221,7 @@ class dropout : public regularizer_layer {
     // Do nothing if dropout is disabled or there is no local data
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::LockedView(output, input);
+      El::Copy(input, output);
       return;
     }
     if (local_input.Height() < 1 && local_input.Width() < 1) { return; }
@@ -293,7 +260,7 @@ class dropout : public regularizer_layer {
     // Copy error signal if dropout is disabled
     const auto& mode = this->m_model->get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
-      El::LockedView(gradient_wrt_input, gradient_wrt_output);
+      El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
       if (local_gradient_wrt_input.Height() > 0
           && local_gradient_wrt_input.Width() > 0) {

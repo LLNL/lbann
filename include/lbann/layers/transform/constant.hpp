@@ -60,21 +60,12 @@ class constant_layer : public transform_layer {
 
  protected:
 
-  void setup_data() override {
-    transform_layer::setup_data();
-    if (m_value != DataType(0)) {
+  void fp_compute() override {
+    if (m_value == EvalType(0)) {
+      El::Zero(get_activations());
+    } else {
       El::Fill(get_activations(), m_value);
     }
-  }
-
-  void fp_compute() override {
-    auto& activations = get_activations();
-    if (m_value == EvalType(0)) {
-      El::Zero(activations);
-    } else {
-      El::Fill(activations, m_value);
-    }
-
   }
 
  private:
