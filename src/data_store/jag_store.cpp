@@ -59,6 +59,7 @@ void jag_store::setup(
   int my_rank) {
 
   bool master = m_comm->am_world_master();
+  if (master) std::cerr << "starting jag_store::setup\n";
 
   std::string test_file;
   std::string test_sample_id;
@@ -144,28 +145,33 @@ void jag_store::get_default_keys(std::string &filename, std::string &sample_id, 
   hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read(filename);
   conduit::Node n2;
 
-  if (m_load_inputs) {
-    const std::string key = "/" + sample_id + "/" + key1;
-    std::vector<std::string> children;
-    conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, key, children);
-    for (auto t : children) {
-      if (master) {
-        std::cout << "next key: " << key1 << std::endl;
-        if (key1 == "inputs") {
-          m_inputs_to_load.insert(t);
-        } else {
-          m_scalars_to_load.insert(t);
-        }
-      }
+  const std::string key = "/" + sample_id + "/" + key1;
+  std::vector<std::string> children;
+  conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, key, children);
+  for (auto t : children) {
+    if (master) std::cout << "next key: " << t << std::endl;
+    if (key1 == "inputs") {
+      m_inputs_to_load.insert(t);
+    } else {
+      m_scalars_to_load.insert(t);
     }
   }
   conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
 }
 
 size_t jag_store::get_linearized_data_size() const {
-  return m_inputs_to_load.size() * sizeof(input_t) 
-           + m_scalars_to_load.size() * sizeof(scalar_t)
+std::cerr << "jag_store::get_linearized_data_size: " << m_inputs_to_load.size()
+<< "  m_scalars_to_load.size(): " << m_scalars_to_load.size()
+<< " m_images_to_load.size(): " <<m_images_to_load.size()
+<< " get_linearized_image_size: " << get_linearized_image_size() << "\n";
+
+  return m_inputs_to_load.size()
+           + m_scalars_to_load.size()
            + m_images_to_load.size() * get_linearized_image_size();
+}
+
+void jag_store::set_image_size(size_t n) {
+  m_image_size = n;
 }
 
 size_t jag_store::get_linearized_image_size() const {

@@ -117,6 +117,8 @@ class jag_store {
              bool num_stores = 1,
              int my_rank = 0);
 
+  void set_image_size(size_t n);
+
   size_t get_linearized_data_size() const;
   size_t get_linearized_image_size() const;
   size_t get_linearized_scalar_size() const;

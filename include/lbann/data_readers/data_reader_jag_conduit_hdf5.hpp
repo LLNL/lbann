@@ -31,7 +31,6 @@
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv.hpp"
-#include "lbann/data_store/jag_store.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
@@ -41,6 +40,8 @@
 #include <unordered_map>
 
 namespace lbann {
+
+class jag_store;
 
 /**
  * Loads the pairs of JAG simulation inputs and results from a conduit-wrapped hdf5 file
@@ -131,6 +132,8 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
+  void set_image_dims(const int width, const int height, const int ch=1);
+
  protected:
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp);
@@ -182,7 +185,7 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   std::vector<std::unique_ptr<cv_process> > m_pps;
 
   /// jag_store; replaces m_data
-  jag_store m_jag_store;
+  jag_store *m_jag_store;
 
   /**
    * Set of keys that are associated with non_numerical values.

@@ -28,6 +28,7 @@
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
+#include "lbann/data_store/jag_store.hpp"
 //#include "lbann/data_store/data_store_jag_conduit.hpp"
 #else
 #include "data_reader_jag_conduit_hdf5.hpp"
@@ -70,7 +71,8 @@
 namespace lbann {
 
 data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : generic_data_reader(shuffle) {
+  : generic_data_reader(shuffle),
+    m_jag_store(nullptr) {
   set_defaults();
 
   if (!pp) {
@@ -81,6 +83,8 @@ data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr
 }
 
 void data_reader_jag_conduit_hdf5::copy_members(const data_reader_jag_conduit_hdf5& rhs) {
+  //todo: make m_jag_store a shared pointer
+  m_jag_store = rhs.m_jag_store;
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
@@ -121,6 +125,10 @@ data_reader_jag_conduit_hdf5& data_reader_jag_conduit_hdf5::operator=(const data
 }
 
 data_reader_jag_conduit_hdf5::~data_reader_jag_conduit_hdf5() {
+  //todo: this goes away when m_jag_store becomes a shared_ptr
+  if (m_jag_store != nullptr) {
+    delete m_jag_store;
+  }
 }
 
 void data_reader_jag_conduit_hdf5::set_defaults() {
@@ -172,6 +180,12 @@ bool data_reader_jag_conduit_hdf5::replicate_processor(const cv_process& pp) {
   return true;
 }
 
+void data_reader_jag_conduit_hdf5::set_image_dims(const int width, const int height, const int ch) {
+  m_image_width = width;
+  m_image_height = height;
+  m_image_num_channels = ch;
+}
+
 void data_reader_jag_conduit_hdf5::load() {
   if(m_gan_labelling) {
     m_num_labels=2;
@@ -181,6 +195,11 @@ void data_reader_jag_conduit_hdf5::load() {
     std::cout << "JAG load GAN m_gan_labelling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
+
+  m_jag_store = new jag_store;
+
+std::cerr << "\nXX data_reader_jag_conduit_hdf5::load; m_image_height, m_image_width: " << m_image_height << " " << m_image_width << "\n";
+  m_jag_store->set_image_size(m_image_height * m_image_width);
 
   // for selecting images, per Luc's advise
   m_emi_selectors.insert("(0.0, 0.0)");
@@ -199,23 +218,22 @@ void data_reader_jag_conduit_hdf5::load() {
     _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
   }
 
-/*
-  int max_files_to_load = INT_MAX;
   if (m_max_files_to_load > 0) {
-    max_files_to_load = m_max_files_to_load;
+    if (m_max_files_to_load < names.size()) {
+      names.resize(m_max_files_to_load);
+    }
   }
-  */
 
-  m_jag_store.set_comm(m_comm);
-  m_jag_store.load_inputs();
+  m_jag_store->set_comm(m_comm);
+  m_jag_store->load_inputs();
   //m_jag_store.load_scalars();
 
   std::vector<std::string> image_names;
   for (auto t : m_emi_selectors) {
     image_names.push_back(t);
   }
-  m_jag_store.load_images(image_names);
-  m_jag_store.setup(names);
+  m_jag_store->load_images(image_names);
+  m_jag_store->setup(names);
 
   m_is_data_loaded = true;
 
@@ -233,28 +251,28 @@ void data_reader_jag_conduit_hdf5::load() {
 
 
 size_t data_reader_jag_conduit_hdf5::get_num_samples() const {
-  return m_jag_store.get_num_samples();
+  return m_jag_store->get_num_samples();
 }
 
 unsigned int data_reader_jag_conduit_hdf5::get_num_img_srcs() const {
-  return m_jag_store.get_num_img_srcs();
+  return m_jag_store->get_num_img_srcs();
 }
 
 size_t data_reader_jag_conduit_hdf5::get_linearized_image_size() const {
-  return m_jag_store.get_linearized_image_size();
+  return m_jag_store->get_linearized_image_size();
 }
 
 size_t data_reader_jag_conduit_hdf5::get_linearized_scalar_size() const {
-  return m_jag_store.get_linearized_scalar_size();
+  return m_jag_store->get_linearized_scalar_size();
 }
 
 size_t data_reader_jag_conduit_hdf5::get_linearized_input_size() const {
-  return m_jag_store.get_linearized_input_size();
+  return m_jag_store->get_linearized_input_size();
 }
 
 
 int data_reader_jag_conduit_hdf5::get_linearized_data_size() const {
-  return m_jag_store.get_linearized_data_size();
+  return m_jag_store->get_linearized_data_size();
 }
 
 int data_reader_jag_conduit_hdf5::get_linearized_response_size() const {
@@ -274,7 +292,7 @@ int data_reader_jag_conduit_hdf5::get_linearized_response_size() const {
 }
 
 std::vector<size_t> data_reader_jag_conduit_hdf5::get_linearized_data_sizes() const {
-  return m_jag_store.get_linearized_data_sizes();
+  return m_jag_store->get_linearized_data_sizes();
 }
 
 std::vector<size_t> data_reader_jag_conduit_hdf5::get_linearized_response_sizes() const {
@@ -350,7 +368,7 @@ std::string data_reader_jag_conduit_hdf5::get_description() const {
 
 
 bool data_reader_jag_conduit_hdf5::check_sample_id(const size_t sample_id) const {
-  return m_jag_store.check_sample_id(sample_id);
+  return m_jag_store->check_sample_id(sample_id);
 }
 
 std::vector< std::pair<size_t, const data_reader_jag_conduit_hdf5::ch_t*> >
@@ -555,7 +573,7 @@ bool data_reader_jag_conduit_hdf5::fetch_label(CPUMat& Y, int data_id, int mb_id
 
 void data_reader_jag_conduit_hdf5::setup_data_store(model *m) {
   if (m_data_store != nullptr) {
-    //delete m_data_store;
+    delete m_jag_store;
   }
 /*
   m_data_store = new data_store_jag_conduit(this, m);

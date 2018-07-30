@@ -109,6 +109,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
+    } else if (name == "jag_conduit_hdf5") {
+      init_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);

@@ -128,7 +128,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * for some data readers (jag_conduit) we load from multiple files;
    * for testing we want to be able to restrict that number
    */
-  void set_max_files_to_load(int n) {
+  void set_max_files_to_load(size_t n) {
     m_max_files_to_load = n;
   }
 
@@ -777,7 +777,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_num_parallel_readers; /// How many parallel readers are being used
 
   int m_rank_in_model;  /// What is the rank of the data reader within a given model
-  int m_max_files_to_load;
+  size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
   std::string m_data_fn;
