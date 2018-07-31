@@ -37,7 +37,8 @@ namespace {
 /** CPU implementation of evaluation layer forward prop. */
 void fp_cpu(lbann_comm& comm,
             const AbsDistMat& input,
-            DataType& value) {
+            DataType& value,
+            Al::request& req) {
   const auto& local_input = input.LockedMatrix();
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
@@ -50,14 +51,15 @@ void fp_cpu(lbann_comm& comm,
     }
   }
   value = value / mini_batch_size;
-  comm.allreduce(&value, 1, input.DistComm());
+  comm.nb_allreduce(&value, 1, input.DistComm(), req);
 }
 
 #ifdef LBANN_HAS_GPU
 /** GPU implementation of evaluation layer forward prop. */
 void fp_gpu(lbann_comm& comm,
             const AbsDistMat& input,
-            DataType& value) {
+            DataType& value,
+            Al::request& req) {
 
   // Local matrix
   const auto& local_input = input.LockedMatrix();
@@ -118,7 +120,7 @@ void fp_gpu(lbann_comm& comm,
   CHECK_CUDA(cudaMemcpy(&value, sum_d.LockedBuffer(), sizeof(DataType),
                         cudaMemcpyDeviceToHost));
   value = value / mini_batch_size;
-  comm.allreduce(&value, 1, input.DistComm());
+  comm.nb_allreduce(&value, 1, input.DistComm(), req);
 
 }
 #endif // LBANN_HAS_GPU
@@ -126,6 +128,7 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 EvalType abstract_evaluation_layer::get_value(bool scaled) {
+  get_comm()->wait(m_allreduce_req);
   if (scaled) { return m_scale * m_value; }
   else        { return m_value; }
 }
@@ -141,11 +144,11 @@ abstract_evaluation_layer::abstract_evaluation_layer(lbann_comm *comm)
 void abstract_evaluation_layer::fp_compute() {
   switch (get_device_allocation()) {
   case El::Device::CPU:
-    fp_cpu(*get_comm(), get_prev_activations(), m_value);
+    fp_cpu(*get_comm(), get_prev_activations(), m_value, m_allreduce_req);
     break;
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
-    fp_gpu(*get_comm(), get_prev_activations(), m_value);
+    fp_gpu(*get_comm(), get_prev_activations(), m_value, m_allreduce_req);
     break;
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");

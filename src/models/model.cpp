@@ -857,10 +857,6 @@ bool model::train_mini_batch() {
   // Result is not needed until the end of the mini-batch.
   m_objective_function->start_evaluation(execution_mode::training,
                                          get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(execution_mode::training,
-                get_current_mini_batch_size());
-  }
 
   // Backward prop step
   m_objective_function->differentiate();
@@ -870,6 +866,10 @@ bool model::train_mini_batch() {
   // Finish evaluation.
   m_objective_function->finish_evaluation(execution_mode::training,
                                           get_current_mini_batch_size());
+  for (const auto& m : m_metrics) {
+    m->evaluate(execution_mode::training,
+                get_current_mini_batch_size());
+  }
 
   // Update step
   update_weights();
