@@ -171,7 +171,7 @@
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/adagrad.hpp"

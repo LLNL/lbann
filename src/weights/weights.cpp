@@ -22,23 +22,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// weights .hpp .cpp - Layer weights class
 ////////////////////////////////////////////////////////////////////////////////
+
+#include <utility>
 
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
-#include <numeric>
-#include<sys/types.h>
-#include <unistd.h>
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 namespace {
 
-/** Get string describing weight tensor dimensions.
- *  height_dims and width_dims are the dimensions of the weight
- *  matrix.
+/** Get string describing tensor dimensions.
+ *  The tensor is stored in a matrix, although there may be multiple
+ *  dimensions corresponding to the matrix height and width.
  */
 std::string get_dims_string(const std::vector<int>& matrix_height_dims,
                             const std::vector<int>& matrix_width_dims) {
@@ -66,8 +64,18 @@ weights::weights(lbann_comm* comm)
   m_name = "weights" + std::to_string(num_weights);
   num_weights++;
 
-  // Zero initialization is default
-  m_initializer.reset(new constant_initializer(m_comm, DataType(0)));
+  // Default matrix distribution
+  m_matrix_dist.colDist = El::STAR;
+  m_matrix_dist.rowDist = El::STAR;
+  m_matrix_dist.blockHeight = 1;
+  m_matrix_dist.blockWidth = 1;
+  m_matrix_dist.colAlign = 0;
+  m_matrix_dist.rowAlign = 0;
+  m_matrix_dist.colCut = 0;
+  m_matrix_dist.rowCut = 0;
+  m_matrix_dist.root = 0;
+  m_matrix_dist.grid = &comm->get_model_grid();
+  m_matrix_dist.device = El::Device::CPU;
 
 }
 
@@ -76,6 +84,7 @@ weights::weights(const weights& other)
     m_comm(other.m_comm),
     m_matrix_height_dims(other.m_matrix_height_dims),
     m_matrix_width_dims(other.m_matrix_width_dims),
+    m_matrix_dist(other.m_matrix_dist),
     m_frozen(other.m_frozen) {
 
   // Deep copies
@@ -95,6 +104,7 @@ weights& weights::operator=(const weights& other) {
   m_comm = other.m_comm;
   m_matrix_height_dims = other.m_matrix_height_dims;
   m_matrix_width_dims = other.m_matrix_width_dims;
+  m_matrix_dist = other.m_matrix_dist;
   m_frozen = other.m_frozen;
 
   // Deep copies
@@ -110,79 +120,137 @@ weights& weights::operator=(const weights& other) {
   return *this;
 }
 
-void weights::setup(int size, El::Device dev) {
-  setup(std::vector<int>(1, size), std::vector<int>(), El::STAR, El::STAR, dev);
+// -----------------------------------------------
+// Dimension accessors
+// -----------------------------------------------
+
+std::vector<int> weights::get_dims() const {
+  std::vector<int> dims;
+  for (const auto& d : get_matrix_width_dims())  { dims.push_back(d); }
+  for (const auto& d : get_matrix_height_dims()) { dims.push_back(d); }
+  return dims;
 }
-
-  void weights::setup(std::vector<int> tensor_dims, El::Device dev) {
-  setup(tensor_dims, std::vector<int>(), El::STAR, El::STAR, dev);
+int weights::get_size() const {
+  const auto& dims = get_dims();
+  return std::accumulate(dims.begin(), dims.end(),
+                         1, std::multiplies<int>());
 }
-
-void weights::setup(int matrix_height,
-                    int matrix_width,
-                    El::Distribution col_dist,
-                    El::Distribution row_dist,
-                    El::Device dev) {
-  setup(std::vector<int>(1, matrix_height),
-        std::vector<int>(1, matrix_width),
-        col_dist, row_dist, dev);
+std::vector<int> weights::get_matrix_height_dims() const {
+  return m_matrix_height_dims;
 }
-
-void weights::setup(std::vector<int> matrix_height_dims,
-                    std::vector<int> matrix_width_dims,
-                    El::Distribution col_dist,
-                    El::Distribution row_dist,
-                    El::Device dev) {
-
+std::vector<int> weights::get_matrix_width_dims() const {
+  return m_matrix_width_dims;
+}
+int weights::get_matrix_height() const {
+  const auto& dims = get_matrix_height_dims();
+  return std::accumulate(dims.begin(), dims.end(),
+                         1, std::multiplies<int>());
+}
+int weights::get_matrix_width() const {
+  const auto& dims = get_matrix_width_dims();
+  return std::accumulate(dims.begin(), dims.end(),
+                         1, std::multiplies<int>());
+}
+void weights::set_dims(std::vector<int> matrix_height_dims,
+                       std::vector<int> matrix_width_dims) {
+  m_matrix_height_dims = matrix_height_dims;
+  m_matrix_width_dims = matrix_width_dims;
   if (m_values != nullptr) {
-    // Check that dimensions are unchanged if weights are already
-    // initialized
-    const El::DistData dist_data(*m_values);
-    if (m_matrix_height_dims == matrix_height_dims
-        && m_matrix_width_dims == matrix_width_dims
-        && dist_data.colDist == col_dist
-        && dist_data.rowDist == row_dist) {
-      return;
-    } else {
+    const auto& height = get_matrix_height();
+    const auto& width = get_matrix_width();
+    if (m_values->Height() != height || m_values->Width() != width) {
       std::stringstream err;
-      err << "attempted to setup " << m_name << " as a "
-          << get_dims_string(matrix_height_dims, matrix_width_dims) << " "
-          << "weights matrix with "
-          << "col_dist=" << col_dist << ", "
-          << "row_dist=" << row_dist << ", "
-          << "but it is already setup as a "
-          << get_dims_string(m_matrix_height_dims, m_matrix_width_dims) << " "
-          << "matrix with "
-          << "col_dist=" << dist_data.colDist << ", "
-          << "row_dist=" << dist_data.rowDist;
-      LBANN_ERROR(err.str());
-    }
-  } else {
-    // Check that tensor dimensions are valid
-    bool dims_are_valid = true;
-    for (const auto& d : matrix_height_dims) {
-      if (d <= 0) { dims_are_valid = false; }
-    }
-    for (const auto& d : matrix_width_dims) {
-      if (d <= 0) { dims_are_valid = false; }
-    }
-    if (!dims_are_valid) {
-      std::stringstream err;
-      err << "attempted to setup " << m_name << " as a "
-          << get_dims_string(matrix_height_dims, matrix_width_dims) << " "
+      err << "attempted to set weights \"" << get_name() << "\" "
+          << "with dimensions "
+          << get_dims_string(matrix_height_dims, matrix_width_dims) << ", "
+          << "but it is already setup with a "
+          << m_values->Height() << " x " << m_values->Width() << " "
           << "weights matrix";
       LBANN_ERROR(err.str());
     }
   }
+}
 
-  // Initialize weights matrix
-  m_matrix_height_dims = matrix_height_dims;
-  m_matrix_width_dims = matrix_width_dims;
-  m_values.reset(m_initializer->construct_matrix(get_matrix_height(),
-                                                 get_matrix_width(),
-                                                 col_dist,
-                                                 row_dist,
-                                                 dev));
+// -----------------------------------------------
+// Initializer accessors
+// -----------------------------------------------
+
+weights_initializer* weights::get_initializer() {
+  return const_cast<weights_initializer*>(static_cast<const weights&>(*this).get_initializer());
+}
+const weights_initializer* weights::get_initializer() const {
+  return m_initializer.get();
+}
+void weights::set_initializer(std::unique_ptr<weights_initializer>& init) {
+  m_initializer = std::move(init);
+}
+
+// -----------------------------------------------
+// Optimizer accessors
+// -----------------------------------------------
+
+optimizer* weights::get_optimizer() {
+  return const_cast<optimizer*>(static_cast<const weights&>(*this).get_optimizer());
+}
+const optimizer* weights::get_optimizer() const {
+  if (m_frozen) {
+    return nullptr;
+  } else {
+    return m_optimizer.get();
+  }
+}
+void weights::set_optimizer(std::unique_ptr<optimizer>& opt) {
+  m_optimizer = std::move(opt);
+}
+  
+// -----------------------------------------------
+// Matrix distribution accessors
+// -----------------------------------------------
+
+El::DistData weights::get_matrix_distribution() const {
+  return m_matrix_dist;
+}
+void weights::set_matrix_distribution(El::DistData dist) {
+  m_matrix_dist = dist;
+}
+  
+// -----------------------------------------------
+// Setup
+// -----------------------------------------------
+
+void weights::setup() {
+
+  // Check that tensor dimensions are valid
+  const auto& is_nonpositive = [] (int d) { return d <= 0; };
+  if (std::any_of(m_matrix_height_dims.begin(),
+                  m_matrix_height_dims.end(),
+                  is_nonpositive)
+      || std::any_of(m_matrix_width_dims.begin(),
+                     m_matrix_width_dims.end(),
+                     is_nonpositive)) {
+    std::stringstream err;
+    err << "attempted to setup weights \"" << get_name() << "\" with a "
+        << get_dims_string(m_matrix_height_dims, m_matrix_width_dims) << " "
+        << "weights matrix";
+    LBANN_ERROR(err.str());
+  }
+
+  // Construct weights matrix
+  m_values.reset(AbsDistMat::Instantiate(*m_matrix_dist.grid,
+                                         m_matrix_dist.root,
+                                         m_matrix_dist.colDist,
+                                         m_matrix_dist.rowDist,
+                                         (m_matrix_dist.blockHeight == 1
+                                          && m_matrix_dist.blockWidth == 1 ?
+                                          El::ELEMENT : El::BLOCK),
+                                         m_matrix_dist.device));
+  m_values->AlignWith(m_matrix_dist);
+  m_values->Resize(get_matrix_height(), get_matrix_width());
+  if (m_initializer != nullptr) {
+    m_initializer->fill(*m_values);
+  } else {
+    El::Zero(*m_values);
+  }
 
   // Setup optimizer
   if (m_optimizer != nullptr) {
@@ -191,32 +259,9 @@ void weights::setup(std::vector<int> matrix_height_dims,
 
 }
 
-std::vector<int> weights::get_dims() const {
-  std::vector<int> dims;
-  for (const auto& d : get_matrix_width_dims())  { dims.push_back(d); }
-  for (const auto& d : get_matrix_height_dims()) { dims.push_back(d); }
-  return dims;
-}
-
-int weights::get_matrix_height() const {
-  const auto& height_dims = get_matrix_height_dims();
-  return std::accumulate(height_dims.begin(), height_dims.end(),
-                         1, std::multiplies<int>());
-}
-
-int weights::get_matrix_width() const {
-  const auto& width_dims = get_matrix_width_dims();
-  return std::accumulate(width_dims.begin(), width_dims.end(),
-                         1, std::multiplies<int>());
-}
-
-void weights::set_initializer(weights_initializer* initializer) {
-  m_initializer.reset(initializer);
-}
-
-void weights::set_optimizer(optimizer* opt) {
-  m_optimizer.reset(opt);
-}
+// -----------------------------------------------
+// Weight matrix accessors
+// -----------------------------------------------
 
 AbsDistMat& weights::get_values() {
   return const_cast<AbsDistMat&>(static_cast<const weights&>(*this).get_values());
@@ -310,12 +355,14 @@ void weights::set_value(DataType value, int row, int col) {
   // Set value if it is local
   auto& values = get_values();
   if (values.IsLocal(row, col)) {
-    const auto& local_row = values.LocalRow(row);
-    const auto& local_col = values.LocalCol(col);
-    values.SetLocal(local_row, local_col, value);
+    values.SetLocal(values.LocalRow(row), values.LocalCol(col), value);
   }
 
 }
+
+// -----------------------------------------------
+// Checkpointing
+// -----------------------------------------------
 
 bool weights::save_to_checkpoint_shared(lbann::persist& p)
 {
