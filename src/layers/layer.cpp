@@ -894,7 +894,7 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
   const bool align_outputs = get_num_parents() > 0;
   const auto& alignment_dist = (align_outputs ?
                                 get_prev_activations().DistData() :
-                                El::DistData());
+                                get_activations().DistData());
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
