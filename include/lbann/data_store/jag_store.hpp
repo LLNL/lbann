@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "lbann/data_readers/cv_process.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -46,10 +46,6 @@ namespace lbann {
 class jag_store {
  public:
 
-  using ch_t = float; ///< jag output image channel type
-  using scalar_t = double; ///< jag scalar output type
-  using input_t = double; ///< jag input parameter type
-
   jag_store();
 
   jag_store(const jag_store&) = default;
@@ -62,31 +58,23 @@ class jag_store {
     m_comm = comm;
   }
 
-  /// Returns the requested input
-  input_t fetch_input(size_t sample_id, const std::string &key) const;
+  /// Returns the requested inputs
+  const std::vector<data_reader_jag_conduit_hdf5::input_t> & fetch_inputs(size_t sample_id) const {
+    check_sample_id(sample_id);
+    return m_data_inputs[sample_id];
+  }
 
-  /// Returns the requested scalar
-  scalar_t fetch_scalar(size_t sample_id, const std::string &key) const;
+  /// Returns the requested scalars
+  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> & fetch_scalars (size_t sample_id) const {
+    check_sample_id(sample_id);
+    return m_data_scalars[sample_id];
+  }
 
-  /// Returns a pointer to the requested scalar
-  const ch_t * fetch_image(size_t sample_id, const std::string &key) const;
-
-  /**
-   * Must be called before setup(), else has no effect. Test mode
-   * incurs considerable overhead in memory, and may increase setup
-   * time by over an order of magnitude.
-   */
-  void set_test_mode() { m_test_mode_is_set = true; }
-
-  /**
-   * Has no effect if set_test_mode() was not called. Also,
-   * must be called after setup(), else has no effect.
-   * In addition to normal loading (where we load only the keys of
-   * interest using the hdf5 api of conduit), we also load the
-   * the entire conduit::Node, and test that our loaded char* data
-   * matches that from the conduit::node
-   */
-  void run_test();
+  /// Returns the requested images
+  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> & fetch_images(size_t sample_id) {
+    check_sample_id(sample_id);
+    return m_data_images[sample_id];
+  }
 
   /**
    * Load all keys from the "input" section of the bundle.
@@ -117,23 +105,22 @@ class jag_store {
              bool num_stores = 1,
              int my_rank = 0);
 
-  void set_image_size(size_t n);
+  void set_image_size(size_t n) { m_image_size = n; }
 
   size_t get_linearized_data_size() const;
-  size_t get_linearized_image_size() const;
-  size_t get_linearized_scalar_size() const;
-  size_t get_linearized_input_size() const;
-  size_t get_num_img_srcs() const;
 
-  std::vector<size_t> get_linearized_data_sizes() const;
+  size_t get_linearized_image_size() const { return m_image_size; }
+  size_t get_linearized_scalar_size() const { return m_scalars_to_load.size(); }
+  size_t get_linearized_input_size() const { return m_inputs_to_load.size(); }
+  size_t get_num_img_srcs() const { return m_images_to_load.size(); }
 
-  bool check_sample_id(const size_t sample_id) const;
+  const std::vector<size_t> & get_linearized_data_sizes() const { return m_data_sizes; }
+
+  bool check_sample_id(const size_t sample_id) const { return sample_id < m_num_samples; }
 
   size_t get_num_samples() const { return m_num_samples; }
 
  private:
-
-  bool m_test_mode_is_set;
 
   bool m_is_setup;
 
@@ -149,14 +136,17 @@ class jag_store {
   std::unordered_set<std::string> m_scalars_to_load;
   std::unordered_set<std::string> m_images_to_load;
 
-  std::unordered_map<std::string, std::vector<input_t>> m_data_inputs;
-  std::unordered_map<std::string, std::vector<scalar_t>> m_data_scalars;
-  std::unordered_map<std::string, std::vector<std::vector<ch_t>>> m_data_images;
+  std::vector<std::vector<data_reader_jag_conduit_hdf5::input_t>> m_data_inputs;
+  std::vector<std::vector<data_reader_jag_conduit_hdf5::scalar_t>> m_data_scalars;
+  std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> m_data_images;
 
   lbann_comm *m_comm;
 
   void get_default_keys(std::string &filename, std::string &sample_id, std::string key1, bool master);
 
+  std::vector<size_t> m_data_sizes;
+
+  void build_data_sizes();
 
 };
 

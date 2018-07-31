@@ -186,6 +186,7 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   /// jag_store; replaces m_data
   jag_store *m_jag_store;
+  //std::shared_ptr<jag_store> m_jag_store;
 
   /**
    * Set of keys that are associated with non_numerical values.

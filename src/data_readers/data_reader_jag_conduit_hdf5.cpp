@@ -36,15 +36,14 @@
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv_extensions.hpp"
-#include <limits>     // numeric_limits
-#include <algorithm>  // max_element
-#include <numeric>    // accumulate
-#include <functional> // multiplies
-#include <type_traits>// is_same
-#include <set>
-#include <map>
+//#include <limits>     // numeric_limits
+//#include <algorithm>  // max_element
+//#include <numeric>    // accumulate
+//#include <functional> // multiplies
+//#include <type_traits>// is_same
+#include <memory>
 #include "lbann/data_readers/image_utils.hpp"
-#include <omp.h>
+//#include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
 
@@ -73,6 +72,7 @@ namespace lbann {
 data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle),
     m_jag_store(nullptr) {
+
   set_defaults();
 
   if (!pp) {
@@ -125,19 +125,15 @@ data_reader_jag_conduit_hdf5& data_reader_jag_conduit_hdf5::operator=(const data
 }
 
 data_reader_jag_conduit_hdf5::~data_reader_jag_conduit_hdf5() {
-  //todo: this goes away when m_jag_store becomes a shared_ptr
-  if (m_jag_store != nullptr) {
-    delete m_jag_store;
-  }
 }
 
 void data_reader_jag_conduit_hdf5::set_defaults() {
-/*
-  m_independent.assign(1u, Undefined);
-  m_dependent.assign(1u, Undefined);
   m_image_width = 0;
   m_image_height = 0;
   m_image_num_channels = 1;
+/*
+  m_independent.assign(1u, Undefined);
+  m_dependent.assign(1u, Undefined);
   set_linearized_image_size();
   m_num_img_srcs = 1u;
   m_is_data_loaded = false;
@@ -197,8 +193,8 @@ void data_reader_jag_conduit_hdf5::load() {
   }
 
   m_jag_store = new jag_store;
+  //m_jag_store = std::make_shared<jag_store>(new jag_store);
 
-std::cerr << "\nXX data_reader_jag_conduit_hdf5::load; m_image_height, m_image_width: " << m_image_height << " " << m_image_width << "\n";
   m_jag_store->set_image_size(m_image_height * m_image_width);
 
   // for selecting images, per Luc's advise
@@ -407,7 +403,15 @@ cv::Mat data_reader_jag_conduit_hdf5::cast_to_cvMat(const std::pair<size_t, cons
 }
 
 std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id) const {
-  std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
+  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_images(sample_id);
+
+  std::vector< std::pair<size_t, const ch_t*> > img_ptrs(raw_images.size());
+  size_t num_pixels = get_linearized_image_size();
+  for (size_t h=0; h<raw_images.size(); h++) {
+    img_ptrs[h] = std::make_pair(num_pixels, raw_images[h].data());
+  }
+
+
   std::vector<cv::Mat> images;
   images.reserve(img_ptrs.size());
 
@@ -537,13 +541,28 @@ bool data_reader_jag_conduit_hdf5::fetch(CPUMat& X, int data_id, int mb_idx, int
 }
 
 bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-  std::vector<size_t> sizes = get_linearized_data_sizes();
-  std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
-  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    // The third argument mb_idx below is 0 because it is for the view of X not X itself
-    // XX ok = fetch(X_v[i], data_id, 0, tid, m_independent[i], "datum");
-  }
+
+  const std::vector<size_t> & sizes = get_linearized_data_sizes();
+  std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
+
+  size_t i = 0;
+  const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(data_id);
+  for (size_t j=0; j<inputs.size(); j++) {
+    set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, &inputs[j], m_jag_store->get_linearized_input_size());
+  }  
+
+  std::vector<cv::Mat> images = get_cv_images(data_id);
+
+  if (images.size() != get_num_img_srcs()) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: the number of images is not as expected " + std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
+  }  
+
+  for(size_t k=0u; k < get_num_img_srcs(); ++k) {
+    int width, height, img_type;
+    image_utils::process_image(images[k], width, height, img_type, *(m_pps[tid]), X_v[i]);
+   }
+
   return ok;
 }
 
@@ -573,7 +592,7 @@ bool data_reader_jag_conduit_hdf5::fetch_label(CPUMat& Y, int data_id, int mb_id
 
 void data_reader_jag_conduit_hdf5::setup_data_store(model *m) {
   if (m_data_store != nullptr) {
-    delete m_jag_store;
+    //delete m_data_store;
   }
 /*
   m_data_store = new data_store_jag_conduit(this, m);
