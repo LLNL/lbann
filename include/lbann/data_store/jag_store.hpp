@@ -132,9 +132,15 @@ class jag_store {
 
   size_t m_num_samples;
 
-  std::unordered_set<std::string> m_inputs_to_load;
-  std::unordered_set<std::string> m_scalars_to_load;
-  std::unordered_set<std::string> m_images_to_load;
+  bool m_run_tests;
+
+  std::unordered_set<std::string> m_valid_samples;
+
+  std::unordered_map<size_t, std::string> m_id_to_name;
+
+  std::vector<std::string> m_inputs_to_load;
+  std::vector<std::string> m_scalars_to_load;
+  std::vector<std::string> m_images_to_load;
 
   std::vector<std::vector<data_reader_jag_conduit_hdf5::input_t>> m_data_inputs;
   std::vector<std::vector<data_reader_jag_conduit_hdf5::scalar_t>> m_data_scalars;
@@ -148,6 +154,7 @@ class jag_store {
 
   void build_data_sizes();
 
+  void run_tests(const std::vector<std::string> &conduit_filenames); 
 };
 
 } // end of namespace lbann

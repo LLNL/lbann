@@ -404,13 +404,11 @@ cv::Mat data_reader_jag_conduit_hdf5::cast_to_cvMat(const std::pair<size_t, cons
 
 std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id) const {
   const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_images(sample_id);
-
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(raw_images.size());
   size_t num_pixels = get_linearized_image_size();
   for (size_t h=0; h<raw_images.size(); h++) {
     img_ptrs[h] = std::make_pair(num_pixels, raw_images[h].data());
   }
-
 
   std::vector<cv::Mat> images;
   images.reserve(img_ptrs.size());
@@ -548,9 +546,7 @@ bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_id
 
   size_t i = 0;
   const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(data_id);
-  for (size_t j=0; j<inputs.size(); j++) {
-    set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, &inputs[j], m_jag_store->get_linearized_input_size());
-  }  
+  set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, inputs.data(), m_jag_store->get_linearized_input_size());
 
   std::vector<cv::Mat> images = get_cv_images(data_id);
 
