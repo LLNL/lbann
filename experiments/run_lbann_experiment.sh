@@ -82,7 +82,7 @@ case ${CLUSTER} in
         ;;
     "surface")
         SCHEDULER=slurm
-        PARTITION=${PARTITION:-gpgpu}
+        PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
@@ -373,7 +373,7 @@ case ${CLUSTER} in
     pascal)
         echo "export OMP_NUM_THREADS=8"                 >> ${BATCH_SCRIPT}
         echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
-    ;;
+        ;;
 esac
 echo ""                                                 >> ${BATCH_SCRIPT}
 
