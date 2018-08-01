@@ -3,8 +3,8 @@ data_reader {
     name: "jag_conduit"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
-    data_filename: "samples100-200.bundle"
+    data_filedir: "/usr/workspace/wsb/icfsi/lbann_datasets/1BJAGS_10k_1/0/0/"
+    data_filename: "samples0-25.bundle"
     validation_percent: 0.01
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
@@ -46,22 +46,19 @@ data_reader {
     # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
     # the pair of a prefix substring and the minimum key length.
     # For example, with the example below, any key that has a length no shorter
-    # than 27 and starts with the substring "image_[" is excluded.
+    # than 26 and starts with the substring "image_(" is excluded.
 
-    jag_scalar_prefix_filters: [ { key_prefix: "image_[" min_len: 27} ]
+    jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
+    jag_scalar_filters: [ "iBT" ]
 
-    # The parameter "shape_model_initial_velocities" is used in numpy-based format but empty in conduit-based format
-    jag_input_keys: ["stopping_mult",
-                     "radiation_mult",
-                     "ablation_cv",
-                     "Vi",
-                     "conduction_mult",
-                     "shape_model_initial_velocity_amplitude"
-                    ];
+    jag_input_keys: ["shape_model_initial_modes:(4,3)",
+                     "betti_prl15_trans_u",
+                     "betti_prl15_trans_v",
+                     "shape_model_initial_modes:(2,1)",
+                     "shape_model_initial_modes:(1,0)"];
 
-    jag_input_filters: ["shape_model_initial_velocity"]
 
-    num_labels: 6
+    num_labels: 5
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
@@ -98,8 +95,8 @@ data_reader {
     name: "jag_conduit"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratchh/brainusr/datasets/jag/bundle_100_10/"
-    data_filename: "samples200-300.bundle"
+    data_filedir: "/usr/workspace/wsb/icfsi/lbann_datasets/1BJAGS_10k_1/0/0/"
+    data_filename: "samples25-50.bundle"
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
@@ -133,19 +130,16 @@ data_reader {
 #        "MINradius"
       ]
 
-    jag_scalar_prefix_filters: [ { key_prefix: "image_[" min_len: 27} ]
+    jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
+    jag_scalar_filters: [ "iBT" ]
 
-    jag_input_keys: ["stopping_mult",
-                     "radiation_mult",
-                     "ablation_cv",
-                     "Vi",
-                     "conduction_mult",
-                     "shape_model_initial_velocity_amplitude"
-                    ];
+    jag_input_keys: ["shape_model_initial_modes:(4,3)",
+                     "betti_prl15_trans_u",
+                     "betti_prl15_trans_v",
+                     "shape_model_initial_modes:(2,1)",
+                     "shape_model_initial_modes:(1,0)"];
 
-    jag_input_filters: ["shape_model_initial_velocity"]
-
-    num_labels: 6
+    num_labels: 5
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used
