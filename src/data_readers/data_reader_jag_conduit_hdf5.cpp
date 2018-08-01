@@ -28,22 +28,16 @@
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
+#include "lbann/utils/options.hpp" // for add_delimiter() in load()
 #include "lbann/data_store/jag_store.hpp"
-//#include "lbann/data_store/data_store_jag_conduit.hpp"
 #else
 #include "data_reader_jag_conduit_hdf5.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv_extensions.hpp"
-//#include <limits>     // numeric_limits
-//#include <algorithm>  // max_element
-//#include <numeric>    // accumulate
-//#include <functional> // multiplies
-//#include <type_traits>// is_same
 #include <memory>
 #include "lbann/data_readers/image_utils.hpp"
-//#include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
 
@@ -71,7 +65,8 @@ namespace lbann {
 
 data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle),
-    m_jag_store(nullptr) {
+    m_jag_store(nullptr),
+    m_owns_jag_store(false) {
 
   set_defaults();
 
@@ -85,6 +80,7 @@ data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr
 void data_reader_jag_conduit_hdf5::copy_members(const data_reader_jag_conduit_hdf5& rhs) {
   //todo: make m_jag_store a shared pointer
   m_jag_store = rhs.m_jag_store;
+  m_owns_jag_store = rhs.m_owns_jag_store;
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
@@ -125,6 +121,9 @@ data_reader_jag_conduit_hdf5& data_reader_jag_conduit_hdf5::operator=(const data
 }
 
 data_reader_jag_conduit_hdf5::~data_reader_jag_conduit_hdf5() {
+  if (m_owns_jag_store) {
+    delete m_jag_store;
+  }
 }
 
 void data_reader_jag_conduit_hdf5::set_defaults() {
@@ -192,44 +191,64 @@ void data_reader_jag_conduit_hdf5::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
-  m_jag_store = new jag_store;
-  //m_jag_store = std::make_shared<jag_store>(new jag_store);
-
-  m_jag_store->set_image_size(m_image_height * m_image_width);
-
-  // for selecting images, per Luc's advise
-  m_emi_selectors.insert("(0.0, 0.0)");
-  m_emi_selectors.insert("(90.0, 0.0)");
-  m_emi_selectors.insert("(90.0, 78.0)");
-
-  //const std::string data_dir = add_delimiter(get_file_dir());
-  //const std::string conduit_file_name = get_data_filename();
-  const std::string pattern = get_file_dir();
-  std::vector<std::string> names = glob(pattern);
-  if (names.size() < 1) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
-  }
-
-  if (m_first_n > 0) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
-  }
-
-  if (m_max_files_to_load > 0) {
-    if (m_max_files_to_load < names.size()) {
-      names.resize(m_max_files_to_load);
+  bool setup_jag_store = true;
+  options *opts = options::get();
+  if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5::load() - getting ptrs to data_readers\n";
+  std::vector<void*> p = opts->get_ptrs();
+  for (auto t : p) {
+    data_reader_jag_conduit_hdf5 *other = static_cast<data_reader_jag_conduit_hdf5*>(t);
+    if (other == nullptr) {
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: dynamic_cast<data_reader_jag_conduit_hdf5*> failed");
+    }
+    if (other->get_role() == get_role()) {
+      if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5::load() - found compatible reader; role: " <<  get_role() << "\n";
+      m_jag_store = other->get_jag_store();
+      m_owns_jag_store = false;
+      setup_jag_store = false;
+      break;
     }
   }
 
-  m_jag_store->set_comm(m_comm);
-  m_jag_store->load_inputs();
-  //m_jag_store.load_scalars();
-
-  std::vector<std::string> image_names;
-  for (auto t : m_emi_selectors) {
-    image_names.push_back(t);
+  if (setup_jag_store) {
+    m_jag_store = new jag_store;
+    //m_jag_store = std::make_shared<jag_store>(new jag_store);
+  
+    m_jag_store->set_image_size(m_image_height * m_image_width);
+  
+    // for selecting images, per Luc's advise
+    m_emi_selectors.insert("(0.0, 0.0)");
+    m_emi_selectors.insert("(90.0, 0.0)");
+    m_emi_selectors.insert("(90.0, 78.0)");
+  
+    //const std::string data_dir = add_delimiter(get_file_dir());
+    //const std::string conduit_file_name = get_data_filename();
+    const std::string pattern = get_file_dir();
+    std::vector<std::string> names = glob(pattern);
+    if (names.size() < 1) {
+      _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
+    }
+  
+    if (m_first_n > 0) {
+      _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
+    }
+  
+    if (m_max_files_to_load > 0) {
+      if (m_max_files_to_load < names.size()) {
+        names.resize(m_max_files_to_load);
+      }
+    }
+  
+    m_jag_store->set_comm(m_comm);
+    m_jag_store->load_inputs();
+    //m_jag_store.load_scalars();
+  
+    std::vector<std::string> image_names;
+    for (auto t : m_emi_selectors) {
+      image_names.push_back(t);
+    }
+    m_jag_store->load_images(image_names);
+    m_jag_store->setup(names);
   }
-  m_jag_store->load_images(image_names);
-  m_jag_store->setup(names);
 
   m_is_data_loaded = true;
 
