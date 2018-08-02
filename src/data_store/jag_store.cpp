@@ -1,3 +1,5 @@
+#ifdef LBANN_HAS_CONDUIT
+
 #include "lbann/data_store/jag_store.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/timer.hpp"
@@ -289,3 +291,4 @@ void jag_store::run_tests(const std::vector<std::string> &conduit_filenames) {
 
 
 } // namespace lbann
+#endif //ifdef LBANN_HAS_CONDUIT
