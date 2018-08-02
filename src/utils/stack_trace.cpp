@@ -80,46 +80,46 @@ std::string get() {
   
 namespace {
 
-/** Get human-readable description of signal.
- *  See /usr/include/bits/signum.h for signal explanations.
- */
+/** Get human-readable description of signal. */
 std::string signal_description(int signal) {
 
   // Get signal description
+  // Note: Multiple signals can share the same code, so we can't use a
+  // switch-case statement. Signal descriptions are taken from the
+  // POSIX C standard
+  // (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html).
   std::string desc;
-  switch (signal) {
-  case 1:  desc = "hangup";                     break;
-  case 2:  desc = "interrupt";                  break;
-  case 3:  desc = "quit";                       break;
-  case 4:  desc = "illegal instruction";        break;
-  case 5:  desc = "trace trap";                 break;
-  case 6:  desc = "abort";                      break;
-  case 7:  desc = "BUS error";                  break;
-  case 8:  desc = "floating-point exception";   break;
-  case 9:  desc = "kill, unblockable";          break;
-  case 10: desc = "user-defined signal 1";      break;
-  case 11: desc = "segmentation violation";     break;
-  case 12: desc = "user-defined signal 2";      break;
-  case 13: desc = "broken pipe";                break;
-  case 14: desc = "alarm clock";                break;
-  case 15: desc = "termination";                break;
-  case 16: desc = "stack fault";                break;
-  case 17: desc = "child status has changed";   break;
-  case 18: desc = "continue";                   break;
-  case 19: desc = "stop, unblockable";          break;
-  case 20: desc = "keyboard stop";              break;
-  case 21: desc = "background read from tty";   break;
-  case 22: desc = "background write to tty";    break;
-  case 23: desc = "urgent condition on socket"; break;
-  case 24: desc = "CPU limit exceeded";         break;
-  case 25: desc = "file size limit exceeded";   break;
-  case 26: desc = "virtual alarm clock";        break;
-  case 27: desc = "profiling alarm clock";      break;
-  case 28: desc = "window size change";         break;
-  case 29: desc = "pollable event occured";     break;
-  case 30: desc = "power failure restart";      break;
-  case 31: desc = "bad system call";            break;
-  }
+#define SIGNAL_CASE(name, description)          \
+  do {                                          \
+    if (desc.empty() && signal == name) {       \
+      desc = #name " - " description;           \
+    }                                           \
+  } while (false)
+  SIGNAL_CASE(SIGABRT, "process abort signal");
+  SIGNAL_CASE(SIGALRM, "alarm clock");
+  SIGNAL_CASE(SIGBUS,  "access to an undefined portion of a memory object");
+  SIGNAL_CASE(SIGCHLD, "child process terminated, stopped");
+  SIGNAL_CASE(SIGCONT, "continue executing, if stopped");
+  SIGNAL_CASE(SIGFPE,  "erroneous arithmetic operation");
+  SIGNAL_CASE(SIGHUP,  "hangup");
+  SIGNAL_CASE(SIGILL,  "illegal instruction");
+  SIGNAL_CASE(SIGINT,  "terminal interrupt signal");
+  SIGNAL_CASE(SIGKILL, "kill (cannot be caught or ignored)");
+  SIGNAL_CASE(SIGPIPE, "write on a pipe with no one to read it");
+  SIGNAL_CASE(SIGQUIT, "terminal quit signal");
+  SIGNAL_CASE(SIGSEGV, "invalid memory reference");
+  SIGNAL_CASE(SIGSTOP, "stop executing (cannot be caught or ignored)");
+  SIGNAL_CASE(SIGTERM, "termination signal");
+  SIGNAL_CASE(SIGTSTP, "terminal stop signal");
+  SIGNAL_CASE(SIGTTIN, "background process attempting read");
+  SIGNAL_CASE(SIGTTOU, "background process attempting write");
+  SIGNAL_CASE(SIGUSR1, "user-defined signal 1");
+  SIGNAL_CASE(SIGUSR2, "user-defined signal 2");
+  SIGNAL_CASE(SIGTRAP, "trace/breakpoint trap");
+  SIGNAL_CASE(SIGURG,  "high bandwidth data is available at a socket");
+  SIGNAL_CASE(SIGXCPU, "CPU time limit exceeded");
+  SIGNAL_CASE(SIGXFSZ, "file size limit exceeded");
+#undef SIGNAL_CASE  
 
   // Construct signal description
   std::stringstream ss;
@@ -129,9 +129,9 @@ std::string signal_description(int signal) {
   
 }
 
-/** Whether to write to file when a signal is detected. */
-bool write_to_file_on_signal = false;
-
+/** Base name for stack trace output file. */
+std::string stack_trace_file_base = "";
+  
 /** Signal handler.
  *  Output signal name and stack trace to standard error and to a file
  *  (if desired).
@@ -147,9 +147,9 @@ void handle_signal(int signal) {
   e.print_report();
 
   // Print error message and stack trace to file
-  if (write_to_file_on_signal) {
+  if (!stack_trace_file_base.empty()) {
     ss.clear();
-    ss.str("stack_trace");
+    ss.str(stack_trace_file_base);
     if (rank >= 0) { ss << "_rank" << rank; }
     ss << ".txt";
     std::ofstream fs(ss.str().c_str());
@@ -163,16 +163,25 @@ void handle_signal(int signal) {
 
 } // namespace
 
-void register_signal_handler(bool write_to_file) {
-  write_to_file_on_signal = write_to_file;
+void register_signal_handler(std::string file_base) {
+  stack_trace_file_base = file_base;
+
+  // Construct signal action object with signal handler
   static struct sigaction sa;
   sa.sa_handler = &handle_signal;
   sa.sa_flags = SA_RESTART;
   sigfillset(&sa.sa_mask);
-  const int num_signals = 40;
-  for (int i = 0; i < num_signals; i++) {
-    sigaction(i, &sa, nullptr);
+
+  // Register signal handler for fatal signals
+  std::vector<int> fatal_signals = {SIGABRT, SIGALRM, SIGBUS , SIGFPE ,
+                                    SIGHUP , SIGILL , SIGINT , SIGKILL,
+                                    SIGPIPE, SIGQUIT, SIGSEGV, SIGTERM,
+                                    SIGUSR1, SIGUSR2, SIGTRAP, SIGXCPU,
+                                    SIGXFSZ};
+  for (const auto& signal : fatal_signals) {
+    sigaction(signal, &sa, nullptr);
   }
+  
 }
 
 } //namespace stack_trace 
