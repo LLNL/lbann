@@ -1,7 +1,7 @@
 # Create the LbannProto library
 if (LBANN_HAS_PROTOBUF)
-
-  protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS lbann.proto)
+    protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS lbann.proto)
+    #protobuf_generate(LANG cpp OUT_VAR PROTO_SRCS PROTOS lbann.proto)
 
   add_library(LbannProto ${PROTO_SRCS} ${PROTO_HDRS})
   target_link_libraries(LbannProto PUBLIC protobuf::libprotobuf)
