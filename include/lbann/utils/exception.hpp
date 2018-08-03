@@ -27,10 +27,15 @@
 #ifndef LBANN_UTILS_EXCEPTION_HPP_INCLUDED
 #define LBANN_UTILS_EXCEPTION_HPP_INCLUDED
 
-#include "lbann/comm.hpp"
 #include <iostream>
 #include <sstream>
 #include <exception>
+#include "lbann/base.hpp"
+
+// Forward declaration
+namespace lbann {
+IntType get_rank_in_world(); // See lbann/comm.hpp
+} // namespace lbann
 
 // Macro to throw an LBANN exception
 #define LBANN_ERROR(message)                                    \

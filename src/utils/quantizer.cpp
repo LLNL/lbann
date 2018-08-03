@@ -216,8 +216,8 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   }
   std::vector<QuantizedMatrix> qmats(4);
   auto send_transform =
-    [&qerror, &qmats, this] (Mat& to_trans, El::IR h, El::IR w, int& count,
-                             bool const_data, int call_idx) {
+    [&qerror, &qmats, this] (Mat& to_trans, El::IR h, El::IR w, IntType& count,
+                             bool const_data, IntType call_idx) {
     auto to_send = to_trans(h, w);
     auto to_send_qerr = qerror(h, w);
     QuantizedMatrix& qmat = qmats[call_idx];
@@ -259,9 +259,9 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   opts.max_reduces = 4;
   comm->intermodel_allreduce(
     mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
-    std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
-    std::function<int(uint8_t *, Mat&)>(recv_transform),
-    std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform),
+    std::function<uint8_t *(Mat&, El::IR, El::IR, IntType&, bool, IntType)>(send_transform),
+    std::function<IntType(uint8_t *, Mat&)>(recv_transform),
+    std::function<IntType(uint8_t *, Mat&, bool)>(recv_apply_transform),
     opts);
 }
 
@@ -305,7 +305,7 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
   } else {
     #pragma omp parallel
     {
-      const int tid = omp_get_thread_num();
+      const IntType tid = omp_get_thread_num();
       #pragma omp for schedule(static)
       for (IntType col = 0; col < width; ++col) {
         for (IntType row = 0; row < height; ++row) {
@@ -469,7 +469,7 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
 }
 
 void lbann_quantizer::intermodel_sum_adaptive_quantized(
-  lbann_comm *comm, Mat& mat, Mat& qerror, int proportion) {
+  lbann_comm *comm, Mat& mat, Mat& qerror, IntType proportion) {
   // Select which algorithm to use based on the size of mat.
   // Multiply at 64 bits to avoid overflows.
   size_t mat_size = ((size_t) mat.Height()) * ((size_t) mat.Width());
@@ -492,13 +492,13 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized(
 }
 
 void lbann_quantizer::intermodel_sum_adaptive_quantized(
-  lbann_comm *comm, DistMat& mat, Mat& qerror, int proportion) {
+  lbann_comm *comm, DistMat& mat, Mat& qerror, IntType proportion) {
   intermodel_sum_adaptive_quantized(comm, mat.Matrix(), qerror,
                                     proportion);
 }
 
 lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
-  const Mat& mat, const Mat& qerror, int proportion, bool sample) {
+  const Mat& mat, const Mat& qerror, IntType proportion, bool sample) {
   double proportion_start = get_time();
   std::vector<DataType> entries;
   const IntType height = mat.Height();
@@ -537,7 +537,8 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
     }
   }
   // Determine the number of entries to keep.
-  IntType num_to_keep = std::max(1, (int) entries.size() / proportion);
+  IntType num_to_keep = std::max(IntType(1),
+                                 IntType(entries.size() / proportion));
   // Determine the threshold values.
   // This finds the num_to_keep'th value if sample were sorted by magnitude
   // and assigns it to the appropriate threshold, then checks the upper portion

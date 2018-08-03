@@ -228,7 +228,7 @@ void generic_data_store::exchange_mb_indices() {
   exchange_mb_counts();
   //setup data structures to exchange minibatch indices with all processors
   //displacement vector
-  std::vector<int> displ(m_np);
+  std::vector<IntType> displ(m_np);
   displ[0] = 0;
   for (size_t j=1; j<m_mb_counts.size(); j++) {
     displ[j] = displ[j-1] + m_mb_counts[j-1];
@@ -239,8 +239,11 @@ void generic_data_store::exchange_mb_indices() {
   std::vector<int> all_indices(n);
 
   //receive the indices
-  m_comm->all_gather<int>(m_my_minibatch_indices_v, all_indices, m_mb_counts, displ, m_comm->get_world_comm());
-
+  std::vector<IntType> mb_counts(m_mb_counts.size());
+  m_comm->all_gather<int>(m_my_minibatch_indices_v, all_indices, mb_counts, displ, m_comm->get_world_comm());
+  m_mb_counts.clear();
+  for (const auto& x : mb_counts) { m_mb_counts.push_back(x); }
+  
   //fill in the final data structure
   m_all_minibatch_indices.resize(m_np);
   for (int j=0; j<m_np; j++) {
@@ -253,9 +256,9 @@ void generic_data_store::exchange_mb_indices() {
 
 void generic_data_store::exchange_partitioned_indices() {
   //determine the largest number of minibatches over all processors
-  std::vector<int> counts(m_np);
-  int my_num_mb = m_my_minibatch_indices->size();
-  m_comm->model_all_gather<int>(my_num_mb, counts);
+  std::vector<IntType> counts(m_np);
+  IntType my_num_mb = m_my_minibatch_indices->size();
+  m_comm->model_all_gather(my_num_mb, counts);
   m_num_minibatches = 0;
   for (auto t : counts) {
     m_num_minibatches = (size_t)t > m_num_minibatches ? t : m_num_minibatches;
@@ -265,11 +268,11 @@ void generic_data_store::exchange_partitioned_indices() {
   //pack m_my_minibatch_indices into a single vector;
   //first, compute vector size, and exchange size with all procs
   std::vector<int> v;
-  int count = m_my_minibatch_indices->size() + 1;
+  IntType count = m_my_minibatch_indices->size() + 1;
   for (auto t : (*m_my_minibatch_indices)) {
     count += t.size();
   }
-  m_comm->model_all_gather<int>(count, counts);
+  m_comm->model_all_gather(count, counts);
 
 
   //now, fill in the vector
@@ -289,7 +292,7 @@ void generic_data_store::exchange_partitioned_indices() {
   }
 
   // exchange the vectors
-  std::vector<int> displ(m_np);
+  std::vector<IntType> displ(m_np);
   displ[0] = 0;
   for (size_t k=1; k<counts.size(); k++) {
     displ[k] = displ[k-1] + counts[k-1];
@@ -401,14 +404,14 @@ int generic_data_store::get_index_owner(int idx) {
 
 void generic_data_store::build_index_owner() {
   m_owner.clear();
-  int num_indices = m_my_datastore_indices.size();
+  IntType num_indices = m_my_datastore_indices.size();
   if (num_indices == 0) {
     num_indices = 1;
   }
-  std::vector<int>counts(m_np);
-  m_comm->model_all_gather<int>(num_indices, counts);
+  std::vector<IntType>counts(m_np);
+  m_comm->model_all_gather(num_indices, counts);
 
-  std::vector<int> disp(m_np);
+  std::vector<IntType> disp(m_np);
   disp[0] = 0;
   for (int h=1; h<m_np; h++) {
     disp[h] = disp[h-1] + counts[h-1];

@@ -180,10 +180,10 @@ class lbann_quantizer {
    */
   template <typename colT, typename rowT>
   void adaptive_quantize(const Mat& mat, std::vector<rowT>& q, Mat& qerror,
-                         int proportion);
+                         IntType proportion);
   template <typename colT, typename rowT>
   void adaptive_quantize(const DistMat& mat, std::vector<rowT>& q,
-                         Mat& qerror, int proportion);
+                         Mat& qerror, IntType proportion);
   /**
    * Unquantize an adaptively-quantized matrix.
    * @param q The quantizd matrix.
@@ -198,9 +198,9 @@ class lbann_quantizer {
    * As with intermodel_sum_onebit_quantized, but use adaptive quantization.
    */
   void intermodel_sum_adaptive_quantized(
-    lbann_comm *comm, Mat& mat, Mat& qerror, int proportion);
+    lbann_comm *comm, Mat& mat, Mat& qerror, IntType proportion);
   void intermodel_sum_adaptive_quantized(
-    lbann_comm *comm, DistMat& mat, Mat& qerror, int proportion);
+    lbann_comm *comm, DistMat& mat, Mat& qerror, IntType proportion);
 
   /**
    * Compute positive and negative thresholds such that only one in proportion
@@ -213,7 +213,7 @@ class lbann_quantizer {
    * @return The threshold values.
    */
   adaptive_thresholds proportion_threshold(
-    const Mat& mat, const Mat& qerror, int proportion, bool sample = true);
+    const Mat& mat, const Mat& qerror, IntType proportion, bool sample = true);
   /**
    * Compute reconstruction values for col.
    * @param mat The matrix to compute reconstruction values for.
@@ -302,22 +302,22 @@ class lbann_quantizer {
    */
   template <typename colT, typename rowT>
   void adaptive_quantize_replace(Mat& mat, std::vector<rowT>& q,
-                                 Mat& qerror, int proportion);
+                                 Mat& qerror, IntType proportion);
   /**
    * Ensure that q is no more than a factor of MAX_QUANTIZED_EXCESS larger
    * than optimal.
    */
   template <typename colT, typename rowT>
   void adaptive_bound(const Mat& mat, Mat& qerror, std::vector<rowT>& q,
-                      int proportion);
+                      IntType proportion);
   template <typename colT, typename rowT>
   void adaptive_quantize_slice(const std::vector<rowT>& q,
                                const Mat& mat, Mat& qerror,
                                std::vector<rowT>& slice, colT start,
-                               colT end, int proportion);
+                               colT end, IntType proportion);
   template <typename colT, typename rowT>
   void intermodel_sum_adaptive_quantized_impl(
-    lbann_comm *comm, Mat& mat, Mat& qerror, int proportion);
+    lbann_comm *comm, Mat& mat, Mat& qerror, IntType proportion);
 
   /**
    * Return the number of threads adaptive quantization should use for a matrix
@@ -325,8 +325,8 @@ class lbann_quantizer {
    * This number of threads is empirically determined.
    * @todo Make this configurable at compile time.
    */
-  inline int get_adaptive_quantization_threads(IntType width) {
-    int num_threads = omp_get_max_threads();
+  inline IntType get_adaptive_quantization_threads(IntType width) {
+    auto num_threads = omp_get_max_threads();
     if (width <= 64) {
       num_threads = 2;
     } else if (width <= 128) {
@@ -348,8 +348,8 @@ class lbann_quantizer {
    * for the same width, OpenMP may reap its threads and add additional overhead
    * when invoking a parallel region with more threads.
    */
-  inline int get_adaptive_quantization_copy_threads(IntType width) {
-    int num_threads = get_adaptive_quantization_threads(width);
+  inline IntType get_adaptive_quantization_copy_threads(IntType width) {
+    auto num_threads = get_adaptive_quantization_threads(width);
     if (width >= 16384) {
       num_threads /= 2;
     }

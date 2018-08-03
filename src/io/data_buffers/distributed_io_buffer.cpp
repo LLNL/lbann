@@ -273,6 +273,7 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
 
   int last_mini_batch_offset =
     std::max(0,
+             (int) (
              /// Number of complete multi-model mini-batches that will be fetched
              /// Ranks after current reader
              ((num_parallel_readers_per_model - m_comm->get_rank_in_model() - 1)
@@ -280,7 +281,8 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
               + parallel_readers_with_extra_mini_batch)
              * min_stride_across_models
              /// Ranks remaining within the current mini-batch
-             + (num_models - model_rank) * max_mini_batch_size);
+             + (num_models - model_rank) * max_mini_batch_size
+              ));
 
 
   ///  The last mini-batch may be partial and thus a reader may have a smaller stride to get there

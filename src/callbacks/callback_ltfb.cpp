@@ -64,7 +64,7 @@ int assign_partners(lbann_comm* comm) {
     std::cout << std::endl;
     return comm->scatter(partners.data(), comm->get_world_comm());
   } else {
-    return comm->scatter<int>(0, comm->get_world_comm());
+    return comm->scatter<int>(IntType(0), comm->get_world_comm());
   }
 }
 

@@ -42,7 +42,7 @@ class input_layer : public generic_input_layer {
  public:
 
   /// @todo make the map and vector references
-  input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode,
+  input_layer(lbann_comm *comm, IntType num_parallel_readers, std::map<execution_mode,
     generic_data_reader *> data_readers, bool data_set_spans_models = true,
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
     : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {

@@ -122,7 +122,7 @@ static bool write_latest(const char *dir, const char *name, int epoch, int train
   int fd = openwrite(filename);
   if (fd != -1) {
     char field[256];
-    sprintf(field, "epoch=%d step=%d\n", epoch, train);
+    sprintf(field, "epoch=%d step=%d\n", (int) epoch, (int) train);
     write_string(fd, "last_checkpoint", field, strlen(field));
     // close our file
     closewrite(fd, filename);
@@ -174,7 +174,8 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     epoch = m->get_cur_epoch();
     step = m->get_cur_step();
     timer.Start();
-    printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
+    printf("Checkpoint: epoch %d step %d ...\n",
+           (int) epoch, (int) step);
     fflush(stdout);
   }
   comm->model_broadcast(0, epoch);
@@ -191,7 +192,10 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     }
     makedir(dir);
     // create directories per ranks
-    snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, comm->get_rank_in_model(), epoch, step);
+    snprintf(epochdir, sizeof(epochdir),
+             "%s/rank.%d.epoch.%d.step.%d",
+             dir, (int) comm->get_rank_in_model(),
+             (int) epoch, (int) step);
     p.open_checkpoint(epochdir);
     // Call top level save to checkpoint function in model, in turn calls save to checkpoint functions for other model classes (weights, layers)
     m->save_to_checkpoint_distributed(p);
@@ -205,7 +209,10 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   if(m_checkpoint_shared){
     strcpy(dir, m_checkpoint_dir.c_str());
     makedir(dir);
-    snprintf(epochdir, sizeof(epochdir), "%s/shared.model.%d.epoch.%d.step.%d", dir, comm->get_model_rank(), epoch, step);
+    snprintf(epochdir, sizeof(epochdir),
+             "%s/shared.model.%d.epoch.%d.step.%d",
+             dir, (int) comm->get_model_rank(),
+             (int) epoch, (int) step);
     if (comm->am_model_master()) {
       p.open_checkpoint(epochdir);
     }
@@ -228,7 +235,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
     printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw);
+           (int) epoch, (int) step, secs, (unsigned long long) bytes_count, bw);
     fflush(stdout);
   }
   // record last checkpoint time in case checkpoint_secs interval defined.
@@ -311,20 +318,26 @@ bool lbann_callback_checkpoint::restart(model *m) {
   // let user know we're restarting from a checkpoint
   if (comm->am_model_master()) {
     timer.Start();
-    printf("Restart: epoch %d ...\n", epoch);
+    printf("Restart: epoch %d ...\n", (int) epoch);
     fflush(stdout);
   }
   
   char epochdir[1024];
   // Create dir to restart from based off last recorded checkpoint (or overriden values in last.shared[distributed].checkpoint
   if(!shared){
-    snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, comm->get_rank_in_model(), epoch, step);
+    snprintf(epochdir, sizeof(epochdir),
+             "%s/rank.%d.epoch.%d.step.%d",
+             dir, (int) comm->get_rank_in_model(),
+             (int) epoch, (int) step);
     p.open_restart(epochdir);
     m->load_from_checkpoint_distributed(p);
     p.close_restart();
   }
   else {
-    sprintf(epochdir, "%s/shared.model.%d.epoch.%d.step.%d", dir, comm->get_model_rank(), epoch, step);
+    sprintf(epochdir,
+            "%s/shared.model.%d.epoch.%d.step.%d",
+            dir, (int) comm->get_model_rank(),
+            (int) epoch, (int) step);
     if (comm->am_model_master()) {
       p.open_restart(epochdir);
     }
@@ -345,7 +358,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
     printf("Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw
+           (int) epoch, (int) step, secs, (unsigned long long) bytes_count, bw
           );
     fflush(stdout);
   }
