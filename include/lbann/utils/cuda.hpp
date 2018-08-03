@@ -72,6 +72,52 @@
 namespace lbann {
 namespace cuda {
 
+#ifdef __CUDACC__
+
+// Atomic add functions
+#if __CUDA_ARCH__ >= 530
+__device__ inline __half atomic_add(__half* address, __half val) {
+#if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
+  return atomicAdd(address, val);
+#else
+  unsigned int* address_as_uint = (unsigned int*) address;
+  unsigned int old = *address_as_uint;
+  __half* old_as_half = (__half*) &old;
+  unsigned int assumed;
+  unsigned int updated;
+  __half* updated_as_half = (__half*) &updated;
+  do {
+    assumed = old;
+    updated = old;
+    *updated_as_half += value;
+    old = atomicCAS(address_as_uint, assumed, updated);
+  } while (assumed != old);
+  return *old_as_half;
+#endif // 0
+}
+#endif // __CUDA_ARCH__ >= 530
+__device__ inline float atomic_add(float* address, float val) {
+  return atomicAdd(address, val);
+}
+__device__ inline double atomic_add(double* address, double val) {
+#if __CUDA_ARCH__ >= 600
+  return atomicAdd(address, val);
+#else
+  unsigned long long int* address_as_ull =
+    (unsigned long long int*)address;
+  unsigned long long int old = *address_as_ull, assumed;
+  do {
+    assumed = old;
+    old = atomicCAS(address_as_ull, assumed,
+                    __double_as_longlong(val +
+                                         __longlong_as_double(assumed)));
+  } while (assumed != old);
+  return __longlong_as_double(old);
+#endif // __CUDA_ARCH__ < 600
+}
+  
+#endif // __CUDACC__
+  
 namespace thrust {
 
 /** GPU memory allocator that can interact with Thrust.
