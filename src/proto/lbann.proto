@@ -799,7 +799,8 @@ message Layer {
 
    // loss layers
    CrossEntropy cross_entropy = 60;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 61;
+   MeanSquaredError mean_squared_error = 61;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
 
    // target Layers
    Target target = 18;

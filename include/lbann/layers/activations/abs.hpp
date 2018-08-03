@@ -24,12 +24,29 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef ABS_HPP_INCLUDED
-#define ABS_HPP_INCLUDED
+#ifndef LBANN_LAYER_ACTIVATION_ABS_HPP_INCLUDED
+#define LBANN_LAYER_ACTIVATION_ABS_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
 
 namespace lbann {
+
+#ifdef LBANN_HAS_GPU
+namespace abs_cuda {
+  void fp(int height, int width,
+          const DataType* input,
+          int input_leading_dim,
+          DataType* output,
+          int output_leading_dim);
+  void bp(int height, int width,
+          const DataType* input,
+          int input_leading_dim,
+          const DataType* gradient_wrt_output,
+          int gradient_wrt_output_leading_dim,
+          DataType* gradient_wrt_input,
+          int gradient_wrt_input_leading_dim);
+} // namespace abs_cuda
+#endif // LBANN_HAS_GPU
 
 /** Absolute value. */
 template <data_layout T_layout, El::Device Dev>
@@ -47,17 +64,51 @@ class abs_layer : public entrywise_activation_layer {
   }
 
  protected:
+
   DataType activation(DataType x) const override {
     return std::abs(x);
   }
 
   DataType activation_derivative(DataType x) const override {
-    if(x < DataType(0)) return DataType(-1);
-    else return DataType(1);
-    
+    if (x > DataType(0)) {
+      return 1;
+    } else if (x < DataType(0)) {
+      return -1;
+    } else {
+      return 0;
+    }
   }
+
+  void fp_compute_gpu() override {
+#ifndef LBANN_HAS_GPU
+    LBANN_ERROR("CUDA not detected");
+#else
+    abs_cuda::fp(get_output_size(),
+                     get_prev_activations().LocalWidth(),
+                     get_prev_activations().LockedBuffer(),
+                     get_prev_activations().LDim(),
+                     get_activations().Buffer(),
+                     get_activations().LDim());
+#endif // LBANN_HAS_GPU
+  }
+
+  void bp_compute_gpu() override {
+#ifndef LBANN_HAS_GPU
+    LBANN_ERROR("CUDA not detected");
+#else
+    abs_cuda::bp(get_output_size(),
+                 get_prev_activations().LocalWidth(),
+                 get_prev_activations().LockedBuffer(),
+                 get_prev_activations().LDim(),
+                 get_prev_error_signals().LockedBuffer(),
+                 get_prev_error_signals().LDim(),
+                 get_error_signals().Buffer(),
+                 get_error_signals().LDim());
+#endif // LBANN_HAS_GPU
+  }
+  
 };
 
 } // namespace lbann
 
-#endif // ABS_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_ABS_HPP_INCLUDED
