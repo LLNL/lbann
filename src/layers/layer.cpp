@@ -869,7 +869,8 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
 
   // Determine distributed matrix alignment
   const auto& alignment_dist
-    = m_parent_layers.front()->get_activations(*this).DistData();
+    // = m_parent_layers.front()->get_activations(*this).DistData();
+    = get_prev_activations().DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
