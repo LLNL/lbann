@@ -46,6 +46,12 @@ public :
   void set_option(std::string name, float value);
   void set_option(std::string name, double value);
   //@}
+  
+  //@{ hack to pass around data structures
+  void set_ptr(void *p) { m_ptrs.push_back(p); }
+  std::vector<void*> & get_ptrs() { return m_ptrs; }
+  void clear_ptrs() { m_ptrs.clear(); }
+  //@}
 
   //@{ 
   /** returns the value of the option; throws exception if option doesn't exist,
@@ -72,6 +78,7 @@ public :
   //@}
 
 private:
+
   int m_rank;
 
   ///private constructor to ensure this class is a singleton
@@ -98,6 +105,8 @@ private:
 
   int m_argc;
   char **m_argv;
+
+  std::vector<void*> m_ptrs;
 };
 
 #endif

@@ -117,10 +117,8 @@ int main(int argc, char *argv[]) {
       delete t;
     }
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   // free all resources by El and MPI
@@ -151,8 +149,8 @@ model * build_model_from_prototext(int argc, char **argv,
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
+      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
+      LBANN_ERROR(err.str());
     }
     El::SetBlocksize(pb_model->block_size());
 
@@ -214,25 +212,31 @@ model * build_model_from_prototext(int argc, char **argv,
 
       // Report build settings
       std::cout << "Build settings" << std::endl;
-      std::cout << "  Type  : ";
+      std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
       std::cout << "Debug" << std::endl;
 #else
       std::cout << "Release" << std::endl;
 #endif // LBANN_DEBUG
-      std::cout << "  CUDA  : ";
+      std::cout << "  Aluminum : ";
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_ALUMINUM
+      std::cout << "  CUDA     : ";
 #ifdef LBANN_HAS_GPU
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN : ";
+      std::cout << "  cuDNN    : ";
 #ifdef LBANN_HAS_CUDNN
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB   : ";
+      std::cout << "  CUB      : ";
 #ifdef HYDROGEN_HAVE_CUB
       std::cout << "detected" << std::endl;
 #else
@@ -257,6 +261,17 @@ model * build_model_from_prototext(int argc, char **argv,
       const auto* env = std::getenv("MV2_USE_CUDA");
       std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
       std::cout << std::endl;
+
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "Aluminum Features:" << std::endl;
+      std::cout << "  NCCL : ";
+#ifdef AL_HAS_NCCL
+      std::cout << "enabled" << std::endl;
+#else
+      std::cout << "disabled" << std::endl;
+#endif // AL_HAS_NCCL
+      std::cout << std::endl;
+#endif // LBANN_HAS_ALUMINUM
 
       // Report model settings
       const auto& grid = comm->get_model_grid();
@@ -320,7 +335,7 @@ model * build_model_from_prototext(int argc, char **argv,
 #endif
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions
   }

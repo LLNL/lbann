@@ -37,6 +37,7 @@
 #include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
+#include <unordered_map>
 
 namespace lbann {
 
@@ -45,7 +46,7 @@ namespace lbann {
  */
 class data_reader_jag_conduit : public generic_data_reader {
  public:
-  using ch_t = double; ///< jag output image channel type
+  using ch_t = float; ///< jag output image channel type
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
 
@@ -196,7 +197,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_dependent_variable_type(const variable_t dependent);
 
   /// Check if a key is in the black lists to filter out
-  bool filter(const std::set<std::string>& filter,
+  bool filter(const std::set<std::string>& key_filter,
               const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
 
   /// Return the linearized size of a particular JAG variable type
@@ -300,6 +301,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::set<std::string> m_input_filter;
   /// The list of input key prefixes to filter out
   std::vector<prefix_t> m_input_prefix_filter;
+
+  /**
+   * maps integers to sample IDs. In the future the sample IDs may
+   * not be integers; also, this map only includes sample IDs that
+   * have <sample_id>/performance/success = 1
+   */
+  std::unordered_map<int, std::string> m_success_map;
+
+  std::set<std::string> m_emi_selectors;
 };
 
 

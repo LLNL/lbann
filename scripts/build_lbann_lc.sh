@@ -24,7 +24,7 @@ fi
 BUILD_TYPE=Release
 Elemental_DIR=
 case $TOSS in
-	3.10.0|4.11.0)
+	3.10.0|4.11.0|4.14.0)
 		OpenCV_DIR=""
 		if [ "${ARCH}" == "x86_64" ]; then
 			export VTUNE_DIR=/usr/tce/packages/vtune/default
@@ -73,7 +73,7 @@ WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
-# version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
+# version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
@@ -83,7 +83,7 @@ WITH_LIBJPEG_TURBO=ON
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
 if [ "${CLUSTER}" == "surface" ]; then
-    AUTOCONF_CUSTOM_DIR=/p/lscratche/brainusr/autoconf/bin
+    AUTOCONF_CUSTOM_DIR=/p/lscratchh/brainusr/autoconf/bin
     AUTOCONF_VER_DEFAULT=`autoconf --version | awk '(FNR==1){print $NF}'`
     AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
 
@@ -277,7 +277,7 @@ done
 # Determine whether system uses modules
 USE_MODULES=0
 case $TOSS in
-	3.10.0|4.11.0)
+	3.10.0|4.11.0|4.14.0)
 		USE_MODULES=1
 		;;
 	2.6.32)
@@ -326,7 +326,14 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
-        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        if [ "${COMPILER_}" == "gcc" ]; then
+            # Special case to avoid GCC 8.1
+            # Note: This should be removed once the bug in GCC 8.1 is
+            # patched. See https://github.com/LLNL/lbann/issues/529.
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | grep -v 8.1.0 | sed '/^$/d' | tail -1)
+        else
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        fi
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -565,12 +572,8 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
 	case $CLUSTER in
-		ray)
+		ray|sierra)
 			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.2_ppc64le
-			;;
-		sierra)
-			# NCCL not available
-			unset NCCL_DIR
 			;;
 		*)
 			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
@@ -583,13 +586,8 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
 			. /usr/share/[mM]odules/init/bash
 			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 			;;
-		ray)
+		ray|sierra)
 			module del cuda
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
-			;;
-		sierra)
-			module del cuda
-			# cuDNN is not yet available for CUDA 9.2
 			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
 			;;
 	esac

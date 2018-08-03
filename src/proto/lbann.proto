@@ -47,11 +47,12 @@ message Reader {
   repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
   repeated int32 independent = 97;
   repeated int32 dependent = 98;
+  int32 max_files_to_load = 1000;
   //------------------  end of only for jag_conduit  -----------------------
 
-  int32 num_labels = 99; //for imagenet
+  int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
-  int64 num_features = 101; //only for synthetic
+  string synth_dimensions = 101; //only for synthetic
   //csv attributes
   string separator = 102;
   int32 skip_cols = 103;
@@ -476,6 +477,7 @@ message CallbackPrint {
 }
 
 message CallbackProfiler {
+  bool sync = 1;
 }
 
 message CallbackTimer {
@@ -797,7 +799,8 @@ message Layer {
 
    // loss layers
    CrossEntropy cross_entropy = 60;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 61;
+   MeanSquaredError mean_squared_error = 61;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
 
    // target Layers
    Target target = 18;

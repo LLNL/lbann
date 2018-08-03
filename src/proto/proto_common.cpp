@@ -109,6 +109,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
+    } else if (name == "jag_conduit_hdf5") {
+      init_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
@@ -131,7 +134,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
-    } else if (name == "merge_samples" || name == "merge_features") {
+    } else if (name == "merge_samples" || name == "merge_features" || name == "multi_conduit") {
       //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
@@ -147,6 +150,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+#ifdef LBANN_HAS_CONDUIT
+        } else if (readme.format() == "jag_conduit") {
+          init_image_data_reader(readme, master, reader);
+          set_up_generic_preprocessor = false;
+          npy_readers.push_back(reader);
+#endif
         } else if (readme.format() == "pilot2_molecular_reader") {
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
           reader_pilot2_molecular->set_data_filename(path);
@@ -176,7 +185,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       if(name == "merge_samples") {
         data_reader_merge_samples* merged_samples = new data_reader_merge_samples(npy_readers, shuffle);
         reader = merged_samples;
-      }else {
+      } else if (name == "multi_conduit") {
+        //note: this is not a mistake! We may have a separate multi_conduit
+        //      reader in the future, but for now merge_samples does what we need.
+        data_reader_merge_samples* multi_conduit = new data_reader_merge_samples(npy_readers, shuffle);
+        reader = multi_conduit;
+      } else {
         //create label file
         //we can use merge_features without label
         generic_data_reader* label_reader = nullptr;
@@ -211,7 +225,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
 
     } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
+      reader = new data_reader_synthetic(
+        readme.num_samples(), proto::parse_list<int>(readme.synth_dimensions()),
+        readme.num_labels(), shuffle);
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
     } else {
@@ -232,6 +248,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
+    reader->set_max_files_to_load( readme.max_files_to_load() );
     if (readme.data_local_filedir() != "") {
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
@@ -330,10 +347,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
-        /*
-        } else if (name == "synthetic") {
-        reader_validation = new data_reader_synthetic(shuffle);
-        */
+      } else if (name == "synthetic") {
+        reader_validation = new data_reader_synthetic(*(data_reader_synthetic *)reader);
+        (*(data_reader_synthetic *) reader_validation) = (*(data_reader_synthetic *)reader);
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);

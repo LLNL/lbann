@@ -4,7 +4,6 @@ set_full_path(THIS_DIR_HEADERS
   base.hpp
   comm.hpp
   lbann.hpp
-  params.hpp
   )
 
 # Add the subdirectories

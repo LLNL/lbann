@@ -7,7 +7,7 @@ MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.protote
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
 IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
-BUILD=          # default: Release
+BUILD=            # default: Release
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
@@ -82,7 +82,7 @@ case ${CLUSTER} in
         ;;
     "surface")
         SCHEDULER=slurm
-        PARTITION=${PARTITION:-gpgpu}
+        PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
@@ -180,7 +180,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                 21000)
                     CACHE_DATASET=NO
                     CACHE_DIR=
-                    IMAGENET_DIR=/p/lscratche/brainusr/datasets
+                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets
                     TRAIN_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
                     TRAIN_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
                     TEST_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
@@ -269,13 +269,13 @@ esac
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-        case ${HAS_GPU} in
-            YES|yes|TRUE|true|ON|on|1)
-                case ${CLUSTER} in
-                    surface|ray)
-                        MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                        ;;
-                esac
+        case ${CLUSTER} in
+            surface|ray)
+                MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
+                ;;
+            pascal)
+                MPIRUN="${MPIRUN} --mpibind=off --cpu_bind=mask_cpu:0x000001ff,0x0003fe00  --nvidia_compute_mode=default"
+                ;;
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
@@ -369,7 +369,12 @@ case ${USE_GPU} in
         echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
         ;;
 esac
-echo ""
+case ${CLUSTER} in
+    pascal)
+        echo "export OMP_NUM_THREADS=8"                 >> ${BATCH_SCRIPT}
+        echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
+        ;;
+esac
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
