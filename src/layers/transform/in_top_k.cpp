@@ -39,12 +39,12 @@ struct entry {
   /** Vector entry value. */
   DataType value = min_value;
   /** Vector entry index. */
-  El::Int index = max_index;
+  IntType index = max_index;
 
   /** Minimum possible value. */
   static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
   /** Maximum possible index. */
-  static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
+  static constexpr IntType max_index = std::numeric_limits<IntType>::max();
 
   /** Comparison operation to sort vector entries.
    *  Entries are sorted by value in decreasing order, with ties
@@ -58,16 +58,16 @@ struct entry {
 
 /** CPU implementation of in_top_k layer forward prop. */
 void fp_cpu(lbann_comm& comm,
-            El::Int k,
+            IntType k,
             const AbsDistMat& input,
             AbsDistMat& output) {
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
-  const El::Int height = input.Height();
-  const El::Int local_height = local_input.Height();
-  const El::Int local_width = local_input.Width();
+  const IntType height = input.Height();
+  const IntType local_height = local_input.Height();
+  const IntType local_width = local_input.Width();
 
   // Trivial cases
   if (k < 1) {
@@ -87,9 +87,9 @@ void fp_cpu(lbann_comm& comm,
   // Find top-k entries in each column of local input matrix
   std::vector<entry> top_entries(local_width * k);
 #pragma omp parallel for
-  for (El::Int col = 0; col < local_width; ++col) {
+  for (IntType col = 0; col < local_width; ++col) {
     std::vector<entry> local_entries(std::max(local_height, k));
-    for (El::Int row = 0; row < local_height; ++row) {
+    for (IntType row = 0; row < local_height; ++row) {
       local_entries[row].value = local_input(row, col);
       local_entries[row].index = input.GlobalRow(row);
     }
@@ -109,9 +109,9 @@ void fp_cpu(lbann_comm& comm,
                     top_entries.size() * sizeof(entry),
                     col_comm);
 #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       std::vector<entry> col_entries(col_comm_size * k);
-      for (El::Int rank = 0; rank < col_comm_size; ++rank) {
+      for (IntType rank = 0; rank < col_comm_size; ++rank) {
         const auto* start = &global_top_entries[rank*local_width*k+col*k];
         std::copy(start, start + k, &col_entries[rank*k]);
       }
@@ -126,8 +126,8 @@ void fp_cpu(lbann_comm& comm,
   // Indicate output entries corresponding to top-k input entries
   El::Zero(output);
 #pragma omp parallel for collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int i = 0; i < k; ++i) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType i = 0; i < k; ++i) {
       const auto& global_row = top_entries[col*k+i].index;
       if (global_row < height && output.IsLocalRow(global_row)) {
         const auto& row = output.LocalRow(global_row);

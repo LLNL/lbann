@@ -38,7 +38,7 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
   // Print minibatch sample indices of input layers
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input != nullptr) {
-    El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
+    El::Matrix<IntType>* indices = l->get_sample_indices_per_mb();
     if (indices == nullptr
         || indices->Height() == 0
         || indices->Width() == 0) {

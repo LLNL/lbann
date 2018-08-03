@@ -48,7 +48,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(IntType mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
   void fp_compute() override {}

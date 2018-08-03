@@ -43,10 +43,10 @@ public:
 
 protected:
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(IntType mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(IntType mini_batch_size) override {
     El::LockedView(get_error_signals(), get_prev_error_signals());
   }
   void fp_compute() override {}

@@ -95,7 +95,7 @@ class sum_layer : public transform_layer {
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(IntType mini_batch_size) override {
     const auto& gradient_wrt_output = get_prev_error_signals();
     for (int i = 0; i < get_num_parents(); ++i) {
       El::LockedView(get_error_signals(i), gradient_wrt_output);

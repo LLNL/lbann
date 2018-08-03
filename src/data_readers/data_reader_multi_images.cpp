@@ -90,7 +90,7 @@ void data_reader_multi_images::set_input_params(const int width, const int heigh
 
 std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const int mb_idx) const {
   std::vector<::Mat> X_v(m_num_img_srcs);
-  El::Int h = 0;
+  IntType h = 0;
   for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
     h = h + m_image_linearized_size;
@@ -140,8 +140,8 @@ std::vector<data_reader_multi_images::sample_t> data_reader_multi_images::get_im
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  for (IntType i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+    IntType index = m_indices_fetched_per_mb.Get(i, 0);
     ret.push_back(m_image_list[index]);
   }
   return ret;

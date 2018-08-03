@@ -72,21 +72,21 @@ void variance_scaling_initializer::fill(AbsDistMat& matrix) {
     std::stringstream err;
     err << "variance scaling initializer is only supported with "
         << "Gaussian and uniform probability distributions "
-        << "(dist=" << El::Int(m_prob_dist) << ")";
+        << "(dist=" << IntType(m_prob_dist) << ")";
     LBANN_ERROR(err.str());
   }
   
 }
 
-DataType glorot_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
+DataType glorot_initializer::get_variance(IntType fan_in, IntType fan_out) {
   return DataType(2) / (fan_in + fan_out);
 }
 
-DataType he_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
+DataType he_initializer::get_variance(IntType fan_in, IntType fan_out) {
   return DataType(2) / fan_in;
 }
 
-DataType lecun_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
+DataType lecun_initializer::get_variance(IntType fan_in, IntType fan_out) {
   return DataType(1) / fan_in;
 }
 

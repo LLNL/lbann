@@ -182,7 +182,7 @@ class Layer {
   /** Set the model that manages this layer. */
   inline void set_model(model* m) { m_model = m; }
 
-  virtual El::Matrix<El::Int>* get_sample_indices_per_mb() { return nullptr; };
+  virtual El::Matrix<IntType>* get_sample_indices_per_mb() { return nullptr; };
 
   virtual bool save_to_checkpoint_shared(persist& p) const;
   virtual bool load_from_checkpoint_shared(persist& p);
@@ -357,7 +357,7 @@ class Layer {
    */
   virtual std::unique_ptr<AbsDistMat> construct_matrix(const El::Grid& grid,
                                                        std::string type,
-                                                       El::Int index);
+                                                       IntType index);
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
@@ -377,12 +377,12 @@ class Layer {
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
-  virtual void fp_setup_inputs(El::Int mini_batch_size);
+  virtual void fp_setup_inputs(IntType mini_batch_size);
   /** Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
-  virtual void fp_setup_outputs(El::Int mini_batch_size);
+  virtual void fp_setup_outputs(IntType mini_batch_size);
   /** Apply layer operation.
    *  Called by the 'forward_prop' function. Given the input tensors,
    *  the output tensors are populated with computed values.
@@ -398,12 +398,12 @@ class Layer {
    *  tensor is setup as a view or copy of the corresponding child
    *  layer's gradient w.r.t. input tensor.
    */
-  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_outputs(IntType mini_batch_size);
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
-  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_inputs(IntType mini_batch_size);
   /** Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input

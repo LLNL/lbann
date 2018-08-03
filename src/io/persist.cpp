@@ -75,8 +75,8 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
     throw lbann_exception("persist: invalid persist_type");
   }
   // skip all of this if matrix is not held on rank
-  const El::Int localHeight = M.LocalHeight();
-  const El::Int localWidth = M.LocalWidth();
+  const IntType localHeight = M.LocalHeight();
+  const IntType localWidth = M.LocalWidth();
   // If this is the case we will try to grab the matrix from model rank 0 on reload
   if(localHeight * localWidth == 0) { return true; }
      
@@ -100,12 +100,12 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
   m_bytes += write_rc;
 
   // now write the data for our part of the distributed matrix
-  const El::Int lDim = M.LDim();
+  const IntType lDim = M.LDim();
   if(localHeight == lDim) {
     // the local dimension in memory matches the local height,
     // so we can write our data in a single shot
     auto *buf = (void *) M.LockedBuffer();
-    El::Int bufsize = localHeight * localWidth * sizeof(DataType);
+    IntType bufsize = localHeight * localWidth * sizeof(DataType);
     write_rc = write(fd, buf, bufsize);
     if (write_rc != bufsize) {
       // error!
@@ -115,9 +115,9 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
     // TODO: if this padding is small, may not be a big deal to write it out anyway
     // we've got some padding along the first dimension
     // while storing the matrix in memory, avoid writing the padding
-    for(El::Int j = 0; j < localWidth; ++j) {
+    for(IntType j = 0; j < localWidth; ++j) {
       auto *buf = (void *) M.LockedBuffer(0, j);
-      El::Int bufsize = localHeight * sizeof(DataType);
+      IntType bufsize = localHeight * sizeof(DataType);
       write_rc = write(fd, buf, bufsize);
       if (write_rc != bufsize) {
         // error!
@@ -153,16 +153,16 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
   m_bytes += read_rc;
 
   // resize our global matrix
-  El::Int height = header.height;
-  El::Int width  = header.width;
+  IntType height = header.height;
+  IntType width  = header.width;
   M.Resize(height, width);
   // TODO: check that header values match up
-  const El::Int localheight = header.localheight;
-  const El::Int localwidth = header.localwidth;
+  const IntType localheight = header.localheight;
+  const IntType localwidth = header.localwidth;
   if(M.ColStride() == 1 && M.RowStride() == 1) {
     if(M.Height() == M.LDim()) {
       auto *buf = (void *) M.Buffer();
-      El::Int bufsize = localheight * localwidth * sizeof(DataType);
+      IntType bufsize = localheight * localwidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
         // error!
@@ -170,9 +170,9 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
       }
       m_bytes += read_rc;
     } else {
-      for(El::Int j = 0; j <  localwidth; ++j) {
+      for(IntType j = 0; j <  localwidth; ++j) {
         auto *buf = (void *) M.Buffer(0, j);
-        El::Int bufsize = localheight * sizeof(DataType);
+        IntType bufsize = localheight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
           // error!
@@ -182,10 +182,10 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
       }
     }
   } else {
-    const El::Int lDim = M.LDim();
+    const IntType lDim = M.LDim();
     if(localheight == lDim) {
       auto *buf = (void *) M.Buffer();
-      El::Int bufsize = localheight * localwidth * sizeof(DataType);
+      IntType bufsize = localheight * localwidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
         // error!
@@ -193,9 +193,9 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
       }
       m_bytes += read_rc;
     } else {
-      for(El::Int jLoc = 0; jLoc < localwidth; ++jLoc) {
+      for(IntType jLoc = 0; jLoc < localwidth; ++jLoc) {
         auto *buf = (void *) M.Buffer(0, jLoc);
-        El::Int bufsize = localheight * sizeof(DataType);
+        IntType bufsize = localheight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
           // error!
@@ -331,7 +331,7 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistM
   El::Write(*M, filename, El::BINARY, "");
   //Write_MPI(M, filename, BINARY, "");
 
-  uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes = 2 * sizeof(IntType) + M->Height() * M->Width() * sizeof(DataType);
   m_bytes += bytes;
 
   return true;
@@ -357,7 +357,7 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
   El::Read(*M, filename, El::BINARY, true);
   //Read_MPI(M, filename, BINARY, 1);
 
-  uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes = 2 * sizeof(IntType) + M->Height() * M->Width() * sizeof(DataType);
   m_bytes += bytes;
 
   return true;
@@ -470,7 +470,7 @@ bool lbann::write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes)
   El::Write(*M, name, El::BINARY, "");
   //Write_MPI(M, name, BINARY, "");
 
-  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_written = 2 * sizeof(IntType) + M->Height() * M->Width() * sizeof(DataType);
   *bytes += bytes_written;
 
   return true;
@@ -487,7 +487,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
   El::Read(*M, name, El::BINARY, true);
   //Read_MPI(M, name, BINARY, 1);
 
-  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_read = 2 * sizeof(IntType) + M->Height() * M->Width() * sizeof(DataType);
   *bytes += bytes_read;
 
   return true;

@@ -183,7 +183,7 @@ class generic_input_layer : public io_layer {
   /** Setup output tensors.
    *  Sets up the effective (global) mini-batch size.
    */
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(IntType mini_batch_size) override {
 
     // Determine model mini-batch size and effective mini-batch size
     // Note: If inter-model communication is activated, the effective
@@ -494,7 +494,7 @@ class generic_input_layer : public io_layer {
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
-  El::Matrix<El::Int>* get_sample_indices_per_mb() override {
+  El::Matrix<IntType>* get_sample_indices_per_mb() override {
     generic_data_reader *dr = get_data_reader();
     return dr->get_indices_fetched_per_mb();
   }

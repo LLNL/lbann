@@ -169,7 +169,7 @@ class crop_layer : public transform_layer {
     // Tensor dimensions
     const auto& input_dims = get_input_dims(0);
     const auto& output_dims = get_output_dims();
-    const El::Int num_dims = output_dims.size();
+    const IntType num_dims = output_dims.size();
 
     // Input and output tensors
     const auto& local_crop_pos = get_local_prev_activations(1);
@@ -178,11 +178,11 @@ class crop_layer : public transform_layer {
 
     // Crop each mini-batch sample
     #pragma omp parallel for
-    for (El::Int s = 0; s < local_input.Width(); ++s) {
+    for (IntType s = 0; s < local_input.Width(); ++s) {
 
       // Determine crop position
       std::vector<int> crop_offsets;
-      for (El::Int d = 0; d < num_dims; ++d) {
+      for (IntType d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, s);
         if (pos < DataType(0) || pos >= DataType(1)) {
           std::stringstream err;
@@ -228,7 +228,7 @@ class crop_layer : public transform_layer {
     // Tensor dimensions
     const auto& input_dims = get_input_dims(0);
     const auto& output_dims = get_output_dims();
-    const El::Int num_dims = output_dims.size();
+    const IntType num_dims = output_dims.size();
 
     // Input and output tensors
     const auto& local_crop_pos = get_local_prev_activations(1);
@@ -238,11 +238,11 @@ class crop_layer : public transform_layer {
 
     // Crop each mini-batch sample
     #pragma omp parallel for
-    for (El::Int s = 0; s < local_gradient_wrt_output.Width(); ++s) {
+    for (IntType s = 0; s < local_gradient_wrt_output.Width(); ++s) {
 
       // Determine crop position
       std::vector<int> crop_offsets;
-      for (El::Int d = 0; d < num_dims; ++d) {
+      for (IntType d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, s);
         if (pos < DataType(0) || pos >= DataType(1)) {
           LBANN_ERROR("crop position not in range [0,1)");

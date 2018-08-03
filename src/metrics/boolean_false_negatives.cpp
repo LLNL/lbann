@@ -30,17 +30,17 @@ namespace lbann {
 
 EvalType boolean_false_negatives_metric::evaluate_compute(
   const AbsDistMat& prediction, const AbsDistMat& ground_truth) {
-  const El::Int height = prediction.Height();
-  const El::Int local_height = prediction.LocalHeight();
-  const El::Int local_width = prediction.LocalWidth();
+  const IntType height = prediction.Height();
+  const IntType local_height = prediction.LocalHeight();
+  const IntType local_width = prediction.LocalWidth();
   const Mat& prediction_local = prediction.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
   // Compute sum of predictions.
   EvalType sum = 0;
   #pragma omp parallel for reduction(+:sum) collapse(2)
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
+  for(IntType col = 0; col < local_width; ++col) {
+    for(IntType row = 0; row < local_height; ++row) {
       const bool true_val = ground_truth_local(row, col) > DataType(0.5);
       const bool pred_val = prediction_local(row, col) > DataType(0.5);
       sum += EvalType((true_val != pred_val) && true_val);

@@ -125,8 +125,8 @@ std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list_o
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  for (IntType i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+    IntType index = m_indices_fetched_per_mb.Get(i, 0);
     ret.emplace_back(m_samples.get_sample(index));
   }
   return ret;

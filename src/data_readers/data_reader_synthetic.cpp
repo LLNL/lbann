@@ -47,9 +47,9 @@ bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int) {
   auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
   auto& gen = get_fast_generator();
-  const El::Int height = X_v.Height();  // Width is 1.
+  const IntType height = X_v.Height();  // Width is 1.
   DataType * __restrict__ buf = X_v.Buffer();
-  for (El::Int i = 0; i < height; ++i) {
+  for (IntType i = 0; i < height; ++i) {
     buf[i] = dist(gen);
   }
   return true;

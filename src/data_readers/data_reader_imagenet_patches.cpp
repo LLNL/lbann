@@ -135,7 +135,7 @@ std::vector<CPUMat> imagenet_reader_patches::create_datum_views(CPUMat& X, const
   }
 */
   std::vector<CPUMat> X_v(m_num_patches);
-  El::Int h = 0;
+  IntType h = 0;
   for(int i=0; i < m_num_patches; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
     h = h + m_image_linearized_size;

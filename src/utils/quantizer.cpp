@@ -45,27 +45,27 @@ lbann_quantizer::~lbann_quantizer() {
 void lbann_quantizer::onebit_quantize(
   const Mat& mat, QuantizedMatrix& qmat, Mat& qerror, bool sample) {
   // Set up the quantized matrix. (+2 for the averages.)
-  const El::Int qheight = get_onebit_quantized_matrix_height(mat);
-  const El::Int qwidth = mat.Width();
+  const IntType qheight = get_onebit_quantized_matrix_height(mat);
+  const IntType qwidth = mat.Width();
   qmat.Resize(qheight, qwidth);
 
-  const El::Int width = mat.Width();
-  const El::Int height = mat.Height();
-  const El::Int ldim = mat.LDim();
-  const El::Int qmat_ldim = qmat.LDim();
+  const IntType width = mat.Width();
+  const IntType height = mat.Height();
+  const IntType ldim = mat.LDim();
+  const IntType qmat_ldim = qmat.LDim();
   const DataType *__restrict__ mat_buf = mat.LockedBuffer();
   DataType *__restrict__ qerror_buf = qerror.Buffer();
   qtype *__restrict__ qmat_buf = qmat.Buffer();
   #pragma omp parallel for schedule(static)
-  for (El::Int col = 0; col < width; ++col) {
+  for (IntType col = 0; col < width; ++col) {
     // First compute the positive and negative column averages.
     DataType pos_sum = 0.0f;
     DataType neg_sum = 0.0f;
     El::Unsigned num_pos = 0;
     El::Unsigned num_neg = 0;
     if (height <= NUM_ONEBIT_SAMPLES || !sample) {
-      for (El::Int row = 0; row < height; ++row) {
-        const El::Int pos = row + col * ldim;
+      for (IntType row = 0; row < height; ++row) {
+        const IntType pos = row + col * ldim;
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= 0.0f) {
           pos_sum += val;
@@ -78,8 +78,8 @@ void lbann_quantizer::onebit_quantize(
     } else {
       // Randomly sample NUM_ONEBIT_SAMPLES to approximate.
       fast_rng_gen& gen = get_fast_generator();
-      for (El::Int i = 0; i < NUM_ONEBIT_SAMPLES; ++i) {
-        const El::Int pos = fast_rand_int(gen, height);
+      for (IntType i = 0; i < NUM_ONEBIT_SAMPLES; ++i) {
+        const IntType pos = fast_rand_int(gen, height);
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= 0.0f) {
           pos_sum += val;
@@ -109,15 +109,15 @@ void lbann_quantizer::onebit_quantize(
     qmat.Set(1, col, tmp);
 
     // Now quantize the column, NUM_BITS entries at a time.
-    El::Int qrow = 2;
-    for (El::Int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
+    IntType qrow = 2;
+    for (IntType row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
       uqtype q = 0;
       for (uqtype bit = 0; bit < NUM_BITS; ++bit) {
-        El::Int row = row_chunk + bit;
+        IntType row = row_chunk + bit;
         if (row >= height) {
           break;
         }
-        const El::Int pos = row + col * ldim;
+        const IntType pos = row + col * ldim;
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= 0.0f) {
           q |= uqtype(1) << bit;
@@ -138,15 +138,15 @@ void lbann_quantizer::onebit_quantize(const DistMat& mat, QuantizedMatrix& qmat,
 }
 
 void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat, Mat& mat) {
-  const El::Int width = mat.Width();
-  const El::Int height = mat.Height();
-  const El::Int ldim = mat.LDim();
-  const El::Int qmat_ldim = qmat.LDim();
+  const IntType width = mat.Width();
+  const IntType height = mat.Height();
+  const IntType ldim = mat.LDim();
+  const IntType qmat_ldim = qmat.LDim();
   const qtype *__restrict__ qmat_buf = qmat.LockedBuffer();
   DataType *__restrict__ mat_buf = mat.Buffer();
   #pragma omp parallel for schedule(static)
-  for (El::Int col = 0; col < width; ++col) {
-    El::Int qrow = 2;
+  for (IntType col = 0; col < width; ++col) {
+    IntType qrow = 2;
     // Extract the averages.
     qtype tmp = qmat.Get(0, col);
     DataType avg_pos;
@@ -155,10 +155,10 @@ void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat, Mat& mat) {
     DataType avg_neg;
     memcpy(&avg_neg, &tmp, sizeof(avg_neg));
     // Unquantize this column.
-    for (El::Int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
+    for (IntType row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
       auto q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
       for (size_t bit = 0; bit < NUM_BITS; ++bit) {
-        El::Int row = row_chunk + bit;
+        IntType row = row_chunk + bit;
         if (row >= height) {
           break;
         }
@@ -176,15 +176,15 @@ void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat,
 
 void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
     Mat& mat) {
-  const El::Int width = mat.Width();
-  const El::Int height = mat.Height();
-  const El::Int ldim = mat.LDim();
-  const El::Int qmat_ldim = qmat.LDim();
+  const IntType width = mat.Width();
+  const IntType height = mat.Height();
+  const IntType ldim = mat.LDim();
+  const IntType qmat_ldim = qmat.LDim();
   const qtype *__restrict__ qmat_buf = qmat.LockedBuffer();
   DataType *__restrict__ mat_buf = mat.Buffer();
   #pragma omp parallel for schedule(static)
-  for (El::Int col = 0; col < width; ++col) {
-    El::Int qrow = 2;
+  for (IntType col = 0; col < width; ++col) {
+    IntType qrow = 2;
     // Extract the averages.
     qtype tmp = qmat.Get(0, col);
     DataType avg_pos;
@@ -193,10 +193,10 @@ void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
     DataType avg_neg;
     memcpy(&avg_neg, &tmp, sizeof(avg_neg));
     // Unquantize this column.
-    for (El::Int row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
+    for (IntType row_chunk = 0; row_chunk < height; row_chunk += NUM_BITS) {
       auto q = (uqtype) qmat_buf[qrow + col * qmat_ldim];
       for (size_t bit = 0; bit < NUM_BITS; ++bit) {
-        El::Int row = row_chunk + bit;
+        IntType row = row_chunk + bit;
         if (row >= height) {
           break;
         }
@@ -273,9 +273,9 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
 void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
     Mat& qerror, DataType pos_thresh,
     DataType neg_thresh, bool delta) {
-  const El::Int ldim = mat.LDim();
-  const El::Int width = mat.Width();
-  const El::Int height = mat.Height();
+  const IntType ldim = mat.LDim();
+  const IntType width = mat.Width();
+  const IntType height = mat.Height();
   if (ldim != qerror.LDim()) {
     std::cout << "ldims don't match!" << std::endl;
   }
@@ -284,8 +284,8 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
   std::vector<ThreshQuantized> thread_qs(omp_get_max_threads());
   if (delta) {
     El::Unsigned prev_pos = 0;
-    for (El::Int col = 0; col < width; ++col) {
-      for (El::Int row = 0; row < height; ++row) {
+    for (IntType col = 0; col < width; ++col) {
+      for (IntType row = 0; row < height; ++row) {
         const El::Unsigned pos = row + col * ldim;
         const DataType val = mat_buf[pos] + qerror_buf[pos];
         if (val >= pos_thresh) {
@@ -307,8 +307,8 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
     {
       const int tid = omp_get_thread_num();
       #pragma omp for schedule(static)
-      for (El::Int col = 0; col < width; ++col) {
-        for (El::Int row = 0; row < height; ++row) {
+      for (IntType col = 0; col < width; ++col) {
+        for (IntType row = 0; row < height; ++row) {
           const El::Unsigned pos = row + col * ldim;
           const DataType val = mat_buf[pos] + qerror_buf[pos];
           if (val >= pos_thresh) {
@@ -501,9 +501,9 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   const Mat& mat, const Mat& qerror, int proportion, bool sample) {
   double proportion_start = get_time();
   std::vector<DataType> entries;
-  const El::Int height = mat.Height();
-  const El::Int width = mat.Width();
-  const El::Int ldim = mat.LDim();
+  const IntType height = mat.Height();
+  const IntType width = mat.Width();
+  const IntType ldim = mat.LDim();
   const DataType *__restrict__ mat_buf = mat.LockedBuffer();
   const DataType *__restrict__ qerror_buf = qerror.LockedBuffer();
   // Bail out if needed.
@@ -513,9 +513,9 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
   if (width * height <= NUM_THRESHOLD_SAMPLES || !sample) {
     // Copy entire matrix into vector.
     entries.reserve(width * height);
-    for (El::Int col = 0; col < width; ++col) {
-      const El::Int col_offset = col * ldim;
-      for (El::Int row = 0; row < height; ++row) {
+    for (IntType col = 0; col < width; ++col) {
+      const IntType col_offset = col * ldim;
+      for (IntType row = 0; row < height; ++row) {
         const El::Unsigned pos = row + col_offset;
         entries.emplace_back(mat_buf[pos] + qerror_buf[pos]);
       }
@@ -537,7 +537,7 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
     }
   }
   // Determine the number of entries to keep.
-  El::Int num_to_keep = std::max(1, (int) entries.size() / proportion);
+  IntType num_to_keep = std::max(1, (int) entries.size() / proportion);
   // Determine the threshold values.
   // This finds the num_to_keep'th value if sample were sorted by magnitude
   // and assigns it to the appropriate threshold, then checks the upper portion
@@ -580,7 +580,7 @@ lbann_quantizer::adaptive_thresholds lbann_quantizer::proportion_threshold(
 }
 
 lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
-  const Mat& mat, const Mat& qerror, El::Int col,
+  const Mat& mat, const Mat& qerror, IntType col,
   const adaptive_thresholds threshes, bool sample) {
   DataType pos_sum = 0.0f;
   El::Unsigned pos_count = 0;
@@ -590,12 +590,12 @@ lbann_quantizer::adaptive_reconstructions lbann_quantizer::col_reconstruction(
   DataType zero_sum = 0.0f;
   El::Unsigned zero_count = 0;
 #endif
-  const El::Int height = mat.Height();
-  const El::Int col_offset = col * mat.LDim();
+  const IntType height = mat.Height();
+  const IntType col_offset = col * mat.LDim();
   const DataType *__restrict__ mat_buf = mat.LockedBuffer();
   const DataType *__restrict__ qerror_buf = qerror.LockedBuffer();
   if (height <= NUM_RECON_SAMPLES || !sample) {
-    for (El::Int row = 0; row < height; ++row) {
+    for (IntType row = 0; row < height; ++row) {
       const El::Unsigned pos = row + col_offset;
       const DataType val = mat_buf[pos] + qerror_buf[pos];
       if (val >= threshes.pos_thresh) {

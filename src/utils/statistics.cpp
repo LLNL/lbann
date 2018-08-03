@@ -38,16 +38,16 @@ void entrywise_mean_and_stdev(const Mat& data,
   // the loop.
 
   // Matrix dimensions
-  const El::Int height = data.Height();
-  const El::Int width = data.Width();
-  const El::Int size = height * width;
+  const IntType height = data.Height();
+  const IntType width = data.Width();
+  const IntType size = height * width;
 
   // Compute sums over matrix entries
   const DataType shift = data(0, 0);
   DataType shifted_sum = 0;
   DataType shifted_sqsum = 0;
-  for(El::Int col = 0; col < width; ++col) {
-    for(El::Int row = 0; row < height; ++row) {
+  for(IntType col = 0; col < width; ++col) {
+    for(IntType row = 0; row < height; ++row) {
       const DataType shifted_val = data(row, col) - shift;
       shifted_sum += shifted_val;
       shifted_sqsum += shifted_val * shifted_val;
@@ -69,9 +69,9 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
                               DataType& stdev) {
 
   // Matrix dimensions
-  const El::Int size = data.Height() * data.Width();
-  const El::Int local_height = data.LocalHeight();
-  const El::Int local_width = data.LocalWidth();
+  const IntType size = data.Height() * data.Width();
+  const IntType local_height = data.LocalHeight();
+  const IntType local_width = data.LocalWidth();
 
   // Local matrices
   const Mat& local_data = data.LockedMatrix();
@@ -80,8 +80,8 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   DataType sum = 0;
   DataType sqsum = 0;
   #pragma omp parallel for reduction(+:sum,sqsum) collapse(2)
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
+  for(IntType col = 0; col < local_width; ++col) {
+    for(IntType row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
       sum += val;
       sqsum += val * val;
@@ -102,8 +102,8 @@ void columnwise_mean_and_stdev(const Mat& data,
                                Mat& stdevs) {
 
   // Matrix dimensions
-  const El::Int height = data.Height();
-  const El::Int width = data.Width();
+  const IntType height = data.Height();
+  const IntType width = data.Width();
 
   // Initialize outputs
   means.Resize(1, width);
@@ -111,11 +111,11 @@ void columnwise_mean_and_stdev(const Mat& data,
 
   // Compute mean and standard deviation of each matrix column
   #pragma omp parallel for
-  for(El::Int col = 0; col < width; ++col) {
+  for(IntType col = 0; col < width; ++col) {
     const DataType shift = data(0, col);
     DataType shifted_sum = 0;
     DataType shifted_sqsum = 0;
-    for(El::Int row = 0; row < height; ++row) {
+    for(IntType row = 0; row < height; ++row) {
       const DataType shifted_val = data(row, col) - shift;
       shifted_sum += shifted_val;
       shifted_sqsum += shifted_val * shifted_val;
@@ -148,9 +148,9 @@ void columnwise_sums_and_sqsums(const AbsDistMat& data,
 #endif // #ifdef LBANN_DEBUG
 
   // Matrix dimensions
-  const El::Int width = data.Width();
-  const El::Int local_height = data.LocalHeight();
-  const El::Int local_width = data.LocalWidth();
+  const IntType width = data.Width();
+  const IntType local_height = data.LocalHeight();
+  const IntType local_width = data.LocalWidth();
 
   // Initialize outputs
   sums.Resize(1, width);
@@ -163,10 +163,10 @@ void columnwise_sums_and_sqsums(const AbsDistMat& data,
 
   // Compute sum and sum of squares of each matrix column
   #pragma omp parallel for
-  for(El::Int col = 0; col < local_width; ++col) {
+  for(IntType col = 0; col < local_width; ++col) {
     DataType sum_val = 0;
     DataType sqsum_val = 0;
-    for(El::Int row = 0; row < local_height; ++row) {
+    for(IntType row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
       sum_val += val;
       sqsum_val += val * val;
@@ -196,15 +196,15 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
 #endif // #ifdef LBANN_DEBUG
 
   // Matrix dimensions
-  const El::Int height = data.Height();
-  const El::Int local_width = data.LocalWidth();
+  const IntType height = data.Height();
+  const IntType local_width = data.LocalWidth();
 
   columnwise_sums_and_sqsums(data, means, stdevs);
   // Local matrices
   Mat& local_means = means.Matrix();
   Mat& local_stdevs = stdevs.Matrix();
 
-  for(El::Int col = 0; col < local_width; ++col) {
+  for(IntType col = 0; col < local_width; ++col) {
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));
@@ -220,34 +220,34 @@ void rowwise_mean_and_stdev(const Mat& data,
                             Mat& stdevs) {
 
   // Matrix dimensions
-  const El::Int height = data.Height();
-  const El::Int width = data.Width();
+  const IntType height = data.Height();
+  const IntType width = data.Width();
 
   // Initialize outputs
   means.Resize(height, 1);
   stdevs.Resize(height, 1);
 
   // Iterate through row blocks
-  const El::Int block_size = 16;
+  const IntType block_size = 16;
   #pragma omp parallel for
-  for(El::Int row_start = 0; row_start < height; row_start += block_size) {
-    const El::Int row_end = std::min(row_start + block_size, height);
+  for(IntType row_start = 0; row_start < height; row_start += block_size) {
+    const IntType row_end = std::min(row_start + block_size, height);
 
     // Initialize shift and sums for each row
     auto *shifts = new DataType[block_size];
-    for(El::Int row = row_start; row < row_end; ++row) {
+    for(IntType row = row_start; row < row_end; ++row) {
       means(row, 0) = 0;
       stdevs(row, 0) = 0;
       shifts[row-row_start] = data(row, 0);
     }
 
     // Iterate through blocks in row block
-    for(El::Int col_start = 0; col_start < width; col_start += block_size) {
-      const El::Int col_end = std::min(col_start + block_size, width);
+    for(IntType col_start = 0; col_start < width; col_start += block_size) {
+      const IntType col_end = std::min(col_start + block_size, width);
 
       // Compute sums by iterating through block entries
-      for(El::Int col = col_start; col < col_end; ++col) {
-        for(El::Int row = row_start; row < row_end; ++row) {
+      for(IntType col = col_start; col < col_end; ++col) {
+        for(IntType row = row_start; row < row_end; ++row) {
           const DataType shift = shifts[row - row_start];
           const DataType shifted_val = data(row, col) - shift;
           means(row, 0) += shifted_val;
@@ -258,7 +258,7 @@ void rowwise_mean_and_stdev(const Mat& data,
     }
 
     // Compute mean and standard deviation of each row
-    for(El::Int row = row_start; row < row_end; ++row) {
+    for(IntType row = row_start; row < row_end; ++row) {
       const DataType shifted_mean = means(row, 0) / width;
       const DataType shifted_sqmean = stdevs(row, 0) / width;
       const DataType mean = shifted_mean + shifts[row - row_start];
@@ -292,9 +292,9 @@ void rowwise_sums_and_sqsums(const AbsDistMat& data,
 #endif // #ifdef LBANN_DEBUG
 
   // Matrix dimensions
-  const El::Int height = data.Height();
-  const El::Int local_height = data.LocalHeight();
-  const El::Int local_width = data.LocalWidth();
+  const IntType height = data.Height();
+  const IntType local_height = data.LocalHeight();
+  const IntType local_width = data.LocalWidth();
 
   // Initialize outputs
   sums.Resize(height, 1);
@@ -306,18 +306,18 @@ void rowwise_sums_and_sqsums(const AbsDistMat& data,
   Mat& local_sqsum = sqsums.Matrix();
 
   // Iterate through row blocks
-  const El::Int block_size = 16;
+  const IntType block_size = 16;
   #pragma omp parallel for
-  for(El::Int row_start = 0; row_start < local_height; row_start += block_size) {
-    const El::Int row_end = std::min(row_start + block_size, local_height);
+  for(IntType row_start = 0; row_start < local_height; row_start += block_size) {
+    const IntType row_end = std::min(row_start + block_size, local_height);
 
     // Iterate through blocks in row block
-    for(El::Int col_start = 0; col_start < local_width; col_start += block_size) {
-      const El::Int col_end = std::min(col_start + block_size, local_width);
+    for(IntType col_start = 0; col_start < local_width; col_start += block_size) {
+      const IntType col_end = std::min(col_start + block_size, local_width);
 
       // Compute sums by iterating through block entries
-      for(El::Int col = col_start; col < col_end; ++col) {
-        for(El::Int row = row_start; row < row_end; ++row) {
+      for(IntType col = col_start; col < col_end; ++col) {
+        for(IntType row = row_start; row < row_end; ++row) {
           const DataType val = local_data(row, col);
           local_sum(row, 0) += val;
           local_sqsum(row, 0) += val * val;
@@ -340,8 +340,8 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
                             AbsDistMat& stdevs) {
 
 
-  const El::Int width = data.Width();
-  const El::Int local_height = data.LocalHeight();
+  const IntType width = data.Width();
+  const IntType local_height = data.LocalHeight();
 
   rowwise_sums_and_sqsums(data, means, stdevs);
 
@@ -351,7 +351,7 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
 
   // Compute mean and standard deviation of each matrix row
   #pragma omp parallel for
-  for(El::Int row = 0; row < local_height; ++row) {
+  for(IntType row = 0; row < local_height; ++row) {
     const DataType mean = local_means(row, 0) / width;
     const DataType sqmean = local_stdevs(row, 0) / width;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));
@@ -383,10 +383,10 @@ void columnwise_covariance(const AbsDistMat& data1,
   }
 
   // Matrix dimensions
-  const El::Int height = data1.Height();
-  const El::Int width = data1.Width();
-  const El::Int local_height = data1.LocalHeight();
-  const El::Int local_width = data1.LocalWidth();
+  const IntType height = data1.Height();
+  const IntType width = data1.Width();
+  const IntType local_height = data1.LocalHeight();
+  const IntType local_width = data1.LocalWidth();
 
   // Initialize covariance
   covs.Resize(1, width);
@@ -400,11 +400,11 @@ void columnwise_covariance(const AbsDistMat& data1,
 
   // Accumulate sum and divide to get covariance
   #pragma omp parallel for
-  for(El::Int col = 0; col < local_width; ++col) {
+  for(IntType col = 0; col < local_width; ++col) {
     DataType sum = 0;
     const DataType mean1 = local_means1(0, col);
     const DataType mean2 = local_means2(0, col);
-    for(El::Int row = 0; row < local_height; ++row) {
+    for(IntType row = 0; row < local_height; ++row) {
       const DataType val1 = local_data1(row, col);
       const DataType val2 = local_data2(row, col);
       sum += (val1 - mean1) * (val2 - mean2);

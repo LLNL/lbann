@@ -94,8 +94,8 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_com
     const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
     auto& local_output = output.Matrix();
     El::IndexDependentMap(local_output,
-                          (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                          ([this,&local_bias](El::Int r, El::Int c,const DataType& z)
+                          (std::function<DataType(IntType,IntType,const DataType&)>)
+                          ([this,&local_bias](IntType r, IntType c,const DataType& z)
                            ->DataType {
                             return z + m_bias_scaling_factor * local_bias(r, 0);
                           }));
@@ -199,8 +199,8 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
   if(m_bias_scaling_factor != DataType(0)) {
     const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
     El::IndexDependentMap(local_output,
-                          (std::function<DataType(El::Int,El::Int,const DataType&)>)
-                          ([this,&local_bias](El::Int r, El::Int c,const DataType& z)
+                          (std::function<DataType(IntType,IntType,const DataType&)>)
+                          ([this,&local_bias](IntType r, IntType c,const DataType& z)
                            ->DataType {
                             return z + m_bias_scaling_factor * local_bias(r, 0);
                           }));

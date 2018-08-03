@@ -220,7 +220,7 @@ void init_data_seq_random(int seed) {
 #endif
 }
 
-void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
+void gaussian_fill(AbsDistMat& mat, IntType m, IntType n, DataType mean,
                    DataType stddev) {
 #ifndef LBANN_DETERMINISTIC
   El::Gaussian(mat, m, n, mean, stddev);
@@ -229,7 +229,7 @@ void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
 #endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
-void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
+void bernoulli_fill(AbsDistMat& mat, IntType m, IntType n, double p) {
 #ifndef LBANN_DETERMINISTIC
   El::Bernoulli(mat, m, n, p);
 #else
@@ -237,7 +237,7 @@ void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
 #endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
-void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
+void uniform_fill(AbsDistMat& mat, IntType m, IntType n, DataType center,
                   DataType radius) {
 #ifndef LBANN_DETERMINISTIC
   El::Uniform(mat, m, n, center, radius);
@@ -246,15 +246,15 @@ void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
 #endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
-void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
+void gaussian_fill_procdet(AbsDistMat& mat, IntType m, IntType n, DataType mean,
                            DataType stddev) {
   CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::normal_distribution<DataType> dist(mean, stddev);
-    for (El::Int col = 0; col < local_vals.Width(); ++col) {
-      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+    for (IntType col = 0; col < local_vals.Width(); ++col) {
+      for (IntType row = 0; row < local_vals.Height(); ++row) {
         local_vals(row, col) = dist(gen);
       }
     }
@@ -262,14 +262,14 @@ void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
   El::Copy(vals, mat);
 }
 
-void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
+void bernoulli_fill_procdet(AbsDistMat& mat, IntType m, IntType n, double p) {
   CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
     std::bernoulli_distribution dist(p);
-    for (El::Int col = 0; col < local_vals.Width(); ++col) {
-      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+    for (IntType col = 0; col < local_vals.Width(); ++col) {
+      for (IntType row = 0; row < local_vals.Height(); ++row) {
         local_vals(row, col) = dist(gen);
       }
     }
@@ -277,7 +277,7 @@ void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
   El::Copy(vals, mat);
 }
 
-void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
+void uniform_fill_procdet(AbsDistMat& mat, IntType m, IntType n, DataType center,
                           DataType radius) {
   CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
@@ -285,8 +285,8 @@ void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center
     auto& gen = get_generator();
     std::uniform_real_distribution<DataType> dist(center - radius,
                                                   center + radius);
-    for (El::Int col = 0; col < local_vals.Width(); ++col) {
-      for (El::Int row = 0; row < local_vals.Height(); ++row) {
+    for (IntType col = 0; col < local_vals.Width(); ++col) {
+      for (IntType row = 0; row < local_vals.Height(); ++row) {
         local_vals(row, col) = dist(gen);
       }
     }

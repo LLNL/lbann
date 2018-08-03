@@ -109,10 +109,10 @@ class selu_dropout : public regularizer_layer {
     } else {
 
       const auto *input_acts = &get_prev_activations();
-      const El::Int height = input_acts->Height();
-      const El::Int width = input_acts->Width();
-      const El::Int local_height = input_acts->LocalHeight();
-      const El::Int local_width = input_acts->LocalWidth();
+      const IntType height = input_acts->Height();
+      const IntType width = input_acts->Width();
+      const IntType local_height = input_acts->LocalHeight();
+      const IntType local_width = input_acts->LocalWidth();
 
       const auto& local_input_acts = input_acts->LockedMatrix();
       Mat& local_output_acts = get_local_activations();
@@ -121,8 +121,8 @@ class selu_dropout : public regularizer_layer {
       // Construct and apply mask and the affine transform.
       // TODO: Optimize.
       El::Bernoulli(*m_mask, height, width, m_keep_prob);
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = 0; row < local_height; ++row) {
+      for (IntType col = 0; col < local_width; ++col) {
+        for (IntType row = 0; row < local_height; ++row) {
           local_output_acts(row, col) = m_a *
             (local_input_acts(row, col)*local_mask(row, col) +
              m_alpha_prime*(1 - local_mask(row, col))) + m_b;
@@ -142,11 +142,11 @@ class selu_dropout : public regularizer_layer {
       const auto& local_prev_error_signal = get_local_prev_error_signals();
       Mat& local_error_signal = get_local_error_signals();
       Mat& local_mask = m_mask->Matrix();
-      const El::Int local_height = local_prev_error_signal.Height();
-      const El::Int local_width = local_prev_error_signal.Width();
+      const IntType local_height = local_prev_error_signal.Height();
+      const IntType local_width = local_prev_error_signal.Width();
       // Reweight with the affine scale factor and the dropout mask.
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = 0; row < local_height; ++row) {
+      for (IntType col = 0; col < local_width; ++col) {
+        for (IntType row = 0; row < local_height; ++row) {
           local_error_signal(row, col) =
             m_a * local_prev_error_signal(row, col) * local_mask(row, col);
         }

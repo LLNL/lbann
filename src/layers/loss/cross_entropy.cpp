@@ -37,14 +37,14 @@ void local_fp_cpu(const AbsMat& local_prediction,
 
   // Useful constants
   const DataType zero = DataType(0);
-  const El::Int local_height = local_prediction.Height();
-  const El::Int local_width = local_prediction.Width();
+  const IntType local_height = local_prediction.Height();
+  const IntType local_width = local_prediction.Width();
 
   // Compute local contribution to cross entropy
 #pragma omp parallel for
-  for (El::Int col = 0; col < local_width; ++col) {
+  for (IntType col = 0; col < local_width; ++col) {
     DataType sum = zero;
-    for (El::Int row = 0; row < local_height; ++row) {
+    for (IntType row = 0; row < local_height; ++row) {
       const auto& xhat = local_ground_truth(row, col);
       if (xhat > zero) {
         const auto& x = local_prediction(row, col);
@@ -67,13 +67,13 @@ void local_bp_cpu(const AbsMat& local_prediction,
                                                                        
   // Useful constants
   const DataType zero = DataType(0);
-  const El::Int local_height = local_prediction.Height();
-  const El::Int local_width = local_prediction.Width();
+  const IntType local_height = local_prediction.Height();
+  const IntType local_width = local_prediction.Width();
 
   // Compute gradients
 #pragma omp parallel for collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int row = 0; row < local_height; ++row) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType row = 0; row < local_height; ++row) {
       const auto& x = local_prediction(row, col);
       const auto& xhat = local_ground_truth(row, col);
       const auto& dy = local_gradient_wrt_output(0, col);

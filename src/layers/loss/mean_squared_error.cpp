@@ -30,7 +30,7 @@ namespace lbann {
 
 namespace {
 
-void local_fp_cpu(El::Int height,
+void local_fp_cpu(IntType height,
                   const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
                   AbsMat& local_contribution) {
@@ -41,9 +41,9 @@ void local_fp_cpu(El::Int height,
 
   // Compute local contribution to mean squared error
 #pragma omp parallel for
-  for (El::Int col = 0; col < local_width; ++col) {
+  for (IntType col = 0; col < local_width; ++col) {
     DataType sum = 0;
-    for (El::Int row = 0; row < local_height; ++row) {
+    for (IntType row = 0; row < local_height; ++row) {
       const auto& err = (local_prediction(row, col)
                          - local_ground_truth(row, col));
       sum += err * err;
@@ -53,7 +53,7 @@ void local_fp_cpu(El::Int height,
 
 }
 
-void local_bp_cpu(El::Int height,
+void local_bp_cpu(IntType height,
                   const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
                   const AbsMat& local_gradient_wrt_output,
@@ -62,13 +62,13 @@ void local_bp_cpu(El::Int height,
                                                                        
   // Useful constants
   const DataType scale = DataType(2) / height;
-  const El::Int local_height = local_prediction.Height();
-  const El::Int local_width = local_prediction.Width();
+  const IntType local_height = local_prediction.Height();
+  const IntType local_width = local_prediction.Width();
 
   // Compute gradients
 #pragma omp parallel for collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int row = 0; row < local_height; ++row) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType row = 0; row < local_height; ++row) {
       const auto& err = (local_prediction(row, col)
                          - local_ground_truth(row, col));
       const auto& dy = local_gradient_wrt_output(0, col);
@@ -83,7 +83,7 @@ void local_bp_cpu(El::Int height,
 
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(El::Int height,
+     ::local_fp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         AbsMat& local_contribution) {
@@ -93,7 +93,7 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(El::Int height,
+     ::local_bp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         const AbsMat& local_gradient_wrt_output,
@@ -109,7 +109,7 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(El::Int height,
+     ::local_fp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         AbsMat& local_contribution) {
@@ -119,7 +119,7 @@ void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
 
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(El::Int height,
+     ::local_bp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         const AbsMat& local_gradient_wrt_output,
