@@ -27,6 +27,8 @@
 #ifndef _JAG_STORE_HPP__
 #define _JAG_STORE_HPP__
 
+#ifdef LBANN_HAS_CONDUIT
+
 #include "lbann_config.hpp" 
 
 #include "conduit/conduit.hpp"
@@ -158,5 +160,6 @@ class jag_store {
 };
 
 } // end of namespace lbann
+#endif //ifdef LBANN_HAS_CONDUIT
 
 #endif // _JAG_STORE_HPP__
