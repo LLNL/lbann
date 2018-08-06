@@ -287,7 +287,7 @@ void weights::set_value(DataType value, int index) {
   if (index < 0 || index >= size) {
     std::stringstream err;
     err << "attempted to set value in "
-        << "weights \"" << get_name() << "\ "
+        << "weights \"" << get_name() << "\""
         << "at index " << index << ", "
         << "but there are " << size << " values";
     LBANN_ERROR(err.str());
@@ -314,7 +314,7 @@ void weights::set_value(DataType value, std::vector<int> pos) {
   if (!valid) {
     std::stringstream err;
     err << "attempted to set value in "
-        << "weights \"" << get_name() << "\ "
+        << "weights \"" << get_name() << "\""
         << "at position (";
     for (size_t i = 0 ; i < pos.size(); ++i) {
       err << (i > 0 ? "x" : "") << pos[i];
@@ -345,7 +345,7 @@ void weights::set_value(DataType value, int row, int col) {
   if (row < 0 || row >= height || col < 0 || col > width ) {
     std::stringstream err;
     err << "attempted to set weights value "
-        << "in weights \"" << get_name() << "\ "
+        << "in weights \"" << get_name() << "\""
         << "at entry (" << row << "," << col << ") "
         << "in a " << height << "x" << width << " matrix";
     LBANN_ERROR(err.str());
