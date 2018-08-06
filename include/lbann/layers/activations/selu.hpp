@@ -39,7 +39,7 @@ namespace lbann {
  *  mean/unit variance (z-score), initialize with 0 mean, 1/n variance
  *  (He), and use the SELU dropout.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class selu_layer : public entrywise_activation_layer {
  public:
   selu_layer(lbann_comm *comm,
@@ -49,6 +49,7 @@ class selu_layer : public entrywise_activation_layer {
   selu_layer* copy() const override { return new selu_layer(*this); }
   std::string get_type() const override { return "SELU"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   std::string get_description() const override {
     return std::string {}
@@ -58,15 +59,15 @@ class selu_layer : public entrywise_activation_layer {
   }
 
  protected:
-  DataType activation(DataType z) const override {
-    return (z >= DataType(0) ?
-            m_scale * z :
-            m_scale * (m_alpha * std::expm1(z)));
+  DataType activation(DataType x) const override {
+    return (x >= DataType(0) ?
+            m_scale * x :
+            m_scale * (m_alpha * std::expm1(x)));
   }
-  DataType activation_derivative(DataType z) const override {
-    return (z >= DataType(0) ?
+  DataType activation_derivative(DataType x) const override {
+    return (x >= DataType(0) ?
             m_scale :
-            m_scale * m_alpha * std::exp(z));
+            m_scale * m_alpha * std::exp(x));
   }
  private:
   /** Alpha parameter for the ELU. */

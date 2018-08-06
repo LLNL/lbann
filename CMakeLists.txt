@@ -72,8 +72,6 @@ option(${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS
 
 option(${UPPER_PROJECT_NAME}_WITH_CUDA "Include Nvidia CUDA" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_NCCL "Include Nvidia NCCL2" OFF)
-
 option(${UPPER_PROJECT_NAME}_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
 option(${UPPER_PROJECT_NAME}_WITH_CNPY "Include cnpy" ON)
@@ -89,7 +87,7 @@ option(${UPPER_PROJECT_NAME}_WITH_NVPROF
 option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
   "Enable topology-aware profiling (HWLOC)" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM 
+option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM
   "Enable Aluminum all-reduce library" OFF)
 
 option(${UPPER_PROJECT_NAME}_WITH_CONDUIT
@@ -134,14 +132,10 @@ endif ()
 set(LBANN_TOPO_AWARE ${${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE})
 
 # Enable parallel random matrix generation, if possible
-if (${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZATION)
-  set(LBANN_SEQUENTIAL_CONSISTENCY TRUE)
-  set(LBANN_PROCDET_DROPOUT TRUE)
-  set(LBANN_PARALLEL_RANDOM_MATRICES FALSE)
+if (${UPPER_PROJECT_NAME}_DETERMINISTIC)
+  set(LBANN_DETERMINISTIC TRUE)
 else()
-  set(LBANN_SEQUENTIAL_CONSISTENCY FALSE)
-  set(LBANN_PROCDET_DROPOUT FALSE)
-  set(LBANN_PARALLEL_RANDOM_MATRICES TRUE)
+  set(LBANN_DETERMINISTIC FALSE)
 endif ()
 
 #
@@ -170,6 +164,29 @@ include(SetupElemental)
 find_package(OpenCV REQUIRED)
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
+if (LBANN_WITH_ALUMINUM)
+  find_package(Aluminum)
+  set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
+  if (NOT LBANN_HAS_ALUMINUM)
+    message(FATAL_ERROR
+      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
+      "Aluminum is now disabled. "
+      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
+      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
+    set(LBANN_WITH_ALUMINUM OFF)
+  endif(NOT LBANN_HAS_ALUMINUM)
+
+  if (AL_HAS_CUDA AND NOT LBANN_WITH_CUDA)
+    message(WARNING
+      "Aluminum has CUDA but LBANN is configured with LBANN_WITH_CUDA=OFF")
+  endif ()
+
+  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
+  if (LBANN_BUILT_WITH_SPECTRUM)
+    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
+  endif (LBANN_BUILT_WITH_SPECTRUM)
+endif (LBANN_WITH_ALUMINUM)
+
 # Setup some additional CUDA-y things
 if (LBANN_HAS_CUDA)
   if (NOT LBANN_WITH_CUDNN)
@@ -184,18 +201,12 @@ if (LBANN_HAS_CUDA)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
 
-  if (LBANN_WITH_NCCL)
-    find_package(NCCL 2.0.0 REQUIRED)
-    set(LBANN_HAS_NCCL2 ${NCCL_FOUND})
-    if (NOT LBANN_HAS_NCCL2)
-      message(FATAL_ERROR
-        "Requested LBANN_WITH_NCCL but NCCL not found. "
-        "NCCL is now disabled. "
-        "Try specifying NCCL_DIR as the root of a NCCL install. "
-        "Alternatively, build with LBANN_WITH_NCCL=OFF.")
-      set(LBANN_WITH_NCCL OFF)
-    endif (NOT LBANN_HAS_NCCL2)
-  endif (LBANN_WITH_NCCL)
+  if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
+    set(LBANN_HAS_NCCL2 TRUE)
+  else ()
+    set(LBANN_HAS_NCCL2 FALSE)
+  endif ()
+
 endif (LBANN_HAS_CUDA)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
@@ -217,6 +228,10 @@ endif ()
 
 if (LBANN_WITH_VTUNE)
   include(SetupVTune)
+endif ()
+
+if (LBANN_WITH_NVPROF)
+  set(LBANN_NVPROF TRUE)
 endif ()
 
 if (LBANN_WITH_CNPY)
@@ -246,23 +261,6 @@ if (LBANN_TOPO_AWARE)
   endif (NOT HWLOC_FOUND)
 endif (LBANN_TOPO_AWARE)
 
-if (LBANN_WITH_ALUMINUM)
-  find_package(ALUMINUM)
-  set(LBANN_HAS_ALUMINUM ${ALUMINUM_FOUND}) 
-  if (NOT LBANN_HAS_ALUMINUM)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
-      "Aluminum is now disabled. "
-      "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
-      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
-    set(LBANN_WITH_ALUMINUM OFF)
-  endif(NOT LBANN_HAS_ALUMINUM)      
-  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
-  if (LBANN_BUILT_WITH_SPECTRUM)
-    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
-  endif (LBANN_BUILT_WITH_SPECTRUM)
-endif (LBANN_WITH_ALUMINUM)
-
 if (LBANN_WITH_CONDUIT)
   find_package(CONDUIT)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
@@ -276,7 +274,7 @@ if (LBANN_WITH_CONDUIT)
 endif (LBANN_WITH_CONDUIT)
 
 # Handle the documentation
-add_subdirectory(doc)
+add_subdirectory(docs)
 
 ################################################################
 # Build LBANN
@@ -322,7 +320,7 @@ if (LBANN_TOPO_AWARE)
 endif ()
 
 if (LBANN_HAS_ALUMINUM)
-  target_link_libraries(lbann PUBLIC ALUMINUM::ALUMINUM)
+  target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
 endif ()
 
 if (LBANN_HAS_CONDUIT)
@@ -334,8 +332,7 @@ endif ()
 if (LBANN_HAS_CUDA)
   target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
   target_link_libraries(lbann PUBLIC cuda::toolkit)
-  if (WITH_NVPROF)
-    add_definitions(-DLBANN_NVPROF)
+  if (LBANN_WITH_NVPROF)
     target_link_libraries(lbann PUBLIC ${NVTX_LIBRARIES})
   endif ()
   target_link_libraries(lbann PUBLIC ${cuBLAS_LIBRARIES})
@@ -360,7 +357,6 @@ target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 # Add the rest of the things
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
-add_subdirectory(model_zoo/historical)
 add_subdirectory(tests)
 
 ################################################################
@@ -429,6 +425,7 @@ message("  LBANN_HAS_PROTOBUF:   ${LBANN_HAS_PROTOBUF}")
 message("  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}")
 message("  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}")
 message("  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}")
+message("  LBANN_NVPROF:         ${LBANN_NVPROF}")
 message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
 message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")
 message("  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}")

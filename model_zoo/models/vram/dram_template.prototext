@@ -1,0 +1,25 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 20
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+  objective_function {
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback { print {} }
+  callback { timer {} }
+
+}

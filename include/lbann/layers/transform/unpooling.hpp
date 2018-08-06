@@ -29,33 +29,35 @@
 
 #include <vector>
 #include "lbann/layers/transform/pooling.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
 
 namespace lbann {
 
 /** Unpooling layer. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class unpooling_layer : public transform_layer {
  private:
- 
+
   /** Corresponding pooling layer. */
-  pooling_layer<T_layout>* m_pooling_layer;
+  pooling_layer<T_layout, Dev>* m_pooling_layer;
 
  public:
 
   unpooling_layer(lbann_comm *comm,
-                  pooling_layer<T_layout>* pool = nullptr)
+                  pooling_layer<T_layout, Dev>* pool = nullptr)
     : transform_layer(comm),
       m_pooling_layer(pool) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "unpooling only supports DATA_PARALLEL");
+    static_assert(Dev == El::Device::CPU,
+                  "unpooling only supports CPU");
   }
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
   std::string get_type() const override { return "unpooling"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_pointers() override {
     // Check that pooling layer is valid
@@ -71,25 +73,33 @@ class unpooling_layer : public transform_layer {
   }
 
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
 
-    // Check that previous neuron tensor is valid
-    if(this->m_num_prev_neurons != m_pooling_layer->m_num_neurons
-       || this->m_num_prev_neuron_dims != m_pooling_layer->m_num_neuron_dims
-       || this->m_prev_neuron_dims != m_pooling_layer->m_neuron_dims) {
-      throw lbann_exception("unpooling_layer: previous neuron tensor must match neuron tensor of corresponding pooling layer");
+    // Check that input tensor is valid
+    const auto& input_dims = get_input_dims();
+    const auto& pool_output_dims = m_pooling_layer->get_output_dims();
+    if (input_dims != pool_output_dims) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects input tensors with dimensions ";
+      for (size_t i = 0; i < pool_output_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << pool_output_dims[i];
+      }
+      err << ", but parent layer "
+          << "\"" << m_parent_layers[0]->get_name() << "\" "
+          << "outputs with dimensions ";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
+      }
+      LBANN_ERROR(err.str());
     }
 
-    // Initialize neuron tensor based on corresponding pooling layer
-    this->m_num_neurons = m_pooling_layer->m_num_prev_neurons;
-    this->m_num_neuron_dims = m_pooling_layer->m_num_prev_neuron_dims;
-    this->m_neuron_dims = m_pooling_layer->m_prev_neuron_dims;
+    // Initialize output tensor based on corresponding pooling layer
+    set_output_dims(m_pooling_layer->get_input_dims());
 
   }
 
-  void set_pooling_layer(pooling_layer<T_layout>* pool) {
+  void set_pooling_layer(pooling_layer<T_layout, Dev>* pool) {
     m_pooling_layer = pool;
   }
 
@@ -100,10 +110,10 @@ class unpooling_layer : public transform_layer {
   }
 
   void set_layer_pointers(std::vector<Layer*> layers) override {
-    m_pooling_layer = dynamic_cast<pooling_layer<T_layout>*>(layers.back());
+    m_pooling_layer = dynamic_cast<pooling_layer<T_layout, Dev>*>(layers.back());
     if (m_pooling_layer == nullptr) {
       std::stringstream err;
-      err << __FILE__ << " " << __LINE__ 
+      err << __FILE__ << " " << __LINE__
           << " :: unpooling_layer: invalid layer pointer used to set paired pooling layer";
       throw lbann_exception(err.str());
     }
@@ -114,7 +124,7 @@ class unpooling_layer : public transform_layer {
   protected:
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
       fp_compute_im2col();
@@ -122,7 +132,7 @@ class unpooling_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       throw lbann_exception("unpooling_layer: GPU version not yet implemented");
     } else {
       bp_compute_im2col();
@@ -135,17 +145,18 @@ class unpooling_layer : public transform_layer {
   void fp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_activations_local = get_local_prev_activations();
-    Mat& activations_local = get_local_activations();
+    const DMat<Dev>& prev_activations_local = get_local_prev_activations();
+    DMat<Dev>& activations_local = get_local_activations();
 
     // Get parameters
     const int local_width = prev_activations_local.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_input_channel = this->m_num_prev_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int num_per_input_channel = get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
-    Mat im2col_mat(pool_size * num_channels, num_per_input_channel);
+    DMat<Dev> im2col_mat(pool_size * num_channels, num_per_input_channel);
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -157,7 +168,7 @@ class unpooling_layer : public transform_layer {
       const DataType *prev_activations_buffer
         = prev_activations_local.LockedBuffer(0, sample);
       const int *indices_buffer
-        = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
+        = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_input_channel; ++j) {
@@ -171,12 +182,12 @@ class unpooling_layer : public transform_layer {
       }
 
       // Convert im2col matrix to output matrix
-      Mat output_mat = El::View(activations_local, El::ALL, El::IR(sample));
+      DMat<Dev> output_mat = El::View(activations_local, El::ALL, El::IR(sample));
       col2im(im2col_mat,
              output_mat,
              num_channels,
-             this->m_num_neuron_dims - 1,
-             this->m_neuron_dims.data() + 1,
+             output_dims.size() - 1,
+             &output_dims[1],
              m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
              m_pooling_layer->m_strides.data(),
@@ -190,29 +201,30 @@ class unpooling_layer : public transform_layer {
   void bp_compute_im2col() {
 
     // Get local matrices
-    const Mat& prev_error_signal_local = get_local_prev_error_signals();
-    Mat& error_signal_local = get_local_error_signals();
+    const DMat<Dev>& prev_error_signal_local = get_local_prev_error_signals();
+    DMat<Dev>& error_signal_local = get_local_error_signals();
 
     // Get parameters
     const int local_width = prev_error_signal_local.Width();
-    const int num_channels = this->m_prev_neuron_dims[0];
-    const int num_per_output_channel = this->m_num_prev_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int num_per_output_channel = get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
-    Mat im2col_mat(pool_size * num_channels, num_per_output_channel);
+    DMat<Dev> im2col_mat(pool_size * num_channels, num_per_output_channel);
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
 
       // Construct im2col matrix from input
-      const Mat input_mat = El::LockedView(prev_error_signal_local,
-                                           El::ALL, El::IR(sample));
+      const DMat<Dev>& input_mat = El::LockedView(prev_error_signal_local,
+                                                  El::ALL, El::IR(sample));
       im2col(input_mat,
              im2col_mat,
              num_channels,
-             this->m_num_neuron_dims - 1,
-             this->m_neuron_dims.data() + 1,
+             output_dims.size() - 1,
+             &output_dims[1],
              m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
              m_pooling_layer->m_strides.data());
@@ -220,7 +232,7 @@ class unpooling_layer : public transform_layer {
       // Propagate error signal based on pooling layer
       DataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
-        = &m_pooling_layer->m_max_pool_indices[sample * this->m_num_prev_neurons];
+        = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
       #pragma omp parallel for
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_output_channel; ++j) {

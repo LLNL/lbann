@@ -552,7 +552,7 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
   auto recv_apply_transform =
   [this] (uint8_t *recv_buf, Mat& accum, bool is_local) -> int {
     if (is_local) {
-      Mat recv_mat;
+      CPUMat recv_mat;
       recv_mat.LockedAttach(accum.Height(), accum.Width(),
                             (DataType *) recv_buf, accum.LDim());
       accum += recv_mat;

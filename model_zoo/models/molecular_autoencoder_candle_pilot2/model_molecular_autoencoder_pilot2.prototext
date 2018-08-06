@@ -6,7 +6,6 @@ model {
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -46,9 +45,11 @@ model {
   #######
   layer {
     name: "data"
+    children: "encode1 reconstruction"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
+      target_mode: "reconstruction"
     }
   }
 
@@ -103,10 +104,9 @@ model {
   #################
   layer {
     name: "reconstruction"
+    parents: "decode_relu10 data"
     data_layout: "data_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################

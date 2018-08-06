@@ -41,6 +41,10 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
+#ifdef LBANN_HAS_CUDNN
+#include "lbann/utils/cudnn.hpp"
+#endif
+
 namespace lbann {
 
 lbann_comm* initialize(int& argc, char**& argv, int seed) {
@@ -78,14 +82,13 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   init_random(seed);
   init_data_seq_random(seed);
 
-  //initialization for stack tracing when a signal is raised
-  //or an lbann_exception thrown.
-  stack_trace::set_lbann_stack_trace_world_rank(comm->get_rank_in_world());
-
   return comm;
 }
 
 void finalize(lbann_comm* comm) {
+#ifdef LBANN_HAS_CUDNN
+  cudnn::destroy();
+#endif
   if (comm != nullptr) {
     delete comm;
   }
@@ -95,11 +98,11 @@ void finalize(lbann_comm* comm) {
 }  // namespace lbann
 
 /** hack to avoid long switch/case statement; users should ignore; of interest to developers */
-static std::vector<std::string> pool_mode_names = { "max", "average", "average_no_pad" };
+static std::vector<std::string> pool_mode_names = { "invalid", "max", "average", "average_no_pad" };
 
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m) {
-  if ((int)m < 0 or (int)m >= (int)pool_mode_names.size()) {
+  if ((int)m < 1 or (int)m >= (int)pool_mode_names.size()) {
     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
           + " Invalid pool_mode");
   }

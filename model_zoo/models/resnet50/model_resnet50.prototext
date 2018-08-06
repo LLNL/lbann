@@ -6,14 +6,13 @@ model {
   num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -23,10 +22,18 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy"
+      unit: "%"
     }
   }
 
@@ -41,21 +48,42 @@ model {
       all_optimizers: true
     }
   }
+  # callback {
+  #   summary {
+  #     dir: "."
+  #     mat_interval: 25
+  #   }
+  # }
 
   ###################################################
   # Layers
   ###################################################
 
-  # conv1
+  # data
   layer {
     name: "data"
+    children: "images labels"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
   layer {
+    name: "images"
     parents: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    name: "labels"
+    parents: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+
+  # conv1
+  layer {
+    parents: "images"
     name: "conv1"
     data_layout: "data_parallel"
     convolution {
@@ -1851,18 +1879,27 @@ model {
   layer {
     parents: "fc1000"
     name: "prob"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     softmax {
     }
   }
   layer {
-    parents: "prob"
-    name: "target"
+    name: "cross_entropy"
+    parents: "prob labels"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    cross_entropy {}
+  }
+  layer {
+    name: "top1_accuracy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 1 }
+  }
+  layer {
+    name: "top5_accuracy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 5 }
   }
 
 }

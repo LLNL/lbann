@@ -3,9 +3,10 @@ cmake_minimum_required(VERSION 3.8)
 cmake_policy(SET CMP0015 NEW)
 
 set(COMPILER "gnu")
-set(CLUSTER "surface")
+#set(CLUSTER "surface")
+set(CLUSTER "catalyst")
 set(LBANN_DIR ../..)
-set(LBANN_BUILD_DIR ${LBANN_DIR}/build/${COMPILER}.${CLUSTER}.llnl.gov/install)
+set(LBANN_BUILD_DIR ${LBANN_DIR}/build/${COMPILER}.Release.${CLUSTER}.llnl.gov/install)
 include(${LBANN_DIR}/cmake/modules/SetupMPI.cmake)
 include(${LBANN_DIR}/cmake/modules/SetupOpenMP.cmake)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
@@ -55,7 +56,7 @@ set(Hydrogen_LIBS "${Hydrogen_LIBRARIES};-lHydrogen;-lpmrrr;-lopenblas;-lpthread
 
 file(GLOB PATCHWORKS_DEPEND_SRCS
      lbann/utils/random.cpp
-     lbann/utils/file_utils.cpp
+     ${LBANN_DIR}/src//utils/file_utils.cpp
      ${LBANN_DIR}/src/data_readers/image_utils.cpp
      ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
      ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
@@ -65,6 +66,7 @@ file(GLOB PATCHWORKS_DEPEND_SRCS
      ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_process.cpp
      ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
+     ${LBANN_DIR}/src/data_readers/cv_resizer.cpp
      ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
      ${LBANN_DIR}/src/data_readers/cv_transform.cpp
      ${LBANN_DIR}/src/data_readers/cv_utils.cpp

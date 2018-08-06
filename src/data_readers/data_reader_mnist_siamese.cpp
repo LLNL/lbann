@@ -87,7 +87,7 @@ void data_reader_mnist_siamese::set_input_params(
  * Fill the input minibatch matrix with the samples of image pairs by using
  * the overloaded fetch_datum()
  */
-int data_reader_mnist_siamese::fetch_data(Mat& X) {
+int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -114,26 +114,21 @@ int data_reader_mnist_siamese::fetch_data(Mat& X) {
   El::Zeros(X, X.Height(), X.Width());
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
 
-  #pragma omp parallel for
+  std::string error_message;
+#pragma omp parallel for
   for (int s = 0; s < mb_size; s++) {
-    // Catch exceptions within the OpenMP thread.
-    try {
-      int n = m_current_pos + (s * m_sample_stride);
-      sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
-      bool valid = fetch_datum(X, index, s, omp_get_thread_num());
-      if (!valid) {
-        throw lbann_exception(
-          std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-          " :: generic data reader load error: datum not valid");
-      }
+    int n = m_current_pos + (s * m_sample_stride);
+    sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
+    bool valid = fetch_datum(X, index, s, omp_get_thread_num());
+    if (valid) {
       El::Int index_coded = m_shuffled_indices[n] + m_shuffled_indices2[n]*(std::numeric_limits<label_t>::max()+1);
       m_indices_fetched_per_mb.Set(s, 0, index_coded);
-    } catch (lbann_exception& e) {
-      lbann_report_exception(e);
-    } catch (std::exception& e) {
-      El::ReportException(e);
+    } else{
+#pragma omp critical
+      error_message = "invalid datum";
     }
   }
+  if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
   /// Allow each thread to perform any postprocessing necessary on the
   /// data source prior to fetching data
@@ -149,7 +144,7 @@ int data_reader_mnist_siamese::fetch_data(Mat& X) {
 /**
  * Fill the ground truth table by using the overloaded fetch_label()
  */
-int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
+int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -171,31 +166,24 @@ int data_reader_mnist_siamese::fetch_labels(Mat& Y) {
  // }
 
 //  else {
-    #pragma omp parallel for
+    std::string error_message;
+#pragma omp parallel for
     for (int s = 0; s < mb_size; s++) {
-      // Catch exceptions within the OpenMP thread.
-      try {
-        int n = m_current_pos + (s * m_sample_stride);
-        sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
-
-        bool valid = fetch_label(Y, index, s, omp_get_thread_num());
-        if (!valid) {
-          throw lbann_exception(
-            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-            " :: generic data reader load error: label not valid");
-        }
-      } catch (lbann_exception& e) {
-        lbann_report_exception(e);
-      } catch (std::exception& e) {
-        El::ReportException(e);
+      int n = m_current_pos + (s * m_sample_stride);
+      sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
+      bool valid = fetch_label(Y, index, s, omp_get_thread_num());
+      if (!valid) {
+#pragma omp critical
+        error_message = "invalid label";
       }
     }
+    if (!error_message.empty()) { LBANN_ERROR(error_message); }
   //}
   return mb_size;
 }
 
 
-bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, std::pair<int, int> data_id, int mb_idx, int tid) {
 
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
@@ -234,7 +222,7 @@ bool data_reader_mnist_siamese::fetch_datum(Mat& X, std::pair<int, int> data_id,
 }
 
 
-bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, std::pair<int, int> data_id, int mb_idx, int tid) {
   const label_t label_1 = m_image_data[data_id.first][0];
   const label_t label_2 = m_image_data[data_id.second][0];
   const label_t label = static_cast<label_t>(label_1 == label_2);
@@ -243,14 +231,14 @@ bool data_reader_mnist_siamese::fetch_label(Mat& Y, std::pair<int, int> data_id,
 }
 
 
-bool data_reader_mnist_siamese::fetch_datum(::Mat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;
 }
 
 
-bool data_reader_mnist_siamese::fetch_label(::Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;

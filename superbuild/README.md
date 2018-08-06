@@ -22,8 +22,8 @@ Subpackages](#passing-options-to-superbuild-subpackages)).
 Arguments that are processed by the SuperBuild are prefixed with
 `LBANN_SB_`. The notable options are:
 
-- `LBANN_SB_BUILD_<PKG>`, where `<PKG>` is one of `CNPY, CUB,
-  ELEMENTAL, HYDROGEN, JPEG_TURBO, LBANN, OPENBLAS, OPENCV,
+- `LBANN_SB_BUILD_<PKG>`, where `<PKG>` is one of `ALUMINUM, CNPY,
+  CUB, ELEMENTAL, HYDROGEN, JPEG_TURBO, LBANN, OPENBLAS, OPENCV,
   PROTOBUF`. Enables the build of `<PKG>` as a subproject.
 
 - `LBANN_SB_FWD_*`. See [Passing options to SuperBuild
@@ -87,4 +87,3 @@ mkdir build
 cd build
 cmake $LBANN_HOME/superbuild -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/path/to/install -DLBANN_SB_BUILD_CNPY=ON -DLBANN_SB_BUILD_HYDROGEN=ON -DLBANN_SB_BUILD_OPENCV=ON -DLBANN_SB_BUILD_PROTOBUF=ON -DLBANN_SB_BUILD_LBANN=ON -DCMAKE_C_COMPILER=$(which clang) -DCMAKE_CXX_COMPILER=$(which clang++) -DCMAKE_Fortran_COMPILER=$(which gfortran)
 ```
-

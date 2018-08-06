@@ -168,7 +168,7 @@ inline void assert_vector_neq(const std::vector<T> x, const std::vector<T> y,
  * Compute the absolute error between approx_val and true_val, both overall
  * (in the return value) and element-wise (in elemerr).
  */
-lbann::DataType absolute_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
+lbann::DataType absolute_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& elemerr) {
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   elemerr = true_val;
@@ -185,7 +185,7 @@ lbann::DataType absolute_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
  * Compute the relative error between approx_val and true_val, both overall
  * (in the return value) and element-wise (in elemerr).
  */
-lbann::DataType relative_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
+lbann::DataType relative_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& elemerr) {
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   lbann::DataType abs_err = absolute_error(approx_val, true_val, elemerr);
@@ -196,7 +196,7 @@ lbann::DataType relative_error(Mat& approx_val, Mat& true_val, Mat& elemerr) {
     return 1.0f / fabs(x);
   }));
   Mat elemerr_copy(elemerr);
-  El::Hadamard(elemerr_copy, true_copy, elemerr);
+  El::Hadamard(static_cast<AbsMat&>(elemerr_copy), static_cast<AbsMat&>(true_copy), static_cast<AbsMat&>(elemerr));
   return rel_err;
 }
 

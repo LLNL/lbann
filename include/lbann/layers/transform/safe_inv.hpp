@@ -36,23 +36,23 @@ namespace lbann {
 /** Safe entrywise inversion (reciprocal).
  *  Output is zero if input is zero. See https://arxiv.org.abs/1606.06582
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class safe_inv_layer : public transform_layer {
  private:
-  
+
   /** Threshhold for computing inverse. */
   DataType m_threshhold;
 
  public:
 
   safe_inv_layer(lbann_comm *comm,
-                 DataType threshhold = DataType(0),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType threshhold = DataType(0))
     : transform_layer(comm), m_threshhold(threshhold) {}
 
   safe_inv_layer* copy() const override { return new safe_inv_layer(*this); }
   std::string get_type() const override { return "safe_inv"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -88,7 +88,7 @@ class safe_inv_layer : public transform_layer {
         const DataType x = local_input(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
-        dx += std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
+        dx = std::fabs(x) > m_threshhold ?  - dy / (x * x) : DataType(0);
       }
     }
   }

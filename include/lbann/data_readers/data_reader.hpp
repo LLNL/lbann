@@ -79,7 +79,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_num_iterations_per_epoch(0), m_global_mini_batch_size(0),
     m_global_last_mini_batch_size(0),
     m_world_master_mini_batch_adjustment(0),
-    m_num_parallel_readers(0), m_model_rank(0),
+    m_num_parallel_readers(0), m_rank_in_model(0),
+    m_max_files_to_load(0),
     m_file_dir(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
@@ -88,7 +89,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
-    m_num_global_indices(0)
+    m_is_partitioned(false),
+    m_partition_overlap(0),
+    m_partition_mode(0),
+    m_procs_per_partition(1)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -111,14 +115,22 @@ class generic_data_reader : public lbann_image_preprocessor {
   // load, etc.
 
   /**
-   * Set base directory for your data. 
+   * Set base directory for your data.
    */
   void set_file_dir(std::string s);
 
   /**
-   * Set base directory for your locally cached (e.g, on ssd) data. 
+   * Set base directory for your locally cached (e.g, on ssd) data.
    */
   void set_local_file_dir(std::string s);
+
+  /**
+   * for some data readers (jag_conduit) we load from multiple files;
+   * for testing we want to be able to restrict that number
+   */
+  void set_max_files_to_load(size_t n) {
+    m_max_files_to_load = n;
+  }
 
   /**
    * Returns the base directory for your data.
@@ -249,11 +261,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(Mat& X);
+  virtual int fetch_data(CPUMat& X);
   /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(Mat& Y);
+  virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(Mat& Y);
+  virtual int fetch_responses(CPUMat& Y);
 
   /**
    * Save pixels to an image. The implementing data reader is responsible for
@@ -489,12 +501,12 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// Allow the reader to know where it is in the model hierarchy
   virtual void set_rank(int rank) {
-    m_model_rank = rank;
+    m_rank_in_model = rank;
   }
 
   /// Allow the reader to know where it is in the model hierarchy
   int get_rank() const {
-    return m_model_rank;
+    return m_rank_in_model;
   }
 
   /**
@@ -502,11 +514,20 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   void select_subset_of_data();
 
+  /// called by select_subset_of_data() if data set is partitioned
+  void select_subset_of_data_partitioned();
+
   /**
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
   void use_unused_index_set();
+
+  /// partition the dataset amongst the models
+  void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);
+
+  /// returns true if the data set is partitioned
+  bool is_partitioned() const { return m_is_partitioned; }
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
@@ -523,7 +544,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     uint64_t current_pos;
     uint64_t current_mini_batch_idx;
     uint64_t data_size;
-  };  
+  };
   bool pack_scalars(persist& p, const char *name) {
     char fieldname[1024];
     lbann::persist_type persist_value;
@@ -537,17 +558,17 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
-    
+
     int size = m_shuffled_indices.size();
     snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) size);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
     p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    
+
     return true;
   }
 
@@ -564,7 +585,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
     // record minibatch index
     uint64_t val;
-    
+
     snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
     p.read_uint64(persist_value, fieldname, &val);
     m_current_mini_batch_idx = (int) val;
@@ -583,7 +604,7 @@ class generic_data_reader : public lbann_image_preprocessor {
      //read list of indices
     snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
     p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-    
+
     if(header != nullptr){
       //shuffled data indices array size, used for resize after broadcast. Not unpacked.
       header->data_size = size;
@@ -599,7 +620,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_pos = (int) header.current_pos;
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
   }
-  
+
   /// returns the data store
   generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
@@ -641,9 +662,9 @@ class generic_data_reader : public lbann_image_preprocessor {
      m_gan_labelling = has_gan_labelling;
   }
   void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
-  
+
   /// support of data store functionality
-  void set_data_store(generic_data_store *g); 
+  void set_data_store(generic_data_store *g);
 
  protected:
 
@@ -665,13 +686,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  /**
-   * Returns the number of global indices. For train and validation,
-   * this is the sum of their numbers
-   */
-  size_t get_num_global_indices() {
-    return m_num_global_indices;
-  }
  protected:
 
    int m_rank;
@@ -686,7 +700,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -697,7 +711,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -708,7 +722,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
@@ -762,7 +776,8 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   int m_num_parallel_readers; /// How many parallel readers are being used
 
-  int m_model_rank;  /// What is the rank of the data reader within a given model
+  int m_rank_in_model;  /// What is the rank of the data reader within a given model
+  size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
   std::string m_data_fn;
@@ -792,13 +807,37 @@ class generic_data_reader : public lbann_image_preprocessor {
    /// added to support data store functionality
    int m_compound_rank;
 
-  
+
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
-   /// added to support data store functionality
-   size_t m_num_global_indices;
+   /// if true, dataset is partitioned amongst several models,
+   /// with options overlap (yeah, I know, if there's overlap its
+   /// not technically a partition)
+   bool m_is_partitioned;
+
+   /// if m_is_partitioned, this determines the amount of overlap
+   /// Has no effect if m_is_partitioned = false
+   double m_partition_overlap;
+
+   /// mode = 1: share overlap_percent/2 with left and right nabors
+   /// mode = 2: there's a set of overlap indices common to all models
+   int m_partition_mode;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->num_models()
+   int m_num_partitions;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->get_model_rank())
+   int m_my_partition;
+
+   /// only relevant if m_is_partitioned = true.  Currently this is same as
+   /// comm->get_procs_per_model)
+   int m_procs_per_partition;
+
+  std::vector<std::vector<char>> m_thread_buffer;
 };
 
 template<typename T>

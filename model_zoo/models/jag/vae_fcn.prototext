@@ -1,16 +1,15 @@
-#Example taken from: https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/vae_fcn.py and 
+#Example taken from: https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/vae_fcn.py and
 #https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
 #Timestamp 02/26/2018 8:45AM
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  #mini_batch_size: 128 
-  mini_batch_size: 100 #more last minibatch images to save 
+  #mini_batch_size: 128
+  mini_batch_size: 100 #more last minibatch images to save
   block_size: 256
   num_epochs: 40
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -65,9 +64,11 @@ model {
   ######################
   layer {
     name: "data"
+    children: "encode1 reconstruction"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
+      target_mode: "reconstruction"
     }
   }
 
@@ -162,7 +163,7 @@ model {
     name: "z_mean"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons:5 
+      num_neurons:5
       weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -172,7 +173,7 @@ model {
     name: "z_log_sigma"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons:5 
+      num_neurons:5
       weight_initialization: "glorot_normal"
       has_bias: true
     }
@@ -196,7 +197,7 @@ model {
     data_layout: "model_parallel"
     power {
       exponent: 2.0
-    }    
+    }
   }
   layer {
     parents: "z_log_sigma"
@@ -208,7 +209,7 @@ model {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
     name: "kl_full"
     data_layout: "model_parallel"
-    sum {
+    weighted_sum {
       scaling_factors: "-0.5 -0.5 0.5 0.5"
     }
   }
@@ -235,9 +236,9 @@ model {
     parents: "z_log_sigma"
     name: "sample_half"
     data_layout: "model_parallel"
-    sum {
+    weighted_sum {
       scaling_factors: "0.5"
-    }    
+    }
   }
   layer {
     parents: "sample_half"
@@ -373,12 +374,10 @@ model {
   ######################
 
   layer {
-    parents: "sigmoid"
+    parents: "sigmoid data"
     name: "reconstruction"
     data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################

@@ -1,12 +1,11 @@
 model {
   name: "sequential_model"
   data_layout: "model_parallel"
-  mini_batch_size: 50 
+  mini_batch_size: 50
   block_size: 256
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -32,7 +31,7 @@ model {
       interval: 1
     }
   }
- 
+
   #callback {
   #  dump_weights {
   #    basename: "."
@@ -48,22 +47,31 @@ model {
   #######
   layer {
     name: "data"
+    children: "encode1 reconstruction"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
+      target_mode: "reconstruction"
     }
   }
 
   #################
   # FULLY_CONNECTED encode1
   #################
+
+  weights {
+    name: "w1"
+    glorot_uniform_initializer {}
+  }
+
   layer {
     name: "encode1"
     data_layout: "model_parallel"
+    weights: "w1"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "glorot_uniform"
       has_bias: true
+      transpose: false
     }
   }
 
@@ -83,10 +91,11 @@ model {
   layer {
     name: "decode1"
     data_layout: "model_parallel"
+    weights: "w1"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_uniform"
       has_bias: true
+      transpose: true
     }
   }
 
@@ -104,10 +113,9 @@ model {
   #################
   layer {
     name: "reconstruction"
+    parents: "sigmoid2 data"
     data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    reconstruction {}
   }
 
   ###################################################

@@ -98,7 +98,7 @@ std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const 
   return X_v;
 }
 
-bool data_reader_multi_images::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
 
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
@@ -112,9 +112,9 @@ bool data_reader_multi_images::fetch_datum(Mat& X, int data_id, int mb_idx, int 
       m_data_store->get_data_buf(data_id, image_buf, i);
       ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
     } else {
-      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i]);
+      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid]);
     }
-  
+
     if(!ret) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                             + get_type() + ": image_utils::load_image failed to load - "
@@ -130,7 +130,7 @@ bool data_reader_multi_images::fetch_datum(Mat& X, int data_id, int mb_idx, int 
   return true;
 }
 
-bool data_reader_multi_images::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
@@ -184,9 +184,9 @@ bool data_reader_multi_images::load_list(const std::string file_name,
   bool ok = true;
 
   if (fetch_list_at_once) {
-    std::string textbuf;
-    ok = load_file<std::string>(file_name, textbuf);
-    std::istringstream text_stream(textbuf);
+    int tid = omp_get_thread_num();
+    ok = load_file(file_name, m_thread_buffer[tid]);
+    std::istringstream text_stream(m_thread_buffer[tid].data());
     ok = ok && read_text_stream(text_stream, list);
   } else {
     std::ifstream text_stream(file_name.c_str(), std::ios_base::in);

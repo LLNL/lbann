@@ -1,0 +1,73 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 64 
+  block_size: 256
+  super_steps: 10000
+  num_batches: 1
+  num_epochs: 1
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    layer_term {
+      scale_factor: 0.05
+      layer: "g_adv2_eval"
+    }
+    #layer_term {
+    #  scale_factor: 0.9
+    #  layer: "L_cyc_y_eval"
+    #}
+    #layer_term {
+    #  scale_factor: 0.9
+    #  layer: "L_cyc_x_eval"
+    #}
+    layer_term {
+      scale_factor: 0.05
+      layer: "l_l2_x_eval"
+    }
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  #metric {
+  #  layer_metric {
+  #    layer: "dis_eval_t"
+  #  }
+  #  layer_metric {
+  #    layer: "dis_eval_f"
+  #  }
+  #}
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  #callback { timer {} }
+  
+  callback {
+      dump_activations{
+      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m3/"
+      layer_names: "param_data_id gen2fc4_1 gen2fc4_2"
+    }
+  }
+ 
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+}

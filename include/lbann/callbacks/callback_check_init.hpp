@@ -50,7 +50,7 @@ class lbann_callback_check_init : public lbann_callback {
   std::string name() const override { return "check init"; }
  private:
   /** Return true if x == y. */
-  bool check_equal(const Mat& x, const Mat& y) const;
+  bool check_equal(const AbsMat& x, const AbsMat& y) const;
 };
 
 }  // namespace lbann

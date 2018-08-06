@@ -1,6 +1,12 @@
 #ifndef LBANN_CONFIG_HPP__
 #define LBANN_CONFIG_HPP__
 
+#include <El/hydrogen_config.h>
+
+#ifdef HYDROGEN_HAVE_CUDA
+#define LBANN_HAS_GPU
+#endif // HYDROGEN_HAVE_CUDA
+
 /* Version string for LBANN */
 #define LBANN_VERSION @LBANN_VERSION@
 
@@ -20,15 +26,14 @@
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
 #cmakedefine LBANN_HAS_CONDUIT
 
-#cmakedefine LBANN_SEQUENTIAL_CONSISTENCY
-#cmakedefine LBANN_PROCDET_DROPOUT
-#cmakedefine LBANN_PARALLEL_RANDOM_MATRICES
+#cmakedefine LBANN_DETERMINISTIC
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
-#cmakedefine LBANN_HAS_NCCL2
 
 #cmakedefine LBANN_NVPROF
+
+#cmakedefine LBANN_SYS_SENDFILE_OK
 
 // Define the LBANN datatype
 namespace lbann

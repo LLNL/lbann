@@ -37,18 +37,19 @@
 
 namespace lbann {
 
-template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL>
+template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class input_layer : public generic_input_layer {
  public:
 
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode,
-    generic_data_reader *> data_readers, bool data_set_spans_models = true, bool for_regression = false)
-    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, for_regression) {
+    generic_data_reader *> data_readers, bool data_set_spans_models = true,
+    data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
+    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {
     validate_data_layout();
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
-    io_buffer->fetch_data_fn = new fetch_data_functor(true, false);
-    io_buffer->update_data_reader_fn = new update_data_reader_functor(true);
+    io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
+    io_buffer->update_data_reader_fn = new update_data_reader_functor();
   }
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
@@ -69,22 +70,45 @@ class input_layer : public generic_input_layer {
   }
 
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
 };
 
 template<>
-inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL>::validate_data_layout() {
-  static_assert(true, "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout");
+inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: "
+      << "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout";
+  throw lbann_exception(err.str());
 }
 
 template<>
-inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL>::validate_data_layout() {}
+inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
 
 template<>
-inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL>::validate_data_layout() {}
+inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {}
 
 template<>
-inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL>::validate_data_layout() {}
+inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
+
+#ifdef LBANN_HAS_GPU
+template<>
+inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {
+  std::stringstream err;
+  err << __FILE__ << " " << __LINE__ << " :: "
+      << "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout";
+  throw lbann_exception(err.str());
+}
+
+template<>
+inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
+
+template<>
+inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {}
+
+template<>
+inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
+#endif // LBANN_HAS_GPU
 
 }
 

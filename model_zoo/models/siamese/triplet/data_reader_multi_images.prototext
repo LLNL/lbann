@@ -3,8 +3,8 @@ data_reader {
     name: "multi_images"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
-    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/train_list_8h_birds.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
+    data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/train_list_8h_birds.txt"
     label_filename: ""
     validation_percent: 0.1
     absolute_sample_count: 0
@@ -15,11 +15,6 @@ data_reader {
     image_preprocessor {
       raw_width: 110
       raw_height: 110
-
-      subtractor {
-        disable: true
-        image_to_sub: "mean_uniform-110x110x3-6.bin"
-      }
 
       cropper {
         disable: false
@@ -38,8 +33,13 @@ data_reader {
         disable: true
       }
 
-      normalizer {
+      subtractor {
         disable: false
+        channel_mean: [0.40625, 0.45703, 0.48047]
+      }
+
+      normalizer {
+        disable: true
         scale: true
         subtract_mean: true
         unit_variance: true
@@ -52,10 +52,9 @@ data_reader {
     name: "multi_images"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
-    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/val_list_8h.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/"
+    data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/birds_and_cars/patches_84h_110x110_13x13-blur-ab_compact/val_list_8h.txt"
     label_filename: ""
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 20
@@ -64,11 +63,6 @@ data_reader {
     image_preprocessor {
       raw_width: 110
       raw_height: 110
-
-      subtractor {
-        disable: true
-        image_to_sub: "mean_uniform-110x110x3-6.bin"
-      }
 
       cropper {
         disable: false
@@ -87,8 +81,13 @@ data_reader {
         disable: true
       }
 
-      normalizer {
+      subtractor {
         disable: false
+        channel_mean: [0.40625, 0.45703, 0.48047]
+      }
+
+      normalizer {
+        disable: true
         scale: true
         subtract_mean: true
         unit_variance: true

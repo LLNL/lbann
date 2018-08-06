@@ -24,7 +24,7 @@ BLAS=openblas
 BUILD_TYPE=Release
 COMPILER=gcc@4.9.3
 DTYPE=float
-EL_VER=hydrogen-develop
+EL_VER=develop
 if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
   MPI=spectrum-mpi
 else
@@ -113,7 +113,9 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
     PLATFORM="+gpu"
     FEATURE="_gpu"
   fi
-  EL_VER="${EL_VER}+cublas"
+  EL_VER="${EL_VER}+cuda"
+else
+  PLATFORM="~gpu"
 fi
 
 C_FLAGS=
@@ -193,7 +195,7 @@ if [ "${CLUSTER}" == "ray" ]; then
   MPI="spectrum-mpi@2018.04.27"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^elemental@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
+SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^hydrogen@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
@@ -249,6 +251,13 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
+FIX="spack uninstall --all -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
-eval $FIX
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+    eval $FIX &> /dev/null
+    exit 0
+else
+    eval $FIX
+fi
+
+

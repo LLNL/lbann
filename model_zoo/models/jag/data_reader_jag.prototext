@@ -9,9 +9,9 @@ data_reader {
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
-    # 0: JAG_Image,  1: JAG_Scalar,  2: JAG_Input
-    independent: 0
-    dependent: 2
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
 
     image_preprocessor {
       raw_width: 50
@@ -28,13 +28,12 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/jjayaram/LDRD-SI/deep-latent-spaces/data"
     data_filename: "outputs_polar_100k.npy:outputs_scalars_100k.npy:inputs_100k.npy"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
 
-    # 0: JAG_Image,  1: JAG_Scalar,  2: JAG_Input
-    independent: 0
-    dependent: 2
+    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
+    independent: [1, 2]
+    dependent: [3]
 
     image_preprocessor {
       raw_width: 50

@@ -9,7 +9,6 @@ model {
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -65,6 +64,7 @@ model {
   #######
   layer {
     name: "finetunedata"
+    children: "encode target"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
@@ -204,11 +204,9 @@ model {
 
   layer {
     name: "target"
+    parents: "prob finetunedata"
     data_layout: "model_parallel"
-    target {
-      io_buffer: "distributed"
-      #shared_data_reader: true
-    }
+    target {}
   }
   ###################################################
   # end of layers

@@ -34,7 +34,7 @@ namespace lbann {
 /** Bent identity activation function.
  *  See https://en.wikipedia.org/wiki/Bent_Identity_function
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class bent_identity_layer : public entrywise_activation_layer {
  public:
   bent_identity_layer(lbann_comm *comm)
@@ -42,15 +42,16 @@ class bent_identity_layer : public entrywise_activation_layer {
   bent_identity_layer* copy() const override { return new bent_identity_layer(*this); }
   std::string get_type() const override { return "bent identity"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
+  DataType activation(DataType x) const override {
     const DataType one = DataType(1);
-    return (std::sqrt(z*z + one) - one) / 2 + z;
+    return (std::sqrt(x*x + one) - one) / 2 + x;
   }
-  DataType activation_derivative(DataType z) const override {
+  DataType activation_derivative(DataType x) const override {
     const DataType one = DataType(1);
-    return z / (2 * std::sqrt(z*z + one)) + one;
+    return x / (2 * std::sqrt(x*x + one)) + one;
   }
 };
 

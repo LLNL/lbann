@@ -33,31 +33,26 @@
 #include <scorep/SCOREP_User.h>
 #elif defined(LBANN_NVPROF)
 #include "nvToolsExt.h"
+#include "nvToolsExtCuda.h"
+#include "nvToolsExtCudaRt.h"
 #include "cuda_runtime.h"
 #endif
 
 namespace {
 #if defined(LBANN_SCOREP)
-static void prof_region_begin(const char *s, int c) {
+static void prof_region_begin(const char *s, int, bool) {
   SCOREP_USER_REGION_BY_NAME_BEGIN(s, SCOREP_USER_REGION_TYPE_COMMON);
   return;
 }
-static void prof_region_end(const char *s) {
+static void prof_region_end(const char *s, bool) {
   SCOREP_USER_REGION_BY_NAME_END(s);
   return;
 }
 #elif defined(LBANN_NVPROF)
-static void synchronize_all_devices() {
-  int count;
-  cudaGetDeviceCount(&count);
-  for (int i = 0; i < count; ++i) {
-    cudaSetDevice(i);
-    cudaDeviceSynchronize();
+static void prof_region_begin(const char *s, int c, bool sync) {
+  if (sync) {
+    El::GPUManager::SynchronizeDevice();
   }
-}
-
-static void prof_region_begin(const char *s, int c) {
-  synchronize_all_devices();
   // Doesn't work with gcc 4.9
   // nvtxEventAttributes_t ev = {0};
   nvtxEventAttributes_t ev;  
@@ -70,15 +65,17 @@ static void prof_region_begin(const char *s, int c) {
   ev.message.ascii = s; 
   nvtxRangePushEx(&ev);
 }
-static void prof_region_end(const char *s) {
-  synchronize_all_devices();    
+static void prof_region_end(const char *, bool sync) {
+  if (sync) {
+    El::GPUManager::SynchronizeDevice();
+  }
   nvtxRangePop();
 }
 #else
-static void prof_region_begin(const char *s, int c) {
+static void prof_region_begin(const char *, int, bool) {
   return;
 }
-static void prof_region_end(const char *s) {
+static void prof_region_end(const char *, bool) {
   return;
 }
 #endif
@@ -86,67 +83,106 @@ static void prof_region_end(const char *s) {
 
 namespace lbann {
 
+lbann_callback_profiler::lbann_callback_profiler(bool sync) :
+  lbann_callback(), m_sync(sync) {
+#ifdef LBANN_NVPROF
+  nvtxNameCudaStreamA(El::GPUManager::Stream(), "Hydrogen");
+#endif  
+}
+
 void lbann_callback_profiler::on_epoch_begin(model *m) {
-  prof_region_begin("epoch", colors[0]);
+  prof_region_begin(("epoch " + std::to_string(m->get_cur_epoch())).c_str(),
+                    colors[0], m_sync);
 }
 
 void lbann_callback_profiler::on_epoch_end(model *m) {
-  prof_region_end("epoch");
+  prof_region_end(("epoch " + std::to_string(m->get_cur_epoch())).c_str(),
+                  m_sync);
 }
 
 void lbann_callback_profiler::on_batch_begin(model *m) {
-  prof_region_begin("batch", colors[1]);
+  prof_region_begin(("batch " + std::to_string(m->get_cur_step())).c_str(),
+                    colors[1], m_sync);
 }
 
 void lbann_callback_profiler::on_batch_end(model *m) {
-  prof_region_end("batch");  
+  prof_region_end(("batch " + std::to_string(m->get_cur_step())).c_str(),
+                  m_sync);
 }
 
 void lbann_callback_profiler::on_forward_prop_begin(model *m) {
-  prof_region_begin("forward", colors[2]);
+  prof_region_begin("forward", colors[2], m_sync);
 }
 
 void lbann_callback_profiler::on_forward_prop_end(model *m) {
-  prof_region_end("forward");
+  prof_region_end("forward", m_sync);
 }
 
 void lbann_callback_profiler::on_backward_prop_begin(model *m) {
-  prof_region_begin("backward", colors[3]);
+  prof_region_begin("backward", colors[3], m_sync);
 }
 
 void lbann_callback_profiler::on_backward_prop_end(model *m) {
-  prof_region_end("backward");
+  prof_region_end("backward", m_sync);
+}
+
+void lbann_callback_profiler::on_optimize_begin(model *m) {
+  prof_region_begin("optimize", colors[4], m_sync);
+}
+
+void lbann_callback_profiler::on_optimize_end(model *m) {
+  prof_region_end("optimize", m_sync);
 }
 
 int lbann_callback_profiler::get_color(Layer *l) {
   const std::string &lname = l->get_type();
-  int idx = 4;
-  if (lname == "fully_connected") {
-    idx = 5;
-  } else if (lname == "convolution") {
+  int idx = 5;
+  if (lname == "fully connected") {
     idx = 6;
-  } else if (lname == "pooling_layer") {
+  } else if (lname == "convolution") {
     idx = 7;
-  } else if (lname == "input_layer_distributed_minibatch_parallel_io") {
+  } else if (lname == "pooling") {
     idx = 8;
+  } else if (lname == "input:partitioned") {
+    idx = 9;
+  } else if (lname == "input:distributed") {
+    idx = 9;
+  } else if (lname == "batch normalization") {
+    idx = 10;
+  } else if (lname == "softmax") {
+    idx = 11;
+  } else if (lname == "ReLU") {
+    idx = 12;
+  } else if (lname == "split") {
+    idx = 13;
+  } else if (lname == "sum") {
+    idx = 13;
   }
   return colors[idx % num_colors];
 }
 
 void lbann_callback_profiler::on_forward_prop_begin(model *m, Layer *l) {
-  prof_region_begin(("fw " + l->get_type()).c_str(), get_color(l));  
+  prof_region_begin(("fw " + l->get_name()).c_str(), get_color(l), m_sync);
 }
 
 void lbann_callback_profiler::on_forward_prop_end(model *m, Layer *l) {
-  prof_region_end(("fw " + l->get_type()).c_str());    
+  prof_region_end(("fw " + l->get_name()).c_str(), m_sync);
 }
 
 void lbann_callback_profiler::on_backward_prop_begin(model *m, Layer *l) {
-  prof_region_begin(("bw " + l->get_type()).c_str(), get_color(l));    
+  prof_region_begin(("bw " + l->get_name()).c_str(), get_color(l), m_sync);
 }
 
 void lbann_callback_profiler::on_backward_prop_end(model *m, Layer *l) {
-  prof_region_end(("bw " + l->get_type()).c_str());
+  prof_region_end(("bw " + l->get_name()).c_str(), m_sync);
+}
+
+void lbann_callback_profiler::on_optimize_begin(model *m, weights *w) {
+  prof_region_begin(("opt " + w->get_name()).c_str(), colors[5], m_sync);
+}
+
+void lbann_callback_profiler::on_optimize_end(model *m, weights *w) {
+  prof_region_end(("opt " + w->get_name()).c_str(), m_sync);
 }
 
 }  // namespace lbann

@@ -34,51 +34,10 @@
 
 using namespace lbann;
 
-void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
-                             std::shared_ptr<cv_process>& pp, int& width, int& height, int& channels) {
-// Currently we set width and height for image_data_reader here considering the transform
-// pipeline. image_data_reader reports the final dimension of data to the child layer based
-// on these information.
-// TODO: However, for composible pipeline, this needs to be automatically determined by each
-// cv_process at the setup finalization stage.
-  if (!pb_readme.has_image_preprocessor()) return;
-
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-  if (pb_preprocessor.disable()) return;
-
-  // data reader name
-  const std::string& name = pb_readme.name();
-  // final size of image
-  width = pb_preprocessor.raw_width();
-  height = pb_preprocessor.raw_height();
-
-  // set up a subtractor
-  if (pb_preprocessor.has_subtractor()) {
-    if (pb_preprocessor.has_colorizer()) {
-      const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
-      if  (!pb_colorizer.disable()) {
-        const std::string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
-        // If every image in the dataset is a color image, this is not needed
-        std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-        colorizer->set_name(colorizer_name);
-        pp->add_transform(std::move(colorizer));
-        channels = 3;
-        if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
-      }
-    }
-    const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
-    if  (!pb_subtractor.disable()) {
-      const std::string subtractor_name = ((pb_subtractor.name() == "")? "default_subtractor" : pb_subtractor.name());
-      // If every image in the dataset is a color image, this is not needed
-      std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
-      subtractor->set_name(subtractor_name);
-      subtractor->set(pb_subtractor.image_to_sub());
-      pp->add_normalizer(std::move(subtractor));
-      if (master) std::cout << "image processor: " << subtractor_name << " subtractor is set" << std::endl;
-    }
-  }
-
-  // set up a cropper
+/// set up a cropper
+static void set_cropper(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                        const bool master, std::shared_ptr<cv_process>& pp,
+                        int& width, int& height) {
   if (pb_preprocessor.has_cropper()) {
     const lbann_data::ImagePreprocessor::Cropper& pb_cropper = pb_preprocessor.cropper();
     if (!pb_cropper.disable()) {
@@ -96,21 +55,33 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       height = pb_cropper.crop_height();
       if (master) std::cout << "image processor: " << cropper_name << " cropper is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if(pb_preprocessor.crop_first()) {
-      std::unique_ptr<lbann::cv_cropper> cropper(new(lbann::cv_cropper));
-      cropper->set(pb_preprocessor.crop_width(),
-                   pb_preprocessor.crop_height(),
-                   pb_preprocessor.crop_randomly(),
-                   std::make_pair<int,int>(pb_preprocessor.resized_width(),
-                                           pb_preprocessor.resized_height()),
-                   pb_preprocessor.adaptive_interpolation());
-      pp->add_transform(std::move(cropper));
-      if (master) std::cout << "image processor: cropper is set (deprecated syntax)" << std::endl;
+  }
+}
+
+/// set up a resizer
+static void set_resizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                        const bool master, std::shared_ptr<cv_process>& pp,
+                        int& width, int& height) {
+  if (pb_preprocessor.has_resizer()) {
+    const lbann_data::ImagePreprocessor::Resizer& pb_resizer = pb_preprocessor.resizer();
+    if (!pb_resizer.disable()) {
+      const std::string resizer_name = ((pb_resizer.name() == "")? "default_resizer" : pb_resizer.name());
+      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
+      resizer->set_name(resizer_name);
+      resizer->set(pb_resizer.resized_width(),
+                   pb_resizer.resized_height(),
+                   pb_resizer.adaptive_interpolation());
+      pp->add_transform(std::move(resizer));
+      width = pb_resizer.resized_width();
+      height = pb_resizer.resized_height();
+      if (master) std::cout << "image processor: " << resizer_name << " resizer is set" << std::endl;
     }
   }
+}
 
-  // set up an augmenter
+/// set up an augmenter
+static void set_augmenter(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                          const bool master, std::shared_ptr<cv_process>& pp) {
   if (pb_preprocessor.has_augmenter()) {
     const lbann_data::ImagePreprocessor::Augmenter& pb_augmenter = pb_preprocessor.augmenter();
     if (!pb_augmenter.disable() &&
@@ -133,26 +104,16 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       pp->add_transform(std::move(augmenter));
       if (master) std::cout << "image processor: " << augmenter_name << " augmenter is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.disable_augmentation()) {
-      std::unique_ptr<lbann::cv_augmenter> augmenter(new(lbann::cv_augmenter));
-      augmenter->set(pb_preprocessor.horizontal_flip(),
-                   pb_preprocessor.vertical_flip(),
-                   pb_preprocessor.rotation(),
-                   pb_preprocessor.horizontal_shift(),
-                   pb_preprocessor.vertical_shift(),
-                   pb_preprocessor.shear_range());
-      pp->add_transform(std::move(augmenter));
-      if (master) std::cout << "image processor: augmenter is set (deprecated syntax)" << std::endl;
-    }
   }
+}
 
-  // set up a decolorizer
+/// set up a decolorizer
+static void set_decolorizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                     const bool master, std::shared_ptr<cv_process>& pp, int& channels) {
   if (pb_preprocessor.has_decolorizer()) {
     const lbann_data::ImagePreprocessor::Decolorizer& pb_decolorizer = pb_preprocessor.decolorizer();
     if  (!pb_decolorizer.disable()) {
       const std::string decolorizer_name = ((pb_decolorizer.name() == "")? "default_decolorizer" : pb_decolorizer.name());
-      // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_decolorizer> decolorizer(new(lbann::cv_decolorizer));
       decolorizer->set_name(decolorizer_name);
       decolorizer->set(pb_decolorizer.pick_1ch());
@@ -161,31 +122,101 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       if (master) std::cout << "image processor: " << decolorizer_name << " decolorizer is set" << std::endl;
     }
   }
+}
 
-  // set up a colorizer
+/// set up a colorizer
+static void set_colorizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                          const bool master, std::shared_ptr<cv_process>& pp, int& channels) {
   if (pb_preprocessor.has_colorizer()) {
     const lbann_data::ImagePreprocessor::Colorizer& pb_colorizer = pb_preprocessor.colorizer();
-    if  (!pb_colorizer.disable()) {
-     if (!pb_preprocessor.has_subtractor()) {
+    if (!pb_colorizer.disable()) {
       const std::string colorizer_name = ((pb_colorizer.name() == "")? "default_colorizer" : pb_colorizer.name());
-      // If every image in the dataset is a color image, this is not needed
       std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
       colorizer->set_name(colorizer_name);
       pp->add_transform(std::move(colorizer));
       channels = 3;
       if (master) std::cout << "image processor: " << colorizer_name << " colorizer is set" << std::endl;
-     }
-    }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.no_colorize()) {
-      std::unique_ptr<lbann::cv_colorizer> colorizer(new(lbann::cv_colorizer));
-      pp->add_transform(std::move(colorizer));
-      channels = 3;
-      if (master) std::cout << "image processor: colorizer is set (deprecated syntax)" << std::endl;
     }
   }
+}
 
-  // set up a normalizer
+static bool has_channel_wise_subtractor(const lbann_data::ImagePreprocessor& pb_preprocessor) {
+  if (!pb_preprocessor.has_subtractor()) {
+    return false;
+  }
+  const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
+  return ((pb_subtractor.channel_mean_size() > 0) || (pb_subtractor.channel_stddev_size() > 0))
+         && pb_subtractor.image_to_sub().empty() && pb_subtractor.image_to_div().empty();
+}
+
+/// set up a subtractor
+static void set_subtractor(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                           const bool master, std::shared_ptr<cv_process>& pp,
+                           const int channels) {
+  if (pb_preprocessor.has_subtractor()) {
+    const lbann_data::ImagePreprocessor::Subtractor& pb_subtractor = pb_preprocessor.subtractor();
+    if  (!pb_subtractor.disable()) {
+      const std::string subtractor_name = ((pb_subtractor.name() == "")? "default_subtractor" : pb_subtractor.name());
+      std::unique_ptr<lbann::cv_subtractor> subtractor(new(lbann::cv_subtractor));
+      subtractor->set_name(subtractor_name);
+
+      bool is_mean_set = false;
+
+      if (!pb_subtractor.image_to_sub().empty()) {
+        subtractor->set_mean(pb_subtractor.image_to_sub());
+        is_mean_set = true;
+      }
+      else if (pb_subtractor.channel_mean_size() > 0) {
+        const size_t n = pb_subtractor.channel_mean_size();
+        if (n != static_cast<size_t>(channels)) {
+          throw lbann_exception("Failed to setup subtractor due to inconsistent number of channels.");
+        }
+        std::vector<lbann::DataType> ch_mean(n);
+        for(size_t i = 0u; i < n; ++i) {
+          ch_mean[i] = static_cast<lbann::DataType>(pb_subtractor.channel_mean(i));
+        }
+
+        subtractor->set_mean(ch_mean);
+        is_mean_set = true;
+      }
+
+      if (!is_mean_set && master) {
+        std::cout << "image processor: " << subtractor_name << " assumes zero mean." << std::endl
+                  << "  If this is not the case, provide mean." << std::endl;
+      }
+
+      bool is_stddev_set = false;
+      if (!pb_subtractor.image_to_div().empty()) {
+        subtractor->set_stddev(pb_subtractor.image_to_div());
+        is_stddev_set = true;
+      }
+      else if (pb_subtractor.channel_stddev_size() > 0) {
+        const size_t n = pb_subtractor.channel_stddev_size();
+        if (n != static_cast<size_t>(channels)) {
+          throw lbann_exception("Failed to setup subtractor due to inconsistent number of channels.");
+        }
+        std::vector<lbann::DataType> ch_stddev(n);
+        for(size_t i = 0u; i < n; ++i) {
+          ch_stddev[i] = static_cast<lbann::DataType>(pb_subtractor.channel_stddev(i));
+        }
+
+        subtractor->set_stddev(ch_stddev);
+        is_stddev_set = true;
+      }
+
+      pp->add_normalizer(std::move(subtractor));
+      if (master) {
+        std::cout << "image processor: " << subtractor_name << " subtractor is set for "
+                  << (has_channel_wise_subtractor(pb_preprocessor)? "channel-wise" : "pixel-wise")
+                  << ' ' << (is_stddev_set? "z-score" : "mean-subtraction") << std::endl;
+      }
+    }
+  }
+}
+
+/// set up a sample-wide normalizer
+static void set_normalizer(const lbann_data::ImagePreprocessor& pb_preprocessor,
+                           const bool master, std::shared_ptr<cv_process>& pp) {
   if (pb_preprocessor.has_normalizer()) {
     const lbann_data::ImagePreprocessor::Normalizer& pb_normalizer = pb_preprocessor.normalizer();
     if (!pb_normalizer.disable()) {
@@ -196,41 +227,55 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
       normalizer->subtract_mean(pb_normalizer.subtract_mean());
       normalizer->unit_variance(pb_normalizer.unit_variance());
       normalizer->z_score(pb_normalizer.z_score());
-      pp->add_normalizer(std::move(normalizer));
-      if (master) std::cout << "image processor: " << normalizer_name << " normalizer is set" << std::endl;
+      bool ok = pp->add_normalizer(std::move(normalizer));
+      if (master && ok) std::cout << "image processor: " << normalizer_name << " normalizer is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    std::unique_ptr<lbann::cv_normalizer> normalizer(new(lbann::cv_normalizer));
-    normalizer->unit_scale(pb_preprocessor.scale());
-    normalizer->subtract_mean(pb_preprocessor.subtract_mean());
-    normalizer->unit_variance(pb_preprocessor.unit_variance());
-    normalizer->z_score(pb_preprocessor.z_score());
-    pp->add_normalizer(std::move(normalizer));
-    if (master) std::cout << "image processor: normalizer is set (deprecated syntax)" << std::endl;
+  }
+}
+
+
+void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool master,
+                             std::shared_ptr<cv_process>& pp, int& width, int& height, int& channels) {
+// Currently we set width and height for image_data_reader here considering the transform
+// pipeline. image_data_reader reports the final dimension of data to the child layer based
+// on these information.
+// TODO: However, for composible pipeline, this needs to be automatically determined by each
+// cv_process at the setup finalization stage.
+  if (!pb_readme.has_image_preprocessor()) return;
+
+  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
+  if (pb_preprocessor.disable()) return;
+
+  // data reader name
+  const std::string& name = pb_readme.name();
+  // final size of image
+  width = pb_preprocessor.raw_width();
+  height = pb_preprocessor.raw_height();
+
+  if (pb_preprocessor.has_subtractor() && !has_channel_wise_subtractor(pb_preprocessor)) {
+    // decolorizer and colorizer are exclusive
+    set_decolorizer(pb_preprocessor, master, pp, channels);
+    set_colorizer(pb_preprocessor, master, pp, channels);
+    // set up a pixel-wise subtractor
+    set_subtractor(pb_preprocessor, master, pp, channels);
   }
 
-  // set up a noiser
-  if (pb_preprocessor.has_noiser()) {
-    const lbann_data::ImagePreprocessor::Noiser& pb_noiser = pb_preprocessor.noiser();
-    if (!pb_noiser.disable()) {
-      const std::string noiser_name = ((pb_noiser.name() == "")? "default_noiser" : pb_noiser.name());
-/* TODO: implement noiser in opencv
-      std::unique_ptr<lbann::cv_noiser> noiser(new(lbann::cv_noiser));
-      noiser->set_name(noiser_name);
-      noiser->set(pb_noiser.factor());
-      pp->add_transform(std::move(noiser));
-*/
-      if (master) std::cout << "image processor: " << noiser_name << " noiser is not supported yet" << std::endl;
-    }
-  } else { // For backward compatibility. TODO: will be deprecated
-/* TODO: implement noiser in opencv
-    std::unique_ptr<lbann::cv_noiser> noiser(new(lbann::cv_noiser));
-    noiser->set(pb_preprocessor.noise_factor());
-    pp->add_transform(std::move(noiser));
-*/
-    if (master && (pb_preprocessor.noise_factor() > 0.0))
-        std::cout << "image processor: noiser is not supported yet (deprecated syntax)" << std::endl;
+  set_cropper(pb_preprocessor, master, pp, width, height);
+  set_resizer(pb_preprocessor, master, pp, width, height);
+  set_augmenter(pb_preprocessor, master, pp);
+  if (has_channel_wise_subtractor(pb_preprocessor)) {
+    // decolorizer and colorizer are exclusive
+    set_decolorizer(pb_preprocessor, master, pp, channels);
+    set_colorizer(pb_preprocessor, master, pp, channels);
+    // set up a channel-wise subtractor
+    set_subtractor(pb_preprocessor, master, pp, channels);
+  } else if (!pb_preprocessor.has_subtractor()) {
+    // decolorizer/colorizer would have already been applied in the pixel-wise subtractor
+    // decolorizer and colorizer are exclusive
+    set_decolorizer(pb_preprocessor, master, pp, channels);
+    set_colorizer(pb_preprocessor, master, pp, channels);
   }
+  set_normalizer(pb_preprocessor, master, pp);
 
   // create a data reader
   if (name == "imagenet_patches") {
@@ -270,7 +315,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "imagenet_single") ||
+  if ((name == "imagenet") || (name == "jag_conduit") || (name == "jag_conduit_hdf5") ||
       (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
@@ -302,8 +347,93 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
     reader = new data_reader_multi_images(pp, shuffle);
-  } else if (name == "imagenet_single") { // imagenet_single
-    reader = new imagenet_reader_single(pp, shuffle);
+#ifdef LBANN_HAS_CONDUIT
+  } else if (name =="jag_conduit_hdf5") {
+    data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
+    reader_jag->set_image_dims(width, height);
+    reader = reader_jag;
+    if (master) std::cout << reader->get_type() << " is set" << std::endl;
+    return;
+  } else if (name =="jag_conduit") {
+    data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
+
+    reader_jag->set_image_dims(width, height);
+
+    using var_t = data_reader_jag_conduit::variable_t;
+    // composite independent variable
+    std::vector<var_t> independent_type(pb_readme.independent_size());
+
+    for (int i=0; i < pb_readme.independent_size(); ++i) {
+      independent_type[i] = static_cast<var_t>(pb_readme.independent(i));
+    }
+
+    reader_jag->set_independent_variable_type(independent_type);
+
+    // composite dependent variable
+    std::vector<var_t> dependent_type(pb_readme.dependent_size());
+
+    for (int i=0; i < pb_readme.dependent_size(); ++i) {
+      dependent_type[i] = static_cast<var_t>(pb_readme.dependent(i));
+    }
+
+    reader_jag->set_dependent_variable_type(dependent_type);
+
+    // keys of chosen scalar values in jag simulation output
+    std::vector<std::string> scalar_keys(pb_readme.jag_scalar_keys_size());
+
+    for (int i=0; i < pb_readme.jag_scalar_keys_size(); ++i) {
+      scalar_keys[i] = pb_readme.jag_scalar_keys(i);
+    }
+
+    if (scalar_keys.size() > 0u) {
+      reader_jag->set_scalar_choices(scalar_keys);
+    }
+
+    // keys of chosen values in jag simulation parameters
+    std::vector<std::string> input_keys(pb_readme.jag_input_keys_size());
+
+    for (int i=0; i < pb_readme.jag_input_keys_size(); ++i) {
+      input_keys[i] = pb_readme.jag_input_keys(i);
+    }
+
+    if (input_keys.size() > 0u) {
+      reader_jag->set_input_choices(input_keys);
+    }
+
+    // add scalar output keys to filter out
+    const int num_scalar_filters = pb_readme.jag_scalar_filters_size();
+    for (int i=0; i < num_scalar_filters; ++i) {
+      reader_jag->add_scalar_filter(pb_readme.jag_scalar_filters(i));
+    }
+
+    // add scalar output key prefixes to filter out by
+    const int num_scalar_prefix_filters = pb_readme.jag_scalar_prefix_filters_size();
+    for (int i=0; i < num_scalar_prefix_filters; ++i) {
+      using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
+      const prefix_t pf = std::make_pair(pb_readme.jag_scalar_prefix_filters(i).key_prefix(),
+                                         pb_readme.jag_scalar_prefix_filters(i).min_len());
+      reader_jag->add_scalar_prefix_filter(pf);
+    }
+
+    // add input parameter keys to filter out
+    const int num_input_filters = pb_readme.jag_input_filters_size();
+    for (int i=0; i < num_input_filters; ++i) {
+      reader_jag->add_input_filter(pb_readme.jag_input_filters(i));
+    }
+
+    // add scalar output key prefixes to filter out by
+    const int num_input_prefix_filters = pb_readme.jag_input_prefix_filters_size();
+    for (int i=0; i < num_input_prefix_filters; ++i) {
+      using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
+      const prefix_t pf = std::make_pair(pb_readme.jag_scalar_prefix_filters(i).key_prefix(),
+                                         pb_readme.jag_scalar_prefix_filters(i).min_len());
+      reader_jag->add_input_prefix_filter(pf);
+    }
+
+    reader = reader_jag;
+    if (master) std::cout << reader->get_type() << " is set" << std::endl;
+    return;
+#endif // LBANN_HAS_CONDUIT
   }
 
   auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
@@ -359,22 +489,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
     } else {
       reader->disable_augmentation();
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    if (!pb_preprocessor.disable_augmentation() &&
-        (pb_preprocessor.horizontal_flip() ||
-         pb_preprocessor.vertical_flip() ||
-         pb_preprocessor.rotation() != 0.0 ||
-         pb_preprocessor.horizontal_shift() != 0.0 ||
-         pb_preprocessor.vertical_shift() != 0.0 ||
-         pb_preprocessor.shear_range() != 0.0)) {
-      reader->horizontal_flip( pb_preprocessor.horizontal_flip() );
-      reader->vertical_flip( pb_preprocessor.vertical_flip() );
-      reader->rotation( pb_preprocessor.rotation() );
-      reader->horizontal_shift( pb_preprocessor.horizontal_shift() );
-      reader->vertical_shift( pb_preprocessor.vertical_shift() );
-      reader->shear_range( pb_preprocessor.shear_range() );
-      if (master) std::cout << "image processor: deprecated syntax for augmenter" << std::endl;
-    }
   }
 
   // set up the normalizer
@@ -388,12 +502,6 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->z_score( pb_normalizer.z_score() );
       if (master) std::cout << "image processor: normalizer is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-      reader->subtract_mean( pb_preprocessor.subtract_mean() );
-      reader->unit_variance( pb_preprocessor.unit_variance() );
-      reader->scale( pb_preprocessor.scale() );
-      reader->z_score( pb_preprocessor.z_score() );
-      if (master) std::cout << "image processor: deprecated syntax for normalizer" << std::endl;
   }
 
   if (pb_preprocessor.has_noiser()) {
@@ -403,36 +511,17 @@ void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool m
       reader->add_noise( pb_noiser.factor() );
       if (master) std::cout << "image processor: noiser is set" << std::endl;
     }
-  } else { // For backward compatibility. TODO: will be deprecated
-    reader->add_noise( pb_preprocessor.noise_factor() );
-    if (master && (pb_preprocessor.noise_factor()>0.0)) std::cout << "image processor: deprecated syntax for noiser" << std::endl;
   }
 }
 
 
 void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-
   // data reader name
   const std::string& name = pb_readme.name();
   // whether to shuffle data
   const bool shuffle = pb_readme.shuffle();
-  // final size of image. If image_preprocessor is not set, the type-default value
-  // (i,e., 0) is used. Then,set_input_params() will not modify the current member value.
-  const int width = pb_preprocessor.raw_width();
-  const int height = pb_preprocessor.raw_height();
 
-  // number of labels
-  const int n_labels = pb_readme.num_labels();
-
-  // TODO: as imagenet_org phases out, and mnist and cifar10 convert to use new
-  // imagenet data reader, this function will disappear
-  // create data reader
-  if (name == "imagenet_org") {
-    reader = new imagenet_reader_org(shuffle);
-    dynamic_cast<imagenet_reader_org*>(reader)->set_input_params(width, height, 3, n_labels);
-    if (master) std::cout << "imagenet_reader_org is set" << std::endl;
-  } else if (name == "mnist") {
+  if (name == "mnist") {
     reader = new mnist_reader(shuffle);
     if (master) std::cout << "mnist_reader is set" << std::endl;
   } else if (name == "cifar10") {

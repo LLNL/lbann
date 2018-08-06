@@ -38,7 +38,7 @@ namespace lbann {
  *  nonlinearities improve neural network acoustic models."
  *  Proc. ICML. Vol. 30. No. 1. 2013.
  */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class leaky_relu_layer : public entrywise_activation_layer {
  public:
   /** Leak is the amount of signal to permit for negative values. */
@@ -48,13 +48,14 @@ class leaky_relu_layer : public entrywise_activation_layer {
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
   std::string get_type() const override { return "leaky relu"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
  protected:
-  DataType activation(DataType z) const override {
-    return std::max(m_leak * z, z);
+  DataType activation(DataType x) const override {
+    return std::max(m_leak * x, x);
   }
-  DataType activation_derivative(DataType z) const override {
-    return (z > DataType(0)) ? DataType(1) : m_leak;
+  DataType activation_derivative(DataType x) const override {
+    return (x > DataType(0)) ? DataType(1) : m_leak;
   }
  private:
   DataType m_leak;

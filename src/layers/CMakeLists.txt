@@ -6,7 +6,9 @@ set_full_path(THIS_DIR_SOURCES
 # Add the subdirectories
 add_subdirectory(activations)
 add_subdirectory(learning)
+add_subdirectory(loss)
 add_subdirectory(regularizers)
+add_subdirectory(transform)
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

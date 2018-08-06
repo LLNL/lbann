@@ -43,16 +43,22 @@ class data_buffer {
   /** Number of samples in the current mini-batch */
   int m_num_data_per_epoch;
 
-  Mat M_local; /** Local matrix that holds data from data reader */
-  Mat M_local_v; /** View of local matrix that holds data from data reader */
-  CircMat Ms; /** Distributed matrix used to stage local data to layer output */
+  std::vector<CPUMat*> M_local; /** Local matrix that holds data from data reader */
+  std::vector<CPUMat*> M_local_v; /** View of local matrix that holds data from data reader */
+  std::vector<CircMat<El::Device::CPU>*> Ms; /** Distributed matrix used to stage local data to layer output */
 
-  data_buffer(lbann_comm *comm) :
+  data_buffer(lbann_comm *comm, int num_child_layers) :
     m_root(0),
     m_local_reader_done(false),
     m_num_samples_in_batch(0),
-    m_local_data_valid(false),
-    Ms(comm->get_model_grid()) {}
+    m_local_data_valid(false) {
+
+    for (int i = 0; i < num_child_layers; i++) {
+      M_local.push_back(new CPUMat());
+      M_local_v.push_back(new CPUMat());
+      Ms.push_back(new CircMat<El::Device::CPU>(comm->get_model_grid()));
+    }
+  }
 
   data_buffer(
     const data_buffer&) = default;
@@ -70,7 +76,7 @@ class distributed_io_buffer : public generic_io_buffer {
   /** Requested maximum number of parallel readers (I/O streams) */
   int m_requested_max_num_parallel_readers;
  public:
-  distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
   distributed_io_buffer(const distributed_io_buffer& other) :
     generic_io_buffer(other) {
     m_requested_max_num_parallel_readers = other.m_requested_max_num_parallel_readers;
@@ -88,30 +94,37 @@ class distributed_io_buffer : public generic_io_buffer {
   }
   virtual ~distributed_io_buffer() {
     for (auto buf : m_data_buffers) {
+      for (auto m : buf.second->M_local) { delete m; }
+      for (auto m : buf.second->M_local_v) { delete m; }
+      for (auto m : buf.second->Ms) { delete m; }
       delete buf.second;
     }
   }
   distributed_io_buffer* copy() const override { return new distributed_io_buffer(*this); }
 
-  std::string get_type() const override { return "distributed_io_buffer"; }
+  std::string get_type() const override { return "distributed"; }
 
-  void set_local_matrix_bypass(Mat *M_local) override {};
+  void set_local_matrix_bypass(CPUMat *M_local, int idx) override {}
 
-  void set_std_matrix_view(El::Int cur_mini_batch_size) override {
+  void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) override {
     for (auto& buf : m_data_buffers) {
-      El::View(buf.second->M_local_v, buf.second->M_local, El::ALL, El::IR(0, cur_mini_batch_size));
+      El::View(*buf.second->M_local_v[idx], *buf.second->M_local[idx], El::ALL, El::IR(0, cur_mini_batch_size));
     }
   }
 
-  void setup_data(El::Int num_neurons, El::Int max_minibatch_size) override {
+  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {
     for (auto& buf : m_data_buffers) {
-      buf.second->M_local.Resize(num_neurons, max_minibatch_size);
-      buf.second->Ms.Resize(num_neurons, max_minibatch_size);
+      buf.second->M_local[0]->Resize(num_neurons, max_minibatch_size);
+      buf.second->Ms[0]->Resize(num_neurons, max_minibatch_size);
+      if(m_num_child_layers > 1) {
+        buf.second->M_local[1]->Resize(num_targets, max_minibatch_size);
+        buf.second->Ms[1]->Resize(num_targets, max_minibatch_size);
+      }
     }
   }
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
-  void distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
   bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) override;
 
   void calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader);
@@ -159,6 +172,7 @@ class distributed_io_buffer : public generic_io_buffer {
 
   // protected:
   data_buffer_map_t m_data_buffers;
+  int m_num_child_layers;
 };
 
 }  // namespace lbann

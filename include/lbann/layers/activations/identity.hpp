@@ -31,22 +31,26 @@
 
 namespace lbann {
 
-/** Identity activation function. */
-template <data_layout T_layout>
+/** Identity layer. */
+template <data_layout T_layout, El::Device Dev>
 class identity_layer : public activation_layer {
- public:
+public:
   identity_layer(lbann_comm *comm) : activation_layer(comm) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
-  void fp_compute() override {
+protected:
+
+  void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
-
-  void bp_compute() override {
-    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+    El::LockedView(get_error_signals(), get_prev_error_signals());
   }
+  void fp_compute() override {}
+  void bp_compute() override {}
 
 };
 

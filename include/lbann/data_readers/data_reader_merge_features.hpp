@@ -39,11 +39,12 @@ namespace lbann {
  * in the order provided to provide the data, and a single data reader to
  * provide the label. This data reader uses the fetch_datum method of its
  * subsidiary data readers to fetch all data, including the labels.
+ * label data reader is optional
  */
 class data_reader_merge_features : public generic_compound_data_reader {
  public:
   data_reader_merge_features(std::vector<generic_data_reader*> data_readers,
-                             generic_data_reader *label_reader,
+                             generic_data_reader *label_reader = nullptr,
                              bool shuffle = true);
   data_reader_merge_features(const data_reader_merge_features&);
   data_reader_merge_features& operator=(const data_reader_merge_features&);
@@ -73,9 +74,9 @@ class data_reader_merge_features : public generic_compound_data_reader {
   void setup_data_store(model *m) override;
 
  protected:
-  bool fetch_datum(Mat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
   /// Reader providing label data.
   generic_data_reader *m_label_reader;
