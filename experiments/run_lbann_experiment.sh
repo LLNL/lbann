@@ -271,10 +271,10 @@ case ${SCHEDULER} in
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
         case ${CLUSTER} in
             surface|ray)
-                MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default"
                 ;;
             pascal)
-                MPIRUN="${MPIRUN} --mpibind=off --cpu_bind=mask_cpu:0x000001ff,0x0003fe00  --nvidia_compute_mode=default"
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default --cpu_bind=mask_cpu:0x000001ff,0x0003fe00"
                 ;;
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
