@@ -331,6 +331,11 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.in_top_k();
     return new in_top_k_layer<layout, Dev>(comm, params.k());
   }
+  if (proto_layer.has_sort()) {
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new sort_layer<data_layout::DATA_PARALLEL, Dev>(comm);
+    }
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
