@@ -112,15 +112,16 @@ def build_skeleton(dir_name, compiler, debug, should_log):
     #mpi_lib = mpi_lib.replace('@', '-')
     cluster = re.sub('[0-9]+', '', subprocess.check_output('hostname'.split()).strip())
     # For reference:
+    # Commenting out for now. These additions to path name will likely return one day, so I am not removing them entirely
     # x86_64 <=> catalyst, pascal, quartz, surface
     # ppc64le <=> ray
-    architecture = subprocess.check_output('uname -m'.split()).strip()
-    if cluster == 'ray':
-        architecture += '_gpu_cuda-9.2.64_cudnn-7.0'
-    elif cluster == 'pascal':
-        architecture += '_gpu_cuda-9.1.85_cudnn-7.1'
-    elif cluster == 'surface':
-        architecture += '_gpu'
+    #architecture = subprocess.check_output('uname -m'.split()).strip()
+    #if cluster == 'ray':
+    #    architecture += '_gpu_cuda-9.2.64_cudnn-7.0'
+    #elif cluster == 'pascal':
+    #    architecture += '_gpu_cuda-9.1.85_cudnn-7.1'
+    #elif cluster == 'surface':
+    #    architecture += '_gpu'
     os.chdir('%s/bamboo/compiler_tests/builds/%s_%s_%s/build' % (dir_name, cluster, compiler, build_type))
     command = 'make -j all > %s 2> %s' % (output_file_name, error_file_name)
     return_code = os.system(command)

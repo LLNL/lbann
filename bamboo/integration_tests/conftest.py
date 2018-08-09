@@ -16,15 +16,12 @@ def pytest_addoption(parser):
         default_exes['gcc7_debug'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
         default_exes['intel18_debug'] = '%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
 
-    if cluster in ['ray']:
+    if cluster == 'ray':
         default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_rel/build/model_zoo/lbann' % (default_dirname, cluster)
         default_exes['gcc4_debug'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_debug/build/model_zoo/lbann' % (default_dirname, cluster)
 
-    if cluster == 'surface':
+    if cluster in ['surface', 'pascal']:
         default_exes['gcc4'] = default_exes['default']
-
-    if cluster == 'pascal':
-        default_exes['gcc7'] = default_exes['default']
 
     parser.addoption('--cluster', action='store', default=cluster,
                      help='--cluster=<cluster> to specify the cluster being run on, for the purpose of determing which commands to use. Default the current cluster')
