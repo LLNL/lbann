@@ -764,7 +764,6 @@ message Layer {
 
    // input Layers
    Input input = 2;
-   RepeatedInput repeated_input = 6; // @todo Remove when possible
 
    // transform Layers
    Reshape reshape = 306;
