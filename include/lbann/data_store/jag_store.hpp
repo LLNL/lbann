@@ -27,9 +27,9 @@
 #ifndef _JAG_STORE_HPP__
 #define _JAG_STORE_HPP__
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "lbann_config.hpp" 
+
+#ifdef LBANN_HAS_CONDUIT
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
