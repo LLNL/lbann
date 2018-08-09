@@ -11,6 +11,13 @@ find_file(CONDUIT_CMAKE_FILE conduit.cmake
   DOC "CONDUIT target file.")
 find_file(CONDUIT_CMAKE_FILE conduit.cmake)
 
+find_path(CONDUIT_INCLUDE_DIRS conduit/conduit_relay.h
+  HINTS ${LBANN_CONDUIT_DIR} ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+  PATH_SUFFIXES include
+  NO_DEFAULT_PATH
+  DOC "Directory with CONDUIT header.")
+find_path(CONDUIT_INCLUDE_DIRS conduit/conduit_relay.h)
+
 if (CONDUIT_CMAKE_FILE AND NOT TARGET conduit)
   include("${CONDUIT_CMAKE_FILE}")
 endif ()
@@ -28,6 +35,9 @@ endif (NOT TARGET CONDUIT::CONDUIT)
 # Set the link libraries for the target
 set_property(TARGET CONDUIT::CONDUIT APPEND
   PROPERTY INTERFACE_LINK_LIBRARIES conduit conduit_relay conduit_blueprint)
+
+set_property(TARGET CONDUIT::CONDUIT APPEND
+  PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CONDUIT_INCLUDE_DIRS}")
 
 #
 # Cleanup
