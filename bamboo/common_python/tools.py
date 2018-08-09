@@ -105,9 +105,9 @@ def get_command(cluster,
 
         # Create run command
         if command_allocate == '':
-            command_run = 'srun'
+            command_run = 'srun --mpibind=off'
         else:
-            command_run = ' srun'
+            command_run = ' srun --mpibind=off'
         option_num_processes = ''
         if num_processes != None:
             # --ntasks => Specify  the  number of tasks to run.
