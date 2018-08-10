@@ -98,13 +98,12 @@ int main(int argc, char *argv[]) {
     const lbann_data::Model pb_model_2 = pbs[1]->model();
     const lbann_data::Model pb_model_3 = pbs[2]->model();
 
-    const lbann_data::Model pb_model_4 = pbs[3]->model();
-    const lbann_data::Model pb_model_5 = pbs[4]->model();
 
     //Optionally pretrain autoencoder
     //@todo: explore joint-train of autoencoder as alternative
     if(ae_model != nullptr) {
       if(master) std::cout << " Pre-train autoencoder " << std::endl;
+      const lbann_data::Model pb_model_4 = pbs[3]->model();
       ae_model->train(pb_model_4.num_epochs());
     }
     
