@@ -267,6 +267,36 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
    }
 }
 
+void model::copy_activations_from(std::vector<Layer*>& src_layers) {
+  if (src_layers.empty()) {
+    if(m_comm->am_world_master()) std::cout << "No layers to copy activations from " << std::endl;
+    return;
+  }
+  for(size_t i = 0; i < src_layers.size(); ++i) {
+     for (size_t j = 0; j < m_layers.size(); ++j) {
+       if(m_layers[j]->get_name() == src_layers[i]->get_name()) {
+         int src_num_children = src_layers[i]->get_num_children();
+         int dst_num_children = m_layers[j]->get_num_children();
+         //check that src is at least number of children as dst
+         if(src_num_children < dst_num_children) {    
+           std::stringstream err;
+           err << "number of children in layers [ " << m_layers[j]->get_name() << " ] are incompatible : "
+               << src_num_children  << " is less than  " << dst_num_children;
+           LBANN_ERROR(err.str());
+          }
+         //Only copy as up to the number of children in dst layer
+         for(int c_i= 0; c_i < dst_num_children; ++c_i) {
+           #ifdef LBANN_DEBUG
+           if(m_comm->am_world_master()) 
+             std::cout << " Replacing " << m_layers[j]->get_name() << "activations [" << c_i << "] with " << src_layers[i]->get_name() << std::endl;
+           #endif
+           El::Copy(src_layers[i]->get_activations(c_i), m_layers[j]->get_activations(c_i));
+         }
+       }
+     }
+   }
+}
+
 optimizer* model::create_optimizer() const {
   if (m_default_optimizer != nullptr) {
     return m_default_optimizer->copy();
