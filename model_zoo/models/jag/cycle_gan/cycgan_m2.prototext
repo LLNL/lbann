@@ -333,6 +333,7 @@ model {
     }
     name: "L_cyc_y"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "cycy_minus_y"
   }
   layer {
@@ -514,12 +515,13 @@ model {
       interval: 1
     }
   }
- # callback {
- #   dump_activations {
- #     basename: "/dir/to/dump_y_activations/"
- #     layer_names: "image_data_dummy gen1fc4_1"
- #   }
- # }
+  #callback {
+  #  dump_activations {
+  #    basename: "/dir/to/dump_y_activations/"
+  #    interval: 100
+  #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
+  #  }
+  #}
   block_size: 256
   super_steps: 10000
   num_batches: 1
