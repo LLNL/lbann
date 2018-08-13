@@ -488,7 +488,7 @@ fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
 if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
   export MV2_USE_CUDA=1
 fi
 
