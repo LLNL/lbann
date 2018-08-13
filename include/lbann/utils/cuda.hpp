@@ -149,14 +149,16 @@ public:
   /** Allocate GPU buffer. */
   pointer allocate(size_type size) {
     value_type* buffer = nullptr;
+    if (size > 0) {
 #ifdef HYDROGEN_HAVE_CUB
-    auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
-                                          size * sizeof(value_type),
-                                          m_stream));
+      auto& memory_pool = El::cub::MemoryPool();
+      CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
+                                            size * sizeof(value_type),
+                                            m_stream));
 #else
-    CHECK_CUDA(cudaMalloc(&buffer, size * sizeof(value_type)));
+      CHECK_CUDA(cudaMalloc(&buffer, size * sizeof(value_type)));
 #endif // HYDROGEN_HAVE_CUB
+    }
     return pointer(buffer);
   }
 
@@ -164,12 +166,15 @@ public:
    *  'size' is unused and maintained for compatibility with Thrust.
    */
   void deallocate(pointer buffer, size_type size = 0) {
+    auto&& ptr = buffer.get();
+    if (ptr != nullptr) {
 #ifdef HYDROGEN_HAVE_CUB
-    auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceFree(buffer.get()));
+      auto& memory_pool = El::cub::MemoryPool();
+      CHECK_CUDA(memory_pool.DeviceFree(ptr));
 #else
-    CHECK_CUDA(cudaFree(buffer.get()));
+      CHECK_CUDA(cudaFree(ptr));
 #endif // HYDROGEN_HAVE_CUB
+    }
   }
 
 };
