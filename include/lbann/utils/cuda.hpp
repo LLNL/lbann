@@ -34,8 +34,13 @@
 #include <cuda.h>
 #include <thrust/memory.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
+#ifdef __CUDACC__
+#include <cuda_fp16.hpp>
+#endif // __CUDACC__
 
+// -------------------------------------------------------------
 // Error utility macros
+// -------------------------------------------------------------
 #define LBANN_CUDA_SYNC(async)                                  \
   do {                                                          \
     /* Synchronize GPU and check for errors. */                 \
@@ -46,8 +51,9 @@
       cudaDeviceReset();                                        \
       std::stringstream err_CUDA_SYNC;                          \
       if (async) { err_CUDA_SYNC << "Asynchronous "; }          \
-      err_CUDA_SYNC << "CUDA error: "                           \
-                    << cudaGetErrorString(status_CUDA_SYNC);    \
+      err_CUDA_SYNC << "CUDA error ("                           \
+                    << cudaGetErrorString(status_CUDA_SYNC)     \
+                    << ")";                                     \
       LBANN_ERROR(err_CUDA_SYNC.str());                         \
     }                                                           \
   } while (0)
@@ -58,8 +64,9 @@
     LBANN_CUDA_SYNC(true);                                      \
     cudaError_t status_CHECK_CUDA = (cuda_call);                \
     if (status_CHECK_CUDA != cudaSuccess) {                     \
-      LBANN_ERROR(std::string("CUDA error: ")                   \
-                  + cudaGetErrorString(status_CHECK_CUDA));     \
+      LBANN_ERROR(std::string("CUDA error (")                   \
+                  + cudaGetErrorString(status_CHECK_CUDA)       \
+                  + std::string(")"));                          \
     }                                                           \
     LBANN_CUDA_SYNC(false);                                     \
   } while (0)
@@ -73,10 +80,13 @@ namespace lbann {
 namespace cuda {
 
 #ifdef __CUDACC__
+// -------------------------------------------------------------
+// Device functions
+// -------------------------------------------------------------
 
 // Atomic add functions
 #if __CUDA_ARCH__ >= 530
-__device__ inline __half atomic_add(__half* address, __half val) {
+__device__ __inline__ __half atomic_add(__half* address, __half val) {
 #if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
   return atomicAdd(address, val);
 #else
@@ -89,17 +99,17 @@ __device__ inline __half atomic_add(__half* address, __half val) {
   do {
     assumed = old;
     updated = old;
-    *updated_as_half += value;
+    *updated_as_half += val;
     old = atomicCAS(address_as_uint, assumed, updated);
   } while (assumed != old);
   return *old_as_half;
 #endif // 0
 }
 #endif // __CUDA_ARCH__ >= 530
-__device__ inline float atomic_add(float* address, float val) {
+__device__ __inline__ float atomic_add(float* address, float val) {
   return atomicAdd(address, val);
 }
-__device__ inline double atomic_add(double* address, double val) {
+__device__ __inline__ double atomic_add(double* address, double val) {
 #if __CUDA_ARCH__ >= 600
   return atomicAdd(address, val);
 #else
@@ -115,9 +125,18 @@ __device__ inline double atomic_add(double* address, double val) {
   return __longlong_as_double(old);
 #endif // __CUDA_ARCH__ < 600
 }
+
+// Min and max
+__device__ __inline__ float min(float x, float y) { return fminf(x, y); }
+__device__ __inline__ double min(double x, double y) { return fmin(x, y); }
+__device__ __inline__ float max(float x, float y) { return fmaxf(x, y); }
+__device__ __inline__ double max(double x, double y) { return fmax(x, y); }
   
 #endif // __CUDACC__
   
+// -------------------------------------------------------------
+// Utilities for Thrust
+// -------------------------------------------------------------
 namespace thrust {
 
 /** GPU memory allocator that can interact with Thrust.
