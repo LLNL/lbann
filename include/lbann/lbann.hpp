@@ -107,7 +107,6 @@
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/layers/io/input/repeated_input_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"

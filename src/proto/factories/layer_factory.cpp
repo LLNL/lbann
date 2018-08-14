@@ -62,21 +62,6 @@ Layer* construct_layer(lbann_comm* comm,
                                                                  target_mode);
     }
   }
-  if (proto_layer.has_repeated_input()) {
-    /// @todo Remove when possible
-    const auto& params = proto_layer.repeated_input();
-    const auto& mode_str = params.target_mode();
-    data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
-    if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
-    if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
-    if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
-    return new repeated_input_layer(comm,
-                                    num_parallel_readers,
-                                    data_readers,
-                                    params.num_steps(),
-                                    !params.data_set_per_model(),
-                                    target_mode);
-  }
 
   // Target layers
   if (proto_layer.has_target()) {
