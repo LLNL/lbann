@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 
     //Support for autoencoder models
     model *ae_model = nullptr;  
-    model *ae_proxy_model = nullptr; //contain layer(s) from (cyc)GAN
+    model *ae_cycgan_model = nullptr; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (pbs.size() > 4) {
-      ae_proxy_model = build_model_from_prototext(argc, argv, *(pbs[4]),
+      ae_cycgan_model = build_model_from_prototext(argc, argv, *(pbs[4]),
                                            comm, false);
     }
 
@@ -137,15 +137,14 @@ int main(int argc, char *argv[]) {
       model_1->copy_trained_weights_from(model3_weights);
       
       //Optionally evaluate on pretrained autoencoder
-      if(ae_model != nullptr && ae_proxy_model != nullptr){
+      if(ae_model != nullptr && ae_cycgan_model != nullptr){
         if(master) std::cout << " Copy trained weights from autoencoder to autoencoder proxy" << std::endl;
         auto ae_weights = ae_model->get_weights();
-        ae_proxy_model->copy_trained_weights_from(ae_weights);
-        if(master) std::cout << " Copy needed activations from cycle GAN" << std::endl;
-        auto model2_layers = model_2->get_layers();
-        ae_proxy_model->copy_activations_from(model2_layers);
-        if(master) std::cout << " Evaluate autoencoder proxy " << std::endl;
-        ae_proxy_model->evaluate(execution_mode::testing);
+        ae_cycgan_model->copy_trained_weights_from(ae_weights);
+        if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
+        ae_cycgan_model->copy_trained_weights_from(model2_weights);
+        if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
+        ae_cycgan_model->evaluate(execution_mode::testing);
        }
 
       super_step++;
@@ -163,8 +162,8 @@ int main(int argc, char *argv[]) {
     if (ae_model != nullptr) {
       delete ae_model;
     }
-    if (ae_proxy_model != nullptr) {
-      delete ae_proxy_model;
+    if (ae_cycgan_model != nullptr) {
+      delete ae_cycgan_model;
     }
     for (auto t : pbs) {
       delete t;

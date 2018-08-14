@@ -121,10 +121,6 @@ class model {
  *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
 
-  /** Copy activations from layers l 
- *  Layers from which activations are to be copied are of the same name */
-  void copy_activations_from(std::vector<Layer *>& l);
-
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
