@@ -31,13 +31,51 @@ namespace lbann {
 template <>
 void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
-  LBANN_ERROR("not yet implemented");
+
+  // Local matrices
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+  auto& local_indices = m_indices->Matrix();
+  const auto& local_height = local_input.Height();
+  const auto& local_width = local_input.Width();
+
+  // Sort each matrix column
+#pragma omp parallel for
+  for (El::Int col = 0; col < local_width; ++col) {
+    std::multimap<DataType, El::Int> sorted_list;
+    for (El::Int row = 0; row < local_height; ++row) {
+      sorted_list.emplace(local_input(row, col), row);
+    }
+    auto&& it = sorted_list.begin();
+    for (El::Int row = 0; row < local_height; ++row, ++it) {
+      local_output(row, col) = it->first;
+      local_indices(row, col) = it->second;
+    }
+  }
+  
 }
 
 template <>
 void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::bp_compute() {
-  LBANN_ERROR("not yet implemented");
+
+  // Local matrices
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+  const auto& local_indices = m_indices->LockedMatrix();
+  const auto& local_height = local_gradient_wrt_input.Height();
+  const auto& local_width = local_gradient_wrt_input.Width();
+
+  // Scatter gradients based on sorted indices
+#pragma omp parallel for collapse(2)
+  for (El::Int col = 0; col < local_width; ++col) {
+    for (El::Int row = 0; row < local_height; ++row) {
+      const auto& dy = local_gradient_wrt_output(row, col);
+      auto& dx = local_gradient_wrt_input(local_indices(row, col), col);
+      dx = dy;
+    }
+  }
+  
 }
 
 } // namespace lbann

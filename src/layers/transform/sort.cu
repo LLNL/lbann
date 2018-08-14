@@ -82,10 +82,11 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   // Scatter gradients based on sorted indices
   for (El::Int col = 0; col < local_width; ++col) {
     const ::thrust::device_ptr<const El::Int> inds(m_indices->LockedBuffer(0, col));
-    const ::thrust::device_ptr<const DataType> grad_out(local_gradient_wrt_output.LockedBuffer(0, col));
-    ::thrust::device_ptr<DataType> grad_in(local_gradient_wrt_input.Buffer(0, col));
+    const ::thrust::device_ptr<const DataType> grad_wrt_out(local_gradient_wrt_output.LockedBuffer(0, col));
+    ::thrust::device_ptr<DataType> grad_wrt_in(local_gradient_wrt_input.Buffer(0, col));
     ::thrust::scatter(thrust::cuda::par(alloc).on(stream),
-                      inds, inds + local_height, grad_out, grad_in);
+                      inds, inds + local_height, grad_wrt_out,
+                      grad_wrt_in);
   }
   
 }
