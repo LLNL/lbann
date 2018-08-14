@@ -10,7 +10,7 @@ ARCH=$(uname -m)
 ################################################################
 
 COMPILER=gnu
-if [ "${CLUSTER}" == "pascal" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
 	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
 	# Version 6.1.0 does not work with CUDA 9.1, either.
 	COMPILER=gnu
@@ -308,13 +308,8 @@ if [ ${USE_MODULES} -ne 0 ]; then
     module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
 else
-    if [ "${CLUSTER}" == "surface" ]; then
-        use git-2.8.0
-        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-    else
-        use git
-        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-    fi
+    use git
+    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
 if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
@@ -501,7 +496,7 @@ fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
 if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
   export MV2_USE_CUDA=1
 fi
 

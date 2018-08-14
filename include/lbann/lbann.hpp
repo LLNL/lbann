@@ -67,6 +67,7 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 
 /// Transform Layers
@@ -105,7 +106,6 @@
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/layers/io/input/repeated_input_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
@@ -121,6 +121,7 @@
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
@@ -171,7 +172,7 @@
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/adagrad.hpp"

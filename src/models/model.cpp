@@ -501,8 +501,8 @@ void model::setup_weights() {
                                      m_weights.end());
 
   // Find weights used by layers
-  for (const auto& layer : m_layers) {
-    for (const auto& w : layer->get_weights()) {
+  for (const auto* l : m_layers) {
+    for (const auto& w : l->get_weights()) {
       if (weights_set.count(w) == 0) {
         m_weights.push_back(w);
         weights_set.insert(w);
@@ -521,10 +521,13 @@ void model::setup_weights() {
   }
 
   // Delete unused weights
-  for (const auto& w : unused_weights) {
+  for (auto&& w : unused_weights) {
     m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
                     m_weights.end());
   }
+
+  // Setup weights
+  for (auto* w : m_weights) { w->setup(); }
 
 }
 
@@ -624,7 +627,7 @@ void model::add_evaluation_layers() {
   }
 
 }
-  
+
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
@@ -848,6 +851,7 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
+
   bool finished;
 
   #pragma omp parallel
@@ -860,10 +864,6 @@ bool model::train_mini_batch() {
       // Result is not needed until the end of the mini-batch.
       m_objective_function->start_evaluation(execution_mode::training,
                                              get_current_mini_batch_size());
-      for (const auto& m : m_metrics) {
-        m->evaluate(execution_mode::training,
-                    get_current_mini_batch_size());
-      }
 
       // Backward prop step
       m_objective_function->differentiate();
@@ -873,6 +873,10 @@ bool model::train_mini_batch() {
       // Finish evaluation.
       m_objective_function->finish_evaluation(execution_mode::training,
                                               get_current_mini_batch_size());
+      for (const auto& m : m_metrics) {
+        m->evaluate(execution_mode::training,
+                    get_current_mini_batch_size());
+      }
 
       // Update step
       update_weights();

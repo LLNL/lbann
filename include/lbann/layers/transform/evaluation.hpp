@@ -51,7 +51,7 @@ public:
   static abstract_evaluation_layer* construct(lbann_comm *comm,
                                               data_layout layout,
                                               El::Device device);
-  
+
 protected:
 
   abstract_evaluation_layer(lbann_comm *comm);
@@ -65,6 +65,8 @@ private:
   EvalType m_scale;
   /** Evaluated value. */
   DataType m_value;
+  /** Non-blocking allreduce request. */
+  Al::request m_allreduce_req;
 
 };
 

@@ -247,48 +247,45 @@ class batch_normalization : public regularizer_layer {
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm);
-      this->m_weights[0]->set_name(this->m_name + "_scale");
-      this->m_weights[0]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
-      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
+      this->m_weights[0] = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(1)));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      this->m_weights[0]->set_name(get_name() + "_scale");
+      this->m_weights[0]->set_initializer(init);
+      this->m_weights[0]->set_optimizer(opt);
       this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm);
-      this->m_weights[1]->set_name(this->m_name + "_bias");
-      this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
+      this->m_weights[1] = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(0)));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      this->m_weights[1]->set_name(get_name() + "_bias");
+      this->m_weights[1]->set_initializer(init);
+      this->m_weights[1]->set_optimizer(opt);
       this->m_model->add_weights(this->m_weights[1]);
     }
     if (this->m_weights[2] == nullptr) {
-      this->m_weights[2] = new weights(this->m_comm);
-      this->m_weights[2]->set_name(this->m_name + "_running_mean");
-      this->m_weights[2]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
+      this->m_weights[2] = new weights(get_comm());
+      this->m_weights[2]->set_name(get_name() + "_running_mean");
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(0)));
+      this->m_weights[2]->set_initializer(init);
       this->m_model->add_weights(this->m_weights[2]);
     }
     if (this->m_weights[3] == nullptr) {
-      this->m_weights[3] = new weights(this->m_comm);
-      this->m_weights[3]->set_name(this->m_name + "_running_variance");
-      this->m_weights[3]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
+      this->m_weights[3] = new weights(get_comm());
+      this->m_weights[3]->set_name(get_name() + "_running_variance");
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(1)));
+      this->m_weights[3]->set_initializer(init);
       this->m_model->add_weights(this->m_weights[3]);
     }
 
     // Setup weights
-    this->m_weights[0]->setup(num_channels, Dev);
-    this->m_weights[1]->setup(num_channels, Dev);
-    this->m_weights[2]->setup(num_channels, Dev);
-    this->m_weights[3]->setup(num_channels, Dev);
-
-    if (m_frozen) {
-      this->m_weights[0]->freeze();
-      this->m_weights[1]->freeze();
-      this->m_weights[2]->freeze();
-      this->m_weights[3]->freeze();
-    } else {
-      if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen() ||
-          this->m_weights[2]->is_frozen() || this->m_weights[3]->is_frozen()) {
-        LBANN_ERROR("layer is not frozen but weights are");
-      }
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    for (auto* w : this->m_weights) {
+      w->set_dims(num_channels);
+      w->set_matrix_distribution(dist);
     }
 
     // Initialize matrices
@@ -298,6 +295,25 @@ class batch_normalization : public regularizer_layer {
     El::Zeros(*m_var_gradient,   num_channels, 1);
     El::Zeros(*m_scale_gradient, num_channels, 1);
     El::Zeros(*m_bias_gradient,  num_channels, 1);
+
+    // Initialize freeze state
+    for (auto&& w : this->m_weights) {
+      if (m_frozen) {
+        w->freeze();
+      } else {
+        w->unfreeze();
+      }
+    }
+    for (auto&& w : this->m_weights) {
+      if (w->is_frozen() != m_frozen) {
+        std::stringstream err;
+        err << (m_frozen ? "" : "un") << "frozen "
+            << "layer \"" << get_name() << "\" has "
+            << (w->is_frozen() ? "" : "un") << "frozen "
+            << "weights \"" << w->get_name() << "\"";
+        LBANN_ERROR(err.str());
+      }
+    }
 
   }
 
