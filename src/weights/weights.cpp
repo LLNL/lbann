@@ -360,6 +360,22 @@ void weights::set_value(DataType value, int row, int col) {
 
 }
 
+void weights::reconcile_values() {
+  auto& values = get_values();
+  if (values.RedundantSize() > 1) {
+    values *= DataType(1) / values.RedundantSize();
+    m_comm->allreduce(values, values.RedundantComm());
+  }
+}
+
+void weights::reconcile_values(Al::request& req) {
+  auto& values = get_values();
+  if (values.RedundantSize() > 1) {
+    values *= DataType(1) / values.RedundantSize();
+    m_comm->nb_allreduce(values, values.RedundantComm(), req);
+  }
+}
+  
 // -----------------------------------------------
 // Checkpointing
 // -----------------------------------------------

@@ -344,6 +344,11 @@ class model {
   virtual void update_weights();
   /** Update layers step. */
   virtual bool update_layers();
+  /** Reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  virtual void reconcile_weight_values();
 
   ////////////////////////////////////////////////////////////
   // Callbacks

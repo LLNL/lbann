@@ -46,7 +46,7 @@
 #include "mpi.h"
 
 namespace lbann {
-
+  
 ////////////////////////////////////////////////////////////
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
@@ -780,28 +780,28 @@ void model::collect_indices(execution_mode mode) {
 void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
-
-    // Stop if training has been terminated
     if (get_terminate_training()) { break; }
 
-    // Setup epoch
+    // Initialize epoch
     reset_mode_and_model(execution_mode::training);
-
     do_epoch_begin_cbs();
-    // Train on num_batches (subepoch) if specified
-    if(num_batches) {
-      for(int i = 0; i < num_batches; i++)
-        train_mini_batch();
-    } else { //train full epoch
+
+    // Training iterations
+    if (num_batches > 0) {
+      for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
+    } else {
       while (!train_mini_batch()) {}
     }
-    // Once the epoch is complete, Increase the count
+    
+    // Finalize epoch
     ++m_current_epoch;
+    reconcile_weight_values();
     do_epoch_end_cbs();
     reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
+    
   }
   do_train_end_cbs();
 }
@@ -944,6 +944,14 @@ bool model::update_layers() {
   return finished;
 }
 
+void model::reconcile_weight_values() {
+  std::vector<Al::request> reqs(m_weights.size());
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    m_weights[i]->reconcile_values(reqs[i]);
+  }
+  for (auto& req : reqs) { m_comm->wait(req); }
+}
+  
 ////////////////////////////////////////////////////////////
 // Callbacks
 ////////////////////////////////////////////////////////////
