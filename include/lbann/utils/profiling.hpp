@@ -23,30 +23,21 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// weights_initializer .hpp .cpp - Weights initializer classes
-////////////////////////////////////////////////////////////////////////////////
-
-#include "lbann/weights/initializer.hpp"
-#include "lbann/utils/random.hpp"
+// profiling .hpp .cpp - Various routines for interfacing with profilers
+///////////////////////////////////////////////////////////////////////////////
 
 namespace lbann {
 
-void constant_initializer::fill(AbsDistMat& matrix) {
-  if (m_value == DataType(0)) {
-    El::Zero(matrix);
-  } else {
-    El::Fill(matrix, m_value);
-  }
-}
+// Colors to use for profiling.
+constexpr int num_prof_colors = 20;
+// http://there4.io/2012/05/02/google-chart-color-list/
+constexpr int prof_colors[num_prof_colors] = {
+  0x3366CC, 0xDC3912, 0xFF9900, 0x109618, 0x990099, 0x3B3EAC,
+  0x0099C6, 0xDD4477, 0x66AA00, 0xB82E2E, 0x316395, 0x994499,
+  0x22AA99, 0xAAAA11, 0x6633CC, 0xE67300, 0x8B0707, 0x329262,
+  0x5574A6, 0x3B3EAC};
 
-void uniform_initializer::fill(AbsDistMat& matrix) {
-  uniform_fill(matrix, matrix.Height(), matrix.Width(), 
-               (m_max + m_min) / 2, (m_max - m_min) / 2);
-}
-
-void normal_initializer::fill(AbsDistMat& matrix) {
-  gaussian_fill(matrix, matrix.Height(), matrix.Width(), 
-                m_mean, m_standard_deviation);
-}
+void prof_region_begin(const char *s, int c, bool sync);
+void prof_region_end(const char *s, bool sync);
 
 }  // namespace lbann

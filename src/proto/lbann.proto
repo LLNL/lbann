@@ -764,7 +764,6 @@ message Layer {
 
    // input Layers
    Input input = 2;
-   RepeatedInput repeated_input = 6; // @todo Remove when possible
 
    // transform Layers
    Reshape reshape = 306;
@@ -799,7 +798,8 @@ message Layer {
 
    // loss layers
    CrossEntropy cross_entropy = 60;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 61;
+   MeanSquaredError mean_squared_error = 61;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
 
    // target Layers
    Target target = 18;

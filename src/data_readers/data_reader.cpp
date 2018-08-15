@@ -700,7 +700,7 @@ void generic_data_reader::init_minibatch() {
 
 void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {
   if (m_comm->get_num_models() == 1 || m_comm->get_procs_in_world() == 1) {
-    m_is_partitioned = false;
+    m_is_partitioned  = false;
     return;
   }
   m_is_partitioned = partitioned_yes;

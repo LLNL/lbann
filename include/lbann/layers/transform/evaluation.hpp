@@ -65,6 +65,8 @@ private:
   EvalType m_scale;
   /** Evaluated value. */
   DataType m_value;
+  /** Non-blocking allreduce request. */
+  Al::request m_allreduce_req;
   
 };
 

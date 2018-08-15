@@ -40,18 +40,19 @@ std::string get();
 
 /** Register signal handler.
  *  Initializes a signal handler that prints an error message and
- *  stack trace to the standard error stream when a signal is
- *  detected. If desired, it also writes to the file
- *  "stack_trace_rank<MPI rank>.txt". 
+ *  stack trace to the standard error stream when a fatal signal is
+ *  detected. If a file name base is provided, it also writes to the
+ *  file "<file_base>_rank<MPI rank>.txt".
+ *
+ *  Fatal signals are those that cause an abnormal termination by
+ *  default, according to the POSIX C standard
+ *  (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html).
  *  
  *  This functionality is somewhat risky since the handler calls
  *  non-reentrant functions, which can result in undefined behavior
- *  (see https://www.ibm.com/developerworks/library/l-reent/). That
- *  said, it is possible (likely?) that our handler will work
- *  correctly. And if there's a SIGSEV and it doesn't, nothing much is
- *  lost (IMO).
+ *  (see https://www.ibm.com/developerworks/library/l-reent/).
  */
-void register_signal_handler(bool write_to_file = false);
+void register_signal_handler(std::string file_base = "");
 
 } //namespace stack_trace 
 } //namespace lbann

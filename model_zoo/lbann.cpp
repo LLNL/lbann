@@ -70,7 +70,9 @@ int main(int argc, char *argv[]) {
 
     //this must be called after call to opts->init();
     if (!opts->has_bool("disable_signal_handler")) {
-      stack_trace::register_signal_handler(opts->has_bool("stack_trace_to_file"));
+      std::string file_base = (opts->has_bool("stack_trace_to_file") ?
+                               "stack_trace" : "");
+      stack_trace::register_signal_handler(file_base);
     }
     
     //to activate, must specify --st_on on cmd line
