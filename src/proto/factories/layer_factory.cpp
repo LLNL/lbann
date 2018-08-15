@@ -202,10 +202,14 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_gaussian()) {
     const auto& params = proto_layer.gaussian();
     const auto& dims = parse_list<int>(params.neuron_dims());
-    return new gaussian_layer<layout, Dev>(comm,
-                                           dims,
-                                           params.mean(),
-                                           params.stdev());
+    if (params.mean() == 0 && params.stdev() == 0) {
+      return new gaussian_layer<layout, Dev>(comm, dims);
+    } else {
+      return new gaussian_layer<layout, Dev>(comm,
+                                             dims,
+                                             params.mean(),
+                                             params.stdev());
+    }
   }
   if (proto_layer.has_bernoulli()) {
     const auto& params = proto_layer.bernoulli();
@@ -217,10 +221,11 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_uniform()) {
     const auto& params = proto_layer.uniform();
     const auto& dims = parse_list<int>(params.neuron_dims());
-    return new uniform_layer<layout, Dev>(comm,
-                                          dims,
-                                          params.min(),
-                                          params.max());
+    if (params.min() == 0 && params.max() == 0) {
+      return new uniform_layer<layout, Dev>(comm, dims);
+    } else {
+      return new uniform_layer<layout, Dev>(comm, dims, params.min(), params.max());
+    }
   }
   if (proto_layer.has_zero()) {
     const auto& params = proto_layer.zero();
@@ -317,8 +322,9 @@ Layer* construct_layer(lbann_comm* comm,
     return new in_top_k_layer<layout, Dev>(comm, params.k());
   }
   if (proto_layer.has_sort()) {
+    const auto& params = proto_layer.sort();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new sort_layer<data_layout::DATA_PARALLEL, Dev>(comm);
+      return new sort_layer<data_layout::DATA_PARALLEL, Dev>(comm, params.descending());
     }
   }
 

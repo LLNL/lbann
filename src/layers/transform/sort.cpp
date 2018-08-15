@@ -35,7 +35,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   // Local matrices
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
-  auto& local_indices = m_indices->Matrix();
+  auto& local_indices = *m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -46,10 +46,18 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     for (El::Int row = 0; row < local_height; ++row) {
       sorted_list.emplace(local_input(row, col), row);
     }
-    auto&& it = sorted_list.begin();
-    for (El::Int row = 0; row < local_height; ++row, ++it) {
-      local_output(row, col) = it->first;
-      local_indices(row, col) = it->second;
+    if (m_descending) {
+      auto&& it = sorted_list.rbegin();
+      for (El::Int row = 0; row < local_height; ++row, ++it) {
+        local_output(row, col) = it->first;
+        local_indices(row, col) = it->second;
+      }
+    } else {
+      auto&& it = sorted_list.begin();
+      for (El::Int row = 0; row < local_height; ++row, ++it) {
+        local_output(row, col) = it->first;
+        local_indices(row, col) = it->second;
+      }
     }
   }
   
@@ -62,7 +70,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   // Local matrices
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
-  const auto& local_indices = m_indices->LockedMatrix();
+  const auto& local_indices = *m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
 

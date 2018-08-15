@@ -1076,6 +1076,7 @@ message InTopK {
 }
 
 message Sort {
+  bool descending = 1;
 }
 
 /////////////////////

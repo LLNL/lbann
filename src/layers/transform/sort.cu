@@ -43,7 +43,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   // Local matrices
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
-  auto& local_indices = m_indices->Matrix();
+  auto& local_indices = *m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
   
@@ -58,8 +58,15 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
     ::thrust::device_ptr<El::Int> inds(local_indices.Buffer(0, col));
     ::thrust::sequence(thrust::cuda::par(alloc).on(stream),
                        inds, inds + local_height);
-    ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                          vals, vals + local_height, inds);
+    if (m_descending) {
+      ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+                            vals, vals + local_height, inds,
+                            ::thrust::greater<DataType>());
+    } else {
+      ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+                            vals, vals + local_height, inds,
+                            ::thrust::less<DataType>());
+    }
   }
   
 }
@@ -71,7 +78,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   // Local matrices
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
-  const auto& local_indices = m_indices->LockedMatrix();
+  const auto& local_indices = *m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
   

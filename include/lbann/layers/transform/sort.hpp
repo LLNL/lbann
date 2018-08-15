@@ -36,16 +36,48 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class sort_layer : public transform_layer {
  public:
 
-  sort_layer(lbann_comm *comm) : transform_layer(comm) {
+  sort_layer(lbann_comm *comm, bool descending = false)
+    : transform_layer(comm), m_descending(descending) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "sort layer only supports DATA_PARALLEL");
   }
   sort_layer(const sort_layer& other)
     : transform_layer(other),
-      m_indices(other.m_indices ? other.m_indices->Copy() : nullptr) {}
+      m_descending(other.m_descending) {
+    if (other.m_indices) {
+      switch (other.m_indices->GetDevice()) {
+      case El::Device::CPU:
+        m_indices.reset(new El::Matrix<El::Int, El::Device::CPU>());
+        break;
+#ifdef LBANN_HAS_GPU
+      case El::Device::GPU:
+        m_indices.reset(new El::Matrix<El::Int, El::Device::GPU>());
+        break;
+#endif // LBANN_HAS_GPU
+      default: LBANN_ERROR("invalid device");
+      }
+      El::Copy(*other.m_indices, *m_indices);
+    }
+  }
   sort_layer& operator=(const sort_layer& other) {
     transform_layer::operator=(other);
-    m_indices.reset(other.m_indices ? other.m_indices->Copy() : nullptr);
+    m_descending = other.m_descending;
+    if (!other.m_indices) {
+      m_indices.reset(nullptr);
+    } else {
+      switch (other.m_indices->GetDevice()) {
+      case El::Device::CPU:
+        m_indices.reset(new El::Matrix<El::Int, El::Device::CPU>());
+        break;
+#ifdef LBANN_HAS_GPU
+      case El::Device::GPU:
+        m_indices.reset(new El::Matrix<El::Int, El::Device::GPU>());
+        break;
+#endif // LBANN_HAS_GPU
+      default: LBANN_ERROR("invalid device");
+      }
+      El::Copy(*other.m_indices, *m_indices);
+    }
     return *this;
   }
   
@@ -64,29 +96,24 @@ class sort_layer : public transform_layer {
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
     const auto& dist = get_activations().DistData();
-    m_indices.reset(El::AbstractDistMatrix<El::Int>
-                    ::Instantiate(*dist.grid,
-                                  dist.root,
-                                  dist.colDist,
-                                  dist.rowDist,
-                                  (dist.blockHeight == 1
-                                   && dist.blockWidth == 1 ?
-                                   El::ELEMENT : El::BLOCK),               
-                                  dist.device));
+    switch (dist.device) {
+    case El::Device::CPU:
+      m_indices.reset(new El::Matrix<El::Int, El::Device::CPU>());
+      break;
 #ifdef LBANN_HAS_GPU
-    // Allocate GPU memory with the CUDA API
-    if (m_indices->GetLocalDevice() == El::Device::GPU) {
-      m_indices->Matrix().SetMemoryMode(0);
+    case El::Device::GPU:
+      m_indices.reset(new El::Matrix<El::Int, El::Device::GPU>());
+      m_indices->SetMemoryMode(0); // Allocate GPU memory with the CUDA API
+      break;
+#endif // LBANN_HAS_GPU
+    default: LBANN_ERROR("invalid device");
     }
-#endif //LBANN_HAS_CUDA
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    transform_layer::setup_data();
+    transform_layer::fp_setup_outputs(mini_batch_size);
     const auto& output = get_activations();
-    m_indices->Empty(false);
-    m_indices->AlignWith(output);
-    m_indices->Resize(output.Height(), output.Width());
+    m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }
   
   void fp_compute() override;
@@ -94,7 +121,15 @@ class sort_layer : public transform_layer {
 
  private:
 
-  std::unique_ptr<El::AbstractDistMatrix<El::Int>> m_indices;
+  /** Whether values are sorted by descending order. */
+  bool m_descending;
+  
+  /** Input indices corresponding to output entries.
+   *  @todo Switch to distributed integer matrix once it's supported
+   *  in Hydrogen.
+   */
+  std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
+  // std::unique_ptr<El::AbstractDistMatrix<El::Int>> m_indices;
   
 };
 
