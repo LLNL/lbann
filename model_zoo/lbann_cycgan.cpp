@@ -98,13 +98,17 @@ int main(int argc, char *argv[]) {
     const lbann_data::Model pb_model_2 = pbs[1]->model();
     const lbann_data::Model pb_model_3 = pbs[2]->model();
 
-
     //Optionally pretrain autoencoder
     //@todo: explore joint-train of autoencoder as alternative
     if(ae_model != nullptr) {
       if(master) std::cout << " Pre-train autoencoder " << std::endl;
       const lbann_data::Model pb_model_4 = pbs[3]->model();
       ae_model->train(pb_model_4.num_epochs());
+      auto ae_weights = ae_model->get_weights();
+      model_1->copy_trained_weights_from(ae_weights);
+      model_2->copy_trained_weights_from(ae_weights);
+      model_3->copy_trained_weights_from(ae_weights);
+      ae_cycgan_model->copy_trained_weights_from(ae_weights);
     }
     
     //Train cycle GAN
@@ -138,9 +142,8 @@ int main(int argc, char *argv[]) {
       
       //Optionally evaluate on pretrained autoencoder
       if(ae_model != nullptr && ae_cycgan_model != nullptr){
-        if(master) std::cout << " Copy trained weights from autoencoder to autoencoder proxy" << std::endl;
-        auto ae_weights = ae_model->get_weights();
-        ae_cycgan_model->copy_trained_weights_from(ae_weights);
+        //if(master) std::cout << " Copy trained weights from autoencoder to autoencoder proxy" << std::endl;
+        //ae_cycgan_model->copy_trained_weights_from(ae_weights);
         if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
         ae_cycgan_model->copy_trained_weights_from(model2_weights);
         if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
