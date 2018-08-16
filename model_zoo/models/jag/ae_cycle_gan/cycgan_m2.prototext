@@ -14,7 +14,7 @@ model {
     }
   }
   num_epochs: 1
-  data_layout: "data_parallel"
+  data_layout: "model_parallel"
   layer {
     input {
       io_buffer: "partitioned"
@@ -26,34 +26,240 @@ model {
   }
   layer {
     name: "slice_data"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "data"
-    children: "image_data_dummy param_data_id"
+    children: "image_data_id param_data_id"
     slice {
-      slice_points: "0 2500 2511"
+      slice_points: "0 16384 16389"
     }
   }
   layer {
     identity {
     }
-    name: "image_data_dummy"
-    data_layout: "data_parallel"
+    name: "image_data_id"
+    data_layout: "model_parallel"
     parents: "slice_data"
   }
   layer {
     identity {
     }
     name: "param_data_id"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "slice_data"
   }
+########Data space end here
+  ######################
+  # Encoder from VAE
+  ######################
+
+  # encode1
+  layer {
+    #parents: "data"
+    parents: "image_data_id"
+    name: "encode1"
+    freeze: true
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode1"
+    name: "encode1_elu"
+    data_layout: "model_parallel"
+    elu {}
+  }
+  layer {
+    parents: "encode1_elu"
+    name: "encode1_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  # encode2
+  layer {
+    parents: "encode1_dropout"
+    name: "encode2"
+    freeze: true
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode2"
+    name: "encode2_tanh"
+    data_layout: "model_parallel"
+    tanh {}
+  }
+  layer {
+    parents: "encode2_tanh"
+    name: "encode2_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  # encode3
+  layer {
+    parents: "encode2_dropout"
+    name: "encode3"
+    freeze: true
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 256
+      weight_initialization: "he_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode3"
+    name: "encode3_tanh"
+    data_layout: "model_parallel"
+    tanh {}
+  }
+  layer {
+    parents: "encode3_tanh"
+    name: "encode3_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+
+  ######################
+  # Latent space
+  ######################
+
+  layer {
+    parents: "encode3_dropout"
+    name: "z_mean"
+    freeze: true
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons:20
+      weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode3_dropout"
+    name: "z_log_sigma"
+    freeze: true
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons:20
+      weight_initialization: "glorot_normal"
+      has_bias: true
+    }
+  }
+
+  ######################
+  # KL divergence
+  ######################
+
+  layer {
+    name: "kl_one"
+    data_layout: "model_parallel"
+    constant {
+      value: 1.0
+      num_neurons: "20"
+    }
+  }
+  layer {
+    parents: "z_mean"
+    name: "kl_z_mean2"
+    data_layout: "model_parallel"
+    power {
+      exponent: 2.0
+    }
+  }
+  layer {
+    parents: "z_log_sigma"
+    name: "kl_exp"
+    data_layout: "model_parallel"
+    exponential {}
+  }
+  layer {
+    parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
+    name: "kl_full"
+    data_layout: "model_parallel"
+    weighted_sum {
+      scaling_factors: "-0.5 -0.5 0.5 0.5"
+    }
+  }
+  layer {
+    parents: "kl_full"
+    name: "kl_sum"
+    data_layout: "data_parallel"
+    reduction {
+      mode: "sum"
+    }
+  }
+  layer {
+    parents: "kl_sum"
+    name: "kl_divergence"
+    data_layout: "data_parallel"
+    evaluation {}
+  }
+
+  ######################
+  # Sample from latent space
+  ######################
+
+  layer {
+    parents: "z_log_sigma"
+    name: "sample_half"
+    data_layout: "model_parallel"
+    weighted_sum {
+      scaling_factors: "0.5"
+    }
+  }
+  layer {
+    parents: "sample_half"
+    name: "sample_exp"
+    data_layout: "model_parallel"
+    exponential {}
+  }
+  layer {
+    name: "sample_noise"
+    data_layout: "model_parallel"
+    gaussian {
+      mean: 0.0
+      stdev: 1.0
+      neuron_dims: "20"
+    }
+  }
+  layer {
+    parents: "sample_exp sample_noise"
+    name: "sample_exp_noise"
+    data_layout: "model_parallel"
+    hadamard {}
+  }
+  layer {
+    parents: "z_mean sample_exp_noise"
+    #name: "sample"
+    ###This is actually sample, call image_data_dummy for legacy
+    name: "image_data_dummy"
+    data_layout: "model_parallel"
+    sum {}
+  }
+  #####VAE Encoder ends here, sample feeds/replaces image data dummy
+
   layer {
     fully_connected {
-      num_neurons: 16
+      num_neurons: 256
       has_bias: true
     }
     name: "gen1fc1_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc1linearity"
     parents: "param_data_id"
   }
@@ -61,16 +267,16 @@ model {
     relu {
     }
     name: "gen1relu1_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc1_1"
   }
   layer {
     fully_connected {
-      num_neurons: 128
+      num_neurons: 2048
       has_bias: true
     }
     name: "gen1fc2_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc2linearity"
     parents: "gen1relu1_1"
   }
@@ -78,7 +284,7 @@ model {
     relu {
     }
     name: "gen1relu2_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc2_1"
   }
   layer {
@@ -86,16 +292,16 @@ model {
       keep_prob: 0.8
     }
     name: "gen1dropout1_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1relu2_1"
   }
   layer {
     fully_connected {
-      num_neurons: 512
+      num_neurons: 8192
       has_bias: true
     }
     name: "gen1fc3_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc3linearity"
     parents: "gen1dropout1_1"
   }
@@ -103,22 +309,24 @@ model {
     relu {
     }
     name: "gen1relu3_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc3_1"
   }
   layer {
     fully_connected {
-      num_neurons: 2500
+      #num_neurons: 16384
+      #replace image_dim with latent_dim
+      num_neurons: 20
       has_bias: true
     }
     name: "gen1fc4_1"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc4linearity"
     parents: "gen1relu3_1"
   }
   layer {
     name: "concat_gsample_n_param"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc4_1 param_data_id"
     concatenation {
     }
@@ -126,11 +334,11 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 128
+      num_neurons: 2048
       has_bias: true
     }
     name: "disc1fc1_real"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "disc1fc1linearity"
     parents: "concat_gsample_n_param"
   }
@@ -138,17 +346,17 @@ model {
     relu {
     }
     name: "disc1relu1_real"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "disc1fc1_real"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 16
+      num_neurons: 256
       has_bias: true
     }
     name: "disc1fc2_real"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "disc1fc2linearity"
     parents: "disc1relu1_real"
   }
@@ -156,7 +364,7 @@ model {
     relu {
     }
     name: "disc1relu2_real"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "disc1fc2_real"
   }
   layer {
@@ -166,13 +374,13 @@ model {
       has_bias: true
     }
     name: "disc1fc3_real"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "disc1fc3linearity"
     parents: "disc1relu2_real"
   }
   layer {
     name: "g_adv1_bce"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     device_allocation: "cpu"
     parents: "disc1fc3_real"
     bce_with_logits {
@@ -181,7 +389,7 @@ model {
   }
   layer {
     name: "g_adv1_eval"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "g_adv1_bce"
     evaluation {
     }
@@ -189,11 +397,11 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 16
+      num_neurons: 256
       has_bias: true
     }
     name: "gen2fc1_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc1linearity"
     parents: "image_data_dummy"
   }
@@ -201,17 +409,17 @@ model {
     relu {
     }
     name: "gen2relu1_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc1_y"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 128
+      num_neurons: 2048
       has_bias: true
     }
     name: "gen2fc2_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc2linearity"
     parents: "gen2relu1_y"
   }
@@ -219,17 +427,17 @@ model {
     relu {
     }
     name: "gen2relu2_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc2_y"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 512
+      num_neurons: 8192
       has_bias: true
     }
     name: "gen2fc3_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc3linearity"
     parents: "gen2relu2_y"
   }
@@ -237,27 +445,27 @@ model {
     relu {
     }
     name: "gen2relu3_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc3_y"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 11
+      num_neurons: 5
       has_bias: true
     }
     name: "gen2fc4_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc4linearity"
     parents: "gen2relu3_y"
   }
   layer {
     fully_connected {
-      num_neurons: 16
+      num_neurons: 256
       has_bias: true
     }
     name: "gen1fc1_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc1linearity"
     parents: "gen2fc4_y"
   }
@@ -265,16 +473,16 @@ model {
     relu {
     }
     name: "gen1relu1_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc1_2"
   }
   layer {
     fully_connected {
-      num_neurons: 128
+      num_neurons: 2048
       has_bias: true
     }
     name: "gen1fc2_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc2linearity"
     parents: "gen1relu1_2"
   }
@@ -282,7 +490,7 @@ model {
     relu {
     }
     name: "gen1relu2_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc2_2"
   }
   layer {
@@ -290,16 +498,16 @@ model {
       keep_prob: 0.8
     }
     name: "gen1dropout1_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1relu2_2"
   }
   layer {
     fully_connected {
-      num_neurons: 512
+      num_neurons: 8192
       has_bias: true
     }
     name: "gen1fc3_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc3linearity"
     parents: "gen1dropout1_2"
   }
@@ -307,22 +515,24 @@ model {
     relu {
     }
     name: "gen1relu3_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc3_2"
   }
   layer {
     fully_connected {
-      num_neurons: 2500
+      #num_neurons: 16384
+      #replace image_dim with latent_dim
+      num_neurons: 20
       has_bias: true
     }
     name: "gen1fc4_2"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen1fc4linearity"
     parents: "gen1relu3_2"
   }
   layer {
     name: "cycy_minus_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc4_2 image_data_dummy"
     weighted_sum {
       scaling_factors: "1 -1"
@@ -332,13 +542,13 @@ model {
     abs {
     }
     name: "L_cyc_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     device_allocation: "cpu"
     parents: "cycy_minus_y"
   }
   layer {
     name: "L_cyc_y_eval"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "L_cyc_y"
     evaluation {
     }
@@ -346,11 +556,11 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 16
+      num_neurons: 256
       has_bias: true
     }
     name: "gen2fc1_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc1linearity"
     parents: "gen1fc4_1"
   }
@@ -358,17 +568,17 @@ model {
     relu {
     }
     name: "gen2relu1_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc1_gsample"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 128
+      num_neurons: 2048
       has_bias: true
     }
     name: "gen2fc2_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc2linearity"
     parents: "gen2relu1_gsample"
   }
@@ -376,17 +586,17 @@ model {
     relu {
     }
     name: "gen2relu2_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc2_gsample"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 512
+      num_neurons: 8192
       has_bias: true
     }
     name: "gen2fc3_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc3linearity"
     parents: "gen2relu2_gsample"
   }
@@ -394,23 +604,23 @@ model {
     relu {
     }
     name: "gen2relu3_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc3_gsample"
   }
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 11
+      num_neurons: 5
       has_bias: true
     }
     name: "gen2fc4_gsample"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     weights: "gen2fc4linearity"
     parents: "gen2relu3_gsample"
   }
   layer {
     name: "cycx_minus_x"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen2fc4_gsample param_data_id"
     weighted_sum {
       scaling_factors: "1 -1"
@@ -421,19 +631,19 @@ model {
     }
     name: "L_cyc_x"
     device_allocation: "cpu"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "cycx_minus_x"
   }
   layer {
     name: "L_cyc_x_eval"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "L_cyc_x"
     evaluation {
     }
   }
   layer {
     name: "gsample_minus_y"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gen1fc4_1 image_data_dummy"
     weighted_sum {
       scaling_factors: "1 -1"
@@ -444,12 +654,12 @@ model {
     }
     name: "l_l2_y"
     device_allocation: "cpu"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "gsample_minus_y"
   }
   layer {
     name: "l_l2_y_eval"
-    data_layout: "data_parallel"
+    data_layout: "model_parallel"
     parents: "l_l2_y"
     evaluation {
     }
@@ -509,15 +719,17 @@ model {
     he_normal_initializer {
     }
   }
-  mini_batch_size: 64
+  mini_batch_size: 100
   callback {
     print {
       interval: 1
     }
   }
-  #callback {
-  #  dump_activations {
-  #    basename: "/dir/to/dump_y_activations/"
+  callback { timer {} }
+ #callback {
+ #   dump_activations {
+ #     basename: "/dir/to/dump_y_activations/"
+  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jags10K_multi/cycgan_m2/"
   #    interval: 100
   #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
   #  }
