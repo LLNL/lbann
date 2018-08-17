@@ -129,7 +129,6 @@ class sort_layer : public transform_layer {
    *  in Hydrogen.
    */
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
-  // std::unique_ptr<El::AbstractDistMatrix<El::Int>> m_indices;
   
 };
 
