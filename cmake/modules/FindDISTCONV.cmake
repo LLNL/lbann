@@ -16,12 +16,12 @@ find_path(DISTCONV_INCLUDE_DIRS distconv/distconv.hpp
 find_path(DISTCONV_INCLUDE_DIRS distconv.hpp)
 
 # Find the library
-find_library(DISTCONV_LIBRARY distconv_cudnn
+find_library(DISTCONV_LIBRARY distconv
   HINTS ${DISTCONV_DIR} $ENV{DISTCONV_DIR}
   PATH_SUFFIXES lib64 lib
   NO_DEFAULT_PATH
   DOC "The DISTCONV library.")
-find_library(DISTCONV_LIBRARY distconv_cudnn)
+find_library(DISTCONV_LIBRARY distconv)
 
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)
