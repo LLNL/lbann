@@ -235,6 +235,8 @@ class batch_normalization : public regularizer_layer {
 
   void setup_data() override {
     regularizer_layer::setup_data();
+    const auto& output_dims = get_output_dims();
+    const auto& num_channels = output_dims[0];
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 4) {
@@ -245,57 +247,73 @@ class batch_normalization : public regularizer_layer {
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm);
-      this->m_weights[0]->set_name(this->m_name + "_scale");
-      this->m_weights[0]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
-      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
+      this->m_weights[0] = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(1)));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      this->m_weights[0]->set_name(get_name() + "_scale");
+      this->m_weights[0]->set_initializer(init);
+      this->m_weights[0]->set_optimizer(opt);
       this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm);
-      this->m_weights[1]->set_name(this->m_name + "_bias");
-      this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
+      this->m_weights[1] = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(0)));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      this->m_weights[1]->set_name(get_name() + "_bias");
+      this->m_weights[1]->set_initializer(init);
+      this->m_weights[1]->set_optimizer(opt);
       this->m_model->add_weights(this->m_weights[1]);
     }
     if (this->m_weights[2] == nullptr) {
-      this->m_weights[2] = new weights(this->m_comm);
-      this->m_weights[2]->set_name(this->m_name + "_running_mean");
-      this->m_weights[2]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
+      this->m_weights[2] = new weights(get_comm());
+      this->m_weights[2]->set_name(get_name() + "_running_mean");
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(0)));
+      this->m_weights[2]->set_initializer(init);
       this->m_model->add_weights(this->m_weights[2]);
     }
     if (this->m_weights[3] == nullptr) {
-      this->m_weights[3] = new weights(this->m_comm);
-      this->m_weights[3]->set_name(this->m_name + "_running_variance");
-      this->m_weights[3]->set_initializer(new constant_initializer(this->m_comm, DataType(1)));
+      this->m_weights[3] = new weights(get_comm());
+      this->m_weights[3]->set_name(get_name() + "_running_variance");
+      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(1)));
+      this->m_weights[3]->set_initializer(init);
       this->m_model->add_weights(this->m_weights[3]);
     }
 
     // Setup weights
-    this->m_weights[0]->setup(this->m_neuron_dims[0], Dev);
-    this->m_weights[1]->setup(this->m_neuron_dims[0], Dev);
-    this->m_weights[2]->setup(this->m_neuron_dims[0], Dev);
-    this->m_weights[3]->setup(this->m_neuron_dims[0], Dev);
-
-    if (m_frozen) {
-      this->m_weights[0]->freeze();
-      this->m_weights[1]->freeze();
-      this->m_weights[2]->freeze();
-      this->m_weights[3]->freeze();
-    } else {
-      if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen() ||
-          this->m_weights[2]->is_frozen() || this->m_weights[3]->is_frozen()) {
-        LBANN_ERROR("layer is not frozen but weights are");
-      }
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    for (auto* w : this->m_weights) {
+      w->set_dims(num_channels);
+      w->set_matrix_distribution(dist);
     }
 
     // Initialize matrices
-    El::Zeros(*m_mean, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_var, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_mean_gradient, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_var_gradient, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_scale_gradient, this->m_neuron_dims[0], 1);
-    El::Zeros(*m_bias_gradient, this->m_neuron_dims[0], 1);
+    El::Zeros(*m_mean,           num_channels, 1);
+    El::Zeros(*m_var,            num_channels, 1);
+    El::Zeros(*m_mean_gradient,  num_channels, 1);
+    El::Zeros(*m_var_gradient,   num_channels, 1);
+    El::Zeros(*m_scale_gradient, num_channels, 1);
+    El::Zeros(*m_bias_gradient,  num_channels, 1);
+
+    // Initialize freeze state
+    for (auto&& w : this->m_weights) {
+      if (m_frozen) {
+        w->freeze();
+      } else {
+        w->unfreeze();
+      }
+    }
+    for (auto&& w : this->m_weights) {
+      if (w->is_frozen() != m_frozen) {
+        std::stringstream err;
+        err << (m_frozen ? "" : "un") << "frozen "
+            << "layer \"" << get_name() << "\" has "
+            << (w->is_frozen() ? "" : "un") << "frozen "
+            << "weights \"" << w->get_name() << "\"";
+        LBANN_ERROR(err.str());
+      }
+    }
 
   }
 
@@ -328,8 +346,9 @@ class batch_normalization : public regularizer_layer {
     // Compute statistics during training
     const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
     if (is_training) {
-      const int num_channels = this->m_neuron_dims[0];
-      const int channel_size = this->m_num_neurons / num_channels;
+      const auto& output_dims = get_output_dims();
+      const int num_channels = output_dims[0];
+      const int channel_size = get_output_size() / num_channels;
       batch_normalization_cuda::channel_sums(num_channels,
                                              local_input,
                                              m_mean->Matrix(),
@@ -451,8 +470,9 @@ class batch_normalization : public regularizer_layer {
     // Matrix parameters
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
-    const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int channel_size = get_output_size() / num_channels;
 
     // Compute statistics
     if (is_training) {
@@ -582,8 +602,9 @@ class batch_normalization : public regularizer_layer {
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
     const El::Int local_width = local_input.Width();
-    const int num_channels = this->m_neuron_dims[0];
-    const int channel_size = this->m_num_neurons / num_channels;
+    const auto& output_dims = get_output_dims();
+    const int num_channels = output_dims[0];
+    const int channel_size = get_output_size() / num_channels;
 
     // Compute local gradients
     #pragma omp parallel for

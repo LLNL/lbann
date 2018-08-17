@@ -32,6 +32,8 @@
 #ifdef LBANN_HAS_GPU
 
 #include <cuda.h>
+#include <thrust/memory.h>
+#include <thrust/detail/allocator/tagged_allocator.h>
 
 // Error utility macros
 #define LBANN_CUDA_SYNC(async)                                  \
@@ -66,6 +68,116 @@
 #else
 #define CHECK_CUDA(cuda_call) (cuda_call)
 #endif // #ifdef LBANN_DEBUG
+
+namespace lbann {
+namespace cuda {
+
+#ifdef __CUDACC__
+
+// Atomic add functions
+#if __CUDA_ARCH__ >= 530
+__device__ inline __half atomic_add(__half* address, __half val) {
+#if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
+  return atomicAdd(address, val);
+#else
+  unsigned int* address_as_uint = (unsigned int*) address;
+  unsigned int old = *address_as_uint;
+  __half* old_as_half = (__half*) &old;
+  unsigned int assumed;
+  unsigned int updated;
+  __half* updated_as_half = (__half*) &updated;
+  do {
+    assumed = old;
+    updated = old;
+    *updated_as_half += value;
+    old = atomicCAS(address_as_uint, assumed, updated);
+  } while (assumed != old);
+  return *old_as_half;
+#endif // 0
+}
+#endif // __CUDA_ARCH__ >= 530
+__device__ inline float atomic_add(float* address, float val) {
+  return atomicAdd(address, val);
+}
+__device__ inline double atomic_add(double* address, double val) {
+#if __CUDA_ARCH__ >= 600
+  return atomicAdd(address, val);
+#else
+  unsigned long long int* address_as_ull =
+    (unsigned long long int*)address;
+  unsigned long long int old = *address_as_ull, assumed;
+  do {
+    assumed = old;
+    old = atomicCAS(address_as_ull, assumed,
+                    __double_as_longlong(val +
+                                         __longlong_as_double(assumed)));
+  } while (assumed != old);
+  return __longlong_as_double(old);
+#endif // __CUDA_ARCH__ < 600
+}
+  
+#endif // __CUDACC__
+  
+namespace thrust {
+
+/** GPU memory allocator that can interact with Thrust.
+ *  Uses Hydrogen's CUB memory pool if available.
+ */
+template <typename T = El::byte>
+class allocator
+  : public ::thrust::detail::tagged_allocator<
+      T,
+      ::thrust::system::cuda::tag,
+      ::thrust::pointer<T, ::thrust::system::cuda::tag>> {
+private:
+  typedef typename ::thrust::detail::tagged_allocator<
+    T,
+    ::thrust::system::cuda::tag,
+    ::thrust::pointer<T, ::thrust::system::cuda::tag>> parent_class;
+
+  /** Active CUDA stream. */
+  cudaStream_t m_stream;
+
+public:
+  typedef typename parent_class::value_type value_type;
+  typedef typename parent_class::pointer    pointer;
+  typedef typename parent_class::size_type  size_type;
+
+  allocator(cudaStream_t stream = El::GPUManager::Stream())
+    : m_stream(stream) {}
+
+  /** Allocate GPU buffer. */
+  pointer allocate(size_type size) {
+    value_type* buffer = nullptr;
+#ifdef HYDROGEN_HAVE_CUB
+    auto& memory_pool = El::cub::MemoryPool();
+    CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
+                                          size * sizeof(value_type),
+                                          m_stream));
+#else
+    CHECK_CUDA(cudaMalloc(&buffer, size * sizeof(value_type)));
+#endif // HYDROGEN_HAVE_CUB
+    return pointer(buffer);
+  }
+
+  /** Deallocate GPU buffer.
+   *  'size' is unused and maintained for compatibility with Thrust.
+   */
+  void deallocate(pointer buffer, size_type size = 0) {
+#ifdef HYDROGEN_HAVE_CUB
+    auto& memory_pool = El::cub::MemoryPool();
+    CHECK_CUDA(memory_pool.DeviceFree(buffer.get()));
+#else
+    CHECK_CUDA(cudaFree(buffer.get()));
+#endif // HYDROGEN_HAVE_CUB
+  }
+
+};
+
+} // namespace thrust
+
+} // namespace cuda
+} // namespace lbann
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_CUDA_HPP

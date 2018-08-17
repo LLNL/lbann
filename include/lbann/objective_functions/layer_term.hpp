@@ -33,15 +33,18 @@
 namespace lbann {
 
 class layer_term : public objective_function_term {
- public:
+public:
   layer_term(EvalType scale_factor = EvalType(1));
   layer_term* copy() const override { return new layer_term(*this); } 
   std::string name() const override { return "evaluation layer term"; }
 
-  void set_evaluation_layer(Layer* l);
-
-  Layer* get_evaluation_layer();
-
+  /** Set corresponding layer. */
+  void set_layer(Layer& l);
+  /** Get corresponding layer. */
+  Layer& get_layer();
+  /** Get corresponding layer (const). */
+  const Layer& get_layer() const;
+  
   void setup(model& m) override;
 
   void start_evaluation() override;
@@ -52,6 +55,11 @@ class layer_term : public objective_function_term {
   
   void compute_weight_regularization() override {};
 
+private:
+  
+  /** Get corresponding evaluation layer. */
+  abstract_evaluation_layer& get_evaluation_layer();
+  
 };
 
 } // namespace lbann

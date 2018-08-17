@@ -63,13 +63,6 @@ lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
   int argc_dummy = 0;
   char** argv_dummy = nullptr;
   ::Al::Initialize(argc_dummy, argv_dummy);
-#ifdef AL_HAS_NCCL
-  for (int i = 0; i < m_num_al_nccl_streams; ++i) {
-    CHECK_CUDA(cudaStreamCreate(&m_al_nccl_streams[i]));
-  }
-  CHECK_CUDA(cudaEventCreateWithFlags(&m_al_nccl_sync_event,
-                                      cudaEventDisableTiming));
-#endif
 #endif
   // Set up the initial model split
   split_models(procs_per_model);
@@ -95,15 +88,6 @@ lbann_comm::~lbann_comm() {
   }
 #ifdef LBANN_HAS_ALUMINUM
   m_al_comms.clear();
-#ifdef AL_HAS_NCCL
-  for (int i = 0; i < m_num_al_nccl_streams; ++i) {
-    CHECK_CUDA(cudaStreamDestroy(m_al_nccl_streams[i]));
-  }
-  CHECK_CUDA(cudaEventDestroy(m_al_nccl_sync_event));
-  for (auto&& e : m_al_nccl_req_events) {
-    CHECK_CUDA(cudaEventDestroy(e));
-  }
-#endif
   ::Al::Finalize();
 #endif
 }
@@ -156,25 +140,33 @@ void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
   allreduce(mat, intermodel_comm, El::mpi::SUM);
 }
 
-void lbann_comm::allreduce(AbsDistMat& m,
+void lbann_comm::allreduce(AbsMat& m,
                            const El::mpi::Comm c,
                            El::mpi::Op op) {
   if (El::mpi::Size(c) == 1) {
     return;  // Can skip allreduce on one rank.
   }
-  const int local_size = m.LocalHeight() * m.LocalWidth();
+  const int local_size = m.Height() * m.Width();
   bytes_sent += sizeof(DataType) * local_size;
 #ifdef LBANN_HAS_ALUMINUM
-  if (m.LocalHeight() != m.LDim()) {
+  if (m.Height() != m.LDim()) {
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
   std::type_index t = std::type_index(typeid(::Al::MPIBackend));
 #ifdef LBANN_HAS_GPU
-  if (m.GetLocalDevice() == El::Device::GPU) {
+  if (m.GetDevice() == El::Device::GPU) {
 #ifdef AL_HAS_NCCL
-    // Force GPU matrices to use NCCL.
+    // We require NCCL for GPU matrices.
     t = std::type_index(typeid(::Al::NCCLBackend));
+    // If available, use the MPI-CUDA backend for small matrices.
+#ifdef AL_HAS_MPI_CUDA
+    // Based on runs on Pascal and Ray.
+    if ((El::mpi::Size(c) > 4 && local_size <= 8192) ||
+        (El::mpi::Size(c) >= 16 && local_size <= 32768)) {
+      t = std::type_index(typeid(::Al::MPICUDABackend));
+    }
+#endif  // AL_HAS_MPI_CUDA
 #else
     throw lbann_exception("Allreduce on GPU matrix requires NCCL support in"
                           " Aluminum");
@@ -189,24 +181,39 @@ void lbann_comm::allreduce(AbsDistMat& m,
       mpi_op_to_al_op(op),
       *comm);
   }
-  /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-    El::GPUManager::SynchronizeStream();
     ::Al::Allreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<::Al::NCCLCommunicator*>(comm));
+      *static_cast<::Al::NCCLBackend::comm_type*>(comm));
   }
 #endif // AL_HAS_NCCL
+#ifdef AL_HAS_MPI_CUDA
+  if (t == std::type_index(typeid(::Al::MPICUDABackend))) {
+    // Force the host-transfer algorithm for now.
+    ::Al::Allreduce<::Al::MPICUDABackend>(
+      m.Buffer(),
+      local_size,
+      mpi_op_to_al_op(op),
+      *static_cast<::Al::MPICUDABackend::comm_type*>(comm),
+      ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
+  }
+#endif  // AL_HAS_MPI_CUDA
 #else
   El::AllReduce(m, c, op);
 #endif
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 }
 
-void lbann_comm::nb_allreduce(AbsDistMat& m,
+void lbann_comm::allreduce(AbsDistMat& m,
+                           const El::mpi::Comm c,
+                           El::mpi::Op op) {
+  allreduce(m.Matrix(), c, op);
+}
+
+void lbann_comm::nb_allreduce(AbsMat& m,
                               const El::mpi::Comm c,
                               Al::request& req,
                               El::mpi::Op op) {
@@ -214,18 +221,26 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
     return;  // Can skip allreduce on one rank.
   }
 #ifdef LBANN_HAS_ALUMINUM
-  const int local_size = m.LocalHeight() * m.LocalWidth();
+  const int local_size = m.Height() * m.Width();
   bytes_sent += sizeof(DataType) * local_size;
-  if (m.LocalHeight() != m.LDim()) {
+  if (m.Height() != m.LDim()) {
     throw lbann_exception("Aluminum does not support allreduces on"
                           " non-contiguous matrices");
   }
   std::type_index t = std::type_index(typeid(::Al::MPIBackend));
 #ifdef LBANN_HAS_GPU
-  if (m.GetLocalDevice() == El::Device::GPU) {
+  if (m.GetDevice() == El::Device::GPU) {
 #ifdef AL_HAS_NCCL
-    // Force GPU matrices to use NCCL.
+    // We require NCCL for GPU matrices.
     t = std::type_index(typeid(::Al::NCCLBackend));
+    // If available, use the MPI-CUDA backend for small matrices.
+#ifdef AL_HAS_MPI_CUDA
+    // Based on runs on Pascal and Ray.
+    if ((El::mpi::Size(c) > 4 && local_size <= 8192) ||
+        (El::mpi::Size(c) >= 16 && local_size <= 32768)) {
+      t = std::type_index(typeid(::Al::MPICUDABackend));
+    }
+#endif  // AL_HAS_MPI_CUDA
 #else
     throw lbann_exception("Allreduce on GPU matrix requires NCCL support in"
                           " Aluminum");
@@ -244,39 +259,37 @@ void lbann_comm::nb_allreduce(AbsDistMat& m,
   /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-    cudaStream_t stream = m_al_nccl_streams[m_al_cur_nccl_req % m_num_al_nccl_streams];
-    ++m_al_cur_nccl_req;
-    // Use an event to synchronize the selected NCCL stream and LBANN's stream.
-    // Note that cudaStreamWaitEvent uses the event state when it is called, so
-    // the event can be overwritten safely.
-    CHECK_CUDA(cudaEventRecord(m_al_nccl_sync_event, El::GPUManager::Stream()));
-    CHECK_CUDA(cudaStreamWaitEvent(stream, m_al_nccl_sync_event, 0));
-    // Enqueue the allreduce in the NCCL stream.
     ::Al::NonblockingAllreduce<::Al::NCCLBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<::Al::NCCLCommunicator*>(comm),
-      stream);
-    // Use a separate event as the request object to synchronize on.
-    // This avoids having to wait for all work in the stream to complete.
-    // Grab a spare event if one is available, otherwise create one.
-    cudaEvent_t req_event;
-    if (m_al_nccl_req_events.empty()) {
-      CHECK_CUDA(cudaEventCreateWithFlags(&req_event,
-                                          cudaEventDisableTiming));
-    } else {
-      req_event = m_al_nccl_req_events.back();
-      m_al_nccl_req_events.pop_back();
-    }
-    CHECK_CUDA(cudaEventRecord(req_event, stream));
-    req.nccl_req = req_event;
+      *static_cast<::Al::NCCLBackend::comm_type*>(comm),
+      req.nccl_req);
   }
 #endif // AL_HAS_NCCL
+#ifdef AL_HAS_MPI_CUDA
+  if (t == std::type_index(typeid(::Al::MPICUDABackend))) {
+    // Force the host-transfer algorithm for now.
+    ::Al::NonblockingAllreduce<::Al::MPICUDABackend>(
+      m.Buffer(),
+      local_size,
+      mpi_op_to_al_op(op),
+      *static_cast<::Al::MPICUDABackend::comm_type*>(comm),
+      req.mpicuda_req,
+      ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
+  }
+#endif  // AL_HAS_MPI_CUDA
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 #else
   allreduce(m, c, op);
 #endif // LBANN_HAS_ALUMINUM
+}
+
+void lbann_comm::nb_allreduce(AbsDistMat& m,
+                              const El::mpi::Comm c,
+                              Al::request& req,
+                              El::mpi::Op op) {
+  nb_allreduce(m.Matrix(), c, req, op);
 }
 
 void lbann_comm::wait(Al::request& req) {
@@ -284,14 +297,18 @@ void lbann_comm::wait(Al::request& req) {
   if (req.mpi_req != Al::mpi_null_req) {
     ::Al::Wait<::Al::MPIBackend>(req.mpi_req);
   }
-  /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (req.nccl_req != Al::nccl_null_req) {
-    CHECK_CUDA(cudaEventSynchronize(req.nccl_req));
-    // Reuse the event.
-    m_al_nccl_req_events.push_back(req.nccl_req);
+    // Note this does not block the host.
+    ::Al::Wait<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
+#ifdef AL_HAS_MPI_CUDA
+  if (req.mpicuda_req != Al::mpicuda_null_req) {
+    // Note this does not block the host.
+    ::Al::Wait<::Al::MPICUDABackend>(req.mpicuda_req);
+  }
+#endif  // AL_HAS_MPI_CUDA
 #endif // LBANN_HAS_ALUMINUM
 }
 
@@ -301,15 +318,16 @@ bool lbann_comm::test(Al::request& req) {
   if (req.mpi_req != Al::mpi_null_req) {
     req_test = req_test && ::Al::Test<::Al::MPIBackend>(req.mpi_req);
   }
-  /// @todo MPI-CUDA backend
 #ifdef AL_HAS_NCCL
   if (req.nccl_req != Al::nccl_null_req) {
-    req_test = req_test && (cudaEventQuery(req.nccl_req) == cudaSuccess);
-    if (req_test) {
-      m_al_nccl_req_events.push_back(req.nccl_req);
-    }
+    req_test = req_test && ::Al::Test<::Al::NCCLBackend>(req.nccl_req);
   }
 #endif // AL_HAS_NCCL
+#ifdef AL_HAS_MPI_CUDA
+  if (req.mpicuda_req != Al::mpicuda_null_req) {
+    req_test = req_test && ::Al::Test<::Al::MPICUDABackend>(req.mpicuda_req);
+  }
+#endif  // AL_HAS_MPI_CUDA
 #endif // LBANN_HAS_ALUMINUM
   return req_test;
 }
@@ -1173,15 +1191,20 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
   const al_comms_key_type key(c.comm, t);
   if (m_al_comms.count(key) == 0) {
     if (t == std::type_index(typeid(::Al::MPIBackend))) {
-      m_al_comms[key] = al_comms_val_type(new ::Al::MPICommunicator(c.comm));
+      m_al_comms[key] = al_comms_val_type(new ::Al::MPIBackend::comm_type(c.comm));
     }
-    /// @todo MPI-CUDA backend
     #ifdef AL_HAS_NCCL
     if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-      auto&& val = new ::Al::NCCLCommunicator(c.comm);
+      auto&& val = new ::Al::NCCLBackend::comm_type(c.comm, El::GPUManager::Stream());
       m_al_comms[key] = al_comms_val_type(val);
     }
     #endif // AL_HAS_NCCL
+    #ifdef AL_HAS_MPI_CUDA
+    if (t == std::type_index(typeid(::Al::MPICUDABackend))) {
+      auto&& val = new ::Al::MPICUDABackend::comm_type(c.comm, El::GPUManager::Stream());
+      m_al_comms[key] = al_comms_val_type(val);
+    }
+    #endif  // AL_HAS_MPI_CUDA
   }
 
   // Return Aluminum communicator
@@ -1210,6 +1233,16 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
 
 void lbann_comm::lbann_comm_abort(std::string msg) {
   throw lbann_exception(msg);
+}
+
+int get_rank_in_world() {
+  int initialized = 0, finalized = 1, rank = -1;
+  MPI_Initialized(&initialized);
+  MPI_Finalized(&finalized);
+  if (initialized && !finalized) {
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  }
+  return rank;
 }
 
 }  // namespace lbann

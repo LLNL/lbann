@@ -6,8 +6,8 @@ LBANN_DIR=$(git rev-parse --show-toplevel)
 MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.prototext --num_epochs=10"
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
-IMAGENET_CLASSES=10 # options: 10, 100, 300, 1000 (leave blank to use other dataset)
-BUILD=          # default: Release
+IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
+BUILD=            # default: Release
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
@@ -18,11 +18,12 @@ ACCOUNT=
 TIME_LIMIT=     # default: 1:00 (format is hours:minutes)
 
 # Additional parameters
-SUBMIT_JOB=     # default: YES
-USE_GPU=        # default: YES (ignored if built without GPUs)
-CACHE_DATASET=  # default: NO
-USE_VTUNE=      # default: NO
-USE_NVPROF=     # default: NO
+SUBMIT_JOB=       # default: YES
+USE_GPU=          # default: YES (ignored if built without GPUs)
+CACHE_DATASET=    # default: NO
+USE_VTUNE=        # default: NO
+USE_NVPROF=       # default: NO
+USE_CUDAMEMCHECK= # default: NO
 EXPERIMENT_HOME_DIR=${EXPERIMENT_HOME_DIR:-${LBANN_DIR}/experiments}
 TRAIN_DATASET_DIR=
 TRAIN_DATASET_LABELS=
@@ -33,6 +34,7 @@ CACHE_DIR=
 EXPERIMENT_SCRIPT=$(readlink -f "$0")
 VTUNE_EXE="amplxe-cl-mpi -collect hotspots"
 NVPROF_EXE="nvprof --profile-child-processes --unified-memory-profiling off"
+CUDAMEMCHECK_EXE="${LBANN_DIR}/scripts/debug/cuda-memcheck.sh"
 
 # Set defaults
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-lbann}
@@ -50,6 +52,7 @@ USE_GPU=${USE_GPU:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
 USE_VTUNE=${USE_VTUNE:-NO}
 USE_NVPROF=${USE_NVPROF:-NO}
+USE_CUDAMEMCHECK=${USE_CUDAMEMCHECK:-NO}
 
 # Set cluster-specific defaults
 CLUSTER=${CLUSTER:-$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')}
@@ -79,7 +82,7 @@ case ${CLUSTER} in
         ;;
     "surface")
         SCHEDULER=slurm
-        PARTITION=${PARTITION:-gpgpu}
+        PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
@@ -105,7 +108,7 @@ case ${CLUSTER} in
     "pascal")
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-lc}
+        ACCOUNT=${ACCOUNT:-hpcdl}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=36
         HAS_GPU=YES
@@ -177,7 +180,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                 21000)
                     CACHE_DATASET=NO
                     CACHE_DIR=
-                    IMAGENET_DIR=/p/lscratche/brainusr/datasets
+                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets
                     TRAIN_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
                     TRAIN_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
                     TEST_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
@@ -245,14 +248,20 @@ EXPERIMENT_COMMAND="${LBANN_EXE} ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROT
 # Initialize profiler command
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${PROFILER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_vtune
         ;;
 esac
 case ${USE_NVPROF} in
     YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${PROFILER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nvprof
+        ;;
+esac
+case ${USE_CUDAMEMCHECK} in
+    YES|yes|TRUE|true|ON|on|1)
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${CUDAMEMCHECK_EXE}"
+        EXPERIMENT_NAME=${EXPERIMENT_NAME}_cudamemcheck
         ;;
 esac
 
@@ -260,13 +269,13 @@ esac
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-        case ${HAS_GPU} in
-            YES|yes|TRUE|true|ON|on|1)
-                case ${CLUSTER} in
-                    surface|ray)
-                        MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                        ;;
-                esac
+        case ${CLUSTER} in
+            surface|ray)
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default"
+                ;;
+            pascal)
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default --cpu_bind=mask_cpu:0x000001ff,0x0003fe00"
+                ;;
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
@@ -347,6 +356,7 @@ echo "# USE_GPU: ${USE_GPU}"                            >> ${BATCH_SCRIPT}
 echo "# CACHE_DATASET: ${CACHE_DATASET}"                >> ${BATCH_SCRIPT}
 echo "# USE_VTUNE: ${USE_VTUNE}"                        >> ${BATCH_SCRIPT}
 echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
+echo "# USE_CUDAMEMCHECK: ${USE_CUDAMEMCHECK}"          >> ${BATCH_SCRIPT}
 echo "# EXPERIMENT_HOME_DIR: ${EXPERIMENT_HOME_DIR}"    >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
@@ -359,7 +369,12 @@ case ${USE_GPU} in
         echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
         ;;
 esac
-echo ""
+case ${CLUSTER} in
+    pascal)
+        echo "export OMP_NUM_THREADS=8"                 >> ${BATCH_SCRIPT}
+        echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
+        ;;
+esac
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
@@ -386,7 +401,7 @@ esac
 
 # Set experiment
 echo "# ======== Experiment ========" >> ${BATCH_SCRIPT}
-echo "${MPIRUN} ${PROFILER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
+echo "${MPIRUN} ${DEBUGGER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
 
 # Submit batch script
 SUBMIT_EXE=sh

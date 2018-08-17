@@ -85,9 +85,7 @@ class generic_target_layer : public Layer {
     return true;
   }
 
-  virtual AbsDistMat& get_prediction() { return get_prev_activations(0); }
   virtual const AbsDistMat& get_prediction() const { return get_prev_activations(0); }
-  virtual AbsDistMat& get_ground_truth() { return get_prev_activations(1); }
   virtual const AbsDistMat& get_ground_truth() const { return get_prev_activations(1); }
 };
 

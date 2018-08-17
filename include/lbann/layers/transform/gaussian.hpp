@@ -46,22 +46,12 @@ class gaussian_layer : public transform_layer {
 
  public:
   gaussian_layer(lbann_comm *comm,
-                 const std::vector<int>& neuron_dims,
+                 const std::vector<int>& dims,
                  DataType mean = DataType(0),
                  DataType stdev = DataType(1))
     : transform_layer(comm), m_mean(mean), m_stdev(stdev) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Gaussian layer has no parents
+    set_output_dims(dims);
     m_expected_num_parent_layers = 0;
-
   }
   gaussian_layer* copy() const override { return new gaussian_layer(*this); }
   std::string get_type() const override { return "Gaussian"; }
@@ -79,17 +69,6 @@ class gaussian_layer : public transform_layer {
   }
 
  protected:
-
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-  }
 
   void fp_compute() override {
     auto& output = get_activations();

@@ -36,7 +36,7 @@ using namespace lbann;
 const int lbann_default_random_seed = 42;
 
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb);
-          
+
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -67,19 +67,19 @@ int main(int argc, char *argv[]) {
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]));
     }
-    
+
     const lbann_data::Model pb_model = pbs[0]->model();
     const lbann_data::Model pb_model_2 = pbs[1]->model();
-    
+
     const auto layers1 = model_1->get_layers();
     const auto layers2 = model_2->get_layers();
     int super_step = 1;
-    int max_super_step = pb_model.super_steps(); 
+    int max_super_step = pb_model.super_steps();
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator model at step " << super_step <<"\n\n";
       //@todo freeze generator layers in this step
       model_1->train( super_step*pb_model.num_epochs() );
-    
+
       //Replace/copy "proxy" layer in adversarial model (model2) with its "equivalent" layer in discriminator model (model1)
       //@todo freeze layers after replacement
       for(size_t l2=0; l2 < layers2.size(); l2++) {
@@ -90,22 +90,22 @@ int main(int argc, char *argv[]) {
           std::cout << "L2 Name " << l2_name << std::endl;
           for(size_t l1=0; l1 < layers1.size(); l1++) {
              if(l2_name == layers1[l1]->get_name()){
-               if(master) std::cout << "Replacing adversarial model (model 2) Layer " << layers1[l1]->get_name(); 
+               if(master) std::cout << "Replacing adversarial model (model 2) Layer " << layers1[l1]->get_name();
                layers2[l2]->replace_weights(layers1[l1]);
                if(master) std::cout << " with corresponding layer " << layers2[l2]->get_name() << " in discriminator model (model1) " << std::endl;
              }
           }
         }
       }
-                
+
       if (master) std::cerr << "\n STARTING train - adversarial model at step " << super_step << " \n\n";
       model_2->train( super_step*pb_model_2.num_epochs() );
 
-      super_step++;          
+      super_step++;
     }
 
-   
-   
+
+
     delete model_1;
     if (model_2 != nullptr) {
       delete model_2;
@@ -114,17 +114,15 @@ int main(int argc, char *argv[]) {
       delete t;
     }
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   // free all resources by El and MPI
   finalize(comm);
   return 0;
 }
-   
+
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
@@ -146,8 +144,8 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
+      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
+      LBANN_ERROR(err.str());
     }
     El::SetBlocksize(pb_model->block_size());
 
@@ -203,25 +201,31 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
       // Report build settings
       std::cout << "Build settings" << std::endl;
-      std::cout << "  Type  : ";
+      std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
       std::cout << "Debug" << std::endl;
 #else
       std::cout << "Release" << std::endl;
 #endif // LBANN_DEBUG
-      std::cout << "  CUDA  : ";
+      std::cout << "  Aluminum : ";
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "detected" << std::endl;
+#else
+      std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_ALUMINUM
+      std::cout << "  CUDA     : ";
 #ifdef LBANN_HAS_GPU
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN : ";
+      std::cout << "  cuDNN    : ";
 #ifdef LBANN_HAS_CUDNN
       std::cout << "detected" << std::endl;
 #else
       std::cout << "NOT detected" << std::endl;
 #endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB   : ";
+      std::cout << "  CUB      : ";
 #ifdef HYDROGEN_HAVE_CUB
       std::cout << "detected" << std::endl;
 #else
@@ -246,6 +250,17 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       const auto* env = std::getenv("MV2_USE_CUDA");
       std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
       std::cout << std::endl;
+
+#ifdef LBANN_HAS_ALUMINUM
+      std::cout << "Aluminum Features:" << std::endl;
+      std::cout << "  NCCL : ";
+#ifdef AL_HAS_NCCL
+      std::cout << "enabled" << std::endl;
+#else
+      std::cout << "disabled" << std::endl;
+#endif // AL_HAS_NCCL
+      std::cout << std::endl;
+#endif // LBANN_HAS_ALUMINUM
 
       // Report model settings
       const auto& grid = comm->get_model_grid();
@@ -297,17 +312,15 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
       init_random(random_seed + comm->get_rank_in_world());
 #else
       if(comm->am_world_master()) {
-        std::cout << 
+        std::cout <<
           "--------------------------------------------------------------------------------\n"
           "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
           "--------------------------------------------------------------------------------\n";
       }
 #endif
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
   }
 
   return model;

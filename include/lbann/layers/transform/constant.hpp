@@ -39,20 +39,10 @@ class constant_layer : public transform_layer {
   /** Constructor. */
   constant_layer(lbann_comm *comm,
                  DataType value,
-                 const std::vector<int>& neuron_dims)
+                 std::vector<int> dims)
     : transform_layer(comm), m_value(value) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Constant layer has no parents
+    set_output_dims(dims);
     m_expected_num_parent_layers = 0;
-
   }
 
   constant_layer* copy() const override { return new constant_layer(*this); }
@@ -70,32 +60,12 @@ class constant_layer : public transform_layer {
 
  protected:
 
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-  }
-
-  void setup_data() override {
-    transform_layer::setup_data();
-    if (m_value != DataType(0)) {
+  void fp_compute() override {
+    if (m_value == EvalType(0)) {
+      El::Zero(get_activations());
+    } else {
       El::Fill(get_activations(), m_value);
     }
-  }
-
-  void fp_compute() override {
-    auto& activations = get_activations();
-    if (m_value == EvalType(0)) {
-      El::Zero(activations);
-    } else {
-      El::Fill(activations, m_value);
-    }
-
   }
 
  private:

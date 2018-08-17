@@ -173,6 +173,7 @@ model {
   layer {
     name: "g_adv1_bce"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "disc1fc3_real"
     bce_with_logits {
       true_label: 1
@@ -323,7 +324,7 @@ model {
     name: "cycy_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4_2 image_data_dummy"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -332,6 +333,7 @@ model {
     }
     name: "L_cyc_y"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "cycy_minus_y"
   }
   layer {
@@ -410,7 +412,7 @@ model {
     name: "cycx_minus_x"
     data_layout: "data_parallel"
     parents: "gen2fc4_gsample param_data_id"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -418,6 +420,7 @@ model {
     abs {
     }
     name: "L_cyc_x"
+    device_allocation: "cpu"
     data_layout: "data_parallel"
     parents: "cycx_minus_x"
   }
@@ -432,7 +435,7 @@ model {
     name: "gsample_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4_1 image_data_dummy"
-    sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
@@ -440,6 +443,7 @@ model {
     l2_loss {
     }
     name: "l_l2_y"
+    device_allocation: "cpu"
     data_layout: "data_parallel"
     parents: "gsample_minus_y"
   }
@@ -511,12 +515,13 @@ model {
       interval: 1
     }
   }
- # callback {
- #   dump_activations {
- #     basename: "/dir/to/dump_y_activations/"
- #     layer_names: "image_data_dummy gen1fc4_1"
- #   }
- # }
+  #callback {
+  #  dump_activations {
+  #    basename: "/dir/to/dump_y_activations/"
+  #    interval: 100
+  #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
+  #  }
+  #}
   block_size: 256
   super_steps: 10000
   num_batches: 1

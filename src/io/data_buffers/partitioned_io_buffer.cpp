@@ -117,6 +117,8 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
     max_mini_batch_size = data_reader->get_num_data();
   }
 
+  bool apportioned = data_reader->is_partitioned();
+
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_model());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
@@ -132,6 +134,12 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   int batch_stride = m_comm->get_num_models() * max_mini_batch_size;
   int base_offset  = m_comm->get_rank_in_model();
   int model_offset = m_comm->get_model_rank() * max_mini_batch_size;
+
+  if (apportioned) {
+    batch_stride = max_mini_batch_size;
+    model_offset = 0;
+  }
+
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
@@ -143,6 +151,9 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   data_reader->set_initial_position();
 
   int min_stride_across_models = max_mini_batch_size * m_comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
+  if (apportioned) {
+    min_stride_across_models = max_mini_batch_size;
+  }
 
   data_reader->set_global_mini_batch_size(min_stride_across_models); /// The global mini-batch is a full mini-batch per model
 

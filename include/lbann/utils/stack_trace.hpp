@@ -23,71 +23,38 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef __STACK_TRACE_HPP__
-#define __STACK_TRACE_HPP__
+#ifndef LBANN_UTILS_STACK_TRACE_HPP_INCLUDED
+#define LBANN_UTILS_STACK_TRACE_HPP_INCLUDED
 
-#include <csignal>
 #include <string>
 
 namespace lbann {
 namespace stack_trace {
 
-/**
- * This module contains functions for printing a stack trace
- * when either a signal is caught or an lbann exception is thrown.
- * Default behavior: processes write to cerr. The cmd line option
- * "--stack_trace_to_file" will additionally cause each processor
- * to attempt to write its stack trace to
- *    "stack_trace_<rank_in_world>.txt"
+/** Get human-readable stack trace.
+ *  Ignores stack frames within the lbann::stack_trace and
+ *  lbann::lbann_exception namespaces. Calls non-reentrant functions,
+ *  so behaviour may be undefined if used within a signal handler.
+ */
+std::string get();
+
+/** Register signal handler.
+ *  Initializes a signal handler that prints an error message and
+ *  stack trace to the standard error stream when a fatal signal is
+ *  detected. If a file name base is provided, it also writes to the
+ *  file "<file_base>_rank<MPI rank>.txt".
  *
- * To use in your driver, you need to call register_handler() after
- * the call to options::get()->init(), and also include the option
- * --catch_signals on the command line
+ *  Fatal signals are those that cause an abnormal termination by
+ *  default, according to the POSIX C standard
+ *  (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html).
+ *  
+ *  This functionality is somewhat risky since the handler calls
+ *  non-reentrant functions, which can result in undefined behavior
+ *  (see https://www.ibm.com/developerworks/library/l-reent/).
  */
-
-/** For internal use; made public for testing.
- *  called by initialize()
- */
-void set_lbann_stack_trace_world_rank(int rank);
-
-/** For internal use; made public for testing.
- *  Attempts to print a stack trace. Calls non-reentrant
- *  functions, so behaviour may be undefined if used within
- *  a signal handler. Can be used when exceptions are thrown
- *  without undefined behavior.
- */
-void print_stack_trace();
-
-
-/** For internal use; made public for testing.
- *  Attempts to print a stack trace when an lbann_exception
- *  is thrown. Called by lbann_exception() ctor.
- */
-void print_lbann_exception_stack_trace(std::string m);
-
-/** For internal use; made public for testing.
- * called by print_lbann_signal_stack_trace().
- */ 
-std::string sig_name(int signal);
-
-
-/** Register our signal handler; This is called in initialize(),
- *  but only if the cmd line option "--catch_signals" is present.
- *  It is not active by default, because the handler calls non-reentrant,
- *  functions, which can result in undefined behavior. 
- *  See: https://www.ibm.com/developerworks/library/l-reent/
- *  for discussion. That said, it is possible (likely?) that our
- *  handler will work correctly. And if there's a SIGSEV and it
- *  doesn't, nothing much is lost (IMO). 
- */
-void register_handler();
-
-/** For internal use; made public for testing. */
-void lbann_signal_handler(int signal);
-
+void register_signal_handler(std::string file_base = "");
 
 } //namespace stack_trace 
 } //namespace lbann
 
-
-#endif
+#endif // LBANN_UTILS_STACK_TRACE_HPP_INCLUDED

@@ -117,7 +117,8 @@ class model {
   void replace_weights(std::vector<weights *>& w);
 
   /** Copy trained weights from input parameter w. 
- *  Only weight values are placed, pointers and layer structure are in place*/
+ *  Only weight values are placed, pointers and layer structure are in place.
+ *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
 
   /** Return the model's weights. */
@@ -344,6 +345,11 @@ class model {
   virtual void update_weights();
   /** Update layers step. */
   virtual bool update_layers();
+  /** Reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  virtual void reconcile_weight_values();
 
   ////////////////////////////////////////////////////////////
   // Callbacks
@@ -393,6 +399,14 @@ class model {
  private:
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
+  /** Insert evaluation layers where needed.
+   *  If an objective function layer term or a layer metric
+   *  corresponds to a layer that is not an evaluation layer, an
+   *  evaluation layer is added as a child of the original layer and
+   *  set as the corresponding layer to the layer term or layer
+   *  metric.
+   */
+  void add_evaluation_layers();
   /** Insert dummy layers after layers with too few children.
    *  If a layer expects more child layers than it has, add dummy
    *  layers until it has enough children.

@@ -31,7 +31,7 @@
 #include "lbann/layers/activations/activation.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
 #include <string>
 #include <sstream>
 
@@ -66,7 +66,7 @@ class fully_connected_layer : public learning_layer {
  public:
 
   fully_connected_layer(lbann_comm *comm,
-                        int num_neurons,  // TODO: accept a vector for neuron dims
+                        int output_size,  /// @todo Accept a vector
                         bool transpose = false,
                         weights* weight = nullptr,
                         bool has_bias = true)
@@ -75,10 +75,8 @@ class fully_connected_layer : public learning_layer {
       m_bias_gradient(nullptr),
       m_transpose(transpose) {
 
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = 1;
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
+    // Initialize output tensor dimensions
+    set_output_dims({output_size});
 
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
@@ -89,7 +87,7 @@ class fully_connected_layer : public learning_layer {
   std::string get_description() const override {
     return std::string {} +
      " fully_connected; num_neurons: "
-     + std::to_string(this->m_num_neurons)
+     + std::to_string(get_output_size())
      + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
      + " dataLayout: " + this->get_data_layout_string(get_data_layout())
      + " device alloc: " + this->get_device_allocation_string(get_device_allocation());
@@ -141,31 +139,21 @@ class fully_connected_layer : public learning_layer {
 
   std::string get_type() const override { return "fully connected"; }
 
-  void set_num_neurons(int n) { 
-    m_num_neurons = n; 
-    this->m_neuron_dims.assign(1, this->m_num_neurons);
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
 
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_matrices(const El::Grid& grid) override;
-
-  void setup_dims() override {
-    // Store neuron tensor dimensions
-    const int num_neurons = this->m_num_neurons;
-    const int num_neuron_dims = this->m_num_neuron_dims;
-    const std::vector<int> neuron_dims = this->m_neuron_dims;
-
-    // Initialize previous neuron tensor dimensions
-    learning_layer::setup_dims();
-
-    // Initialize neuron tensor dimensions
-    this->m_num_neurons = num_neurons;
-    this->m_num_neuron_dims = num_neuron_dims;
-    this->m_neuron_dims = neuron_dims;
+  /** Set dimensions of output tensor.
+   *  E.g. set the dimensions of an "activations tensor" or the
+   *  "neuron dimensions."
+   */
+  void set_output_dims(std::vector<int> dims) {
+    learning_layer::set_output_dims(dims);
   }
+
+ protected:
+
+  void setup_matrices(const El::Grid& grid) override;
 
   void setup_data() override {
     learning_layer::setup_data();
@@ -179,77 +167,81 @@ class fully_connected_layer : public learning_layer {
     }
     this->m_weights.resize(2, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm);
-      this->m_weights[0]->set_name(this->m_name + "_linearity_weights");
-      this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
-      this->m_model->add_weights(this->m_weights[0]);
+      auto* w = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      w->set_name(get_name() + "_linearity_weights");
+      w->set_initializer(init);
+      w->set_optimizer(opt);
+      this->m_weights[0] = w;
+      this->m_model->add_weights(w);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm);
-      this->m_weights[1]->set_name(this->m_name + "_bias_weights");
-      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
-      this->m_model->add_weights(this->m_weights[1]);
+      auto* w = new weights(get_comm());
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      w->set_name(get_name() + "_bias_weights");
+      w->set_optimizer(opt);
+      this->m_weights[1] = w;
+      this->m_model->add_weights(w);
     }
+    auto& linearity_weights = *this->m_weights[0];
+    auto& bias_weights = *this->m_weights[1];
 
-    // Initialize Glorot or He weight initialization
+    // Initialize variance scaling initialization
     auto* cast_initializer
-      = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
+      = dynamic_cast<variance_scaling_initializer*>(linearity_weights.get_initializer());
     if (cast_initializer != nullptr) {
-      cast_initializer->set_fan_in(this->m_num_prev_neurons);
-      cast_initializer->set_fan_out(this->m_num_neurons);
+      cast_initializer->set_fan_in(get_input_size());
+      cast_initializer->set_fan_out(get_output_size());
     }
 
-    // Setup weights
-    // Note: linearity matrix is duplicated across processes unless
-    // the data layout is model-parallel.
-    El::Distribution col_dist, row_dist;
-    switch (get_data_layout()) {
-    case data_layout::DATA_PARALLEL:
-      col_dist = El::STAR;
-      row_dist = El::STAR;
-      break;
-    case data_layout::MODEL_PARALLEL:
-      col_dist = El::MC;
-      row_dist = El::MR;
-      break;
-    default:
-      LBANN_ERROR("invalid data layout");
+    // Setup linearity weights
+    auto linearity_dist = get_prev_activations().DistData();
+    if (linearity_dist.colDist != El::MC
+        || linearity_dist.rowDist != El::MR) {
+      linearity_dist.colDist = El::STAR;
+      linearity_dist.rowDist = El::STAR;
     }
     if (m_transpose) {
-      this->m_weights[0]->setup(get_num_prev_neurons(),
-                                get_num_neurons(),
-                                col_dist, row_dist, Dev);
+      linearity_weights.set_dims(get_input_dims(), get_output_dims());
     } else {
-      this->m_weights[0]->setup(get_num_neurons(),
-                                get_num_prev_neurons(),
-                                col_dist, row_dist, Dev);
+      linearity_weights.set_dims(get_output_dims(), get_input_dims());
     }
-    this->m_weights[1]->setup(get_num_neurons(),
-                              1,
-                              get_activations().DistData().colDist,
-                              El::STAR, Dev);
+    linearity_weights.set_matrix_distribution(linearity_dist);
+
+    // Setup bias weights
+    auto bias_dist = get_activations().DistData();
+    bias_dist.rowDist = El::STAR;
+    bias_weights.set_dims(get_output_dims());
+    bias_weights.set_matrix_distribution(bias_dist);
 
     // Setup weight gradients
-    El::Zeros(*this->m_linearity_gradient,
-              this->m_weights[0]->get_matrix_height(),
-              this->m_weights[0]->get_matrix_width());
+    El::Zeros(*m_linearity_gradient,
+              linearity_weights.get_matrix_height(),
+              linearity_weights.get_matrix_width());
     El::Zeros(*this->m_bias_gradient,
-              this->m_weights[1]->get_matrix_height(),
-              this->m_weights[1]->get_matrix_width());
+              bias_weights.get_matrix_height(),
+              bias_weights.get_matrix_width());
 
-    if (m_frozen) {
-      this->m_weights[0]->freeze();
-      this->m_weights[1]->freeze();
-    } else {
-      if (this->m_weights[0]->is_frozen() || this->m_weights[1]->is_frozen()) {
+    // Initialize freeze state
+    for (auto&& w : this->m_weights) {
+      if (m_frozen) {
+        w->freeze();
+      } else {
+        w->unfreeze();
+      }
+    }
+    for (auto&& w : this->m_weights) {
+      if (w->is_frozen() != m_frozen) {
         std::stringstream err;
-        err << "layer " << get_name() << " is not frozen, but its weights "
-            << "(" << this->m_weights[0]->get_name() << ", "
-            << this->m_weights[1]->get_name() << ") are frozen";
+        err << (m_frozen ? "" : "un") << "frozen "
+            << "layer \"" << get_name() << "\" has "
+            << (w->is_frozen() ? "" : "un") << "frozen "
+            << "weights \"" << w->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
     }
+    
   }
 
   void fp_compute() override;

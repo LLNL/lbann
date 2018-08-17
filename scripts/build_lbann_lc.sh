@@ -10,11 +10,10 @@ ARCH=$(uname -m)
 ################################################################
 
 COMPILER=gnu
-if [ "${CLUSTER}" == "pascal" ]; then
-	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
-	# Version 6.1.0 does not work with CUDA 9.1, either.
-	COMPILER=gnu
-	module load gcc/4.9.3
+if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
+    # NVCC in CUDA 9.1 does not support GCC versions later than 6
+    COMPILER=gnu
+    module load gcc/4.9.3
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -24,7 +23,7 @@ fi
 BUILD_TYPE=Release
 Elemental_DIR=
 case $TOSS in
-	3.10.0|4.11.0)
+	3.10.0|4.11.0|4.14.0)
 		OpenCV_DIR=""
 		if [ "${ARCH}" == "x86_64" ]; then
 			export VTUNE_DIR=/usr/tce/packages/vtune/default
@@ -74,7 +73,7 @@ WITH_TBINF=OFF
 WITH_HDF5=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
-# version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
+# version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
@@ -84,7 +83,7 @@ WITH_LIBJPEG_TURBO=ON
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
 if [ "${CLUSTER}" == "surface" ]; then
-    AUTOCONF_CUSTOM_DIR=/p/lscratche/brainusr/autoconf/bin
+    AUTOCONF_CUSTOM_DIR=/p/lscratchh/brainusr/autoconf/bin
     AUTOCONF_VER_DEFAULT=`autoconf --version | awk '(FNR==1){print $NF}'`
     AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
 
@@ -282,7 +281,7 @@ done
 # Determine whether system uses modules
 USE_MODULES=0
 case $TOSS in
-	3.10.0|4.11.0)
+	3.10.0|4.11.0|4.14.0)
 		USE_MODULES=1
 		;;
 	2.6.32)
@@ -306,13 +305,8 @@ if [ ${USE_MODULES} -ne 0 ]; then
     module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
 else
-    if [ "${CLUSTER}" == "surface" ]; then
-        use git-2.8.0
-        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-    else
-        use git
-        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-    fi
+    use git
+    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
 if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
@@ -331,7 +325,14 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
-        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        if [ "${COMPILER_}" == "gcc" ]; then
+            # Special case to avoid GCC 8.1
+            # Note: This should be removed once the bug in GCC 8.1 is
+            # patched. See https://github.com/LLNL/lbann/issues/529.
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | grep -v 8.1.0 | sed '/^$/d' | tail -1)
+        else
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        fi
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -492,7 +493,7 @@ fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
 if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
   export MV2_USE_CUDA=1
 fi
 
@@ -570,15 +571,11 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
 	case $CLUSTER in
-		ray)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
-			;;
-		sierra)
-			# NCCL not available
-			unset NCCL_DIR
+		ray|sierra)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.2_ppc64le
 			;;
 		*)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
 			;;
 	esac
 
@@ -588,14 +585,9 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
 			. /usr/share/[mM]odules/init/bash
 			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 			;;
-		ray)
+		ray|sierra)
 			module del cuda
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
-			;;
-		sierra)
-			module del cuda
-			# cuDNN is not yet available for CUDA 9.2
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.1.85}
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
 			;;
 	esac
 fi
@@ -625,7 +617,11 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
-		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.4/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		fi
 	fi
 	if [ ! -d "${CUDNN_DIR}" ]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"

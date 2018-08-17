@@ -41,24 +41,24 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_reader_path = '%s/model_zoo/models/gan/mnist/discriminator_data.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'triplet' in file_name:
-                    data_filedir_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
-                    data_filename_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/train/train_list_8h.nfl.npz'
-                    data_filedir_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
-                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/val/val_list_8h.nfl.npz'
+                    data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
+                    data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/train/train_list_8h.nfl.npz'
+                    data_filedir_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
+                    data_filename_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/val/val_list_8h.nfl.npz'
                     data_reader_path = '%s/model_zoo/models/siamese/triplet/data_reader_triplet.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'siamese_alexnet' in file_name:
-                    data_filedir_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/'
-                    data_filename_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/train.txt'
-                    data_filedir_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/'
-                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/val.txt'
+                    data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/'
+                    data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt'
+                    data_filedir_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/'
+                    data_filename_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt'
                     data_reader_path = '%s/model_zoo/models/siamese/siamese_alexnet/data_reader_imagenet_patches.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'net' in file_name:
-                    data_filedir_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/'
-                    data_filename_train_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/train.txt'
-                    data_filedir_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/'
-                    data_filename_test_default = '/p/lscratche/brainusr/datasets/ILSVRC2012/labels/val.txt'
+                    data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/'
+                    data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt'
+                    data_filedir_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/'
+                    data_filename_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt'
                     data_reader_name = 'imagenet'
                     node_count = 2
                     if(cluster == 'ray'):
@@ -70,7 +70,7 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_filename_test_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin'
                     data_reader_name = 'cifar10'
                 elif 'char' in file_name:
-                    data_filedir_default = '/p/lscratche/brainusr/datasets/tinyshakespeare/'
+                    data_filedir_default = '/p/lscratchh/brainusr/datasets/tinyshakespeare/'
                     data_reader_name = 'ascii'
                 else:
                     print("Shared lbannusr account doesn't have access to dataset this model requires")

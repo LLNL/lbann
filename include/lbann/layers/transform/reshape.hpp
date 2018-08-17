@@ -34,62 +34,52 @@ namespace lbann {
 /** Reshape layer */
 template <data_layout T_layout, El::Device Dev>
 class reshape_layer : public transform_layer {
- public:
+public:
   reshape_layer(lbann_comm *comm,
-                int num_dims,
-                const int *dims)
+                std::vector<int> dims)
     : transform_layer(comm) {
-    this->m_num_neuron_dims = num_dims;
-    this->m_neuron_dims.assign(dims, dims+num_dims);
-    this->m_num_neurons = std::accumulate(dims, dims+num_dims, 1,
-                                          std::multiplies<int>());
+    set_output_dims(dims);
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_dims() override {
-    // Store neuron tensor dimensions
-    const int num_neuron_dims = this->m_num_neuron_dims;
-    const std::vector<int> neuron_dims = this->m_neuron_dims;
+protected:
 
-    // Initialize previous neuron tensor dimensions
+  void setup_dims() override {
     transform_layer::setup_dims();
 
-    // Initialize neuron tensor dimensions
-    this->m_num_neuron_dims = num_neuron_dims;
-    this->m_neuron_dims = neuron_dims;
+    const auto& input_dims = get_input_dims();
+    auto output_dims = get_output_dims();
 
     // Determine any unspecified dimensions
     int unspecified_dim = -1;
-    for(int dim = 0; dim < this->m_num_neuron_dims; ++dim) {
-      if(this->m_neuron_dims[dim] <= 0) {
-        unspecified_dim = dim;
-        this->m_neuron_dims[dim] = 1;
+    for (size_t dim = 0; dim < output_dims.size(); ++dim) {
+      if (output_dims[dim] <= 0) {
+        if (unspecified_dim < 0) { unspecified_dim = dim; }
+        output_dims[dim] = 1;
       }
     }
-    if(unspecified_dim >= 0) {
-      const int specified_size = std::accumulate(this->m_neuron_dims.begin(),
-                                                 this->m_neuron_dims.end(),
-                                                 1,
-                                                 std::multiplies<int>());
-      this->m_neuron_dims[unspecified_dim] = this->m_num_neurons / specified_size;
+    if (unspecified_dim >= 0) {
+      const auto& specified_size = std::accumulate(output_dims.begin(),
+                                                   output_dims.end(),
+                                                   1,
+                                                   std::multiplies<int>());
+      output_dims[unspecified_dim] = get_input_size() / specified_size;
+      set_output_dims(output_dims);
     }
 
     // Check that reshape is valid
-    if(this->m_num_neurons != std::accumulate(this->m_neuron_dims.begin(),
-                                              this->m_neuron_dims.end(),
-                                              1,
-                                              std::multiplies<int>())) {
+    if (get_input_size() != get_output_size()) {
       std::stringstream err;
-      err << "input neuron dimensions (";
-      for (size_t i = 0; i < this->m_prev_neuron_dims.size(); ++i) {
-        err << (i > 0 ? "x" : "") << this->m_prev_neuron_dims[i];
+      err << "input tensor dimensions (";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
       }
-      err << ") do not match output neuron dimensions (";
-      for (size_t i = 0; i < this->m_neuron_dims.size(); ++i) {
-        err << (i > 0 ? "x" : "") << this->m_neuron_dims[i];
+      err << ") do not match output tensor dimensions (";
+      for (size_t i = 0; i < output_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << output_dims[i];
       }
       err << ")";
       LBANN_ERROR(err.str());
@@ -97,28 +87,14 @@ class reshape_layer : public transform_layer {
 
   }
 
-  void setup_gpu() override {
-    transform_layer::setup_gpu();
-#ifdef HYDROGEN_HAVE_CUB
-    // Set matrices to use CUB GPU memory pool
-    // Note: During each iteration, matrices are resized to the
-    // mini-batch size and cleared to obtain a matrix view. To avoid
-    // expensive GPU memory allocations and deallocations, we use
-    // CUB's GPU memory pool.
-    if (Dev == El::Device::GPU) {
-      get_local_activations().SetMemoryMode(1);
-      get_local_error_signals().SetMemoryMode(1);
-    }
-#endif
-  }
-
-  void fp_compute() override {
+  void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
-
-  void bp_compute() override {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     El::LockedView(get_error_signals(), get_prev_error_signals());
   }
+  void fp_compute() override {}
+  void bp_compute() override {}
 
 };
 

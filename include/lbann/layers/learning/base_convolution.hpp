@@ -32,7 +32,7 @@
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/random.hpp"
@@ -202,6 +202,8 @@ class base_convolution_layer : public learning_layer {
    *  deconvolution classes. */
   void setup_data() override {
     learning_layer::setup_data();
+    const auto& input_dims = get_input_dims();
+    const auto& output_dims = get_output_dims();
 
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 2) {
@@ -214,51 +216,70 @@ class base_convolution_layer : public learning_layer {
     }
     this->m_weights.resize(2, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm);
-      this->m_weights[0]->set_name(this->m_name + "_kernel");
-      this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
-      this->m_model->add_weights(this->m_weights[0]);
+      auto* w = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      w->set_name(get_name() + "_kernel");
+      w->set_initializer(init);
+      w->set_optimizer(opt);
+      this->m_weights[0] = w;
+      this->m_model->add_weights(w);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm);
-      this->m_weights[1]->set_name(this->m_name + "_bias");
-      this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
-      this->m_model->add_weights(this->m_weights[1]);
+      auto* w = new weights(get_comm());
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      w->set_name(get_name() + "_bias");
+      w->set_optimizer(opt);
+      this->m_weights[1] = w;
+      this->m_model->add_weights(w);
     }
-
-    // Initialize Glorot or He weight initialization
+    auto& kernel_weights = *this->m_weights[0];
+    auto& bias_weights = *this->m_weights[1];
+    
+    // Initialize variance scaling initialization
     auto* cast_initializer
-      = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
+      = dynamic_cast<variance_scaling_initializer*>(kernel_weights.get_initializer());
     if (cast_initializer != nullptr) {
-      cast_initializer->set_fan_in(m_kernel_size / this->m_neuron_dims[0]);
-      cast_initializer->set_fan_out(m_kernel_size / this->m_prev_neuron_dims[0]);
+      cast_initializer->set_fan_in(m_kernel_size / output_dims[0]);
+      cast_initializer->set_fan_out(m_kernel_size / input_dims[0]);
     }
 
-    // Initialize bias
-    this->m_weights[1]->setup(this->m_neuron_dims[0], Dev);
+    // Initialize weight matrices
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    kernel_weights.set_dims(m_kernel_dims);
+    kernel_weights.set_matrix_distribution(dist);
+    bias_weights.set_dims(output_dims[0]);
+    bias_weights.set_matrix_distribution(dist);
+
+    // Initialize gradients
+    El::Zeros(m_kernel_gradient,
+              kernel_weights.get_matrix_height(),
+              kernel_weights.get_matrix_width());
     El::Zeros(m_bias_gradient,
-              this->m_weights[1]->get_matrix_height(),
-              this->m_weights[1]->get_matrix_width());
+              bias_weights.get_matrix_height(),
+              bias_weights.get_matrix_width());
 
-    if (m_frozen) {
-      this->m_weights[0]->freeze();
-      this->m_weights[1]->freeze();
-    } else {
-      if (this->m_weights[0]->is_frozen()) {
-        std::stringstream err;
-        err << "unfrozen layer \"" << get_name() << "\" "
-            << "has frozen weights \"" << this->m_weights[0]->get_name() << "\"";
-        LBANN_ERROR(err.str());
+    // Initialize freeze state
+    for (auto&& w : this->m_weights) {
+      if (m_frozen) {
+        w->freeze();
+      } else {
+        w->unfreeze();
       }
-      if (this->m_weights[1]->is_frozen()) {
+    }
+    for (auto&& w : this->m_weights) {
+      if (w->is_frozen() != m_frozen) {
         std::stringstream err;
-        err << "unfrozen layer \"" << get_name() << "\" "
-            << "has frozen weights \"" << this->m_weights[1]->get_name() << "\"";
+        err << (m_frozen ? "" : "un") << "frozen "
+            << "layer \"" << get_name() << "\" has "
+            << (w->is_frozen() ? "" : "un") << "frozen "
+            << "weights \"" << w->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
     }
+    
   }
 
   /// Initialize GPU objects
@@ -267,6 +288,8 @@ class base_convolution_layer : public learning_layer {
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
+
+    const auto& output_dims = get_output_dims();
 
     // Set kernel descriptor
     CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_kernel_cudnn_desc));
@@ -279,7 +302,7 @@ class base_convolution_layer : public learning_layer {
     // Set convolution descriptor
     // Note: upscales are not supported as of cuDNN v5.1
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
-    std::vector<int> upscales(this->m_num_neuron_dims-1, 1);
+    std::vector<int> upscales(output_dims.size() - 1, 1);
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
                                                 m_pads.size(),
                                                 m_pads.data(),
@@ -289,40 +312,11 @@ class base_convolution_layer : public learning_layer {
                                                 cudnn::get_data_type()));
 
     // Set bias tensor descriptor
-    std::vector<int> bias_dims(get_num_neuron_dims() + 1, 1);
-    bias_dims[1] = get_neuron_dims()[0];
+    std::vector<int> bias_dims(output_dims.size() + 1, 1);
+    bias_dims[1] = output_dims[0];
     cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
 
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  virtual void check_setup() override {
-    learning_layer::check_setup();
-    std::stringstream err;
-
-    // Check that kernel and bias weights are both initialized
-    if (this->m_weights.size() != 2
-        || this->m_weights[0] == nullptr
-        || this->m_weights[1] == nullptr) {
-      err << "failed to setup weights in layer \"" << get_name() << "\"";
-      LBANN_ERROR(err.str());
-    }
-
-    // Check that kernel data and kernel gradient data are contiguous
-    const auto& kernel = this->m_weights[0]->get_values();
-    if (kernel.LocalWidth() > 1
-        && kernel.LDim() != kernel.LocalHeight()) {
-      err << "kernel data in layer \"" << m_name << "\" "
-          << "is not contiguous";
-      LBANN_ERROR(err.str());
-    }
-    if (m_kernel_gradient.LocalWidth() > 1
-        && m_kernel_gradient.LDim() != m_kernel_gradient.LocalHeight()) {
-      err << "kernel gradient data in layer \"" << m_name << "\" "
-          << "is not contiguous";
-      LBANN_ERROR(err.str());
-    }
-
+#endif // LBANN_HAS_CUDNN
   }
 
  protected:
@@ -365,14 +359,14 @@ class base_convolution_layer : public learning_layer {
     std::vector<int> input_dims, output_dims;
     cudnnTensorDescriptor_t input_desc, output_desc;
     if (during_forward_prop) {
-      input_dims = get_prev_neuron_dims();
-      output_dims = get_neuron_dims();
+      input_dims = get_input_dims();
+      output_dims = get_output_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_activations();
       output_desc = m_tensors_cudnn_desc.get_activations();
     }
     else {
-      input_dims = get_neuron_dims();
-      output_dims = get_prev_neuron_dims();
+      input_dims = get_output_dims();
+      output_dims = get_input_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
       output_desc = m_tensors_cudnn_desc.get_error_signals();
     }
@@ -447,14 +441,14 @@ class base_convolution_layer : public learning_layer {
     std::vector<int> input_dims, output_dims;
     cudnnTensorDescriptor_t input_desc, output_desc;
     if (during_forward_prop) {
-      input_dims = get_prev_neuron_dims();
-      output_dims = get_neuron_dims();
+      input_dims = get_input_dims();
+      output_dims = get_output_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_activations();
       output_desc = m_tensors_cudnn_desc.get_activations();
     }
     else {
-      input_dims = get_neuron_dims();
-      output_dims = get_prev_neuron_dims();
+      input_dims = get_output_dims();
+      output_dims = get_input_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
       output_desc = m_tensors_cudnn_desc.get_error_signals();
     }
@@ -660,12 +654,12 @@ class base_convolution_layer : public learning_layer {
     const El::Int local_width = local_input.Width();
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
-      input_dims = this->m_prev_neuron_dims;
-      output_dims = this->m_neuron_dims;
+      input_dims = get_input_dims();
+      output_dims = get_output_dims();
     }
     else {
-      input_dims = this->m_neuron_dims;
-      output_dims = this->m_prev_neuron_dims;
+      input_dims = get_output_dims();
+      output_dims = get_input_dims();
     }
 
     // Initialize matrices
@@ -717,12 +711,12 @@ class base_convolution_layer : public learning_layer {
     const El::Int local_width = local_input.Width();
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
-      input_dims = this->m_prev_neuron_dims;
-      output_dims = this->m_neuron_dims;
+      input_dims = get_input_dims();
+      output_dims = get_output_dims();
     }
     else {
-      input_dims = this->m_neuron_dims;
-      output_dims = this->m_prev_neuron_dims;
+      input_dims = get_output_dims();
+      output_dims = get_input_dims();
     }
 
     // Initialize matrices
@@ -769,8 +763,9 @@ class base_convolution_layer : public learning_layer {
 
     // Matrix parameters
     const El::Int local_width = local_output.Width();
-    const El::Int num_output_channels = this->m_neuron_dims[0];
-    const El::Int num_per_output_channel = this->m_num_neurons / num_output_channels;
+    const auto& output_dims = get_output_dims();
+    const El::Int num_output_channels = output_dims[0];
+    const El::Int num_per_output_channel = get_output_size() / num_output_channels;
 
     // Apply bias to each output channel
     #pragma omp parallel for
@@ -797,9 +792,11 @@ class base_convolution_layer : public learning_layer {
 
     // Get convolution parameters
     const El::Int local_width = local_input.Width();
-    const int num_input_channels = this->m_prev_neuron_dims[0];
-    const int num_output_channels = this->m_neuron_dims[0];
-    const int num_per_output_channel = this->m_num_neurons / num_output_channels;
+    const auto& input_dims = get_input_dims();
+    const auto& output_dims = get_output_dims();
+    const int num_input_channels = input_dims[0];
+    const int num_output_channels = output_dims[0];
+    const int num_per_output_channel = get_output_size() / num_output_channels;
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
 
     // Compute bias gradient
@@ -840,8 +837,8 @@ class base_convolution_layer : public learning_layer {
                    num_input_channels :
                    num_output_channels);
     const int k = (using_transposed_convolution ?
-                   this->m_num_prev_neurons / num_input_channels :
-                   this->m_num_neurons / num_output_channels);
+                   get_input_size() / num_input_channels :
+                   get_output_size() / num_output_channels);
     DMat<Dev> im2col_matrix(m, k);
     DMat<Dev> kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
     El::Zero(kernel_gradient_matrix);
@@ -855,8 +852,8 @@ class base_convolution_layer : public learning_layer {
         im2col(gradient_wrt_output_col,
                im2col_matrix,
                num_output_channels,
-               this->m_num_neuron_dims - 1,
-               &this->m_neuron_dims[1],
+               output_dims.size() - 1,
+               &output_dims[1],
                m_pads.data(),
                &m_kernel_dims[2],
                m_strides.data());
@@ -871,8 +868,8 @@ class base_convolution_layer : public learning_layer {
         im2col(input_col,
                im2col_matrix,
                num_input_channels,
-               this->m_num_prev_neuron_dims - 1,
-               &this->m_prev_neuron_dims[1],
+               input_dims.size() - 1,
+               &input_dims[1],
                m_pads.data(),
                &m_kernel_dims[2],
                m_strides.data());

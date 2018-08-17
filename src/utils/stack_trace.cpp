@@ -25,237 +25,163 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/stack_trace.hpp"
-#include "lbann/utils/options.hpp"
-#include <execinfo.h>
-#include <dlfcn.h>
-#include <cxxabi.h>
+#include "lbann/utils/exception.hpp"
+#include "lbann/comm.hpp"
+#include <algorithm>
+#include <vector>
 #include <string>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <unistd.h>
+#include <iomanip>
 
+#include <execinfo.h>
+#include <dlfcn.h>
+#include <cxxabi.h>
+// #include <unistd.h>
+#include <csignal>
 
 namespace lbann {
-
 namespace stack_trace {
 
-static std::ofstream to_file;
+std::string get() {
+  std::stringstream ss;
 
-static int my_lbann_tracing_id = 0;
+  // Get stack frames
+  std::vector<void*> frames(128, nullptr);
+  const auto& frames_size = backtrace(frames.data(), frames.size());
+  frames.resize(frames_size, nullptr);
 
-struct sigaction sa;
-
-void set_lbann_stack_trace_world_rank(int rank) {
-  my_lbann_tracing_id = rank;
-}
-
-// optionally opens "to_file" for writing; returns 'false' if
-// we tried to open the file, but failed
-static bool open_output_file() {
-  options * opts = options::get();
-  bool success = true;
-  if (opts->has_bool("stack_trace_to_file") && opts->get_bool("stack_trace_to_file")) {
-    std::stringstream b;
-    b << "stack_trace_" << my_lbann_tracing_id << ".txt";
-    to_file.open(b.str().c_str());
-    if (! to_file.is_open()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " failed to open file: " << b.str() << " for writing";
-
-      //todo: can this be done better? Can't throw exception, else
-      //      we go into an infinite loop
-      std::cerr << err.str() << std::endl;
-      success = false;
-    }
-  }
-  return success;
-}
-
-static void close_output_file() {
-  if (to_file.is_open()) {
-    to_file.close();
-  }
-}
-
-void print_stack_trace() {
-  if (to_file.is_open()) {
-    to_file << "\n**************************************************************************\n";
-  }
-
-  #define MAX_STACK_FRAMES 64
-  static void *stack_traces[MAX_STACK_FRAMES];
-  int trace_size = backtrace(stack_traces, MAX_STACK_FRAMES);
-  char **messages = backtrace_symbols(stack_traces, trace_size);
-  Dl_info info;
-  for (int i=0; i<trace_size; i++) {
-    std::cerr << "rank: " << my_lbann_tracing_id << " :: ";
-    dladdr(stack_traces[i], &info);
-    if (info.dli_sname != NULL) {
-      char *demangled_name = abi::__cxa_demangle(info.dli_sname, nullptr, nullptr, nullptr);
-      if (demangled_name != NULL) {
-        std::string test(demangled_name);
-        /*if (test.find("__libc_start_main") != std::string::npos) {
-          i = 100000;
-          break;
-        }
-        */
-        if (test.find("lbann::stack_trace::print_stack_trace") == std::string::npos && test.find("lbann::stack_trace::print_lbann_exception_stack_trace") == std::string::npos) {
-          std::cerr << demangled_name << std::endl;
-          if (to_file.is_open()) {
-            to_file << "  >>>> " << demangled_name << std::endl;
-          }
-        }
-        free(demangled_name);
+  // Get demangled stack frame names
+  auto* symbols = backtrace_symbols(frames.data(), frames.size());
+  for (size_t i = 0; i < frames.size(); ++i) {
+    ss << std::setw(4) << i << ": ";
+    Dl_info info;
+    dladdr(frames[i], &info);
+    if (info.dli_sname != nullptr) {
+      auto* name = abi::__cxa_demangle(info.dli_sname,
+                                       nullptr, nullptr, nullptr);
+      if (name == nullptr) {
+        ss << info.dli_sname << " (demangling failed)";
       } else {
-        std::cerr << "demangling failed for: " << info.dli_sname << std::endl;
-        if (to_file.is_open()) {
-          to_file << "  >>>> demangling failed for: " << info.dli_sname << std::endl;
-        }
+        ss << name;
       }
+      std::free(name);
     } else {
-      std::cerr << "dli_sname == NULL for: " << stack_traces[i] << " backtrace message was: " << messages[i] << std::endl;
-      if (to_file.is_open()) {
-        to_file << "  >>>> dli_sname == NULL for: " << stack_traces[i] << " backtrace message was: " << messages[i] << std::endl;
-      }
+      if (symbols != nullptr) { ss << symbols[i] << " "; }
+      ss << "(could not find stack frame symbol)";
     }
+    ss << std::endl;
   }
-  std::cerr << std::endl;
+  std::free(symbols);
+  
+  return ss.str();
+}
+  
+namespace {
 
-  if (to_file.is_open()) {
-    to_file.close();
-  }
+/** Get human-readable description of signal. */
+std::string signal_description(int signal) {
 
-  std::cerr << "sleeping for two seconds to give all procs a chance to write ...\n";
-  sleep(2);
+  // Get signal description
+  // Note: Multiple signals can share the same code, so we can't use a
+  // switch-case statement. Signal descriptions are taken from the
+  // POSIX C standard
+  // (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html).
+  std::string desc;
+#define SIGNAL_CASE(name, description)          \
+  do {                                          \
+    if (desc.empty() && signal == name) {       \
+      desc = #name " - " description;           \
+    }                                           \
+  } while (false)
+  SIGNAL_CASE(SIGABRT, "process abort signal");
+  SIGNAL_CASE(SIGALRM, "alarm clock");
+  SIGNAL_CASE(SIGBUS,  "access to an undefined portion of a memory object");
+  SIGNAL_CASE(SIGCHLD, "child process terminated, stopped");
+  SIGNAL_CASE(SIGCONT, "continue executing, if stopped");
+  SIGNAL_CASE(SIGFPE,  "erroneous arithmetic operation");
+  SIGNAL_CASE(SIGHUP,  "hangup");
+  SIGNAL_CASE(SIGILL,  "illegal instruction");
+  SIGNAL_CASE(SIGINT,  "terminal interrupt signal");
+  SIGNAL_CASE(SIGKILL, "kill (cannot be caught or ignored)");
+  SIGNAL_CASE(SIGPIPE, "write on a pipe with no one to read it");
+  SIGNAL_CASE(SIGQUIT, "terminal quit signal");
+  SIGNAL_CASE(SIGSEGV, "invalid memory reference");
+  SIGNAL_CASE(SIGSTOP, "stop executing (cannot be caught or ignored)");
+  SIGNAL_CASE(SIGTERM, "termination signal");
+  SIGNAL_CASE(SIGTSTP, "terminal stop signal");
+  SIGNAL_CASE(SIGTTIN, "background process attempting read");
+  SIGNAL_CASE(SIGTTOU, "background process attempting write");
+  SIGNAL_CASE(SIGUSR1, "user-defined signal 1");
+  SIGNAL_CASE(SIGUSR2, "user-defined signal 2");
+  SIGNAL_CASE(SIGTRAP, "trace/breakpoint trap");
+  SIGNAL_CASE(SIGURG,  "high bandwidth data is available at a socket");
+  SIGNAL_CASE(SIGXCPU, "CPU time limit exceeded");
+  SIGNAL_CASE(SIGXFSZ, "file size limit exceeded");
+#undef SIGNAL_CASE  
+
+  // Construct signal description
+  std::stringstream ss;
+  ss << "signal " << signal;
+  if (!desc.empty()) { ss << " (" << desc << ")"; }
+  return ss.str();
+  
 }
 
+/** Base name for stack trace output file. */
+std::string stack_trace_file_base = "";
+  
+/** Signal handler.
+ *  Output signal name and stack trace to standard error and to a file
+ *  (if desired).
+ */
+void handle_signal(int signal) {
 
-void print_lbann_exception_stack_trace(std::string m) {
-  if (! open_output_file()) {
-    return;
+  // Print error message and stack trace to standard error
+  std::stringstream ss;
+  ss << "Caught " << signal_description(signal);
+  const auto& rank = get_rank_in_world();
+  if (rank >= 0) { ss << " on rank " << rank; }
+  const exception e(ss.str());
+  e.print_report();
+
+  // Print error message and stack trace to file
+  if (!stack_trace_file_base.empty()) {
+    ss.clear();
+    ss.str(stack_trace_file_base);
+    if (rank >= 0) { ss << "_rank" << rank; }
+    ss << ".txt";
+    std::ofstream fs(ss.str().c_str());
+    e.print_report(fs);
+  }
+
+  // Terminate program
+  El::mpi::Abort(El::mpi::COMM_WORLD, 1);
+  
+}
+
+} // namespace
+
+void register_signal_handler(std::string file_base) {
+  stack_trace_file_base = file_base;
+
+  // Construct signal action object with signal handler
+  static struct sigaction sa;
+  sa.sa_handler = &handle_signal;
+  sa.sa_flags = SA_RESTART;
+  sigfillset(&sa.sa_mask);
+
+  // Register signal handler for fatal signals
+  std::vector<int> fatal_signals = {SIGABRT, SIGALRM, SIGBUS , SIGFPE ,
+                                    SIGHUP , SIGILL , SIGINT , SIGKILL,
+                                    SIGPIPE, SIGQUIT, SIGSEGV, SIGTERM,
+                                    SIGUSR1, SIGUSR2, SIGTRAP, SIGXCPU,
+                                    SIGXFSZ};
+  for (const auto& signal : fatal_signals) {
+    sigaction(signal, &sa, nullptr);
   }
   
-  std::stringstream s;
-  s << "\n**************************************************************************\n"
-    << " This lbann_exception is about to be thrown:" << m << "\n\n"
-    << " Am now attempting to print the stack trace ...\n"
-    << "**************************************************************************\n";
-  if (to_file.is_open()) {
-    to_file << s.str();
-  }
-  std::cerr << s.str();
-  print_stack_trace();
-  close_output_file();
-}
-
-
-std::string sig_name(int signal) {
-  std::string r;
-  switch (signal) {
-    case 1 : 
-      r = "SIGHUP"; break;
-    case 2 :
-      r = "SIGINT"; break;
-    case 3 :
-      r = "SIGQUIT"; break;
-    case 4 :
-      r = "SIGILL"; break;
-    case 5 :
-      r = "SIGTRAP"; break;
-    case 6 :
-      r = "SIGABRT"; break;
-    case 7 :
-      r = "SIGBUS"; break;
-    case 8 :
-      r = "SIGFPE"; break;
-    case 9 :
-      r = "SIGKILL"; break;
-    case 10 :
-      r = "SIGUSR1"; break;
-    case 11 :
-      r = "SIGSEGV"; break;
-    case 12 :
-      r = "SIGUSR2"; break;
-    case 13 :
-      r = "SIGPIPE"; break;
-    case 14 :
-      r = "SIGALRM"; break;
-    case 15 :
-      r = "SIGTERM"; break;
-    case 16 :
-      r = "SIGSTKFLT"; break;
-    case 17 :
-      r = "SIGCHLD"; break;
-    case 18 :
-      r = "SIGCONT"; break;
-    case 19 :
-      r = "SIGSTOP"; break;
-    case 20 :
-      r = "SIGTSTP"; break;
-    case 21 :
-      r = "SIGTTIN"; break;
-    case 22 :
-      r = "SIGTTOU"; break;
-    case 23 :
-      r = "SIGURG"; break;
-    case 24 :
-      r = "SIGXCPU"; break;
-    case 25 :
-      r = "SIGXFSZ"; break;
-    case 26 :
-      r = "SIGVTALRM"; break;
-    case 27 :
-      r = "SIGPROF"; break;
-    case 28 :
-      r = "SIGWINCH"; break;
-    case 29 :
-      r = "SIGPOLL"; break;
-    case 30 :
-      r = "SIGPWR"; break;
-    case 31 :
-      r = "SIGSYS"; break;
-    default :
-      std::stringstream s;
-      s << "unknown signal #" << signal;
-      r = s.str();
-  }
-  return r;
-}
-
-void register_handler() {
-  options *opts = options::get();
-  if (opts->has_bool("catch_signals") and opts->get_bool("catch_signals")) {
-    sa.sa_handler = &lbann_signal_handler;
-    sa.sa_flags = SA_RESTART;
-    sigfillset(&sa.sa_mask);
-
-    for (int i=0; i<40; i++) {
-      sigaction(i, &sa, NULL);
-    }
-  }
-}
-
-
-void lbann_signal_handler(int signal) {
-std::cerr << "starting lbann_signal_handler\n";
-  if (! open_output_file()) {
-    return;
-  }
-  std::stringstream s;
-  s <<  
-         "\n**************************************************************************\n"
-         " Caught this signal: " << sig_name(signal) << "\n"
-         " Note: see /usr/include/bits/signum.h for signal explanations\n"
-         " Am now attempting to print the stack trace ...\n"
-         "**************************************************************************\n";
-  if (to_file.is_open()) {
-    to_file << s.str();
-  }
-  std::cerr << s.str();
-  print_stack_trace();
-  close_output_file();
 }
 
 } //namespace stack_trace 

@@ -32,6 +32,9 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
@@ -43,7 +46,7 @@
 #include "mpi.h"
 #include "H5Cpp.h"
 namespace lbann {
-
+  
 ////////////////////////////////////////////////////////////
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
@@ -312,13 +315,16 @@ void model::permute_layers(const std::vector<int>& permutation) {
 std::string model::print_layer_description(const Layer* layer) const {
   if (layer == nullptr) return std::string();
   std::stringstream os;
+  /// @todo Clean up
   //std::string description = layer->get_description();
   os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
      << layer->get_type()
      << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
      <<  "] Set up a layer with input " << std::setw(7)
-     << layer->get_num_prev_neurons() << " and " << std::setw(7)
-     << layer->get_num_neurons() << " neurons.";
+     << (layer->get_num_parents() > 0 ? layer->get_input_size() : 0)
+     << " and " << std::setw(7)
+     << (layer->get_num_children() > 0 ? layer->get_output_size() : 0)
+     << " neurons.";
   std::string s = layer->get_topo_description();
   if(s != "") {
     os << " (" << s << ")";
@@ -444,6 +450,7 @@ void model::setup_layer_topology() {
   }
 
   // Add utility layers if needed
+  add_evaluation_layers();
   add_dummy_layers();
   add_split_layers();
 
@@ -494,8 +501,8 @@ void model::setup_weights() {
                                      m_weights.end());
 
   // Find weights used by layers
-  for (const auto& layer : m_layers) {
-    for (const auto& w : layer->get_weights()) {
+  for (const auto* l : m_layers) {
+    for (const auto& w : l->get_weights()) {
       if (weights_set.count(w) == 0) {
         m_weights.push_back(w);
         weights_set.insert(w);
@@ -514,11 +521,14 @@ void model::setup_weights() {
   }
 
   // Delete unused weights
-  for (const auto& w : unused_weights) {
+  for (auto&& w : unused_weights) {
     m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
                     m_weights.end());
   }
 
+  // Setup weights
+  for (auto* w : m_weights) { w->setup(); }
+  
 }
 
 void model::add_connected_layers() {
@@ -558,6 +568,66 @@ void model::add_connected_layers() {
 
 }
 
+void model::add_evaluation_layers() {
+
+  // Add evaluation layers corresponding to objective function layer terms
+  for (auto* t : m_objective_function->get_terms()) {
+    auto* term = dynamic_cast<layer_term*>(t);
+    if (term != nullptr) {
+      auto* l = &term->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "an objective function layer term corresponds to "
+            << "layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        term->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+  // Add evaluation layers corresponding to layer metrics
+  for (auto* m : m_metrics) {
+    auto* met = dynamic_cast<layer_metric*>(m);
+    if (met != nullptr) {
+      auto* l = &met->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "layer metric \"" << met->name() << "\" "
+            << "corresponds to layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        met->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+}
+  
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
@@ -710,28 +780,28 @@ void model::collect_indices(execution_mode mode) {
 void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
-
-    // Stop if training has been terminated
     if (get_terminate_training()) { break; }
 
-    // Setup epoch
+    // Initialize epoch
     reset_mode_and_model(execution_mode::training);
-
     do_epoch_begin_cbs();
-    // Train on num_batches (subepoch) if specified
-    if(num_batches) {
-      for(int i = 0; i < num_batches; i++)
-        train_mini_batch();
-    } else { //train full epoch
+
+    // Training iterations
+    if (num_batches > 0) {
+      for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
+    } else {
       while (!train_mini_batch()) {}
     }
-    // Once the epoch is complete, Increase the count
+    
+    // Finalize epoch
     ++m_current_epoch;
+    reconcile_weight_values();
     do_epoch_end_cbs();
     reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
+    
   }
   do_train_end_cbs();
 }
@@ -787,10 +857,6 @@ bool model::train_mini_batch() {
   // Result is not needed until the end of the mini-batch.
   m_objective_function->start_evaluation(execution_mode::training,
                                          get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(execution_mode::training,
-                get_current_mini_batch_size());
-  }
 
   // Backward prop step
   m_objective_function->differentiate();
@@ -800,6 +866,10 @@ bool model::train_mini_batch() {
   // Finish evaluation.
   m_objective_function->finish_evaluation(execution_mode::training,
                                           get_current_mini_batch_size());
+  for (const auto& m : m_metrics) {
+    m->evaluate(execution_mode::training,
+                get_current_mini_batch_size());
+  }
 
   // Update step
   update_weights();
@@ -874,6 +944,14 @@ bool model::update_layers() {
   return finished;
 }
 
+void model::reconcile_weight_values() {
+  std::vector<Al::request> reqs(m_weights.size());
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    m_weights[i]->reconcile_values(reqs[i]);
+  }
+  for (auto& req : reqs) { m_comm->wait(req); }
+}
+  
 ////////////////////////////////////////////////////////////
 // Callbacks
 ////////////////////////////////////////////////////////////
