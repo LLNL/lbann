@@ -86,9 +86,17 @@ using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;
 
+/** Initialize Distconv
+ */
+void initialize(MPI_Comm comm);
+
+/** Finalize Distconv
+ */
+void finalize();
+
 /** Get Distconv backend handle.
  */
-Backend &get_backend(MPI_Comm comm);
+Backend &get_backend();
 /** Return a HaloExchangeMethod
  */
 ::distconv::HaloExchangeMethod get_halo_exchange_method();

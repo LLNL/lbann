@@ -923,7 +923,7 @@ protected:
     setup_error_signals_copyout_tensor(dists);
 
     m_bn = new dc::BatchNormalization(
-        dc::get_backend(this->get_comm()->get_model_comm().comm), m_decay, m_epsilon,
+        dc::get_backend(), m_decay, m_epsilon,
         m_use_global_stats);
 
     dc::MPIPrintStreamDebug()

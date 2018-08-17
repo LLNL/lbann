@@ -129,7 +129,7 @@ setup_tensors_bwd(const std::array<Dist, 4> &dists)  {
   setup_error_signals_tensor(dists);
   setup_error_signals_copyout_tensor(dists);
   // Init the dc::Pooling layer
-  m_relu = new ReLU(get_backend(this->get_comm()->get_model_comm().comm));
+  m_relu = new ReLU(get_backend());
   m_relu->setup(m_prev_activations_t, m_activations_t,
                 m_error_signals_t, m_prev_error_signals_t);
 }

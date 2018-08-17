@@ -425,7 +425,7 @@ protected:
     assert0(tensor::View(
         m_kernel_gradient_e, this->m_kernel_gradient.Buffer()));
 
-    m_conv = new Convolution(dc::get_backend(this->get_comm()->get_model_comm().comm),
+    m_conv = new Convolution(dc::get_backend(),
                              dc::get_halo_exchange_method());
 
     // Bias tensor. Shared by all procs

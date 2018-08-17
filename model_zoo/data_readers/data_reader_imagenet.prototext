@@ -8,7 +8,7 @@ data_reader {
     label_filename: ""
     validation_percent: 0.01
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    percent_of_data_to_use: 0.1
     num_labels: 1000
 
     image_preprocessor {

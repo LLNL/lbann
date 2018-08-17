@@ -26,7 +26,6 @@
 
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/cudnn.hpp"
-#include <memory>
 #include <cstdlib>
 
 #ifdef LBANN_HAS_DISTCONV
@@ -41,26 +40,26 @@ namespace dc {
 ////////////////////////////////////////////////////////////
 
 namespace {
-
-/** Global instance of cuDNN handle. */
-std::unique_ptr<Backend> backend_instance;
-
-void initialize(MPI_Comm comm) {
-  auto &cudnn_h = lbann::cudnn::get_handle();
-  cudaStream_t s;
-  CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
-  backend_instance.reset(
-      new Backend(comm, cudnn_h, s));
-}
-
-void destroy() {
-  backend_instance.reset();
-}
-
+Backend *backend_instance = nullptr;
 } // namespace
 
-Backend &get_backend(MPI_Comm comm) {
-  if (!backend_instance) { initialize(comm); }
+void initialize(MPI_Comm comm) {
+  if (!backend_instance) {
+    auto &cudnn_h = lbann::cudnn::get_handle();
+    cudaStream_t s;
+    CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
+    backend_instance = new Backend(comm, cudnn_h, s);
+  }
+}
+
+void finalize() {
+  if (backend_instance) {
+    delete backend_instance;
+    backend_instance = nullptr;
+  }
+}
+
+Backend &get_backend() {
   return *backend_instance;
 }
 
