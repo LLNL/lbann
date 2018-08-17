@@ -790,6 +790,7 @@ message Layer {
    Max max = 321;
    Min min = 322;
    InTopK in_top_k = 324;
+   Sort sort = 325;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -1072,6 +1073,10 @@ message Min {
 
 message InTopK {
   int64 k = 1;
+}
+
+message Sort {
+  bool descending = 1;
 }
 
 /////////////////////
