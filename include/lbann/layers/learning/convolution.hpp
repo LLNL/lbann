@@ -435,7 +435,7 @@ protected:
         << ", bias factor: " << this->m_bias_scaling_factor
         << "\n";
     if (this->m_bias_scaling_factor != DataType(0)) {
-      Array4 bias_shape = {1, 1, this->m_neuron_dims[0], 1};
+      Array4 bias_shape = {1, 1, this->get_output_dims()[0], 1};
       m_bias_t = TensorDev(bias_shape, loc, dc::Dist());
       assert0(tensor::View(m_bias_t, this->get_weights()[1]->get_values().LockedBuffer()));
       MPIPrintStreamDebug() << "Bias tensor: " << m_bias_t << "\n";
