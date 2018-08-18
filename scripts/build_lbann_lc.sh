@@ -305,7 +305,8 @@ else
 fi
 
 if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
-    module load cmake
+	# the latest version, 3.12.1, has several issues
+    module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
 fi
 
