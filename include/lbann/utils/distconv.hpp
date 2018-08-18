@@ -46,6 +46,9 @@
 #include "distconv/distconv.hpp"
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle.hpp"
+#include "distconv/tensor/shuffle_p2p.hpp"
+
+#include "p2p/p2p.hpp"
 
 namespace lbann {
 namespace dc {
@@ -64,6 +67,8 @@ using TensorDev = ::distconv::tensor::Tensor<
   ::distconv::tensor::CUDAAllocator>;
 
 using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<
+  4, DataType>;
+using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<
   4, DataType>;
 
 using Dist = ::distconv::tensor::Distribution<4>;
@@ -94,6 +99,10 @@ void initialize(MPI_Comm comm);
  */
 void finalize();
 
+/** Get p2p handle
+ */
+p2p::P2P &get_p2p();
+
 /** Get Distconv backend handle.
  */
 Backend &get_backend();
@@ -101,6 +110,8 @@ Backend &get_backend();
  */
 ::distconv::HaloExchangeMethod get_halo_exchange_method();
 
+TensorShuffler *get_tensor_shuffler(const TensorDev &src,
+                                    const TensorDev &dst);
 } // namespace dc
 } // namespace lbann
 

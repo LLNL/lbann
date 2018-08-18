@@ -40,10 +40,14 @@ namespace dc {
 ////////////////////////////////////////////////////////////
 
 namespace {
+p2p::P2P *p2p_instance = nullptr;
 Backend *backend_instance = nullptr;
 } // namespace
 
 void initialize(MPI_Comm comm) {
+  if (!p2p_instance) {
+    p2p_instance = new p2p::P2P(comm);
+  }
   if (!backend_instance) {
     auto &cudnn_h = lbann::cudnn::get_handle();
     cudaStream_t s;
@@ -53,10 +57,18 @@ void initialize(MPI_Comm comm) {
 }
 
 void finalize() {
+  if (p2p_instance) {
+    delete p2p_instance;
+    p2p_instance = nullptr;
+  }
   if (backend_instance) {
     delete backend_instance;
     backend_instance = nullptr;
   }
+}
+
+p2p::P2P &get_p2p() {
+  return *p2p_instance;
 }
 
 Backend &get_backend() {
@@ -80,6 +92,17 @@ HaloExchangeMethod get_halo_exchange_method() {
     LBANN_ERROR("Unknown value of environment variable DISTCONV_HALO_EXCHANGE");
   }
 }
+
+TensorShuffler *get_tensor_shuffler(const TensorDev &src,
+                                    const TensorDev &dst) {
+  char *env = std::getenv("DISTCONV_TENSOR_SHUFFLER");
+  if (env && std::string(env) == "P2P") {
+    return new TensorShufflerP2P(src, dst, get_p2p());
+  } else {
+    return new TensorShuffler(src, dst);
+  }
+}
+
 } // namespace dc
 } // namespace lbann
 
