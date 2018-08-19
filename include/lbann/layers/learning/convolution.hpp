@@ -464,8 +464,23 @@ protected:
       // Same algorithm as LBANN
       m_fwd_algo = "IMPLICIT_GEMM";
       // Deterministic algorithm
-      m_bwd_data_algo = "ALGO1";
-      m_bwd_filter_algo = "ALGO1";
+      m_bwd_data_algo = "ALGO_1";
+      m_bwd_filter_algo = "ALGO_1";
+    } else {
+      char *fwd_algo_env = getenv("DISTCONV_CONVOLUTION_FWD_ALGORITHM");
+      if (fwd_algo_env) {
+        m_fwd_algo = fwd_algo_env;
+      }
+      char *bwd_data_algo_env =
+          getenv("DISTCONV_CONVOLUTION_BWD_DATA_ALGORITHM");
+      if (bwd_data_algo_env) {
+        m_bwd_data_algo = bwd_data_algo_env;
+      }
+      char *bwd_filter_algo_env =
+          getenv("DISTCONV_CONVOLUTION_BWD_FILTER_ALGORITHM");
+      if (bwd_filter_algo_env) {
+        m_bwd_filter_algo = bwd_filter_algo_env;
+      }
     }
     
     m_conv->setup(this->m_prev_activations_t,
