@@ -43,21 +43,21 @@ public:
   void fill(AbsDistMat& matrix) override;
   
   /** Set fan-in parameter. */
-  void set_fan_in(El::Int fan_in) { m_fan_in = fan_in; }
+  void set_fan_in(IntType fan_in) { m_fan_in = fan_in; }
   /** Set fan-out parameter. */
-  void set_fan_out(El::Int fan_out) { m_fan_out = fan_out; }
+  void set_fan_out(IntType fan_out) { m_fan_out = fan_out; }
 
 protected:
   /** Get probability distribution variance. */
-  virtual DataType get_variance(El::Int fan_in, El::Int fan_out) = 0;
+  virtual DataType get_variance(IntType fan_in, IntType fan_out) = 0;
   
 private:
   /** Probability distribution. */
   probability_distribution m_prob_dist;
   /** Fan-in parameter. */
-  El::Int m_fan_in;
+  IntType m_fan_in;
   /** Fan-out parameter.*/
-  El::Int m_fan_out;
+  IntType m_fan_out;
 
 };
 
@@ -73,7 +73,7 @@ public:
     return new glorot_initializer(*this);
   }
 protected:
-  DataType get_variance(El::Int fan_in, El::Int fan_out) override;
+  DataType get_variance(IntType fan_in, IntType fan_out) override;
 };
 
 /** He initializer.
@@ -87,7 +87,7 @@ public:
     return new he_initializer(*this);
   }
 protected:
-  DataType get_variance(El::Int fan_in, El::Int fan_out) override;
+  DataType get_variance(IntType fan_in, IntType fan_out) override;
 };
 
 /** LeCun initializer.
@@ -101,7 +101,7 @@ public:
     return new lecun_initializer(*this);
   }
 protected:
-  DataType get_variance(El::Int fan_in, El::Int fan_out) override;
+  DataType get_variance(IntType fan_in, IntType fan_out) override;
 };
 
 } // namespace lbann

@@ -658,7 +658,7 @@ void Layer::setup_matrices(const El::Grid& grid) {
 
 std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
                                                     std::string type,
-                                                    El::Int index) {
+                                                    IntType index) {
 
   // Choose matrix distribution
   El::Distribution col_dist, row_dist;
@@ -864,7 +864,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   }
 }
 
-void Layer::fp_setup_inputs(El::Int mini_batch_size) {
+void Layer::fp_setup_inputs(IntType mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
@@ -903,7 +903,7 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
   
 }
 
-void Layer::fp_setup_outputs(El::Int mini_batch_size) {
+void Layer::fp_setup_outputs(IntType mini_batch_size) {
   if (get_num_children() < 1) { return; }
 
   // Determine distributed matrix alignment
@@ -922,7 +922,7 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 
 }
 
-void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
+void Layer::bp_setup_gradient_wrt_outputs(IntType mini_batch_size) {
   for (int i = 0; i < get_num_children(); ++i) {
 
     // Initialize gradient w.r.t. output tensor
@@ -956,7 +956,7 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
   }
 }
 
-void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+void Layer::bp_setup_gradient_wrt_inputs(IntType mini_batch_size) {
   for (int i = 0; i < get_num_parents(); ++i) {
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);

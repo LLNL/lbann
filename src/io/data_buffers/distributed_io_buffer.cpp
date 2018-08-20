@@ -81,7 +81,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
       lbann_exception(err.str());
     }
     for (int i = 0; i < 2; i++) {
-      El::Int width = sample.Width();
+      IntType width = sample.Width();
       if(i == 1) { width = response.Width(); }
       CopyFromRoot((*buf->M_local[i])(El::ALL, El::IR(0, width)), *buf->Ms[i]);
     }

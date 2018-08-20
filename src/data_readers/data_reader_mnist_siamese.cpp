@@ -108,7 +108,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    IntType{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     X.Width());
 
   El::Zeros(X, X.Height(), X.Width());
@@ -121,7 +121,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
     sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
     bool valid = fetch_datum(X, index, s, omp_get_thread_num());
     if (valid) {
-      El::Int index_coded = m_shuffled_indices[n] + m_shuffled_indices2[n]*(std::numeric_limits<label_t>::max()+1);
+      IntType index_coded = m_shuffled_indices[n] + m_shuffled_indices2[n]*(std::numeric_limits<label_t>::max()+1);
       m_indices_fetched_per_mb.Set(s, 0, index_coded);
     } else{
 #pragma omp critical
@@ -155,7 +155,7 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    IntType{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
   El::Zeros(Y, Y.Height(), Y.Width());

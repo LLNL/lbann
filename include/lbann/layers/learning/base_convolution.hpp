@@ -651,7 +651,7 @@ class base_convolution_layer : public learning_layer {
 
     // Matrix parameters
     const int output_size = local_output.Height();
-    const El::Int local_width = local_input.Width();
+    const IntType local_width = local_input.Width();
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
       input_dims = get_input_dims();
@@ -671,7 +671,7 @@ class base_convolution_layer : public learning_layer {
     const DMat<Dev> kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
 
     // Iterate through input columns
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
 
       // Construct im2col matrix from current input column
       El::LockedView(input_col, local_input, El::ALL, El::IR(col));
@@ -708,7 +708,7 @@ class base_convolution_layer : public learning_layer {
 
     // Matrix parameters
     const int input_size = local_input.Height();
-    const El::Int local_width = local_input.Width();
+    const IntType local_width = local_input.Width();
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
       input_dims = get_input_dims();
@@ -728,7 +728,7 @@ class base_convolution_layer : public learning_layer {
     const DMat<Dev> kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
 
     // Iterate through input columns
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
 
       // Apply transposed convolution to current input column
       input_col.LockedAttach(n, k, local_input.LockedBuffer(0, col), n);
@@ -762,19 +762,19 @@ class base_convolution_layer : public learning_layer {
     auto& local_output = get_local_activations();
 
     // Matrix parameters
-    const El::Int local_width = local_output.Width();
+    const IntType local_width = local_output.Width();
     const auto& output_dims = get_output_dims();
-    const El::Int num_output_channels = output_dims[0];
-    const El::Int num_per_output_channel = get_output_size() / num_output_channels;
+    const IntType num_output_channels = output_dims[0];
+    const IntType num_per_output_channel = get_output_size() / num_output_channels;
 
     // Apply bias to each output channel
     #pragma omp parallel for
-    for (El::Int channel = 0; channel < num_output_channels; ++channel) {
-      const El::Int row_start = channel * num_per_output_channel;
-      const El::Int row_end = (channel+1) * num_per_output_channel;
+    for (IntType channel = 0; channel < num_output_channels; ++channel) {
+      const IntType row_start = channel * num_per_output_channel;
+      const IntType row_end = (channel+1) * num_per_output_channel;
       const DataType bias_term = m_bias_scaling_factor * local_bias(channel, 0);
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = row_start; row < row_end; ++row) {
+      for (IntType col = 0; col < local_width; ++col) {
+        for (IntType row = row_start; row < row_end; ++row) {
           local_output(row, col) += bias_term;
         }
       }
@@ -791,7 +791,7 @@ class base_convolution_layer : public learning_layer {
     auto& local_bias_gradient = m_bias_gradient.Matrix();
 
     // Get convolution parameters
-    const El::Int local_width = local_input.Width();
+    const IntType local_width = local_input.Width();
     const auto& input_dims = get_input_dims();
     const auto& output_dims = get_output_dims();
     const int num_input_channels = input_dims[0];
@@ -805,12 +805,12 @@ class base_convolution_layer : public learning_layer {
     if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
       #pragma omp parallel for
       for (int channel = 0; channel < num_output_channels; ++channel) {
-        const El::Int row_start = channel * num_per_output_channel;
-        const El::Int row_end = (channel+1) * num_per_output_channel;
+        const IntType row_start = channel * num_per_output_channel;
+        const IntType row_end = (channel+1) * num_per_output_channel;
         DataType sum = 0;
         DataType correction = 0;
-        for (El::Int col = 0; col < local_width; ++col) {
-          for (El::Int row = row_start; row < row_end; ++row) {
+        for (IntType col = 0; col < local_width; ++col) {
+          for (IntType row = row_start; row < row_end; ++row) {
             DataType term = local_gradient_wrt_output(row, col);
             term += correction;
             const DataType next_sum = sum + term;
@@ -844,7 +844,7 @@ class base_convolution_layer : public learning_layer {
     El::Zero(kernel_gradient_matrix);
 
     // Compute kernel gradient contributions from each data sample
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       if (using_transposed_convolution) {
         const DMat<Dev> input_col(k, n, local_input.LockedBuffer(0,col), k);
         const DMat<Dev> gradient_wrt_output_col =

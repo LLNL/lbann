@@ -199,7 +199,7 @@ class softmax_layer : public activation_layer {
     m_workspace->Resize(1, mini_batch_size);
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(IntType mini_batch_size) override {
     activation_layer::fp_setup_outputs(mini_batch_size);
     m_workspace->Resize(1, mini_batch_size);
   }
@@ -215,8 +215,8 @@ class softmax_layer : public activation_layer {
     auto& local_workspace = m_workspace->Matrix();
 
     // Matrix parameters
-    const El::Int local_height = local_input.Height();
-    const El::Int local_width = local_input.Width();
+    const IntType local_height = local_input.Height();
+    const IntType local_width = local_input.Width();
 
     // Find maximum entry in each column
     if (local_height == 0) {
@@ -225,9 +225,9 @@ class softmax_layer : public activation_layer {
       El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
     } else {
       #pragma omp parallel for
-      for (El::Int col = 0; col < local_width; ++col) {
+      for (IntType col = 0; col < local_width; ++col) {
         DataType max_entry = local_input(0, col);
-        for (El::Int row = 1; row < local_height; ++row) {
+        for (IntType row = 1; row < local_height; ++row) {
           max_entry = std::max(max_entry, local_input(row, col));
         }
         local_workspace(0, col) = max_entry;
@@ -240,10 +240,10 @@ class softmax_layer : public activation_layer {
     // Note: Subtracting by the column max prevents activations from
     // blowing up. Large negative values underflow to 0.
     #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       const DataType shift = local_workspace(0, col);
       DataType sum = 0;
-      for (El::Int row = 0; row < local_height; ++row) {
+      for (IntType row = 0; row < local_height; ++row) {
         const DataType x = local_input(row, col);
         const DataType y = std::exp(x - shift);
         local_output(row, col) = y;
@@ -257,9 +257,9 @@ class softmax_layer : public activation_layer {
     // Note: Small values are rounded to minimum output value to avoid
     // denormalized floats.
     #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       const DataType scale = DataType(1) / local_workspace(0, col);
-      for (El::Int row = 0; row < local_height; ++row) {
+      for (IntType row = 0; row < local_height; ++row) {
         DataType& y = local_output(row, col);
         y *= scale;
       #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
@@ -279,11 +279,11 @@ class softmax_layer : public activation_layer {
     DMat<Dev>& local_workspace = m_workspace->Matrix();
 
     // Matrix parameters
-    const El::Int local_height = local_output.Height();
-    const El::Int local_width = local_output.Width();
+    const IntType local_height = local_output.Height();
+    const IntType local_width = local_output.Width();
 
     // Compute dot products between output and gradient w.r.t. output
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       const auto& y = local_output(El::ALL, El::IR(col));
       const auto& dy = local_gradient_wrt_output(El::ALL, El::IR(col));
       local_workspace(0, col) = El::Dot(y, dy);
@@ -292,9 +292,9 @@ class softmax_layer : public activation_layer {
 
     // Compute gradient w.r.t. input
     #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       const DataType y_dot_dy = local_workspace(0, col);
-      for (El::Int row = 0; row < local_height; ++row) {
+      for (IntType row = 0; row < local_height; ++row) {
         const DataType y = local_output(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType dx = y * (dy - y_dot_dy);

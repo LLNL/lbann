@@ -140,8 +140,8 @@ std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_cu
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  for (IntType i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+    IntType index = m_indices_fetched_per_mb.Get(i, 0);
     ret.push_back(m_image_list[index]);
   }
   return ret;

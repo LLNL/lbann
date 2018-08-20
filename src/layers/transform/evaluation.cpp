@@ -45,8 +45,8 @@ void fp_cpu(lbann_comm& comm,
   const auto& mini_batch_size = input.Width();
   value = DataType(0);
 #pragma omp parallel for reduction(+:value) collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int row = 0; row < local_height; ++row) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType row = 0; row < local_height; ++row) {
       value += local_input(row, col);
     }
   }
@@ -101,7 +101,7 @@ void fp_gpu(lbann_comm& comm,
     sum_d.Resize(local_width + 1, 1);
     ones_d.Resize(std::max(local_height, local_width), 1);
     El::Fill(ones_d, DataType(1));
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
       cublas::dot(handle,
                   local_height,
                   local_input.LockedBuffer(0, col), 1,

@@ -472,7 +472,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return &m_unused_indices[0];
   }
   /// Get a pointer to the fetched indices matrix.
-  El::Matrix<El::Int>* get_indices_fetched_per_mb() {
+  El::Matrix<IntType>* get_indices_fetched_per_mb() {
     return &m_indices_fetched_per_mb;
   }
   /// Set the number of iterations in each epoch.
@@ -792,7 +792,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   bool m_master;
 
   /// 1-D Matrix of which indices were fetched in this mini-batch
-  El::Matrix<El::Int> m_indices_fetched_per_mb;
+  El::Matrix<IntType> m_indices_fetched_per_mb;
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
@@ -847,7 +847,7 @@ inline void set_minibatch_item(Mat& M, const int mb_idx, const T* const ptr, con
                           " :: attempt to dereference a nullptr ");
   }
   for (size_t i = 0u; i < count; ++i) {
-    M.Set(static_cast<El::Int>(i), static_cast<El::Int>(mb_idx), static_cast<DataType>(ptr[i]));
+    M.Set(static_cast<IntType>(i), static_cast<IntType>(mb_idx), static_cast<DataType>(ptr[i]));
   }
 }
 

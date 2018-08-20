@@ -469,7 +469,7 @@ class batch_normalization : public regularizer_layer {
 
     // Matrix parameters
     const int width = input.Width();
-    const El::Int local_width = local_input.Width();
+    const IntType local_width = local_input.Width();
     const auto& output_dims = get_output_dims();
     const int num_channels = output_dims[0];
     const int channel_size = get_output_size() / num_channels;
@@ -492,10 +492,10 @@ class batch_normalization : public regularizer_layer {
       for (int channel = 0; channel < num_channels; ++channel) {
         DataType sum = zero;
         DataType sqsum = zero;
-        const El::Int row_start = channel * channel_size;
-        const El::Int row_end = (channel+1) * channel_size;
-        for (El::Int col = 0; col < local_width; ++col) {
-          for (El::Int row = row_start; row < row_end; ++row) {
+        const IntType row_start = channel * channel_size;
+        const IntType row_end = (channel+1) * channel_size;
+        for (IntType col = 0; col < local_width; ++col) {
+          for (IntType row = row_start; row < row_end; ++row) {
             const DataType x = local_input(row, col);
             sum += x;
             sqsum += x * x;
@@ -561,10 +561,10 @@ class batch_normalization : public regularizer_layer {
       const DataType bias = local_bias(channel, 0);
 
       // Apply batch normalization to inputs in channel
-      const El::Int row_start = channel * channel_size;
-      const El::Int row_end = (channel+1) * channel_size;
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = row_start; row < row_end; ++row) {
+      const IntType row_start = channel * channel_size;
+      const IntType row_end = (channel+1) * channel_size;
+      for (IntType col = 0; col < local_width; ++col) {
+        for (IntType row = row_start; row < row_end; ++row) {
           const DataType x = local_input(row, col);
           const DataType xhat = (x - mean) * inv_stdev;
           const DataType y = scale * xhat + bias;
@@ -601,7 +601,7 @@ class batch_normalization : public regularizer_layer {
     // Matrix parameters
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
     const int width = input.Width();
-    const El::Int local_width = local_input.Width();
+    const IntType local_width = local_input.Width();
     const auto& output_dims = get_output_dims();
     const int num_channels = output_dims[0];
     const int channel_size = get_output_size() / num_channels;
@@ -622,10 +622,10 @@ class batch_normalization : public regularizer_layer {
       DataType dbias = DataType(0);
 
       // Compute gradient contributions from local entries
-      const El::Int row_start = channel * channel_size;
-      const El::Int row_end = (channel+1) * channel_size;
-      for (El::Int col = 0; col < local_width; ++col) {
-        for (El::Int row = row_start; row < row_end; ++row) {
+      const IntType row_start = channel * channel_size;
+      const IntType row_end = (channel+1) * channel_size;
+      for (IntType col = 0; col < local_width; ++col) {
+        for (IntType row = row_start; row < row_end; ++row) {
           const DataType x = local_input(row, col);
           const DataType xhat = (x - mean) * inv_stdev;
           const DataType dy = local_gradient_wrt_output(row, col);
@@ -693,10 +693,10 @@ class batch_normalization : public regularizer_layer {
         const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 
         // Compute error signal for current channel
-        const El::Int row_start = channel * channel_size;
-        const El::Int row_end = (channel+1) * channel_size;
-        for (El::Int col = 0; col < local_width; ++col) {
-          for (El::Int row = row_start; row < row_end; ++row) {
+        const IntType row_start = channel * channel_size;
+        const IntType row_end = (channel+1) * channel_size;
+        for (IntType col = 0; col < local_width; ++col) {
+          for (IntType row = row_start; row < row_end; ++row) {
             const auto& x = local_input(row, col);
             const auto& dy = local_gradient_wrt_output(row, col);
             const auto& dxhat = dy * scale;

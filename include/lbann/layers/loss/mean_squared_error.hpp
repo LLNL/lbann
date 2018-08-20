@@ -147,12 +147,12 @@ public:
 private:
 
   /** Compute local contributions to mean squared error loss. */
-  static void local_fp_compute(El::Int height,
+  static void local_fp_compute(IntType height,
                                const AbsMat& local_prediction,
                                const AbsMat& local_ground_truth,
                                AbsMat& local_contribution);
   /** Compute local gradients. */
-  static void local_bp_compute(El::Int height,
+  static void local_bp_compute(IntType height,
                                const AbsMat& local_prediction,
                                const AbsMat& local_ground_truth,
                                const AbsMat& local_gradient_wrt_output,

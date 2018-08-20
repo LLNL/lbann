@@ -71,7 +71,7 @@ class reduction_layer : public transform_layer {
     // Local matrices
     const auto& local_input = get_local_prev_activations();
     auto& local_output = get_local_activations();
-    const El::Int input_size = local_input.Height();
+    const IntType input_size = local_input.Height();
 
     // Apply reduction
     switch (m_mode) {
@@ -98,7 +98,7 @@ class reduction_layer : public transform_layer {
     // Local matrices
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     auto& local_gradient_wrt_input = get_local_error_signals();
-    const El::Int input_size = local_gradient_wrt_input.Height();
+    const IntType input_size = local_gradient_wrt_input.Height();
 
     // Compute gradients w.r.t. inputs
     switch (m_mode) {

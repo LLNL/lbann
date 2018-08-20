@@ -411,8 +411,8 @@ void weights::write_proto(lbann_data::WeightsData* proto) const {
   values.SetRoot(0); /// @todo What if world master is not process 0?
   if (m_comm->am_world_master()) {
     const auto& local_values = values.LockedMatrix();
-    const El::Int height = local_values.Height();
-    const El::Int width = local_values.Width();
+    const IntType height = local_values.Height();
+    const IntType width = local_values.Width();
     /// @todo OpenMP parallelization
     /** @todo Our matrices are column-major while Numpy expects
      *  row-major matrices. This row-wise iteration is fine for
@@ -421,8 +421,8 @@ void weights::write_proto(lbann_data::WeightsData* proto) const {
      *  matrix. This is what we need for quantization on convolution
      *  kernel weights.
      */
-    for (El::Int i = 0; i < height; ++i) {
-      for (El::Int j = 0; j < width; ++j) {
+    for (IntType i = 0; i < height; ++i) {
+      for (IntType j = 0; j < width; ++j) {
         proto->add_data(local_values(i,j));
       }
     }

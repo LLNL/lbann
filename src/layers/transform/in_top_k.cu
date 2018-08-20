@@ -42,12 +42,12 @@ struct entry {
   /** Vector entry value. */
   DataType value;
   /** Vector entry index. */
-  El::Int index;
+  IntType index;
 
   /** Minimum possible value. */
   static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
   /** Maximum possible index. */
-  static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
+  static constexpr IntType max_index = std::numeric_limits<IntType>::max();
 
 };
 
@@ -66,20 +66,20 @@ struct entry_compare : thrust::binary_function<entry,entry,bool> {
  *  the sparse vectors correspond to global row indices in the dense
  *  matrix.
  */
-__global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
-                                               El::Int local_matrix_height,
-                                               El::Int local_matrix_width,
-                                               El::Int global_matrix_height,
-                                               El::Int global_matrix_col_shift,
-                                               El::Int global_matrix_col_stride,
+__global__ void dense_matrix_to_sparse_vectors(IntType local_vector_size,
+                                               IntType local_matrix_height,
+                                               IntType local_matrix_width,
+                                               IntType global_matrix_height,
+                                               IntType global_matrix_col_shift,
+                                               IntType global_matrix_col_stride,
                                                const DataType* __restrict__ local_matrix,
-                                               El::Int local_matrix_ldim,
+                                               IntType local_matrix_ldim,
                                                entry* __restrict__ local_entries,
-                                               El::Int local_entries_ldim) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int num_threads = blockDim.x * gridDim.x;
-  const El::Int num_local_entries = local_vector_size * local_matrix_width;
-  for (El::Int i = gid; i < num_local_entries; i += num_threads) {
+                                               IntType local_entries_ldim) {
+  const IntType gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const IntType num_threads = blockDim.x * gridDim.x;
+  const IntType num_local_entries = local_vector_size * local_matrix_width;
+  for (IntType i = gid; i < num_local_entries; i += num_threads) {
     const auto& local_row = i % local_vector_size;
     const auto& local_col = i / local_vector_size;
     auto& current_entry = local_entries[local_row + local_col * local_entries_ldim];
@@ -106,13 +106,13 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
  *    dim         = d(k)
  *    dim_stride  = d(k+1) * ... * d(n)
  */
-__global__ void fill_with_tensor_index(El::Int tensor_size,
-                                       El::Int dim,
-                                       El::Int dim_stride,
-                                       El::Int* tensor) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int num_threads = blockDim.x * gridDim.x;
-  for (El::Int i = gid; i < tensor_size; i += num_threads) {
+__global__ void fill_with_tensor_index(IntType tensor_size,
+                                       IntType dim,
+                                       IntType dim_stride,
+                                       IntType* tensor) {
+  const IntType gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const IntType num_threads = blockDim.x * gridDim.x;
+  for (IntType i = gid; i < tensor_size; i += num_threads) {
     tensor[i] = (i / dim_stride) % dim;
   }  
 }
@@ -122,22 +122,22 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
  *  local matrix entry corresponds to one of the top-k entries, then
  *  it is set to one.
  */
-__global__ void indicate_matrix_entries(El::Int k,
-                                        El::Int global_matrix_height,
-                                        El::Int local_matrix_height,
-                                        El::Int local_matrix_width,
-                                        El::Int global_matrix_col_rank,
-                                        El::Int global_matrix_col_align,
-                                        El::Int global_matrix_col_shift,
-                                        El::Int global_matrix_col_stride,
+__global__ void indicate_matrix_entries(IntType k,
+                                        IntType global_matrix_height,
+                                        IntType local_matrix_height,
+                                        IntType local_matrix_width,
+                                        IntType global_matrix_col_rank,
+                                        IntType global_matrix_col_align,
+                                        IntType global_matrix_col_shift,
+                                        IntType global_matrix_col_stride,
                                         DataType* __restrict__ local_matrix,
-                                        El::Int local_matrix_ldim,
+                                        IntType local_matrix_ldim,
                                         const entry*  __restrict__ entries,
-                                        El::Int entries_ldim) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int num_threads = blockDim.x * gridDim.x;
-  const El::Int num_entries = local_matrix_width * k;
-  for (El::Int i = gid; i < num_entries; i += num_threads) {
+                                        IntType entries_ldim) {
+  const IntType gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const IntType num_threads = blockDim.x * gridDim.x;
+  const IntType num_entries = local_matrix_width * k;
+  for (IntType i = gid; i < num_entries; i += num_threads) {
     const auto& ind = i % k;
     const auto& local_col = i / k;
     const auto& global_row = entries[ind + local_col * entries_ldim].index;
@@ -145,7 +145,7 @@ __global__ void indicate_matrix_entries(El::Int k,
                              % global_matrix_col_stride);
     if (global_row < global_matrix_height
         && row_owner == global_matrix_col_rank) {
-      El::Int local_row = 0;
+      IntType local_row = 0;
       if (global_row > global_matrix_col_shift) {
         local_row = ((global_row - global_matrix_col_shift - 1)
                      / global_matrix_col_stride + 1);
@@ -157,7 +157,7 @@ __global__ void indicate_matrix_entries(El::Int k,
 
 /** GPU implementation of in_top_k layer forward prop. */
 void fp_gpu(lbann_comm& comm,
-            El::Int k, const AbsDistMat& input, AbsDistMat& output) {
+            IntType k, const AbsDistMat& input, AbsDistMat& output) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
     LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
                 "distributed matrices");
@@ -166,9 +166,9 @@ void fp_gpu(lbann_comm& comm,
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
-  const El::Int height = input.Height();
-  const El::Int local_height = local_input.Height();
-  const El::Int local_width = local_input.Width();
+  const IntType height = input.Height();
+  const IntType local_height = local_input.Height();
+  const IntType local_width = local_input.Width();
 
   // Trivial cases
   if (k < 1) {
@@ -190,7 +190,7 @@ void fp_gpu(lbann_comm& comm,
   auto&& stream = El::GPUManager::Stream();
   cuda::thrust::allocator<> alloc(stream);
   using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
-  using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
+  using index_array = thrust::device_vector<IntType, cuda::thrust::allocator<IntType>>;
 
   // Find top-k entries in each column of local prediction matrix
   entry_array top_entries(local_width * k);

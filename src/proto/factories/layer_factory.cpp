@@ -186,7 +186,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    const auto& slice_points = parse_list<El::Int>(params.slice_points());
+    const auto& slice_points = parse_list<IntType>(params.slice_points());
     return new slice_layer<layout, Dev>(comm,
                                         params.slice_axis(),
                                         slice_points);

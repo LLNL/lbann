@@ -84,8 +84,8 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   auto& local_output = get_local_activations();
   auto& local_workspace = m_workspace->Matrix();
 
-  const El::Int local_height = local_input.Height();
-  const El::Int local_width = local_input.Width();
+  const IntType local_height = local_input.Height();
+  const IntType local_width = local_input.Width();
 
   // Find the maximum entry in each local column.
   if (local_height == 0) {
@@ -132,13 +132,13 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
   auto& local_grad_wrt_input = get_local_error_signals();
   auto& local_workspace = m_workspace->Matrix();
 
-  const El::Int local_height = local_output.Height();
-  const El::Int local_width = local_output.Width();
+  const IntType local_height = local_output.Height();
+  const IntType local_width = local_output.Width();
 
   // Compute dot products between output and gradient w.r.t. output.
   auto&& handle = El::GPUManager::cuBLASHandle();
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
-  for (El::Int col = 0; col < local_width; ++col) {
+  for (IntType col = 0; col < local_width; ++col) {
     cublas::dot(handle, local_height,
                 local_output.LockedBuffer(0, col), 1,
                 local_grad_wrt_output.LockedBuffer(0, col), 1,

@@ -72,6 +72,9 @@ using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  , El::ELEME
 using DistMat         = MCMRMat<El::Device::CPU>;
 using Mat        = El::Matrix<lbann::DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
+/** Integer type. */
+using IntType = El::Int;
+
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions
 using EvalType = double;

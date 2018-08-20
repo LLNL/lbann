@@ -511,10 +511,10 @@ std::vector<data_reader_jag_conduit_hdf5::input_t> data_reader_jag_conduit_hdf5:
 std::vector<CPUMat>
 data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
   std::vector<CPUMat> X_v(sizes.size());
-  El::Int h = 0;
+  IntType h = 0;
 
   for(size_t i=0u; i < sizes.size(); ++i) {
-    const El::Int h_end =  h + static_cast<El::Int>(sizes[i]);
+    const IntType h_end =  h + static_cast<IntType>(sizes[i]);
     El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
     h = h_end;
   }

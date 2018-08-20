@@ -39,7 +39,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class concatenation_layer : public transform_layer {
 public:
 
-  concatenation_layer(lbann_comm *comm, El::Int concat_dim)
+  concatenation_layer(lbann_comm *comm, IntType concat_dim)
     : transform_layer(comm), m_concat_dim(concat_dim) {
     m_expected_num_parent_layers = -1; // No limit on parents
   }
@@ -106,7 +106,7 @@ protected:
     // Get concatenation points for first parent layer
     auto output_dims = get_input_dims(0);
     if (m_concat_dim < 0
-        || m_concat_dim >= (El::Int) output_dims.size()) {
+        || m_concat_dim >= (IntType) output_dims.size()) {
       std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
           << "has " << output_dims.size() << " dimensions, "
@@ -156,7 +156,7 @@ protected:
 
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(IntType mini_batch_size) override {
     const auto& num_inputs = get_num_parents();
     const auto& output_dims = get_output_dims();
 
@@ -216,7 +216,7 @@ protected:
 
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(IntType mini_batch_size) override {
     const auto& num_inputs = get_num_parents();
     const auto& output_dims = get_output_dims();
 
@@ -284,9 +284,9 @@ protected:
 private:
 
   /** Tensor dimension to concatenation. */
-  El::Int m_concat_dim;
+  IntType m_concat_dim;
   /** Concatenation points for each child layer. */
-  std::vector<El::Int> m_concat_points;
+  std::vector<IntType> m_concat_points;
 
   /** View into input tensor. */
   std::unique_ptr<AbsDistMat> m_input_v;

@@ -68,13 +68,13 @@ void poisson_negloglike::differentiate_compute(const AbsDistMat& predictions,
   Mat& gradient_local = gradient.Matrix();
 
   // Matrix parameters
-  const El::Int local_height = gradient_local.Height();
-  const El::Int local_width = gradient_local.Width();
+  const IntType local_height = gradient_local.Height();
+  const IntType local_width = gradient_local.Width();
 
   // Compute gradient
   #pragma omp parallel for collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int row = 0; row < local_height; ++row) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
       const DataType pred_val = predictions_local(row, col);
       gradient_local(row, col) = DataType(1) - true_val / pred_val; // \f[1 - k/\lambda\f]

@@ -86,7 +86,7 @@ class io_layer : public Layer {
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
-  El::Matrix<El::Int>* get_sample_indices_per_mb() override = 0;
+  El::Matrix<IntType>* get_sample_indices_per_mb() override = 0;
 
   /**
    * Get the dimensions of the underlying data.

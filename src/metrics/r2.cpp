@@ -51,8 +51,8 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   EvalType ss_res = 0;
   EvalType ss_tot = 0;
   #pragma omp parallel for reduction(+:ss_res,ss_tot) collapse(2)
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
+  for(IntType col = 0; col < local_width; ++col) {
+    for(IntType row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = prediction_local(row, col);
       const EvalType val1 = true_val - pred_val;
