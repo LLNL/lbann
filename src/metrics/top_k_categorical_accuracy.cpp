@@ -37,29 +37,29 @@ EvalType top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& p
     // This first computes the top k predictions within each column locally,
     // then each column master gathers these, computes the global top k, and
     // determines if an error was made.
-    El::Int num_errors = 0;
+    IntType num_errors = 0;
     // Note: assumes structure is packed.
     struct top_k_ele {
       DataType val;  // Predicted value.
       DataType gt;  // Ground truth.
     };
-    const El::Int local_width = prediction.LocalWidth();  // minibatch dim
-    const El::Int local_height = prediction.LocalHeight();  // class dim
+    const IntType local_width = prediction.LocalWidth();  // minibatch dim
+    const IntType local_height = prediction.LocalHeight();  // class dim
     // Pack the top k predictions for each local column together.
     std::vector<top_k_ele> local_top_k(m_top_k * local_width);
     // Compute the top k entries locally.
-    std::vector<El::Int> local_indices(local_height);
+    std::vector<IntType> local_indices(local_height);
     std::iota(local_indices.begin(), local_indices.end(), 0);
-    for (El::Int mb_idx = 0; mb_idx < local_width; ++mb_idx) {
+    for (IntType mb_idx = 0; mb_idx < local_width; ++mb_idx) {
       // Determine the top k local entries in this column.
       std::partial_sort(
         local_indices.begin(), local_indices.begin() + m_top_k,
         local_indices.end(),
-        [mb_idx, &prediction] (El::Int a, El::Int b) -> bool {
+        [mb_idx, &prediction] (IntType a, IntType b) -> bool {
           return prediction.GetLocal(a, mb_idx) >
             prediction.GetLocal(b, mb_idx); });
-      for (El::Int i = 0; i < m_top_k; ++i) {
-        El::Int idx = mb_idx*m_top_k + i;
+      for (IntType i = 0; i < m_top_k; ++i) {
+        IntType idx = mb_idx*m_top_k + i;
         local_top_k[idx].val = prediction.GetLocal(local_indices[i], mb_idx);
         local_top_k[idx].gt = ground_truth.GetLocal(local_indices[i], mb_idx);
       }
@@ -76,25 +76,25 @@ EvalType top_k_categorical_accuracy_metric::evaluate_compute(const AbsDistMat& p
       get_comm().gather((DataType*) local_top_k.data(), 2*local_top_k.size(),
                         (DataType*) global_top_k.data(), col_comm);
       // Compute the global top k elements in each column.
-      std::vector<El::Int> global_indices(m_top_k * col_comm_size);
+      std::vector<IntType> global_indices(m_top_k * col_comm_size);
       std::iota(global_indices.begin(), global_indices.end(), 0);
-      for (El::Int mb_idx = 0; mb_idx < local_width; ++mb_idx) {
+      for (IntType mb_idx = 0; mb_idx < local_width; ++mb_idx) {
         std::partial_sort(
           global_indices.begin(), global_indices.begin() + m_top_k,
           global_indices.end(),
           [mb_idx, col_comm_size, &global_top_k, this]
-          (El::Int a, El::Int b) -> bool {
-            El::Int mb_offset = mb_idx * m_top_k;
-            El::Int a_proc_offset = (a/m_top_k) * m_top_k * col_comm_size;
-            El::Int a_idx = a_proc_offset + mb_offset + (a%m_top_k);
-            El::Int b_proc_offset = (b/m_top_k) * m_top_k * col_comm_size;
-            El::Int b_idx = b_proc_offset + mb_offset + (b%m_top_k);
+          (IntType a, IntType b) -> bool {
+            IntType mb_offset = mb_idx * m_top_k;
+            IntType a_proc_offset = (a/m_top_k) * m_top_k * col_comm_size;
+            IntType a_idx = a_proc_offset + mb_offset + (a%m_top_k);
+            IntType b_proc_offset = (b/m_top_k) * m_top_k * col_comm_size;
+            IntType b_idx = b_proc_offset + mb_offset + (b%m_top_k);
             return global_top_k[a_idx].val > global_top_k[b_idx].val;
           });
         // Check if there is a 1 ground truth label in the top k.
         bool found = false;
-        for (El::Int i = 0; i < m_top_k; ++i) {
-          El::Int idx = global_indices[i];
+        for (IntType i = 0; i < m_top_k; ++i) {
+          IntType idx = global_indices[i];
           idx = mb_idx*m_top_k + (i/m_top_k)*m_top_k*col_comm_size + (i%m_top_k);
           if (global_top_k[idx].gt == DataType(1)) {
             found = true;

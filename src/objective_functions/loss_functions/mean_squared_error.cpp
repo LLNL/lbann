@@ -36,16 +36,16 @@ void mean_squared_error_loss::start_evaluate_compute(
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
   // Matrix parameters
-  const El::Int height = predictions.Height();
-  const El::Int width = predictions.Width();
-  const El::Int local_height = predictions_local.Height();
-  const El::Int local_width = predictions_local.Width();
+  const IntType height = predictions.Height();
+  const IntType width = predictions.Width();
+  const IntType local_height = predictions_local.Height();
+  const IntType local_width = predictions_local.Width();
 
   // Compute sum of squared errors
   EvalType sum = EvalType(0);
   #pragma omp parallel for reduction(+:sum) collapse(2)
-  for(El::Int col = 0; col < local_width; ++col) {
-    for(El::Int row = 0; row < local_height; ++row) {
+  for(IntType col = 0; col < local_width; ++col) {
+    for(IntType row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
       const EvalType error = true_val - pred_val;
@@ -74,14 +74,14 @@ void mean_squared_error_loss::differentiate_compute(const AbsDistMat& prediction
 
   // Matrix parameters
   const int height = gradient.Height();
-  const El::Int local_height = gradient_local.Height();
-  const El::Int local_width = gradient_local.Width();
+  const IntType local_height = gradient_local.Height();
+  const IntType local_width = gradient_local.Width();
 
   // Compute gradient
   const DataType scale = DataType(2) / height;
   #pragma omp parallel for collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int row = 0; row < local_height; ++row) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
       const DataType pred_val = predictions_local(row, col);
       gradient_local(row, col) = (pred_val - true_val) * scale;

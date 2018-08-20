@@ -44,7 +44,7 @@ template <data_layout T_layout, El::Device Dev>
 class top_k_categorical_accuracy_layer : public Layer {
 public:
 
-  top_k_categorical_accuracy_layer(lbann_comm *comm, El::Int k)
+  top_k_categorical_accuracy_layer(lbann_comm *comm, IntType k)
     : Layer(comm), m_k(k) {
     set_output_dims({1});
 
@@ -64,7 +64,7 @@ public:
  private:
 
   /** Parameter for top-k search. */
-  const El::Int m_k;
+  const IntType m_k;
   
 };
 

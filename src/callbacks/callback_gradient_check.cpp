@@ -101,13 +101,13 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
     const AbsDistMat& gradient = w->get_optimizer()->get_gradient();
 
     // Iterate through weights matrix entries
-    for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
-      for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
+    for (IntType col = 0; col < weights_matrix.Width(); ++col) {
+      for (IntType row = 0; row < weights_matrix.Height(); ++row) {
         const bool weight_is_local = weights_matrix.IsLocal(row, col);
-        const El::Int local_row = (weight_is_local ?
+        const IntType local_row = (weight_is_local ?
                                    weights_matrix.LocalRow(row) :
                                    0);
-        const El::Int local_col = (weight_is_local ?
+        const IntType local_col = (weight_is_local ?
                                    weights_matrix.LocalCol(col) :
                                    0);
         const DataType initial_weight = (weight_is_local ?

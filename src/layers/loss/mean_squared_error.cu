@@ -75,7 +75,7 @@ __global__ void fp_kernel(int global_height,
     
 }
   
-void local_fp_gpu(El::Int height,
+void local_fp_gpu(IntType height,
                   const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
                   AbsMat& local_contribution) {
@@ -131,7 +131,7 @@ __global__ void bp_kernel(int global_height,
     
 }
 
-void local_bp_gpu(El::Int height,
+void local_bp_gpu(IntType height,
                   const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
                   const AbsMat& local_gradient_wrt_output,
@@ -163,7 +163,7 @@ void local_bp_gpu(El::Int height,
 
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(El::Int height,
+     ::local_fp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         AbsMat& local_contribution) {
@@ -173,7 +173,7 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
 
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(El::Int height,
+     ::local_bp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         const AbsMat& local_gradient_wrt_output,
@@ -189,7 +189,7 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
 
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(El::Int height,
+     ::local_fp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         AbsMat& local_contribution) {
@@ -199,7 +199,7 @@ void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(El::Int height,
+     ::local_bp_compute(IntType height,
                         const AbsMat& local_prediction,
                         const AbsMat& local_ground_truth,
                         const AbsMat& local_gradient_wrt_output,

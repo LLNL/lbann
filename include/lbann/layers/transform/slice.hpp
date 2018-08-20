@@ -40,8 +40,8 @@ class slice_layer : public transform_layer {
 public:
 
   slice_layer(lbann_comm *comm,
-              El::Int slice_dim,
-              std::vector<El::Int> slice_points)
+              IntType slice_dim,
+              std::vector<IntType> slice_points)
     : transform_layer(comm),
       m_slice_dim(slice_dim),
       m_slice_points(slice_points) {
@@ -107,7 +107,7 @@ protected:
 
     // Check that slice parameters are valid
     std::stringstream err;
-    if (m_slice_dim < 0 || m_slice_dim >= (El::Int) input_dims.size()) {
+    if (m_slice_dim < 0 || m_slice_dim >= (IntType) input_dims.size()) {
       err << get_type() << " layer \"" << get_name() << "\" "
           << "has " << input_dims.size() << " dimensions, "
           << "but attempted to slice along dimension " << m_slice_dim;
@@ -148,7 +148,7 @@ protected:
 
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override {
+  void fp_setup_outputs(IntType mini_batch_size) override {
     const auto& num_outputs = get_num_children();
     const auto& input_dims = get_input_dims();
 
@@ -209,7 +209,7 @@ protected:
 
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+  void bp_setup_gradient_wrt_inputs(IntType mini_batch_size) override {
     const auto& num_outputs = get_num_children();
     const auto& input_dims = get_input_dims();
     
@@ -272,9 +272,9 @@ protected:
 private:
 
   /** Tensor dimension to slice. */
-  El::Int m_slice_dim;
+  IntType m_slice_dim;
   /** Slice points for each child layer. */
-  std::vector<El::Int> m_slice_points;
+  std::vector<IntType> m_slice_points;
 
   /** View into input tensor. */
   std::unique_ptr<AbsDistMat> m_input_v;

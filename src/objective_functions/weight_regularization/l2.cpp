@@ -34,24 +34,24 @@ namespace {
 
   /** Compute the entry-wise sum of squares of a local matrix. */
   EvalType sum_of_squares(const Mat& mat) {
-    const El::Int height = mat.Height();
-    const El::Int width = mat.Width();
-    const El::Int ldim = mat.LDim();
+    const IntType height = mat.Height();
+    const IntType width = mat.Width();
+    const IntType ldim = mat.LDim();
     const auto& __restrict__ buf = mat.LockedBuffer();
     EvalType sqsum = EvalType(0);
     if (ldim == height) {
       // Parallelize single loop if data is contiguous
-      const El::Int size = height*width;
+      const IntType size = height*width;
       #pragma omp parallel for reduction(+:sqsum)
-      for (El::Int i = 0; i < size; ++i) {
+      for (IntType i = 0; i < size; ++i) {
         const EvalType val = buf[i];
         sqsum += val * val;
       }
     } else {
       // Parallelize double loop if data is not contiguous
       #pragma omp parallel for reduction(+:sqsum) collapse(2)
-      for (El::Int j = 0; j < width; ++j) {
-        for (El::Int i = 0; i < height; ++i) {
+      for (IntType j = 0; j < width; ++j) {
+        for (IntType i = 0; i < height; ++i) {
           const EvalType val = buf[i + j*ldim];
           sqsum += val * val;
         }

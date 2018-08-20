@@ -128,10 +128,10 @@ std::string mesh_reader::construct_filename(std::string channel, int data_id) {
 
 void mesh_reader::horizontal_flip(CPUMat& mat) {
   // TODO: Could probably optimize this for better locality.
-  const El::Int height = mat.Height();
-  const El::Int width = mat.Width();
-  for (El::Int row = 0; row < height; ++row) {
-    for (El::Int col = 0; col < (width / 2); ++col) {
+  const IntType height = mat.Height();
+  const IntType width = mat.Width();
+  for (IntType row = 0; row < height; ++row) {
+    for (IntType col = 0; col < (width / 2); ++col) {
       DataType tmp = mat(row, col);
       mat(row, col) = mat(row, width - col - 1);
       mat(row, width - col - 1) = tmp;
@@ -141,10 +141,10 @@ void mesh_reader::horizontal_flip(CPUMat& mat) {
 
 void mesh_reader::vertical_flip(CPUMat& mat) {
   // TODO: Could probably optimize this for better locality.
-  const El::Int height = mat.Height();
-  const El::Int width = mat.Width();
-  for (El::Int row = 0; row < (height / 2); ++row) {
-    for (El::Int col = 0; col < width; ++col) {
+  const IntType height = mat.Height();
+  const IntType width = mat.Width();
+  for (IntType row = 0; row < (height / 2); ++row) {
+    for (IntType col = 0; col < width; ++col) {
       DataType tmp = mat(row, col);
       mat(row, col) = mat(height - row - 1, col);
       mat(height - row - 1, col) = tmp;

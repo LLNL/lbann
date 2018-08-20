@@ -106,13 +106,13 @@ class distributed_io_buffer : public generic_io_buffer {
 
   void set_local_matrix_bypass(CPUMat *M_local, int idx) override {}
 
-  void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) override {
+  void set_std_matrix_view(IntType cur_mini_batch_size, int idx) override {
     for (auto& buf : m_data_buffers) {
       El::View(*buf.second->M_local_v[idx], *buf.second->M_local[idx], El::ALL, El::IR(0, cur_mini_batch_size));
     }
   }
 
-  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {
+  void setup_data(IntType num_neurons, IntType num_targets, IntType max_minibatch_size) override {
     for (auto& buf : m_data_buffers) {
       buf.second->M_local[0]->Resize(num_neurons, max_minibatch_size);
       buf.second->Ms[0]->Resize(num_neurons, max_minibatch_size);

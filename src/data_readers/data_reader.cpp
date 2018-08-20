@@ -90,7 +90,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    IntType{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     X.Width());
 
   if (!m_save_minibatch_indices) {
@@ -142,7 +142,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    IntType{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
   El::Zeros(Y, Y.Height(), Y.Width());
@@ -180,7 +180,7 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
   const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+    IntType{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
   El::Zeros(Y, Y.Height(), Y.Width());

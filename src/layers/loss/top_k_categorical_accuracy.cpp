@@ -39,12 +39,12 @@ struct entry {
   /** Vector entry value. */
   DataType value = min_value;
   /** Vector entry index. */
-  El::Int index = max_index;
+  IntType index = max_index;
 
   /** Minimum possible value. */
   static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
   /** Maximum possible index. */
-  static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
+  static constexpr IntType max_index = std::numeric_limits<IntType>::max();
 
   /** Comparison operation to sort vector entries.
    *  Entries are sorted by value in decreasing order, with ties
@@ -58,7 +58,7 @@ struct entry {
 
 /** CPU implementation of top-k categorical accuracy layer forward prop. */
 void fp_cpu(lbann_comm& comm,
-            El::Int k,
+            IntType k,
             const AbsDistMat& predictions,
             const AbsDistMat& labels,
             AbsDistMat& loss) {
@@ -67,9 +67,9 @@ void fp_cpu(lbann_comm& comm,
   const auto& local_predictions = predictions.LockedMatrix();
   const auto& local_labels = labels.LockedMatrix();
   auto& local_loss = loss.Matrix();
-  const El::Int height = predictions.Height();
-  const El::Int local_height = local_predictions.Height();
-  const El::Int local_width = local_predictions.Width();
+  const IntType height = predictions.Height();
+  const IntType local_height = local_predictions.Height();
+  const IntType local_width = local_predictions.Width();
 
   // Trivial cases
   if (k < 1) {
@@ -91,11 +91,11 @@ void fp_cpu(lbann_comm& comm,
   // Get label indices
   // Note: This may have race conditions if columns of labels matrix
   // are not one-hot vectors.
-  std::vector<El::Int> label_indices(local_width, height);
+  std::vector<IntType> label_indices(local_width, height);
   Al::request req;
 #pragma omp parallel for collapse(2)
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int row = 0; row < local_height; ++row) {
+  for (IntType col = 0; col < local_width; ++col) {
+    for (IntType row = 0; row < local_height; ++row) {
       if (local_labels(row, col) > DataType(0)) {
         label_indices[col] = labels.GlobalRow(row);
       }
@@ -110,9 +110,9 @@ void fp_cpu(lbann_comm& comm,
   // Find top-k entries in each column of local prediction matrix
   std::vector<entry> top_entries(local_width * k);
 #pragma omp parallel for
-  for (El::Int col = 0; col < local_width; ++col) {
+  for (IntType col = 0; col < local_width; ++col) {
     std::vector<entry> local_entries(std::max(local_height, k));
-    for (El::Int row = 0; row < local_height; ++row) {
+    for (IntType row = 0; row < local_height; ++row) {
       local_entries[row].value = local_predictions(row, col);
       local_entries[row].index = predictions.GlobalRow(row);
     }
@@ -137,9 +137,9 @@ void fp_cpu(lbann_comm& comm,
                   reinterpret_cast<El::byte*>(global_top_entries.data()),
                   col_comm);
 #pragma omp parallel for
-      for (El::Int col = 0; col < local_width; ++col) {
+      for (IntType col = 0; col < local_width; ++col) {
         std::vector<entry> col_entries(col_comm_size * k);
-        for (El::Int rank = 0; rank < col_comm_size; ++rank) {
+        for (IntType rank = 0; rank < col_comm_size; ++rank) {
           const auto* start = &global_top_entries[rank*local_width*k+col*k];
           std::copy(start, start + k, &col_entries[rank*k]);
         }
@@ -158,8 +158,8 @@ void fp_cpu(lbann_comm& comm,
   comm.wait(req);
   if (col_comm_rank == col_comm_root) {
 #pragma omp parallel for collapse(2)
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int i = 0; i < k; ++i) {
+    for (IntType col = 0; col < local_width; ++col) {
+      for (IntType i = 0; i < k; ++i) {
         const auto& label_index = label_indices[col];
         if (top_entries[col*k+i].index == label_index
             && label_index < height) {

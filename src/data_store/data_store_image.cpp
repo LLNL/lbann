@@ -296,36 +296,50 @@ void data_store_image::exchange_data() {
 
 
 void data_store_image::exchange_file_sizes(
-  std::vector<int> &my_global_indices,
-  std::vector<int> &my_num_bytes) {
+  std::vector<int> &my_global_indices_,
+  std::vector<int> &my_num_bytes_) {
 
+  // Convert int vectors to IntType vectors
+  std::vector<IntType> my_global_indices, my_num_bytes;
+  for (const auto& x : my_global_indices_) { my_global_indices.push_back(x); }
+  for (const auto& x : my_num_bytes_) { my_num_bytes.push_back(x); }
+  
   if (my_global_indices.size() == 0) {
     my_global_indices.push_back(-1);
     my_num_bytes.push_back(-1);
   }
 
-  std::vector<int> rcv_counts(m_np);
-  int nbytes = my_global_indices.size();
-  m_comm->model_all_gather<int>(nbytes, rcv_counts);
-  int num_global_indices = std::accumulate(rcv_counts.begin(), rcv_counts.end(), 0);
+  std::vector<IntType> rcv_counts(m_np);
+  IntType nbytes = my_global_indices.size();
+  m_comm->model_all_gather<IntType>(nbytes, rcv_counts);
+  IntType num_global_indices = std::accumulate(rcv_counts.begin(), rcv_counts.end(), 0);
 
-  std::vector<int> disp(m_np);   //@todo: fix for model
+  std::vector<IntType> disp(m_np);   //@todo: fix for model
   disp[0] = 0;
   for (int h=1; h<m_np; h++) {
     disp[h] = disp[h-1] + rcv_counts[h-1];
   }
-  std::vector<int> all_global_indices(num_global_indices);
-  std::vector<int> all_num_bytes(num_global_indices);
+  std::vector<IntType> all_global_indices(num_global_indices);
+  std::vector<IntType> all_num_bytes(num_global_indices);
 
-  m_comm->all_gather<int>(my_global_indices, all_global_indices, rcv_counts, disp, m_comm->get_world_comm());
+  m_comm->all_gather<IntType>(my_global_indices, all_global_indices,
+                              rcv_counts, disp, m_comm->get_world_comm());
 
-  m_comm->all_gather<int>(my_num_bytes, all_num_bytes, rcv_counts, disp, m_comm->get_world_comm());
+  m_comm->all_gather<IntType>(my_num_bytes, all_num_bytes,
+                              rcv_counts, disp, m_comm->get_world_comm());
 
   for (size_t j=0; j<all_global_indices.size(); j++) {
     if (all_global_indices[j] != -1) {
       m_file_sizes[all_global_indices[j]] = all_num_bytes[j];
     }
   }
+
+  // Convert IntType vectors to int vectors
+  my_global_indices_.clear();
+  my_num_bytes_.clear();
+  for (const auto& x : my_global_indices) { my_global_indices_.push_back(x); }
+  for (const auto& x : my_num_bytes) { my_num_bytes_.push_back(x); }
+  
 }
 
 size_t data_store_image::get_global_num_file_bytes() {
@@ -399,7 +413,7 @@ void data_store_image::report_memory_constraints() {
   if (m_master) {
     m_comm->gather<long long>(count, counts.data(), m_comm->get_world_comm());
   } else {
-    m_comm->gather<long long>(count, 0, m_comm->get_world_comm());
+    m_comm->gather<long long>(count, IntType(0), m_comm->get_world_comm());
   }
 
   double global = get_global_num_file_bytes()/1000000;

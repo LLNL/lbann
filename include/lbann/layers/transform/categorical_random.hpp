@@ -75,15 +75,15 @@ class categorical_random_layer : public transform_layer {
 
     // Process each mini-batch sample
     #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
+    for (IntType col = 0; col < local_width; ++col) {
 
       // Determine index of output
-      El::Int index = local_height - 1;
+      IntType index = local_height - 1;
       if (mode == execution_mode::training) {
         // Choose first output with CDF above random number in (0,1)
         const auto& rand = rand_mat.GetLocal(0, col);
         DataType cdf = DataType(0);
-        for (El::Int row = 0; row < local_height; ++row) {
+        for (IntType row = 0; row < local_height; ++row) {
           cdf += local_input(row, col);
           if (rand < cdf) {
             index = row;

@@ -37,13 +37,13 @@ void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, 
     return;
   }
 
-  El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
+  El::Matrix<IntType>* indices = l->get_sample_indices_per_mb();
 
   std::set<long>::iterator it;
 
-  for(El::Int i = 0; i < indices->Height(); i++) {
-    for(El::Int j = 0; j < indices->Width(); j++) {
-      El::Int idx = indices->Get(i,j);
+  for(IntType i = 0; i < indices->Height(); i++) {
+    for(IntType j = 0; j < indices->Width(); j++) {
+      IntType idx = indices->Get(i,j);
       it = set.find(idx);
       if(it != set.end()) {
         throw lbann_exception(

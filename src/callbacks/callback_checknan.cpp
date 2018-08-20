@@ -38,12 +38,12 @@ namespace {
  *  If a NaN entry is detected, return true and output the local entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
-bool has_nan(const AbsDistMat& mat, El::Int& row, El::Int& col) {
+bool has_nan(const AbsDistMat& mat, IntType& row, IntType& col) {
   row = -1;
   col = -1;
   const auto& local_mat = mat.LockedMatrix();
-  for (El::Int j = 0; j < local_mat.Width(); ++j) {
-    for (El::Int i = 0; i < local_mat.Height(); ++i) {
+  for (IntType j = 0; j < local_mat.Width(); ++j) {
+    for (IntType i = 0; i < local_mat.Height(); ++i) {
       if (std::isnan(local_mat(i,j))) {
         row = i;
         col = j;
@@ -58,12 +58,12 @@ bool has_nan(const AbsDistMat& mat, El::Int& row, El::Int& col) {
  *  If an inf entry is detected, return true and output the entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
-bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
+bool has_inf(const AbsDistMat& mat, IntType& row, IntType& col) {
   row = -1;
   col = -1;
   const auto& local_mat = mat.LockedMatrix();
-  for (El::Int j = 0; j < local_mat.Width(); ++j) {
-    for (El::Int i = 0; i < local_mat.Height(); ++i) {
+  for (IntType j = 0; j < local_mat.Width(); ++j) {
+    for (IntType i = 0; i < local_mat.Height(); ++i) {
       if (std::isinf(local_mat(i,j))) {
         row = i;
         col = j;
@@ -124,7 +124,7 @@ void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
   std::stringstream err;
   const auto& num_outputs = l->get_num_children();
   for (int i = 0; i < num_outputs; ++i) {
-    El::Int row, col;
+    IntType row, col;
     AbsDistMatReadProxy<El::Device::CPU> mat_proxy(l->get_activations(i));
     if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
@@ -151,7 +151,7 @@ void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
   std::stringstream err;
   const auto& num_inputs = l->get_num_parents();
   for (int i = 0; i < num_inputs; ++i) {
-    El::Int row, col;
+    IntType row, col;
     AbsDistMatReadProxy<El::Device::CPU> mat_proxy(l->get_error_signals(i));
     if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
@@ -179,7 +179,7 @@ void lbann_callback_checknan::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
     auto* opt = w->get_optimizer();
     if (opt != nullptr) {
-      El::Int row, col;
+      IntType row, col;
       AbsDistMatReadProxy<El::Device::CPU> mat_proxy(opt->get_gradient());
       if (has_nan(mat_proxy.GetLocked(), row, col)) {
         dump_network(m);
@@ -202,7 +202,7 @@ void lbann_callback_checknan::on_backward_prop_end(model *m) {
 void lbann_callback_checknan::on_batch_end(model *m) {
   std::stringstream err;
   for (weights *w : m->get_weights()) {
-    El::Int row, col;
+    IntType row, col;
     AbsDistMatReadProxy<El::Device::CPU> mat_proxy(w->get_values());
     if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);

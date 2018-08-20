@@ -41,7 +41,7 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class in_top_k_layer : public transform_layer {
  public:
 
-  in_top_k_layer(lbann_comm *comm, El::Int k)
+  in_top_k_layer(lbann_comm *comm, IntType k)
     : transform_layer(comm), m_k(k) {
     if (m_k < 0) {
       std::stringstream err;
@@ -62,7 +62,7 @@ class in_top_k_layer : public transform_layer {
  private:
 
   /** Parameter for top-k search. */
-  const El::Int m_k;
+  const IntType m_k;
 
 };
 
