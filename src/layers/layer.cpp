@@ -686,6 +686,8 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
 #ifdef LBANN_HAS_GPU
   // Allocate GPU memory with the CUDA API
   if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
+  // Use pinned memory for data on the host.
+  if (device == El::Device::CPU) { mat->Matrix().SetMemoryMode(1); }
 #endif // LBANN_HAS_GPU
 
   return mat;
