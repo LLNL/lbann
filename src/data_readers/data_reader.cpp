@@ -87,11 +87,23 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
 
   int loaded_batch_size = get_loaded_mini_batch_size();
-  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
+
+  int mb_size_;                                
+  if (m_jag_partitioned) {
+    const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
-  const int mb_size = std::min(
-    El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
-    X.Width());
+    mb_size_ = std::min(
+      El::Int{(end_pos - m_current_pos)},
+      X.Width());
+  if (m_debug && get_role() == "train") (*m_debug) << "XXXX m_current_pos: " << m_current_pos+loaded_batch_size << " loaded_batch_size: " << loaded_batch_size << " end_pos: " << end_pos << " mb_size: " << mb_size_ << " X.width: " << X.Width() << "\n";
+  } else {
+    const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
+                               m_shuffled_indices.size());
+    mb_size_ = std::min(
+      El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+      X.Width());
+  }
+  const int mb_size = mb_size_;
 
   if (!m_save_minibatch_indices) {
     El::Zeros(X, X.Height(), X.Width());
@@ -484,6 +496,11 @@ for j in range(40) :
 }
 
 void generic_data_reader::select_subset_of_data() {
+  // ensure that all readers have the same number of indices
+  if (m_jag_partitioned) {
+    size_t n = m_comm->model_allreduce(m_shuffled_indices.size(), El::mpi::MIN);
+    m_shuffled_indices.resize(n);
+  }
 
   // optionally partition data set amongst the models
   if (m_is_partitioned) {
