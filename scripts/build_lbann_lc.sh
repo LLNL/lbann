@@ -568,7 +568,7 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     ELEMENTAL_USE_CUBLAS=OFF
 	case $CLUSTER in
 		ray|sierra)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.2_ppc64le
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
 			;;
 		*)
 			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
@@ -583,7 +583,7 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
 			;;
 		ray|sierra)
 			module del cuda
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.88}
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 			;;
 	esac
 fi
@@ -614,7 +614,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
 		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.4/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.2.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
 			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		fi
