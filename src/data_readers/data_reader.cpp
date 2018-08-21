@@ -92,10 +92,17 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   if (m_jag_partitioned) {
     const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
-    mb_size_ = std::min(
-      El::Int{(end_pos - m_current_pos)},
-      X.Width());
-  if (m_debug && get_role() == "train") (*m_debug) << "XXXX m_current_pos: " << m_current_pos+loaded_batch_size << " loaded_batch_size: " << loaded_batch_size << " end_pos: " << end_pos << " mb_size: " << mb_size_ << " X.width: " << X.Width() << "\n";
+    mb_size_ = end_pos - m_current_pos;
+    if (mb_size_ != X.Width()) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " mb_size != X.Width(); must be identical for jag data partitioning";
+      throw lbann_exception(err.str());
+          
+    }
+//    mb_size_ = std::min(
+//      El::Int{(end_pos - m_current_pos)},
+//      X.Width());
   } else {
     const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
