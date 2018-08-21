@@ -24,25 +24,30 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/relu.hpp"
+#include "lbann/callbacks/callback_dump_error_signals.hpp"
 
 namespace lbann {
 
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
+void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
+
+  // Write each activation matrix to file
+  for (int i = 0; i < l->get_num_parents(); ++i) {
+
+    // File name
+    std::stringstream file;
+    file << m_basename
+         << "model" << m->get_comm()->get_model_rank() << "-"
+         << "epoch" << m->get_cur_epoch() << "-"
+         << "step" << m->get_cur_step() << "-"
+         << l->get_name() << "-"
+         << "ErrorSignals";
+    if (l->get_num_parents() > 1) { file << i; }
+
+    // Write activations to file
+    El::Write(l->get_error_signals(i), file.str(), El::ASCII);
+
+  }
+
 }
 
-} // namespace lbann
+}  // namespace lbann

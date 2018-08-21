@@ -280,10 +280,7 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();
     const auto& dims = parse_list<int>(params.dims());
-    if (layout == data_layout::DATA_PARALLEL
-        && Dev == El::Device::CPU) {
-      return new crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm, dims);
-    }
+    return new crop_layer<layout, Dev>(comm, dims);
   }
   if (proto_layer.has_categorical_random()) {
     if (layout == data_layout::DATA_PARALLEL
