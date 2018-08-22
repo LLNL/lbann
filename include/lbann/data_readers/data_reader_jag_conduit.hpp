@@ -42,7 +42,7 @@
 namespace lbann {
 
 /**
- * Loads the pairs of JAG simulation inputs and results from a conduit-wrapped hdf5 file
+ * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
  */
 class data_reader_jag_conduit : public generic_data_reader {
  public:
@@ -227,7 +227,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
   /// See if the image size is consistent with the linearized size
-  void check_image_size();
+  void check_image_data();
   /// Make sure that the keys to choose scalar outputs are valid
   void check_scalar_keys();
   /// Make sure that the keys to choose scalar outputs are valid

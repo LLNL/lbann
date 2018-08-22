@@ -258,11 +258,11 @@ data_reader_jag_conduit::get_dependent_variable_type() const {
 }
 
 void data_reader_jag_conduit::set_image_dims(const int width, const int height, const int ch) {
-  if ((width > 0) && (height > 0)) { // set and valid
+  if ((width > 0) && (height > 0) && (ch > 0)) { // set and valid
     m_image_width = width;
     m_image_height = height;
     m_image_num_channels = ch;
-  } else if (!((width == 0) && (height == 0))) { // set but not valid
+  } else if (!((width == 0) && (height == 0) && (ch == 1))) { // set but not valid
     _THROW_LBANN_EXCEPTION_(_CN_, "set_image_dims() : invalid image dims");
   }
   set_linearized_image_size();
@@ -407,22 +407,17 @@ void data_reader_jag_conduit::set_num_img_srcs() {
 }
 
 void data_reader_jag_conduit::set_linearized_image_size() {
-  m_image_linearized_size = m_image_width * m_image_height;
-  //m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
-  // TODO: we do not know how multi-channel image data will be formatted yet.
+  m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
 }
 
-void data_reader_jag_conduit::check_image_size() {
+void data_reader_jag_conduit::check_image_data() {
   if (m_success_map.size() == 0) {
     return;
   }
 
   const conduit::Node & n_imageset = get_conduit_node(m_success_map[0] + "/outputs/images");
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
-    //m_image_width = 0;
-    //m_image_height = 0;
-    //set_linearized_image_size();
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : no image in data");
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
   }
   const conduit::Node & n_image = get_conduit_node(m_success_map[0] + "/outputs/images/(0.0, 0.0)/0.0/emi");
@@ -434,12 +429,13 @@ void data_reader_jag_conduit::check_image_size() {
     if ((m_image_width == 0) && (m_image_height == 0)) {
       m_image_height = 1;
       m_image_width = static_cast<int>(emi.number_of_elements());
+      m_image_num_channels = 1;
       set_linearized_image_size();
     } else {
-      //_THROW_LBANN_EXCEPTION_(_CN_, "check_image_size() : image size mismatch");
+      //_THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : image size mismatch");
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
-          <<"check_image_size() : image size mismatch; m_image_width: "
+          <<"check_image_data() : image size mismatch; m_image_width: "
           << m_image_width << " m_image_height: " << m_image_height
           << " m_image_linearized_size: " << m_image_linearized_size << std::endl;
     }
