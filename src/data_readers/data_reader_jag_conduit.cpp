@@ -530,6 +530,11 @@ void data_reader_jag_conduit::load() {
 
   filenames.resize(num_files_to_load);
 
+  // Shuffle the file names
+  if (m_shuffle) {
+    std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
+  }
+
   if (m_first_n > 0) {
     _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
   }
