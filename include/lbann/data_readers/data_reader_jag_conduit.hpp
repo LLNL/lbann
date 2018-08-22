@@ -50,6 +50,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
+  using sample_map_t = std::unordered_map<int, std::string>; ///< valid sample map type
 
   /**
    * Dependent/indepdendent variable types
@@ -121,8 +122,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   void load_conduit(const std::string conduit_file_path, size_t& idx);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-  /// Return the number of samples
-  size_t get_num_samples() const;
+  /// Return the number of valid samples locally available
+  size_t get_num_valid_local_samples() const;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
@@ -224,12 +225,12 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
+  /// See if the image size is consistent with the linearized size
+  void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
-  /// See if the image size is consistent with the linearized size
-  void check_image_data();
   /// Make sure that the keys to choose scalar outputs are valid
   void check_scalar_keys();
   /// Make sure that the keys to choose scalar outputs are valid
@@ -308,7 +309,7 @@ class data_reader_jag_conduit : public generic_data_reader {
    * not be integers; also, this map only includes sample IDs that
    * have <sample_id>/performance/success = 1
    */
-  std::unordered_map<int, std::string> m_success_map;
+  sample_map_t m_valid_samples;
 
 };
 
