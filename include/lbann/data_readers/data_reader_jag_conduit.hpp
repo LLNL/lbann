@@ -113,11 +113,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Report the selected simulation input parameters
   const std::vector<std::string>& get_input_choices() const;
 
-  /// Load data and do data reader's chores.
 #ifndef _JAG_OFFLINE_TOOL_MODE_
+  /// Load data and do data reader's chores.
   void load() override;
 #else
-  void load_conduit(const std::string conduit_file_path);
+  /// Load a data file
+  void load_conduit(const std::string conduit_file_path, size_t& idx);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Return the number of samples
@@ -221,8 +222,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Load a conduit-packed hdf5 data file
-  void load_conduit(const std::string conduit_file_path);
+  /// Load a data file
+  void load_conduit(const std::string conduit_file_path, size_t& idx);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Obtain the linearized size of images of a sample from the meta info

@@ -27,13 +27,13 @@
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 //#include "lbann/data_store/data_store_jag_conduit.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 #ifdef LBANN_HAS_CONDUIT
+#include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/data_readers/opencv_extensions.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
@@ -50,17 +50,17 @@
 
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
-  std::stringstream err; \
-  err << __FILE__ << ' '  << __LINE__ << " :: " \
+  std::stringstream _err; \
+  _err << __FILE__ << ' '  << __LINE__ << " :: " \
       << (_CLASS_NAME_) << "::" << (_MSG_); \
-  throw lbann_exception(err.str()); \
+  throw lbann_exception(_err.str()); \
 }
 
 #define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) { \
-  std::stringstream err; \
-  err << __FILE__ << ' '  << __LINE__ << " :: " \
+  std::stringstream _err; \
+  _err << __FILE__ << ' '  << __LINE__ << " :: " \
       << (_CLASS_NAME_) << "::" << (_MSG1_) << (_MSG2_); \
-  throw lbann_exception(err.str()); \
+  throw lbann_exception(_err.str()); \
 }
 
 // This comes after all the headers, and is only visible within the current implementation file.
@@ -517,13 +517,18 @@ void data_reader_jag_conduit::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
-  //const std::string data_dir = add_delimiter(get_file_dir());
-  //const std::string conduit_file_name = get_data_filename();
-  const std::string pattern = get_file_dir();
-  std::vector<std::string> names = glob(pattern);
-  if (names.size() < 1) {
+  const std::string data_dir = add_delimiter(get_file_dir());
+  const std::string conduit_file_name = get_data_filename();
+  const std::string pattern = data_dir + conduit_file_name;
+  std::vector<std::string> filenames = glob(pattern);
+  if (filenames.size() < 1) {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
   }
+
+  const size_t num_files_to_load =
+    (m_max_files_to_load > 0u)? std::min(m_max_files_to_load, filenames.size()) : filenames.size();
+
+  filenames.resize(num_files_to_load);
 
   if (m_first_n > 0) {
     _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
@@ -536,8 +541,8 @@ void data_reader_jag_conduit::load() {
 
   double tm1 = get_time();
   int n = 0;
-  for (auto t : names) {
-    load_conduit(t);
+  for (auto t : filenames) {
+    load_conduit(t, idx);
     ++n;
     if (is_master()) std::cerr << "time to load: " << n << " files: " << get_time() - tm1 << "\n";
     if (n >= max_files_to_load) {
@@ -547,7 +552,7 @@ void data_reader_jag_conduit::load() {
   if (is_master()) std::cerr << "time to load conduit files: " << get_time() - tm1
         << "  num samples: " << m_data.number_of_children() << "\n";
 
-  // reset indices
+  check_image_data();
   m_shuffled_indices.resize(get_num_samples());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
@@ -559,14 +564,16 @@ void data_reader_jag_conduit::load() {
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path) {
-if (is_master()) std::cerr << "loading: " << conduit_file_path<< "\n";
+void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, size_t& idx) {
+  if (!check_if_file_exists(conduit_file_path)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
+  }
+  std::cerr << "loading: " << conduit_file_path << "\n";
   conduit::relay::io::load_merged(conduit_file_path, "hdf5", m_data);
 
   // set up mapping: need to do this since some of the data may be bad
   const std::vector<std::string> &children_names = m_data.child_names();
-  int idx = 0;
-  int bad = 0;
+  size_t bad = 0u;
   for (auto t : children_names) {
     const std::string key = "/" + t + "/performance/success";
     const conduit::Node& n_ok = get_conduit_node(key);
