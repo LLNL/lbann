@@ -222,8 +222,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   void load_conduit(const std::string conduit_file_path);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-  /// Obtain the number of image measurement views
-  void set_num_img_srcs();
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
   /// See if the image size is consistent with the linearized size
@@ -241,9 +239,6 @@ class data_reader_jag_conduit : public generic_data_reader {
    * cannot be converted to a numertic.
    */
   static bool check_non_numeric(const std::string key);
-
-  /// Choose the image closest to the bang time among those associated with the i-th sample
-  std::vector<int> choose_image_near_bang_time(const size_t i) const;
 
   /// Allow const access to the conduit data structure
   const conduit::Node& get_conduit_node(const std::string key) const;
@@ -268,6 +263,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   int m_num_labels; ///< number of labels
 
+  /// Allow image selection by the view and the time index
+  std::vector<std::string> m_emi_image_keys;
   /// Keys to select a set of scalar simulation outputs to use. By default, use all.
   std::vector<std::string> m_scalar_keys;
   /// Keys to select a set of simulation input parameters to use. By default, use all.
@@ -309,7 +306,6 @@ class data_reader_jag_conduit : public generic_data_reader {
    */
   std::unordered_map<int, std::string> m_success_map;
 
-  std::set<std::string> m_emi_selectors;
 };
 
 

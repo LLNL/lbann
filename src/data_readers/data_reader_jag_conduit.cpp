@@ -113,6 +113,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   set_linearized_image_size();
   m_num_img_srcs = rhs.m_num_img_srcs;
   m_is_data_loaded = rhs.m_is_data_loaded;
+  m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
   m_success_map = rhs.m_success_map;
@@ -163,6 +164,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_num_img_srcs = 1u;
   m_is_data_loaded = false;
   m_num_labels = 0;
+  m_emi_image_keys.clear();
   m_scalar_keys.clear();
   m_input_keys.clear();
   m_uniform_input_type = false;
@@ -375,37 +377,6 @@ const std::vector<std::string>& data_reader_jag_conduit::get_input_choices() con
 }
 
 
-void data_reader_jag_conduit::set_num_img_srcs() {
-  m_num_img_srcs = m_emi_selectors.size();
-
-#if 0
-
-  if (m_success_map.size() == 0) {
-    return;
-  }
-
-  conduit::NodeConstIterator itr = get_conduit_node(m_success_map[0] + "/outputs/images").children();
-
-  using view_set = std::set< std::pair<float, float> >;
-  view_set views;
-
-  while (itr.has_next()) {
-    const conduit::Node & n_image = itr.next();
-    std::stringstream sstr(n_image["view"].as_string());
-    double c1, c2;
-    std::string tmp;
-    sstr >> tmp >> c1 >> c2;
-
-    views.insert(std::make_pair(c1, c2));
-  }
-
-  m_num_img_srcs = views.size();
-  if (m_num_img_srcs == 0u) {
-    m_num_img_srcs = 1u;
-  }
-#endif
-}
-
 void data_reader_jag_conduit::set_linearized_image_size() {
   m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
 }
@@ -420,10 +391,19 @@ void data_reader_jag_conduit::check_image_data() {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
   }
-  const conduit::Node & n_image = get_conduit_node(m_success_map[0] + "/outputs/images/(0.0, 0.0)/0.0/emi");
+  if (m_emi_image_keys.size() == 0u) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image is selected");
+    return;
+  }
+  for (const auto& emi_tag: m_emi_image_keys) {
+    if (!m_data.has_path(m_valid_samples[0] + "/outputs/images/" + emi_tag + "/emi")) {
+      _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
+      return;
+    }
+  }
+  const conduit::Node & n_image
+    = get_conduit_node(m_valid_samples[0] + "/outputs/images/" + m_emi_image_keys[0] + "/emi");
   conduit::float32_array emi = n_image.value();
-
-  m_image_linearized_size = static_cast<size_t>(emi.number_of_elements());
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
@@ -432,12 +412,9 @@ void data_reader_jag_conduit::check_image_data() {
       m_image_num_channels = 1;
       set_linearized_image_size();
     } else {
-      //_THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : image size mismatch");
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          <<"check_image_data() : image size mismatch; m_image_width: "
-          << m_image_width << " m_image_height: " << m_image_height
-          << " m_image_linearized_size: " << m_image_linearized_size << std::endl;
+      std::string msg = "expected linearized emi image size: "
+                      + std::to_string(emi.number_of_elements()) + '\n';
+      _THROW_LBANN_EXCEPTION_(_CN_, msg + get_description());
     }
   }
 }
@@ -532,11 +509,6 @@ void data_reader_jag_conduit::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
-  // for selecting images, per Luc's advise
-  m_emi_selectors.insert("(0.0, 0.0)");
-  m_emi_selectors.insert("(90.0, 0.0)");
-  m_emi_selectors.insert("(90.0, 78.0)");
-
   //const std::string data_dir = add_delimiter(get_file_dir());
   //const std::string conduit_file_name = get_data_filename();
   const std::string pattern = get_file_dir();
@@ -601,7 +573,6 @@ if (is_master()) std::cerr << "loading: " << conduit_file_path<< "\n";
     std::cerr << "data_reader_jag_conduit::load_conduit: num good samples: " << m_success_map.size() << "  num bad: " << bad << "\n";
   }
 
-  set_num_img_srcs();
   check_image_size();
 
   if (!m_is_data_loaded) {
@@ -721,8 +692,9 @@ const std::vector<int> data_reader_jag_conduit::get_dims(const data_reader_jag_c
 }
 
 const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
+#if 1
   return {get_linearized_data_size()};
-#if 0
+#else
   std::vector<int> all_dim;
   for (const auto t: m_independent) {
     if (t == Undefined) {
@@ -764,17 +736,16 @@ std::string data_reader_jag_conduit::to_string(const std::vector<data_reader_jag
 }
 
 std::string data_reader_jag_conduit::get_description() const {
-  std::vector<size_t> s = get_linearized_data_sizes();
   std::string ret = std::string("data_reader_jag_conduit:\n")
     + " - independent: " + data_reader_jag_conduit::to_string(m_independent) + "\n"
     + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent) + "\n"
-    + " - images: "   + std::to_string(m_num_img_srcs) + 'x'
+    + " - images: "   + std::to_string(m_num_img_srcs) + " of "
+                      + std::to_string(m_image_num_channels) + 'x'
                       + std::to_string(m_image_width) + 'x'
                       + std::to_string(m_image_height) + "\n"
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
     + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
     + " - linearized data size: "   + std::to_string(get_linearized_data_size()) + "\n"
-
     + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
   if (!m_scalar_filter.empty()) {
     ret += " - scalar filter:";
@@ -832,45 +803,6 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 }
 
 
-std::vector<int> data_reader_jag_conduit::choose_image_near_bang_time(const size_t sample_id) const {
-  std::vector<int> img_indices;
-  return img_indices;
-#if 0
-  using view_map = std::map<std::pair<float, float>, std::pair<int, double> >;
-
-  conduit::NodeConstIterator itr = get_conduit_node(m_success_map[sample_id] + "/outputs/images").children();
-  view_map near_bang_time;
-  int idx = 0;
-
-  while (itr.has_next()) {
-    const conduit::Node & n_image = itr.next();
-    std::stringstream sstr(n_image["view"].as_string());
-    double c1, c2;
-    std::string tmp;
-    sstr >> tmp >> c1 >> c2;
-    const double t = n_image["time"].value();
-    const double t_abs = std::abs(t);
-
-    view_map::iterator it = near_bang_time.find(std::make_pair(c1, c2));
-
-    if (it == near_bang_time.end()) {
-      near_bang_time.insert(std::make_pair(std::make_pair(c1, c2), std::make_pair(idx, t_abs)));
-    } else if ((it->second).second > t) { // currently ignore tie
-      it->second = std::make_pair(idx, t_abs);
-    }
-
-    idx++;
-  }
-
-  std::vector<int> img_indices;
-  img_indices.reserve(near_bang_time.size());
-  for(const auto& view: near_bang_time) {
-    img_indices.push_back(view.second.first);
-  }
-  return img_indices;
-#endif
-}
-
 std::vector< std::pair<size_t, const data_reader_jag_conduit::ch_t*> >
 data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
   if (sample_id >= m_success_map.size()) {
@@ -880,8 +812,8 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
   std::unordered_map<int, std::string>::const_iterator it = m_success_map.find(sample_id);
 
-  for (auto t : m_emi_selectors) {
-    std::string img_key = it->second + "/outputs/images/" + t + "/0.0/emi";
+  for (const auto& emi_tag : m_emi_image_keys) {
+    std::string img_key = it->second + "/outputs/images/" + emi_tag + "/emi";
     const conduit::Node & n_image = get_conduit_node(img_key);
     conduit::float32_array emi = n_image.value();
     const size_t num_pixels = emi.number_of_elements();
