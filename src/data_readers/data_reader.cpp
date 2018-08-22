@@ -88,29 +88,15 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
   int loaded_batch_size = get_loaded_mini_batch_size();
 
-  int mb_size_;                                
-  if (m_jag_partitioned) {
-    const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-    mb_size_ = end_pos - m_current_pos;
-    if (mb_size_ != X.Width()) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " mb_size != X.Width(); must be identical for jag data partitioning";
-      throw lbann_exception(err.str());
-          
-    }
-//    mb_size_ = std::min(
-//      El::Int{(end_pos - m_current_pos)},
-//      X.Width());
-  } else {
-    const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
-                               m_shuffled_indices.size());
-    mb_size_ = std::min(
-      El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
+  const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
+  const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
+
+  static bool fix_jag = true;
+  if (m_jag_partitioned && fix_jag) {
+    fix_jag = false;
+    set_jag_variables(mb_size);
   }
-  const int mb_size = mb_size_;
 
   if (!m_save_minibatch_indices) {
     El::Zeros(X, X.Height(), X.Width());
@@ -148,6 +134,32 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
 
   return mb_size;
+}
+
+void lbann::generic_data_reader::set_jag_variables(int mb_size) {
+  // all min_batches have the same number of indices;
+  // this probably causes a few indices to be discarded,
+  // but with 1B indices, who cares?
+  int mb_max = m_comm->model_allreduce(mb_size, El::mpi::MAX);
+  m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
+
+  m_last_mini_batch_size = m_mini_batch_size;
+  m_global_mini_batch_size = m_mini_batch_size;
+  m_global_last_mini_batch_size = m_mini_batch_size;
+
+  m_reset_mini_batch_index = 0;
+  m_loaded_mini_batch_idx = 0;
+  m_current_mini_batch_idx = 0;  
+
+  m_stride_to_next_mini_batch = mb_size;
+  m_stride_to_last_mini_batch = mb_size;
+
+  m_base_offset = 0;
+  m_model_offset = 0;
+  m_sample_stride = 1;
+  m_iteration_stride = 1;
+
+  m_world_master_mini_batch_adjustment = 0;
 }
 
 int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
@@ -218,6 +230,7 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   return mb_size;
 }
 
+#if 0
 bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
   bool reader_not_done = true;
   if(is_active_reader) {
@@ -227,6 +240,7 @@ bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
   }
   return reader_not_done;
 }
+#endif
 
 bool generic_data_reader::update(bool is_active_reader) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
@@ -249,7 +263,8 @@ bool generic_data_reader::update(bool is_active_reader) {
     reader_not_done = false;
   }
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
-    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size())) {
+    // for working with 1B jag samples, we may not process all the data
+    if ((get_rank() < m_num_parallel_readers) && (m_current_pos < (int)m_shuffled_indices.size()) && !m_jag_partitioned) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: generic data reader update error: the epoch is complete,"

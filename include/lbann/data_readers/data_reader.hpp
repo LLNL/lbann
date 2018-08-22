@@ -63,6 +63,9 @@ class model;
 class generic_data_reader : public lbann_image_preprocessor {
  public:
 
+ #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
+ #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; } 
+
   /**
    * ctor
    */
@@ -350,6 +353,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch size across all models (global)
   void set_global_mini_batch_size(const int s) {
+    JAG_NOOP_VOID
     m_global_mini_batch_size = s;
   }
   /// Return the mini_batch_size across all models (global)
@@ -358,6 +362,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch stride
   void set_stride_to_next_mini_batch(const int s) {
+    JAG_NOOP_VOID
     m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
@@ -366,11 +371,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the sample stride
   void set_sample_stride(const int s) {
-    if (m_jag_partitioned) {
-      m_sample_stride = 1;
-    } else {
-      m_sample_stride = s;
-    }
+    JAG_NOOP_VOID
+    m_sample_stride = s;
   }
   /// Return the sample stride.
   int get_sample_stride() const {
@@ -386,11 +388,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Return the base offset.
   void set_base_offset(const int s) {
-    if (m_jag_partitioned) {
-      m_base_offset = 0;
-    } else {
-      m_base_offset = s;
-    }
+    JAG_NOOP_VOID
+    m_base_offset = s;
   }
   /// Return the base offset.
   int get_base_offset() const {
@@ -398,6 +397,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the model offset
   void set_model_offset(const int s) {
+    JAG_NOOP_VOID
     m_model_offset = s;
   }
   /// Return the model offset.
@@ -406,6 +406,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) {
+    JAG_NOOP_VOID
     m_last_mini_batch_size = s;
   }
   /// Return the last mini batch size
@@ -414,6 +415,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size across all models (global)
   void set_global_last_mini_batch_size(const int s) {
+    JAG_NOOP_VOID
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
@@ -422,6 +424,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the world master mini batch adjustment (global)
   void set_world_master_mini_batch_adjustment(const int s) {
+    JAG_NOOP_VOID
     m_world_master_mini_batch_adjustment = s;
   }
   /// Return the world master mini batch adjustment (global)
@@ -430,6 +433,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s) {
+    JAG_NOOP_VOID
     m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
@@ -859,6 +863,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data
   bool m_jag_partitioned;
+
+  /// called by fetch_data a single time if m_jag_partitioned = true;
+  /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
+  /// etc.
+  void set_jag_variables(int mb_size);
 };
 
 template<typename T>

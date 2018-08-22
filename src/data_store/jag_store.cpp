@@ -17,7 +17,8 @@ jag_store::jag_store()
     m_load_inputs(false),
     m_load_scalars(false),
     m_image_size(0),
-    m_run_tests(false)
+    m_run_tests(false),
+    m_master(false)
   { 
   }
 
@@ -43,7 +44,7 @@ void jag_store::setup(
 
   // quick hack to get every processor to read a unique
   // subset of the data
-  if (options::get()->has_string("every_n")) {
+  if (options::get()->has_string("every_n") || options::get()->has_string("jag_partitioned")) {
     my_rank = m_comm->get_rank_in_world();
     num_stores = m_comm->get_procs_in_world();
   }
@@ -55,8 +56,7 @@ void jag_store::setup(
     }
   }
 
-  bool master = m_comm->am_world_master();
-  if (master) std::cerr << "starting jag_store::setup for " << conduit_filenames.size() << " conduit files\n";
+  if (m_master) std::cerr << "starting jag_store::setup for " << conduit_filenames.size() << " conduit files\n";
 
   if (m_image_size == 0) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: image_size = 0; probably set_image_size() has not been called");
@@ -91,7 +91,7 @@ void jag_store::setup(
     conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
   m_num_samples = m_valid_samples.size();
-  if (master) {
+  if (m_master) {
     std::cout << "jag_store::setup; successful samples: " << m_num_samples << " failed samples: " << failed << " time to test for success: " << get_time() - tm1 << std::endl;
   }
   double tm2 = get_time();
@@ -102,10 +102,10 @@ void jag_store::setup(
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to find any good samples");
     }
     if (m_load_inputs) {
-      get_default_keys(test_file, test_sample_id, "inputs", master);
+      get_default_keys(test_file, test_sample_id, "inputs");
     }
     if (m_load_scalars) {
-      get_default_keys(test_file, test_sample_id, "scalars", master);
+      get_default_keys(test_file, test_sample_id, "scalars");
     }
   }
 
@@ -177,7 +177,7 @@ void jag_store::setup(
 
   build_data_sizes();
   m_is_setup = true;
-  if (master) {
+  if (m_master) {
     std::cerr << "jag_store::setup; time to load the data: " << get_time() - tm2 << std::endl;
   }
 
@@ -186,7 +186,7 @@ void jag_store::setup(
   }
 }
 
-void jag_store::get_default_keys(std::string &filename, std::string &sample_id, std::string key1, bool master) {
+void jag_store::get_default_keys(std::string &filename, std::string &sample_id, std::string key1) {
   hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read(filename);
   conduit::Node n2;
 
@@ -223,13 +223,12 @@ void jag_store::build_data_sizes() {
 
 void jag_store::run_tests(const std::vector<std::string> &conduit_filenames) {
   conduit::Node node;
-  bool master = m_comm->am_world_master();
-  if (master) {
+  if (m_master) {
     std::cout << "\n=======================================================================\n"
               << "starting jag_store::run_tests\n";
   }
   for (auto t : conduit_filenames) {
-    if (master) {
+    if (m_master) {
       std::cout << "  loading conduit::Node from file: " << t << "\n";
     }
     conduit::relay::io::load_merged(t, "hdf5", node);
@@ -247,7 +246,7 @@ void jag_store::run_tests(const std::vector<std::string> &conduit_filenames) {
     size_t i = 0;
     for (auto input_name : m_inputs_to_load) {
       const std::string key = "/" + sample_id + "/inputs/" + input_name;
-      if (master) {
+      if (m_master) {
         //std::cout << "  next key: " << key << "\n";
       }
       const conduit::Node& nd = node[key];
@@ -257,7 +256,7 @@ void jag_store::run_tests(const std::vector<std::string> &conduit_filenames) {
       ++i;
     }
   }
-  if (master) {
+  if (m_master) {
     std::cout << "all inputs match!\n";
   }
 
@@ -265,11 +264,11 @@ void jag_store::run_tests(const std::vector<std::string> &conduit_filenames) {
   for (size_t j=0; j<get_num_samples(); j++) {
     const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> & images = fetch_images(j);
     std::string sample_id = m_id_to_name[j];
-    //if (master) std::cout << "  next sample: " << sample_id << "\n";
+    //if (m_master) std::cout << "  next sample: " << sample_id << "\n";
     for (size_t k=0; k<m_images_to_load.size(); k++) {
-      //if (master) std::cerr << "  next image: " << m_images_to_load[k] << "\n";
+      //if (m_master) std::cerr << "  next image: " << m_images_to_load[k] << "\n";
       std::string img_key = sample_id + "/outputs/images/" + m_images_to_load[k] + "/0.0/emi";
-      //if (master) std::cerr << "  next key: " << img_key << "\n";
+      //if (m_master) std::cerr << "  next key: " << img_key << "\n";
       const conduit::Node & n_image = node[img_key];
       conduit::float32_array emi = n_image.value();
       const size_t num_pixels = emi.number_of_elements();
@@ -284,7 +283,7 @@ void jag_store::run_tests(const std::vector<std::string> &conduit_filenames) {
       }
     }
   }
-  if (master) {
+  if (m_master) {
     std::cout << "all images match!\n";
     std::cout << "=======================================================================\n";
   }
