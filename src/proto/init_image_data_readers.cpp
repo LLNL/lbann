@@ -368,6 +368,16 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     }
     reader_jag->set_image_dims(width, height, channels);
 
+    // declare the set of images to use
+    std::vector<std::string> image_keys(pb_readme.jag_image_keys_size());
+
+    for (int i=0; i < pb_readme.jag_image_keys_size(); ++i) {
+      image_keys[i] = pb_readme.jag_image_keys(i);
+    }
+
+    reader_jag->set_image_keys(image_keys);
+
+
     using var_t = data_reader_jag_conduit::variable_t;
     // composite independent variable
     std::vector<var_t> independent_type(pb_readme.independent_size());
