@@ -82,6 +82,7 @@ message ImagePreprocessor {
   bool disable = 2;
   int32 raw_width = 3;
   int32 raw_height = 4;
+  int32 raw_num_channels = 5;
 
   message Cropper {
     string name = 1;
@@ -159,15 +160,15 @@ message ImagePreprocessor {
     float factor = 3;
   }
 
-  Cropper cropper = 5;
-  Resizer resizer = 34;
-  Augmenter augmenter = 6;
-  Decolorizer decolorizer = 7;
-  Colorizer colorizer = 8;
-  Subtractor subtractor = 9;
-  Normalizer normalizer = 10;
-  Noiser noiser = 11;
-  PatchExtractor patch_extractor = 12;
+  Cropper cropper = 6;
+  Resizer resizer = 7;
+  Augmenter augmenter = 8;
+  Decolorizer decolorizer = 9;
+  Colorizer colorizer = 10;
+  Subtractor subtractor = 11;
+  Normalizer normalizer = 12;
+  Noiser noiser = 13;
+  PatchExtractor patch_extractor = 14;
 
   int32 early_normalization = 33; // for data_reader_jag only
 }

@@ -251,6 +251,9 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   // final size of image
   width = pb_preprocessor.raw_width();
   height = pb_preprocessor.raw_height();
+  if (pb_preprocessor.raw_num_channels() > 0) {
+    channels = pb_preprocessor.raw_num_channels();
+  }
 
   if (pb_preprocessor.has_subtractor() && !has_channel_wise_subtractor(pb_preprocessor)) {
     // decolorizer and colorizer are exclusive
@@ -331,7 +334,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   // final size of image
   int width = 0, height = 0;
-  int channels = 3;
+  int channels = 0;
 
   // setup preprocessor
   init_image_preprocessor(pb_readme, master, pp, width, height, channels);
@@ -350,14 +353,20 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 #ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit_hdf5") {
     data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
-    reader_jag->set_image_dims(width, height);
+    if (channels == 0) {
+      channels = 1;
+    }
+    reader_jag->set_image_dims(width, height, channels);
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
 
-    reader_jag->set_image_dims(width, height);
+    if (channels == 0) {
+      channels = 1;
+    }
+    reader_jag->set_image_dims(width, height, channels);
 
     using var_t = data_reader_jag_conduit::variable_t;
     // composite independent variable
@@ -434,6 +443,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
 #endif // LBANN_HAS_CONDUIT
+  }
+
+  if (channels == 0) {
+    channels = 3;
   }
 
   auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
