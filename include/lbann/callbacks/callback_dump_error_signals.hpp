@@ -24,25 +24,40 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/relu.hpp"
+#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED
+
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
-}
+/** Dump gradients w.r.t. inputs to file.
+ *  After each layer performs a backward prop step, this callback will
+ *  dump the gradients w.r.t. inputs (the "error signals") to a
+ *  human-readable ASCII file. This is slow and produces a lot of output.
+ */
+class lbann_callback_dump_error_signals : public lbann_callback {
+ public:
 
-} // namespace lbann
+  /** Constructor.
+   *  @param basename The basename for output files.
+   */
+  lbann_callback_dump_error_signals(std::string basename = "")
+    : lbann_callback(), m_basename(basename) {}
+  lbann_callback_dump_error_signals* copy() const override {
+    return new lbann_callback_dump_error_signals(*this);
+  }
+  std::string name() const override { return "dump error signals"; }
+
+  /** Write error signals to file after each backward prop step. */
+  void on_backward_prop_end(model *m, Layer *l) override;
+  
+ private:
+  /** Basename for output files. */
+  std::string m_basename;
+
+};
+
+}  // namespace lbann
+
+#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED

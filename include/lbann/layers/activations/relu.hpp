@@ -28,7 +28,6 @@
 #define LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 
 #include "lbann/layers/activations/activation.hpp"
-#include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
 
@@ -38,58 +37,9 @@ namespace lbann {
  */
 template <data_layout T_layout, El::Device Dev>
 class relu_layer : public entrywise_activation_layer {
+public:
 
- private:
-#ifdef LBANN_HAS_CUDNN
-  /** Activation cuDNN descriptor. */
-  cudnnActivationDescriptor_t m_activation_cudnn_desc;
-  /** Tensor cuDNN descriptors. */
-  cudnn::entrywise_layer_tensor_manager m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
-
- public:
-
-  relu_layer(lbann_comm *comm)
-    : entrywise_activation_layer(comm)
-#ifdef LBANN_HAS_CUDNN
-    , m_activation_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(this)
-#endif // LBANN_HAS_CUDNN
-  {}
-
-  relu_layer(const relu_layer& other)
-    : entrywise_activation_layer(other)
-#ifdef LBANN_HAS_CUDNN
-    , m_activation_cudnn_desc(nullptr),
-      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
-#endif // LBANN_HAS_CUDNN
-  {
-#ifdef LBANN_HAS_CUDNN
-    cudnn::copy_activation_desc(other.m_activation_cudnn_desc,
-                                m_activation_cudnn_desc);
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
-  }
-
-  relu_layer& operator=(const relu_layer& other) {
-    entrywise_activation_layer::operator=(other);
-#ifdef LBANN_HAS_CUDNN
-    cudnn::copy_activation_desc(other.m_activation_cudnn_desc,
-                                m_activation_cudnn_desc);
-    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
-    return *this;
-  }
-
-  ~relu_layer() {
-#ifdef LBANN_HAS_CUDNN
-    if (m_activation_cudnn_desc != nullptr) {
-      cudnnDestroyActivationDescriptor(m_activation_cudnn_desc);
-    }
-#endif // LBANN_HAS_CUDNN
-  }
-
+  relu_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
   relu_layer* copy() const override { return new relu_layer(*this); }
   std::string get_type() const override { return "ReLU"; }
 
@@ -102,24 +52,7 @@ class relu_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_gpu() override {
-    entrywise_activation_layer::setup_gpu();
-#ifndef LBANN_HAS_CUDNN
-    LBANN_ERROR("cuDNN not detected");
-#else
-    if (m_activation_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
-      m_activation_cudnn_desc = nullptr;
-    }
-    CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_cudnn_desc));
-    CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_cudnn_desc,
-                                             CUDNN_ACTIVATION_RELU,
-                                             CUDNN_PROPAGATE_NAN,
-                                             0.0));
-#endif // LBANN_HAS_CUDNN
-  }
-
- protected:
+protected:
 
   DataType activation(DataType x) const override {
     return x > DataType(0) ? x : DataType(0);

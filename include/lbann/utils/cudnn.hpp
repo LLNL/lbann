@@ -46,8 +46,9 @@
     const cudnnStatus_t status_CHECK_CUDNN = (cudnn_call);      \
     if (status_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
       cudaDeviceReset();                                        \
-      LBANN_ERROR(std::string("cuDNN error: ")                  \
-                  + cudnnGetErrorString(status_CHECK_CUDNN));   \
+      LBANN_ERROR(std::string("cuDNN error (")                  \
+                  + cudnnGetErrorString(status_CHECK_CUDNN)     \
+                  + std::string(")"));                          \
     }                                                           \
     LBANN_CUDA_SYNC(false);                                     \
   } while (0)
