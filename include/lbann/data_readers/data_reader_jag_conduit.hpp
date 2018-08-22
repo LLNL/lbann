@@ -47,6 +47,7 @@ namespace lbann {
 class data_reader_jag_conduit : public generic_data_reader {
  public:
   using ch_t = float; ///< jag output image channel type
+  using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
 
@@ -86,6 +87,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
+  /// Choose images to use. e.g. by measurement views and time indices
+  void set_image_keys(const std::vector<std::string> image_keys);
 
   /// Add a scalar key to filter out
   void add_scalar_filter(const std::string& key);
@@ -166,7 +169,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
   /// Check if the simulation was successful
-  int check_exp_success(const size_t sample_id) const;
+  int check_exp_success(const std::string sample_key) const;
 
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 

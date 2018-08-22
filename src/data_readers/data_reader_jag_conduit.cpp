@@ -270,6 +270,14 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
   set_linearized_image_size();
 }
 
+void data_reader_jag_conduit::set_image_keys(const std::vector<std::string> image_keys) {
+  m_emi_image_keys = image_keys;
+  //image_keys: ["(0.0, 0.0)/0.0","(90.0, 0.0)/0.0","(90.0, 78.0)/0.0"];
+
+  m_num_img_srcs = m_emi_image_keys.size();
+}
+
+
 void data_reader_jag_conduit::add_scalar_filter(const std::string& key) {
   m_scalar_filter.insert(key);
 }
@@ -403,7 +411,7 @@ void data_reader_jag_conduit::check_image_data() {
   }
   const conduit::Node & n_image
     = get_conduit_node(m_valid_samples[0] + "/outputs/images/" + m_emi_image_keys[0] + "/emi");
-  conduit::float32_array emi = n_image.value();
+  conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
@@ -815,7 +823,7 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
   for (const auto& emi_tag : m_emi_image_keys) {
     std::string img_key = it->second + "/outputs/images/" + emi_tag + "/emi";
     const conduit::Node & n_image = get_conduit_node(img_key);
-    conduit::float32_array emi = n_image.value();
+    conduit_ch_t emi = n_image.value();
     const size_t num_pixels = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
     image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
@@ -908,13 +916,12 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   return inputs;
 }
 
-int data_reader_jag_conduit::check_exp_success(const size_t sample_id) const {
-  if (!check_sample_id(sample_id)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_exp_success() : invalid sample index");
+int data_reader_jag_conduit::check_exp_success(const std::string sample_key) const {
+  if (!m_data.has_path(sample_key)) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_exp_success() : invalid key to sample: " + sample_key);
   }
 
-  std::unordered_map<int, std::string>::const_iterator it = m_success_map.find(sample_id);
-  return static_cast<int>(get_conduit_node(it->second + "performance/success").value());
+  return static_cast<int>(get_conduit_node(sample_key + "/performance/success").value());
 }
 
 
