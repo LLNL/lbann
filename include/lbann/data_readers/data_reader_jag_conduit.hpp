@@ -50,7 +50,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
-  using sample_map_t = std::unordered_map<int, std::string>; ///< valid sample map type
+  using sample_map_t = std::vector<std::string>; ///< valid sample map type
 
   /**
    * Dependent/indepdendent variable types
