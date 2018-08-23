@@ -581,24 +581,18 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
 
   const size_t num_valid_samples = get_num_valid_local_samples();
 
-  MPI_Comm comm = m_comm->get_model_comm().comm;
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
   const size_t num_ranks = static_cast<size_t>(m_comm->get_procs_per_model());
 
   // Find the minimum of the number of valid samples locally available
   unsigned long long n_loc = static_cast<unsigned long long>(num_valid_samples);
   unsigned long long n_min = static_cast<unsigned long long>(num_valid_samples);
-  MPI_Allreduce(&n_loc, &n_min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, comm);
-
-  // Find the last rank that has the minimum number of valid samples
-  int rank_tmp_last = (n_loc == n_min)? static_cast<int>(my_rank) : 0;
-  int rank_min_last;
-  MPI_Allreduce(&rank_tmp_last, &rank_min_last, 1, MPI_INT, MPI_MAX, comm);
+  m_comm->model_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
 
   // Find the first rank that has the minimum number of valid samples 
   int rank_tmp_1st = (n_loc == n_min)? static_cast<int>(my_rank) : static_cast<int>(num_ranks);
   int rank_min_1st;
-  MPI_Allreduce(&rank_tmp_1st, &rank_min_1st, 1, MPI_INT, MPI_MIN, comm);
+  m_comm->model_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
 
   // Determine the number of samples to use
   m_global_num_samples_to_use = 0u;
@@ -627,7 +621,7 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
   // Compute data yield
   unsigned long long n_valid_local = num_valid_samples;
   unsigned long long n_valid_global = 0u;
-  MPI_Allreduce(&n_valid_local, &n_valid_global, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, comm);
+  m_comm->model_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
 
   if (is_master()) {
     const double yield = static_cast<double>(m_global_num_samples_to_use)/n_valid_global;
