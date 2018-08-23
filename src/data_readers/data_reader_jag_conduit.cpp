@@ -302,7 +302,7 @@ void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
  */
 bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   const std::vector<data_reader_jag_conduit::prefix_t>& prefix_filter, const std::string& key) const {
-  if (key_filter.find(key) != key_filter.end()) {
+  if (key_filter.find(key) != key_filter.cend()) {
     return true;
   }
   for (const auto& pf: prefix_filter) {
@@ -598,8 +598,6 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     std::cerr << "data_reader_jag_conduit::load_conduit: num good samples: " << m_valid_samples.size() << "  num bad: " << bad << "\n";
   }
 
-  check_image_size();
-
   if (!m_is_data_loaded) {
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -805,11 +803,7 @@ std::string data_reader_jag_conduit::get_description() const {
 
 
 bool data_reader_jag_conduit::check_sample_id(const size_t sample_id) const {
-  if (m_valid_samples.find(sample_id) == m_valid_samples.cend()) {
-    return false;
-  }
-  return true;
-  //return (static_cast<conduit_index_t>(sample_id) < m_data.number_of_children());
+  return (m_valid_samples.find(sample_id) != m_valid_samples.cend());
 }
 
 bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
@@ -830,12 +824,13 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 
 std::vector< std::pair<size_t, const data_reader_jag_conduit::ch_t*> >
 data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
-  if (sample_id >= m_valid_samples.size()) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : invalid sample index");
+  sample_map_t::const_iterator it = m_valid_samples.find(sample_id);
+  if (it == m_valid_samples.cend()) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_image_ptrs() : invalid sample index");
   }
 
   std::vector< std::pair<size_t, const ch_t*> >image_ptrs;
-  sample_map_t::const_iterator it = m_valid_samples.find(sample_id);
+  image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
     std::string img_key = it->second + "/outputs/images/" + emi_tag + "/emi";
@@ -888,16 +883,18 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
 }
 
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id) const {
-  if (!check_sample_id(sample_id)) {
+  const sample_map_t::const_iterator it = m_valid_samples.find(sample_id);
+  if (it == m_valid_samples.cend()) {
     _THROW_LBANN_EXCEPTION_(_CN_, "get_scalars() : invalid sample index");
   }
+
+  const std::string sample_scalars = it->second + "/outputs/scalars/";
 
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
   for(const auto key: m_scalar_keys) {
-    sample_map_t::const_iterator t2 = m_valid_samples.find(sample_id);
-    std::string scalar_key = t2->second + "/outputs/scalars/" + key;
+    const std::string scalar_key = sample_scalars + key;
     const conduit::Node & n_scalar = get_conduit_node(scalar_key);
     // All the scalar output currently seems to be scalar_t
     //add_val(key, n_scalar, scalars);
@@ -907,9 +904,12 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 }
 
 std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id) const {
-  if (!check_sample_id(sample_id)) {
+  const sample_map_t::const_iterator it = m_valid_samples.find(sample_id);
+  if (it == m_valid_samples.cend()) {
     _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
   }
+
+  const std::string sample_inputs = it->second + "/inputs/";
 
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
@@ -917,15 +917,13 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
     for(const auto key: m_input_keys) {
-      sample_map_t::const_iterator t2 = m_valid_samples.find(sample_id);
-      std::string input_key = t2->second + "/inputs/" + key;
+      const std::string input_key = sample_inputs + key;
       const conduit::Node & n_input = get_conduit_node(input_key);
       inputs.push_back(n_input.value()); // less overhead
     }
   } else {
     for(const auto key: m_input_keys) {
-      sample_map_t::const_iterator t2 = m_valid_samples.find(sample_id);
-      std::string input_key = t2->second + "/inputs/" + key;
+      const std::string input_key = sample_inputs + key;
       const conduit::Node & n_input = get_conduit_node(input_key);
       add_val(key, n_input, inputs); // more overhead but general
     }
@@ -1047,10 +1045,10 @@ void data_reader_jag_conduit::print_schema() const {
 }
 
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
-  if (!check_sample_id(sample_id)) {
+  sample_map_t::const_iterator it = m_valid_samples.find(sample_id);
+  if (it == m_valid_samples.cend()) {
     _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
   }
-  std::unordered_map<int, std::string>::const_iterator it = m_valid_samples.find(sample_id);
   const conduit::Node & n = get_conduit_node(it->second);
   n.schema().print();
 }
