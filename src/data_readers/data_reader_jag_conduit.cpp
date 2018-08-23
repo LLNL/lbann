@@ -530,37 +530,44 @@ void data_reader_jag_conduit::load() {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
   }
 
-  const size_t num_files_to_load =
-    (m_max_files_to_load > 0u)? std::min(m_max_files_to_load, filenames.size()) : filenames.size();
-
-  filenames.resize(num_files_to_load);
-
   // Shuffle the file names
   if (m_shuffle) {
     std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
+  const size_t num_files_to_load =
+    (m_max_files_to_load > 0u)? std::min(m_max_files_to_load, filenames.size()) : filenames.size();
+
+  filenames.resize(num_files_to_load);
+
   if (m_first_n > 0) {
     _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
   }
 
-  int max_files_to_load = INT_MAX;
-  if (m_max_files_to_load > 0) {
-    max_files_to_load = m_max_files_to_load;
-  }
-
   double tm1 = get_time();
-  int n = 0;
-  for (auto t : filenames) {
-    load_conduit(t, idx);
-    ++n;
-    if (is_master()) std::cerr << "time to load: " << n << " files: " << get_time() - tm1 << "\n";
-    if (n >= max_files_to_load) {
-      break;
+
+  // Reserve m_valid_samples
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t num_ranks = static_cast<size_t>(m_comm->get_procs_per_model());
+  const size_t max_num_files_to_load_per_rank = (num_files_to_load + num_ranks - 1u) / num_ranks;
+  bool valid_samples_reserved = false;
+
+  size_t idx = static_cast<size_t>(0ul);
+  for (size_t n = my_rank; n < num_files_to_load; n += num_ranks) {
+    load_conduit(filenames[n], idx);
+    if (!valid_samples_reserved) {
+      // reserve the maximum capacity required assuming that files have the same number of samples
+      m_valid_samples.reserve(m_data.number_of_children() * max_num_files_to_load_per_rank);
+      valid_samples_reserved = true;
+    }
+    if (is_master()) {
+      std::cerr << "time to load: " << n << " files: " << get_time() - tm1 << std::endl;
     }
   }
-  if (is_master()) std::cerr << "time to load conduit files: " << get_time() - tm1
-        << "  num samples: " << m_data.number_of_children() << "\n";
+  if (is_master()) {
+    std::cerr << "time to load conduit files: " << get_time() - tm1
+              << "  num samples: " << m_data.number_of_children() << std::endl;
+  }
 
   check_image_data();
   m_shuffled_indices.resize(get_num_samples());
@@ -569,7 +576,7 @@ void data_reader_jag_conduit::load() {
   select_subset_of_data();
 
   if (is_master()) {
-    std::cout << "\n" << get_description() << "\n\n";
+    std::cout << std::endl << get_description() << std::endl << std::endl;
   }
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
@@ -578,7 +585,12 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   if (!check_if_file_exists(conduit_file_path)) {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
   }
-  std::cerr << "loading: " << conduit_file_path << "\n";
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  std::cerr << "rank " << my_rank << " loading: " << conduit_file_path << std::endl;
+#else
+  std::cerr << "loading: " << conduit_file_path << std::endl;
+#endif
   conduit::relay::io::load_merged(conduit_file_path, "hdf5", m_data);
 
   // set up mapping: need to do this since some of the data may be bad
