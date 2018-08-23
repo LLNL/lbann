@@ -233,6 +233,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Shuffle sample indices
   void shuffle_indices() override;
+  /// Determine the number of samples to use
+  void determine_num_samples_to_use();
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
@@ -321,6 +323,16 @@ class data_reader_jag_conduit : public generic_data_reader {
    */
   sample_map_t m_valid_samples;
 
+  /**
+   * The number of local samples that are selected to use.
+   * This is less than or equal to the number of valid samples locally available.
+   */
+  size_t m_local_num_samples_to_use;
+  /**
+   * The total number of samples to use.
+   * This is the sum of m_local_num_samples_to_use.
+   */
+  size_t m_global_num_samples_to_use;
 };
 
 

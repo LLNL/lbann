@@ -166,6 +166,8 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_input_filter = rhs.m_input_filter;
   m_input_prefix_filter = rhs.m_input_prefix_filter;
   m_valid_samples = rhs.m_valid_samples;
+  m_local_num_samples_to_use = rhs.m_local_num_samples_to_use;
+  m_global_num_samples_to_use = rhs.m_global_num_samples_to_use;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -208,6 +210,8 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_filter.clear();
   m_input_prefix_filter.clear();
   m_valid_samples.clear();
+  m_local_num_samples_to_use = 0ul;
+  m_global_num_samples_to_use = 0ul;
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -547,6 +551,95 @@ void data_reader_jag_conduit::check_input_keys() {
 
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
+void data_reader_jag_conduit::determine_num_samples_to_use() {
+#if 1
+  // The meaning of m_first_n is slightly different in this data reader as it
+  // represents the first n local samples instead of the first n global samples.
+  if (m_first_n > 0) {
+    const size_t num_samples = std::min(static_cast<size_t>(m_first_n), get_num_valid_local_samples());
+    m_valid_samples.resize(num_samples); // this does not work with unordered_map but with vector
+  }
+#else
+  if (m_first_n > 0) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
+  }
+#endif
+
+#if 1
+  // We do not support "percent_of_data_to_use" or "absolute_sample_count" yet.
+  if ((get_use_percent() != 1.0) || (get_absolute_sample_count() != static_cast<size_t>(0u))) {
+    _THROW_LBANN_EXCEPTION_(get_type(), \
+      "'percent_of_data_to_use' and 'absolute_sample_count' are not supported with this data reader");
+  }
+  if (get_validation_percent() != 0.0) {
+    _THROW_LBANN_EXCEPTION_(get_type(), \
+      "'validation_percent' is not supported with this data reader");
+  }
+#else
+  select_subset_of_data();
+#endif
+
+  const size_t num_valid_samples = get_num_valid_local_samples();
+
+  MPI_Comm comm = m_comm->get_model_comm().comm;
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t num_ranks = static_cast<size_t>(m_comm->get_procs_per_model());
+
+  // Find the minimum of the number of valid samples locally available
+  unsigned long long n_loc = static_cast<unsigned long long>(num_valid_samples);
+  unsigned long long n_min = static_cast<unsigned long long>(num_valid_samples);
+  MPI_Allreduce(&n_loc, &n_min, 1, MPI_UNSIGNED_LONG_LONG, MPI_MIN, comm);
+
+  // Find the last rank that has the minimum number of valid samples
+  int rank_tmp_last = (n_loc == n_min)? static_cast<int>(my_rank) : 0;
+  int rank_min_last;
+  MPI_Allreduce(&rank_tmp_last, &rank_min_last, 1, MPI_INT, MPI_MAX, comm);
+
+  // Find the first rank that has the minimum number of valid samples 
+  int rank_tmp_1st = (n_loc == n_min)? static_cast<int>(my_rank) : static_cast<int>(num_ranks);
+  int rank_min_1st;
+  MPI_Allreduce(&rank_tmp_1st, &rank_min_1st, 1, MPI_INT, MPI_MIN, comm);
+
+  // Determine the number of samples to use
+  m_global_num_samples_to_use = 0u;
+  m_local_num_samples_to_use = 0u;
+
+  m_global_num_samples_to_use = static_cast<size_t>(n_min * num_ranks + rank_min_1st);
+  if (m_global_num_samples_to_use == static_cast<size_t>(0u)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), "No valid sample found.");
+  }
+  m_local_num_samples_to_use = n_min;
+  m_local_num_samples_to_use = (static_cast<int>(my_rank) < rank_min_1st)? (n_min+1) : n_min;
+
+
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_global_num_samples_to_use);
+
+  int s = 0;
+  for(size_t n = 0u; n < m_shuffled_indices.size() ; n += num_ranks) {
+    for(size_t r = 0; (r < num_ranks) && (n+r < m_shuffled_indices.size()); ++r) {
+      m_shuffled_indices[n+r] = s;
+    }
+    ++s;
+  }
+
+
+  // Compute data yield
+  unsigned long long n_valid_local = num_valid_samples;
+  unsigned long long n_valid_global = 0u;
+  MPI_Allreduce(&n_valid_local, &n_valid_global, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, comm);
+
+  if (is_master()) {
+    const double yield = static_cast<double>(m_global_num_samples_to_use)/n_valid_global;
+    std::cout << "Data yield: " << yield << std::endl;
+  }
+
+  std::cout << "rank " << my_rank << '/' << num_ranks
+            << " has " << m_local_num_samples_to_use << '/' << m_global_num_samples_to_use
+            << " samples to use out of total " << n_valid_local << '/' << n_valid_global
+            << " valid local samples." << std::endl;
+}
+
 void data_reader_jag_conduit::load() {
   if(m_gan_labelling) {
     m_num_labels=2;
@@ -575,9 +668,6 @@ void data_reader_jag_conduit::load() {
 
   filenames.resize(num_files_to_load);
 
-  if (m_first_n > 0) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
-  }
 
   double tm1 = get_time();
 
@@ -605,10 +695,7 @@ void data_reader_jag_conduit::load() {
   }
 
   check_image_data();
-  m_shuffled_indices.resize(get_num_samples());
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-
-  select_subset_of_data();
+  determine_num_samples_to_use();
 
   if (is_master()) {
     std::cout << std::endl << get_description() << std::endl << std::endl;
