@@ -30,7 +30,7 @@ model {
     parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
-      slice_points: "0 2500 2511"
+      slice_points: "0 16384 16489"
     }
   }
   layer {
@@ -108,7 +108,7 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 2500
+      num_neurons: 16384
       has_bias: true
     }
     name: "gen1fc4_1"
@@ -243,7 +243,7 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 11
+      num_neurons: 5
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -312,7 +312,7 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 2500
+      num_neurons: 16384
       has_bias: true
     }
     name: "gen1fc4_2"
@@ -400,7 +400,7 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 11
+      num_neurons: 5
       has_bias: true
     }
     name: "gen2fc4_gsample"
