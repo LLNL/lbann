@@ -438,7 +438,7 @@ class lbann_comm {
   template <typename T>
   T scatter(int root, const El::mpi::Comm c) {
     T val = {};
-    El::mpi::Scatter((T*) nullptr, 0, &val, 1, root, c);
+    El::mpi::Scatter((T*) nullptr, 1, &val, 1, root, c);
     bytes_received += sizeof(T);
     return val;
   }
