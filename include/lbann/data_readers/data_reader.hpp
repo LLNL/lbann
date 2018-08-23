@@ -512,7 +512,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /**
    * Select the appropriate subset of data based on settings.
    */
-  void select_subset_of_data();
+  virtual void select_subset_of_data();
 
   /// called by select_subset_of_data() if data set is partitioned
   void select_subset_of_data_partitioned();
@@ -521,7 +521,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
-  void use_unused_index_set();
+  virtual void use_unused_index_set();
 
   /// partition the dataset amongst the models
   void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);

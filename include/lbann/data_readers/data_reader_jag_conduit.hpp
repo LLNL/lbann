@@ -123,6 +123,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   void set_initial_position() override;
   /// Get the number of samples in this dataset.
   int get_num_data() const override;
+  /// Select the appropriate subset of data based on settings.
+  void select_subset_of_data() override;
+  /// Replace the sample indices with the unused sample indices.
+  void use_unused_index_set() override;
 #else
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
@@ -322,6 +326,8 @@ class data_reader_jag_conduit : public generic_data_reader {
    * have <sample_id>/performance/success = 1
    */
   sample_map_t m_valid_samples;
+  /// To support validation_percent
+  sample_map_t m_unused_samples;
 
   /**
    * The number of local samples that are selected to use.

@@ -126,6 +126,62 @@ void data_reader_jag_conduit::shuffle_indices() {
   }
   m_valid_samples.resize(m_local_num_samples_to_use);
 }
+
+void data_reader_jag_conduit::select_subset_of_data() {
+
+  m_local_num_samples_to_use = get_num_valid_local_samples();
+  shuffle_indices();
+
+  const size_t count = get_absolute_sample_count();
+  const double use_percent = get_use_percent();
+  if (count == 0u and use_percent == 0.0) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: data_reader_jag_conduit::select_subset_of_data() get_use_percent() "
+        + "and get_absolute_sample_count() are both zero; exactly one "
+        + "must be zero");
+  }
+  if (!(count == 0u or use_percent == 0.0)) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: data_reader_jag_conduit::select_subset_of_data() get_use_percent() "
+        "and get_absolute_sample_count() are both non-zero; exactly one "
+        "must be zero");
+  }
+
+  if (count != 0u) {
+    if(count > get_num_valid_local_samples()) {
+      throw lbann_exception(
+        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+        " :: data_reader_jag_conduit::select_subset_of_data() - absolute_sample_count=" +
+        std::to_string(count) + " is > get_num_valid_local_samples()=" +
+        std::to_string(get_num_valid_local_samples()));
+    }
+    m_valid_samples.resize(get_absolute_sample_count());
+  }
+
+  if (use_percent) {
+    m_valid_samples.resize(get_use_percent()*get_num_valid_local_samples());
+  }
+
+  long unused = get_validation_percent()*get_num_valid_local_samples();
+  long use_me = get_num_valid_local_samples() - unused;
+  if (unused > 0) {
+      m_unused_samples = sample_map_t(m_valid_samples.begin() + use_me, m_valid_samples.end());
+      m_valid_samples.resize(use_me);
+  }
+
+  if(!m_shuffle) {
+    std::sort(m_valid_samples.begin(), m_valid_samples.end());
+    std::sort(m_unused_samples.begin(), m_unused_samples.end());
+  }
+}
+
+void data_reader_jag_conduit::use_unused_index_set() {
+  m_valid_samples.swap(m_unused_samples);
+  m_unused_samples.clear();
+  m_unused_samples.shrink_to_fit();
+}
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
@@ -565,7 +621,7 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
   }
 #endif
 
-#if 1
+#if 0
   // We do not support "percent_of_data_to_use" or "absolute_sample_count" yet.
   if ((get_use_percent() != 1.0) || (get_absolute_sample_count() != static_cast<size_t>(0u))) {
     _THROW_LBANN_EXCEPTION_(get_type(), \
