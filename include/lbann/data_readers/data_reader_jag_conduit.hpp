@@ -117,9 +117,17 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load data and do data reader's chores.
   void load() override;
+  /// True if the data reader's current position is valid.
+  bool position_valid() const override;
+  /// Set the current position based on the base and model offsets
+  void set_initial_position() override;
+  /// Get the number of samples in this dataset.
+  int get_num_data() const override;
 #else
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
+  /// See if the image size is consistent with the linearized size
+  void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Return the number of valid samples locally available
@@ -223,6 +231,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
+  /// Shuffle sample indices
+  void shuffle_indices() override;
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size

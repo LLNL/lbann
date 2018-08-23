@@ -309,7 +309,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return std::vector<int>(0);
   }
   /// True if the data reader's current position is valid.
-  bool position_valid() const {
+  virtual bool position_valid() const {
     return (m_current_pos < (int)m_shuffled_indices.size());
   }
   /// True if the data reader is at the start of an epoch.
@@ -444,7 +444,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_current_mini_batch_idx;
   }
   /// Set the current position based on the base and model offsets
-  void set_initial_position() {
+  virtual void set_initial_position() {
     m_current_pos = m_base_offset + m_model_offset;
     m_loaded_mini_batch_idx = m_reset_mini_batch_index;
     m_current_mini_batch_idx = 0;
@@ -460,7 +460,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return &m_shuffled_indices[0];
   }
   /// Get the number of samples in this dataset.
-  int get_num_data() const {
+  virtual int get_num_data() const {
     return (int)m_shuffled_indices.size();
   }
   /// Get the number of unused samples in this dataset.

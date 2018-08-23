@@ -93,6 +93,41 @@ const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "solver_mode"
 };
 
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+// These methods are overriden to allow each process to load and consume unique set of data files
+bool data_reader_jag_conduit::position_valid() const {
+  const bool ok = (static_cast<size_t>(m_shuffled_indices[m_current_pos]) < m_valid_samples.size())
+    && (m_current_pos < (int)m_shuffled_indices.size());
+  if (!ok) {
+    const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+    std::stringstream err;
+    err << "rank " << my_rank << " position invalid: m_shuffled_indices["
+        << m_current_pos << "] (" << m_shuffled_indices[m_current_pos]
+        << ") >= m_valid_samples.size() (" << m_valid_samples.size() << ")" << std::endl;
+    std::cerr << err.str();
+  }
+  return ok;
+}
+
+void data_reader_jag_conduit::set_initial_position() {
+  set_base_offset(0);
+  generic_data_reader::set_initial_position();
+}
+
+int data_reader_jag_conduit::get_num_data() const {
+  return m_global_num_samples_to_use;
+}
+
+void data_reader_jag_conduit::shuffle_indices() {
+  // Shuffle the data
+  if (m_shuffle) {
+    std::shuffle(m_valid_samples.begin(), m_valid_samples.end(),
+                 get_data_seq_generator());
+  }
+  m_valid_samples.resize(m_local_num_samples_to_use);
+}
+#endif // _JAG_OFFLINE_TOOL_MODE_
+
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle) {
   set_defaults();
@@ -587,7 +622,7 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   }
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  std::cerr << "rank " << my_rank << " loading: " << conduit_file_path << std::endl;
+  std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
 #else
   std::cerr << "loading: " << conduit_file_path << std::endl;
 #endif
@@ -608,7 +643,8 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   }
   idx = m_valid_samples.size();
   if (is_master()) {
-    std::cerr << "data_reader_jag_conduit::load_conduit: num good samples: " << m_valid_samples.size() << "  num bad: " << bad << "\n";
+    std::cerr << "data_reader_jag_conduit::load_conduit: num good samples: "
+              << m_valid_samples.size() << "  num bad: " << bad << std::endl;
   }
 
   if (!m_is_data_loaded) {
