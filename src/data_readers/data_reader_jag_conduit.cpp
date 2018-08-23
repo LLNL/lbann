@@ -222,6 +222,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_input_filter = rhs.m_input_filter;
   m_input_prefix_filter = rhs.m_input_prefix_filter;
   m_valid_samples = rhs.m_valid_samples;
+  m_unused_samples = rhs.m_unused_samples;
   m_local_num_samples_to_use = rhs.m_local_num_samples_to_use;
   m_global_num_samples_to_use = rhs.m_global_num_samples_to_use;
 }
@@ -608,9 +609,10 @@ void data_reader_jag_conduit::check_input_keys() {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::determine_num_samples_to_use() {
+  // The meaning of m_first_n as well as absolute_sample_count is slightly
+  // different in this data reader as it represents the first n local samples
+  // instead of the first n global samples.
 #if 1
-  // The meaning of m_first_n is slightly different in this data reader as it
-  // represents the first n local samples instead of the first n global samples.
   if (m_first_n > 0) {
     const size_t num_samples = std::min(static_cast<size_t>(m_first_n), get_num_valid_local_samples());
     m_valid_samples.resize(num_samples); // this does not work with unordered_map but with vector
@@ -621,7 +623,9 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
   }
 #endif
 
-#if 0
+#if 1
+  select_subset_of_data();
+#else
   // We do not support "percent_of_data_to_use" or "absolute_sample_count" yet.
   if ((get_use_percent() != 1.0) || (get_absolute_sample_count() != static_cast<size_t>(0u))) {
     _THROW_LBANN_EXCEPTION_(get_type(), \
@@ -631,8 +635,6 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
     _THROW_LBANN_EXCEPTION_(get_type(), \
       "'validation_percent' is not supported with this data reader");
   }
-#else
-  select_subset_of_data();
 #endif
 
   const size_t num_valid_samples = get_num_valid_local_samples();
@@ -645,7 +647,7 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
   unsigned long long n_min = static_cast<unsigned long long>(num_valid_samples);
   m_comm->model_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
 
-  // Find the first rank that has the minimum number of valid samples 
+  // Find the first rank that has the minimum number of valid samples
   int rank_tmp_1st = (n_loc == n_min)? static_cast<int>(my_rank) : static_cast<int>(num_ranks);
   int rank_min_1st;
   m_comm->model_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
@@ -684,10 +686,12 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
     std::cout << "Data yield: " << yield << std::endl;
   }
 
+#if 0
   std::cout << "rank " << my_rank << '/' << num_ranks
-            << " has " << m_local_num_samples_to_use << '/' << m_global_num_samples_to_use
-            << " samples to use out of total " << n_valid_local << '/' << n_valid_global
-            << " valid local samples." << std::endl;
+            << " has L" << m_local_num_samples_to_use << "/G" << m_global_num_samples_to_use
+            << " samples to use out of total L" << n_valid_local << "/G" << n_valid_global
+            << " valid samples." << std::endl;
+#endif
 }
 
 void data_reader_jag_conduit::load() {
