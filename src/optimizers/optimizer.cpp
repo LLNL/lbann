@@ -275,9 +275,6 @@ void optimizer::step() {
     LBANN_ERROR(err.str());
   }
 
-  // Clear gradients
-  clear_gradient();
-
   m_step_time += get_time() - step_start;
 
 }

@@ -40,63 +40,32 @@ namespace lbann {
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class crop_layer : public transform_layer {
- private:
-
-  /** View into region of input tensor. */
-  AbsDistMat* m_input_region_v;
-  /** View into region of output tensor. */
-  AbsDistMat* m_output_region_v;
-
- public:
+public:
 
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
-    : transform_layer(comm),
-      m_input_region_v(nullptr),
-      m_output_region_v(nullptr) {
-    static_assert(Dev == El::Device::CPU,
-                  "crop layer currently only supports CPU");
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "crop layer currently only supports DATA_PARALLEL");
-
-    // Crop dimensions
+    : transform_layer(comm) {
     set_output_dims(dims);
- 
-    // Parent layers for original tensor and crop position
     m_expected_num_parent_layers = 2;
-
   }
 
   crop_layer(const crop_layer& other)
     : transform_layer(other),
-      m_input_region_v(other.m_input_region_v),
-      m_output_region_v(other.m_output_region_v) {
-    if (m_input_region_v != nullptr) {
-      m_input_region_v = m_input_region_v->Copy();
-    }
-    if (m_output_region_v != nullptr) {
-      m_output_region_v = m_output_region_v->Copy();
-    }
-  }
-
+      m_input_v(other.m_input_v ?
+                other.m_input_v->Copy() : nullptr),
+      m_output_v(other.m_output_v ?
+                 other.m_output_v->Copy() : nullptr),
+      m_crop_pos_v(other.m_crop_pos_v ?
+                   other.m_crop_pos_v->Copy() : nullptr){}
   crop_layer& operator=(const crop_layer& other) {
     transform_layer::operator=(other);
-    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
-    if (m_output_region_v != nullptr) { delete m_output_region_v; }
-    m_input_region_v = other.m_input_region_v;
-    m_output_region_v = other.m_output_region_v;
-    if (m_input_region_v != nullptr) {
-      m_input_region_v = m_input_region_v->Copy();
-    }
-    if (m_output_region_v != nullptr) {
-      m_output_region_v = m_output_region_v->Copy();
-    }
-
-  }
-
-  virtual ~crop_layer() override {
-    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
-    if (m_output_region_v != nullptr) { delete m_output_region_v; }
+    m_input_v.reset(other.m_input_v ?
+                    other.m_input_v->Copy() : nullptr);
+    m_output_v.reset(other.m_output_v ?
+                     other.m_output_v->Copy() : nullptr);
+    m_crop_pos_v.reset(other.m_crop_pos_v ?
+                       other.m_crop_pos_v->Copy() : nullptr);
+    return *this;
   }
 
   crop_layer* copy() const override { return new crop_layer(*this); }
@@ -106,11 +75,20 @@ class crop_layer : public transform_layer {
 
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
-    if (m_input_region_v != nullptr)  { delete m_input_region_v; }
-    if (m_output_region_v != nullptr) { delete m_output_region_v; }
     const auto& input = get_prev_activations();
-    m_input_region_v = input.Construct(input.Grid(), input.Root());
-    m_output_region_v = input.Construct(input.Grid(), input.Root());
+    const auto& dist = input.DistData();
+    m_input_v.reset(input.Construct(input.Grid(), input.Root()));
+    m_output_v.reset(input.Construct(input.Grid(), input.Root()));
+
+    /// @todo Setup the input tensor with this data distribution
+    m_crop_pos_v.reset(AbsDistMat::Instantiate(*dist.grid,
+                                               dist.root,
+                                               El::STAR,
+                                               dist.rowDist,
+                                               (dist.blockWidth == 1 ?
+                                                El::ELEMENT : El::BLOCK),
+                                               El::Device::CPU));
+    
   }
 
   void setup_dims() override {
@@ -146,151 +124,173 @@ class crop_layer : public transform_layer {
 
   }
 
-  protected:
+protected:
 
   void fp_compute() override {
-    if (this->using_gpus()) {
-      fp_compute_gpu();
+
+    // Input and output tensors
+    const auto& input = get_prev_activations(0);
+    auto& output = get_activations();
+
+    // Tensor dimensions
+    const auto& input_dims = get_input_dims(0);
+    const auto& output_dims = get_output_dims();
+    const El::Int num_dims = output_dims.size();
+    const auto& local_width = input.LocalWidth();
+    const auto& region_size = output_dims.back();
+
+    // Get crop position
+    m_crop_pos_v->Empty(false);
+    m_crop_pos_v->AlignWith(input);
+    const auto& input1 = get_prev_activations(1);
+    if (m_crop_pos_v->DistData() == input1.DistData()) {
+      El::LockedView(*m_crop_pos_v, input1);
     } else {
-      fp_compute_cpu();
+      El::Copy(input1, *m_crop_pos_v);
     }
+    const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
+
+    // Crop each local mini-batch sample
+    for (El::Int local_col = 0; local_col < local_width; ++local_col) {
+      const auto& col = input.GlobalCol(local_col);
+
+      // Determine crop position
+      std::vector<El::Int> crop_offsets;
+      for (El::Int d = 0; d < num_dims; ++d) {
+        const auto& pos = local_crop_pos(d, local_col);
+        if (pos < DataType(0) || pos > DataType(1)) {
+          std::stringstream err;
+          err << "crop position not in range [0,1] (pos=(";
+          for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
+            err << (i > 0 ? "," : "") << local_crop_pos(i, local_col);
+          }
+          err << "))";
+          LBANN_ERROR(err.str());
+        }
+        const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
+        crop_offsets.push_back(std::min(El::Int(pos * num_offsets),
+                                        num_offsets - 1));
+      }
+
+      // Copy contiguous regions from input tensor to output tensor
+      std::vector<El::Int> output_pos(num_dims, 0);
+      while (output_pos[0] < output_dims[0]) {
+
+        // Copy region from input tensor to output tensor
+        auto input_index = output_pos[0] + crop_offsets[0];
+        auto output_index = output_pos[0];
+        for (El::Int d = 1; d < num_dims; ++d) {
+          input_index = (input_dims[d] * input_index
+                         + output_pos[d] + crop_offsets[d]);
+          output_index = output_dims[d] * output_index + output_pos[d];
+        }
+        El::LockedView(*m_input_v,
+                       input,
+                       El::IR(input_index, input_index + region_size),
+                       El::IR(col));
+        El::View(*m_output_v,
+                 output,
+                 El::IR(output_index, output_index + region_size),
+                 El::IR(col));
+        El::Copy(*m_input_v, *m_output_v);
+
+        // Move to next contiguous region
+        output_pos.back() += region_size;
+        for (El::Int d = num_dims-1; d >= 1; --d) {
+          if (output_pos[d] >= output_dims[d]) {
+            output_pos[d] = 0;
+            ++output_pos[d-1];
+          }
+        }
+      
+      }
+    
+    }
+    
   }
 
   void bp_compute() override {
-    if (this->using_gpus()) {
-      bp_compute_gpu();
-    } else {
-      bp_compute_cpu();
-    }
-  }
 
-  void fp_compute_cpu() {
+    // Input and gradient tensors
+    const auto& gradient_wrt_output = get_prev_error_signals();
+    auto& gradient_wrt_input = get_error_signals(0);
+    El::Zero(get_error_signals(1));
+    const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
 
     // Tensor dimensions
     const auto& input_dims = get_input_dims(0);
     const auto& output_dims = get_output_dims();
     const El::Int num_dims = output_dims.size();
+    const auto& local_width = gradient_wrt_input.LocalWidth();
+    const auto& region_size = output_dims.back();
 
-    // Input and output tensors
-    const auto& local_crop_pos = get_local_prev_activations(1);
-    const auto& local_input = get_local_prev_activations(0);
-    auto& local_output = get_local_activations();
-
-    // Crop each mini-batch sample
-    #pragma omp parallel for
-    for (El::Int s = 0; s < local_input.Width(); ++s) {
+    // Populate error signal for each local mini-batch sample
+    for (El::Int local_col = 0; local_col < local_width; ++local_col) {
+      const auto& col = gradient_wrt_input.GlobalCol(local_col);
 
       // Determine crop position
-      std::vector<int> crop_offsets;
+      std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
-        const auto& pos = local_crop_pos(d, s);
-        if (pos < DataType(0) || pos >= DataType(1)) {
+        const auto& pos = local_crop_pos(d, local_col);
+        if (pos < DataType(0) || pos > DataType(1)) {
           std::stringstream err;
-          err << "crop position not in range [0,1) "
-              << "(pos[" << d << "] = " << pos << ")";
+          err << "crop position not in range [0,1] (pos=(";
+          for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
+            err << (i > 0 ? "," : "") << local_crop_pos(i, local_col);
+          }
+          err << "))";
           LBANN_ERROR(err.str());
         }
-        const auto& num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back((int)(pos * num_offsets));
+        const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
+        crop_offsets.push_back(std::min(El::Int(pos * num_offsets),
+                                        num_offsets - 1));
       }
 
-      // Copy entries from input tensor to output tensor
-      std::vector<int> output_pos(num_dims, 0);
+      // Populate contiguous regions in gradient w.r.t. input tensor
+      std::vector<El::Int> output_pos(num_dims, 0);
       while (output_pos[0] < output_dims[0]) {
 
-        // Copy entry from input tensor to output tensor
-        int input_index = output_pos[0] + crop_offsets[0];
-        int output_index = output_pos[0];
-        for (int d = 0; d < num_dims-1; ++d) {
+        // Copy region
+        auto input_index = output_pos[0] + crop_offsets[0];
+        auto output_index = output_pos[0];
+        for (El::Int d = 1; d < num_dims; ++d) {
           input_index = (input_dims[d] * input_index
-                         + output_pos[d+1] + crop_offsets[d+1]);
-          output_index = output_dims[d] * output_index + output_pos[d+1];
+                         + output_pos[d] + crop_offsets[d]);
+          output_index = output_dims[d] * output_index + output_pos[d];
         }
-        local_output(output_index, s) = local_input(input_index, s);
-          
-        // Move to next entry
-        ++output_pos.back();
-        for (int d = num_dims-1; d >= 1; --d) {
+        El::LockedView(*m_output_v,
+                       gradient_wrt_output,
+                       El::IR(output_index, output_index + region_size),
+                       El::IR(col));
+        El::View(*m_input_v,
+                 gradient_wrt_input,
+                 El::IR(input_index, input_index + region_size),
+                 El::IR(col));
+        El::Copy(*m_output_v, *m_input_v);
+
+        // Move to next contiguous region
+        output_pos.back() += region_size;
+        for (El::Int d = num_dims-1; d >= 1; --d) {
           if (output_pos[d] >= output_dims[d]) {
             output_pos[d] = 0;
             ++output_pos[d-1];
           }
         }
-        
-      }
 
+      }
+      
     }
-
+    
   }
 
-  void bp_compute_cpu() {
-
-    // Tensor dimensions
-    const auto& input_dims = get_input_dims(0);
-    const auto& output_dims = get_output_dims();
-    const El::Int num_dims = output_dims.size();
-
-    // Input and output tensors
-    const auto& local_crop_pos = get_local_prev_activations(1);
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals(0);
-    El::Zero(get_error_signals(1));
-
-    // Crop each mini-batch sample
-    #pragma omp parallel for
-    for (El::Int s = 0; s < local_gradient_wrt_output.Width(); ++s) {
-
-      // Determine crop position
-      std::vector<int> crop_offsets;
-      for (El::Int d = 0; d < num_dims; ++d) {
-        const auto& pos = local_crop_pos(d, s);
-        if (pos < DataType(0) || pos >= DataType(1)) {
-          LBANN_ERROR("crop position not in range [0,1)");
-        }
-        const auto& num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back((int)(pos * num_offsets));
-      }
-
-      // Copy entries from input tensor to output tensor
-      std::vector<int> output_pos(num_dims, 0);
-      while (output_pos[0] < output_dims[0]) {
-
-        // Copy entry from input tensor to output tensor
-        int input_index = output_pos[0] + crop_offsets[0];
-        int output_index = output_pos[0];
-        for (int d = 0; d < num_dims-1; ++d) {
-          input_index = (input_dims[d] * input_index
-                         + output_pos[d+1] + crop_offsets[d+1]);
-          output_index = output_dims[d] * output_index + output_pos[d+1];
-        }
-        local_gradient_wrt_input(input_index, s)
-          = local_gradient_wrt_output(output_index, s);
-          
-        // Move to next entry
-        ++output_pos.back();
-        for (int d = num_dims-1; d >= 1; --d) {
-          if (output_pos[d] >= output_dims[d]) {
-            output_pos[d] = 0;
-            ++output_pos[d-1];
-          }
-        }
-        
-      }
-
-    }
-
-  }
-
-  void fp_compute_gpu() {
-    /// @todo Implement
-    LBANN_ERROR("not yet implemented");
-  }
-
-  void bp_compute_gpu() {
-    /// @todo Implement
-    LBANN_ERROR("not yet implemented");
-  }
-
+private:
+  /** View into input tensor. */
+  std::unique_ptr<AbsDistMat> m_input_v;
+  /** View into output tensor. */
+  std::unique_ptr<AbsDistMat> m_output_v;
+  /** View into crop positions. */
+  std::unique_ptr<AbsDistMat> m_crop_pos_v;
+  
 };
 
 } // namespace lbann

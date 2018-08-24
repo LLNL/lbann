@@ -238,6 +238,32 @@ class batch_normalization : public regularizer_layer {
     const auto& output_dims = get_output_dims();
     const auto& num_channels = output_dims[0];
 
+    // Display warning if mini-batch size is small
+    const auto& output = get_activations();
+    const auto& mini_batch_size = output.Width();
+    const auto& local_mini_batch_size = mini_batch_size / output.DistSize();
+    if (m_use_global_stats && mini_batch_size <= 4) {
+      std::stringstream err;
+      err << "LBANN warning: "
+          << get_type() << " layer \"" << get_name() << "\" "
+          << "is using global statistics and "
+          << "the mini-batch size (" << mini_batch_size << ") "
+          << "may be too small to get good statistics";
+      if (output.DistRank() == 0) {
+        std::cerr << err.str() << std::endl;
+      }
+    } else if (!m_use_global_stats && local_mini_batch_size <= 4) {
+      std::stringstream err;
+      err << "LBANN warning: "
+          << get_type() << " layer \"" << get_name() << "\" "
+          << "is using local statistics and "
+          << "the local mini-batch size (" << local_mini_batch_size << ") "
+          << "may be too small to get good statistics";
+      if (output.DistRank() == 0) {
+        std::cerr << err.str() << std::endl;
+      }
+    }
+    
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 4) {
       std::stringstream err;

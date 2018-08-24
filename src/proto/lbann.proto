@@ -412,6 +412,7 @@ message Callback {
    CallbackSummary summary = 3;
    CallbackDumpWeights dump_weights = 4;
    CallbackDumpActivations dump_activations = 5;
+   CallbackDumpErrorSignals dump_error_signals = 35;
    CallbackDumpGradients dump_gradients = 6;
    CallbackDumpMBIndices dump_mb_indices = 7;
    CallbackDispIOStats disp_io_stats = 8;
@@ -498,6 +499,10 @@ message CallbackDumpActivations {
   int64 interval = 2;
   string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
 
+}
+
+message CallbackDumpErrorSignals {
+  string basename = 1;
 }
 
 message CallbackDumpGradients {
@@ -790,6 +795,7 @@ message Layer {
    Max max = 321;
    Min min = 322;
    InTopK in_top_k = 324;
+   Sort sort = 325;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -1072,6 +1078,10 @@ message Min {
 
 message InTopK {
   int64 k = 1;
+}
+
+message Sort {
+  bool descending = 1;
 }
 
 /////////////////////
