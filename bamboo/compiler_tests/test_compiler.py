@@ -1,10 +1,14 @@
 import pytest
 import os, re, subprocess
 
-def test_compiler_build_script(cluster, dirname):
-    output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
-    error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
-    command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (dirname, output_file_name, error_file_name)
+def build_script(cluster, dirname, compiler, debug):
+    if debug:
+        build = 'debug'
+    else:
+        build = 'release'
+    output_file_name = '%s/bamboo/compiler_tests/output/%s_%s_%s_output.txt' % (dirname, cluster, compiler, build)
+    error_file_name = '%s/bamboo/compiler_tests/error/%s_%s_%s_error.txt' % (dirname, cluster, compiler, build)
+    command = '%s/bamboo/compiler_tests/build_script.sh --compiler %s %s> %s 2> %s' % (dirname, compiler, debug, output_file_name, error_file_name)
     return_code = os.system(command)
     if return_code != 0:
         output_file = open(output_file_name, 'r')
@@ -16,28 +20,54 @@ def test_compiler_build_script(cluster, dirname):
     assert return_code == 0
 
 def test_compiler_clang4_release(cluster, dirname):
-    skeleton_clang4(cluster, dirname, False)
+    #skeleton_clang4(cluster, dirname, False)
+    if cluster in ['ray', 'catalyst']:
+        build_script(cluster, dirname, 'clang', '')
+    else:
+        pytest.skip('Unsupported Cluster %s' % cluster)
 
 def test_compiler_clang4_debug(cluster, dirname):
-    skeleton_clang4(cluster, dirname, True)
+    #skeleton_clang4(cluster, dirname, True)
+    if cluster in ['ray', 'catalyst']:
+        build_script(cluster, dirname, 'clang', '--debug')
+    else:
+        pytest.skip('Unsupported Cluster %s' % cluster)
 
 def test_compiler_gcc4_release(cluster, dirname):
-    skeleton_gcc4(cluster, dirname, False)
+    #skeleton_gcc4(cluster, dirname, False)
+    build_script(cluster, dirname, 'gcc4', '')
 
 def test_compiler_gcc4_debug(cluster, dirname):
-    skeleton_gcc4(cluster, dirname, True)
+    #skeleton_gcc4(cluster, dirname, True)
+    build_script(cluster, dirname, 'gcc4', '--debug')
 
 def test_compiler_gcc7_release(cluster, dirname):
-    skeleton_gcc7(cluster, dirname, False)
+    #skeleton_gcc7(cluster, dirname, False)
+    if cluster == 'catalyst':
+        build_script(cluster, dirname, 'gcc7', '')
+    else:
+        pytest.skip('Unsupported Cluster %s' % cluster)
 
 def test_compiler_gcc7_debug(cluster, dirname):
-    skeleton_gcc7(cluster, dirname, True)
+    #skeleton_gcc7(cluster, dirname, True)
+    if cluster == 'catalyst':
+        build_script(cluster, dirname, 'gcc7', '--debug')
+    else:
+        pytest.skip('Unsupported Cluster %s' % cluster)
 
 def test_compiler_intel18_release(cluster, dirname):
-    skeleton_intel18(cluster, dirname, False)
+    #skeleton_intel18(cluster, dirname, False)
+    if cluster == 'catalyst':
+        build_script(cluster, dirname, 'intel', '')
+    else:
+        pytest.skip('Unsupported Cluster %s' % cluster)
 
 def test_compiler_intel18_debug(cluster, dirname):
-    skeleton_intel18(cluster, dirname, True)
+    #skeleton_intel18(cluster, dirname, True)
+    if cluster == 'catalyst':
+        build_script(cluster, dirname, 'intel', '--debug')
+    else:
+        pytest.skip('Unsupported Cluster %s' % cluster)
 
 def skeleton_clang4(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst', 'quartz']:

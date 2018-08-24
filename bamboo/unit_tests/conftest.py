@@ -6,18 +6,14 @@ def pytest_addoption(parser):
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if cluster in ['catalyst', 'quartz']:
-        default_exes['clang4'] = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-        default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-        default_exes['gcc7'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-        default_exes['intel18'] = '%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        default_exes['clang4'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster) #'%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        #default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        default_exes['gcc7'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)  #'%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        default_exes['intel18'] = '%s/build/intel.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster) #'%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
 
-    if cluster == 'pascal':
-        #default_exes['clang4'] = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_x86_64_gpu_mvapich2-2.2_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-        #default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_x86_64_gpu_mvapich2-2.2_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-        default_exes['gcc7'] = default_exes['default'] #'%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_x86_64_gpu_mvapich2-2.2_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-        #default_exes['intel18'] = '%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_x86_64_gpu_mvapich2-2.2_openblas_rel/build/model_zoo/lbann' % (default_dirname, cluster)
     if cluster ==  'ray':
-        default_exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        default_exes['gcc4'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster) #'%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+        default_exes['clang4'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
 
     if cluster in ['surface', 'pascal']:
         default_exes['gcc4'] = default_exes['default']
