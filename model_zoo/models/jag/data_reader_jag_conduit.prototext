@@ -15,6 +15,8 @@ data_reader {
     disable_responses: true
     disable_labels: true
 
+    split_jag_image_channels: true
+
     # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
     independent: [1, 3]
     dependent: [2]
@@ -114,6 +116,8 @@ data_reader {
     disable_responses: true
     disable_labels: true
 
+    split_jag_image_channels: true
+
     # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
     independent: [1, 3]
     dependent: [2]
@@ -201,6 +205,8 @@ data_reader {
     percent_of_data_to_use: 1.0
     disable_responses: true
     disable_labels: true
+
+    split_jag_image_channels: true
 
     # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
     independent: [1, 3]
