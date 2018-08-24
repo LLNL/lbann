@@ -368,6 +368,13 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     }
     reader_jag->set_image_dims(width, height, channels);
 
+    // Whether to split channels of an image before preprocessing
+    if (pb_readme.split_jag_image_channels()) {
+      reader_jag->set_split_image_channels();
+    } else {
+      reader_jag->unset_split_image_channels();
+    }
+
     // declare the set of images to use
     std::vector<std::string> image_keys(pb_readme.jag_image_keys_size());
 

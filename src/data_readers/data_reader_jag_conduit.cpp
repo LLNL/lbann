@@ -258,7 +258,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_image_num_channels = 1;
   set_linearized_image_size();
   m_num_img_srcs = 1u;
-  m_split_channels = true;
+  m_split_channels = false;
   m_is_data_loaded = false;
   m_num_labels = 0;
   m_emi_image_keys.clear();

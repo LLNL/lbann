@@ -35,6 +35,7 @@ message Reader {
   ImagePreprocessor image_preprocessor = 13;
 
   //------------------ start of only for jag_conduit -----------------------
+  bool split_jag_image_channels = 89;
   repeated string jag_image_keys = 90;
   repeated string jag_scalar_keys = 91;
   repeated string jag_input_keys = 92;
