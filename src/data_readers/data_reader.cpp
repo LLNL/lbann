@@ -140,7 +140,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
   // all min_batches have the same number of indices;
   // this probably causes a few indices to be discarded,
   // but with 1B indices, who cares?
-  int mb_max = m_comm->model_allreduce(mb_size, El::mpi::MAX);
+  int mb_max = m_comm->model_allreduce<int>(mb_size, El::mpi::MAX);
   m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
 
   m_last_mini_batch_size = m_mini_batch_size;
@@ -520,7 +520,7 @@ for j in range(40) :
 void generic_data_reader::select_subset_of_data() {
   // ensure that all readers have the same number of indices
   if (m_jag_partitioned) {
-    size_t n = m_comm->model_allreduce(m_shuffled_indices.size(), El::mpi::MIN);
+    size_t n = m_comm->model_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
     m_shuffled_indices.resize(n);
   }
 
