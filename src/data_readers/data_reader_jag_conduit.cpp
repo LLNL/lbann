@@ -202,8 +202,9 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
-  set_linearized_image_size();
   m_num_img_srcs = rhs.m_num_img_srcs;
+  m_split_channels = rhs.m_split_channels;
+  set_linearized_image_size();
   m_is_data_loaded = rhs.m_is_data_loaded;
   m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
@@ -257,6 +258,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_image_num_channels = 1;
   set_linearized_image_size();
   m_num_img_srcs = 1u;
+  m_split_channels = true;
   m_is_data_loaded = false;
   m_num_labels = 0;
   m_emi_image_keys.clear();
@@ -485,6 +487,7 @@ const std::vector<std::string>& data_reader_jag_conduit::get_input_choices() con
 
 void data_reader_jag_conduit::set_linearized_image_size() {
   m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
+  m_1ch_image_linearized_size = m_image_width * m_image_height;
 }
 
 void data_reader_jag_conduit::check_image_data() {
@@ -820,6 +823,10 @@ size_t data_reader_jag_conduit::get_linearized_image_size() const {
   return m_image_linearized_size;
 }
 
+size_t data_reader_jag_conduit::get_linearized_1ch_image_size() const {
+  return m_1ch_image_linearized_size;
+}
+
 size_t data_reader_jag_conduit::get_linearized_scalar_size() const {
   return m_scalar_keys.size();
 }
@@ -933,6 +940,19 @@ int data_reader_jag_conduit::get_linearized_label_size() const {
 }
 
 
+void data_reader_jag_conduit::set_split_image_channels() {
+  m_split_channels = true;
+}
+
+void data_reader_jag_conduit::unset_split_image_channels() {
+  m_split_channels = false;
+}
+
+bool data_reader_jag_conduit::check_split_image_channels() const {
+  return m_split_channels;
+}
+
+
 std::string data_reader_jag_conduit::to_string(const variable_t t) {
   switch (t) {
     case Undefined:  return "Undefined";
@@ -1029,15 +1049,16 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
     std::string img_key = m_valid_samples[sample_id] + "/outputs/images/" + emi_tag + "/emi";
     const conduit::Node & n_image = get_conduit_node(img_key);
     conduit_ch_t emi = n_image.value();
-    const size_t num_pixels = emi.number_of_elements();
+    const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
-    image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
+    image_ptrs.push_back(std::make_pair(num_vals, emi_data));
   }
 
   return image_ptrs;
 }
 
-cv::Mat data_reader_jag_conduit::cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height) {
+cv::Mat data_reader_jag_conduit::cast_to_cvMat(
+  const std::pair<size_t, const ch_t*> img, const int height, const int num_ch) {
   const int num_pixels = static_cast<int>(img.first);
   const ch_t* ptr = img.second;
 
@@ -1047,16 +1068,27 @@ cv::Mat data_reader_jag_conduit::cast_to_cvMat(const std::pair<size_t, const ch_
                       reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
   // reshape the image. Furter need to clone (deep-copy) the image
   // to preserve the constness of the original data
-  return (image.reshape(0, height));
+  return (image.reshape(num_ch, height));
 }
 
 std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
   std::vector<cv::Mat> images;
-  images.reserve(img_ptrs.size());
 
-  for (const auto& img: img_ptrs) {
-    images.emplace_back(cast_to_cvMat(img, m_image_height).clone());
+  if (m_split_channels) {
+    images.reserve(img_ptrs.size()*m_image_num_channels);
+    for (const auto& img: img_ptrs) {
+      cv::Mat ch[m_image_num_channels];
+      cv::split(cast_to_cvMat(img, m_image_height, m_image_num_channels), ch);
+      for(int c = 0; c < m_image_num_channels; ++c) {
+        images.emplace_back(ch[c].clone());
+      }
+    }
+  } else {
+    images.reserve(img_ptrs.size());
+    for (const auto& img: img_ptrs) {
+      images.emplace_back(cast_to_cvMat(img, m_image_height, m_image_num_channels).clone());
+    }
   }
   return images;
 }
@@ -1064,12 +1096,26 @@ std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_
 std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
   std::vector<ch_t> images;
-  images.reserve(get_linearized_image_size());
 
-  for (const auto& img: img_ptrs) {
-    const size_t num_pixels = img.first;
-    const ch_t* ptr = img.second;
-    images.insert(images.end(), ptr, ptr + num_pixels);
+  if (m_split_channels) {
+    images.resize(get_linearized_size(JAG_Image));
+    size_t i = 0u;
+    for (const auto& img: img_ptrs) {
+      const size_t num_vals = img.first;
+      const ch_t * const ptr_end = img.second + num_vals;
+      for (int c=0; c < m_image_num_channels; ++c) {
+        for (const ch_t* ptr = img.second + c; ptr < ptr_end; ptr += m_image_num_channels) {
+          images[i++] = *ptr;
+        }
+      }
+    }
+  } else {
+    images.reserve(get_linearized_size(JAG_Image));
+    for (const auto& img: img_ptrs) {
+      const size_t num_vals = img.first;
+      const ch_t* ptr = img.second;
+      images.insert(images.end(), ptr, ptr + num_vals);
+    }
   }
 
   return images;
@@ -1148,16 +1194,19 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
-      const std::vector<size_t> sizes(get_num_img_srcs(), get_linearized_image_size());
+      const size_t num_images = get_num_img_srcs()
+                              * static_cast<size_t>(m_split_channels? m_image_num_channels : 1u);
+      const size_t image_size = m_split_channels? get_linearized_1ch_image_size() : get_linearized_image_size();
+      const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
       std::vector<cv::Mat> images = get_cv_images(data_id);
 
-      if (images.size() != get_num_img_srcs()) {
+      if (images.size() != num_images) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
-          std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
+          std::to_string(images.size()) + "!=" + std::to_string(num_images));
       }
 
-      for(size_t i=0u; i < get_num_img_srcs(); ++i) {
+      for(size_t i=0u; i < num_images; ++i) {
         int width, height, img_type;
         image_utils::process_image(images[i], width, height, img_type, *(m_pps[tid]), X_v[i]);
       }

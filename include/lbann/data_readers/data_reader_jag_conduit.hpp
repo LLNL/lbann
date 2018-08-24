@@ -141,6 +141,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   unsigned int get_num_img_srcs() const;
   /// Return the linearized size of an image
   size_t get_linearized_image_size() const;
+  /// Return the linearized size of a single channel image
+  size_t get_linearized_1ch_image_size() const;
   /// Return the linearized size of scalar outputs
   size_t get_linearized_scalar_size() const;
   /// Return the linearized size of inputs
@@ -160,6 +162,10 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
+
+  void set_split_image_channels();
+  void unset_split_image_channels();
+  bool check_split_image_channels() const;
 
   /// Show the description
   std::string get_description() const;
@@ -193,7 +199,8 @@ class data_reader_jag_conduit : public generic_data_reader {
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// A untiliy function to convert the pointer to image data into an opencv image
-  static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height);
+  static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
+                               const int height, const int num_ch=1);
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
@@ -283,7 +290,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   int m_image_height; ///< image height
   int m_image_num_channels; ///< number of image channels
   size_t m_image_linearized_size; ///< The linearized size of an image
+  size_t m_1ch_image_linearized_size; ///< The linearized size of a single channel image
   unsigned int m_num_img_srcs; ///< number of views result in images
+  bool m_split_channels; ///< Whether to export a separate image per channel
 
   /// Whether data have been loaded
   bool m_is_data_loaded;
