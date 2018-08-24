@@ -99,12 +99,9 @@ def conv_block_initial(f, tab, name, index_num, parents, num_dims=None, num_outp
 def dense_block(f, tab, num, num_layers, index_num, parent, num_initial_channels, batch_norm_size, growth_rate):
   name = 'dense_block_%d' % num
   num_output_channels = num_initial_channels*(2**(num-1)) # Double for each block
-  layer_num = 1
-  # Only parent of the first dense_layer is the dense_block's parent.
-  (parent_name, index_num) = dense_layer(f, tab, name, layer_num, index_num, [parent], batch_norm_size, growth_rate, num_output_channels + ((layer_num-1)*growth_rate))
-  # Parents of following dense_layer are the preceding dense_layers.
-  parents = [parent_name]
-  for layer_num	in range(2, num_layers + 1):
+  # Parents of a dense_layer are the preceding dense_layers, as well as the previous block (initial layer or DenseBlock's transition layer).
+  parents = [parent]
+  for layer_num	in range(1, num_layers + 1):
     (parent_name, index_num) = dense_layer(f, tab, name, layer_num, index_num, parents, batch_norm_size, growth_rate, num_output_channels + ((layer_num-1)*growth_rate))
     parents.append(parent_name)
   # parent_name is the name of the last dense_layer.
