@@ -181,6 +181,7 @@ void data_reader_jag_conduit::use_unused_index_set() {
   m_valid_samples.swap(m_unused_samples);
   m_unused_samples.clear();
   m_unused_samples.shrink_to_fit();
+  adjust_num_samples_to_use();
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
@@ -636,7 +637,10 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
       "'validation_percent' is not supported with this data reader");
   }
 #endif
+  adjust_num_samples_to_use();
+}
 
+void data_reader_jag_conduit::adjust_num_samples_to_use() {
   const size_t num_valid_samples = get_num_valid_local_samples();
 
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
