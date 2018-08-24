@@ -4,9 +4,12 @@ data_reader {
     format: "csv"
     role: "train"
     shuffle: true
-    data_file_pattern: "/p/lscratchf/brainusr/datasets/cancer/pilot1/lm_genes/combo_x_train_lmg.*.txt"
-    label_filename: "/p/lscratchf/brainusr/datasets/cancer/pilot1/lm_genes/combo_y_train_lmg.txt"
-    validation_percent: 0
+    is_partitioned: true
+    partition_overlap: 0.4
+    partition_mode: 1
+    data_file_pattern: "/p/lscratchh/brainusr/datasets/cancer/pilot1/lm_genes/combo_x_train_lmg.*.txt"
+    label_filename: "/p/lscratchh/brainusr/datasets/cancer/pilot1/lm_genes/combo_y_train_lmg.txt"
+    validation_percent: 0.2
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     separator: ','
@@ -18,8 +21,8 @@ data_reader {
     format: "csv"
     role: "test"
     shuffle: true
-    data_file_pattern: "/p/lscratchf/brainusr/datasets/cancer/pilot1/lm_genes/combo_x_val_lmg.*.txt"
-    label_filename: "/p/lscratchf/brainusr/datasets/cancer/pilot1/lm_genes/combo_y_val_lmg.txt"
+    data_file_pattern: "/p/lscratchh/brainusr/datasets/cancer/pilot1/lm_genes/combo_x_val_lmg.*.txt"
+    label_filename: "/p/lscratchh/brainusr/datasets/cancer/pilot1/lm_genes/combo_y_val_lmg.txt"
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     separator: ','
