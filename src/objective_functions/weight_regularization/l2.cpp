@@ -128,7 +128,9 @@ void l2_weight_regularization::start_evaluation() {
       if (vals.Participating()
           && vals.GetLocalDevice() == El::Device::GPU
           && vals.RedundantRank() == i % vals.RedundantSize()) {
-        if (vals.LDim() == vals.LocalHeight()) {
+        if (vals.LocalWidth() < 1 || vals.LocalHeight() < 1) {
+        } else if (vals.LocalWidth() == 1
+                   || vals.LDim() == vals.LocalHeight()) {
           cublas::dot(handle,
                       vals.LocalHeight() * vals.LocalWidth(),
                       vals.LockedBuffer(), 1,
