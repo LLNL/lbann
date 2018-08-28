@@ -42,8 +42,8 @@ __global__ void fp_compute_3d_kernel(
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int bidy = blockIdx.y;
-  const El::Int num_blocks_y = gridDim.y;
   const El::Int num_threads_x = blockDim.x * gridDim.x;
+  const El::Int num_blocks_y = gridDim.y;
 
   const auto& output_size = output_dimx * output_dimy * output_dimz;
   const auto& num_offsets_x = input_dimx - output_dimx + 1;
@@ -54,12 +54,12 @@ __global__ void fp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    const auto& offz = min(static_cast<El::Int>(num_offsets_z * crop_pos[3*col]),
-                           num_offsets_z - 1);
-    const auto& offy = min(static_cast<El::Int>(num_offsets_y * crop_pos[3*col+1]),
-                           num_offsets_y - 1);
-    const auto& offx = min(static_cast<El::Int>(num_offsets_x * crop_pos[3*col+2]),
-                           num_offsets_x - 1);
+    El::Int offz = num_offsets_z * crop_pos[col*crop_pos_ldim];
+    El::Int offy = num_offsets_y * crop_pos[col*crop_pos_ldim+1];
+    El::Int offx = num_offsets_x * crop_pos[col*crop_pos_ldim+2];
+    offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
+    offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
+    offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
     
     // Iterate through output entries in mini-batch sample
     for (El::Int output_pos = gidx;
@@ -112,12 +112,12 @@ __global__ void bp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    const auto& offz = min(static_cast<El::Int>(num_offsets_z * crop_pos[3*col]),
-                           num_offsets_z - 1);
-    const auto& offy = min(static_cast<El::Int>(num_offsets_y * crop_pos[3*col+1]),
-                           num_offsets_y - 1);
-    const auto& offx = min(static_cast<El::Int>(num_offsets_x * crop_pos[3*col+2]),
-                           num_offsets_x - 1);
+    El::Int offz = num_offsets_z * crop_pos[col*crop_pos_ldim];
+    El::Int offy = num_offsets_y * crop_pos[col*crop_pos_ldim+1];
+    El::Int offx = num_offsets_x * crop_pos[col*crop_pos_ldim+2];
+    offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
+    offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
+    offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
     
     // Iterate through output entries in mini-batch sample
     for (El::Int output_pos = gidx;
@@ -164,7 +164,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
   const auto& output_size = get_output_size();
 
   // Launch CUDA kernel
-  if (output_size > 0 && local_width > 0) {
+  if (!local_output.IsEmpty()) {
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
@@ -184,11 +184,14 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
 template <>
 void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
 
+  // Clear error signals
+  El::Zero(get_error_signals(0));
+  El::Zero(get_error_signals(1));
+
   // Local matrices
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   const auto& local_crop_pos = get_local_prev_activations(1);
   auto& local_gradient_wrt_input = get_local_error_signals(0);
-  El::Zero(get_local_error_signals(1));
   
   // Tensor dimensions
   const auto& local_width = local_gradient_wrt_input.Width();
@@ -197,7 +200,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
   const auto& output_size = get_output_size();
 
   // Launch CUDA kernel
-  if (output_size > 0 && local_width > 0) {
+  if (!local_gradient_wrt_output.IsEmpty()) {
     const int block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;

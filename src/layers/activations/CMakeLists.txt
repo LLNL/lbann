@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   relu.cpp
   tanh.cpp
+  sigmoid.cpp
   softmax.cpp
   )
 

@@ -35,109 +35,55 @@
 
 namespace lbann {
 
-#ifdef LBANN_HAS_GPU
-namespace sigmoid_cuda {
-  void fp(int height, int width,
-          const DataType* input,
-          int input_leading_dim,
-          DataType* output,
-          int output_leading_dim,
-          DataType cutoff);
-  void bp(int height, int width,
-          const DataType* input,
-          int input_leading_dim,
-          const DataType* gradient_wrt_output,
-          int gradient_wrt_output_leading_dim,
-          DataType* gradient_wrt_input,
-          int gradient_wrt_input_leading_dim,
-          DataType cutoff);
-} // namespace sigmoid_cuda
-#endif // LBANN_HAS_GPU
-
 /** Sigmoid activation function.
  *  See https://en.wikipedia.org/wiki/Sigmoid_function
  */
 template <data_layout T_layout, El::Device Dev>
 class sigmoid_layer : public entrywise_activation_layer {
-
- private:
-
-  /** Cutoff value for inputs.
-   *  If sigmoid cutoff is enabled, this cutoff value ensures that the
-   *  output is strictly in (0,1).
-   */
-  DataType m_cutoff;
-
- public:
-  sigmoid_layer(lbann_comm *comm)
-    : entrywise_activation_layer(comm) {
-
-    // Compute cutoff value to ensure output is in (0,1)
-    const DataType eps = std::numeric_limits<DataType>::epsilon();
-    m_cutoff = std::log(DataType(1) - eps) - std::log(eps);
-
-  }
+public:
+  sigmoid_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
 
   sigmoid_layer* copy() const override { return new sigmoid_layer(*this); }
   std::string get_type() const override { return "sigmoid"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  std::string get_description() const override {
-    return std::string{} +
-     " sigmoid dataLayout: " + this->get_data_layout_string(get_data_layout());
-  }
-
  protected:
 
   DataType activation(DataType x) const override {
-  #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    // Ensure -m_cutoff <= x <= m_cutoff
-    x = std::min(std::max(x, -m_cutoff), m_cutoff);
-  #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return 1 / (DataType(1) + std::exp(-x));
+    constexpr DataType one = 1;
+    DataType y = 1 / (one + std::exp(-x));
+#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
+    if (y <= eps) { y = eps; }
+    else if (y >= one - eps) { y = one - eps; }
+#endif // LBANN_ENABLE_SIGMOID_CUTOFF
+    return y;
   }
 
   DataType activation_derivative(DataType x) const override {
-  #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (x < -m_cutoff || x > m_cutoff) { return DataType(0); }
-  #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    const auto sigx = activation(x);
-    return sigx * (DataType(1) - sigx);
+    constexpr DataType one = 1;
+    const auto& y = activation(x); 
+#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
+    if (y <= eps || y >= one - eps) { return DataType(0); }
+#endif // LBANN_ENABLE_SIGMOID_CUTOFF
+    return y * (one - y);
   }
 
-  void fp_compute_gpu() override {
-#ifndef LBANN_HAS_GPU
-    LBANN_ERROR("CUDA not detected");
-#else
-    sigmoid_cuda::fp(get_output_size(),
-                     get_prev_activations().LocalWidth(),
-                     get_prev_activations().LockedBuffer(),
-                     get_prev_activations().LDim(),
-                     get_activations().Buffer(),
-                     get_activations().LDim(),
-                     m_cutoff);
-#endif // LBANN_HAS_GPU
-  }
+  void fp_compute() override;
+  void bp_compute() override;
 
-  void bp_compute_gpu() override {
-#ifndef LBANN_HAS_GPU
-    LBANN_ERROR("CUDA not detected");
-#else
-    sigmoid_cuda::bp(get_output_size(),
-                     get_prev_activations().LocalWidth(),
-                     get_prev_activations().LockedBuffer(),
-                     get_prev_activations().LDim(),
-                     get_prev_error_signals().LockedBuffer(),
-                     get_prev_error_signals().LDim(),
-                     get_error_signals().Buffer(),
-                     get_error_signals().LDim(),
-                     m_cutoff);
-#endif // LBANN_HAS_GPU
-  }
+private:
 
+#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
+  /** Cutoff value for output.
+   *  If sigmoid cutoff is enabled, outputs are guaranteed to be in
+   *  the interval [eps, 1-eps].
+   */
+  static constexpr DataType eps = std::numeric_limits<DataType>::epsilon();
+#endif // LBANN_ENABLE_SIGMOID_CUTOFF
+  
 };
-
+  
 } // namespace lbann
 
 #endif // LBANN_LAYER_ACTIVATION_SIGMOID_HPP_INCLUDED

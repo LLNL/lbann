@@ -237,10 +237,13 @@ private:
   /** Backward prop implementation for n-dimensional tensors. */
   void bp_compute_nd() {
 
+    // Clear error signals
+    El::Zero(get_error_signals(0));
+    El::Zero(get_error_signals(1));
+
     // Input and gradient tensors
     const auto& gradient_wrt_output = get_prev_error_signals();
     auto& gradient_wrt_input = get_error_signals(0);
-    El::Zero(get_error_signals(1));
     const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
 
     // Tensor dimensions
