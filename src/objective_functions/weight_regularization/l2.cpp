@@ -127,10 +127,9 @@ void l2_weight_regularization::start_evaluation() {
       const auto& vals = m_weights[i]->get_values();
       if (vals.Participating()
           && vals.GetLocalDevice() == El::Device::GPU
-          && vals.RedundantRank() == i % vals.RedundantSize()) {
-        if (vals.LocalWidth() < 1 || vals.LocalHeight() < 1) {
-        } else if (vals.LocalWidth() == 1
-                   || vals.LDim() == vals.LocalHeight()) {
+          && vals.RedundantRank() == i % vals.RedundantSize()
+          && vals.LocalWidth() > 0 && vals.LocalHeight() > 0) {
+        if (vals.LocalWidth() == 1 || vals.LDim() == vals.LocalHeight()) {
           cublas::dot(handle,
                       vals.LocalHeight() * vals.LocalWidth(),
                       vals.LockedBuffer(), 1,
@@ -138,7 +137,15 @@ void l2_weight_regularization::start_evaluation() {
                       sqsums_d.Buffer(i, 0));
         } else {
           /// @todo Support non-contiguous data
-          LBANN_ERROR("we currently assume weights matrices are contiguous");
+          std::stringstream err;
+          err << "weights \"" << m_weights[i]->get_name() << "\" "
+              << "has a non-contiguous weight matrix "
+              << "(local height = " << vals.LocalHeight() << ", "
+              << "local width = " << vals.LocalWidth() << ", "
+              << "leading dim = " << vals.LDim() << "), "
+              << "but L2 regularization currently only supports "
+              << "contiguous weight data";
+          LBANN_ERROR(err.str());
         }
       }
     }
