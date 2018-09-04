@@ -45,6 +45,8 @@ public:
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
     : transform_layer(comm) {
+    static_assert(T_layout == data_layout::DATA_PARALLEL,
+                  "crop layer only supports DATA_PARALLEL");
     set_output_dims(dims);
     m_expected_num_parent_layers = 2;
   }
@@ -127,7 +129,30 @@ public:
 protected:
 
   void fp_compute() override {
+    switch (get_input_dims().size()) {
+    case 3: fp_compute_3d(); break;
+    default: fp_compute_nd();
+    }
+  }
 
+  void bp_compute() override {
+    switch (get_input_dims().size()) {
+    case 3: bp_compute_3d(); break;
+    default: bp_compute_nd();
+    }
+  }
+
+private:
+  /** View into input tensor. */
+  std::unique_ptr<AbsDistMat> m_input_v;
+  /** View into output tensor. */
+  std::unique_ptr<AbsDistMat> m_output_v;
+  /** View into crop positions. */
+  std::unique_ptr<AbsDistMat> m_crop_pos_v;
+
+  /** Forward prop implementation for n-dimensional tensors. */
+  void fp_compute_nd() {
+    
     // Input and output tensors
     const auto& input = get_prev_activations(0);
     auto& output = get_activations();
@@ -206,15 +231,19 @@ protected:
       }
     
     }
-    
+
   }
 
-  void bp_compute() override {
+  /** Backward prop implementation for n-dimensional tensors. */
+  void bp_compute_nd() {
+
+    // Clear error signals
+    El::Zero(get_error_signals(0));
+    El::Zero(get_error_signals(1));
 
     // Input and gradient tensors
     const auto& gradient_wrt_output = get_prev_error_signals();
     auto& gradient_wrt_input = get_error_signals(0);
-    El::Zero(get_error_signals(1));
     const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
 
     // Tensor dimensions
@@ -280,16 +309,17 @@ protected:
       }
       
     }
-    
+
   }
 
-private:
-  /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
-  /** View into output tensor. */
-  std::unique_ptr<AbsDistMat> m_output_v;
-  /** View into crop positions. */
-  std::unique_ptr<AbsDistMat> m_crop_pos_v;
+  /** Forward prop implementation for 3D tensors.
+   *  E.g. image data.
+   */
+  void fp_compute_3d();
+  /** Backward prop implementation for 3D tensors.
+   *  E.g. image data.
+   */
+  void bp_compute_3d();
   
 };
 

@@ -31,7 +31,9 @@
 #include <thrust/system/cuda/execution_policy.h>
 #include <thrust/fill.h>
 #include <thrust/sort.h>
+#include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
+#include <thrust/iterator/discard_iterator.h>
 
 namespace lbann {
 
@@ -59,6 +61,19 @@ struct entry {
 struct entry_compare : thrust::binary_function<entry,entry,bool> {
   __host__ __device__ bool operator()(const entry& a, const entry& b) const {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
+  }
+};
+
+/** Reduction operation to get largest sparse vector entry.
+ *  Ties are broken in favor of entries with smaller indices.
+ */
+struct entry_reduce : thrust::binary_function<entry,entry,entry> {
+  __host__ __device__ entry operator()(const entry& a, const entry& b) const {
+    if (a.value > b.value || (a.value == b.value && a.index < b.index)) {
+      return a;
+    } else {
+      return b;
+    }
   }
 };
 
@@ -254,23 +269,34 @@ void fp_gpu(lbann_comm& comm,
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
-    thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                        local_entries.begin(),
-                        local_entries.end(),
-                        local_entries_cols.begin(),
-                        entry_compare());
-    thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                               local_entries_cols.begin(),
-                               local_entries_cols.end(),
-                               local_entries.begin());
-    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                 k * sizeof(entry),
-                                 local_entries.data().get(),
-                                 num_local_entries_per_col * sizeof(entry),
-                                 k * sizeof(entry),
-                                 local_width,
-                                 cudaMemcpyDeviceToDevice,
-                                 stream));
+    if (k == 1) {
+      thrust::reduce_by_key(thrust::cuda::par(alloc).on(stream),
+                            local_entries_cols.begin(),
+                            local_entries_cols.end(),
+                            local_entries.begin(),
+                            thrust::make_discard_iterator(),
+                            top_entries.begin(),
+                            thrust::equal_to<El::Int>(),
+                            entry_reduce());
+    } else {
+      thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+                          local_entries.begin(),
+                          local_entries.end(),
+                          local_entries_cols.begin(),
+                          entry_compare());
+      thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
+                                 local_entries_cols.begin(),
+                                 local_entries_cols.end(),
+                                 local_entries.begin());
+      CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
+                                   k * sizeof(entry),
+                                   local_entries.data().get(),
+                                   num_local_entries_per_col * sizeof(entry),
+                                   k * sizeof(entry),
+                                   local_width,
+                                   cudaMemcpyDeviceToDevice,
+                                   stream));
+    }
   }
 
   // Find top-k entries in each column of global prediction matrix
