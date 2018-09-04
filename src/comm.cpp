@@ -143,15 +143,20 @@ void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
 void lbann_comm::allreduce(AbsMat& m,
                            const El::mpi::Comm c,
                            El::mpi::Op op) {
-  if (El::mpi::Size(c) == 1) {
-    return;  // Can skip allreduce on one rank.
+  if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
+    return;
   }
   const int local_size = m.Height() * m.Width();
   bytes_sent += sizeof(DataType) * local_size;
 #ifdef LBANN_HAS_ALUMINUM
-  if (m.Height() != m.LDim()) {
-    throw lbann_exception("Aluminum does not support allreduces on"
-                          " non-contiguous matrices");
+  if (m.Width() > 1 && m.Height() != m.LDim()) {
+    std::stringstream err;
+    err << "Aluminum does not support allreduces "
+        << "on non-contiguous matrices "
+        << "(height=" << m.Height() << ", "
+        << "width=" << m.Width() << ", "
+        << "leading dim=" << m.LDim() << ")";
+    LBANN_ERROR(err.str());
   }
   std::type_index t = std::type_index(typeid(::Al::MPIBackend));
 #ifdef LBANN_HAS_GPU
@@ -217,15 +222,20 @@ void lbann_comm::nb_allreduce(AbsMat& m,
                               const El::mpi::Comm c,
                               Al::request& req,
                               El::mpi::Op op) {
-  if (El::mpi::Size(c) == 1) {
-    return;  // Can skip allreduce on one rank.
+  if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
+    return;
   }
 #ifdef LBANN_HAS_ALUMINUM
   const int local_size = m.Height() * m.Width();
   bytes_sent += sizeof(DataType) * local_size;
-  if (m.Height() != m.LDim()) {
-    throw lbann_exception("Aluminum does not support allreduces on"
-                          " non-contiguous matrices");
+  if (m.Width() > 1 && m.Height() != m.LDim()) {
+    std::stringstream err;
+    err << "Aluminum does not support allreduces "
+        << "on non-contiguous matrices "
+        << "(height=" << m.Height() << ", "
+        << "width=" << m.Width() << ", "
+        << "leading dim=" << m.LDim() << ")";
+    LBANN_ERROR(err.str());
   }
   std::type_index t = std::type_index(typeid(::Al::MPIBackend));
 #ifdef LBANN_HAS_GPU
