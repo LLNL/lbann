@@ -28,101 +28,51 @@
 #include "lbann/utils/cuda.hpp"
 
 namespace lbann {
+
 namespace {
 
-__global__ void fp_kernel(int height, int width,
-                          const DataType* __restrict__ input,
-                          int input_leading_dim,
-                          DataType* __restrict__ output,
-                          int output_leading_dim) {
-  const auto& gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const auto& size = height * width;
-  const auto& num_threads = blockDim.x * gridDim.x;
-  for (int pos = gid; pos < size; pos += num_threads) {
-    const auto& row = pos % height;
-    const auto& col = pos / height;
-    const auto& x = input[row + col * input_leading_dim];
-    auto& y = output[row + col * output_leading_dim];
-    y = cuda::max(x, DataType(0));
+/** Entry-wise operator. */
+struct op {
+  __device__ DataType operator()(DataType x) const {
+    return x > DataType(0) ? x : DataType(0);
   }
-}
-
-__global__ void bp_kernel(int height, int width,
-                          const DataType* __restrict__ input,
-                          int input_leading_dim,
-                          const DataType* __restrict__ gradient_wrt_output,
-                          int gradient_wrt_output_leading_dim,
-                          DataType* __restrict__ gradient_wrt_input,
-                          int gradient_wrt_input_leading_dim) {
-  const auto& gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const auto& size = height * width;
-  const auto& num_threads = blockDim.x * gridDim.x;
-  for (int pos = gid; pos < size; pos += num_threads) {
-    const auto& row = pos % height;
-    const auto& col = pos / height;
-    const auto& x = input[row + col * input_leading_dim];
-    const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_leading_dim];
-    auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_leading_dim];
-    if (x > DataType(0)) {
-      dx = dy;
-    } else {
-      dx = DataType(0);
-    }
+};
+  
+/** Entry-wise operator for backprop.
+ *  If the forward propagation step computes \f$ y = f(x) \f$, the
+ *  backward propagation step computes
+ *  \f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$.
+ */
+struct op_backprop {
+  __device__ DataType operator()(DataType x, DataType dy) const {
+    return x > DataType(0) ? dy : DataType(0);
   }
-}
-
-void fp(const AbsMat& input, AbsMat& output) {
-  const auto& height = input.Height();
-  const auto& width = input.Width();
-  const auto& block_dim = 256;
-  const auto& grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      height, width,
-      input.LockedBuffer(), input.LDim(),
-      output.Buffer(), output.LDim());
-  }
-}
-
-void bp(const AbsMat& input,
-        const AbsMat& gradient_wrt_output,
-        AbsMat& gradient_wrt_input) {
-  const auto& height = input.Height();
-  const auto& width = input.Width();
-  const auto& block_dim = 256;
-  const auto& grid_dim = (height * width + block_dim - 1) / block_dim;
-  if (grid_dim > 0) {
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      height, width,
-      input.LockedBuffer(), input.LDim(),
-      gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
-  }
-}
-
+};
+  
 } // namespace
 
+// Template instantiation
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp(get_local_prev_activations(), get_local_activations());
+  cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),
+                                           get_activations());
 }
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp(get_local_prev_activations(),
-     get_local_prev_error_signals(),
-     get_local_error_signals());
+  cuda::apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
+                                                     get_prev_error_signals(),
+                                                     get_error_signals());
 }
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp(get_local_prev_activations(), get_local_activations());
+  cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),
+                                           get_activations());
 }
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp(get_local_prev_activations(),
-     get_local_prev_error_signals(),
-     get_local_error_signals());
+  cuda::apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
+                                                     get_prev_error_signals(),
+                                                     get_error_signals());
 }
   
 } // namespace lbann
