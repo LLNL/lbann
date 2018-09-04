@@ -312,9 +312,13 @@ private:
 
   }
 
-  /** Forward prop implementation for 3D tensors. */
+  /** Forward prop implementation for 3D tensors.
+   *  E.g. image data.
+   */
   void fp_compute_3d();
-  /** Backward prop implementation for 3D tensors. */
+  /** Backward prop implementation for 3D tensors.
+   *  E.g. image data.
+   */
   void bp_compute_3d();
   
 };

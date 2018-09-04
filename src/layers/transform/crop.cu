@@ -31,6 +31,12 @@ namespace lbann {
 
 namespace {
 
+/** CUDA kernel for 3D tensor crop.
+ *  Data tensor dimensions:
+ *  - Input - width x input_dimz x input_dimy x input_dimx
+ *  - Output - width x output_dimz x output_dimy x output_dimx
+ *  - Crop position - width x 3 (i.e. a 3 x width matrix)
+ */
 __global__ void fp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
@@ -89,6 +95,12 @@ __global__ void fp_compute_3d_kernel(
   
 }
 
+/** CUDA kernel for 3D tensor crop backprop.
+ *  Data tensor dimensions:
+ *  - Gradient w.r.t. output - width x output_dimz x output_dimy x output_dimx
+ *  - Gradient w.r.t. input - width x input_dimz x input_dimy x input_dimx
+ *  - Crop position - width x 3 (i.e. a 3 x width matrix)
+ */
 __global__ void bp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
