@@ -295,7 +295,7 @@ class logsoftmax_layer : public activation_layer {
     // Compute gradient w.r.t. input
     #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
-      const DataType sum = local_workspace(0, col);
+      const DataType sum = sum_local_workspace(0, col);
       for (El::Int row = 0; row < local_height; ++row) {
         const DataType y = local_output(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);
