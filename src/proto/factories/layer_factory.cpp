@@ -74,13 +74,36 @@ Layer* construct_layer(lbann_comm* comm,
   // Fully connected layer
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
-    int num_neurons = params.num_neurons();
-    if (proto_layer.num_neurons_from_data_reader()) {
-      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-      if (!dr) {
-        LBANN_ERROR("training data reader does not exist!");
+    int num_neurons = 0;
+    if (params.get_input_dimension_from_reader() 
+        || params.get_image_dimension_from_reader()
+        || params.get_scalar_dimension_from_reader())
+       {
+       const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
+       lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
+       size_t input_dim = dr->get_linearized_input_size();
+       size_t scalar_dim = dr->get_linearized_scalar_size();
+       size_t image_dim = dr->get_linearized_image_size();
+       size_t num_images = dr->get_num_img_srcs();
+
+       if (params.get_input_dimension_from_reader()) {
+         num_neurons += input_dim;
+       }
+       if (params.get_image_dimension_from_reader()) {
+         num_neurons += (num_images * image_dim);
+       }
+       if (params.get_scalar_dimension_from_reader()) {
+         num_neurons += scalar_dim;
+       }
+    } else {
+      num_neurons = params.num_neurons();
+      if (proto_layer.num_neurons_from_data_reader()) {
+        const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
+        if (!dr) {
+          LBANN_ERROR("training data reader does not exist!");
+        }
+        num_neurons = dr->get_linearized_data_size();
       }
-      num_neurons = dr->get_linearized_data_size();
     }
     return new fully_connected_layer<layout, Dev>(comm,
                                                   num_neurons,
@@ -186,10 +209,42 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    const auto& slice_points = parse_list<El::Int>(params.slice_points());
-    return new slice_layer<layout, Dev>(comm,
-                                        params.slice_axis(),
-                                        slice_points);
+    if (params.get_slice_points_from_reader() != "") {
+      std::stringstream ss;
+      ss << params.get_slice_points_from_reader();
+      std::string s;
+      std::vector<El::Int> slice_points;
+      size_t total = 0;
+      slice_points.push_back(total);
+      const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
+      lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
+      while (ss >> s) {
+        if (s != "") {  //probably not needed
+          if (s == "scalars") {
+            total += dr->get_linearized_scalar_size();
+            slice_points.push_back(total);
+          } else if (s == "images") {
+            total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
+            slice_points.push_back(total);
+          } else if (s == "inputs") {
+            total += dr->get_linearized_input_size();
+            slice_points.push_back(total);
+          } else {
+            err << __FILE__ << " " << __LINE__ << " :: "
+                << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
+            throw lbann_exception(err.str());
+          }
+        }
+      }
+      return new slice_layer<layout, Dev>(comm,
+                                          params.slice_axis(),
+                                          slice_points);
+    } else {
+      const auto& slice_points = parse_list<El::Int>(params.slice_points());
+      return new slice_layer<layout, Dev>(comm,
+                                          params.slice_axis(),
+                                          slice_points);
+    }
   }
   if (proto_layer.has_hadamard()) {
     return new hadamard_layer<layout, Dev>(comm);
