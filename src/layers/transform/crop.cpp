@@ -24,25 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/relu.hpp"
+#include "lbann/layers/transform/crop.hpp"
 
 namespace lbann {
+  
+template <>
+void crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute_3d() {
+  fp_compute_nd();
+}
 
 template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
+void crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute_3d() {
+  bp_compute_nd();
 }
 
 } // namespace lbann

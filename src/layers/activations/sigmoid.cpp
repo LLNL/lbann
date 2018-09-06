@@ -24,25 +24,25 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/relu.hpp"
+#include "lbann/layers/activations/sigmoid.hpp"
 
 namespace lbann {
 
 template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
+void sigmoid_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
+  entrywise_activation_layer::fp_compute();
 }
 template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
+void sigmoid_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
+  entrywise_activation_layer::bp_compute();
 }
 template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
+void sigmoid_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
+  entrywise_activation_layer::fp_compute();
 }
 template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
+void sigmoid_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
+  entrywise_activation_layer::bp_compute();
 }
 
 } // namespace lbann

@@ -367,6 +367,7 @@ echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        echo "export MV2_CUDA_ALLGATHER_FGP=0"          >> ${BATCH_SCRIPT}
         ;;
 esac
 case ${CLUSTER} in
@@ -375,6 +376,7 @@ case ${CLUSTER} in
         echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
         ;;
 esac
+echo "export MV2_USE_RDMA_CM=0"                         >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

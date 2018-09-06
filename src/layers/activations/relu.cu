@@ -24,80 +24,54 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "math.h"
-#include "lbann/layers/activations/sigmoid.hpp"
+#include "lbann/layers/activations/relu.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 namespace {
 
-// Sigmoid function
-#if __CUDA_ARCH__ >= 530
-__device__ inline __half sigmoid(__half x) {
-  static_cast<void>(static_cast<__half (*)(__half)>(sigmoid)); // Suppress "unused function" warning
-  return __hdiv(__float2half(1.f),
-                __hadd(__float2half(1.f), hexp(__hneg(x))));
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float sigmoid(float x) {
-  static_cast<void>(static_cast<float (*)(float)>(sigmoid)); // Suppress "unused function" warning
-  return 1 / (1.0f + expf(-x));
-}
-__device__ inline double sigmoid(double x) {
-  static_cast<void>(static_cast<double (*)(double)>(sigmoid)); // Suppress "unused function" warning
-  return 1 / (1.0 + exp(-x));
-}
-  
-__global__ void fp_kernel(El::Int height, El::Int width,
+__global__ void fp_kernel(int height, int width,
                           const DataType* __restrict__ input,
-                          El::Int input_leading_dim,
+                          int input_leading_dim,
                           DataType* __restrict__ output,
-                          El::Int output_leading_dim,
-                          DataType eps) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int size = height * width;
-  const El::Int num_threads = blockDim.x * gridDim.x;
-  for (El::Int pos = gid; pos < size; pos += num_threads) {
+                          int output_leading_dim) {
+  const auto& gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto& size = height * width;
+  const auto& num_threads = blockDim.x * gridDim.x;
+  for (int pos = gid; pos < size; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     const auto& x = input[row + col * input_leading_dim];
-    auto y = sigmoid(x);
-#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (y <= eps) { y = eps; }
-    else if (y >= DataType(1) - eps) { y = DataType(1) - eps; }
-#endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    output[row + col * output_leading_dim] = y;
+    auto& y = output[row + col * output_leading_dim];
+    y = cuda::max(x, DataType(0));
   }
 }
 
-__global__ void bp_kernel(El::Int height, El::Int width,
+__global__ void bp_kernel(int height, int width,
                           const DataType* __restrict__ input,
-                          El::Int input_leading_dim,
+                          int input_leading_dim,
                           const DataType* __restrict__ gradient_wrt_output,
-                          El::Int gradient_wrt_output_leading_dim,
+                          int gradient_wrt_output_leading_dim,
                           DataType* __restrict__ gradient_wrt_input,
-                          El::Int gradient_wrt_input_leading_dim,
-                          DataType eps) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int size = height * width;
-  const El::Int num_threads = blockDim.x * gridDim.x;
-  for (El::Int pos = gid; pos < size; pos += num_threads) {
+                          int gradient_wrt_input_leading_dim) {
+  const auto& gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const auto& size = height * width;
+  const auto& num_threads = blockDim.x * gridDim.x;
+  for (int pos = gid; pos < size; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     const auto& x = input[row + col * input_leading_dim];
-    const auto& y = sigmoid(x);
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_leading_dim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_leading_dim];
-#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (y <= eps || y >= DataType(1) - eps) {
+    if (x > DataType(0)) {
+      dx = dy;
+    } else {
       dx = DataType(0);
-      continue;
     }
-#endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    dx = dy * y * (DataType(1) - y);
   }
 }
 
-void fp(const AbsMat& input, AbsMat& output, DataType eps) {
+void fp(const AbsMat& input, AbsMat& output) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   const auto& block_dim = 256;
@@ -107,15 +81,13 @@ void fp(const AbsMat& input, AbsMat& output, DataType eps) {
     fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
       height, width,
       input.LockedBuffer(), input.LDim(),
-      output.Buffer(), output.LDim(),
-      eps);
+      output.Buffer(), output.LDim());
   }
 }
 
 void bp(const AbsMat& input,
         const AbsMat& gradient_wrt_output,
-        AbsMat& gradient_wrt_input,
-        DataType eps) {
+        AbsMat& gradient_wrt_input) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   const auto& block_dim = 256;
@@ -126,34 +98,31 @@ void bp(const AbsMat& input,
       height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim(),
-      eps);
+      gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
   }
 }
-  
+
 } // namespace
 
 template <>
-void sigmoid_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp(get_local_prev_activations(), get_local_activations(), eps);
+void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+  fp(get_local_prev_activations(), get_local_activations());
 }
 template <>
-void sigmoid_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
   bp(get_local_prev_activations(),
      get_local_prev_error_signals(),
-     get_local_error_signals(),
-     eps);
+     get_local_error_signals());
 }
 template <>
-void sigmoid_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp(get_local_prev_activations(), get_local_activations(), eps);
+void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+  fp(get_local_prev_activations(), get_local_activations());
 }
 template <>
-void sigmoid_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   bp(get_local_prev_activations(),
      get_local_prev_error_signals(),
-     get_local_error_signals(),
-     eps);
+     get_local_error_signals());
 }
-
+  
 } // namespace lbann

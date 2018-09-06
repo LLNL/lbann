@@ -96,6 +96,7 @@
 #include "lbann/layers/transform/max.hpp"
 #include "lbann/layers/transform/min.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
+#include "lbann/layers/transform/sort.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -151,6 +152,7 @@
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
 #include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_error_signals.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/callbacks/callback_early_stopping.hpp"
