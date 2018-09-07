@@ -92,7 +92,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
     const ::thrust::device_ptr<const DataType> grad_wrt_out(local_gradient_wrt_output.LockedBuffer(0, col));
     ::thrust::device_ptr<DataType> grad_wrt_in(local_gradient_wrt_input.Buffer(0, col));
     ::thrust::scatter(thrust::cuda::par(alloc).on(stream),
-                      inds, inds + local_height, grad_wrt_out,
+                      grad_wrt_out, grad_wrt_out + local_height, inds,
                       grad_wrt_in);
   }
   
