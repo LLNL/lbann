@@ -229,23 +229,27 @@ class lbann_comm {
    * Broadcast a buffer over an arbitrary communicator assuming that
    * the buffer space is already allocated.
    */
-  template < typename T, bool S = is_instantiated_El_mpi_type<T>::value >
-  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c);
+  template < typename T, El::Device D, bool S = is_instantiated_El_mpi_type<T>::value >
+  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c,
+                 El::SyncInfo<D> const& syncInfo);
 
   /// World broadcast of a buffer.
-  template <typename T>
-  void world_broadcast(const int root, T* data, const int count) {
-    broadcast(root, data, count, get_world_comm());
+  template <typename T, El::Device D>
+  void world_broadcast(const int root, T* data, const int count,
+                       El::SyncInfo<D> const& syncInfo) {
+    broadcast(root, data, count, get_world_comm(), syncInfo);
   }
   /// Inter-model broadcast of a buffer.
-  template <typename T>
-  void intermodel_broadcast(const int root, T* data, const int count) {
-    broadcast(root, data, count, get_intermodel_comm());
+  template <typename T, El::Device D>
+  void intermodel_broadcast(const int root, T* data, const int count,
+                            El::SyncInfo<D> const& syncInfo) {
+    broadcast(root, data, count, get_intermodel_comm(), syncInfo);
   }
   /// Within-model broadcast of a buffer.
-  template <typename T>
-  void model_broadcast(const int root, T* data, const int count) {
-    broadcast(root, data, count, get_model_comm());
+  template <typename T, El::Device D>
+  void model_broadcast(const int root, T* data, const int count,
+                       El::SyncInfo<D> const& syncInfo) {
+    broadcast(root, data, count, get_model_comm(), syncInfo);
   }
 
   /**
@@ -270,7 +274,7 @@ class lbann_comm {
     if (count <= 0) {
       return;
     }
-    broadcast<T>(root, data.data(), count, c);
+    broadcast<T>(root, data.data(), count, c, El::SyncInfo<El::Device::CPU>{});
   }
   /// Broadcast vector<> to world.
   template <typename T>
@@ -304,10 +308,10 @@ class lbann_comm {
   }
 
   /** Allgather over an arbitrary communicator */
-  template <typename T>
-  void all_gather(const T* src, int src_count, T* rcv, int rcv_count, El::mpi::Comm c) {
-    El::mpi::AllGather<T>(src, src_count, rcv, rcv_count, c,
-                          El::SyncInfo<El::Device::CPU>{});
+  template <typename T, El::Device D>
+  void all_gather(const T* src, int src_count, T* rcv, int rcv_count, El::mpi::Comm c,
+                  El::SyncInfo<D> const& syncInfo) {
+    El::mpi::AllGather<T>(src, src_count, rcv, rcv_count, c, syncInfo);
   }
 
   /**
@@ -375,7 +379,7 @@ class lbann_comm {
   template <typename T>
   void model_gatherv(T* snd, int count, int root) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Gather(snd, count, (T *) NULL, (int *) nullptr, (int *) nullptr, root,
+    El::mpi::Gather(snd, count, nullptr, nullptr, nullptr, root,
                     model_comm);
   }
   template <typename T>
@@ -499,20 +503,26 @@ class lbann_comm {
     return val;
   }
 
-  // FIXME (trb)
   /** Scalar-array reduce (for non-root processes). */
-  template <typename T>
-  void reduce(T *snd, int count, int root, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
+  // Op is "SUM"
+  template <typename T, El::Device D>
+  void reduce(T *snd, int count, int root, El::mpi::Comm c, El::SyncInfo<D> const& syncInfo) {
+    reduce(snd, count, root, std::move(c), El::mpi::SUM, syncInfo);
+  }
+  template <typename T, El::Device D>
+  void reduce(T *snd, int count, int root, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Reduce(snd, (T*) NULL, count, op, root, c,
-                    El::SyncInfo<El::Device::CPU>{});
+    El::mpi::Reduce(snd, nullptr, count, op, root, std::move(c), syncInfo);
   }
   /** Scalar-array reduce (for root processes). */
-  template <typename T>
-  void reduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
-    if (snd == rcv) { snd = (T*) MPI_IN_PLACE; }
-    El::mpi::Reduce(snd, rcv, count, op, El::mpi::Rank(c), c,
-                    El::SyncInfo<El::Device::CPU>{});
+  template <typename T, El::Device D>
+  void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::SyncInfo<D> const& syncInfo) {
+    reduce(snd, count, rcv, std::move(c), El::mpi::SUM, syncInfo);
+  }
+  template <typename T, El::Device D>
+  void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
+    if (snd == rcv) { snd = MPI_IN_PLACE; }
+    El::mpi::Reduce(snd, rcv, count, op, El::mpi::Rank(c), std::move(c), syncInfo);
     bytes_received += sizeof(T) * count * (El::mpi::Size(c) - 1);
   }
   /** Inter-model all-reduce. */
@@ -539,7 +549,8 @@ class lbann_comm {
     return snd;
   }
 
-  // FIXME (trb)
+  // FIXME (trb): Based on the backend choice of "MPIBackend", I'm
+  // assuming this is intended as a CPU-only call.
   /** Scalar-array allreduce. */
   template <typename T>
   void allreduce(T *snd, int count, T *rcv, const El::mpi::Comm c, El::mpi::Op op = El::mpi::SUM) {
@@ -1176,8 +1187,7 @@ void lbann_comm::broadcast(int root, T& val, const El::mpi::Comm c) {
 
 template <typename T>
 void lbann_comm::broadcast_native(int root, T& val, const El::mpi::Comm c) const {
-  El::mpi::Broadcast(val, root, c,
-                     El::SyncInfo<El::Device::CPU>{});
+  El::mpi::Broadcast(val, root, c, El::SyncInfo<El::Device::CPU>{});
 }
 
 template <typename T>
@@ -1188,13 +1198,12 @@ void lbann_comm::broadcast_custom(int root, T& val, const El::mpi::Comm c) const
 }
 
 // FIXME (trb)
-template <typename T, bool S>
-void lbann_comm::broadcast(const int root, T* data, const int count, const El::mpi::Comm c) {
+template <typename T, El::Device D, bool S>
+void lbann_comm::broadcast(const int root, T* data, const int count, El::mpi::Comm c, El::SyncInfo<D> const& syncInfo) {
   const int size = static_cast<int>(S? count : sizeof(T)*count);
   // Avoid linking error from uninstantiated El::mpi routine if !S by converting T to El::byte
   using TT = typename interpret_as_byte_if_needed<S, T>::type;
-  El::mpi::Broadcast<TT>(reinterpret_cast<TT*>(data), size, root, c,
-                         El::SyncInfo<El::Device::CPU>{});
+  El::mpi::Broadcast<TT>(reinterpret_cast<TT*>(data), size, root, c, syncInfo);
   count_bytes_broadcast(sizeof(T)*count, El::mpi::Rank(c), root);
 }
 

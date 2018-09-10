@@ -114,7 +114,7 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < tensor_size; i += num_threads) {
     tensor[i] = (i / dim_stride) % dim;
-  }  
+  }
 }
 
 /** Set selected matrix entries to one.
@@ -152,7 +152,7 @@ __global__ void indicate_matrix_entries(El::Int k,
       }
       local_matrix[local_row + local_col * local_matrix_ldim] = DataType(1);
     }
-  }  
+  }
 }
 
 /** GPU implementation of in_top_k layer forward prop. */
@@ -180,7 +180,7 @@ void fp_gpu(lbann_comm& comm,
   } else if (local_width < 1) {
     return;
   }
-  
+
   // Column communicator
   auto&& col_comm = input.ColComm();
   const auto& col_comm_rank = El::mpi::Rank(col_comm);
@@ -240,7 +240,7 @@ void fp_gpu(lbann_comm& comm,
                     top_entries.size() * sizeof(entry),
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),
                     top_entries.size() * sizeof(entry),
-                    col_comm);
+                    col_comm, El::SyncInfo<El::Device::GPU>{stream, nullptr});
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_entries, local_width, k, global_top_entries_cols.data().get());
     thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
