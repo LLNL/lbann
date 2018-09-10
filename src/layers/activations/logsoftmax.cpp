@@ -35,20 +35,16 @@ template <>
 void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   activation_layer::setup_matrices(grid);
-  if (m_sum_workspace != nullptr) { delete m_sum_workspace; }
-  if (m_shift_workspace != nullptr) { delete m_shift_workspace; }
-  m_sum_workspace = new StarMRMat<El::Device::CPU>(grid);
-  m_shift_workspace = new StarMRMat<El::Device::CPU>(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarMRMat<El::Device::CPU>(grid);
 }
 
 template <>
 void logsoftmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   activation_layer::setup_matrices(grid);
-  if (m_sum_workspace != nullptr) { delete m_sum_workspace; }
-  if (m_shift_workspace != nullptr) { delete m_shift_workspace; }
-  m_sum_workspace = new StarVCMat<El::Device::CPU>(grid);
-  m_shift_workspace = new StarVCMat<El::Device::CPU>(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarVCMat<El::Device::CPU>(grid);
 }
 
 #ifdef LBANN_HAS_GPU
@@ -56,20 +52,16 @@ template <>
 void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
   activation_layer::setup_matrices(grid);
-  if (m_sum_workspace != nullptr) { delete m_sum_workspace; }
-  if (m_shift_workspace != nullptr) { delete m_shift_workspace; }
-  m_sum_workspace = new StarMRMat<El::Device::GPU>(grid);
-  m_shift_workspace = new StarMRMat<El::Device::GPU>(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarMRMat<El::Device::GPU>(grid);
 }
 
 template <>
 void logsoftmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
   activation_layer::setup_matrices(grid);
-  if (m_sum_workspace != nullptr) { delete m_sum_workspace; }
-  if (m_shift_workspace != nullptr) { delete m_shift_workspace; }
-  m_sum_workspace = new StarVCMat<El::Device::GPU>(grid);
-  m_shift_workspace = new StarVCMat<El::Device::GPU>(grid);
+  if (m_workspace != nullptr) { delete m_workspace; }
+  m_workspace = new StarVCMat<El::Device::GPU>(grid);
 }
 #endif // LBANN_HAS_GPU
 
@@ -90,8 +82,7 @@ void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute(
   // Local matrices.
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
-  auto& local_sum_workspace = m_sum_workspace->Matrix();
-  auto& local_shift_workspace = m_shift_workspace->Matrix();
+  auto& local_workspace = m_workspace->Matrix();
 
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
@@ -100,38 +91,39 @@ void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute(
   if (local_height == 0) {
     // When there's no local data, fill the workspace with a small value so the
     // maximum across processors is still computed correctly.
-    El::Fill(local_shift_workspace, std::numeric_limits<DataType>::lowest());
+    El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
   } else {
     logsoftmax_cuda::max_local_col_entry(
       local_height, local_width, local_input.LockedBuffer(),
-      local_input.LDim(), local_shift_workspace.Buffer(), El::GPUManager::Stream());
+      local_input.LDim(), local_workspace.Buffer(), El::GPUManager::Stream());
   }
   // Find the global max entry in each column.
-  m_comm->allreduce(*m_shift_workspace, m_shift_workspace->RedundantComm(), El::mpi::MAX);
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::MAX);
 
   // Exponentiate activations and compute column sums.
   // This subtracts by the column max for stability.
+  // Save the sum, shift values for the log-sum-exp trick.
   if (local_height == 0) {
     // Zero out so that we contribute nothing to the sum.
-    El::Zero(local_sum_workspace);
+    El::Zero(local_workspace);
   } else {
     logsoftmax_cuda::exp_and_col_sum(
-      local_height, local_width, local_input.LockedBuffer(),
-      local_input.LDim(),
-      local_shift_workspace.Buffer(), 
-      local_sum_workspace.Buffer(), 
+      local_height, local_width, 
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_output.Buffer(), local_output.LDim(),
+      local_workspace.Buffer(), 
       El::GPUManager::Stream());
   }
   // Compute the global sums for each column.
-  m_comm->allreduce(*m_sum_workspace, m_sum_workspace->RedundantComm(), El::mpi::SUM);
+  m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM);
 
-  // Divide activations by the column sums.
-  // This rounds small values to avoid denormalization.
+  // Subtract from activations the column sums.
+  // Shift by the max column entry for the log-sum-exp trick.
   logsoftmax_cuda::sub_by_col_sums_and_shift(
     local_height, local_width, 
     local_input.LockedBuffer(), local_input.LDim(), 
     local_output.Buffer(), local_output.LDim(), 
-    local_shift_workspace.LockedBuffer(), local_sum_workspace.LockedBuffer(), 
+    local_workspace.LockedBuffer(),
     El::GPUManager::Stream());
 
 }
@@ -143,28 +135,15 @@ void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute(
   const auto& local_output = get_local_activations();
   const auto& local_grad_wrt_output = get_local_prev_error_signals();
   auto& local_grad_wrt_input = get_local_error_signals();
-  auto& local_sum_workspace = m_sum_workspace->Matrix();
+  auto& local_workspace = m_workspace->Matrix();
 
   const El::Int local_height = local_output.Height();
   const El::Int local_width = local_output.Width();
 
-  // Compute dot products between output and gradient w.r.t. output.
-  auto&& handle = El::GPUManager::cuBLASHandle();
-  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
-  for (El::Int col = 0; col < local_width; ++col) {
-    cublas::dot(handle, local_height,
-                local_output.LockedBuffer(0, col), 1,
-                local_grad_wrt_output.LockedBuffer(0, col), 1,
-                local_sum_workspace.Buffer(0, col));
-  }
-  CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
-  m_comm->allreduce(*m_sum_workspace, m_sum_workspace->RedundantComm(), El::mpi::SUM);
-
   // Compute gradient w.r.t. input.
-  // Applies a cutoff if needed to avoid denormalized floats.
   logsoftmax_cuda::grad_wrt_input(
     local_height, local_width, local_output.LockedBuffer(),
-    local_output.LDim(), local_sum_workspace.LockedBuffer(),
+    local_output.LDim(), local_workspace.LockedBuffer(),
     local_grad_wrt_output.LockedBuffer(), local_grad_wrt_output.LDim(),
     local_grad_wrt_input.Buffer(), local_grad_wrt_input.LDim(),
     El::GPUManager::Stream());

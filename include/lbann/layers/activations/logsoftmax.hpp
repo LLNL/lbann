@@ -49,36 +49,36 @@ namespace logsoftmax_cuda {
 void max_local_col_entry(int height, int width,
                          const DataType * __restrict__ input,
                          int input_ldim,
-                         DataType * __restrict__ shift_workspace,
+                         DataType * __restrict__ workspace,
                          cudaStream_t stream);
 /** Exponentiate the (shifted) input, and compute its sum.
  * Data is assumed to be on the GPU.
  */
 void exp_and_col_sum(int height, int width,
                      const DataType * __restrict__ input,
-                     int intput_ldim,
-                     DataType * __restrict__ shift_workspace,
-                     DataType * __restrict__ sum_workspace,
+                     int input_ldim,
+                     DataType * __restrict__ output,
+                     int output_ldim,
+                     DataType * __restrict__ workspace,
                      cudaStream_t stream);
-/** Divide each entry in a column by the pre-computed sum of the column.
- * Apply a minimum cutoff to the entries if needed.
+/** Subtract from each entry in a column the log of the pre-computed sum of the column.
+ * Shift by the max column entry for the log-sum-exp trick.
  * Data is assumed to be on the GPU.
  */
 void sub_by_col_sums_and_shift(int height, int width,
                                 const DataType * __restrict__ input,
-                                int intput_ldim,
+                                int input_ldim,
                                 DataType * __restrict__ output,
                                 int output_ldim,
-                                const DataType * __restrict__ shift_workspace,
-                                const DataType * __restrict__ sum_workspace,
+                                const DataType * __restrict__ workspace,
                                 cudaStream_t stream);
-/** Compute the gradient w.r.t. the input and apply a cutoff if needed.
+/** Compute the gradient w.r.t. the input.
  * Data is assumed to be on the GPU.
  */
 void grad_wrt_input(int height, int width,
                                const DataType * __restrict__ output,
                                int output_ldim,
-                               const DataType * __restrict__ sum_workspace,
+                               const DataType * __restrict__ workspace,
                                const DataType * __restrict__ grad_wrt_output,
                                int grad_wrt_output_ldim,
                                DataType * __restrict__ grad_wrt_input,
@@ -94,14 +94,7 @@ class logsoftmax_layer : public activation_layer {
  private:
 
   /** Workspace for column-wise reductions. */
-  AbsDistMat *m_sum_workspace;
-  AbsDistMat *m_shift_workspace;
-
-  /** Lower bound for outputs.
-   *  This should be sufficiently large to avoid denormalized
-   *  floats.
-   */
-  DataType m_min_output;
+  AbsDistMat *m_workspace;
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */
@@ -112,27 +105,22 @@ class logsoftmax_layer : public activation_layer {
 
   logsoftmax_layer(lbann_comm *comm)
     : activation_layer(comm),
-      m_sum_workspace(nullptr),
-      m_shift_workspace(nullptr),
-      m_min_output(std::sqrt(std::numeric_limits<DataType>::min()))
+      m_workspace(nullptr)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {}
 
   logsoftmax_layer(const logsoftmax_layer& other)
-    : activation_layer(other),
-      m_min_output(other.m_min_output)
+    : activation_layer(other)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
 
     // Matrix deep copy
-    m_sum_workspace = other.m_sum_workspace;
-    m_shift_workspace = other.m_shift_workspace;
-    if (m_sum_workspace != nullptr) { m_sum_workspace = m_sum_workspace->Copy(); }
-    if (m_shift_workspace != nullptr) { m_shift_workspace = m_shift_workspace->Copy(); }
+    m_workspace = other.m_workspace;
+    if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
 
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc.set_layer(this);
@@ -142,16 +130,11 @@ class logsoftmax_layer : public activation_layer {
 
   logsoftmax_layer& operator=(const logsoftmax_layer& other) {
     activation_layer::operator=(other);
-    m_min_output = other.m_min_output;
 
     // Deep matrix copy
-    if (m_sum_workspace != nullptr) { delete m_sum_workspace; }
-    m_sum_workspace = other.m_sum_workspace;
-    if (m_sum_workspace != nullptr) { m_sum_workspace = m_sum_workspace->Copy(); }
-
-    if (m_shift_workspace != nullptr) { delete m_shift_workspace; }
-    m_shift_workspace = other.m_shift_workspace;
-    if (m_shift_workspace != nullptr) { m_shift_workspace = m_shift_workspace->Copy(); }
+    if (m_workspace != nullptr) { delete m_workspace; }
+    m_workspace = other.m_workspace;
+    if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
 
 #ifdef LBANN_HAS_CUDNN
     // Copy cuDNN objects
@@ -162,8 +145,7 @@ class logsoftmax_layer : public activation_layer {
   }
 
   ~logsoftmax_layer() {
-    if (m_sum_workspace != nullptr) { delete m_sum_workspace; }
-    if (m_shift_workspace != nullptr) { delete m_shift_workspace; }
+    if (m_workspace != nullptr) { delete m_workspace; }
   }
 
   logsoftmax_layer* copy() const override { return new logsoftmax_layer(*this); }
@@ -183,14 +165,12 @@ class logsoftmax_layer : public activation_layer {
   void setup_data() override {
     activation_layer::setup_data();
     const int mini_batch_size = this->m_model->get_max_mini_batch_size();
-    m_sum_workspace->Resize(1, mini_batch_size);
-    m_shift_workspace->Resize(1, mini_batch_size);
+    m_workspace->Resize(1, mini_batch_size);
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     activation_layer::fp_setup_outputs(mini_batch_size);
-    m_sum_workspace->Resize(1, mini_batch_size);
-    m_shift_workspace->Resize(1, mini_batch_size);
+    m_workspace->Resize(1, mini_batch_size);
   }
 
   void fp_compute() override;
@@ -201,8 +181,7 @@ class logsoftmax_layer : public activation_layer {
     // Local matrices
     const auto& local_input = get_local_prev_activations();
     auto& local_output = get_local_activations();
-    auto& local_shift_workspace = m_sum_workspace->Matrix();
-    auto& local_sum_workspace = m_shift_workspace->Matrix();
+    auto& local_workspace = m_workspace->Matrix();
 
     // Matrix parameters
     const El::Int local_height = local_input.Height();
@@ -212,7 +191,7 @@ class logsoftmax_layer : public activation_layer {
     if (local_height == 0) {
       // When there's no local data, fill the workspace with a small value so
       // the maximum across processors is still computed correctly.
-      El::Fill(local_shift_workspace, std::numeric_limits<DataType>::lowest());
+      El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
     } else {
       #pragma omp parallel for
       for (El::Int col = 0; col < local_width; ++col) {
@@ -220,34 +199,35 @@ class logsoftmax_layer : public activation_layer {
         for (El::Int row = 1; row < local_height; ++row) {
           max_entry = std::max(max_entry, local_input(row, col));
         }
-        local_shift_workspace(0, col) = max_entry;
+        local_workspace(0, col) = max_entry;
       }
     }
-    m_comm->allreduce(*m_shift_workspace, m_shift_workspace->RedundantComm(),
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(),
                       El::mpi::MAX);
 
     // Exponentiate activations and compute column sums
     // Note: Subtracting by the column max prevents activations from
     // blowing up. Large negative values underflow to 0.
-    // Save the max/shift value for the log-sum-exp trick.
+    // Save the sum, shift values for the log-sum-exp trick.
     #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
-      const DataType shift = local_shift_workspace(0, col);
+      const DataType shift = local_workspace(0, col);
+      local_output(0, col) = shift;
       DataType sum = 0;
       for (El::Int row = 0; row < local_height; ++row) {
         const DataType x = local_input(row, col);
         const DataType y = std::exp(x - shift);
         sum += y;
       }
-      local_sum_workspace(0, col) = sum;
+      local_workspace(0, col) = sum;
     }
-    m_comm->allreduce(*m_sum_workspace, m_sum_workspace->RedundantComm());
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
 
     // Subtract log-sum-exp and shift value from input to get numerically stable output.
     #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
-      const DataType lse = std::log(local_sum_workspace(0, col));
-      const DataType shift = local_shift_workspace(0, col);
+      const DataType lse = std::log(local_workspace(0, col));
+      const DataType shift = local_output(0, col);
       for (El::Int row = 0; row < local_height; ++row) {
         const DataType x = local_input(row, col);
         DataType& y = local_output(row, col);
@@ -263,7 +243,7 @@ class logsoftmax_layer : public activation_layer {
     const DMat<Dev>& local_output = get_local_activations();
     const DMat<Dev>& local_gradient_wrt_output = get_local_prev_error_signals();
     DMat<Dev>& local_gradient_wrt_input = get_local_error_signals();
-    DMat<Dev>& local_sum_workspace = m_sum_workspace->Matrix();
+    DMat<Dev>& local_workspace = m_workspace->Matrix();
 
     // Matrix parameters
     const El::Int local_height = local_output.Height();
@@ -272,7 +252,7 @@ class logsoftmax_layer : public activation_layer {
     // Compute gradient w.r.t. input
     #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
-      const DataType sum = local_sum_workspace(0, col);
+      const DataType sum = local_workspace(0, col);
       for (El::Int row = 0; row < local_height; ++row) {
         const DataType y = local_output(row, col);
         const DataType dy = local_gradient_wrt_output(row, col);

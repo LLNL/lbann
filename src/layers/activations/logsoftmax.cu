@@ -34,7 +34,7 @@ __global__ void max_local_col_entry_kernel(
   int height, int width,
   const lbann::DataType * __restrict__ input,
   int input_ldim,
-  lbann::DataType * __restrict__ shift_workspace) {
+  lbann::DataType * __restrict__ workspace) {
   const int tid = threadIdx.x + blockIdx.x*blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
   for (int col = tid; col < width; col += num_threads) {
@@ -43,7 +43,7 @@ __global__ void max_local_col_entry_kernel(
     for (int row = 1; row < height; ++row) {
       max_entry = fmax(max_entry, input[row + col_offset]);
     }
-    shift_workspace[col] = max_entry;
+    workspace[col] = max_entry;
   }
 }
 
@@ -51,20 +51,23 @@ __global__ void exp_and_col_sum_kernel(
   int height, int width,
   const lbann::DataType * __restrict__ input,
   int input_ldim,
-  lbann::DataType * __restrict__ shift_workspace,
-  lbann::DataType * __restrict__ sum_workspace) {
+  lbann::DataType * __restrict__ output,
+  int output_ldim,
+  lbann::DataType * __restrict__ workspace) {
   const int tid = threadIdx.x + blockIdx.x*blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
   for (int col = tid; col < width; col += num_threads) {
     const int input_col_offset = col*input_ldim;
+    const int output_col_offset = col*output_ldim;
     // Shift by the pre-computed maximum value for the column.
-    const lbann::DataType shift = shift_workspace[col];
+    const lbann::DataType shift = workspace[col];
+    output[output_col_offset] = shift;
     lbann::DataType sum = lbann::DataType(0);
     for (int row = 0; row < height; ++row) {
       const lbann::DataType y = exp(input[row + input_col_offset] - shift);
       sum += y;
     }
-    sum_workspace[col] = sum;
+    workspace[col] = sum;
   }
 }
 
@@ -74,15 +77,14 @@ __global__ void sub_by_col_sums_and_shift_kernel(
   int input_ldim,
   lbann::DataType * __restrict__ output,
   int output_ldim,
-  const lbann::DataType * __restrict__ shift_workspace,
-  const lbann::DataType * __restrict__ sum_workspace) {
+  const lbann::DataType * __restrict__ workspace) {
   const int tid = threadIdx.x + blockIdx.x*blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
   for (int col = tid; col < width; col += num_threads) {
     const int input_col_offset = col*input_ldim;
     const int output_col_offset = col*output_ldim;
-    const lbann::DataType shift = shift_workspace[col];
-    const lbann::DataType lse = log(sum_workspace[col]);
+    const lbann::DataType shift = output[output_col_offset];
+    const lbann::DataType lse = log(workspace[col]);
     for (int row = 0; row < height; ++row) {
       output[row + output_col_offset] = input[row + input_col_offset] - lse - shift;
     }
@@ -93,7 +95,7 @@ __global__ void grad_wrt_input_kernel(
   int height, int width,
   const lbann::DataType * __restrict__ output,
   int output_ldim,
-  const lbann::DataType * __restrict__ sum_workspace,
+  const lbann::DataType * __restrict__ workspace,
   const lbann::DataType * __restrict__ grad_wrt_output,
   int grad_wrt_output_ldim,
   lbann::DataType * __restrict__ grad_wrt_input,
@@ -101,7 +103,7 @@ __global__ void grad_wrt_input_kernel(
   const int tid = threadIdx.x + blockIdx.x*blockDim.x;
   const int num_threads = blockDim.x * gridDim.x;
   for (int col = tid; col < width; col += num_threads) {
-    const lbann::DataType sum = sum_workspace[col];
+    const lbann::DataType sum = workspace[col];
     const int output_col_offset = col * output_ldim;
     const int grad_wrt_output_offset = col * grad_wrt_output_ldim;
     const int grad_wrt_input_offset = col * grad_wrt_input_ldim;
@@ -124,7 +126,7 @@ namespace logsoftmax_cuda {
 void max_local_col_entry(int height, int width,
                          const DataType * __restrict__ input,
                          int input_ldim,
-                         DataType * __restrict__ shift_workspace,
+                         DataType * __restrict__ workspace,
                          cudaStream_t stream) {
   if (width <= 0 || height <= 0) {
     return;
@@ -132,14 +134,15 @@ void max_local_col_entry(int height, int width,
   const int block_dim = 256;
   const int grid_dim = (width + block_dim - 1) / block_dim;
   max_local_col_entry_kernel<<<grid_dim, block_dim, 0, stream>>>(
-    height, width, input, input_ldim, shift_workspace);
+    height, width, input, input_ldim, workspace);
 }
 
 void exp_and_col_sum(int height, int width,
                      const DataType * __restrict__ input,
                      int input_ldim,
-                     DataType * __restrict__ shift_workspace,
-                     DataType * __restrict__ sum_workspace,
+                     DataType * __restrict__ output,
+                     int output_ldim,
+                     DataType * __restrict__ workspace,
                      cudaStream_t stream) {
   if (width <= 0 || height <= 0) {
     return;
@@ -147,7 +150,7 @@ void exp_and_col_sum(int height, int width,
   const int block_dim = 256;
   const int grid_dim = (width + block_dim - 1) / block_dim;
   exp_and_col_sum_kernel<<<grid_dim, block_dim, 0, stream>>>(
-    height, width, input, input_ldim, shift_workspace, sum_workspace);
+    height, width, input, input_ldim, output, output_ldim, workspace);
 }
 
 void sub_by_col_sums_and_shift(int height, int width,
@@ -155,8 +158,7 @@ void sub_by_col_sums_and_shift(int height, int width,
                                 int input_ldim,
                                 DataType * __restrict__ output,
                                 int output_ldim,
-                                const DataType * __restrict__ shift_workspace,
-                                const DataType * __restrict__ sum_workspace,
+                                const DataType * __restrict__ workspace,
                                 cudaStream_t stream) {
   if (width <= 0 || height <= 0) {
     return;
@@ -164,13 +166,13 @@ void sub_by_col_sums_and_shift(int height, int width,
   const int block_dim = 256;
   const int grid_dim = (width + block_dim - 1) / block_dim;
   sub_by_col_sums_and_shift_kernel<<<grid_dim, block_dim, 0, stream>>>(
-    height, width, input, input_ldim, output, output_ldim, shift_workspace, sum_workspace);
+    height, width, input, input_ldim, output, output_ldim, workspace);
 }
 
 void grad_wrt_input(int height, int width,
                                const DataType * __restrict__ output,
                                int output_ldim,
-                               const DataType * __restrict__ sum_workspace,
+                               const DataType * __restrict__ workspace,
                                const DataType * __restrict__ grad_wrt_output,
                                int grad_wrt_output_ldim,
                                DataType * __restrict__ grad_wrt_input,
@@ -182,7 +184,7 @@ void grad_wrt_input(int height, int width,
   const int block_dim = 256;
   const int grid_dim = (width + block_dim - 1) / block_dim;
   grad_wrt_input_kernel<<<grid_dim, block_dim, 0, stream>>>(
-    height, width, output, output_ldim, sum_workspace, grad_wrt_output,
+    height, width, output, output_ldim, workspace, grad_wrt_output,
     grad_wrt_output_ldim, grad_wrt_input, grad_wrt_input_ldim);
 }
 
