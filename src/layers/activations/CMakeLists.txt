@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_SOURCES
   tanh.cpp
   sigmoid.cpp
   softmax.cpp
+  logsoftmax.cpp
   )
 
 if (LBANN_HAS_CUDA)
@@ -13,6 +14,7 @@ if (LBANN_HAS_CUDA)
     relu.cu
     sigmoid.cu
     softmax.cu
+    logsoftmax.cu
     )
 endif ()
 
