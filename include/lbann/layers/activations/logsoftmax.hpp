@@ -72,6 +72,14 @@ void sub_by_col_sums_and_shift(int height, int width,
                                 int output_ldim,
                                 const DataType * __restrict__ workspace,
                                 cudaStream_t stream);
+/** Compute column sums for the gradient w.r.t. the output.
+ * Data is assumed to be on the GPU.
+ */
+void out_grad_col_sum(int height, int width,
+                               DataType * __restrict__ workspace,
+                               const DataType * __restrict__ grad_wrt_output,
+                               int grad_wrt_output_ldim,
+                               cudaStream_t stream);
 /** Compute the gradient w.r.t. the input.
  * Data is assumed to be on the GPU.
  */
@@ -249,7 +257,19 @@ class logsoftmax_layer : public activation_layer {
     const El::Int local_height = local_output.Height();
     const El::Int local_width = local_output.Width();
 
-    // Compute gradient w.r.t. input
+    // Compute column sums for gradient w.r.t. output.
+    #pragma omp parallel for
+    for (El::Int col = 0; col < local_width; ++col) {
+      DataType sum = 0;
+      for (El::Int row = 0; row < local_height; ++row) {
+        const DataType dy = local_gradient_wrt_output(row, col);
+        sum += dy;
+      }
+      local_workspace(0, col) = sum;
+    }
+    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+
+    // Compute gradient w.r.t. input.
     #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
       const DataType sum = local_workspace(0, col);

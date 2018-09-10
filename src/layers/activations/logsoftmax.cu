@@ -91,6 +91,24 @@ __global__ void sub_by_col_sums_and_shift_kernel(
   }
 }
 
+__global__ void out_grad_col_sum_kernel(
+  int height, int width,
+  lbann::DataType * __restrict__ workspace,
+  const lbann::DataType * __restrict__ grad_wrt_output,
+  int grad_wrt_output_ldim) {
+  const int tid = threadIdx.x + blockIdx.x*blockDim.x;
+  const int num_threads = blockDim.x * gridDim.x;
+  for (int col = tid; col < width; col += num_threads) {
+    const int grad_wrt_output_offset = col * grad_wrt_output_ldim;
+    lbann::DataType sum = lbann::DataType(0);
+    for (int row = 0; row < height; ++row) {
+        const lbann::DataType dy = grad_wrt_output[row + grad_wrt_output_offset];
+        sum += dy;
+    }
+    workspace[col] = sum;
+  }
+}
+
 __global__ void grad_wrt_input_kernel(
   int height, int width,
   const lbann::DataType * __restrict__ output,
@@ -167,6 +185,20 @@ void sub_by_col_sums_and_shift(int height, int width,
   const int grid_dim = (width + block_dim - 1) / block_dim;
   sub_by_col_sums_and_shift_kernel<<<grid_dim, block_dim, 0, stream>>>(
     height, width, input, input_ldim, output, output_ldim, workspace);
+}
+
+void out_grad_col_sum(int height, int width,
+                               DataType * __restrict__ workspace,
+                               const DataType * __restrict__ grad_wrt_output,
+                               int grad_wrt_output_ldim,
+                               cudaStream_t stream) {
+  if (width <= 0 || height <= 0) {
+    return;
+  }
+  const int block_dim = 256;
+  const int grid_dim = (width + block_dim - 1) / block_dim;
+  out_grad_col_sum_kernel<<<grid_dim, block_dim, 0, stream>>>(
+    height, width, workspace, grad_wrt_output, grad_wrt_output_ldim);
 }
 
 void grad_wrt_input(int height, int width,

@@ -117,7 +117,7 @@ void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute(
   // Compute the global sums for each column.
   m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(), El::mpi::SUM);
 
-  // Subtract from activations the column sums.
+  // Subtract from activations the log column sums.
   // Shift by the max column entry for the log-sum-exp trick.
   logsoftmax_cuda::sub_by_col_sums_and_shift(
     local_height, local_width, 
@@ -139,6 +139,13 @@ void logsoftmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute(
 
   const El::Int local_height = local_output.Height();
   const El::Int local_width = local_output.Width();
+
+  // Compute column sums for gradient w.r.t. output.
+  logsoftmax_cuda::out_grad_col_sum(
+    local_height, local_width,
+    local_workspace.Buffer(),
+    local_grad_wrt_output.LockedBuffer(), local_grad_wrt_output.LDim(),
+    El::GPUManager::Stream());
 
   // Compute gradient w.r.t. input.
   logsoftmax_cuda::grad_wrt_input(
