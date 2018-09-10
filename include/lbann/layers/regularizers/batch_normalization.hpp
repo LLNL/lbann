@@ -110,17 +110,17 @@ class batch_normalization : public regularizer_layer {
   bool m_use_global_stats;
 
   /** Current minibatch means. */
-  AbsDistMat *m_mean;
+  std::unique_ptr<AbsDistMat> m_mean;
   /** Current minibatch standard deviations. */
-  AbsDistMat *m_var;
+  std::unique_ptr<AbsDistMat> m_var;
   /** Gradient w.r.t. means. */
-  AbsDistMat *m_mean_gradient;
+  std::unique_ptr <AbsDistMat> m_mean_gradient;
   /** Gradient w.r.t. standard deviations. */
-  AbsDistMat *m_var_gradient;
+  std::unique_ptr<AbsDistMat> m_var_gradient;
   /** Gradient w.r.t. scaling terms. */
-  AbsDistMat *m_scale_gradient;
+  std::unique_ptr<AbsDistMat> m_scale_gradient;
   /** Gradient w.r.t. bias terms. */
-  AbsDistMat *m_bias_gradient;
+  std::unique_ptr<AbsDistMat> m_bias_gradient;
 
  public:
   /**
@@ -138,13 +138,7 @@ class batch_normalization : public regularizer_layer {
     : regularizer_layer(comm),
       m_decay(decay),
       m_epsilon(epsilon),
-      m_use_global_stats(use_global_stats),
-      m_mean(nullptr),
-      m_var(nullptr),
-      m_mean_gradient(nullptr),
-      m_var_gradient(nullptr),
-      m_scale_gradient(nullptr),
-      m_bias_gradient(nullptr) {
+      m_use_global_stats(use_global_stats) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
 #ifdef LBANN_DETERMINISTIC
@@ -153,26 +147,21 @@ class batch_normalization : public regularizer_layer {
 #endif
   }
 
-  batch_normalization(const batch_normalization& other) :
-    regularizer_layer(other),
-    m_decay(other.m_decay),
-    m_epsilon(other.m_epsilon),
-    m_use_global_stats(other.m_use_global_stats),
-    m_mean(other.m_mean),
-    m_var(other.m_var),
-    m_mean_gradient(other.m_mean_gradient),
-    m_var_gradient(other.m_var_gradient),
-    m_scale_gradient(other.m_scale_gradient),
-    m_bias_gradient(other.m_bias_gradient) {
-
-    // Deep copy matrices
-    if (m_mean != nullptr)           { m_mean = m_mean->Copy(); }
-    if (m_var != nullptr)            { m_var = m_var->Copy(); }
-    if (m_mean_gradient != nullptr)  { m_mean_gradient = m_mean_gradient->Copy(); }
-    if (m_var_gradient != nullptr)   { m_var_gradient = m_var_gradient->Copy(); }
-    if (m_scale_gradient != nullptr) { m_scale_gradient = m_scale_gradient->Copy(); }
-    if (m_bias_gradient != nullptr)  { m_bias_gradient = m_bias_gradient->Copy(); }
-  }
+  batch_normalization(const batch_normalization& other)
+    : regularizer_layer(other),
+      m_decay(other.m_decay),
+      m_epsilon(other.m_epsilon),
+      m_use_global_stats(other.m_use_global_stats),
+      m_mean(other.m_mean ? other.m_mean->Copy() : nullptr),
+      m_var(other.m_var ? other.m_var->Copy() : nullptr),
+      m_mean_gradient(other.m_mean_gradient ?
+                      other.m_mean_gradient->Copy() : nullptr),
+      m_var_gradient(other.m_var_gradient ?
+                     other.m_var_gradient->Copy() : nullptr),
+      m_scale_gradient(other.m_scale_gradient ?
+                       other.m_scale_gradient->Copy() : nullptr),
+      m_bias_gradient(other.m_bias_gradient ?
+                      other.m_bias_gradient->Copy() : nullptr) {}
 
   batch_normalization& operator=(const batch_normalization& other) {
     regularizer_layer::operator=(other);
@@ -180,22 +169,17 @@ class batch_normalization : public regularizer_layer {
     m_epsilon = other.m_epsilon;
     m_use_global_stats = other.m_use_global_stats;
 
-    // Deallocate matrices
-    deallocate_matrices();
-
     // Deep copy matrices
-    m_mean = other.m_mean;
-    m_var = other.m_var;
-    m_mean_gradient = other.m_mean_gradient;
-    m_var_gradient = other.m_var_gradient;
-    m_scale_gradient = other.m_scale_gradient;
-    m_bias_gradient = other.m_bias_gradient;
-    if (m_mean != nullptr)           { m_mean = m_mean->Copy(); }
-    if (m_var != nullptr)            { m_var = m_var->Copy(); }
-    if (m_mean_gradient != nullptr)  { m_mean_gradient = m_mean_gradient->Copy(); }
-    if (m_var_gradient != nullptr)   { m_var_gradient = m_var_gradient->Copy(); }
-    if (m_scale_gradient != nullptr) { m_scale_gradient = m_scale_gradient->Copy(); }
-    if (m_bias_gradient != nullptr)  { m_bias_gradient = m_bias_gradient->Copy(); }
+    m_mean.reset(other.m_mean ? other.m_mean->Copy() : nullptr);
+    m_var.reset(other.m_var ? other.m_var->Copy() : nullptr);
+    m_mean_gradient.reset(other.m_mean_gradient ?
+                          other.m_mean_gradient->Copy() : nullptr);
+    m_var_gradient.reset(other.m_var_gradient ?
+                         other.m_var_gradient->Copy() : nullptr);
+    m_scale_gradient.reset(other.m_scale_gradient ?
+                           other.m_scale_gradient->Copy() : nullptr);
+    m_bias_gradient.reset(other.m_bias_gradient ?
+                          other.m_bias_gradient->Copy() : nullptr);
 
     return *this;
   }
@@ -210,23 +194,18 @@ class batch_normalization : public regularizer_layer {
     return ss.str();
   }
 
-  virtual ~batch_normalization() override {
-    deallocate_matrices();
-  }
-
   batch_normalization* copy() const override { return new batch_normalization(*this); }
 
   std::string get_type() const override { return "batch normalization"; }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
-    deallocate_matrices();
-    m_mean = new StarMat<Dev>(grid);
-    m_var = new StarMat<Dev>(grid);
-    m_mean_gradient = new StarMat<Dev>(grid);
-    m_var_gradient = new StarMat<Dev>(grid);
-    m_scale_gradient = new StarMat<Dev>(grid);
-    m_bias_gradient = new StarMat<Dev>(grid);
+    m_mean.reset(new StarMat<Dev>(grid));
+    m_var.reset(new StarMat<Dev>(grid));
+    m_mean_gradient.reset(new StarMat<Dev>(grid));
+    m_var_gradient.reset(new StarMat<Dev>(grid));
+    m_scale_gradient.reset(new StarMat<Dev>(grid));
+    m_bias_gradient.reset(new StarMat<Dev>(grid));
   }
 
   data_layout get_data_layout() const override { return T_layout; }
@@ -736,23 +715,6 @@ class batch_normalization : public regularizer_layer {
       }
     }
 
-  }
-
- private:
-
-  void deallocate_matrices() {
-    if (m_mean != nullptr)           delete m_mean;
-    if (m_var != nullptr)            delete m_var;
-    if (m_mean_gradient != nullptr)  delete m_mean_gradient;
-    if (m_var_gradient != nullptr)   delete m_var_gradient;
-    if (m_scale_gradient != nullptr) delete m_scale_gradient;
-    if (m_bias_gradient != nullptr)  delete m_bias_gradient;
-    m_mean = nullptr;
-    m_var = nullptr;
-    m_mean_gradient = nullptr;
-    m_var_gradient = nullptr;
-    m_scale_gradient = nullptr;
-    m_bias_gradient = nullptr;
   }
 
 };
