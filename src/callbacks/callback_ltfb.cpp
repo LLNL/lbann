@@ -27,6 +27,7 @@
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
+#include "lbann/optimizers/adam.hpp"
 #include "lbann/utils/random.hpp"
 #include <typeinfo>
 #include <typeindex>
@@ -94,6 +95,18 @@ void exchange_weights(lbann_comm* comm,
       comm->sendrecv(local_matrix.LockedBuffer(), size, partner,
                      remote_matrix->Buffer(), size, partner);
       model_weights[i]->set_values(*remote_matrix);
+
+      // Hack to communicate Adam state
+      /// @todo Come up with something more general
+      auto* local_opt = dynamic_cast<adam*>(local_weights[i]->get_optimizer());
+      auto* remote_opt = dynamic_cast<adam*>(model_weights[i]->get_optimizer());
+      if (local_opt != nullptr && remote_opt != nullptr) {
+        comm->sendrecv(local_opt->m_moment1->LockedBuffer(), size, partner,
+                       remote_opt->m_moment1->Buffer(), size, partner);
+        comm->sendrecv(local_opt->m_moment2->LockedBuffer(), size, partner,
+                       remote_opt->m_moment2->Buffer(), size, partner);
+      }
+      
     }
     delete remote_matrix;
   }

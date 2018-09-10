@@ -82,6 +82,8 @@ class adam : public optimizer {
   DataType m_current_beta1;
   /** beta2 ^ iteration. */
   DataType m_current_beta2;
+
+public: /// @todo Making these matrices public is morally dubious
   /** First moment estimates. */
   AbsDistMat *m_moment1;
   /** Second moment estimates. */
