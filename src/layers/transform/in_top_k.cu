@@ -188,6 +188,7 @@ void fp_gpu(lbann_comm& comm,
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
+  auto&& event = El::GPUManager::Event();
   cuda::thrust::allocator<> alloc(stream);
   using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
   using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
@@ -240,7 +241,7 @@ void fp_gpu(lbann_comm& comm,
                     top_entries.size() * sizeof(entry),
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),
                     top_entries.size() * sizeof(entry),
-                    col_comm, El::SyncInfo<El::Device::GPU>{stream, nullptr});
+                    col_comm, El::SyncInfo<El::Device::GPU>{stream, event});
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_entries, local_width, k, global_top_entries_cols.data().get());
     thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
