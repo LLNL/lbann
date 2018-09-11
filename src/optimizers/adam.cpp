@@ -26,6 +26,7 @@
 
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
@@ -104,6 +105,32 @@ std::string adam::get_description() const {
 void adam::setup(weights& w) {
   optimizer::setup(w);
 
+  // Randomly perturb hyperparameters
+  // Note: Gaussian noise is added in log space
+  /// @todo Implement this more cleanly, without hardcoding
+  std::vector<DataType> params(3);
+  if (m_comm->am_model_master()) {
+    constexpr DataType one = DataType(1);
+    auto& gen = get_generator();
+    std::normal_distribution<DataType> dist(DataType(0), one);
+    params[0] = std::log(get_learning_rate());
+    params[0] += dist(gen);
+    params[0] = std::exp(params[0]);
+    params[0] = std::max(params[0], m_eps);
+    params[1] = std::log(one - m_beta1);
+    params[1] += dist(gen);
+    params[1] = one - std::exp(params[1]);
+    params[1] = std::max(params[1], m_eps);
+    params[2] = std::log(one - m_beta2);
+    params[2] += dist(gen);
+    params[2] = one - std::exp(params[2]);
+    params[2] = std::max(params[2], m_eps);
+  }
+  m_comm->model_broadcast(0, params.data(), 3);
+  set_learning_rate(params[0]);
+  m_beta1 = params[1];
+  m_beta2 = params[2];
+  
   // Allocate matrices
   const int height = m_gradient->Height();
   const int width = m_gradient->Width();

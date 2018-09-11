@@ -70,12 +70,13 @@ class adam : public optimizer {
   void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
- private:
-
+public: /// @todo Making these parameters public is morally dubious
   /** Update factor for first moment estimate. */
   DataType m_beta1;
   /** Update factor for second moment estimate. */
   DataType m_beta2;
+
+private:
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** beta1 ^ iteration. */
