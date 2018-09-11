@@ -640,6 +640,22 @@ else
 	OPENBLAS_ARCH=
 fi
 
+if [ "${WITH_CONDUIT}" = "ON" ] ; then
+echo $COMPILER_VERSION
+  if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
+      echo "CONDUIT_DIR not available."
+      if [ "${CLUSTER}" = "sierra" ]; then
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
+      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
+          export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
+      else
+          # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-dev
+      fi
+      echo "Set to the default CONDUIT_DIR="$CONDUIT_DIR
+  fi
+fi
+exit
 ################################################################
 # Display parameters
 ################################################################
