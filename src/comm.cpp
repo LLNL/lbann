@@ -54,8 +54,8 @@ namespace lbann {
 #define checkMPI(status) status
 #endif // #ifdef LBANN_DEBUG
 
-lbann_comm::lbann_comm(int ppm, const El::mpi::Comm world) :
-  world_comm(world), grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
+lbann_comm::lbann_comm(int ppm, El::mpi::Comm world) :
+  world_comm(std::move(world)), grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
   num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 #ifdef LBANN_HAS_ALUMINUM
@@ -213,13 +213,13 @@ void lbann_comm::allreduce(AbsMat& m,
 }
 
 void lbann_comm::allreduce(AbsDistMat& m,
-                           const El::mpi::Comm c,
+                           El::mpi::Comm c,
                            El::mpi::Op op) {
-  allreduce(m.Matrix(), c, op);
+  allreduce(m.Matrix(), std::move(c), op);
 }
 
 void lbann_comm::nb_allreduce(AbsMat& m,
-                              const El::mpi::Comm c,
+                              El::mpi::Comm c,
                               Al::request& req,
                               El::mpi::Op op) {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
@@ -291,15 +291,15 @@ void lbann_comm::nb_allreduce(AbsMat& m,
 #endif  // AL_HAS_MPI_CUDA
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 #else
-  allreduce(m, c, op);
+  allreduce(m, std::move(c), op);
 #endif // LBANN_HAS_ALUMINUM
 }
 
 void lbann_comm::nb_allreduce(AbsDistMat& m,
-                              const El::mpi::Comm c,
+                              El::mpi::Comm c,
                               Al::request& req,
                               El::mpi::Op op) {
-  nb_allreduce(m.Matrix(), c, req, op);
+  nb_allreduce(m.Matrix(), std::move(c), req, op);
 }
 
 void lbann_comm::wait(Al::request& req) {
@@ -351,9 +351,9 @@ void lbann_comm::intermodel_broadcast_matrix(AbsDistMat& mat, int root) {
 }
 
 template<>
-void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm c) {
+void lbann_comm::broadcast<std::string>(const int root, std::string& str, El::mpi::Comm c) {
   std::vector<char> data(str.begin(), str.end());
-  broadcast(root, data, c);
+  broadcast(root, data, std::move(c));
   str.assign(data.begin(), data.end());
 }
 
