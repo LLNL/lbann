@@ -210,8 +210,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
       p.open_checkpoint(epochdir);
     }
     // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-    comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir),
-                          El::SyncInfo<El::Device::CPU>{});
+    comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->save_to_checkpoint_shared(p);
     // close our checkpoint
     p.close_checkpoint();
@@ -330,8 +329,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
       p.open_restart(epochdir);
     }
     // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
-    comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir),
-                          El::SyncInfo<El::Device::CPU>{});
+    comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->load_from_checkpoint_shared(p);
     if(comm->am_model_master())
       p.close_restart();

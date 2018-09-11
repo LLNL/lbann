@@ -167,8 +167,7 @@ void data_store_pilot2_molecular::build_nabor_map() {
     work.resize(sz);
     neighbors_8 = work.data();
   }
-  m_comm->world_broadcast<double>(0, neighbors_8, sz,
-                                  El::SyncInfo<El::Device::CPU>{});
+  m_comm->world_broadcast<double>(0, neighbors_8, sz);
 
   //fill in the nabors map
   for (auto data_id : (*m_shuffled_indices)) {

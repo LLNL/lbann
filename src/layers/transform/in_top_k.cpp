@@ -107,7 +107,7 @@ void fp_cpu(lbann_comm& comm,
                     top_entries.size() * sizeof(entry),
                     reinterpret_cast<El::byte*>(global_top_entries.data()),
                     top_entries.size() * sizeof(entry),
-                    col_comm, El::SyncInfo<El::Device::CPU>{});
+                    col_comm);
 #pragma omp parallel for
     for (El::Int col = 0; col < local_width; ++col) {
       std::vector<entry> col_entries(col_comm_size * k);

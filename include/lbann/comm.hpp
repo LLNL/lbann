@@ -229,23 +229,44 @@ class lbann_comm {
    * Broadcast a buffer over an arbitrary communicator assuming that
    * the buffer space is already allocated.
    */
+
+  // Default to cpu memory
+  template <typename T>
+  void broadcast(const int root, T* data, const int count, El::mpi::Comm c) {
+      broadcast(root, data, count, std::move(c), El::SyncInfo<El::Device::CPU>{});
+  }
+
   template < typename T, El::Device D, bool S = is_instantiated_El_mpi_type<T>::value >
-  void broadcast(const int root, T* data, const int count, const El::mpi::Comm c,
+  void broadcast(const int root, T* data, const int count, El::mpi::Comm c,
                  El::SyncInfo<D> const& syncInfo);
 
   /// World broadcast of a buffer.
+  template <typename T>
+  void world_broadcast(const int root, T* data, const int count) {
+    world_broadcast(root, data, count, El::SyncInfo<El::Device::CPU>{});
+  }
+
   template <typename T, El::Device D>
   void world_broadcast(const int root, T* data, const int count,
                        El::SyncInfo<D> const& syncInfo) {
     broadcast(root, data, count, get_world_comm(), syncInfo);
   }
   /// Inter-model broadcast of a buffer.
+  template <typename T>
+  void intermodel_broadcast(const int root, T* data, const int count) {
+    intermodel_broadcast(root, data, count, El::SyncInfo<El::Device::CPU>{});
+  }
   template <typename T, El::Device D>
   void intermodel_broadcast(const int root, T* data, const int count,
                             El::SyncInfo<D> const& syncInfo) {
     broadcast(root, data, count, get_intermodel_comm(), syncInfo);
   }
   /// Within-model broadcast of a buffer.
+  template <typename T>
+  void model_broadcast(const int root, T* data, const int count) {
+    model_broadcast(root, data, count, El::SyncInfo<El::Device::CPU>{});
+  }
+
   template <typename T, El::Device D>
   void model_broadcast(const int root, T* data, const int count,
                        El::SyncInfo<D> const& syncInfo) {
@@ -308,10 +329,15 @@ class lbann_comm {
   }
 
   /** Allgather over an arbitrary communicator */
+  template <typename T>
+  void all_gather(const T* src, int src_count, T* rcv, int rcv_count, El::mpi::Comm c) {
+    all_gather(src, src_count, rcv, rcv_count, std::move(c),
+                   El::SyncInfo<El::Device::CPU>{});
+  }
   template <typename T, El::Device D>
   void all_gather(const T* src, int src_count, T* rcv, int rcv_count, El::mpi::Comm c,
                   El::SyncInfo<D> const& syncInfo) {
-    El::mpi::AllGather<T>(src, src_count, rcv, rcv_count, c, syncInfo);
+    El::mpi::AllGather<T>(src, src_count, rcv, rcv_count, std::move(c), syncInfo);
   }
 
   /**
@@ -505,9 +531,19 @@ class lbann_comm {
 
   /** Scalar-array reduce (for non-root processes). */
   // Op is "SUM"
+  template <typename T>
+  void reduce(T *snd, int count, int root, El::mpi::Comm c) {
+    reduce(snd, count, root, std::move(c), El::mpi::SUM,
+           El::SyncInfo<El::Device::CPU>{});
+  }
   template <typename T, El::Device D>
   void reduce(T *snd, int count, int root, El::mpi::Comm c, El::SyncInfo<D> const& syncInfo) {
     reduce(snd, count, root, std::move(c), El::mpi::SUM, syncInfo);
+  }
+
+  template <typename T>
+  void reduce(T *snd, int count, int root, El::mpi::Comm c, El::mpi::Op op) {
+    reduce(snd, count, root, std::move(c), op, El::SyncInfo<El::Device::CPU>{});
   }
   template <typename T, El::Device D>
   void reduce(T *snd, int count, int root, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
@@ -518,6 +554,15 @@ class lbann_comm {
   template <typename T, El::Device D>
   void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::SyncInfo<D> const& syncInfo) {
     reduce(snd, count, rcv, std::move(c), El::mpi::SUM, syncInfo);
+  }
+  template <typename T>
+  void reduce(T *snd, int count, T *rcv, El::mpi::Comm c) {
+    reduce(snd, count, rcv, std::move(c), El::mpi::SUM, El::SyncInfo<El::Device::CPU>{});
+  }
+
+  template <typename T>
+  void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op) {
+      reduce(snd, count, rcv, std::move(c), op, El::SyncInfo<El::Device::CPU>{});
   }
   template <typename T, El::Device D>
   void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
@@ -1197,7 +1242,6 @@ void lbann_comm::broadcast_custom(int root, T& val, const El::mpi::Comm c) const
                               El::SyncInfo<El::Device::CPU>{});
 }
 
-// FIXME (trb)
 template <typename T, El::Device D, bool S>
 void lbann_comm::broadcast(const int root, T* data, const int count, El::mpi::Comm c, El::SyncInfo<D> const& syncInfo) {
   const int size = static_cast<int>(S? count : sizeof(T)*count);

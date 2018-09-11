@@ -809,8 +809,7 @@ void data_store_image::read_file_sizes() {
     }
   }
 
-  m_comm->broadcast(0, s2.data(), s2.size(), m_comm->get_model_comm(),
-                    El::SyncInfo<El::Device::CPU>{});
+  m_comm->broadcast(0, s2.data(), s2.size(), m_comm->get_model_comm());
   for (size_t j=0; j<s2.size(); j+=2) {
     m_file_sizes[s2[j]] = s2[j+1];
   }
