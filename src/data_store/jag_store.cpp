@@ -105,7 +105,7 @@ void jag_store::setup(
       get_default_keys(test_file, test_sample_id, "inputs", master);
     }
     if (m_load_scalars) {
-      get_default_keys(test_file, test_sample_id, "scalars", master);
+      get_default_keys(test_file, test_sample_id, "outputs/scalars", master);
     }
   }
 
@@ -142,7 +142,7 @@ void jag_store::setup(
           m_data_inputs[idx].push_back( node.to_float64() );
         }
         for (auto scalar_name : m_scalars_to_load) {
-          const std::string key = "/" + t + "/inputs/" + scalar_name;
+          const std::string key = "/" + t + "/outputs/scalars/" + scalar_name;
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
           //this is fragile; will break if input_t changes
           m_data_inputs[idx].push_back( node.to_float64() );
@@ -191,6 +191,7 @@ void jag_store::get_default_keys(std::string &filename, std::string &sample_id, 
   conduit::Node n2;
 
   const std::string key = "/" + sample_id + "/" + key1;
+
   std::vector<std::string> children;
   conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, key, children);
   for (auto t : children) {

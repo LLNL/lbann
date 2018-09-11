@@ -48,6 +48,11 @@ message Reader {
   repeated int32 independent = 97;
   repeated int32 dependent = 98;
   int32 max_files_to_load = 1000;
+
+  // for jag_conduit_hdf5
+  bool use_scalars = 1001;
+  bool use_images = 1002;
+  bool use_inputs = 1003;
   //------------------  end of only for jag_conduit  -----------------------
 
   int32 num_labels = 99; //for imagenet and synthetic
