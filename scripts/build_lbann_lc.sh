@@ -655,7 +655,6 @@ echo $COMPILER_VERSION
       echo "Set to the default CONDUIT_DIR="$CONDUIT_DIR
   fi
 fi
-exit
 ################################################################
 # Display parameters
 ################################################################
