@@ -93,14 +93,69 @@ HaloExchangeMethod get_halo_exchange_method() {
   }
 }
 
+namespace {
+int get_number_of_local_ranks(MPI_Comm comm) {
+  MPI_Comm local_comm;
+  MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0,
+                      MPI_INFO_NULL, &local_comm);
+  int local_comm_size;
+  MPI_Comm_size(local_comm, &local_comm_size);
+  MPI_Comm_free(&local_comm);
+  return local_comm_size;
+}
+
+// P2P is only supported intra-node shuffling.
+bool is_p2p_shuffle_feasible(const TensorDev &tensor) {
+  const auto &dist = tensor.get_distribution();
+  auto sample_proc_groups = dist.get_locale_shape().back();
+  auto sample_size = tensor.get_shape().back();
+  // Condition: The number of samples must be divisible by the size of
+  // sample process groups
+  if (sample_size % sample_proc_groups != 0) {
+    return false;
+  }
+  // Condition: The number of local processes must be greater than or
+  // equal to the number of processes of the spatial domain
+  auto local_comm_size = get_number_of_local_ranks(
+      tensor.get_locale().get_comm());
+  auto spatial_proc_size = 1;
+  for (int i = 0; i < TensorDev::num_spatial_dims; ++i) {
+    spatial_proc_size *= dist.get_locale_shape()[i];
+  }
+  if (local_comm_size < spatial_proc_size) {
+    return false;
+  }
+  // Condition: The number of local processes must be divisible by the
+  // number of processes for the spatial domain
+  if (local_comm_size % spatial_proc_size != 0) {
+    return false;
+  }
+  return true;
+}
+} // namespace
+
 TensorShuffler *get_tensor_shuffler(const TensorDev &src,
                                     const TensorDev &dst) {
+  // Use the P2P shuffler if possible. Otherwise, the default
+  // MPI-based shuffler is returned.
   char *env = std::getenv("DISTCONV_TENSOR_SHUFFLER");
   if (env && std::string(env) == "P2P") {
-    return new TensorShufflerP2P(src, dst, get_p2p());
-  } else {
-    return new TensorShuffler(src, dst);
+    bool src_feasible = is_p2p_shuffle_feasible(src);
+    bool dst_feasible = is_p2p_shuffle_feasible(dst);
+    if (!src_feasible) {
+      MPIRootPrintStreamInfo()
+          << "Unable to use P2P shuffler for source tensor\n";
+    }
+    if (!dst_feasible) {
+      MPIRootPrintStreamInfo()
+          << "Unable to use P2P shuffler for destination tensor\n";
+    }
+    if (src_feasible && dst_feasible) {
+      return new TensorShufflerP2P(src, dst, get_p2p());
+    }
   }
+
+  return new TensorShuffler(src, dst);
 }
 
 } // namespace dc
