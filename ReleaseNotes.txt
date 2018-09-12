@@ -6,7 +6,7 @@ Support for new network structures:
   - Variational Autoencoders
   - GAN
   - CycleGAN
-  - Combined Autoenocders with CycleGAN
+  - Combined Autoencoders with CycleGAN
   - Deep Recurrent Attention Model (DRAM), Ba et al. (2015)
   - Video Recurrent Attention Model (VRAM)
 
@@ -23,13 +23,13 @@ Performance optimizations:
   - Use Pinned memory for CPU activations matrices
   - Custom GPU ReLU
   - Non-blocking metrics calculations
-  - Refactored weight matrices and weightx initialization
+  - Refactored weight matrices and weight initialization
   - Optimized GPU memory allocation
   - Slice and concatenation layer emit matrix views if possible
   - GPU acceleration for evaluation layers
-  - Used more fine-grained asynchrnonous calls when using Aluminum Library
+  - Used more fine-grained asynchronous calls when using Aluminum Library
     - Minimized GPU stream synchronization events per call
-  - Improved / minimized synchronization eventsx when using a single GPU
+  - Improved / minimized synchronization events when using a single GPU
   - Fixed GPU workspace size
   - GPU implementation of Adagrad optimizer
   - GPU model-parallel softmax
@@ -49,18 +49,18 @@ Internals Features:
   - Model automatically inserts evaluation layers where needed
   - Copy Layer activations between models
   - Annotated GPU profiling output with training phases
-  - Fixed interation of Comm object and Grid objects when using multiple models
+  - Fixed initialization of Comm object and Grid objects when using multiple models
   - General code cleanup, refactoring, and various bug fixes.
   - All layers overwrite error signal matrices
-  - NCCL backend is now inherited from Hydrogen (not directly imported)
-  - MPI calls are routed throught the LBANN Comm object into Hydrogen or Aluminum
+  - NCCL backend is now implemented via Aluminum Library
+  - MPI calls are routed through the LBANN Comm object into Hydrogen or Aluminum
   - Provide runtime statistics summary from every rank
-  - Reworked LBANN to use Hydrogen to manages GPU memory
+  - Reworked LBANN to use Hydrogen to manage GPU memory
   - GPU allocations now via CUB memory pool
   - Fixed Spack build interaction with Hydrogen Library
 
 I/O & data readers:
-  - Support for Conduit objects with HDF5 formating
+  - Support for Conduit objects with HDF5 formatting
   - In-memory and locally offloaded data store
     - Data Store can hold the entire training set in memory (or node-local storage)
     - Data store will shuffle data samples between epochs and present samples to input layer
@@ -70,7 +70,7 @@ I/O & data readers:
     sample and label / response if necessary.
     - Target layer is being deprecated
   - Updated image data reader to use cv::imdecode to accelerate image load times
-  - Allow users to specify a array of data sources for the independent/dependent
+  - Allow users to specify an array of data sources for the independent/dependent
     variables via prototext
 
 ============================== Release Notes: v0.94 ==============================
@@ -124,7 +124,7 @@ Performance optimizations:
   - L2 normalization
   - Adaptive Quantization (inter-model)
 
-Model portablility & usability:
+Model portability & usability:
   - Portable checkpoints / recovery
   - Distributed checkpoint / recovery
   - Network visualization
@@ -155,7 +155,7 @@ and asynchronous communication operators. It uses MPI, MPI w/GPUdirect, or NCCL
 as back-end libraries. Aluminum enables us to effectively use non-blocking
 all-reduces during backprop/optimization
 
-Addtionally, we have added support for an online, distributed data store.  When
+Additionally, we have added support for an online, distributed data store.  When
 enabled, LBANN is able to ingest all of the training data set in a distributed
 method across all ranks.  Each data store is then able to serve it's portion of
 a mini-batch, dynamically moving data to the necessary ranks in the model (based
@@ -174,7 +174,7 @@ Key highlights include:
   readers is nearly fully functional.
 - Code now adheres to internal coding style as outlined in
   README_coding_style.txt
-- Dead-code has been eliminated and layer file hierachy has been
+- Dead-code has been eliminated and layer file hierarchy has been
   cleaned up.
 
 ============================== Release Notes: v0.92 ==============================
@@ -186,14 +186,14 @@ New features include (but are not limited to):
     -- VGG
     -- CIFAR-10
   - Added a suite of regularizers, objective functions, and metrics, including:
-    -- Batch normaalization
+    -- Batch normalization
     -- Drop-out
     -- L2
   - Dramatically improves the performance of inter-model communication
   - Added suite of image prepossessing routines
 
 ============================== Release Notes: v0.91 ==============================
-Incorporates a number of changes throught the LBANN code base.  In
+Incorporates a number of changes through the LBANN code base.  In
 particular there is a new build system that tries to have LBANN
 download all of the dependencies into its build tree, and compile them
 locally.  Additional improvements include optimizations in the data
