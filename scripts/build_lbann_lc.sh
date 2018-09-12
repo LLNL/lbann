@@ -568,7 +568,7 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     ELEMENTAL_USE_CUBLAS=OFF
 	case $CLUSTER in
 		ray|sierra)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
 			;;
 		*)
 			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
