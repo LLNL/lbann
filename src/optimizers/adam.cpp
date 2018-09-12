@@ -112,7 +112,7 @@ void adam::setup(weights& w) {
   if (m_comm->am_model_master()) {
     constexpr DataType one = DataType(1);
     auto& gen = get_generator();
-    std::normal_distribution<DataType> dist(DataType(0), one);
+    std::normal_distribution<DataType> dist(DataType(0), one / 4);
     params[0] = std::log(get_learning_rate());
     params[0] += dist(gen);
     params[0] = std::exp(params[0]);

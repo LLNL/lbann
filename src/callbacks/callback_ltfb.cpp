@@ -28,6 +28,7 @@
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/metrics/categorical_accuracy.hpp"
 #include "lbann/optimizers/adam.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/utils/random.hpp"
 #include <typeinfo>
 #include <typeindex>
@@ -121,6 +122,63 @@ void exchange_weights(lbann_comm* comm,
   }
 }
 
+template <data_layout Layout, El::Device Dev>
+void get_dropout_keep_prob(Layer* l, EvalType& keep_prob) {
+  auto* d = dynamic_cast<dropout<Layout, Dev>*>(l);
+  if (d != nullptr) { keep_prob = d->m_keep_prob; }
+}
+
+template <data_layout Layout, El::Device Dev>
+void set_dropout_keep_prob(Layer* l, EvalType keep_prob) {
+  auto* d = dynamic_cast<dropout<Layout, Dev>*>(l);
+  if (d != nullptr) {
+    d->m_keep_prob = keep_prob;
+#ifdef LBANN_HAS_GPU
+    if (Dev == El::Device::GPU) { d->setup_dropout_cudnn_desc(); }
+#endif // LBANN_HAS_GPU
+  }
+}
+  
+void exchange_dropout(lbann_comm* comm,
+                      const std::vector<Layer*>& layers,
+                      std::vector<EvalType>& remote_keep_probs,
+                      int partner) {
+  const auto& num_layers = layers.size();
+  std::vector<EvalType> local_keep_probs(num_layers);
+  for (size_t i = 0; i < num_layers; ++i) {
+    get_dropout_keep_prob<data_layout::MODEL_PARALLEL, El::Device::CPU>(layers[i],
+                                                                        local_keep_probs[i]);
+    get_dropout_keep_prob<data_layout::DATA_PARALLEL, El::Device::CPU>(layers[i],
+                                                                       local_keep_probs[i]);
+#ifdef LBANN_HAS_GPU
+    get_dropout_keep_prob<data_layout::MODEL_PARALLEL, El::Device::GPU>(layers[i],
+                                                                        local_keep_probs[i]);
+    get_dropout_keep_prob<data_layout::DATA_PARALLEL, El::Device::GPU>(layers[i],
+                                                                       local_keep_probs[i]);
+#endif // LBANN_HAS_GPU
+  }
+  remote_keep_probs.assign(num_layers, EvalType(0));
+  comm->sendrecv(local_keep_probs.data(), num_layers, partner,
+                 remote_keep_probs.data(), num_layers, partner);
+}
+
+void use_remote_dropout(lbann_comm* comm,
+                        std::vector<Layer*>& layers,
+                        const std::vector<EvalType>& remote_keep_probs,
+                        int partner) {
+  for (size_t i = 0; i < layers.size(); ++i) {
+    set_dropout_keep_prob<data_layout::MODEL_PARALLEL, El::Device::CPU>(layers[i],
+                                                                        remote_keep_probs[i]);
+    set_dropout_keep_prob<data_layout::DATA_PARALLEL, El::Device::CPU>(layers[i],
+                                                                       remote_keep_probs[i]);
+#ifdef LBANN_HAS_GPU
+    set_dropout_keep_prob<data_layout::MODEL_PARALLEL, El::Device::GPU>(layers[i],
+                                                                        remote_keep_probs[i]);
+    set_dropout_keep_prob<data_layout::DATA_PARALLEL, El::Device::GPU>(layers[i],
+                                                                       remote_keep_probs[i]);
+#endif // LBANN_HAS_GPU
+  }
+}
 
 /** Evaluate a model on tournament data and return evaluation metric value(s). */
 /** @todo: deal with multiple metric values, return a list of values, max, min, mean? */
@@ -234,6 +292,13 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   //GAN: only send weights specified in prototext (e.g., generator or discriminator)
   exchange_weights(m_comm, model_weights, m_local_weights,m_weights_tosend, remote_model);
 
+  // Exchange dropout parameters
+  // Note: Don't need to apply until needed since dropout is disabled
+  // for validation.
+  std::vector<EvalType> remote_keep_probs;
+  auto model_layers = m->get_layers(); /// @todo This hurts
+  exchange_dropout(m_comm, model_layers, remote_keep_probs, remote_model);
+
   //evaluate received model on tournament data
   const auto& remote_score = evaluate(m, m_eval_metrics);
 
@@ -251,6 +316,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
                 << "(" << remote_score << " score) "
                 << std::endl;
     }
+    use_remote_dropout(m_comm, model_layers, remote_keep_probs, remote_model);
   }
 
 }

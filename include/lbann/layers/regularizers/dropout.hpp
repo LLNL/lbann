@@ -29,6 +29,7 @@
 
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
@@ -129,6 +130,20 @@ protected:
     m_mask = std::unique_ptr<AbsDistMat>(get_activations().Copy());
   }
 
+  void setup_data() {
+    regularizer_layer::setup_data();
+    if (m_comm->am_model_master()) {
+      constexpr EvalType one = EvalType(1);
+      auto& gen = get_generator();
+      std::normal_distribution<EvalType> dist(EvalType(0), one / 4);
+      EvalType log1m_keep_prob = std::log(one - m_keep_prob);
+      log1m_keep_prob += dist(gen);
+      m_keep_prob = one - std::exp(log1m_keep_prob);
+      m_keep_prob = std::max(m_keep_prob, one / 16);
+    }
+    m_comm->model_broadcast(0, &m_keep_prob, 1);
+  }
+  
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
@@ -278,6 +293,7 @@ protected:
   }
 
 #ifdef LBANN_HAS_CUDNN
+public: /// @todo Making this function public is morally dubious
   /** Setup cuDNN dropout descriptor and RNG state.
    */
   void setup_dropout_cudnn_desc() {
@@ -305,8 +321,11 @@ protected:
   }
 #endif // LBANN_HAS_CUDNN
 
+public: /// @todo Making this parameter public is morally dubious
   /** Probability of keeping each unit. */
   EvalType m_keep_prob;
+
+protected:
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   std::unique_ptr<AbsDistMat> m_mask;
 
