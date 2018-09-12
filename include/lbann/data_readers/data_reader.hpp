@@ -372,7 +372,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_iteration_stride;
   }
   /// Return the base offset.
-  void set_base_offset(const int s) {
+  virtual void set_base_offset(const int s) {
     m_base_offset = s;
   }
   /// Return the base offset.
@@ -428,7 +428,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_num_parallel_readers;
   }
   /// Set the starting mini-batch index for the epoch
-  void set_reset_mini_batch_index(const int s) {
+  virtual void set_reset_mini_batch_index(const int s) {
     m_reset_mini_batch_index = s;
   }
   /// Return the starting mini-batch index for the epoch
@@ -444,7 +444,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_current_mini_batch_idx;
   }
   /// Set the current position based on the base and model offsets
-  virtual void set_initial_position() {
+  void set_initial_position() {
     m_current_pos = m_base_offset + m_model_offset;
     m_loaded_mini_batch_idx = m_reset_mini_batch_index;
     m_current_mini_batch_idx = 0;

@@ -119,8 +119,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   void load() override;
   /// True if the data reader's current position is valid.
   bool position_valid() const override;
-  /// Set the current position based on the base and model offsets
-  void set_initial_position() override;
+  /// Return the base offset.
+  void set_base_offset(const int s) override;
+  /// Set the starting mini-batch index for the epoch
+  void set_reset_mini_batch_index(const int s) override;
   /// Get the number of samples in this dataset.
   int get_num_data() const override;
   /// Select the appropriate subset of data based on settings.
@@ -252,6 +254,11 @@ class data_reader_jag_conduit : public generic_data_reader {
    * all the available samples.
    */
   void adjust_num_samples_to_use();
+  /**
+   * populate the m_shuffled_indices such that each data reader can
+   * access local data using local indices.
+   */
+  void populate_shuffled_indices(const size_t num_samples);
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size

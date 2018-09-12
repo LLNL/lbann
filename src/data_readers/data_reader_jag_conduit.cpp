@@ -109,9 +109,12 @@ bool data_reader_jag_conduit::position_valid() const {
   return ok;
 }
 
-void data_reader_jag_conduit::set_initial_position() {
-  set_base_offset(0);
-  generic_data_reader::set_initial_position();
+void data_reader_jag_conduit::set_base_offset(const int s) {
+  m_base_offset = 0;
+}
+
+void data_reader_jag_conduit::set_reset_mini_batch_index(const int s) {
+  m_reset_mini_batch_index = 0;
 }
 
 int data_reader_jag_conduit::get_num_data() const {
@@ -646,40 +649,38 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
 void data_reader_jag_conduit::adjust_num_samples_to_use() {
   const size_t num_valid_samples = get_num_valid_local_samples();
 
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  const size_t num_ranks = static_cast<size_t>(m_comm->get_procs_per_model());
+  const int my_rank = m_comm->get_rank_in_model();
+  // TODO use the same maximum number of parallel readers computed by io buffer
+  // Currently, the line below assumes that only the partitioned_io_buffer is used and
+  // that mini_batch_size is larger than or equals to the number of processes per model.
+  const int num_readers = m_comm->get_procs_per_model();
+  set_num_parallel_readers(num_readers);
 
   // Find the minimum of the number of valid samples locally available
   unsigned long long n_loc = static_cast<unsigned long long>(num_valid_samples);
   unsigned long long n_min = static_cast<unsigned long long>(num_valid_samples);
+
+  if (my_rank >= num_readers) {
+    n_loc = std::numeric_limits<unsigned long long>::max();
+    n_min = std::numeric_limits<unsigned long long>::max();
+  }
+
   m_comm->model_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
 
   // Find the first rank that has the minimum number of valid samples
-  int rank_tmp_1st = (n_loc == n_min)? static_cast<int>(my_rank) : static_cast<int>(num_ranks);
+  int rank_tmp_1st = (n_loc == n_min)? my_rank : num_readers;
   int rank_min_1st;
   m_comm->model_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
 
   // Determine the number of samples to use
-  m_global_num_samples_to_use = 0u;
-  m_local_num_samples_to_use = 0u;
-
-  m_global_num_samples_to_use = static_cast<size_t>(n_min * num_ranks + rank_min_1st);
+  m_global_num_samples_to_use = static_cast<size_t>(n_min * num_readers + rank_min_1st);
   if (m_global_num_samples_to_use == static_cast<size_t>(0u)) {
     _THROW_LBANN_EXCEPTION_(get_type(), "No valid sample found.");
   }
-  m_local_num_samples_to_use = n_min;
-  m_local_num_samples_to_use = (static_cast<int>(my_rank) < rank_min_1st)? (n_min+1) : n_min;
 
-
-  m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_global_num_samples_to_use);
-
-  int s = 0;
-  for(size_t n = 0u; n < m_shuffled_indices.size() ; n += num_ranks) {
-    for(size_t r = 0; (r < num_ranks) && (n+r < m_shuffled_indices.size()); ++r) {
-      m_shuffled_indices[n+r] = s;
-    }
-    ++s;
+  m_local_num_samples_to_use = (my_rank < rank_min_1st)? (n_min+1) : n_min;
+  if (my_rank >= num_readers) {
+    m_local_num_samples_to_use = 0u;
   }
 
 
@@ -690,15 +691,50 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
 
   if (is_master()) {
     const double yield = static_cast<double>(m_global_num_samples_to_use)/n_valid_global;
-    std::cout << "Data yield: " << yield << std::endl;
+    std::cout << "\nData yield: " << yield << std::endl;
   }
 
+  // TODO: in case of distributed io buffers, the number of data readers
+  // must be checked to see if there too many readers considering the
+  // number of samples
+  populate_shuffled_indices(m_global_num_samples_to_use);
+
 #if 0
-  std::cout << "rank " << my_rank << '/' << num_ranks
+  std::cout << "rank " << my_rank << '/' << num_readers
             << " has L" << m_local_num_samples_to_use << "/G" << m_global_num_samples_to_use
             << " samples to use out of total L" << n_valid_local << "/G" << n_valid_global
             << " valid samples." << std::endl;
+  std::cout << "num_parallel_readers_per_model: " << get_num_parallel_readers() << std::endl;
 #endif
+}
+
+void data_reader_jag_conduit::populate_shuffled_indices(const size_t num_samples) {
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(num_samples);
+
+  int s = 0;
+//  if (m_io_buffer_type == "partitioned") {
+    const size_t s_stride = static_cast<size_t>(get_num_parallel_readers()); //static_cast<size_t>(get_sample_stride());
+    for(size_t n = 0u; n < m_shuffled_indices.size() ; n += s_stride) {
+      for(size_t r = 0u; (r < s_stride) && (n+r < m_shuffled_indices.size()); ++r) {
+        m_shuffled_indices[n+r] = s;
+      }
+      ++s;
+    }
+/*
+  } else if (m_io_buffer_type == "distributed") {
+    const int num_readers = get_num_parallel_readers(); //get_iteration_stride();
+    const int mb_size = get_mini_batch_size();
+    for(size_t n = 0u; n < m_shuffled_indices.size(); ) {
+      for(int r = 0; r < num_readers; r++) {
+        for(int m = 0, si = s; (m < mb_size) && (n < m_shuffled_indices.size()); ++m) {
+          m_shuffled_indices[n++] = si++;
+        }
+      }
+      s += mb_size;
+    }
+  }
+*/
 }
 
 void data_reader_jag_conduit::load() {
@@ -720,7 +756,7 @@ void data_reader_jag_conduit::load() {
   }
 
   // Shuffle the file names
-  if (m_shuffle) {
+  if (is_shuffled()) {
     std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
@@ -729,17 +765,17 @@ void data_reader_jag_conduit::load() {
 
   filenames.resize(num_files_to_load);
 
-
   double tm1 = get_time();
 
   // Reserve m_valid_samples
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  const size_t num_ranks = static_cast<size_t>(m_comm->get_procs_per_model());
-  const size_t max_num_files_to_load_per_rank = (num_files_to_load + num_ranks - 1u) / num_ranks;
+  // TODO: use the same maximum number of parallel readers determined by io buffer
+  const size_t num_readers = static_cast<size_t>(m_comm->get_procs_per_model());
+  const size_t max_num_files_to_load_per_rank = (num_files_to_load + num_readers - 1u) / num_readers;
   bool valid_samples_reserved = false;
-
   size_t idx = static_cast<size_t>(0ul);
-  for (size_t n = my_rank; n < num_files_to_load; n += num_ranks) {
+
+  for (size_t n = my_rank; (n < num_files_to_load) && (my_rank < num_readers); n += num_readers) {
     load_conduit(filenames[n], idx);
     if (!valid_samples_reserved) {
       // reserve the maximum capacity required assuming that files have the same number of samples
@@ -747,7 +783,7 @@ void data_reader_jag_conduit::load() {
       valid_samples_reserved = true;
     }
     if (is_master()) {
-      std::cerr << "time to load: " << n << " files: " << get_time() - tm1 << std::endl;
+      std::cerr << "time to load: " << n + num_readers << " files: " << get_time() - tm1 << std::endl;
     }
   }
   if (is_master()) {
@@ -763,6 +799,7 @@ void data_reader_jag_conduit::load() {
   }
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
 
 void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, size_t& idx) {
   if (!check_if_file_exists(conduit_file_path)) {
