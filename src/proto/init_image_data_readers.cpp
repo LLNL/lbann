@@ -357,6 +357,9 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       channels = 1;
     }
     reader_jag->set_image_dims(width, height, channels);
+    reader_jag->set_use_images(pb_readme.use_images());
+    reader_jag->set_use_scalars(pb_readme.use_scalars());
+    reader_jag->set_use_inputs(pb_readme.use_inputs());
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;

@@ -280,7 +280,9 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();
     const auto& dims = parse_list<int>(params.dims());
-    return new crop_layer<layout, Dev>(comm, dims);
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new crop_layer<data_layout::DATA_PARALLEL, Dev>(comm, dims);
+    }
   }
   if (proto_layer.has_categorical_random()) {
     if (layout == data_layout::DATA_PARALLEL
@@ -364,6 +366,9 @@ Layer* construct_layer(lbann_comm* comm,
   // Activation layers
   if (proto_layer.has_softmax()) {
     return new softmax_layer<layout, Dev>(comm);
+  }
+  if (proto_layer.has_logsoftmax()) {
+    return new logsoftmax_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_relu()) {
     return new relu_layer<layout, Dev>(comm);

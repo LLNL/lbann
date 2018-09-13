@@ -127,8 +127,12 @@ __device__ __inline__ double atomic_add(double* address, double val) {
 }
 
 // Min and max
+__device__ __inline__ int min(int x, int y) { return x <= y ? x : y; }
+__device__ __inline__ El::Int min(El::Int x, El::Int y) { return x <= y ? x : y; }
 __device__ __inline__ float min(float x, float y) { return fminf(x, y); }
 __device__ __inline__ double min(double x, double y) { return fmin(x, y); }
+__device__ __inline__ int max(int x, int y) { return x >= y ? x : y; }
+__device__ __inline__ El::Int max(El::Int x, El::Int y) { return x >= y ? x : y; }
 __device__ __inline__ float max(float x, float y) { return fmaxf(x, y); }
 __device__ __inline__ double max(double x, double y) { return fmax(x, y); }
   

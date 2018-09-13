@@ -239,14 +239,30 @@ void data_reader_jag_conduit_hdf5::load() {
     }
   
     m_jag_store->set_comm(m_comm);
-    m_jag_store->load_inputs();
-    //m_jag_store.load_scalars();
-  
-    std::vector<std::string> image_names;
-    for (auto t : m_emi_selectors) {
-      image_names.push_back(t);
+    if (m_use_inputs) {
+      if (is_master()) {
+        std::cerr << "USING INPUTS\n";
+      }
+      m_jag_store->load_inputs();
+    }  
+    if (m_use_scalars) {
+      if (is_master()) {
+        std::cerr << "USING SCALARS\n";
+      }  
+      m_jag_store->load_scalars();
     }
-    m_jag_store->load_images(image_names);
+  
+    if (m_use_images) {
+      if (is_master()) {
+        std::cerr << "USING IMAGES\n";
+      }  
+      std::vector<std::string> image_names;
+      for (auto t : m_emi_selectors) {
+        image_names.push_back(t);
+      }
+      m_jag_store->load_images(image_names);
+    }  
+
     m_jag_store->setup(names);
   }
 
