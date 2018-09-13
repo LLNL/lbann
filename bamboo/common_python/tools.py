@@ -88,8 +88,8 @@ def get_command(cluster,
                 # maxnodes.
                 option_num_nodes = ' --nodes=%d' % num_nodes
             if partition != None:
-                # Surface does not have pdebug, so switch to pbatch
-                if (cluster == 'surface') and (partition == 'pdebug'):
+                # Pascal and Surface do not have pdebug, so switch to pbatch
+                if (cluster in ['pascal', 'surface']) and (partition == 'pdebug'):
                     partition = 'pbatch'
                 # --partition => Request a specific partition for the resource
                 # allocation.
