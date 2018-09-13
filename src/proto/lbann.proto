@@ -824,6 +824,7 @@ message Layer {
 
    // activation Layers
    Softmax softmax = 200;
+   LogSoftmax logsoftmax = 203;
    ELU elu = 30;
    Identity identity = 31;
    LeakyRelu leaky_relu = 32;
@@ -899,6 +900,9 @@ message Selu {
 }
 
 message Softmax {
+}
+
+message LogSoftmax {
 }
 
 message Power {

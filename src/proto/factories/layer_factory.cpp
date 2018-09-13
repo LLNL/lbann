@@ -367,6 +367,9 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_softmax()) {
     return new softmax_layer<layout, Dev>(comm);
   }
+  if (proto_layer.has_logsoftmax()) {
+    return new logsoftmax_layer<layout, Dev>(comm);
+  }
   if (proto_layer.has_relu()) {
     return new relu_layer<layout, Dev>(comm);
   }
