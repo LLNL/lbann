@@ -154,6 +154,10 @@ class lbann_comm {
   inline Grid& get_model_grid() {
     return *grid;
   }
+  /** Return a read-only grid to use for this model. */
+  inline const Grid& get_model_grid() const {
+    return *grid;
+  }
   /** Return the total number of models. */
   inline int get_num_models() const {
     return num_models;
