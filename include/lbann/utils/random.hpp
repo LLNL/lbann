@@ -34,6 +34,9 @@
 
 namespace lbann {
 
+/** Probability distributions. */
+enum class probability_distribution {invalid, gaussian, bernoulli, uniform};
+
 using rng_gen = std::mt19937;  // Mersenne Twister
 using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
 

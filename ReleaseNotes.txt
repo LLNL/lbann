@@ -1,0 +1,204 @@
+============================== Release Notes: v0.95 ==============================
+Support for new training algorithms:
+  - Generative Adversarial Networks (GAN)
+
+Support for new network structures:
+  - Variational Autoencoders
+  - GAN
+  - CycleGAN
+  - Combined Autoencoders with CycleGAN
+  - Deep Recurrent Attention Model (DRAM), Ba et al. (2015)
+  - Video Recurrent Attention Model (VRAM)
+
+Support for new layers:
+  - Optimized Top-K accuracy (CPU, GPU)
+  - Crop (CPU, GPU)
+  - Sort (CPU, GPU) both ascending and descending order
+  - Absolute value (CPU, GPU)
+  - Mean-squared (CPU, GPU)
+  - Top-K categorical accuracy (CPU, GPU)
+  - Cross-entropy (CPU, GPU)
+  - Stop gradient (CPU, GPU)
+
+Performance optimizations:
+  - Use Pinned memory for CPU activations matrices
+  - Non-blocking GPU computation of objective functions and metrics
+  - Refactored weight matrices and weight initialization
+  - Manage GPU workspace buffers with memory pool
+  - Slice and concatenation layer emit matrix views if possible
+  - Used more fine-grained asynchronous calls when using Aluminum Library
+    - Minimized GPU stream synchronization events per call
+  - Improved / minimized synchronization events when using a single GPU
+  - Fixed GPU workspace size
+  - GPU implementation of Adagrad optimizer
+  - GPU model-parallel softmax
+  - Optimized local CUDA kernel implementations
+  - Support for distributed matrices with arbitrary alignment
+
+Model portability & Usability:
+  - Keras to LBANN prototext conversion tool
+
+Internals Features:
+  - Support for multiple objective functions and metrics per network with arbitrary placement
+    - Objective functions represented as layers
+    - Metrics represented as layers
+    - Introduced evaluation layer construct
+  - Ability to freeze specific layers for pre-training / fine-tuning
+  - Refactoring tensor setup in setup, forward prop, and back prop
+  - Layers store matrices in private smart pointers
+  - Model automatically inserts evaluation layers where needed
+  - Copy Layer activations between models
+  - Annotated GPU profiling output with training phases
+  - Fixed initialization of Comm object and Grid objects when using multiple models
+  - General code cleanup, refactoring, and various bug fixes.
+  - All layers overwrite error signal matrices
+  - NCCL backend is now implemented via Aluminum Library
+  - MPI calls are routed through the LBANN Comm object into Hydrogen or Aluminum
+  - Provide runtime statistics summary from every rank
+  - Reworked LBANN to use Hydrogen to manage GPU memory
+  - GPU allocations now via CUB memory pool
+  - Fixed Spack build interaction with Hydrogen Library
+
+I/O & data readers:
+  - Support for Conduit objects with HDF5 formatting
+  - In-memory and locally offloaded data store
+    - Data Store can hold the entire training set in memory (or node-local storage)
+    - Data store will shuffle data samples between epochs and present samples to input layer
+  - Updated synthetic data reader
+  - Modified data readers to handle bad samples in JAG conduit data
+  - Reworked the I/O layers (input and target) so that the input layer produces both the
+    sample and label / response if necessary.
+    - Target layer is being deprecated
+  - Updated image data reader to use cv::imdecode to accelerate image load times
+  - Allow users to specify an array of data sources for the independent/dependent
+    variables via prototext
+
+============================== Release Notes: v0.94 ==============================
+Support for new training algorithms:
+  - Back-Propagation Through Time (BPTT)
+    -- Recurrent Neural Networks (RNN)
+    -- Long Short-Term Memories (LSTM)
+  - Generative Adversarial Networks (GAN)
+  - Variational autoencoders
+  - Convolutional autoencoders
+  - Fine tuning of pretrained networks
+    -- Flexible weight freezing
+  - Context-prediction network (Siamese network)
+  - Livermore Tournament Fast Batch learning (LTFB)
+  - Variable mini-batch sizes
+
+Support for new network structures
+  - Directed Acyclic Graph (DAG) networks
+  - Residual networks
+  - Modular and composable objective functions
+  - Multiple metrics
+  - Shared weight matrices
+  - (BETA) New evaluation layer that is attach to any point of DAG
+  - Motifs (compound, reused network patterns)
+
+Support for new layers:
+  - Learning:
+    - Deconvolution
+  - Metrics:
+    -- Top K Categorical accuracy, Pearson correlation, Mean absolute deviation
+  - Loss Functions:
+    -- Cross Entropy with Uncertainty, Geometric negative log likelihood
+    -- Poisson Negative log likelihood, Polya Negative Log Likelihood
+  - Optimizers:
+    -- Hypergradient Adam
+  - Transform Layers:
+    -- Contatenation, Noise, Unpooling, Pooling, Reshape, Slice, Split, Sum
+  - Regularizer:
+    -- Batch Normalization, Selu Dropout, Local Response Normalization (LRN)
+  - Activations:
+    -- Leaky Relu, Smooth Relu, Elu, Scaled Elu, Softplus, Atan,
+    -- Bent Identity, Exponential
+
+Performance optimizations:
+  - GPU acceleration for most layers
+  - NCCL 2.X
+  - Optimized communication patterns
+  - Asynchronous weight updates
+  - Asynchronous metric and objective function updates
+  - batch normalization (global and local)
+  - L2 normalization
+  - Adaptive Quantization (inter-model)
+
+Model portability & usability:
+  - Portable checkpoints / recovery
+  - Distributed checkpoint / recovery
+  - Network visualization
+  - Export LBANN to TensorFlow format
+
+Internals Features:
+  - Gradient checking
+  - Network representation using tensor dimensions
+  - Bamboo continuous integration (CI)
+  - Improved data processing pipeline
+
+New data readers:
+ - Numpy
+ - CSV
+ - Methods for merging multiple features and samples across files
+ - CANDLE Pilot 2
+ - CANDLE Pilot 1 Combo
+ - ICF JAG
+
+Integration with Hydrogen, an optimized distributed, dense linear algebra
+library.  Hydrogen is a fork of the Elemental library.  Hydrogen optimizes for:
+distributed matrices with elemental and block distributions, BLAS, LAPACK,
+distributed and local matrix management.
+
+Integration with optimized all-reduce communication library Aluminum.  Aluminum
+provides custom reduction patterns, customized CUDA reduction kernels,
+and asynchronous communication operators. It uses MPI, MPI w/GPUdirect, or NCCL
+as back-end libraries. Aluminum enables us to effectively use non-blocking
+all-reduces during backprop/optimization
+
+Additionally, we have added support for an online, distributed data store.  When
+enabled, LBANN is able to ingest all of the training data set in a distributed
+method across all ranks.  Each data store is then able to serve it's portion of
+a mini-batch, dynamically moving data to the necessary ranks in the model (based
+on the mini-batch data distribution).
+
+============================== Release Notes: v0.93 ==============================
+This release contains a major refactoring / overhaul of the code base.
+Key highlights include:
+- Moving layer design into smaller simpler layers that have a single
+  compute behavior per layer.  Specifically, linear combination of the
+  inputs, non-linear activations, and regularizers now exist as their
+  own layers.
+- Layers now have a template parameter that specifies the data layout
+  for the distributed matrices.
+- Prototext interface for specifying neural network models and data
+  readers is nearly fully functional.
+- Code now adheres to internal coding style as outlined in
+  README_coding_style.txt
+- Dead-code has been eliminated and layer file hierarchy has been
+  cleaned up.
+
+============================== Release Notes: v0.92 ==============================
+New features include (but are not limited to):
+  - Full support for convolutional and pooling layers
+  - GPU acceleration of local Elemental GEMM operations
+  - Improved network and data reader support
+    -- Alexnet
+    -- VGG
+    -- CIFAR-10
+  - Added a suite of regularizers, objective functions, and metrics, including:
+    -- Batch normalization
+    -- Drop-out
+    -- L2
+  - Dramatically improves the performance of inter-model communication
+  - Added suite of image prepossessing routines
+
+============================== Release Notes: v0.91 ==============================
+Incorporates a number of changes through the LBANN code base.  In
+particular there is a new build system that tries to have LBANN
+download all of the dependencies into its build tree, and compile them
+locally.  Additional improvements include optimizations in the data
+parallel, multiple model training framework, support for convolutional
+layers, and general bug fixes.
+
+============================== Release Notes: v0.90 ==============================
+Initial release of the LBANN toolkit.

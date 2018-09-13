@@ -119,25 +119,25 @@ bool imagenet_reader::replicate_processor(const cv_process& pp) {
   return true;
 }
 
-::Mat imagenet_reader::create_datum_view(::Mat& X, const int mb_idx) const {
+CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
   return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 }
 
-bool imagenet_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
 
   std::vector<unsigned char> *image_buf;
 
-  ::Mat X_v = create_datum_view(X, mb_idx);
+  CPUMat X_v = create_datum_view(X, mb_idx);
 
   bool ret;
   if (m_data_store != nullptr) {
     m_data_store->get_data_buf(data_id, image_buf, 0);
     ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
   } else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid]);
   }
 
   if(!ret) {

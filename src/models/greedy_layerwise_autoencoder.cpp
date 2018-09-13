@@ -89,8 +89,8 @@ void greedy_layerwise_autoencoder::setup_layer_topology() {
 
     // Encoder input and decoder output should match
     std::vector<int> input_dims, output_dims;
-    input_dims = m_layers[encoder_start]->get_prev_neuron_dims();
-    output_dims = m_layers[decoder_end-1]->get_neuron_dims();
+    input_dims = m_layers[encoder_start]->get_input_dims();
+    output_dims = m_layers[decoder_end-1]->get_output_dims();
     if (input_dims != output_dims) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -110,8 +110,8 @@ void greedy_layerwise_autoencoder::setup_layer_topology() {
     }
 
     // Encoder output and decoder input should match
-    output_dims = m_layers[encoder_end-1]->get_neuron_dims();
-    input_dims = m_layers[decoder_start]->get_prev_neuron_dims();
+    output_dims = m_layers[encoder_end-1]->get_output_dims();
+    input_dims = m_layers[decoder_start]->get_input_dims();
     if (input_dims != output_dims) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -134,7 +134,7 @@ void greedy_layerwise_autoencoder::setup_layer_topology() {
 
 }
 
-void greedy_layerwise_autoencoder::train(int num_epochs) {
+void greedy_layerwise_autoencoder::train(int num_epochs,int num_batches) {
   do_train_begin_cbs();
 
   // Train each autoencoder phase on several epochs
@@ -179,13 +179,40 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
 
   // Initialize reconstruction layer
   if (m_reconstruction != nullptr) delete m_reconstruction;
-  Layer* original_layer = m_layers[encoder_start-1];
   switch (encoder_parents[0]->get_data_layout()) {
   case data_layout::MODEL_PARALLEL:
-    m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL>(m_comm, original_layer);
+    switch(encoder_parents[0]->get_device_allocation()) {
+    case El::Device::CPU:
+      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_reconstruction = new reconstruction_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
     break;
   case data_layout::DATA_PARALLEL:
-    m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL>(m_comm, original_layer);
+    switch(encoder_parents[0]->get_device_allocation()) {
+    case El::Device::CPU:
+      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      break;
+#ifdef LBANN_HAS_GPU
+    case El::Device::GPU:
+      m_reconstruction = new reconstruction_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      break;
+#endif // LBANN_HAS_GPU
+    default:
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << "invalid matrix data allocation";
+      throw lbann_exception(err.str());
+    }
     break;
   default:
     std::stringstream err;
@@ -197,9 +224,12 @@ void greedy_layerwise_autoencoder::set_phase(int phase) {
 
   // Setup layer pointers to train encoder and decoder
   encoder_children[0] = m_layers[decoder_start];
+  /// @todo FIXME this model needs to put a split layer in here so that we can duplicate the original data
+  /// @todo then it should have something like: encoder_children[1] = m_reconstruction;
   decoder_parents[0] = m_layers[encoder_end-1];
   decoder_children[0] = m_reconstruction;
   m_reconstruction->add_parent_layer(m_layers[decoder_end-1]);
+  m_reconstruction->add_parent_layer(m_layers[encoder_start-1]);
 
   // Set objective function to reconstruction layer
   for (auto term : m_objective_function->get_terms()) {

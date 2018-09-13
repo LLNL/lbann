@@ -32,71 +32,69 @@
 namespace lbann {
 
 /** Reshape layer */
-template <data_layout T_layout>
+template <data_layout T_layout, El::Device Dev>
 class reshape_layer : public transform_layer {
- public:
+public:
   reshape_layer(lbann_comm *comm,
-                int num_dims,
-                const int *dims) :
-    transform_layer(comm) {
-    this->m_num_neuron_dims = num_dims;
-    this->m_neuron_dims.assign(dims, dims+num_dims);
-    this->m_num_neurons = std::accumulate(dims, dims+num_dims, 1,
-                                          std::multiplies<int>());
+                std::vector<int> dims)
+    : transform_layer(comm) {
+    set_output_dims(dims);
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+
+protected:
 
   void setup_dims() override {
-    // Store neuron tensor dimensions
-    const int num_neuron_dims = this->m_num_neuron_dims;
-    const std::vector<int> neuron_dims = this->m_neuron_dims;
-
-    // Initialize previous neuron tensor dimensions
     transform_layer::setup_dims();
 
-    // Initialize neuron tensor dimensions
-    this->m_num_neuron_dims = num_neuron_dims;
-    this->m_neuron_dims = neuron_dims;
+    const auto& input_dims = get_input_dims();
+    auto output_dims = get_output_dims();
 
     // Determine any unspecified dimensions
     int unspecified_dim = -1;
-    for(int dim = 0; dim < this->m_num_neuron_dims; ++dim) {
-      if(this->m_neuron_dims[dim] <= 0) {
-        unspecified_dim = dim;
-        this->m_neuron_dims[dim] = 1;
+    for (size_t dim = 0; dim < output_dims.size(); ++dim) {
+      if (output_dims[dim] <= 0) {
+        if (unspecified_dim < 0) { unspecified_dim = dim; }
+        output_dims[dim] = 1;
       }
     }
-    if(unspecified_dim >= 0) {
-      const int specified_size = std::accumulate(this->m_neuron_dims.begin(),
-                                                 this->m_neuron_dims.end(),
-                                                 1,
-                                                 std::multiplies<int>());
-      this->m_neuron_dims[unspecified_dim] = this->m_num_neurons / specified_size;
+    if (unspecified_dim >= 0) {
+      const auto& specified_size = std::accumulate(output_dims.begin(),
+                                                   output_dims.end(),
+                                                   1,
+                                                   std::multiplies<int>());
+      output_dims[unspecified_dim] = get_input_size() / specified_size;
+      set_output_dims(output_dims);
     }
 
     // Check that reshape is valid
-    if(this->m_num_neurons != std::accumulate(this->m_neuron_dims.begin(),
-                                              this->m_neuron_dims.end(),
-                                              1,
-                                              std::multiplies<int>())) {
-      std::string num_neurons = " {";
-      for(int n: m_neuron_dims) num_neurons += " " + std::to_string(n);
-      num_neurons += " }";
-      throw lbann_exception("reshape_layer: invalid neuron dimensions, " +
-                             std::to_string(m_num_neurons) + " != " + num_neurons);
+    if (get_input_size() != get_output_size()) {
+      std::stringstream err;
+      err << "input tensor dimensions (";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
+      }
+      err << ") do not match output tensor dimensions (";
+      for (size_t i = 0; i < output_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << output_dims[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
     }
 
   }
 
-  void fp_compute() override {
+  void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
-
-  void bp_compute() override {
-    El::Axpy(DataType(1), get_prev_error_signals(), get_error_signals());
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+    El::LockedView(get_error_signals(), get_prev_error_signals());
   }
+  void fp_compute() override {}
+  void bp_compute() override {}
 
 };
 

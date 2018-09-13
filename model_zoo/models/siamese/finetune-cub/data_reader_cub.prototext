@@ -3,8 +3,8 @@ data_reader {
     name: "imagenet"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
-    data_filename: "/p/lscratche/brainusr/datasets/CUB_200_2011_list/train_list.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
+    data_filename: "/p/lscratchh/brainusr/datasets/CUB_200_2011_list/train_list.txt"
     label_filename: ""
     validation_percent: 0.01
     absolute_sample_count: 0
@@ -14,12 +14,6 @@ data_reader {
     image_preprocessor {
       raw_width: 256
       raw_height: 256
-
-      subtractor {
-        disable: false
-#        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
 
       cropper {
         disable: false
@@ -38,6 +32,11 @@ data_reader {
         disable: true
       }
 
+      subtractor {
+        disable: false
+        channel_mean: [0.40625, 0.45703, 0.48047]
+      }
+
       normalizer {
         disable: true
       }
@@ -48,10 +47,9 @@ data_reader {
     name: "imagenet"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
-    data_filename: "/p/lscratche/brainusr/datasets/CUB_200_2011_list/test_list.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/CUB_200_2011/basic_set_256x256/"
+    data_filename: "/p/lscratchh/brainusr/datasets/CUB_200_2011_list/test_list.txt"
     label_filename: ""
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 200
@@ -59,12 +57,6 @@ data_reader {
     image_preprocessor {
       raw_width: 256
       raw_height: 256
-
-      subtractor {
-        disable: false
-#        image_to_sub: "../../../../tools/compute_mean/sample/imagenet-trainset/mean-256x256x3-6.bin"
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
 
       cropper {
         disable: false
@@ -81,6 +73,11 @@ data_reader {
 
       augmenter {
         disable: true
+      }
+
+      subtractor {
+        disable: false
+        channel_mean: [0.40625, 0.45703, 0.48047]
       }
 
       normalizer {

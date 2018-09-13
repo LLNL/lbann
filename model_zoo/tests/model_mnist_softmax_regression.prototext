@@ -6,7 +6,6 @@ model {
   num_epochs: 4
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -59,6 +58,8 @@ model {
   # INPUT
   #######
   layer {
+    name: "data"
+    children: "fc target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -69,6 +70,7 @@ model {
   # FULLY_CONNECTED
   #################
   layer {
+    name: "fc"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10
@@ -81,6 +83,7 @@ model {
   # SOFTMAX
   #########
   layer {
+    name: "prob"
     data_layout: "model_parallel"
     softmax {}
   }
@@ -89,11 +92,10 @@ model {
   # TARGET
   ########
   layer {
+    parents: "prob data"
+    name: "target"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
   ###################################################

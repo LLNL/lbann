@@ -6,7 +6,6 @@ model {
   num_epochs: 50
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -310,6 +309,7 @@ model {
 
   layer {
     name: "data_new"
+    children: "conv1_head0 target_new"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -545,7 +545,7 @@ model {
     fully_connected {
       # The number of outputs specific to the dataset used.
       # E.g., 200 for CUB, and 431 for CompCars.
-      num_neurons: 200
+      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc8_new_linearity fc8_new_bias"
@@ -558,12 +558,10 @@ model {
   }
 
   layer {
+    parents: "prob_new data_new"
     name: "target_new"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }

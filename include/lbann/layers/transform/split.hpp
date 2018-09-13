@@ -30,39 +30,30 @@
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
 /** Split layer.
  *  This layer can accommodate an arbitrary number of outputs.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+  template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class split_layer : public transform_layer {
  private:
 
  public:
 
-  split_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
+  split_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     // Split layer has no limit on children
     m_expected_num_child_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_using_gpus = true;
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 
   split_layer* copy() const override { return new split_layer(*this); }
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -77,54 +68,25 @@ class split_layer : public transform_layer {
 
   protected:
 
-  void fp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("split_layer: cuDNN not detected");
-  #else
-      const auto& input_d = this->m_prev_activations_d[0];
-      for (auto& output_d : this->m_activations_d ) {
-        output_d.locked_view(input_d);
-      }
-  #endif // LBANN_HAS_CUDNN
-    } else {
-      const auto& input = get_prev_activations();
-      for (auto& output : this->m_activations) {
-        El::LockedView(*output, input);
-      }
+  void fp_setup_outputs(El::Int mini_batch_size) override {
+    const auto& input = get_prev_activations();
+    for (int i = 0; i < get_num_children(); ++i) {
+      El::LockedView(get_activations(i), input);
     }
   }
 
+  void fp_compute() override {}
+
   void bp_compute() override {
-    if(this->m_using_gpus) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("split_layer: cuDNN not detected");
-  #else
-      const int num_gpus = m_cudnn->get_num_gpus();
-      auto& gradient_wrt_input_d = m_error_signals_d[0];
-      for (const auto& gradient_wrt_output_d : this->m_prev_error_signals_d) {
-        for (int i=0; i<num_gpus; ++i) {
-          CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(i)));
-          cublas::geam(this->m_cudnn->get_cublas_handle(i),
-                       CUBLAS_OP_N, CUBLAS_OP_N,
-                       gradient_wrt_input_d.get_height(),
-                       this->m_mini_batch_size_per_gpu,
-                       DataType(1),
-                       gradient_wrt_output_d.get_locked_data(i),
-                       gradient_wrt_output_d.get_leading_dim(),
-                       DataType(1),
-                       gradient_wrt_input_d.get_locked_data(i),
-                       gradient_wrt_input_d.get_leading_dim(),
-                       gradient_wrt_input_d.get_data(i),
-                       gradient_wrt_input_d.get_leading_dim());
-        }
-      }
-  #endif // LBANN_HAS_CUDNN
+    auto& gradient_wrt_input = get_error_signals();
+    if (get_num_children() > 0) {
+      El::Copy(get_prev_error_signals(0), gradient_wrt_input);
     } else {
-      auto& gradient_wrt_input = get_error_signals();
-      for (const auto& gradient_wrt_output : this->m_prev_error_signals) {
-        El::Axpy(DataType(1), *gradient_wrt_output, gradient_wrt_input);
-      }
+      El::Zero(gradient_wrt_input);
+    }
+    for (int i = 1; i < get_num_children(); ++i) {
+      El::Axpy(DataType(1), get_prev_error_signals(i),
+               gradient_wrt_input);
     }
   }
 

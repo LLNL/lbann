@@ -36,7 +36,7 @@ namespace lbann {
  *  During validation and testing, the layer outputs the distribution
  *  mean.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer {
  private:
   /** Gaussian distribution mean. */
@@ -46,27 +46,17 @@ class gaussian_layer : public transform_layer {
 
  public:
   gaussian_layer(lbann_comm *comm,
-                 const std::vector<int>& neuron_dims,
+                 const std::vector<int>& dims,
                  DataType mean = DataType(0),
-                 DataType stdev = DataType(1),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                 DataType stdev = DataType(1))
     : transform_layer(comm), m_mean(mean), m_stdev(stdev) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Gaussian layer has no parents
+    set_output_dims(dims);
     m_expected_num_parent_layers = 0;
-
   }
   gaussian_layer* copy() const override { return new gaussian_layer(*this); }
   std::string get_type() const override { return "Gaussian"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of ctor params */
   std::string get_description() const override {
@@ -80,17 +70,6 @@ class gaussian_layer : public transform_layer {
 
  protected:
 
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-  }
-
   void fp_compute() override {
     auto& output = get_activations();
     if (this->m_model->get_execution_mode() == execution_mode::training) {
@@ -99,8 +78,6 @@ class gaussian_layer : public transform_layer {
       El::Fill(output, m_mean);
     }
   }
-
-  void bp_compute() override {}
 
 };
 

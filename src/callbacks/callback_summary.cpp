@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_summary.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
@@ -45,6 +46,7 @@ void lbann_callback_summary::on_train_begin(model *m) {
 }
 
 void lbann_callback_summary::on_batch_end(model *m) {
+  prof_region_begin("summary-batch", prof_colors[0], false);
   m->summarize_stats(*m_summarizer);
   if (m_mat_interval > 0 && m->get_cur_step() % m_mat_interval == 0) {
     m->summarize_matrices(*m_summarizer);
@@ -65,9 +67,11 @@ void lbann_callback_summary::on_batch_end(model *m) {
                               m->get_cur_step());
   m_summarizer->reduce_scalar("global_barriers", global_barriers,
                               m->get_cur_step());
+  prof_region_end("summary-batch", false);
 }
 
 void lbann_callback_summary::on_epoch_end(model *m) {
+  prof_region_begin("summary-epoch", prof_colors[0], false);
   for (const auto& met : m->get_metrics()) {
     EvalType train_score = met->get_mean_value(m->get_execution_mode());
     // Replace spaces with _ for consistency.
@@ -79,9 +83,11 @@ void lbann_callback_summary::on_epoch_end(model *m) {
   }
   save_histograms(m);
   m_summarizer->flush();
+  prof_region_end("summary-epoch", false);
 }
 
 void lbann_callback_summary::on_test_end(model *m) {
+  prof_region_begin("summary-test", prof_colors[0], false);
   lbann_comm *comm = m->get_comm();
   for (auto&& met : m->get_metrics()) {
     EvalType test_score = met->get_mean_value(m->get_execution_mode());
@@ -97,26 +103,30 @@ void lbann_callback_summary::on_test_end(model *m) {
   for (auto&& layer : m->get_layers()) {
     layer->reset_counters();
   }
+  prof_region_end("summary-test", false);
 }
 
 void lbann_callback_summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
     for (int i = 0; i < layer->get_num_children(); ++i) {
+      AbsDistMatReadProxy<El::Device::CPU> acts(layer->get_activations(i));
       m_summarizer->reduce_histogram(prefix + "activations" + std::to_string(i),
-                                     layer->get_activations(i),
+                                     acts.GetLocked(),
                                      m->get_cur_step());
     }
   }
   for (const auto& w : m->get_weights()) {
     const std::string prefix = w->get_name() + "/";
+    AbsDistMatReadProxy<El::Device::CPU> weights(w->get_values());
     m_summarizer->reduce_histogram(prefix + "weights",
-                                   w->get_values(),
+                                   weights.GetLocked(),
                                    m->get_cur_step());
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
+      AbsDistMatReadProxy<El::Device::CPU> gradients(opt->get_gradient());
       m_summarizer->reduce_histogram(prefix + "weights_gradient",
-                                     opt->get_gradient(),
+                                     gradients.GetLocked(),
                                      m->get_cur_step());
     }
   }

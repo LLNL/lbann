@@ -6,7 +6,6 @@ model {
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 1
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -91,6 +90,7 @@ model {
   layer {
     name: "1"
     parents: "1"
+    children: "2 13"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
@@ -226,11 +226,8 @@ model {
   ######################
   layer {
     name: "13"
-    parents: "12"
+    parents: "12 1"
     data_layout: "model_parallel"
-    target {
-      io_buffer: "distributed"
-      shared_data_reader: true
-    }
+    target {}
   }
 }

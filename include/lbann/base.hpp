@@ -39,24 +39,38 @@
 // Typedefs for Elemental matrices
 using EGrid      = El::Grid;
 using Grid       = El::Grid;
-using Mat        = El::Matrix<lbann::DataType>;
+using AbsMat     = El::AbstractMatrix<lbann::DataType>;
+template <El::Device D>
+using DMat       = El::Matrix<lbann::DataType, D>;
+using CPUMat     = DMat<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+using GPUMat     = DMat<El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 using AbsDistMat = El::AbstractDistMatrix<lbann::DataType>;
+template <El::Device D>
+using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<lbann::DataType, D>;
 using ElMat      = El::ElementalMatrix<lbann::DataType>;
 using BlockMat   = El::BlockMatrix<lbann::DataType>;
-using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  >;
-using CircMat    = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC>;
-using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR>;
-using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  >;
-using VCStarMat  = El::DistMatrix<lbann::DataType, El::VC  , El::STAR>;
-using MCStarMat  = El::DistMatrix<lbann::DataType, El::MC  , El::STAR>;
-using MRStarMat  = El::DistMatrix<lbann::DataType, El::MR  , El::STAR>;
-using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  >;
+template <El::Device D>
+using MCMRMat    = El::DistMatrix<lbann::DataType, El::MC  , El::MR  , El::ELEMENT, D>;
+template <El::Device D>
+using CircMat    = El::DistMatrix<lbann::DataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+template <El::Device D>
+using StarMat    = El::DistMatrix<lbann::DataType, El::STAR, El::STAR, El::ELEMENT, D>;
+template <El::Device D>
+using StarVCMat  = El::DistMatrix<lbann::DataType, El::STAR, El::VC  , El::ELEMENT, D>;
+template <El::Device D>
+using VCStarMat  = El::DistMatrix<lbann::DataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
+template <El::Device D>
+using MCStarMat  = El::DistMatrix<lbann::DataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
+template <El::Device D>
+using MRStarMat  = El::DistMatrix<lbann::DataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
+template <El::Device D>
+using StarMRMat  = El::DistMatrix<lbann::DataType, El::STAR, El::MR  , El::ELEMENT, D>;
 
 // Deprecated typedefs for Elemental matrices
-using DistMat         = MCMRMat;
-using RowSumMat       = MCStarMat;
-using ColSumStarVCMat = VCStarMat;
-using ColSumMat       = MRStarMat;
+using DistMat         = MCMRMat<El::Device::CPU>;
+using Mat        = El::Matrix<lbann::DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
 // Datatype for model evaluation
 // Examples: timing, metrics, objective functions
@@ -108,30 +122,25 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
+// NA - Not applicable, used for input layers that don't produce a second output
+enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
+
 namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
 
-/**
- * Initialize LBANN.
- * The comm instance this returns places every process in one model. This can be
- * changed with lbann_comm::split_models afterward.
- * @param argc The program's argc.
- * @param argv The program's argv.
- * @param seed Optional seed for random number generators.
+/** Initialize LBANN.
+ *  The comm instance this returns places every process in one
+ *  model. This can be changed with lbann_comm::split_models
+ *  afterward.
+ *  @param argc Command line arguments.
+ *  @param argv Number of command line arguments.
+ *  @param seed Optional RNG seed.
  */
 lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
-/**
- * Perform finalization.
- */
+/** Finalize LBANN. */
 void finalize(lbann_comm* comm = nullptr);
-
-class CUtility {
- public:
-  static void convolveMat(StarMat *Kernels, BlockMat& InputMat, BlockMat& OutputMat,
-                          uint InputWidth, uint InputHeight);
-};
 
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
@@ -149,17 +158,6 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
 }
 
 }  // namespace lbann
-
-// Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                            \
-  do {                                                                  \
-    std::stringstream ss_LBANN_ERROR;                                   \
-    ss_LBANN_ERROR << "LBANN error"                                     \
-                   << " (" << __FILE__ << ":" << __LINE__ << ")"        \
-                   << ": " << message;                                  \
-    throw lbann::lbann_exception(ss_LBANN_ERROR.str());                 \
-  } while(0)
-
 
 /// Print the dimensions and name of a Elemental matrix
 static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {

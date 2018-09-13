@@ -43,8 +43,7 @@ class adam : public optimizer {
        DataType learning_rate,
        DataType beta1 = DataType(0.9),
        DataType beta2 = DataType(0.99),
-       DataType eps = DataType(1e-8),
-       cudnn::cudnn_manager *cudnn = nullptr);
+       DataType eps = DataType(1e-8));
 
 
   /** Copy constructor. */
@@ -57,7 +56,7 @@ class adam : public optimizer {
   adam* copy() const override { return new adam(*this); }
 
   /** Returns the optimizer name. */
-  std::string get_type() const override { return "adam"; }
+  std::string get_type() const override { return "Adam"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 
@@ -68,8 +67,7 @@ class adam : public optimizer {
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 #ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(cudnn::matrix& values_d,
-                        const cudnn::matrix& gradient_d) override;
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
  private:
@@ -88,13 +86,6 @@ class adam : public optimizer {
   AbsDistMat *m_moment1;
   /** Second moment estimates. */
   AbsDistMat *m_moment2;
-
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for first moment estimates. */
-  std::vector<DataType*> m_moment1_d;
-  /** GPU memory for second moment estimates. */
-  std::vector<DataType*> m_moment2_d;
-#endif // LBANN_HAS_CUDNN
 
 //************************************************************************
 // Checkpointing
@@ -143,8 +134,6 @@ class adam : public optimizer {
     m_current_beta2 = header.current_beta2;
   }
 
-  void set_states_on_host() override;
-  void set_states_on_device() override;
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;

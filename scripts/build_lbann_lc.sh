@@ -10,11 +10,10 @@ ARCH=$(uname -m)
 ################################################################
 
 COMPILER=gnu
-if [ "${CLUSTER}" == "pascal" ]; then
-	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
-	# Version 6.1.0 does not work with CUDA 9.1, either.
-	COMPILER=gnu
-	module load gcc/4.9.3
+if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
+    # NVCC in CUDA 9.1 does not support GCC versions later than 6
+    COMPILER=gnu
+    module load gcc/4.9.3
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -23,17 +22,20 @@ elif [ "${ARCH}" == "ppc64le" ]; then
 fi
 BUILD_TYPE=Release
 Elemental_DIR=
-if [ "${TOSS}" == "3.10.0" ]; then
-    OpenCV_DIR=""
-    if [ "${ARCH}" == "x86_64" ]; then
-        export VTUNE_DIR=/usr/tce/packages/vtune/default
-    elif [ "${ARCH}" == "ppc64le" ]; then
-        export VTUNE_DIR=
-    fi
-else
-    OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
-    export VTUNE_DIR=/usr/local/tools/vtune
-fi
+case $TOSS in
+	3.10.0|4.11.0|4.14.0)
+		OpenCV_DIR=""
+		if [ "${ARCH}" == "x86_64" ]; then
+			export VTUNE_DIR=/usr/tce/packages/vtune/default
+		elif [ "${ARCH}" == "ppc64le" ]; then
+			export VTUNE_DIR=
+		fi
+		;;
+	*)
+      OpenCV_DIR=/usr/gapps/brain/tools/OpenCV/2.4.13
+      export VTUNE_DIR=/usr/local/tools/vtune
+	  ;;
+esac
 if [ "${ARCH}" == "x86_64" ]; then
     if [ "${CLUSTER}" == "quartz" ]; then
         IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
@@ -50,7 +52,7 @@ C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
 Fortran_FLAGS=
 CLEAN_BUILD=0
-DATATYPE=4
+DATATYPE=float
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
@@ -59,16 +61,18 @@ INSTALL_LBANN=0
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
-SEQ_INIT=OFF
+DETERMINISTIC=OFF
 WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=OFF
+ALUMINUM_WITH_MPI_CUDA=OFF
+ALUMINUM_WITH_NCCL=OFF
 WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
-# version of autoconf installed under '/p/lscratche/brainusr/autoconf/bin'
+# version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
@@ -78,7 +82,7 @@ WITH_LIBJPEG_TURBO=ON
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
 if [ "${CLUSTER}" == "surface" ]; then
-    AUTOCONF_CUSTOM_DIR=/p/lscratche/brainusr/autoconf/bin
+    AUTOCONF_CUSTOM_DIR=/p/lscratchh/brainusr/autoconf/bin
     AUTOCONF_VER_DEFAULT=`autoconf --version | awk '(FNR==1){print $NF}'`
     AUTOCONF_VER_CUSTOM=`${AUTOCONF_CUSTOM_DIR}/autoconf --version | awk '(FNR==1){print $NF}'`
 
@@ -117,10 +121,11 @@ Options:
   ${C}--build${N}                 Specify alternative build directory; default is <lbann_home>/build.
   ${C}--suffix${N}                Specify suffix for build directory. If you are, e.g, building on surface, your build will be <someplace>/surface.llnl.gov, regardless of your choice of compiler or other flags. This option enables you to specify, e.g: --suffix gnu_debug, in which case your build will be in the directory <someplace>/surface.llnl.gov.gnu_debug
   ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
-  ${C}--use-nccl${N}              Use NCCL library
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
   ${C}--with-aluminum${N}              Use Aluminum allreduce library
+  ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
+  ${C}--aluminum-with-nccl             Enable NCCL backend in Aluminum
 EOF
 }
 
@@ -193,7 +198,7 @@ while :; do
         -d|--debug)
             # Debug mode
             BUILD_TYPE=Debug
-            SEQ_INIT=ON
+            DETERMINISTIC=ON
             ;;
         --tbinf)
             # Tensorboard interface
@@ -229,14 +234,19 @@ while :; do
         --disable-cuda)
             WITH_CUDA=OFF
             ;;
-        --use-nccl)
-            WITH_NCCL=ON
-            ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
             ;;
         --with-aluminum)
             WITH_ALUMINUM=ON
+            ;;
+        --aluminum-with-mpi-cuda)
+            WITH_ALUMINUM=ON
+            ALUMINUM_WITH_MPI_CUDA=ON
+            ;;
+        --aluminum-with-nccl)
+            WITH_ALUMINUM=ON
+            ALUMINUM_WITH_NCCL=ON
             ;;
         --with-conduit)
             WITH_CONDUIT=ON
@@ -265,15 +275,19 @@ done
 
 # Determine whether system uses modules
 USE_MODULES=0
-if [ "${TOSS}" == "3.10.0" ]; then
-    USE_MODULES=1
-elif [ "${TOSS}" == "2.6.32" ]; then
-    USE_MODULES=0
-else
-    # Initialize modules
-    . /usr/share/[mM]odules/init/bash
-    USE_MODULES=1
-fi
+case $TOSS in
+	3.10.0|4.11.0|4.14.0)
+		USE_MODULES=1
+		;;
+	2.6.32)
+		USE_MODULES=0
+		;;
+	*)
+		# Initialize modules
+		. /usr/share/[mM]odules/init/bash
+		USE_MODULES=1
+		;;
+esac
 
 # Initialize Dotkit if system doesn't use modules
 if [ ${USE_MODULES} -eq 0 ]; then
@@ -283,19 +297,16 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss3/cmake-3.9.6/bin
+    module load cmake/3.9.2
+    CMAKE_PATH=$(dirname $(which cmake))
 else
-    if [ "${CLUSTER}" == "surface" ]; then
-        use git-2.8.0
-        CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-    else
-        use git
-        #use cmake
-    fi
+    use git
+    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
-if [ ${CLUSTER} == "ray" ]; then
-    module load cmake
+if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
+	# the latest version, 3.12.1, has several issues
+    module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
 fi
 
@@ -310,7 +321,14 @@ if [ ${USE_MODULES} -ne 0 ]; then
         COMPILER_=gcc
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
-        COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        if [ "${COMPILER_}" == "gcc" ]; then
+            # Special case to avoid GCC 8.1
+            # Note: This should be removed once the bug in GCC 8.1 is
+            # patched. See https://github.com/LLNL/lbann/issues/529.
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | grep -v 8.1.0 | sed '/^$/d' | tail -1)
+        else
+            COMPILER_=$(module --terse spider ${COMPILER_} 2>&1 | sed '/^$/d' | tail -1)
+        fi
         module load ${COMPILER_}
     fi
     if [ -z "$(module list 2>&1 | grep ${COMPILER_})" ]; then
@@ -354,7 +372,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [ "${CLUSTER}" == "ray" ]; then
+    if [ "${CLUSTER}" == "ray" -o "{CLUSTER}" == "sierra" ]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -389,7 +407,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=ivybridge -mtune=ivybridge"
-        elif [ "${CLUSTER}" == "quartz" ]; then
+        elif [ "${CLUSTER}" == "quartz" ] || [ "${CLUSTER}" == "pascal" ] ; then
             C_FLAGS="${C_FLAGS} -march=broadwell -mtune=broadwell"
             CXX_FLAGS="${CXX_FLAGS} -march=broadwell -mtune=broadwell"
             Fortran_FLAGS="${Fortran_FLAGS} -march=broadwell -mtune=broadwell"
@@ -398,6 +416,11 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             CXX_FLAGS="${CXX_FLAGS} -march=sandybridge -mtune=sandybridge"
             Fortran_FLAGS="${Fortran_FLAGS} -march=sandybridge -mtune=sandybridge"
         elif [ "${CLUSTER}" == "ray" ]; then
+            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
+        elif [ "${CLUSTER}" == "sierra" ]; then
+			# no power9 option shown in the manual
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
@@ -413,7 +436,7 @@ fi
 
 # Add flag for libldl: may be needed some compilers
 CXX_FLAGS="${CXX_FLAGS} -ldl"
-C_FLAGS="${CXX_FLAGS} -ldl"
+C_FLAGS="${CXX_FLAGS}"
 
 
 # Set environment variables
@@ -466,7 +489,7 @@ fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
 if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/global/tools/mpi/sideinstalls/${SYS_TYPE}/mvapich2-2.3/install-gcc-4.9.3-cuda-9.1
+  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
   export MV2_USE_CUDA=1
 fi
 
@@ -536,27 +559,33 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" ] || [ "${CLUSTER}" == "ray" ] ||
-   [ "${CLUSTER}" == "pascal" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
+	 "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "sierra" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
-    if [ "${CLUSTER}" == "ray" ]; then
-        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.0.5-3+cuda8.0_ppc64el
-    else
-        export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.1.15-1+cuda9.1_x86_64
-    fi
+	case $CLUSTER in
+		ray|sierra)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
+			;;
+		*)
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
+			;;
+	esac
 
     # Hack for surface
-	if [ "${CLUSTER}" == "surface" ]; then
-        . /usr/share/[mM]odules/init/bash
-		CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-	elif [ "${CLUSTER}" == "ray" ]; then
-		module del cuda
-		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/8.0}
-	fi
+	case $CLUSTER in
+		surface)
+			. /usr/share/[mM]odules/init/bash
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
+			;;
+		ray|sierra)
+			module del cuda
+			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
+			;;
+	esac
 fi
 
 if [ "${WITH_CUDA}" == "ON" ]; then
@@ -584,7 +613,11 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
-		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.2.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+		fi
 	fi
 	if [ ! -d "${CUDNN_DIR}" ]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"
@@ -596,6 +629,15 @@ else
     WITH_CUDA=${WITH_CUDA:-OFF}
     WITH_CUDNN=OFF
     ELEMENTAL_USE_CUBLAS=OFF
+fi
+
+################################################################
+# Library options
+################################################################
+if [ "${CLUSTER}" == "sierra" ]; then
+	OPENBLAS_ARCH="TARGET=POWER8"
+else
+	OPENBLAS_ARCH=
 fi
 
 ################################################################
@@ -651,7 +693,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable ELEMENTAL_USE_CUBLAS
     print_variable ELEMENTAL_MATH_LIBS
     print_variable PATCH_OPENBLAS
-    print_variable SEQ_INIT
+    print_variable DETERMINISTIC
     print_variable CLEAN_BUILD
     print_variable VERBOSE
     print_variable MAKE_NUM_PROCESSES
@@ -691,36 +733,40 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-${CMAKE_PATH}/cmake \
+ ${CMAKE_PATH}/cmake \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
+-D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
 -D LBANN_SB_BUILD_OPENBLAS=ON \
 -D LBANN_SB_BUILD_OPENCV=ON \
 -D LBANN_SB_BUILD_JPEG_TURBO=ON \
 -D LBANN_SB_BUILD_PROTOBUF=ON \
--D LBANN_SB_BUILD_CUB=${WITH_CUB}
+-D LBANN_SB_BUILD_CUB=${WITH_CUB} \
+-D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
+-D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
+-D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
--D LBANN_WITH_NCCL=${WITH_NCCL} \
 -D LBANN_WITH_CUDA=${WITH_CUDA} \
 -D LBANN_WITH_NVPROF=${WITH_NVPROF} \
 -D LBANN_WITH_VTUNE=${WITH_VTUNE} \
 -D LBANN_WITH_TBINF=${WITH_TBINF} \
 -D LBANN_WITH_TOPO_AWARE=${WITH_TOPO_AWARE} \
--D LBANN_SEQUENTIAL_INITIALIZATION=${SEQ_INIT} \
+-D LBANN_DATATYPE=${DATATYPE} \
+-D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
--D LBANN_ALUMINUM_DIR=${ALUMINUM_DIR} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
+-D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 ${SUPERBUILD_DIR}
 EOF
 )

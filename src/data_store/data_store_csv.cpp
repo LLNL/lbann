@@ -53,6 +53,7 @@ void data_store_csv::setup() {
               << "calling generic_data_store::setup()\n";
   }
   generic_data_store::setup();
+  build_index_owner();
 
   if (! m_in_memory) {
     err << __FILE__ << " " << __LINE__ << " :: "

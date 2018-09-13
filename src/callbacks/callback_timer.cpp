@@ -41,6 +41,7 @@ void lbann_callback_timer::batch_timing_end(model *m) {
   m_batch_times.push_back(mb_time);
   if (m_summarizer != nullptr) {
     m_summarizer->reduce_scalar("minibatch_time", mb_time, m->get_cur_step()-1);
+    m_summarizer->reduce_scalar_all("minibatch_time", mb_time, m->get_cur_step()-1);
   }
 }
 

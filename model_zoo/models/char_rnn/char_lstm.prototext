@@ -6,7 +6,6 @@ model {
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
   recurrent {
     unroll_depth : 5
   }
@@ -35,6 +34,7 @@ model {
   # Data
   layer {
     name: "data"
+    children: "lstm1_forgetgate_input eval"
     input {
       io_buffer: "partitioned"
     }
@@ -197,7 +197,7 @@ model {
     }
     data_layout: "data_parallel"
   }
-  
+
   # lstm1 output
   layer {
     parents: "lstm1_cell"
@@ -238,12 +238,9 @@ model {
     data_layout: "data_parallel"
   }
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "eval"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
     data_layout: "data_parallel"
   }
 

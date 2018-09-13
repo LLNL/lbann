@@ -1,0 +1,228 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 31
+  block_size: 257
+  num_epochs: 4
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+  objective_function {
+    layer_term { layer: "cross_entropy" }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    gradient_check {
+      verbose: false
+      fail_on_error: true
+    }
+  }
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  # data
+  layer {
+    name: "data"
+    children: "images labels"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+  layer {
+    name: "images"
+    parents: "data"
+    data_layout: "data_parallel"
+    identity {}
+  }
+  layer {
+    name: "labels"
+    parents: "data"
+    data_layout: "model_parallel"
+    identity {}
+  }
+
+  # conv1
+  layer {
+    parents: "images"
+    name: "conv1"
+    convolution {
+      num_dims: 2
+      num_output_channels: 29
+      conv_dims_i: 7
+      conv_pads_i: 0
+      conv_strides_i: 2
+      has_bias: true
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "conv1"
+    name: "conv1_pool"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_pads_i: 1
+      pool_strides_i: 2
+      pool_mode: "average"
+    }
+    data_layout: "data_parallel"
+  }
+
+  # branch1
+  layer {
+    parents: "conv1_pool"
+    name: "branch1_conv1"
+    convolution {
+      num_dims: 2
+      num_output_channels: 10
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: true
+    }
+    data_layout: "data_parallel"
+  }
+
+  # branch2
+  layer {
+    parents: "conv1_pool"
+    name: "branch2_conv1"
+    convolution {
+      num_dims: 2
+      num_output_channels: 13
+      conv_dims_i: 1
+      conv_pads_i: 0
+      conv_strides_i: 1
+      has_bias: false
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "branch2_conv1"
+    name: "branch2_bn1"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+    }
+  }
+  layer {
+    parents: "branch2_bn1"
+    name: "branch2_conv2"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 10
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: true
+    }
+  }
+
+  # branch3
+  layer {
+    parents: "conv1_pool"
+    name: "branch3_slice"
+    children: "branch3_conv1 branch3_conv2"
+    data_layout: "data_parallel"
+    slice {
+      slice_axis: 1
+      slice_points: "0 4 6"
+    }
+  }
+  weights {
+    name: "branch3_conv_kernel"
+    glorot_uniform_initializer {}
+  }
+  weights {
+    name: "branch3_conv_bias"
+    constant_initializer {}
+  }
+  layer {
+    parents: "branch3_slice"
+    name: "branch3_conv1"
+    data_layout: "data_parallel"
+    weights: "branch3_conv_kernel branch3_conv_bias"
+    convolution {
+      num_dims: 2
+      num_output_channels: 10
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "branch3_slice"
+    name: "branch3_conv2"
+    data_layout: "data_parallel"
+    weights: "branch3_conv_kernel branch3_conv_bias"
+    convolution {
+      num_dims: 2
+      num_output_channels: 10
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "branch3_conv1 branch3_conv2"
+    name: "branch3_concat"
+    data_layout: "data_parallel"
+    concatenation {
+      concatenation_axis: 1
+    }
+  }
+
+  # sum
+  layer {
+    parents: "branch1_conv1 branch2_conv2 branch3_concat"
+    name: "sum"
+    data_layout: "data_parallel"
+    sum {}
+  }
+
+  # prob
+  layer {
+    parents: "sum"
+    name: "prob_pool"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 6
+      pool_pads_i: 0
+      pool_strides_i: 1
+      pool_mode: "average"
+    }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "prob_pool"
+    name: "prob"
+    softmax {}
+    data_layout: "data_parallel"
+  }
+
+  # cross_entropy
+  layer {
+    name: "cross_entropy"
+    parents: "prob labels"
+    data_layout: "model_parallel"
+    cross_entropy {}
+  }
+
+}

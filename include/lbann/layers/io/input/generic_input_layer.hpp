@@ -45,8 +45,9 @@ class generic_input_layer : public io_layer {
   generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
               std::map<execution_mode, generic_data_reader *> data_readers,
-              bool data_set_spans_models = true, bool for_regression = false)
-    : io_layer(comm, data_set_spans_models, for_regression),
+              bool data_set_spans_models = true,
+              data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
+    : io_layer(comm, data_set_spans_models, dr_mode),
       io_buffer(nullptr),
       m_training_dataset(),
       m_testing_dataset(),
@@ -55,6 +56,13 @@ class generic_input_layer : public io_layer {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     m_expected_num_parent_layers = 0;
+    if(dr_mode == data_reader_target_mode::NA) {
+      m_expected_num_child_layers = 1;
+    }else {
+      // Input layers output a sample and target, which could be the
+      // original value, categorical label, or regression value
+      m_expected_num_child_layers = 2;
+    }
 
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
@@ -114,30 +122,22 @@ class generic_input_layer : public io_layer {
            + " (" + s + ")";
   }
 
-  //data_layout get_data_layout() const override { return T_layout; }
-  // std::string get_description() const {
-  //   std::stringstream s;
-  //   for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
-  //     s << this->m_neuron_dims[i];
-  //     if ( i != this->m_neuron_dims.size()-1) {
-  //       s << " x ";
-  //     }
-  //   }
-  //   return s.str();;
-  // }
-
   void setup_dims() override {
     io_layer::setup_dims();
-    this->m_neuron_dims = get_data_dims();
-    this->m_num_neuron_dims = this->m_neuron_dims.size();
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    for (int i = 0; i < get_num_children(); ++i) {
+      set_output_dims(get_data_dims(i), i);
+    }
   }
 
   void setup_data() override {
     io_layer::setup_data();
+
+    // Resize output to maximum mini-batch size
+    const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
+    for (int i = 0; i < get_num_children(); ++i) {
+      auto& output = get_activations(i);
+      output.Resize(output.Height(), max_mb_size);
+    }
 
     /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
@@ -154,20 +154,36 @@ class generic_input_layer : public io_layer {
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
 
-    int max_mb_size = this->m_model->get_max_mini_batch_size();
     if(io_layer::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     }
 
-    io_buffer->setup_data(this->m_num_neurons, max_mb_size);
+    int linearized_target_size;
+    switch(m_data_reader_mode) {
+    case data_reader_target_mode::REGRESSION:
+      linearized_target_size = get_linearized_response_size();
+      break;
+    case data_reader_target_mode::RECONSTRUCTION:
+      linearized_target_size = get_linearized_data_size();
+      break;
+    case data_reader_target_mode::CLASSIFICATION:
+      linearized_target_size = get_linearized_label_size();
+      break;
+    case data_reader_target_mode::NA:
+    default:
+      linearized_target_size = 0;
+    }
+    io_buffer->setup_data(get_output_size(0),
+                          linearized_target_size,
+                          max_mb_size);
   }
 
-  /** Define the standard view of the matrix -- and set it for the model
-   * Setup the effective (global) mini-batch size so that gradients are properly
-   * averaged across models. */
-  void fp_setup_data(int mini_batch_size) override {
+  /** Setup output tensors.
+   *  Sets up the effective (global) mini-batch size.
+   */
+  void fp_setup_outputs(El::Int mini_batch_size) override {
 
     // Determine model mini-batch size and effective mini-batch size
     // Note: If inter-model communication is activated, the effective
@@ -187,12 +203,13 @@ class generic_input_layer : public io_layer {
     this->m_model->set_effective_mini_batch_size(effective_mini_batch_size);
 
     // Initialize matrices
-    io_layer::fp_setup_data(mini_batch_size);
+    io_layer::fp_setup_outputs(mini_batch_size);
 
     // Once the current mini-batch size is defined, set the standard view for activations only
-    io_buffer->set_local_matrix_bypass(&get_local_activations());
-    io_buffer->set_std_matrix_view(mini_batch_size);
-
+    for (int i = 0; i < get_num_children(); ++i) {
+      io_buffer->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
+      io_buffer->set_std_matrix_view(mini_batch_size, i);
+    }
   }
 
   void fp_compute() override {
@@ -225,7 +242,11 @@ class generic_input_layer : public io_layer {
       this->m_model->set_current_mini_batch_size(num_samples_in_batch
                                                  + get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()));
 
-      io_buffer->distribute_from_local_matrix(get_activations(), get_data_reader(), mode);
+      if(m_expected_num_child_layers == 1) {
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0));
+      }else {
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
+      }
 
       if(num_samples_in_batch !=
          (expected_num_samples_in_batch - get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()))) {
@@ -245,8 +266,6 @@ class generic_input_layer : public io_layer {
       throw lbann_exception(err.str());
     }
   }
-
-  void bp_compute() override {}
 
   /**
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
@@ -487,24 +506,48 @@ class generic_input_layer : public io_layer {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims() const override {
+  const std::vector<int> get_data_dims(int child_index = 0) const override {
     const generic_data_reader *dr = get_data_reader();
     //    dataset* ds = select_first_valid_dataset();
     if (dr) {
-      return dr->get_data_dims();
+      if(child_index == 0) {
+        return dr->get_data_dims();
+      }else if(child_index == 1) {
+        switch(m_data_reader_mode) {
+        case data_reader_target_mode::REGRESSION:
+          return std::vector<int>(1, dr->get_num_responses());
+        case data_reader_target_mode::RECONSTRUCTION:
+          return dr->get_data_dims();
+        case data_reader_target_mode::CLASSIFICATION:
+        default:
+          return std::vector<int>(1, dr->get_num_labels());
+        }
+        //        the correct value based on initialization
+      }else {
+        LBANN_ERROR("get_data_dims: Invalid child index");
+      }
     }
     return std::vector<int>(1, 0);
   }
 
   std::string get_topo_description() const override {
-    std::stringstream s;
-    for (size_t i = 0; i < this->m_neuron_dims.size(); i++) {
-      s << this->m_neuron_dims[i];
-      if ( i != this->m_neuron_dims.size()-1) {
-        s << " x ";
+    std::stringstream ss;
+    const size_t num_children = get_num_children();
+    for (size_t i = 0; i < num_children; ++i) {
+      const auto& dims = get_output_dims(i);
+      if (i > 0) { ss << ", "; }
+      ss << "activations";
+      if (num_children > 1) { ss << "[" << i << "]"; }
+      ss << " = [";
+      for (size_t j = 0; j < dims.size(); j++) {
+        ss << dims[j];
+        if ( j != dims.size()-1) {
+          ss << " x ";
+        }
       }
+      ss << ", " << get_activations(i).Width() << "s]";
     }
-    return s.str();;
+    return ss.str();;
   }
 
   /**
@@ -665,9 +708,9 @@ class generic_input_layer : public io_layer {
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_validation");
-      }    
+      }
     }
-    return true;  
+    return true;
   }
 
   struct dataset_header {
@@ -707,7 +750,7 @@ class generic_input_layer : public io_layer {
         p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
       }
     }
-    
+
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
       (it->second)->load_from_checkpoint_shared(p, "data_reader_validation");
@@ -790,7 +833,7 @@ class generic_input_layer : public io_layer {
     if ((it != this->m_data_readers.end()) && it->second) {
       (it->second)->load_from_checkpoint_distributed(p, "data_reader_validation");
     }
-    
+
     // set our fields
     m_training_dataset.num_samples_processed()   = (long) header.train_proc;
     m_training_dataset.total_samples()           = (long) header.train_total;
@@ -814,11 +857,11 @@ class generic_input_layer : public io_layer {
 };
 
 template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers);
+  io_buffer = new partitioned_io_buffer(comm, num_parallel_readers, data_readers, m_expected_num_child_layers);
 }
 
 template<> inline void generic_input_layer::initialize_io_buffer<distributed_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers);
+  io_buffer = new distributed_io_buffer(comm, num_parallel_readers, data_readers, m_expected_num_child_layers);
 }
 
 }  // namespace lbann

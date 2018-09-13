@@ -43,7 +43,9 @@ data_reader_merge_features::data_reader_merge_features(
   const data_reader_merge_features& other) :
   generic_compound_data_reader(other),
   m_data_size(other.m_data_size) {
-  m_label_reader = other.m_label_reader->copy();
+  if(other.m_label_reader != nullptr) 
+    m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
 }
 
 data_reader_merge_features& data_reader_merge_features::operator=(
@@ -53,12 +55,14 @@ data_reader_merge_features& data_reader_merge_features::operator=(
   if (m_label_reader) {
     delete m_label_reader;
   }
-  m_label_reader = other.m_label_reader->copy();
+  if(other.m_label_reader != nullptr) 
+    m_label_reader = other.m_label_reader->copy();
+  else m_label_reader = nullptr;
   return *this;
 }
 
 data_reader_merge_features::~data_reader_merge_features() {
-  delete m_label_reader;
+  if(m_label_reader != nullptr) delete m_label_reader;
 }
 
 void data_reader_merge_features::load() {
@@ -80,14 +84,14 @@ void data_reader_merge_features::load() {
         "data_reader_merge_features: data readers do not have the same amount of data");
     }
   }
-  m_label_reader->load();
+  if(m_label_reader != nullptr) m_label_reader->load();
   // Reset indices.
   m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
 }
 
-bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,
+bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx,
                                              int tid) {
   int start = 0;
   for (auto&& reader : m_data_readers) {
@@ -99,12 +103,12 @@ bool data_reader_merge_features::fetch_datum(Mat& X, int data_id, int mb_idx,
   return true;
 }
 
-bool data_reader_merge_features::fetch_label(Mat& Y, int data_id, int mb_idx,
+bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx,
                                              int tid) {
   return m_label_reader->fetch_label(Y, data_id, mb_idx, tid);
 }
 
-bool data_reader_merge_features::fetch_response(Mat& Y, int data_id, int mb_idx,
+bool data_reader_merge_features::fetch_response(CPUMat& Y, int data_id, int mb_idx,
                                                 int tid) {
   return m_label_reader->fetch_response(Y, data_id, mb_idx, tid);
 }

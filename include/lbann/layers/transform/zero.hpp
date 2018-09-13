@@ -37,7 +37,7 @@ namespace lbann {
  * @param second_half output zeros for second half of minibatch samples if true
  * @todo generalzie if there are other use cases
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class zero_layer : public transform_layer {
  private:
   bool  m_first_half;
@@ -46,8 +46,7 @@ class zero_layer : public transform_layer {
  public:
  zero_layer(lbann_comm *comm,
               bool first_half=true,
-              bool second_half=true,
-              cudnn::cudnn_manager *cudnn = nullptr)
+              bool second_half=true)
     : transform_layer(comm),
       m_first_half(first_half),
       m_second_half(second_half) {
@@ -56,12 +55,14 @@ class zero_layer : public transform_layer {
   zero_layer* copy() const override { return new zero_layer(*this); }
   std::string get_type() const override { return "zero"; }
   data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 
   /** Returns description of constructor params */
   std::string get_description() const override {
     std::stringstream s;
-     s << "zero_layer  first half: " << m_first_half << "second half: " << m_second_half  
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
+     s << "zero_layer  first half: " << m_first_half << "second half: " << m_second_half
+       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
+       << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
      return s.str();
   }
 
@@ -96,9 +97,9 @@ class zero_layer : public transform_layer {
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
         if(m_first_half)
-        dx += input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
         if(m_second_half)
-        dx += input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
       }
     }
   }

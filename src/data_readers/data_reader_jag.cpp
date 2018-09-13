@@ -39,7 +39,7 @@ namespace lbann {
 
 data_reader_jag::data_reader_jag(bool shuffle)
   : generic_data_reader(shuffle),
-    m_independent(Undefined), m_dependent(Undefined),
+    m_independent({Undefined}), m_dependent({Undefined}),
     m_image_loaded(false), m_scalar_loaded(false),
     m_input_loaded(false), m_num_samples(0u),
     m_linearized_image_size(0u),
@@ -55,32 +55,72 @@ data_reader_jag::data_reader_jag(bool shuffle)
 data_reader_jag::~data_reader_jag() {
 }
 
+
 void data_reader_jag::set_independent_variable_type(
+  const std::vector<data_reader_jag::variable_t> independent) {
+  if (!independent.empty() && !m_independent.empty() && (m_independent[0] == Undefined)) {
+    m_independent.clear();
+  }
+  for (const auto t: independent) {
+    add_independent_variable_type(t);
+  }
+}
+
+void data_reader_jag::add_independent_variable_type(
   const data_reader_jag::variable_t independent) {
   if (!(independent == JAG_Image || independent == JAG_Scalar ||
         independent == JAG_Input || independent == Undefined)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: unrecognized variable type " + std::to_string(static_cast<int>(independent)));
   }
-  m_independent = independent;
+  m_independent.push_back(independent);
 }
 
 void data_reader_jag::set_dependent_variable_type(
+  const std::vector<data_reader_jag::variable_t> dependent) {
+  if (!dependent.empty() && !m_dependent.empty() && (m_dependent[0] == Undefined)) {
+    m_dependent.clear();
+  }
+  for (const auto t: dependent) {
+    add_dependent_variable_type(t);
+  }
+}
+
+void data_reader_jag::add_dependent_variable_type(
   const data_reader_jag::variable_t dependent) {
   if (!(dependent == JAG_Image || dependent == JAG_Scalar ||
         dependent == JAG_Input || dependent == Undefined)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: unrecognized variable type " + std::to_string(static_cast<int>(dependent)));
   }
-  m_dependent = dependent;
+  m_dependent.push_back(dependent);
 }
 
-data_reader_jag::variable_t data_reader_jag::get_independent_variable_type() const {
+
+std::vector<data_reader_jag::variable_t> data_reader_jag::get_independent_variable_type() const {
   return m_independent;
 }
 
-data_reader_jag::variable_t data_reader_jag::get_dependent_variable_type() const {
+std::vector<data_reader_jag::variable_t> data_reader_jag::get_dependent_variable_type() const {
   return m_dependent;
+}
+
+bool data_reader_jag::is_independent(const variable_t t) const {
+  for(const auto i: m_independent) {
+    if (i == t) return true;
+  }
+  return false;
+}
+
+bool data_reader_jag::is_dependent(const variable_t t) const {
+  for(const auto d: m_dependent) {
+    if (d == t) return true;
+  }
+  return false;
+}
+
+bool data_reader_jag::is_used(const variable_t t) const {
+  return is_independent(t) || is_dependent(t);
 }
 
 void data_reader_jag::set_normalization_mode(int mode) {
@@ -162,40 +202,71 @@ void data_reader_jag::set_linearized_input_size() {
   }
 }
 
-int data_reader_jag::get_linearized_data_size() const {
-  switch (m_independent) {
+size_t data_reader_jag::get_linearized_size(const data_reader_jag::variable_t t) const {
+  switch (t) {
     case JAG_Image:
-      return static_cast<int>(m_linearized_image_size);
+      return m_linearized_image_size;
     case JAG_Scalar:
-      return static_cast<int>(m_linearized_scalar_size);
+      return m_linearized_scalar_size;
     case JAG_Input:
-      return static_cast<int>(m_linearized_input_size);
+      return m_linearized_input_size;
     default: { // includes Undefined case
-      throw lbann_exception(std::string("data_reader_jag::get_linearized_data_size() : ") +
+      throw lbann_exception(std::string("data_reader_jag::get_linearized_size() : ") +
                                         "unknown or undefined variable type");
     }
   }
-  return 0;
+  return 0u;
+}
+
+int data_reader_jag::get_linearized_data_size() const {
+  size_t sz = 0u;
+  for (const auto t: m_independent) {
+    if (t == Undefined) {
+      continue;
+    }
+    sz += get_linearized_size(t);
+  }
+  return static_cast<int>(sz);
 }
 
 int data_reader_jag::get_linearized_response_size() const {
-  switch (m_dependent) {
-    case JAG_Image:
-      return static_cast<int>(m_linearized_image_size);
-    case JAG_Scalar:
-      return static_cast<int>(m_linearized_scalar_size);
-    case JAG_Input:
-      return static_cast<int>(m_linearized_input_size);
-    default: { // includes Undefined case
-      throw lbann_exception(std::string("data_reader_jag::get_linearized_response_size() : ") +
-                                        "unknown or undefined variable type");
+  size_t sz = 0u;
+  for (const auto t: m_dependent) {
+    if (t == Undefined) {
+      continue;
     }
+    sz += get_linearized_size(t);
   }
-  return 0;
+  return static_cast<int>(sz);
 }
 
-const std::vector<int> data_reader_jag::get_data_dims() const {
-  switch (m_independent) {
+std::vector<size_t> data_reader_jag::get_linearized_data_sizes() const {
+  std::vector<size_t> all_dim;
+  all_dim.reserve(m_independent.size());
+  for (const auto t: m_independent) {
+    if (t == Undefined) {
+      continue;
+    }
+    all_dim.push_back(get_linearized_size(t));
+  }
+  return all_dim;
+}
+
+std::vector<size_t> data_reader_jag::get_linearized_response_sizes() const {
+  std::vector<size_t> all_dim;
+  all_dim.reserve(m_dependent.size());
+  for (const auto t: m_dependent) {
+    if (t == Undefined) {
+      continue;
+    }
+    all_dim.push_back(get_linearized_size(t));
+  }
+  return all_dim;
+}
+
+
+const std::vector<int> data_reader_jag::get_dims(const data_reader_jag::variable_t t) const {
+  switch (t) {
     case JAG_Image:
       return {1, m_image_height, m_image_width};
       //return {static_cast<int>(m_linearized_image_size)};
@@ -204,15 +275,35 @@ const std::vector<int> data_reader_jag::get_data_dims() const {
     case JAG_Input:
       return {static_cast<int>(m_linearized_input_size)};
     default: {
-      throw lbann_exception(std::string("data_reader_jag::get_data_dims() : ") +
+      throw lbann_exception(std::string("data_reader_jag::get_dims() : ") +
                                         "unknown or undefined variable type");
     }
   }
   return {};
 }
 
+const std::vector<int> data_reader_jag::get_data_dims() const {
+  std::vector<int> all_dim;
+  for (const auto t: m_independent) {
+    if (t == Undefined) {
+      continue;
+    }
+    const std::vector<int> ld = get_dims(t);
+    all_dim.insert(all_dim.end(), ld.begin(), ld.end());
+  }
+  return all_dim;
+}
+
 
 void data_reader_jag::load() {
+  if (m_gan_labelling) {
+    m_num_labels=2;
+  }
+  if (is_master()) {
+    std::cout << "JAG load GAN m_gan_labelling : label_value "
+              << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
+  }
+
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string namestr = get_data_filename();
   std::vector<std::string> file_names = get_tokens(namestr);
@@ -252,27 +343,24 @@ void data_reader_jag::load(const std::string image_file,
             const std::string scalar_file,
             const std::string input_file,
             const size_t first_n) {
-  if ((m_independent == Undefined) && (m_dependent == Undefined)) {
+  if ((m_independent.empty() || (m_independent[0] == Undefined)) &&
+      !m_dependent.empty() && (m_dependent[0] == Undefined)) {
     throw lbann_exception("data_reader_jag: no type of variables to load is defined.");
   }
-  if ((m_independent == JAG_Image || m_dependent == JAG_Image) &&
-      !image_file.empty() && !check_if_file_exists(image_file)) {
+  if (is_used(JAG_Image) && !image_file.empty() && !check_if_file_exists(image_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + image_file);
   }
-  if ((m_independent == JAG_Scalar || m_dependent == JAG_Scalar) &&
-      !scalar_file.empty() && !check_if_file_exists(scalar_file)) {
+  if (is_used(JAG_Scalar) && !scalar_file.empty() && !check_if_file_exists(scalar_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + scalar_file);
   }
-  if ((m_independent == JAG_Input || m_dependent == JAG_Input) &&
-      !input_file.empty() && !check_if_file_exists(input_file)) {
+  if (is_used(JAG_Input) && !input_file.empty() && !check_if_file_exists(input_file)) {
     throw lbann_exception("data_reader_jag: failed to load " + input_file);
   }
 
   m_num_samples = 0u;
 
   // read in only those that will be used
-  if ((m_independent == JAG_Image || m_dependent == JAG_Image) &&
-      !image_file.empty()) {
+  if (is_used(JAG_Image) && !image_file.empty()) {
     m_images  = cnpy::npy_load(image_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_images, first_n);
@@ -280,8 +368,7 @@ void data_reader_jag::load(const std::string image_file,
     m_image_loaded = true;
     set_linearized_image_size();
   }
-  if ((m_independent == JAG_Scalar || m_dependent == JAG_Scalar) &&
-      !scalar_file.empty()) {
+  if (is_used(JAG_Scalar) && !scalar_file.empty()) {
     m_scalars = cnpy::npy_load(scalar_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_scalars, first_n);
@@ -289,8 +376,7 @@ void data_reader_jag::load(const std::string image_file,
     m_scalar_loaded = true;
     set_linearized_scalar_size();
   }
-  if ((m_independent == JAG_Input || m_dependent == JAG_Input) &&
-      !input_file.empty()) {
+  if (is_used(JAG_Input) && !input_file.empty()) {
     m_inputs  = cnpy::npy_load(input_file);
     if (first_n > 0u) { // to use only first_n samples
       cnpy_utils::shrink_to_fit(m_inputs, first_n);
@@ -365,13 +451,13 @@ bool data_reader_jag::check_data(size_t& num_samples) const {
   if (!ok) {
     num_samples = 0u;
   } else {
-    if (m_independent == JAG_Image || m_dependent == JAG_Image) {
+    if (is_used(JAG_Image)) {
       ok = ok && m_image_loaded;
     }
-    if (m_independent == JAG_Scalar || m_dependent == JAG_Scalar) {
+    if (is_used(JAG_Scalar)) {
       ok = ok && m_scalar_loaded;
     }
-    if (m_independent == JAG_Input || m_dependent == JAG_Input) {
+    if (is_used(JAG_Input)) {
       ok = ok && m_input_loaded;
     }
   }
@@ -384,8 +470,6 @@ std::string data_reader_jag::get_description() const {
   using std::string;
   using std::to_string;
   string ret = string("data_reader_jag:\n")
-    + " - independent: " + to_string(static_cast<int>(m_independent)) + "\n"
-    + " - dependent: " + to_string(static_cast<int>(m_dependent)) + "\n"
     + " - images: "   + cnpy_utils::show_shape(m_images) + "\n"
     + " - scalars: "  + cnpy_utils::show_shape(m_scalars) + "\n"
     + " - inputs: "   + cnpy_utils::show_shape(m_inputs) + "\n";
@@ -503,8 +587,21 @@ std::vector<DataType> data_reader_jag::get_input(const size_t i) const {
 }
 
 
-bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  switch (m_independent) {
+std::vector<CPUMat>
+data_reader_jag::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
+  std::vector<CPUMat> X_v(sizes.size());
+  El::Int h = 0;
+  for(size_t i=0u; i < sizes.size(); ++i) {
+    const El::Int h_end =  h + static_cast<El::Int>(sizes[i]);
+    El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
+    h = h_end;
+  }
+  return X_v;
+}
+
+bool data_reader_jag::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
+  const data_reader_jag::variable_t vt, const std::string tag) {
+  switch (vt) {
     case JAG_Image: {
       const data_t* ptr = get_image_ptr(data_id);
       set_minibatch_item<data_t>(X, mb_idx, ptr, m_linearized_image_size);
@@ -521,35 +618,41 @@ bool data_reader_jag::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
       break;
     }
     default: { // includes Undefined case
-      throw lbann_exception(std::string("data_reader_jag::fetch_datum() : ") + \
-                                        "unknown or undefined variable type");
+      throw lbann_exception(std::string("data_reader_jag::fetch_") + tag +
+                            "() : unknown or undefined variable type (" +
+                            std::to_string(static_cast<int>(vt)) + ')');
     }
   }
   return true;
 }
 
-bool data_reader_jag::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
-  switch (m_dependent) {
-    case JAG_Image: {
-      const data_t* ptr = get_image_ptr(data_id);
-      set_minibatch_item<data_t>(Y, mb_idx, ptr, m_linearized_image_size);
-      break;
-    }
-    case JAG_Scalar: {
-      const scalar_t* ptr = get_scalar_ptr(data_id);
-      set_minibatch_item<scalar_t>(Y, mb_idx, ptr, m_linearized_scalar_size);
-      break;
-    }
-    case JAG_Input: {
-      const input_t* ptr = get_input_ptr(data_id);
-      set_minibatch_item<input_t>(Y, mb_idx, ptr, m_linearized_input_size);
-      break;
-    }
-    default: { // includes Undefined case
-      throw lbann_exception(std::string("data_reader_jag::fetch_response() : ") +
-                                        "unknown or undefined variable type");
-    }
+bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+  std::vector<size_t> sizes = get_linearized_data_sizes();
+  std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
+  bool ok = true;
+  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
+    ok = fetch(X_v[i], data_id, 0, tid, m_independent[i], "datum");
   }
+  return ok;
+}
+
+bool data_reader_jag::fetch_response(CPUMat& X, int data_id, int mb_idx, int tid) {
+  std::vector<size_t> sizes = get_linearized_response_sizes();
+  std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
+  bool ok = true;
+  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
+    ok = fetch(X_v[i], data_id, 0, tid, m_dependent[i], "response");
+  }
+  return ok;
+}
+
+bool data_reader_jag::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+  if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
+  else { //fake sample (second half of minibatch is set to 0;discriminator model
+    //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+    mb_idx < (get_current_mini_batch_size()/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
+  }
+  //Y.Set(m_gan_label_value, mb_idx, 1);
   return true;
 }
 

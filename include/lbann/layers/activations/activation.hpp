@@ -60,7 +60,7 @@ class entrywise_activation_layer : public activation_layer {
   virtual DataType activation_derivative(DataType x) const = 0;
 
   void fp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -68,7 +68,7 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   void bp_compute() override {
-    if(this->m_using_gpus) {
+    if(this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();
@@ -76,11 +76,17 @@ class entrywise_activation_layer : public activation_layer {
   }
 
   virtual void fp_compute_gpu() {
-    throw lbann_exception("entrywise_activation_layer: no forward propagation GPU implementation");
+    std::stringstream err;
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "has no GPU implementation for forward propagation";
+    LBANN_ERROR(err.str());
   }
 
   virtual void bp_compute_gpu() {
-    throw lbann_exception("entrywise_activation_layer: no backward propagation GPU implementation");
+    std::stringstream err;
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "has no GPU implementation for backward propagation";
+    LBANN_ERROR(err.str());
   }
 
   virtual void fp_compute_cpu() {
@@ -149,7 +155,7 @@ class entrywise_activation_layer : public activation_layer {
         const auto& x = input_buffer[i];
         const auto& dy = gradient_wrt_output_buffer[i];
         auto& dx = gradient_wrt_input_buffer[i];
-        dx += dy * activation_derivative(x);
+        dx = dy * activation_derivative(x);
       }
     } else {
       // Non-contiguous data
@@ -161,7 +167,7 @@ class entrywise_activation_layer : public activation_layer {
             = gradient_wrt_output_buffer[row + col * gradient_wrt_output_ldim];
           auto& dx
             = gradient_wrt_input_buffer[row + col * gradient_wrt_input_ldim];
-          dx += dy * activation_derivative(x);
+          dx = dy * activation_derivative(x);
         }
       }
     }

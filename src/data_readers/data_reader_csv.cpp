@@ -269,7 +269,7 @@ void csv_reader::load() {
   select_subset_of_data();
 }
 
-bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   if (m_data_store != nullptr) {
     std::vector<DataType> *buf;
     m_data_store->get_data_buf_DataType(data_id, buf);
@@ -286,12 +286,12 @@ bool csv_reader::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool csv_reader::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
   Y(m_labels[data_id], mb_idx) = 1;
   return true;
 }
 
-bool csv_reader::fetch_response(Mat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
   Y(0, mb_idx) = m_responses[data_id];
   return true;
 }
@@ -375,7 +375,7 @@ static int n = 0;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "csv_reader: error on reading data_id: " << data_id << "\n"
         <<"index.size(): " << m_index.size() << "  m_index["<< data_id
-        << ")=" <<m_index[data_id] << "; index[" << data_id+1 
+        << ")=" <<m_index[data_id] << "; index[" << data_id+1
         << ")= " << m_index[data_id+1] << "\ncnt: " << cnt << " role: "
         << get_role() << " gcount: " << ifs.gcount() << " n: " << n;
     throw lbann_exception(err.str());

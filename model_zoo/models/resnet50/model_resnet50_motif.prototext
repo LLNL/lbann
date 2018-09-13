@@ -176,7 +176,6 @@ model {
   num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -208,7 +207,7 @@ model {
   layer {
     parents: ""
     name: "data"
-    children: "conv1"
+    children: "conv1 target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -540,13 +539,10 @@ model {
     }
   }
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 }

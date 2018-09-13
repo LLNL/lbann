@@ -27,32 +27,43 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
+#include "lbann/utils/random.hpp"
 #include <cstdio>
 #include <string>
 
 namespace lbann {
 
-data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features, bool shuffle)
-  : generic_data_reader(shuffle) {
-  m_num_samples = num_samples;
-  m_num_features = num_features;
+data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features,
+                                             bool shuffle)
+  : data_reader_synthetic(num_samples, {num_features}, 0, shuffle) {}
+
+data_reader_synthetic::data_reader_synthetic(int num_samples,
+                                             std::vector<int> dims,
+                                             int num_labels, bool shuffle)
+  : generic_data_reader(shuffle), m_num_samples(num_samples),
+    m_num_labels(num_labels), m_dimensions(dims) {}
+
+bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int) {
+  auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
+  std::normal_distribution<DataType> dist(DataType(0), DataType(1));
+  auto& gen = get_fast_generator();
+  const El::Int height = X_v.Height();  // Width is 1.
+  DataType * __restrict__ buf = X_v.Buffer();
+  for (El::Int i = 0; i < height; ++i) {
+    buf[i] = dist(gen);
+  }
+  return true;
 }
 
-/// Generate one datum of the mini-batch
-bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  Mat X_v;
-  El::View(X_v, X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  //@todo: generalize to take different data distribution/generator
-  El::Gaussian(X_v, m_num_features, 1, DataType(0), DataType(1));
-
+bool data_reader_synthetic::fetch_label(Mat& Y, int data_id, int mb_idx, int) {
+  Y.Set(fast_rand_int(get_fast_generator(), m_num_labels), mb_idx, 1);
   return true;
 }
 
 void data_reader_synthetic::load() {
-  //set indices/ number of features
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
-
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
 }
 
