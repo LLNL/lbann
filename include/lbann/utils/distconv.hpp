@@ -99,6 +99,10 @@ void initialize(MPI_Comm comm);
  */
 void finalize();
 
+/** Query profiling
+ */
+bool is_profiling_enabled();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();

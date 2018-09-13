@@ -42,6 +42,7 @@ namespace dc {
 namespace {
 p2p::P2P *p2p_instance = nullptr;
 Backend *backend_instance = nullptr;
+bool enable_profile = false;
 } // namespace
 
 void initialize(MPI_Comm comm) {
@@ -54,6 +55,9 @@ void initialize(MPI_Comm comm) {
     CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
     backend_instance = new Backend(comm, cudnn_h, s);
   }
+  if (std::getenv("LBANN_DISTCONV_PROFILE")) {
+    enable_profile = true;
+  }
 }
 
 void finalize() {
@@ -65,6 +69,10 @@ void finalize() {
     delete backend_instance;
     backend_instance = nullptr;
   }
+}
+
+bool is_profiling_enabled() {
+  return enable_profile;
 }
 
 p2p::P2P &get_p2p() {

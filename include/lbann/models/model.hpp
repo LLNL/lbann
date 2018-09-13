@@ -517,12 +517,16 @@ private:
   float m_elapsed = 0;
   int m_num_iterations = 0;
   void clock_start() {
-    m_clk_start.record();
+    if (dc::is_profiling_enabled()) {
+      m_clk_start.record();
+    }
   }
   void clock_end() {
-    m_clk_end.record();
-    m_elapsed += m_clk_end.get_elapsed_time_since(m_clk_start);
-    ++m_num_iterations;
+    if (dc::is_profiling_enabled()) {
+      m_clk_end.record();
+      m_elapsed += m_clk_end.get_elapsed_time_since(m_clk_start);
+      ++m_num_iterations;
+    }
   }
   void clock_clear() {
     m_elapsed = 0.0;

@@ -1026,12 +1026,14 @@ void model::train(int num_epochs, int num_batches) {
     reset_epoch_statistics(execution_mode::training);
 
 #ifdef LBANN_HAS_DISTCONV
-    if (m_comm->am_model_master()) {
-      std::cout << "Distconv elapsed time: " << m_elapsed
-                << ", average: " << (m_elapsed / m_num_iterations)
-                << std::endl;
+    if (dc::is_profiling_enabled()) {
+      if (m_comm->am_model_master()) {
+        std::cout << "Distconv elapsed time: " << m_elapsed
+                  << ", average: " << (m_elapsed / m_num_iterations)
+                  << std::endl;
+      }
+      clock_clear();
     }
-    clock_clear();
 #endif
 
     // Evaluate on validation set
