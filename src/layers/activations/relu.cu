@@ -33,7 +33,7 @@ namespace {
 
 /** Entry-wise operator. */
 struct op {
-  __device__ DataType operator()(DataType x) const {
+  inline __device__ DataType operator()(DataType x) const {
     return x > DataType(0) ? x : DataType(0);
   }
 };
@@ -44,7 +44,7 @@ struct op {
  *  \f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$.
  */
 struct op_backprop {
-  __device__ DataType operator()(DataType x, DataType dy) const {
+  inline __device__ DataType operator()(DataType x, DataType dy) const {
     return x > DataType(0) ? dy : DataType(0);
   }
 };

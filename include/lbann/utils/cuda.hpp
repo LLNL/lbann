@@ -310,6 +310,10 @@ void apply_entrywise_unary_operator(const AbsDistMat& input,
                                                 output.Matrix());
 }
 
+/** Apply an entry-wise binary operator to GPU data.
+ *  The input and output data must be on GPU, have the same
+ *  dimensions, and be aligned.
+ */
 template <typename BinaryOperator>
 void apply_entrywise_binary_operator(const AbsDistMat& input1,
                                      const AbsDistMat& input2,
