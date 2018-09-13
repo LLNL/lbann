@@ -1,3 +1,19 @@
+============================== (Pending) Release Notes: v0.96 ==============================
+Support for new training algorithms:
+
+Support for new network structures:
+
+Support for new layers:
+ - LogSoftmax (CPU, GPU)
+
+Performance optimizations:
+
+Model portability & Usability:
+
+Internals Features:
+
+I/O & data readers:
+
 ============================== Release Notes: v0.95 ==============================
 Support for new training algorithms:
   - Generative Adversarial Networks (GAN)
