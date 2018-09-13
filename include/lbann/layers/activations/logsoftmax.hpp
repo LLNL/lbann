@@ -217,32 +217,39 @@ class logsoftmax_layer : public activation_layer {
     // Note: Subtracting by the column max prevents activations from
     // blowing up. Large negative values underflow to 0.
     // Save the sum, shift values for the log-sum-exp trick.
-    #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
-      const DataType shift = local_workspace(0, col);
-      local_output(0, col) = shift;
-      DataType sum = 0;
-      for (El::Int row = 0; row < local_height; ++row) {
-        const DataType x = local_input(row, col);
-        const DataType y = std::exp(x - shift);
-        sum += y;
-      }
-      local_workspace(0, col) = sum;
+    if (local_height == 0) {
+      // When there's no local data, fill the workspace with zeros so
+      // the sum across processors is still computed correctly.
+      El::Fill(local_workspace, DataType(0));
+    } else {
+        #pragma omp parallel for
+        for (El::Int col = 0; col < local_width; ++col) {
+          const DataType shift = local_workspace(0, col);
+          local_output(0, col) = shift;
+          DataType sum = 0;
+          for (El::Int row = 0; row < local_height; ++row) {
+            const DataType x = local_input(row, col);
+            const DataType y = std::exp(x - shift);
+            sum += y;
+          }
+          local_workspace(0, col) = sum;
+        }
     }
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
 
     // Subtract log-sum-exp and shift value from input to get numerically stable output.
-    #pragma omp parallel for
-    for (El::Int col = 0; col < local_width; ++col) {
-      const DataType lse = std::log(local_workspace(0, col));
-      const DataType shift = local_output(0, col);
-      for (El::Int row = 0; row < local_height; ++row) {
-        const DataType x = local_input(row, col);
-        DataType& y = local_output(row, col);
-        y = x - lse - shift;
+    if (local_height > 0) {
+      #pragma omp parallel for
+      for (El::Int col = 0; col < local_width; ++col) {
+        const DataType lse = std::log(local_workspace(0, col));
+        const DataType shift = local_output(0, col);
+        for (El::Int row = 0; row < local_height; ++row) {
+          const DataType x = local_input(row, col);
+          DataType& y = local_output(row, col);
+          y = x - lse - shift;
+        }
       }
     }
-
   }
 
   virtual void bp_compute_cpu() {
