@@ -14,19 +14,18 @@ Support for new layers:
   - Optimized Top-K accuracy (CPU, GPU)
   - Crop (CPU, GPU)
   - Sort (CPU, GPU) both ascending and descending order
-  - absolute value (CPU, GPU)
-  - Mean-squared (CPU, ??? - Tim)
-  - Top-K categorical accuracy (CPU, ???)
-  - Cross-entropy layer
+  - Absolute value (CPU, GPU)
+  - Mean-squared (CPU, GPU)
+  - Top-K categorical accuracy (CPU, GPU)
+  - Cross-entropy (CPU, GPU)
+  - Stop gradient (CPU, GPU)
 
 Performance optimizations:
   - Use Pinned memory for CPU activations matrices
-  - Custom GPU ReLU
-  - Non-blocking metrics calculations
+  - Non-blocking GPU computation of objective functions and metrics
   - Refactored weight matrices and weight initialization
-  - Optimized GPU memory allocation
+  - Manage GPU workspace buffers with memory pool
   - Slice and concatenation layer emit matrix views if possible
-  - GPU acceleration for evaluation layers
   - Used more fine-grained asynchronous calls when using Aluminum Library
     - Minimized GPU stream synchronization events per call
   - Improved / minimized synchronization events when using a single GPU
@@ -34,6 +33,7 @@ Performance optimizations:
   - GPU implementation of Adagrad optimizer
   - GPU model-parallel softmax
   - Optimized local CUDA kernel implementations
+  - Support for distributed matrices with arbitrary alignment
 
 Model portability & Usability:
   - Keras to LBANN prototext conversion tool
