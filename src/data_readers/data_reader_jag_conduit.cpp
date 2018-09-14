@@ -69,6 +69,8 @@
 
 namespace lbann {
 
+int data_reader_jag_conduit::m_num_local_readers = 0;
+
 const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "fusion_reaction",
   "fusion_model_reaction",
@@ -186,6 +188,10 @@ void data_reader_jag_conduit::use_unused_index_set() {
   m_unused_samples.shrink_to_fit();
   adjust_num_samples_to_use();
 }
+
+void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
+  m_io_buffer_type = io_buffer;
+}
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
@@ -230,6 +236,8 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_unused_samples = rhs.m_unused_samples;
   m_local_num_samples_to_use = rhs.m_local_num_samples_to_use;
   m_global_num_samples_to_use = rhs.m_global_num_samples_to_use;
+  m_io_buffer_type = rhs.m_io_buffer_type;
+  m_local_reader_id = rhs.m_local_reader_id;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -275,6 +283,8 @@ void data_reader_jag_conduit::set_defaults() {
   m_valid_samples.clear();
   m_local_num_samples_to_use = 0ul;
   m_global_num_samples_to_use = 0ul;
+  m_io_buffer_type = "";
+  m_local_reader_id = 0;
 }
 
 /// Replicate image processor for each OpenMP thread

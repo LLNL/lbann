@@ -38,6 +38,8 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   }
 }
 
+int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+
 void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
   bool master = comm->am_world_master();
@@ -108,6 +110,22 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, master, reader);
+      const lbann_data::Model& pb_model = p.model();
+      reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+
+      for (int i=0; i < pb_model.layer_size(); ++i) {
+        const auto& proto_layer = pb_model.layer(i);
+        if (proto_layer.has_input()) {
+          const auto& params = proto_layer.input();
+          const auto& io_buffer = params.io_buffer();
+          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
+          reader_jag_conduit->set_io_buffer_type(io_buffer);
+          const auto num_readers = get_requested_num_parallel_readers(comm, p);
+          reader_jag_conduit->set_num_parallel_readers(num_readers);
+          reader_jag_conduit->set_local_id();
+          break;
+        }
+      }
       set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, master, reader);
@@ -433,25 +451,44 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lbann_data::Model& model)
 {
-  bool master = comm->am_world_master();
+  const bool master = comm->am_world_master();
+  const int parallel_io = model.num_parallel_readers();
 
-  lbann_data::Model *model = p.mutable_model();
-
-  int parallel_io = model->num_parallel_readers();
   if (parallel_io == 0) {
     if (master) {
       std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
         " (Limited to # Processes)" << std::endl;
     }
-    parallel_io = comm->get_procs_per_model();
-    model->set_num_parallel_readers(parallel_io); //adjust the prototext
-  } else {
-    if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
-    }
+    return false;
   }
+  if (master) {
+    std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
+  }
+  return true;
+}
+
+void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+{
+  lbann_data::Model *model = p.mutable_model();
+  const bool is_set = check_if_num_parallel_readers_set(comm, *model);
+
+  if (!is_set) {
+    const int parallel_io = comm->get_procs_per_model();
+    model->set_num_parallel_readers(parallel_io); //adjust the prototext
+  }
+}
+
+int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p)
+{
+  const lbann_data::Model& model = p.model();
+  const bool is_set = check_if_num_parallel_readers_set(comm, model);
+
+  if (!is_set) {
+    return comm->get_procs_per_model();
+  }
+  return model.num_parallel_readers();
 }
 
 void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
