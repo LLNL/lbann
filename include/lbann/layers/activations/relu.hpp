@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 #define LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
@@ -36,35 +36,16 @@ namespace lbann {
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <data_layout T_layout, El::Device Dev>
-class relu_layer : public entrywise_activation_layer {
+class relu_layer : public Layer {
 public:
-
-  relu_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
+  relu_layer(lbann_comm *comm) : Layer(comm) {}
   relu_layer* copy() const override { return new relu_layer(*this); }
   std::string get_type() const override { return "ReLU"; }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} +
-     " relu" + " dataLayout: " + this->get_data_layout_string(get_data_layout());
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-
 protected:
-
-  DataType activation(DataType x) const override {
-    return x > DataType(0) ? x : DataType(0);
-  }
-
-  DataType activation_derivative(DataType x) const override {
-    return x > DataType(0) ? DataType(1) : DataType(0);
-  }
-
   void fp_compute() override;
   void bp_compute() override;
-
 };
 
 } // namespace lbann
