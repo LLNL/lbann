@@ -192,7 +192,7 @@ int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set
   /// Check to make sure that there is enough data for all of the parallel readers
   if(data_set_size != 0) {
     int max_num_parallel_readers = num_parallel_readers;
-    while(ceil((float)data_set_size / (float)(mini_batch_size * comm->get_num_models())) < max_num_parallel_readers) {
+    while (!check_num_parallel_readers(data_set_size, mini_batch_size, max_num_parallel_readers, comm)) {
       max_num_parallel_readers--;
     }
     if(comm->am_world_master() && max_num_parallel_readers != num_parallel_readers) {
@@ -205,6 +205,10 @@ int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set
   } else {
     return 0;
   }
+}
+
+bool lbann::distributed_io_buffer::check_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers, const lbann_comm* comm) {
+  return !(ceil((float)data_set_size / (float)(mini_batch_size * comm->get_num_models())) < num_parallel_readers);
 }
 
 void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader) {

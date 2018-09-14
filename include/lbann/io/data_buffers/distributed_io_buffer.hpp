@@ -133,6 +133,7 @@ class distributed_io_buffer : public generic_io_buffer {
   void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
+  static bool check_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers, const lbann_comm* comm);
 
   data_buffer *get_data_buffer(const execution_mode mode) const {
     data_buffer *data_buffer = nullptr;

@@ -253,6 +253,18 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Shuffle sample indices
   void shuffle_indices() override;
+  /**
+   * Compute the number of parallel readers based on the type of io_buffer,
+   * the mini batch size, the requested number of parallel readers.
+   * This is done before populating the sample indices.
+   */
+  int compute_max_num_parallel_readers();
+  /**
+   * Check if there are sufficient number of samples for the given number of
+   * data readers with distributed io buffer, based on the number of samples,
+   * the number of models and the mini batch size.
+   */
+  bool check_num_parallel_readers(long data_set_size);
   /// Determine the number of samples to use
   void determine_num_samples_to_use();
   /**
