@@ -1248,16 +1248,6 @@ void Layer::setup_tensor_distribution_init(
       MPIRootPrintStreamError() << "The numbers of channel and filter decomposition should be the same.\n";
       throw lbann_exception();
     }
-    if (n != 1) {
-#if 0
-      if (get_type() != "convolution" &&
-          get_type() != "ReLU" &&
-          get_type() != "pooling") {
-        MPIRootPrintStreamError() << "Layers except for convolution, ReLU and pooling do not support sample parallelization yet.\n";
-        throw lbann_exception();
-      }
-#endif
-    }
     if (c != 1 || f != 1) {
       MPIRootPrintStreamError() << "Distconv does not support channel/filter parallelization yet.\n";
       throw lbann_exception();      
@@ -1565,7 +1555,7 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists)
 }
 
 Array4 Layer::get_prev_activations_overlap() const {
-  return Array4(0);  
+  return Array4(0);
 }
 
 Array4 Layer::get_activations_overlap() const {
@@ -1577,7 +1567,7 @@ Array4 Layer::get_activations_overlap() const {
     return Array4(0);
   }
 #endif
-    return Array4(0);  
+  return Array4(0);
 }
 
 Array4 Layer::get_prev_error_signals_overlap() const {
@@ -1683,32 +1673,50 @@ void Layer::bp_setup_distconv(int mini_batch_size) {
   ensure_prev_error_signals();
 }
 
+namespace {
+TensorShuffler *get_shuffler(Layer *layer,
+                             TensorShuffler *main_shuffler,
+                             TensorShuffler **last_mb_shufflers,
+                             const TensorDev &src,
+                             const TensorDev &dst) {
+  TensorShuffler *shuffler = nullptr;
+  if (layer->get_model()->get_max_mini_batch_size() ==
+      layer->get_model()->get_current_mini_batch_size()) {
+    shuffler = main_shuffler;
+  } else {
+    // The last remaining mini-batches for the train, validation, and
+    // testing modes
+    int shfl_idx = static_cast<int>(
+        layer->get_model()->get_execution_mode());
+    assert_always(shfl_idx >= 0 && shfl_idx < 3);
+    if (last_mb_shufflers[shfl_idx] == nullptr) {
+      last_mb_shufflers[shfl_idx] = get_tensor_shuffler(src, dst);
+    }
+    shuffler = last_mb_shufflers[shfl_idx];
+  }
+  return shuffler;
+}
+}
+
 void Layer::ensure_prev_activations() {
   if (!(m_parent_copy_in_required || m_parent_shuffle_required)) {
     return;
   }
 
   if (m_parent_copy_in_required) {
-    MPIPrintStreamDebug() << "Copying previous activations from sample decomposition\n";
+    MPIPrintStreamDebug()
+        << "Copying previous activations from sample decomposition\n";
     assert0(dc::tensor::View(
         m_prev_activations_const_view,
         get_prev_activations().LockedBuffer()));
   } else {
     assert_always(m_parent_shuffle_required);
   }
-  TensorShuffler *shuffler = nullptr;
-  if (this->m_model->get_max_mini_batch_size() ==
-      this->m_model->get_current_mini_batch_size()) {
-    shuffler = m_prev_activations_shuffler;
-  } else {
-    int shfl_idx = static_cast<int>(this->m_model->get_execution_mode());
-    assert_always(shfl_idx >= 0 && shfl_idx < 3);
-    if (m_prev_activations_shuffler_last_mb[shfl_idx] == nullptr) {
-      m_prev_activations_shuffler_last_mb[shfl_idx] = get_tensor_shuffler(
-          m_prev_activations_const_view, m_prev_activations_t);
-    }
-    shuffler = m_prev_activations_shuffler_last_mb[shfl_idx];      
-  }
+  TensorShuffler *shuffler =
+      get_shuffler(this, m_prev_activations_shuffler,
+                   m_prev_activations_shuffler_last_mb,
+                   m_prev_activations_const_view,
+                   m_prev_activations_t);
   assert_always(shuffler != nullptr);
   shuffler->shuffle_forward(
       m_prev_activations_const_view.get_const_base_ptr(),
@@ -1722,22 +1730,14 @@ void Layer::copy_out_activations() {
 
   this->m_model->clock_end();
   
-  MPIPrintStreamDebug() << "Copying activations back to sample decomposition\n";
+  MPIPrintStreamDebug()
+      << "Copying activations back to sample decomposition\n";
   assert0(dc::tensor::View(
       m_activations_copyout, get_activations().Buffer()));
-  TensorShuffler *shuffler = nullptr;
-  if (this->m_model->get_max_mini_batch_size() ==
-      this->m_model->get_current_mini_batch_size()) {
-    shuffler = m_activations_shuffler;
-  } else {
-    int shfl_idx = static_cast<int>(this->m_model->get_execution_mode());    
-    assert_always(shfl_idx >= 0 && shfl_idx < 3);
-    if (m_activations_shuffler_last_mb[shfl_idx] == nullptr) {
-      m_activations_shuffler_last_mb[shfl_idx] = get_tensor_shuffler(
-          m_activations_t, m_activations_copyout);          
-    }
-    shuffler = m_activations_shuffler_last_mb[shfl_idx];      
-  }
+  TensorShuffler *shuffler =
+      get_shuffler(this, m_activations_shuffler,
+                   m_activations_shuffler_last_mb,
+                   m_activations_t, m_activations_copyout);
   assert_always(shuffler != nullptr);
   shuffler->shuffle_forward(
       m_activations_t.get_const_base_ptr(),
@@ -1751,28 +1751,20 @@ void Layer::ensure_prev_error_signals() {
   }
 
   if (m_child_copy_out_required) {  
-    MPIPrintStreamDebug() << "Copying previous error signals from sample decomposition\n";
+    MPIPrintStreamDebug()
+        << "Copying previous error signals from sample decomposition\n";
     assert0(dc::tensor::View(
         m_prev_error_signals_const_view,
         get_prev_error_signals().LockedBuffer()));
   } else {
     assert_always(m_child_shuffle_required);
   }
-  TensorShuffler *shuffler = nullptr;
-  if (this->m_model->get_max_mini_batch_size() ==
-      this->m_model->get_current_mini_batch_size()) {
-    shuffler = m_prev_error_signals_shuffler;
-  } else {
-    int shfl_idx = static_cast<int>(this->m_model->get_execution_mode());
-    assert_always(shfl_idx >= 0 && shfl_idx < 3);
-    if (m_prev_error_signals_shuffler_last_mb[shfl_idx] == nullptr) {
-      m_prev_error_signals_shuffler_last_mb[shfl_idx] = get_tensor_shuffler(
-          m_prev_error_signals_const_view, m_prev_error_signals_t);
-    }
-    shuffler = m_prev_error_signals_shuffler_last_mb[shfl_idx];      
-  }
+  TensorShuffler *shuffler =
+      get_shuffler(this, m_prev_error_signals_shuffler,
+                   m_prev_error_signals_shuffler_last_mb,
+                   m_prev_error_signals_const_view,
+                   m_prev_error_signals_t);
   assert_always(shuffler != nullptr);
-  
   shuffler->shuffle_forward(
       m_prev_error_signals_const_view.get_const_base_ptr(),
       m_prev_error_signals_t.get_base_ptr(),
@@ -1793,31 +1785,23 @@ void Layer::copy_out_error_signals() {
 
   if (parent->get_type().find("input") == 0) {
     // No need to copy back when the parent is an input layer
-    MPIPrintStreamDebug() << "Skipping copy back as the parent is an input layer\n";
+    MPIPrintStreamDebug()
+        << "Skipping copy back as the parent is an input layer\n";
     return;
   }
   // No need to copy back as the original layer compute function
   // will be called
   if (m_exit_count == 0) return;
     
-  MPIPrintStreamDebug() << "Copying error signals back to sample decomposition\n";
+  MPIPrintStreamDebug()
+      << "Copying error signals back to sample decomposition\n";
   assert0(dc::tensor::View(
       m_error_signals_copyout, get_error_signals().Buffer()));
-  TensorShuffler *shuffler = nullptr;
-  if (this->m_model->get_max_mini_batch_size() ==
-      this->m_model->get_current_mini_batch_size()) {
-    shuffler = m_error_signals_shuffler;
-  } else {
-    int shfl_idx = static_cast<int>(this->m_model->get_execution_mode());            
-    assert_always(shfl_idx >= 0 && shfl_idx < 3);
-    if (m_error_signals_shuffler_last_mb[shfl_idx] == nullptr) {
-      m_error_signals_shuffler_last_mb[shfl_idx] = get_tensor_shuffler(
-          m_error_signals_t, m_error_signals_copyout);
-    }
-    shuffler = m_error_signals_shuffler_last_mb[shfl_idx];      
-  }
+  TensorShuffler *shuffler =
+      get_shuffler(this, m_error_signals_shuffler,
+                   m_error_signals_shuffler_last_mb,
+                   m_error_signals_t, m_error_signals_copyout);
   assert_always(shuffler != nullptr);
-  
   shuffler->shuffle_forward(
       m_error_signals_t.get_const_base_ptr(),
       m_error_signals_copyout.get_base_ptr(),
