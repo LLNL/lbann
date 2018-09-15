@@ -1786,7 +1786,12 @@ void Layer::copy_out_error_signals() {
   assert_always(parents.size() == 1);
   const Layer *parent = parents[0];
 
-  if (parent->get_type().find("input:") == 0) {
+  // Traverse the graph while skipping split nodes
+  while (parent->get_type() == "split") {
+    parent = parent->get_parent_layers()[0];
+  }
+
+  if (parent->get_type().find("input") == 0) {
     // No need to copy back when the parent is an input layer
     MPIPrintStreamDebug() << "Skipping copy back as the parent is an input layer\n";
     return;
