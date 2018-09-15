@@ -198,6 +198,9 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
+        if (m_conv->is_overlap_bwd_halo_exchange_enabled()) {
+          m_conv->backward_data_exchange_halo(this->m_prev_error_signals_t);
+        }
         compute_gradients_distconv();
         apply_transposed_convolution_distconv();
         if (this->early_terminate_last_iteration()) {
