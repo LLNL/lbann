@@ -772,10 +772,10 @@ message Layer {
    // motif layer
    MotifLayer motif_layer = 4;
 
-   // input Layers
+   // Input layers
    Input input = 2;
 
-   // transform Layers
+   // Transform layers
    Reshape reshape = 306;
    Pooling pooling = 12;
    Concatenation concatenation = 300;
@@ -802,27 +802,56 @@ message Layer {
    InTopK in_top_k = 324;
    Sort sort = 325;
 
-   // learning Layers
+   // Learning layers
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
    Deconvolution deconvolution = 305;
 
-   // loss layers
+   // Loss layers
    CrossEntropy cross_entropy = 60;
    MeanSquaredError mean_squared_error = 61;
    TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
 
-   // target Layers
+   // Math layers
+   Not not = 401;
+   Abs abs = 402;
+   Negative negative = 403;
+   Sign sign = 404;
+   Round round = 405;
+   Ceil ceil = 406;
+   Floor floor = 407;
+   Reciprocal reciprocal = 408;
+   Square square = 409;
+   Sqrt sqrt = 410;
+   Rsqrt rsqrt = 411;
+   Exp exp = 412;
+   Expm1 expm1 = 413;
+   Log log = 414;
+   Log1p log1p = 415;
+   Cos cos = 416;
+   Sin sin = 417;
+   Tan tan = 418;
+   Acos acos = 419;
+   Asin asin = 420;
+   Atan atan = 421;
+   Cosh cosh = 422;
+   Sinh sinh = 423;
+   Tanh tanh = 424;
+   Acosh acosh = 425;
+   Asinh asinh = 426;
+   Atanh atanh = 427;
+   
+   // Target Layers
    Target target = 18;
    TargetReconstruction reconstruction = 22;
 
-   // regularization Layers
+   // Regularization Layers
    BatchNormalization batch_normalization = 19;
    LocalResponseNormalization local_response_normalization = 20;
    Dropout dropout = 21;
    SeluDropout selu_dropout = 229;
 
-   // activation Layers
+   // Activation Layers
    Softmax softmax = 200;
    LogSoftmax logsoftmax = 203;
    ELU elu = 30;
@@ -833,16 +862,12 @@ message Layer {
    SmoothRelu smooth_relu = 35;
    Softplus softplus = 36;
    Selu selu = 37;
-   Tanh tanh = 38;
-   Atan atan = 39;
    BentIdentity bent_identity = 40;
-   Exponential exponential = 41;
    Swish swish = 42;
    Power power = 43;
-   Abs   abs = 44;
    L2Loss l2_loss = 45;
-   Log log = 46;
    Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
+
 }
 ///////////////////////
 // MotifLayer //
@@ -852,6 +877,36 @@ message MotifLayer {
   repeated string variable = 2;
 }
 
+///////////////////////
+// Math Layers       //
+///////////////////////
+message Not {}
+message Abs {}
+message Negative {}
+message Sign {}
+message Round {}
+message Ceil {}
+message Floor {}
+message Reciprocal {}
+message Square {}
+message Sqrt {}
+message Rsqrt {}
+message Exp {}
+message Expm1 {}
+message Log {}
+message Log1p {}
+message Cos {}
+message Sin {}
+message Tan {}
+message Acos {}
+message Asin {}
+message Atan {}
+message Cosh {}
+message Sinh {}
+message Tanh {}
+message Acosh {}
+message Asinh {}
+message Atanh {}
 
 ///////////////////////
 // Activation Layers //
@@ -879,16 +934,7 @@ message SmoothRelu {
 message Softplus {
 }
 
-message Tanh {
-}
-
-message Atan {
-}
-
 message BentIdentity {
-}
-
-message Exponential {
 }
 
 message Swish {
@@ -909,14 +955,7 @@ message Power {
   double exponent = 1;
 }
 
-message Abs {
-}
-
 message L2Loss {
-}
-
-message Log {
-  double base = 1;
 }
 
 message Sigmoid_Binary_Cross_Entropy_With_Logits {
