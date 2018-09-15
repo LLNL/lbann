@@ -357,7 +357,7 @@ class lbann_comm {
   /** Within-model scalar gather (for root processes). */
   template <typename T>
   void model_gather(T snd, T* rcv) {
-    gather(snd, get_model_master(), model_comm);
+    gather(snd, rcv, model_comm);
   }
   /** Within-model scalar-array gather (for non-root processes). */
   template <typename T>
