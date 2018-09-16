@@ -630,9 +630,23 @@ void Layer::setup() {
   setup_pointers();
   setup_dims();
   setup_matrices(m_comm->get_trainer_grid());
+  // setup_data and setup_gpu are delayed to setup_distconv when
+  // distconv is used
+#ifndef LBANN_HAS_DISTCONV
+  setup_data();
+  if (using_gpus()) { setup_gpu(); }
+#endif
+}
+
+#ifdef LBANN_HAS_DISTCONV
+void Layer::setup_distconv() {
+  setup_early_termination();
+  setup_inter_layer_adaptation();
+  setup_keep_original_tensors();
   setup_data();
   if (using_gpus()) { setup_gpu(); }
 }
+#endif
 
 void Layer::setup_pointers() {
   std::stringstream err;
@@ -806,6 +820,7 @@ void Layer::setup_data() {
   // Initialize gradient w.r.t. output tensors
   // Note: We guess whether the tensor is a view or needs to allocate
   // memory, but there are some edge cases that are not handled.
+#ifndef LBANN_HAS_DISTCONV
   for (int i = 0; i < get_num_children(); ++i) {
     const auto& child = *m_child_layers[i];
     const auto& output = get_activations(i);
@@ -820,6 +835,24 @@ void Layer::setup_data() {
       El::Copy(output, gradient_wrt_output);
     }
   }
+#else
+  if (keep_original_output()) {
+    for (int i = 0; i < get_num_children(); ++i) {
+      const auto& child = *m_child_layers[i];
+      const auto& output = get_activations(i);
+      auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
+      gradient_wrt_output.Empty(false);
+      gradient_wrt_output.AlignWith(output);
+      if (child.get_data_layout() == get_data_layout()
+          && child.get_device_allocation() == get_device_allocation()
+          && gradient_wrt_output.DistData() == output.DistData()) {
+        El::LockedView(gradient_wrt_output, output);
+      } else {
+        El::Copy(output, gradient_wrt_output);
+      }
+    }
+  }
+#endif
 
   // Initialize gradient w.r.t. input tensors
   bp_setup_gradient_wrt_inputs(mini_batch_size);
@@ -970,6 +1003,14 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
 void Layer::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
+#ifdef LBANN_HAS_DISTCONV
+  if (!keep_original_input()) {
+    dc::MPIPrintStreamDebug()
+        << get_name() << ": omit fp_setup_inputs\n";
+    return;
+  }
+#endif
+
   // Determine distributed matrix alignment
   const auto& alignment_dist
     = m_parent_layers.front()->get_activations(*this).DistData();
@@ -1023,6 +1064,14 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {
   if (get_num_children() < 1) { return; }
 
+#ifdef LBANN_HAS_DISTCONV
+  if (!keep_original_output()) {
+    dc::MPIPrintStreamDebug()
+        << get_name() << ": omit fp_setup_outputs\n";
+    return;
+  }
+#endif
+
   // Determine distributed matrix alignment
   const bool align_outputs = get_num_parents() > 0;
   const auto& alignment_dist = (align_outputs ?
@@ -1040,6 +1089,14 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 }
 
 void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
+#ifdef LBANN_HAS_DISTCONV
+  if (!keep_original_output()) {
+    dc::MPIPrintStreamDebug()
+        << get_name() << ": omit bp_setup_gradient_wrt_outputs\n";
+    return;
+  }
+#endif
+
   for (int i = 0; i < get_num_children(); ++i) {
 
     // Initialize gradient w.r.t. output tensor
@@ -1088,6 +1145,14 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 }
 
 void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+#ifdef LBANN_HAS_DISTCONV
+  if (!keep_original_input()) {
+    dc::MPIPrintStreamDebug()
+        << get_name() << ": omit bp_setup_gradient_wrt_inputs\n";
+    return;
+  }
+#endif
+
   for (int i = 0; i < get_num_parents(); ++i) {
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
@@ -1199,6 +1264,20 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
 #ifdef LBANN_HAS_DISTCONV
 using namespace dc;
 
+void Layer::enable_distconv() {
+  m_distconv_enabled = using_distconv();
+}
+
+void Layer::setup_early_termination() {
+  char *count_str = std::getenv("DISTCONV_EARLY_TERMINATE");
+  if (count_str) {
+    m_exit_count = atoi(count_str);
+    dc::MPIRootPrintStreamInfo()
+        << "Exiting after " << m_exit_count
+        << " iterations\n";
+  }
+}
+
 void Layer::early_terminate() {
   if (m_exit_count == 0) {
     dc::MPIPrintStreamDebug() << "Early terminate\n";
@@ -1214,15 +1293,57 @@ bool Layer::early_terminate_last_iteration() const {
   return m_exit_count == 0;
 }
 
-void Layer::setup_distconv() {
-  m_distconv_enabled = using_distconv();
-  char *count_str = std::getenv("DISTCONV_EARLY_TERMINATE");
-  if (count_str) {
-    m_exit_count = atoi(count_str);
-    dc::MPIRootPrintStreamInfo()
-        << "Exiting after " << m_exit_count
-        << " iterations\n";
+void Layer::setup_inter_layer_adaptation() {
+  if (!distconv_enabled()) return;
+
+  MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout\n";
+  const auto &child_layers = get_child_layers();
+  MPIPrintStreamDebug() << ": number of children: "
+                            << child_layers.size()
+                            << ", child name: " << child_layers[0]->get_name()
+                            << "\n";
+  const auto &parent_layers = get_parent_layers();
+  MPIPrintStreamDebug() << ": number of parents: "
+                            << parent_layers.size()
+                            << ", parent name: " << parent_layers[0]->get_name()
+                            << "\n";
+  assert_always(child_layers.size() == 1);
+  assert_always(parent_layers.size() == 1);
+
+  const auto &ps = get_parallel_strategy();
+  const auto &parent = *parent_layers[0];
+  if (parent.distconv_enabled()) {
+    m_parent_copy_in_required = false;
+    m_parent_shuffle_required = ps != parent.get_parallel_strategy();
+  } else {
+    m_parent_copy_in_required = true;
   }
+  MPIRootPrintStreamInfo() << "m_parent_copy_in_required: "
+                           << m_parent_copy_in_required
+                           << ", m_parent_shuffle_required: "
+                           << m_parent_shuffle_required
+                           << "\n";
+
+  const auto &child = *child_layers[0];
+  if (child.distconv_enabled()) {
+    m_child_copy_out_required = false;
+    m_child_shuffle_required = ps != child.get_parallel_strategy();
+  } else {
+    m_child_copy_out_required = true;
+  }
+  MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
+                           << m_child_copy_out_required
+                           << ", m_child_shuffle_required: "
+                           << m_child_shuffle_required
+                           << "\n";
+}
+
+void Layer::setup_keep_original_tensors() {
+  if (!using_distconv()) return;
+  bool env_set = getenv("DISTCONV_KEEP_ORIGINAL_TENSORS");
+  m_keep_original_input = env_set || m_parent_copy_in_required;
+  m_keep_original_output = env_set || m_child_copy_out_required;
+  return;
 }
 
 void Layer::setup_tensor_distribution_init(
@@ -1340,56 +1461,6 @@ void Layer::setup_tensor_distribution_block() {
         m_output_decomposition_block * get_strides();
   }
 #endif
-}
-
-void Layer::setup_tensors_fwd(const std::array<Dist, 4> &dists) {
-  m_distconv_enabled = distconv_enabled();
-
-  if (!m_distconv_enabled) {
-    //MPIPrintStreamInfo() << get_name() << ": distconv disabled\n";
-    return;
-  }
-
-  MPIRootPrintStreamInfo() << get_name() << ": setup_tensors_fwd\n";  
-  const auto &child_layers = get_child_layers();
-  MPIPrintStreamDebug() << ": number of children: "
-                            << child_layers.size()
-                            << ", child name: " << child_layers[0]->get_name()
-                            << "\n";
-  const auto &parent_layers = get_parent_layers();
-  MPIPrintStreamDebug() << ": number of parents: "
-                            << parent_layers.size()
-                            << ", parent name: " << parent_layers[0]->get_name()
-                            << "\n";
-  assert_always(child_layers.size() == 1);
-  assert_always(parent_layers.size() == 1);
-
-  const auto &ps = get_parallel_strategy();
-  const auto &parent = *parent_layers[0];
-  if (parent.distconv_enabled()) {
-    m_parent_copy_in_required = false;
-    m_parent_shuffle_required = ps != parent.get_parallel_strategy();
-  } else {
-    m_parent_copy_in_required = true;
-  }
-  MPIRootPrintStreamInfo() << "m_parent_copy_in_required: "
-                           << m_parent_copy_in_required
-                           << ", m_parent_shuffle_required: "
-                           << m_parent_shuffle_required      
-                           << "\n";
-  
-  const auto &child = *child_layers[0];
-  if (child.distconv_enabled()) {
-    m_child_copy_out_required = false;
-    m_child_shuffle_required = ps != child.get_parallel_strategy();
-  } else {
-    m_child_copy_out_required = true;
-  }
-  MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
-                           << m_child_copy_out_required
-                           << ", m_child_shuffle_required: "
-                           << m_child_shuffle_required 
-                           << "\n";
 }
 
 void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
@@ -1636,8 +1707,10 @@ void Layer::fp_setup_distconv(int mini_batch_size) {
   m_activations_copyout.set_outermost_dimension(mini_batch_size);
   assert_always((int)m_activations_copyout.get_shape()[-1] ==
                 mini_batch_size);
-  assert_always((int)m_activations_copyout.get_local_shape()[-1] ==
-                get_activations().LocalWidth());
+  if (keep_original_output()) {
+    assert_always((int)m_activations_copyout.get_local_shape()[-1] ==
+                  get_activations().LocalWidth());
+  }
 
   ensure_prev_activations();
 }
@@ -1667,8 +1740,10 @@ void Layer::bp_setup_distconv(int mini_batch_size) {
   m_error_signals_copyout.set_outermost_dimension(mini_batch_size);
   assert_always((int)m_error_signals_copyout.get_shape()[-1] ==
                 mini_batch_size);
-  assert_always((int)m_error_signals_copyout.get_local_shape()[-1] ==
-                get_error_signals().LocalWidth());
+  if (keep_original_input()) {
+    assert_always((int)m_error_signals_copyout.get_local_shape()[-1] ==
+                  get_error_signals().LocalWidth());
+  }
 
   ensure_prev_error_signals();
 }

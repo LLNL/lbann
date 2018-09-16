@@ -681,8 +681,22 @@ void model::setup_layers() {
     auto& l = get_layer(i);
     l.set_model(this);
     l.setup();
+    // Delay check_setup afeter setup_distconv
+#ifndef LBANN_HAS_DISTCONV
+    l.check_setup();
+#endif
+  }
+#ifdef LBANN_HAS_DISTCONV
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto& l = get_layer(i);
+    l.enable_distconv();
+  }
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto& l = get_layer(i);
+    l.setup_distconv();
     l.check_setup();
   }
+#endif
 }
 
 void model::setup_weights() {
@@ -1769,26 +1783,23 @@ void model::setup_distconv() {
   std::map<dc::Dist*, std::set<dc::Dist*>> invariants;
   std::set<dc::Dist*> updated;
   std::set<dc::Dist*> fixed;
-  for (const auto& layer : m_layers) {  
-    layer->setup_distconv();
-  }
-  for (const auto& layer : m_layers) {  
+  for (const auto& layer : m_layers) {
     layer->setup_tensor_distribution_init(dists, invariants, updated, fixed);
   }
-  for (const auto& layer : m_layers) {    
+  for (const auto& layer : m_layers) {
     layer->setup_tensor_distribution_add_adjacent_invariants(
         dists, invariants);
   }
   while (updated.size() > 0) {
     dc::MPIRootPrintStreamDebug() << "# of updated dists: " << updated.size() << "\n";
-    std::set<dc::Dist*> updated_new;    
+    std::set<dc::Dist*> updated_new;
     for (const auto d: updated) {
       dc::MPIRootPrintStreamDebug() << "Updated: " << *d << "\n";
       for (auto p: invariants[d]) {
         dc::MPIRootPrintStreamDebug() << "Invariant: " << *p << "\n";
         if (d->get_overlap() != p->get_overlap()) {
           if (fixed.find(p) != fixed.end()) {
-            throw lbann_exception("Cannot satisfy the distconv constraints");            
+            throw lbann_exception("Cannot satisfy the distconv constraints");
           }
           p->set_overlap(d->get_overlap());
           updated_new.insert(p);
@@ -1811,16 +1822,17 @@ void model::setup_distconv() {
           << layer->get_name() << "; distconv disabled\n";
     }
   }
-  for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {  
+  for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {
     (*it)->setup_tensor_distribution_block();
   }
   for (const auto& layer : m_layers) {
     layer->setup_tensors_fwd(dists[layer]);
   }
-  for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {  
+  for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {
     (*it)->setup_tensors_bwd(dists[*it]);
   }
 }
+
 #endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

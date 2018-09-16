@@ -516,7 +516,11 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  public:
-  virtual void setup_distconv();
+  void enable_distconv();
+  void setup_distconv();
+  void setup_inter_layer_adaptation();
+  void setup_early_termination();
+  void setup_keep_original_tensors();
   virtual void setup_tensor_distribution_init(
       std::map<const Layer*, std::array<lbann::dc::Dist, 4>> &dists, 
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
@@ -527,7 +531,7 @@ protected:
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
   virtual void setup_tensor_distribution_block();
   // TODO: use dists
-  virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists);
+  virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, 4> &dists);
   virtual dc::Array4 get_activations_tensor_local_shape() const;
   virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists);
@@ -572,6 +576,8 @@ protected:
   
  protected:
   virtual bool using_distconv() const { return false; }
+  virtual bool keep_original_input() const { return m_keep_original_input; }
+  virtual bool keep_original_output() const { return m_keep_original_output; }
   virtual void fp_setup_distconv(int mini_batch_size);
   virtual void bp_setup_distconv(int mini_batch_size);  
   
@@ -654,6 +660,8 @@ protected:
   dc::TensorShuffler *m_error_signals_shuffler_last_mb[3];
  private:
   bool m_distconv_enabled = false;
+  bool m_keep_original_input = true;
+  bool m_keep_original_output = true;
 #endif // LBANN_HAS_DISTCONV
 
 private:

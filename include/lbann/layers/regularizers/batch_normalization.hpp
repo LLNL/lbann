@@ -752,9 +752,11 @@ protected:
 
     const bool is_training =
         this->m_model->get_execution_mode() == execution_mode::training;
-    
-    assert_always(this->m_model->get_current_mini_batch_size() ==
-                  get_prev_activations().Width());
+
+    if (keep_original_input()) {
+      assert_always(this->m_model->get_current_mini_batch_size() ==
+                    get_prev_activations().Width());
+    }
 
     assert0(dc::tensor::View(
         m_scale_t, get_weights()[0]->get_values().LockedBuffer()));
