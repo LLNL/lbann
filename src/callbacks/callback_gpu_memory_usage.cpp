@@ -38,9 +38,9 @@ T get_mean(const std::vector<T> &v) {
 template <typename T>
 T get_median(const std::vector<T> &v) {
   std::vector<T> tmp = v;
-  std::sort(tmp.begin(), tmp.end());
-  int mean_idx = tmp.size() / 2 - 1 + tmp.size() % 2;
-  return tmp[mean_idx];
+  int median_idx = tmp.size() / 2 - 1 + tmp.size() % 2;  
+  std::nth_element(tmp.begin(), tmp.begin() + median_idx, tmp.end());
+  return tmp[median_idx];
 }
 template <typename T>
 T get_max(const std::vector<T> &v) {
