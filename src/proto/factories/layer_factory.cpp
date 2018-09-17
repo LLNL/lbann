@@ -331,10 +331,12 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new batch_normalization<data_layout::DATA_PARALLEL, Dev>(comm,
-                                                                      params.decay(),
-                                                                      params.epsilon(),
-                                                                      params.global_stats());
+      return new batch_normalization_layer<data_layout::DATA_PARALLEL, Dev>(comm,
+                                                                            params.decay(),
+                                                                            params.epsilon(),
+                                                                            params.global_stats());
+    } else {
+      LBANN_ERROR("batch normalization is only supported in a data-parallel layout");
     }
   }
   if (proto_layer.has_dropout()) {
