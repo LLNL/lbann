@@ -495,14 +495,12 @@ class lbann_comm {
     gather(snd, rcv.data(), std::move(c));
   }
   /** Scalar-array gather (for non-root processes). */
-#ifdef NOGO_RIGHT_NOW
   template <typename T>
   void gather(T *snd, int count, int root, El::mpi::Comm c)
   {
     gather(snd, count, root, std::move(c),
            El::SyncInfo<El::Device::CPU>{});
   }
-#endif // NOGO_RIGHT_NOW
   template <typename T, El::Device D>
   void gather(T *snd, int count, int root, El::mpi::Comm c,
               El::SyncInfo<D> const& syncInfo) {
@@ -511,12 +509,10 @@ class lbann_comm {
                     syncInfo);
   }
   /** Scalar-array gather (for root processes). */
-#ifdef NOGO_RIGHT_NOW
   template <typename T>
   void gather(T *snd, int count, T *rcv, El::mpi::Comm c) {
       gather(snd, count, rcv, std::move(c), El::SyncInfo<El::Device::CPU>{});
   }
-#endif // NOGO_RIGHT_NOW
   template <typename T, El::Device D>
   void gather(T *snd, int count, T *rcv, El::mpi::Comm c,
               El::SyncInfo<D> const& syncInfo) {
@@ -771,12 +767,10 @@ class lbann_comm {
   void barrier(const El::mpi::Comm c);
 
   /** Send a buffer to rank in model. */
-#ifdef NOGO_RIGHT_NOW
   template <typename T>
   void send(const T *data, int count, int model, int rank) {
     send(data, count, model, rank, El::SyncInfo<El::Device::CPU>{});
   }
-#endif // NOGO_RIGHT_NOW
   template <typename T, El::Device D>
   void send(const T *data, int count, int model, int rank, El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * count;
@@ -824,17 +818,15 @@ class lbann_comm {
   }
 
   /** Corresponding receive to send. */
-#ifdef NOGO_RIGHT_NOW
   template <typename T> void recv(T *data, int count, int model, int rank) {
     recv(data, count, model, rank, El::SyncInfo<El::Device::CPU>{});
   }
   template <typename T> void recv(T *data, int count, int model) {
-    recv(data, coutn, model, rank_in_model);
+    recv(data, count, model, rank_in_model);
   }
   template <typename T> void recv(T *data, int count) {
     recv(data, count, El::SyncInfo<El::Device::CPU>{});
   }
-#endif // NOGO_RIGHT_NOW
   template <typename T, El::Device D>
   void recv(T *data, int count, int model, int rank, El::SyncInfo<D> const& syncInfo) {
     El::mpi::Recv(data, count, get_world_rank(model, rank), get_world_comm(), syncInfo);
@@ -895,7 +887,6 @@ class lbann_comm {
   void nb_recv(DistMat& mat, El::mpi::Request<DataType>& req);
 
   /** Send/recv to/from ranks. */
-#ifdef NOGO_RIGHT_NOW
   template <typename T, El::Device D>
   void sendrecv(const T *snd, int send_count, int send_model, int send_rank,
                 T *rcv, int recv_count, int recv_model, int recv_rank) {
@@ -910,7 +901,6 @@ class lbann_comm {
              rcv, recv_count, recv_model, rank_in_model,
              El::SyncInfo<El::Device::CPU>{});
   }
-#endif // NOGO_RIGHT_NOW
 
   template <typename T, El::Device D>
   void sendrecv(const T *snd, int send_count, int send_model, int send_rank,
