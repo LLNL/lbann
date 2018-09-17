@@ -669,20 +669,24 @@ message Weights {
   Optimizer optimizer = 2;
 
   ConstantInitializer constant_initializer = 20;
-  UniformInitializer uniform_initializer = 21;
-  NormalInitializer normal_initializer = 22;
-  GlorotNormalInitializer glorot_normal_initializer = 23;
-  GlorotUniformInitializer glorot_uniform_initializer = 24;
-  HeNormalInitializer he_normal_initializer = 25;
-  HeUniformInitializer he_uniform_initializer = 26;
-  LeCunNormalInitializer lecun_normal_initializer = 27;
-  LeCunUniformInitializer lecun_uniform_initializer = 28;
+  ValueInitializer value_initializer = 21;
+  UniformInitializer uniform_initializer = 22;
+  NormalInitializer normal_initializer = 23;
+  GlorotNormalInitializer glorot_normal_initializer = 24;
+  GlorotUniformInitializer glorot_uniform_initializer = 25;
+  HeNormalInitializer he_normal_initializer = 26;
+  HeUniformInitializer he_uniform_initializer = 27;
+  LeCunNormalInitializer lecun_normal_initializer = 28;
+  LeCunUniformInitializer lecun_uniform_initializer = 29;
 
 }
 
 // Weight initializers
 message ConstantInitializer {
   double value = 1;
+}
+message ValueInitializer {
+  string values = 1;
 }
 message UniformInitializer {
   double min = 1;
