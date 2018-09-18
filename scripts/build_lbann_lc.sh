@@ -126,6 +126,7 @@ Options:
   ${C}--with-aluminum${N}              Use Aluminum allreduce library
   ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
   ${C}--aluminum-with-nccl             Enable NCCL backend in Aluminum
+  ${C}--with-conduit              Build with conduit interface
 EOF
 }
 
