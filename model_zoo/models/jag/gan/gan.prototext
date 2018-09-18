@@ -360,7 +360,7 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_y"
     data_layout: "data_parallel"

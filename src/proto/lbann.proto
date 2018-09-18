@@ -816,6 +816,7 @@ message Layer {
    CrossEntropy cross_entropy = 60;
    MeanSquaredError mean_squared_error = 61;
    TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
+   L2Norm2 l2_norm2 = 63;
 
    // target Layers
    Target target = 18;
@@ -845,7 +846,6 @@ message Layer {
    Swish swish = 42;
    Power power = 43;
    Abs   abs = 44;
-   L2Loss l2_loss = 45;
    Log log = 46;
    Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 }
@@ -917,9 +917,6 @@ message Power {
 message Abs {
 }
 
-message L2Loss {
-}
-
 message Log {
   double base = 1;
 }
@@ -927,6 +924,11 @@ message Log {
 message Sigmoid_Binary_Cross_Entropy_With_Logits {
   int32 true_label = 1;
 }
+
+///////////////////////
+// Loss Layers //
+///////////////////////
+message L2Norm2 {}
 
 ///////////////////////////
 // Regularization Layers //

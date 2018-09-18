@@ -24,48 +24,38 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_LOSS_CROSS_ENTROPY_HPP_INCLUDED
-#define LBANN_LAYERS_LOSS_CROSS_ENTROPY_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
+#define LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** Cross entropy layer.
- *  Given a predicted distribution \f$y\f$ and ground truth
- *  distribution \f$\hat{y}\f$, the cross entropy is
- *    \f[
- *    CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i
- *    \f]
+/** L2 norm squared layer.
+ *  Given an input \f$x\f$, this layer outputs
+ *    \f[ L2(x)^2 = \sum\limits_{i} x_i^2 \f]
  */
 template <data_layout T_layout, El::Device Dev>
-class cross_entropy_layer : public Layer {
+class l2_norm2_layer : public Layer {
 public:
 
-  cross_entropy_layer(lbann_comm *comm) : Layer(comm) {
+  l2_norm2_layer(lbann_comm *comm) : Layer(comm) {
     set_output_dims({1});
-
-    // Expects inputs for prediction and ground truth
-    m_expected_num_parent_layers = 2;
   }
 
-  cross_entropy_layer(const cross_entropy_layer& other)
-    : Layer(other) {
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() :
-                      nullptr);
-  }
-
-  cross_entropy_layer& operator=(const cross_entropy_layer& other) {
+  l2_norm2_layer(const l2_norm2_layer& other)
+    : Layer(other),
+      m_workspace(other.m_workspace ?
+                  other.m_workspace->Copy() : nullptr) {}
+  l2_norm2_layer& operator=(const l2_norm2_layer& other) {
     Layer::operator=(other);
     m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() :
-                      nullptr);
+                      other.m_workspace->Copy() : nullptr);
     return *this;
   }
 
-  cross_entropy_layer* copy() const override { return new cross_entropy_layer(*this); }
-  std::string get_type() const override { return "cross entropy"; }
+  l2_norm2_layer* copy() const override { return new l2_norm2_layer(*this); }
+  std::string get_type() const override { return "L2 norm squared"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
@@ -73,18 +63,9 @@ public:
     Layer::setup_data();
 
     // Initialize workspace
-    const auto& prediction = get_prev_activations(0);
-    switch (get_data_layout()) {
-    case data_layout::DATA_PARALLEL:
-      m_workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
-                                           prediction.Root()));
-      break;
-    case data_layout::MODEL_PARALLEL:
-      m_workspace.reset(new StarMRMat<Dev>(prediction.Grid(),
-                                           prediction.Root()));
-      break;
-    default: LBANN_ERROR("invalid data layout");
-    }
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    m_workspace.reset(AbsDistMat::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -96,48 +77,48 @@ public:
   void fp_compute() override {
 
     // Initialize workspace
-    const auto& prediction = get_prev_activations(0);
-    m_workspace->AlignWith(prediction.DistData());
-    m_workspace->Resize(1, prediction.Width());
+    m_workspace->Empty();
+    m_workspace->AlignWith(get_prev_activations());
+    m_workspace->Resize(1, get_prev_activations().Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
-    local_fp_compute(get_local_prev_activations(0),
-                     get_local_prev_activations(1),
+    local_fp_compute(get_local_prev_activations(),
                      m_workspace->Matrix());
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
     El::Copy(*m_workspace, get_activations());
+
+    // Clean up
+    m_workspace->Empty();
     
   }
   
   void bp_compute() override {
 
     // Initialize workspace
-    const auto& prediction = get_prev_activations(0);
-    m_workspace->AlignWith(prediction.DistData());
+    m_workspace->Empty();
+    m_workspace->AlignWith(get_prev_activations());
     El::Copy(get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
-    local_bp_compute(get_local_prev_activations(0),
-                     get_local_prev_activations(1),
+    local_bp_compute(get_local_prev_activations(),
                      m_workspace->LockedMatrix(),
-                     get_local_error_signals(0),
-                     get_local_error_signals(1));
-    
+                     get_local_error_signals());
+
+    // Clean up
+    m_workspace->Empty();
+
   }
 
 private:
 
-  /** Compute local contributions to cross entropy loss. */
-  static void local_fp_compute(const AbsMat& local_prediction,
-                               const AbsMat& local_ground_truth,
+  /** Compute local contributions to L2 norm. */
+  static void local_fp_compute(const AbsMat& local_input,
                                AbsMat& local_contribution);
   /** Compute local gradients. */
-  static void local_bp_compute(const AbsMat& local_prediction,
-                               const AbsMat& local_ground_truth,
+  static void local_bp_compute(const AbsMat& local_input,
                                const AbsMat& local_gradient_wrt_output,
-                               AbsMat& local_gradient_wrt_prediction,
-                               AbsMat& local_gradient_wrt_ground_truth);
+                               AbsMat& local_gradient_wrt_input);
 
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMat> m_workspace;
@@ -146,4 +127,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYERS_LOSS_CROSS_ENTROPY_HPP_INCLUDED
+#endif // LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED

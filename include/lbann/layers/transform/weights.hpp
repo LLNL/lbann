@@ -164,6 +164,9 @@ class weights_layer : public transform_layer {
     El::Gemm(El::NORMAL, El::TRANSPOSE,
              DataType(1), local_weights, *m_workspace,
              DataType(0), local_output);
+
+    // Clean up
+    m_workspace->Empty();
     
   }
 
@@ -185,6 +188,9 @@ class weights_layer : public transform_layer {
              scale, local_gradient_wrt_output, *m_workspace,
              DataType(0), m_gradient->Matrix());
     opt->add_to_gradient_staging(*m_gradient);
+
+    // Clean up
+    m_workspace->Empty();
     
   }
   
