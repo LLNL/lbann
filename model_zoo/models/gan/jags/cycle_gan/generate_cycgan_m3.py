@@ -210,7 +210,6 @@ def configure_model(model):
     l.weighted_sum.scaling_factors = '1 -1'
 
     l = new_layer(model, 'l_l2_x', 'gsample2_minus_x', 'l2_norm2')
-    l = new_layer(model, 'l_l2_x_eval','l_l2_x', 'evaluation')
 
 if __name__ == "__main__":
 

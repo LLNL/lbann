@@ -17,8 +17,8 @@ model {
     #  layer: "L_cyc_x_eval"
     #}
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      scale_factor: 0.025
+      layer: "l_l2_y"
     }
   }
   num_epochs: 1
@@ -449,13 +449,6 @@ model {
     name: "l_l2_y"
     data_layout: "data_parallel"
     parents: "gsample_minus_y"
-  }
-  layer {
-    name: "l_l2_y_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_y"
-    evaluation {
-    }
   }
   weights {
     name: "gen1fc1linearity"
