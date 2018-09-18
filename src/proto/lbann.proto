@@ -805,6 +805,7 @@ message Layer {
    Min min = 322;
    InTopK in_top_k = 324;
    Sort sort = 325;
+   WeightsLayer weights_layer = 326;
 
    // learning Layers
    FullyConnected fully_connected = 11;
@@ -1095,6 +1096,10 @@ message InTopK {
 
 message Sort {
   bool descending = 1;
+}
+
+message WeightsLayer {
+  string dims = 1;
 }
 
 /////////////////////

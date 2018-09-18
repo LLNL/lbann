@@ -26,6 +26,7 @@ set_full_path(THIS_DIR_HEADERS
   min.hpp
   in_top_k.hpp
   sort.hpp
+  weights.hpp
   )
 
 # Propagate the files up the tree

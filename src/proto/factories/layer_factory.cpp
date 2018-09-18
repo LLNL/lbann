@@ -326,6 +326,11 @@ Layer* construct_layer(lbann_comm* comm,
       return new sort_layer<data_layout::DATA_PARALLEL, Dev>(comm, params.descending());
     }
   }
+  if (proto_layer.has_weights_layer()) {
+    const auto& params = proto_layer.weights_layer();
+    const auto& dims = parse_list<El::Int>(params.dims());
+    return new weights_layer<layout, Dev>(comm, dims);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
