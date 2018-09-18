@@ -266,7 +266,7 @@ void data_store_pilot2_molecular::exchange_data() {
   for (auto data_id : required_molecules) {
     m_my_molecules[data_id].resize(num_features);
     m_comm->nb_tagged_recv<double>(
-          m_my_molecules[data_id].data(), num_features, m_owner_rank, 
+          m_my_molecules[data_id].data(), num_features, m_owner_rank,
           data_id, recv_req[jj++], m_comm->get_world_comm());
   }
 
@@ -280,7 +280,7 @@ void data_store_pilot2_molecular::exchange_data() {
       send_req[p].resize(required_molecules.size());
       for (auto data_id : required_molecules) {
         m_comm->nb_tagged_send<double>(
-           m_data[data_id].data(), num_features, p, 
+           m_data[data_id].data(), num_features, p,
            data_id, send_req[p][jj++], m_comm->get_world_comm());
       }
     }
