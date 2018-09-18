@@ -126,6 +126,7 @@ Options:
   ${C}--disable-aluminum${N}           Disable the Aluminum communication library
   ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
   ${C}--disable-aluminum-with-nccl     Disable the NCCL backend in Aluminum
+  ${C}--with-conduit              Build with conduit interface
 EOF
 }
 

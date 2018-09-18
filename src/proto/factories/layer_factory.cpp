@@ -331,10 +331,12 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new batch_normalization<data_layout::DATA_PARALLEL, Dev>(comm,
-                                                                      params.decay(),
-                                                                      params.epsilon(),
-                                                                      params.global_stats());
+      return new batch_normalization_layer<data_layout::DATA_PARALLEL, Dev>(comm,
+                                                                            params.decay(),
+                                                                            params.epsilon(),
+                                                                            params.global_stats());
+    } else {
+      LBANN_ERROR("batch normalization is only supported in a data-parallel layout");
     }
   }
   if (proto_layer.has_dropout()) {
@@ -363,6 +365,35 @@ Layer* construct_layer(lbann_comm* comm,
     }
   }
 
+  // Math layers
+  if (proto_layer.has_not_())       { return new not_layer<layout, Dev>(comm); }
+  if (proto_layer.has_abs())        { return new abs_layer<layout, Dev>(comm); }
+  if (proto_layer.has_negative())   { return new negative_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sign())       { return new sign_layer<layout, Dev>(comm); }
+  if (proto_layer.has_round())      { return new round_layer<layout, Dev>(comm); }
+  if (proto_layer.has_ceil())       { return new ceil_layer<layout, Dev>(comm); }
+  if (proto_layer.has_floor())      { return new floor_layer<layout, Dev>(comm); }
+  if (proto_layer.has_reciprocal()) { return new reciprocal_layer<layout, Dev>(comm); }
+  if (proto_layer.has_square())     { return new square_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sqrt())       { return new sqrt_layer<layout, Dev>(comm); }
+  if (proto_layer.has_rsqrt())      { return new rsqrt_layer<layout, Dev>(comm); }
+  if (proto_layer.has_exp())        { return new exp_layer<layout, Dev>(comm); }
+  if (proto_layer.has_expm1())      { return new expm1_layer<layout, Dev>(comm); }
+  if (proto_layer.has_log())        { return new log_layer<layout, Dev>(comm); }
+  if (proto_layer.has_log1p())      { return new log1p_layer<layout, Dev>(comm); }
+  if (proto_layer.has_cos())        { return new cos_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sin())        { return new sin_layer<layout, Dev>(comm); }
+  if (proto_layer.has_tan())        { return new tan_layer<layout, Dev>(comm); }
+  if (proto_layer.has_acos())       { return new acos_layer<layout, Dev>(comm); }
+  if (proto_layer.has_asin())       { return new asin_layer<layout, Dev>(comm); }
+  if (proto_layer.has_atan())       { return new atan_layer<layout, Dev>(comm); }
+  if (proto_layer.has_cosh())       { return new cosh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sinh())       { return new sinh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_tanh())       { return new tanh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_acosh())      { return new acosh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_asinh())      { return new asinh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_atanh())      { return new atanh_layer<layout, Dev>(comm); }
+  
   // Activation layers
   if (proto_layer.has_softmax()) {
     return new softmax_layer<layout, Dev>(comm);
@@ -375,15 +406,6 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_sigmoid()) {
     return new sigmoid_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_tanh()) {
-    return new tanh_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_atan()) {
-    return new atan_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_exponential()) {
-    return new exponential_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_identity()) {
     return new identity_layer<layout, Dev>(comm);
@@ -420,19 +442,6 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_power()) {
     const auto& params = proto_layer.power();
     return new power_layer<layout, Dev>(comm, params.exponent());
-  }
-  if (proto_layer.has_log()) {
-    const auto& params = proto_layer.log();
-    const auto& base = params.base();
-    if (base != 0.0) {
-      return new log_layer<layout, Dev>(comm, base);
-    } else {
-      return new log_layer<layout, Dev>(comm);
-    }
-  }
-
-  if (proto_layer.has_abs()) {
-    return new abs_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_l2_loss()) {
     return new l2_loss_layer<layout, Dev>(comm);
