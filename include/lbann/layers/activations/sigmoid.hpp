@@ -35,7 +35,7 @@
 
 namespace lbann {
 
-/** Sigmoid activation function.
+/** Sigmoid function layer.
  *  \f[ \sigma(x) = \frac{1}{1 + e^{-x}} \f]
  *  See https://en.wikipedia.org/wiki/Sigmoid_function
  */
