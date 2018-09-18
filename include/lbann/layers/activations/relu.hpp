@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** Rectified linear unit activation function.
+/** Rectified linear unit activation function layer.
  *  \f[ ReLU(x) = \text{max}(x, 0) \f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
