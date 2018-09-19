@@ -1,18 +1,12 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  relu.cpp
-  sigmoid.cpp
-  softmax.cpp
-  logsoftmax.cpp
+  unary.cpp
   )
 
 if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
-    relu.cu
-    sigmoid.cu
-    softmax.cu
-    logsoftmax.cu
+    unary.cu
     )
 endif ()
 

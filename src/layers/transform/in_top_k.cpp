@@ -83,7 +83,7 @@ void fp_cpu(lbann_comm& comm,
   // Column communicator
   auto&& col_comm = input.ColComm();
   const auto& col_comm_size = El::mpi::Size(col_comm);
-  
+
   // Find top-k entries in each column of local input matrix
   std::vector<entry> top_entries(local_width * k);
 #pragma omp parallel for
@@ -99,7 +99,7 @@ void fp_cpu(lbann_comm& comm,
                            &top_entries[col*k] + k,
                            entry::compare);
   }
-  
+
   // Find top-k entries in each column of global input matrix
   if (col_comm_size > 1) {
     std::vector<entry> global_top_entries(col_comm_size * local_width * k);
@@ -135,7 +135,7 @@ void fp_cpu(lbann_comm& comm,
       }
     }
   }
-  
+
 }
 
 } // namespace

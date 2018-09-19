@@ -361,7 +361,7 @@ bool load_model_weights(std::string ckpt_dir, model * m){
     closeread(fd, latest);
     if(temp_comm->am_model_master())
       sprintf(latest, "%s/shared.model.%d.epoch.%d.step.%d/", ckpt_dir.c_str(), temp_comm->get_model_rank(), epochLast, stepLast);
-    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest));
+    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
   }
 
   DIR *weight_dir;
