@@ -65,9 +65,9 @@ DETERMINISTIC=OFF
 WITH_CUDA=
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
-WITH_ALUMINUM=OFF
+WITH_ALUMINUM=
 ALUMINUM_WITH_MPI_CUDA=OFF
-ALUMINUM_WITH_NCCL=OFF
+ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
@@ -123,9 +123,10 @@ Options:
   ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
-  ${C}--with-aluminum${N}              Use Aluminum allreduce library
+  ${C}--disable-aluminum${N}           Disable the Aluminum communication library
   ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
-  ${C}--aluminum-with-nccl             Enable NCCL backend in Aluminum
+  ${C}--disable-aluminum-with-nccl     Disable the NCCL backend in Aluminum
+  ${C}--with-conduit              Build with conduit interface
 EOF
 }
 
@@ -237,16 +238,15 @@ while :; do
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
             ;;
-        --with-aluminum)
-            WITH_ALUMINUM=ON
+        --disable-aluminum)
+            WITH_ALUMINUM=OFF
             ;;
         --aluminum-with-mpi-cuda)
             WITH_ALUMINUM=ON
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
-        --aluminum-with-nccl)
-            WITH_ALUMINUM=ON
-            ALUMINUM_WITH_NCCL=ON
+        --disable-aluminum-with-nccl)
+            ALUMINUM_WITH_NCCL=OFF
             ;;
         --with-conduit)
             WITH_CONDUIT=ON
@@ -566,9 +566,11 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     WITH_CUDNN=ON
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
-	case $CLUSTER in
+    WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
+    ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
+    case $CLUSTER in
 		ray|sierra)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
+			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
 			;;
 		*)
 			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
@@ -640,6 +642,21 @@ else
 	OPENBLAS_ARCH=
 fi
 
+if [ "${WITH_CONDUIT}" = "ON" ] ; then
+echo $COMPILER_VERSION
+  if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
+      echo "CONDUIT_DIR not available."
+      if [ "${CLUSTER}" = "sierra" ]; then
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
+      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
+          export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
+      else
+          # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-dev
+      fi
+      echo "Set to the default CONDUIT_DIR="$CONDUIT_DIR
+  fi
+fi
 ################################################################
 # Display parameters
 ################################################################

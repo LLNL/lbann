@@ -42,12 +42,6 @@ model {
     }
   }
   callback { timer {} }
-  callback {
-      dump_activations{
-      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/dump_acts_ae_cycm2_sc2/gpu_pascal"
-      layer_names: "image_data_id sigmoid"
-    }
-  }
  # callback {
  #   save_images {
  #     image_dir: "vae_fcn_images_"
@@ -322,7 +316,7 @@ model {
     name: "kl_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
@@ -364,7 +358,7 @@ model {
     name: "sample_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     name: "sample_noise"

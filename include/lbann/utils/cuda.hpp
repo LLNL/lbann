@@ -79,10 +79,10 @@
 namespace lbann {
 namespace cuda {
 
-#ifdef __CUDACC__
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
+#ifdef __CUDACC__
 
 // Atomic add functions
 #if __CUDA_ARCH__ >= 530
@@ -127,13 +127,219 @@ __device__ __inline__ double atomic_add(double* address, double val) {
 }
 
 // Min and max
+__device__ __inline__ int min(int x, int y) { return x <= y ? x : y; }
+__device__ __inline__ El::Int min(El::Int x, El::Int y) { return x <= y ? x : y; }
 __device__ __inline__ float min(float x, float y) { return fminf(x, y); }
 __device__ __inline__ double min(double x, double y) { return fmin(x, y); }
+__device__ __inline__ int max(int x, int y) { return x >= y ? x : y; }
+__device__ __inline__ El::Int max(El::Int x, El::Int y) { return x >= y ? x : y; }
 __device__ __inline__ float max(float x, float y) { return fmaxf(x, y); }
 __device__ __inline__ double max(double x, double y) { return fmax(x, y); }
   
 #endif // __CUDACC__
   
+// -------------------------------------------------------------
+// Helper functions for entrywise operations
+// -------------------------------------------------------------
+#ifdef __CUDACC__
+
+/** CUDA kernel to apply an entry-wise unary operator. */
+template <typename UnaryOperator>
+__global__
+void entrywise_unary_operator_kernel(El::Int height, El::Int width,
+                                     const DataType* __restrict__ input,
+                                     El::Int input_ldim,
+                                     DataType* __restrict__ output,
+                                     El::Int output_ldim) {
+  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int size = height * width;
+  const El::Int num_threads = blockDim.x * gridDim.x;
+  UnaryOperator op;
+  for (El::Int pos = gid; pos < size; pos += num_threads) {
+    const auto& row = pos % height;
+    const auto& col = pos / height;
+    const auto& x = input[row + col * input_ldim];
+    auto& y = output[row + col * output_ldim];
+    y = op(x);
+  }
+}
+
+/** CUDA kernel to apply an entry-wise binary operator. */
+template <typename BinaryOperator>
+__global__
+void entrywise_binary_operator_kernel(El::Int height, El::Int width,
+                                     const DataType* __restrict__ input1,
+                                     El::Int input1_ldim,
+                                     const DataType* __restrict__ input2,
+                                     El::Int input2_ldim,
+                                     DataType* __restrict__ output,
+                                     El::Int output_ldim) {
+  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int size = height * width;
+  const El::Int num_threads = blockDim.x * gridDim.x;
+  BinaryOperator op;
+  for (El::Int pos = gid; pos < size; pos += num_threads) {
+    const auto& row = pos % height;
+    const auto& col = pos / height;
+    const auto& x1 = input1[row + col * input1_ldim];
+    const auto& x2 = input2[row + col * input2_ldim];
+    auto& y = output[row + col * output_ldim];
+    y = op(x1, x2);
+  }
+}
+
+/** Apply an entry-wise unary operator to GPU data.
+ *  The input and output data must be on GPU and must have the same
+ *  dimensions.
+ */
+template <typename UnaryOperator>
+void apply_entrywise_unary_operator(const AbsMat& input,
+                                    AbsMat& output) {
+
+  // Check that input and output are valid
+  std::stringstream err;
+  if (input.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("input is not on GPU");
+  } else if (output.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("output is not on GPU");
+  } else if (input.Height() != output.Height()
+             || input.Width() != output.Width()) {
+    err << "input matrix dimensions "
+        << "(" << input.Height() << " x " << input.Width() << ")"
+        << "don't match output matrix dimensions "
+        << "(" << output.Height() << " x " << output.Width() << ")";
+    LBANN_ERROR(err.str());
+  }
+
+  // Get CUDA grid dimensions
+  // Note: Maximum CUDA grid dimension is 2^32-1
+  // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  const El::Int height = input.Height();
+  const El::Int width = input.Width();
+  const El::Int block_dim = 256;
+  El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
+  if (sizeof(El::Int) > sizeof(unsigned int)
+      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+    grid_dim = std::numeric_limits<uint32_t>::max();
+  }
+
+  // Launch CUDA kernel
+  if (grid_dim > 0) {
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    entrywise_unary_operator_kernel<UnaryOperator>
+      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+        height, width, input.LockedBuffer(), input.LDim(),
+        output.Buffer(), output.LDim());
+  }
+  
+}
+
+/** Apply an entry-wise binary operator to GPU data.
+ *  The input and output data must be on GPU and must have the same
+ *  dimensions.
+ */
+template <typename BinaryOperator>
+void apply_entrywise_binary_operator(const AbsMat& input1,
+                                     const AbsMat& input2,
+                                     AbsMat& output) {
+
+  // Check that input and output are valid
+  std::stringstream err;
+  if (input1.GetDevice() != El::Device::GPU
+      || input2.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("input is not on GPU");
+  } else if (output.GetDevice() != El::Device::GPU) {
+    LBANN_ERROR("output is not on GPU");
+  } else if (input1.Height() != input2.Height()
+             || input1.Width() != input2.Width()
+             || input1.Height() != output.Height()
+             || input1.Width() != output.Width()) {
+    err << "input matrix dimensions "
+        << "(" << input1.Height() << " x " << input1.Width() << ", "
+        << input2.Height() << " x " << input2.Width() << ")"
+        << "don't match output matrix dimensions "
+        << "(" << output.Height() << " x " << output.Width() << ")";
+    LBANN_ERROR(err.str());
+  }
+
+  // Get CUDA grid dimensions
+  // Note: Maximum CUDA grid dimension is 2^32-1
+  // (https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#features-and-technical-specifications).
+  const El::Int height = input1.Height();
+  const El::Int width = input1.Width();
+  const El::Int block_dim = 256;
+  El::Int grid_dim = (height * width + block_dim - 1) / block_dim;
+  if (sizeof(El::Int) > sizeof(unsigned int)
+      && grid_dim > std::numeric_limits<uint32_t>::max()) {
+    grid_dim = std::numeric_limits<uint32_t>::max();
+  }
+
+  // Launch CUDA kernel
+  if (grid_dim > 0) {
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    entrywise_binary_operator_kernel<BinaryOperator>
+      <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+        height, width,
+        input1.LockedBuffer(), input1.LDim(),
+        input2.LockedBuffer(), input2.LDim(),
+        output.Buffer(), output.LDim());
+  }
+  
+}
+
+  
+/** Apply an entry-wise unary operator to GPU data.
+ *  The input and output data must be on GPU, have the same
+ *  dimensions, and be aligned.
+ */
+template <typename UnaryOperator>
+void apply_entrywise_unary_operator(const AbsDistMat& input,
+                                    AbsDistMat& output) {
+  std::stringstream err;
+  if (input.Height() != output.Height()
+      || input.Width() != output.Width()) {
+    err << "input matrix dimensions "
+        << "(" << input.Height() << " x " << input.Width() << ")"
+        << "don't match output matrix dimensions "
+        << "(" << output.Height() << " x " << output.Width() << ")";
+    LBANN_ERROR(err.str());
+  } else if (input.DistData() != output.DistData()) {
+    LBANN_ERROR("input and output matrix distributions don't match");
+  }
+  apply_entrywise_unary_operator<UnaryOperator>(input.LockedMatrix(),
+                                                output.Matrix());
+}
+
+/** Apply an entry-wise binary operator to GPU data.
+ *  The input and output data must be on GPU, have the same
+ *  dimensions, and be aligned.
+ */
+template <typename BinaryOperator>
+void apply_entrywise_binary_operator(const AbsDistMat& input1,
+                                     const AbsDistMat& input2,
+                                     AbsDistMat& output) {
+  if (input1.Height() != input2.Height()
+      || input1.Width() != input2.Width()
+      || input1.Height() != output.Height()
+      || input1.Width() != output.Width()) {
+    std::stringstream err;
+    err << "input matrix dimensions "
+        << "(" << input1.Height() << " x " << input1.Width() << ", "
+        << input2.Height() << " x " << input2.Width() << ")"
+        << "don't match output matrix dimensions "
+        << "(" << output.Height() << " x " << output.Width() << ")";
+    LBANN_ERROR(err.str());
+  } else if (input1.DistData() != input2.DistData()
+             || input1.DistData() != output.DistData()) {
+    LBANN_ERROR("input and output matrix distributions don't match");
+  }
+  apply_entrywise_binary_operator<BinaryOperator>(input1.LockedMatrix(),
+                                                  input2.LockedMatrix(),
+                                                  output.Matrix());
+}
+  
+#endif // __CUDACC__
+
 // -------------------------------------------------------------
 // Utilities for Thrust
 // -------------------------------------------------------------

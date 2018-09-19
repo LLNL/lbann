@@ -150,7 +150,7 @@ model {
     parents: "logsd"
     name: "sd"
     data_layout: "data_parallel"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "sd"
