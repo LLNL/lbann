@@ -96,6 +96,10 @@ Layer* construct_layer(lbann_comm* comm,
        if (params.get_scalar_dimension_from_reader()) {
          num_neurons += scalar_dim;
        }
+    #else
+      err << "get_*_dimension_from_reader() not suppoeted";
+      LBANN_ERROR(err.str());
+      return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       num_neurons = params.num_neurons();
@@ -242,6 +246,10 @@ Layer* construct_layer(lbann_comm* comm,
       return new slice_layer<layout, Dev>(comm,
                                           params.slice_axis(),
                                           slice_points);
+    #else
+      err << "get_slice_points_from_reader() not suppoeted";
+      LBANN_ERROR(err.str());
+      return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       const auto& slice_points = parse_list<El::Int>(params.slice_points());
