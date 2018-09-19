@@ -4,7 +4,8 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
- - LogSoftmax (CPU, GPU)
+ - LogSoftmax
+ - Basic unary math functions
 
 Performance optimizations:
 
