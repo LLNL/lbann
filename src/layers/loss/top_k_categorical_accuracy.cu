@@ -130,7 +130,7 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < tensor_size; i += num_threads) {
     tensor[i] = (i / dim_stride) % dim;
-  }  
+  }
 }
 
 /** Get indices corresponding to one-hot matrix.
@@ -156,7 +156,7 @@ __global__ void one_hot_matrix_to_indices(El::Int local_height,
                                 + local_row * global_matrix_col_stride);
       indices[local_col] = global_row;
     }
-  }  
+  }
 }
 
 /** Compute categorical accuracy for each matrix column.
@@ -182,7 +182,7 @@ __global__ void compute_categorical_accuracy(El::Int k,
         && label_index <= max_entry) {
       loss[col * loss_stride] = DataType(1);
     }
-  }  
+  }
 }
 
 /** GPU implementation of top-k categorical accuracy layer forward prop. */
@@ -249,7 +249,9 @@ void fp_gpu(lbann_comm& comm,
     El::mpi::AllReduce(label_indices.data().get(),
                        label_indices.size(),
                        El::mpi::MIN,
-                       col_comm);
+                       col_comm,
+                       El::SyncInfo<El::Device::GPU>{stream,
+                               El::GPUManager::Event()});
   }
 
   // Find top-k entries in each column of local prediction matrix
@@ -336,7 +338,7 @@ void fp_gpu(lbann_comm& comm,
                                    local_width,
                                    cudaMemcpyDeviceToDevice,
                                    stream));
-    }   
+    }
   }
 
   // Compute categorical accuracy
