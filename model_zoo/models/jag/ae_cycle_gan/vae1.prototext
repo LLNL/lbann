@@ -240,7 +240,7 @@ model {
     name: "kl_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
@@ -282,7 +282,7 @@ model {
     name: "sample_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     name: "sample_noise"
