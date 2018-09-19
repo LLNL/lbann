@@ -1049,6 +1049,10 @@ message Concatenation {
 message Slice {
   int64 slice_axis = 2;
   string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+  //the following is for jag;
+  //string should optionally include two or more of the following: 
+  //  scalars images inputs
+  string get_slice_points_from_reader = 4;
 }
 
 message Split {
@@ -1144,6 +1148,10 @@ message FullyConnected {
   double group_lasso_regularization_factor = 6; //default: 0
   bool transpose = 7;
   bool num_neurons_is_num_labels = 8;
+
+  bool get_input_dimension_from_reader = 9;
+  bool get_image_dimension_from_reader = 10;
+  bool get_scalar_dimension_from_reader = 11;
 }
 
 message Convolution {
