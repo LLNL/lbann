@@ -363,8 +363,16 @@ protected:
 
     const int num_channels = this->get_output_dims()[0];
     dc::Array4 per_channel_stat_shape = {1, 1, num_channels, 1};
-    const auto shared_dist = dc::Dist();
-    const dc::LocaleMPI loc(m_comm->get_model_comm().comm, false);
+    dc::Dist shared_dist(dists[0].get_locale_shape());
+    auto split_shape = dists[0].get_split_shape();
+    // set all dimensions to be 1 except for the channel dimension
+    auto pc = split_shape[-2];
+    split_shape = 1;
+    split_shape[-2] = pc;
+    shared_dist.set_split_shape(split_shape);
+
+    const dc::LocaleMPI loc(m_comm->get_model_comm().comm, false);    
+
     // mean
     m_mean_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(m_mean_t, this->m_mean->Buffer()));
