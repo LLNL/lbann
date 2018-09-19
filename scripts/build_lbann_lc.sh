@@ -44,7 +44,6 @@ if [ "${ARCH}" == "x86_64" ]; then
     fi
 fi
 
-#CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3
 
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
@@ -650,6 +649,8 @@ echo $COMPILER_VERSION
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
       elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
           export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
+      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-7.3.0
       else
           # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-dev
