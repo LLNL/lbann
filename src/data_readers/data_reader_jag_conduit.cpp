@@ -48,6 +48,8 @@
 #include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
+#include "conduit/conduit_relay.hpp"
+#include "conduit/conduit_relay_hdf5.hpp"
 
 
 // This macro may be moved to a global scope
@@ -70,6 +72,27 @@
 #define _CN_ "data_reader_jag_conduit"
 
 namespace lbann {
+
+hdf5_file_handles::~hdf5_file_handles() {
+  for (auto& h: m_open_hdf5_files) {
+    conduit::relay::io::hdf5_close_file(h.second);
+  }
+  m_open_hdf5_files.clear();
+}
+
+bool hdf5_file_handles::add(const std::string fname, hid_t hnd) {
+  auto ret = m_open_hdf5_files.insert(std::pair<std::string, hid_t>(fname, hnd));
+  return ret.second;
+}
+
+hid_t hdf5_file_handles::get(const std::string& fname) const {
+  std::unordered_map<std::string, hid_t>::const_iterator it = m_open_hdf5_files.find(fname);
+  if (it == m_open_hdf5_files.end()) {
+    return static_cast<hid_t>(-1);
+  }
+  return it->second;
+}
+
 
 int data_reader_jag_conduit::m_num_local_readers = 0;
 
@@ -195,6 +218,14 @@ void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
   m_io_buffer_type = io_buffer;
 }
 
+void data_reader_jag_conduit::set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f) {
+  m_open_hdf5_files = f;
+}
+
+std::shared_ptr<hdf5_file_handles>& data_reader_jag_conduit::get_open_hdf_files() {
+  return m_open_hdf5_files;
+}
+
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
   if (m_io_buffer_type == "distributed") {
     // Use a sufficiently large data set size for the time being, and
@@ -266,7 +297,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 
   replicate_processor(*rhs.m_pps[0]);
 
-  m_data = rhs.m_data;
   m_uniform_input_type = rhs.m_uniform_input_type;
 
   m_scalar_filter = rhs.m_scalar_filter;
@@ -279,6 +309,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_global_num_samples_to_use = rhs.m_global_num_samples_to_use;
   m_io_buffer_type = rhs.m_io_buffer_type;
   m_local_reader_id = rhs.m_local_reader_id;
+  m_open_hdf5_files = rhs.m_open_hdf5_files;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -326,6 +357,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_global_num_samples_to_use = 0ul;
   m_io_buffer_type = "";
   m_local_reader_id = 0;
+  m_open_hdf5_files = nullptr;
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -360,8 +392,24 @@ bool data_reader_jag_conduit::replicate_processor(const cv_process& pp) {
   return true;
 }
 
-const conduit::Node& data_reader_jag_conduit::get_conduit_node(const std::string key) const {
-  return m_data[key];
+const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::Node& n_base, const std::string key) {
+  return n_base[key];
+}
+
+bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
+  const std::string& sample_name = m_valid_samples[i].first;
+  hid_t h = m_valid_samples[i].second;
+  if (h < static_cast<hid_t>(0)) {
+    return false;
+  }
+  conduit::relay::io::hdf5_read(h, '/' + sample_name + key, node);
+  return true;
+}
+
+bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
+  const std::string& sample_name = m_valid_samples[i].first;
+  hid_t h = m_valid_samples[i].second;
+  return conduit::relay::io::hdf5_has_path(h, '/' + sample_name + key);
 }
 
 
@@ -426,7 +474,8 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
 
 void data_reader_jag_conduit::set_image_keys(const std::vector<std::string> image_keys) {
   m_emi_image_keys = image_keys;
-  //image_keys: ["(0.0, 0.0)/0.0","(90.0, 0.0)/0.0","(90.0, 78.0)/0.0"];
+  // For example, in the data reader prototext file, have a line similar to the one below
+  // image_keys: ["(0.0, 0.0)/0.0","(90.0, 0.0)/0.0","(90.0, 78.0)/0.0"];
 
   m_num_img_srcs = m_emi_image_keys.size();
 }
@@ -488,7 +537,8 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
   if (m_valid_samples.empty()) {
     return;
   }
-  const conduit::Node & n_scalar = get_conduit_node(m_valid_samples[0] + "/outputs/scalars");
+  conduit::Node n_scalar;
+  load_conduit_node(0, "/outputs/scalars", n_scalar);
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -523,7 +573,8 @@ void data_reader_jag_conduit::set_all_input_choices() {
   if (m_valid_samples.empty()) {
     return;
   }
-  const conduit::Node & n_input = get_conduit_node(m_valid_samples[0] + "/inputs");
+  conduit::Node n_input;
+  load_conduit_node(0, "/inputs", n_input);
   m_input_keys.reserve(n_input.number_of_children());
   const std::vector<std::string>& child_names = n_input.child_names();
   for (const auto& key: child_names) {
@@ -549,11 +600,12 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
 
-  if (!m_data.has_path(m_valid_samples[0])) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no sample by " + m_valid_samples[0]);
+  if (!has_conduit_path(0, "")) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no sample by " + m_valid_samples[0].first);
     return;
   }
-  const conduit::Node & n_imageset = get_conduit_node(m_valid_samples[0] + "/outputs/images");
+  conduit::Node n_imageset;
+  load_conduit_node(0, "/outputs/images", n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
@@ -563,13 +615,13 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   for (const auto& emi_tag: m_emi_image_keys) {
-    if (!m_data.has_path(m_valid_samples[0] + "/outputs/images/" + emi_tag + "/emi")) {
+    if (!has_conduit_path(0, "/outputs/images/" + emi_tag + "/emi")) {
       _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
-  const conduit::Node & n_image
-    = get_conduit_node(m_valid_samples[0] + "/outputs/images/" + m_emi_image_keys[0] + "/emi");
+  conduit::Node n_image;
+  load_conduit_node(0, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image);
   conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
@@ -596,7 +648,8 @@ void data_reader_jag_conduit::check_scalar_keys() {
   std::vector<bool> found(m_scalar_keys.size(), false);
   std::set<std::string> keys_conduit;
 
-  const conduit::Node & n_scalar = get_conduit_node(m_valid_samples[0] + "/outputs/scalars");
+  conduit::Node n_scalar;
+  load_conduit_node(0, "/outputs/scalars", n_scalar);
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -632,7 +685,8 @@ void data_reader_jag_conduit::check_input_keys() {
   std::vector<bool> found(m_input_keys.size(), false);
   std::map<std::string, TypeID> keys_conduit;
 
-  const conduit::Node & n_input = get_conduit_node(m_valid_samples[0] + "/inputs");
+  conduit::Node n_input;
+  load_conduit_node(0, "/inputs", n_input);
   conduit::NodeConstIterator itr = n_input.children();
 
   while (itr.has_next()) {
@@ -820,8 +874,8 @@ void data_reader_jag_conduit::load() {
   for (size_t n = my_rank; (n < num_files_to_load) && (my_rank < num_readers); n += num_readers) {
     load_conduit(filenames[n], idx);
     if (!valid_samples_reserved) {
-      // reserve the maximum capacity required assuming that files have the same number of samples
-      m_valid_samples.reserve(m_data.number_of_children() * max_num_files_to_load_per_rank);
+      // reserve the sufficient capacity estimated assuming that files have the same number of samples
+      m_valid_samples.reserve(m_valid_samples.size() * (max_num_files_to_load_per_rank + 1u));
       valid_samples_reserved = true;
     }
     if (is_master()) {
@@ -830,7 +884,7 @@ void data_reader_jag_conduit::load() {
   }
   if (is_master()) {
     std::cerr << "time to load conduit files: " << get_time() - tm1
-              << "  num samples: " << m_data.number_of_children() << std::endl;
+              << "  number of valid local samples at the master rank: " << m_valid_samples.size() << std::endl;
   }
 
   check_image_data();
@@ -853,17 +907,24 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
 #else
   std::cerr << "loading: " << conduit_file_path << std::endl;
 #endif
-  conduit::relay::io::load_merged(conduit_file_path, "hdf5", m_data);
+
+  hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+
+  if (!m_open_hdf5_files) {
+    m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
+  }
+  m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
 
   // set up mapping: need to do this since some of the data may be bad
-  const std::vector<std::string> &children_names = m_data.child_names();
+  std::vector<std::string> sample_names;
+  conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
   size_t bad = 0u;
-  for (auto t : children_names) {
-    const std::string key = "/" + t + "/performance/success";
-    const conduit::Node& n_ok = get_conduit_node(key);
+  for (auto s : sample_names) {
+    conduit::Node n_ok;
+    conduit::relay::io::hdf5_read(hdf5_file_hnd, '/' + s + "/performance/success", n_ok);
     int success = n_ok.to_int64();
     if (success == 1) {
-      m_valid_samples.push_back(t);
+      m_valid_samples.push_back(sample_locator_t(s, hdf5_file_hnd));
     } else {
       ++bad;
     }
@@ -1125,8 +1186,8 @@ data_reader_jag_conduit::get_image_ptrs(const size_t sample_id) const {
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
-    std::string img_key = m_valid_samples[sample_id] + "/outputs/images/" + emi_tag + "/emi";
-    const conduit::Node & n_image = get_conduit_node(img_key);
+    conduit::Node n_image;
+    load_conduit_node(sample_id, "/outputs/images/" + emi_tag + "/emi", n_image);
     conduit_ch_t emi = n_image.value();
     const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
@@ -1205,14 +1266,13 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
     _THROW_LBANN_EXCEPTION_(_CN_, "get_scalars() : invalid sample index");
   }
 
-  const std::string sample_scalars = m_valid_samples[sample_id] + "/outputs/scalars/";
-
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
   for(const auto key: m_scalar_keys) {
-    const std::string scalar_key = sample_scalars + key;
-    const conduit::Node & n_scalar = get_conduit_node(scalar_key);
+    conduit::Node n_scalar;
+    // TODO: optimize by loading the entire set of scalars of the samples
+    load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
     // All the scalar output currently seems to be scalar_t
     //add_val(key, n_scalar, scalars);
     scalars.push_back(static_cast<scalar_t>(n_scalar.to_value()));
@@ -1225,34 +1285,25 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
   }
 
-  const std::string sample_inputs = m_valid_samples[sample_id] + "/inputs/";
-
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
     for(const auto key: m_input_keys) {
-      const std::string input_key = sample_inputs + key;
-      const conduit::Node & n_input = get_conduit_node(input_key);
+      conduit::Node n_input;
+      // TODO: optimize by loading the entire set of input parameters of the samples
+      load_conduit_node(sample_id, "/inputs/" + key, n_input);
       inputs.push_back(n_input.value()); // less overhead
     }
   } else {
     for(const auto key: m_input_keys) {
-      const std::string input_key = sample_inputs + key;
-      const conduit::Node & n_input = get_conduit_node(input_key);
+      conduit::Node n_input;
+      load_conduit_node(sample_id, "/inputs/" + key, n_input);
       add_val(key, n_input, inputs); // more overhead but general
     }
   }
   return inputs;
-}
-
-int data_reader_jag_conduit::check_exp_success(const std::string sample_key) const {
-  if (!m_data.has_path(sample_key)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_exp_success() : invalid key to sample: " + sample_key);
-  }
-
-  return static_cast<int>(get_conduit_node(sample_key + "/performance/success").value());
 }
 
 
@@ -1341,15 +1392,6 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx, in
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    //delete m_data_store;
-  }
-/*
-  m_data_store = new data_store_jag_conduit(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
-*/
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
@@ -1359,15 +1401,12 @@ void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename
 #endif // _JAG_OFFLINE_TOOL_MODE_
 }
 
-void data_reader_jag_conduit::print_schema() const {
-  m_data.schema().print();
-}
-
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
   if (sample_id >= m_valid_samples.size()) {
     _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
   }
-  const conduit::Node & n = get_conduit_node(m_valid_samples[sample_id]);
+  conduit::Node n;
+  load_conduit_node(sample_id, "", n);
   n.schema().print();
 }
 

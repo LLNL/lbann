@@ -33,13 +33,37 @@
 #include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
+#include "hdf5.h"
 #include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <memory>
 
 namespace lbann {
+
+/**
+ * Store the handles of open hdf5 files, and close files at the end of the
+ * life time of this container object.
+ */
+class hdf5_file_handles {
+ protected:
+  std::unordered_map<std::string, hid_t> m_open_hdf5_files;
+
+ public:
+  ~hdf5_file_handles();
+  /// Add a handle that corresponds to the filename fname
+  bool add(const std::string fname, hid_t hnd);
+  /**
+   *  Returns the handle that corresponds to the given file name.
+   *  Reuturns a negative value if not found.
+   */
+  hid_t get(const std::string& fname) const;
+
+  /// Returns the read-only access to the internal data
+  const std::unordered_map<std::string, hid_t>& get() const { return m_open_hdf5_files; }
+};
+
 
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
@@ -50,7 +74,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
-  using sample_map_t = std::vector<std::string>; ///< valid sample map type
+  /// Type for the pair of the key string of a sample and the handle of the file that contains it
+  using sample_locator_t = std::pair<std::string, hid_t>;
+  using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
 
   /**
    * Dependent/indepdendent variable types
@@ -136,6 +162,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   void set_local_id() { m_local_reader_id = m_num_local_readers++; }
   /// Get the id of this local instance
   int get_local_id() const { return m_local_reader_id; }
+  /// Set the set of open hdf5 data files
+  void set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f);
+  /// Get the set of open hdf5 data files
+  std::shared_ptr<hdf5_file_handles>& get_open_hdf_files();
 #else
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
@@ -197,9 +227,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
-  /// Check if the simulation was successful
-  int check_exp_success(const std::string sample_key) const;
-
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
@@ -213,8 +240,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
-  /// print the schema of the all the samples
-  void print_schema() const;
   /// print the schema of the specific sample identified by a given id
   void print_schema(const size_t i) const;
 
@@ -301,7 +326,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   static bool check_non_numeric(const std::string key);
 
   /// Allow const access to the conduit data structure
-  const conduit::Node& get_conduit_node(const std::string key) const;
+  static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
+  /** Load the conduit node with the data of the sample i identified by key
+   *  from the file that contains the sample.
+   */
+  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
+  /// Check if a key exist for sample i
+  bool has_conduit_path(const size_t i, const std::string& key) const;
 
   /// Obtain the pointers to read-only image data
   std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
@@ -335,9 +366,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
 
-  /// data wrapped in a conduit structure
-  conduit::Node m_data;
-
   /**
    * Set of keys that are associated with non_numerical values.
    * Such a variable requires a specific method for mapping to a numeric value.
@@ -362,9 +390,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<prefix_t> m_input_prefix_filter;
 
   /**
-   * maps integers to sample IDs. In the future the sample IDs may
-   * not be integers; also, this map only includes sample IDs that
-   * have <sample_id>/performance/success = 1
+   * maps integers to sample IDs and the handle of the file that contains it.
+   * In the future the sample IDs may not be integers; also, this map only
+   * includes sample IDs that have <sample_id>/performance/success = 1
    */
   sample_map_t m_valid_samples;
   /// To support validation_percent
@@ -391,6 +419,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   static int m_num_local_readers;
   /// locally addressable id in case of multiple data reader instances attached to a model
   int m_local_reader_id;
+
+  /// Shared set of the handles of open HDF5 files
+  std::shared_ptr<hdf5_file_handles> m_open_hdf5_files;
 };
 
 

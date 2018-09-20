@@ -110,15 +110,21 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, master, reader);
+      static data_reader_jag_conduit* leading_reader_jag_conduit = nullptr;
+      auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+      if (!leading_reader_jag_conduit) {
+        leading_reader_jag_conduit = reader_jag_conduit;
+      } else {
+        reader_jag_conduit->set_open_hdf_files(leading_reader_jag_conduit->get_open_hdf_files());
+      }
 
       for (int i=0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
         if (proto_layer.has_input()) {
           const auto& params = proto_layer.input();
           const auto& io_buffer = params.io_buffer();
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
           reader_jag_conduit->set_io_buffer_type(io_buffer);
           const auto num_readers = get_requested_num_parallel_readers(comm, p);
           reader_jag_conduit->set_num_parallel_readers(num_readers);
