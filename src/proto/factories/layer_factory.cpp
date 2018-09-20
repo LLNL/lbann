@@ -97,7 +97,7 @@ Layer* construct_layer(lbann_comm* comm,
          num_neurons += scalar_dim;
        }
     #else
-      err << "get_*_dimension_from_reader() not suppoeted";
+      err << "get_*_dimension_from_reader() not supported";
       LBANN_ERROR(err.str());
       return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
@@ -247,7 +247,7 @@ Layer* construct_layer(lbann_comm* comm,
                                           params.slice_axis(),
                                           slice_points);
     #else
-      err << "get_slice_points_from_reader() not suppoeted";
+      err << "get_slice_points_from_reader() not supported";
       LBANN_ERROR(err.str());
       return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
