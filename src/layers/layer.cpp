@@ -1383,6 +1383,7 @@ void Layer::setup_tensor_distribution_init(
     // Put the remaining factor into the outer-most process dimension
     float rem = np / (float)nchw;
     n *= rem;
+    ps.sample_splits *= rem;
     nchw = n * c * h * w;
     if (nchw != np) {
       MPIRootPrintStreamError() <<
@@ -1402,6 +1403,12 @@ void Layer::setup_tensor_distribution_init(
   ps.filter_groups = f;
   ps.height_groups = h;
   ps.width_groups = w;
+  // If splits are not set, set them to be equal to the group numbers
+  if (ps.sample_splits == 0) ps.sample_splits = n;
+  if (ps.channel_splits == 0) ps.channel_splits = c;
+  if (ps.filter_splits == 0) ps.filter_splits = f;
+  if (ps.height_splits == 0) ps.height_splits = h;
+  if (ps.width_splits == 0) ps.width_splits = w;
   
   Dist prev_activations_dist =  Dist({w, h, c, n});
   Dist activations_dist =  Dist({w, h, f, n});

@@ -52,24 +52,39 @@ class lbann_callback_sync_layers;
 
 /** Represents a parallel strategy for a layer. */
 struct ParallelStrategy {
-  /** Number of groups the sample dimension is split over. */
+  /** Number of process groups the sample dimension is split over. */
   int sample_groups = 0;
-  /** Number of groups the height dimension is split over. */
+  /** Number of groups the sample dimension is split over. */
+  int sample_splits = 0;
+  /** Number of process groups the height dimension is split over. */
   int height_groups = 0;
-  /** Number of groups the width dimension is split over. */
+  /** Number of groups the height dimension is split over. */
+  int height_splits = 0;
+  /** Number of process groups the width dimension is split over. */
   int width_groups = 0;
-  /** Number of groups the channel dimension is split over. */
+  /** Number of groups the width dimension is split over. */
+  int width_splits = 0;
+  /** Number of process groups the channel dimension is split over. */
   int channel_groups = 0;
-  /** Number of groups the filter dimension is split over. */
+  /** Number of groups the channel dimension is split over. */
+  int channel_splits = 0;
+  /** Number of process groups the filter dimension is split over. */
   int filter_groups = 0;
+  /** Number of groups the filter dimension is split over. */
+  int filter_splits = 0;
   /** Number of times the layer is replicated (for FC layers right now). */
   int replications = 0;
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
+        sample_splits == ps.sample_splits &&
         height_groups == ps.height_groups &&
+        height_splits == ps.height_splits &&
         width_groups == ps.width_groups &&
+        width_splits == ps.width_splits &&
         channel_groups == ps.channel_groups &&
+        channel_splits == ps.channel_splits &&
         filter_groups == ps.filter_groups &&
+        filter_splits == ps.filter_splits &&
         replications == ps.replications;
   }
   bool operator!=(const ParallelStrategy &ps) const {
@@ -80,10 +95,15 @@ struct ParallelStrategy {
 inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
   os << "{" << ps.sample_groups
+     << "/" << ps.sample_splits
      << ", " << ps.height_groups
+     << "/" << ps.height_splits
      << ", " << ps.width_groups
+     << "/" << ps.width_splits
      << ", " << ps.channel_groups
+     << "/" << ps.channel_splits
      << ", " << ps.filter_groups
+     << "/" << ps.filter_splits
      << ", " << ps.replications
      << "}";
   return os;

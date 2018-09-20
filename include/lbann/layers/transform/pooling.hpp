@@ -592,7 +592,7 @@ private:
       }
       auto &prev_activations_dist = dists[this][0];
       auto &activations_dist = dists[this][1];
-      auto &error_signals_dist = dists[this][2];            
+      auto &error_signals_dist = dists[this][2];
       auto &prev_error_signals_dist = dists[this][3];
       prev_activations_dist.set_overlap(overlap);
       updated.insert(&prev_activations_dist);
