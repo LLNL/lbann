@@ -263,6 +263,7 @@ void data_reader_jag_conduit_hdf5::load() {
       m_jag_store->load_images(image_names);
     }  
 
+    if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5: calling m_jag_store->setup(names)\n";
     m_jag_store->setup(names);
   }
 
@@ -399,7 +400,9 @@ std::string data_reader_jag_conduit_hdf5::get_description() const {
 
 
 bool data_reader_jag_conduit_hdf5::check_sample_id(const size_t sample_id) const {
-  return m_jag_store->check_sample_id(sample_id);
+  //return m_jag_store->check_sample_id(sample_id);
+  m_jag_store->check_sample_id(sample_id);
+  return true;
 }
 
 std::vector< std::pair<size_t, const data_reader_jag_conduit_hdf5::ch_t*> >
@@ -437,8 +440,8 @@ cv::Mat data_reader_jag_conduit_hdf5::cast_to_cvMat(const std::pair<size_t, cons
   return (image.reshape(0, height));
 }
 
-std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id) const {
-  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_images(sample_id);
+std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id, int tid) const {
+  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_images(tid);
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(raw_images.size());
   size_t num_pixels = get_linearized_image_size();
   for (size_t h=0; h<raw_images.size(); h++) {
@@ -539,11 +542,15 @@ data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<si
 
 bool data_reader_jag_conduit_hdf5::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   const data_reader_jag_conduit_hdf5::variable_t vt, const std::string tag) {
+
+//dah - sanity check: I don't think this method is ever called ...
+if (is_master()) std::cerr << "XXXXXX STARTING data_reader_jag_conduit_hdf5::fetch\n";
+
   switch (vt) {
     case JAG_Image: {
       const std::vector<size_t> sizes(get_num_img_srcs(), get_linearized_image_size());
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector<cv::Mat> images = get_cv_images(data_id);
+      std::vector<cv::Mat> images = get_cv_images(data_id, tid);
 
       if (images.size() != get_num_img_srcs()) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
@@ -576,14 +583,16 @@ bool data_reader_jag_conduit_hdf5::fetch(CPUMat& X, int data_id, int mb_idx, int
 bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   bool ok = true;
 
+  m_jag_store->load_data(data_id, tid);
+
   const std::vector<size_t> & sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
 
   size_t i = 0;
-  const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(data_id);
+  const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(tid);
   set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, inputs.data(), m_jag_store->get_linearized_input_size());
 
-  std::vector<cv::Mat> images = get_cv_images(data_id);
+  std::vector<cv::Mat> images = get_cv_images(data_id, tid);
 
   if (images.size() != get_num_img_srcs()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: the number of images is not as expected " + std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));

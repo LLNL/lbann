@@ -107,7 +107,7 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   std::string get_description() const;
 
   /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i) const;
+  std::vector<cv::Mat> get_cv_images(const size_t i, int tid) const;
 
   /**
    * Return the images of the i-th sample as an 1-D vector of lbann::DataType

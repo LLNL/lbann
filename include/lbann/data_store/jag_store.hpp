@@ -60,22 +60,21 @@ class jag_store {
     m_comm = comm;
   }
 
+  void load_data(int data_id, int tid);
+
   /// Returns the requested inputs
-  const std::vector<data_reader_jag_conduit_hdf5::input_t> & fetch_inputs(size_t sample_id) const {
-    check_sample_id(sample_id);
-    return m_data_inputs[sample_id];
+  const std::vector<data_reader_jag_conduit_hdf5::input_t> & fetch_inputs(int tid) const {
+    return m_data_inputs[tid];
   }
 
   /// Returns the requested scalars
-  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> & fetch_scalars (size_t sample_id) const {
-    check_sample_id(sample_id);
-    return m_data_scalars[sample_id];
+  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> & fetch_scalars (int tid) const {
+    return m_data_scalars[tid];
   }
 
   /// Returns the requested images
-  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> & fetch_images(size_t sample_id) {
-    check_sample_id(sample_id);
-    return m_data_images[sample_id];
+  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> & fetch_images(int tid) {
+    return m_data_images[tid];
   }
 
   /**
@@ -118,7 +117,11 @@ class jag_store {
 
   const std::vector<size_t> & get_linearized_data_sizes() const { return m_data_sizes; }
 
-  bool check_sample_id(const size_t sample_id) const { return sample_id < m_num_samples; }
+  void check_sample_id(const size_t sample_id) const { 
+    if (sample_id >= m_num_samples) {
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: sample_id >= m_num_samples");
+    }
+  }
 
   size_t get_num_samples() const { return m_num_samples; }
 
@@ -133,10 +136,6 @@ class jag_store {
   size_t m_image_size;
 
   size_t m_num_samples;
-
-  bool m_run_tests;
-
-  std::unordered_set<std::string> m_valid_samples;
 
   std::unordered_map<size_t, std::string> m_id_to_name;
 
@@ -156,7 +155,9 @@ class jag_store {
 
   void build_data_sizes();
 
-  void run_tests(const std::vector<std::string> &conduit_filenames); 
+  std::vector<std::string> m_conduit_filenames;
+  std::vector<int> m_sample_id_to_filename_idx;
+  std::vector<std::string> m_sample_id_to_string_id;
 };
 
 } // end of namespace lbann
