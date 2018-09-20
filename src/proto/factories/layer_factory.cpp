@@ -79,6 +79,7 @@ Layer* construct_layer(lbann_comm* comm,
         || params.get_image_dimension_from_reader()
         || params.get_scalar_dimension_from_reader())
        {
+    #if defined(LBANN_HAS_CONDUIT)
        const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
        lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
        size_t input_dim = dr->get_linearized_input_size();
@@ -95,6 +96,11 @@ Layer* construct_layer(lbann_comm* comm,
        if (params.get_scalar_dimension_from_reader()) {
          num_neurons += scalar_dim;
        }
+    #else
+      err << "get_*_dimension_from_reader() not supported";
+      LBANN_ERROR(err.str());
+      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       num_neurons = params.num_neurons();
       if (proto_layer.num_neurons_from_data_reader()) {
@@ -210,6 +216,7 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
     if (params.get_slice_points_from_reader() != "") {
+    #if defined(LBANN_HAS_CONDUIT)
       std::stringstream ss;
       ss << params.get_slice_points_from_reader();
       std::string s;
@@ -239,6 +246,11 @@ Layer* construct_layer(lbann_comm* comm,
       return new slice_layer<layout, Dev>(comm,
                                           params.slice_axis(),
                                           slice_points);
+    #else
+      err << "get_slice_points_from_reader() not supported";
+      LBANN_ERROR(err.str());
+      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       const auto& slice_points = parse_list<El::Int>(params.slice_points());
       return new slice_layer<layout, Dev>(comm,
