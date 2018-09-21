@@ -240,6 +240,10 @@ model* construct_model(lbann_comm* comm,
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
   for (auto&& cb  : callback_list) { m->add_callback(cb); }
+  m->set_model_id(proto_model.model_id());
+  for (auto t : data_readers) {
+    t.second->set_model(m);
+  }
   return m;
 
 }

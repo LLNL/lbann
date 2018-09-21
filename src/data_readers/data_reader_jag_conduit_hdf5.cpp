@@ -30,6 +30,7 @@
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/utils/options.hpp" // for add_delimiter() in load()
 #include "lbann/data_store/jag_store.hpp"
+#include "lbann/models/model.hpp"
 #else
 #include "data_reader_jag_conduit_hdf5.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
@@ -40,6 +41,7 @@
 #include "lbann/data_readers/image_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
+#include <thread>
 
 
 // This macro may be moved to a global scope
@@ -66,7 +68,8 @@ namespace lbann {
 data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle),
     m_jag_store(nullptr),
-    m_owns_jag_store(false) {
+    m_owns_jag_store(false),
+    m_primary_reader(nullptr) {
 
   set_defaults();
 
@@ -191,10 +194,19 @@ void data_reader_jag_conduit_hdf5::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
+  // this block contains functionality to permit only one of the
+  // three models to read the data (i.e, setup the jag_store);
+  // the jag_store is then passed to the other two readers.
+  // todo: should used a shared_ptr, but I had compilation errors;
+  //       will fix later
   bool setup_jag_store = true;
   options *opts = options::get();
+  if (! opts->get_bool("share_data_reader_data")) {
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: you must include the command line option: --share_data_reader_data when using data_reader_jag_conduit_hdf5");
+  }
   if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5::load() - getting ptrs to data_readers\n";
   std::vector<void*> p = opts->get_ptrs();
+  bool foundit = false;
   for (auto t : p) {
     data_reader_jag_conduit_hdf5 *other = static_cast<data_reader_jag_conduit_hdf5*>(t);
     if (other == nullptr) {
@@ -205,9 +217,18 @@ void data_reader_jag_conduit_hdf5::load() {
       m_jag_store = other->get_jag_store();
       m_owns_jag_store = false;
       setup_jag_store = false;
+      m_primary_reader = other;
+      foundit = true;
       break;
     }
   }
+  if (! foundit) {
+    m_owns_jag_store = true;
+    if (is_master()) {
+      std::cout << "data_reader_jag_conduit_hdf5::load; I am the primary data reader; role: " << get_role() << "\n";
+    }
+  }
+  if (is_master()) std::cerr << "DONE! data_reader_jag_conduit_hdf5::load() - getting ptrs to data_readers\n";
 
   if (setup_jag_store) {
     m_jag_store = new jag_store;
@@ -239,32 +260,9 @@ void data_reader_jag_conduit_hdf5::load() {
     }
   
     m_jag_store->set_comm(m_comm);
-    if (m_use_inputs) {
-      if (is_master()) {
-        std::cerr << "USING INPUTS\n";
-      }
-      m_jag_store->load_inputs();
-    }  
-    if (m_use_scalars) {
-      if (is_master()) {
-        std::cerr << "USING SCALARS\n";
-      }  
-      m_jag_store->load_scalars();
-    }
-  
-    if (m_use_images) {
-      if (is_master()) {
-        std::cerr << "USING IMAGES\n";
-      }  
-      std::vector<std::string> image_names;
-      for (auto t : m_emi_selectors) {
-        image_names.push_back(t);
-      }
-      m_jag_store->load_images(image_names);
-    }  
 
     if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5: calling m_jag_store->setup(names)\n";
-    m_jag_store->setup(names);
+    m_jag_store->setup(names, this);
   }
 
   m_is_data_loaded = true;
@@ -540,6 +538,7 @@ data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<si
   return X_v;
 }
 
+#if 0
 bool data_reader_jag_conduit_hdf5::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   const data_reader_jag_conduit_hdf5::variable_t vt, const std::string tag) {
 
@@ -579,6 +578,7 @@ if (is_master()) std::cerr << "XXXXXX STARTING data_reader_jag_conduit_hdf5::fet
   }
   return true;
 }
+#endif
 
 bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   bool ok = true;
@@ -591,6 +591,9 @@ bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_id
   size_t i = 0;
   const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(tid);
   set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, inputs.data(), m_jag_store->get_linearized_input_size());
+
+  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> &scalars = m_jag_store->fetch_scalars(tid);
+  set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, scalars.data(), m_jag_store->get_linearized_input_size());
 
   std::vector<cv::Mat> images = get_cv_images(data_id, tid);
 
@@ -640,6 +643,23 @@ void data_reader_jag_conduit_hdf5::setup_data_store(model *m) {
     m_data_store->setup();
   }
 */
+}
+
+
+void data_reader_jag_conduit_hdf5::post_update() {
+  return;
+  if (m_owns_jag_store) {
+    return;
+  }
+  size_t len = m_shuffled_indices.size();
+  if (m_primary_reader == nullptr) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: m_primary_reader == nullptr; model id: " + m_model->get_model_id() + " role: " + get_role());
+  }
+  m_shuffled_indices = m_primary_reader->get_shuffled_indices();
+  if (m_shuffled_indices.size() != len) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: got shuffled indices from primary reader; size is: " + std::to_string(m_shuffled_indices.size()) + " but my previous indices size was: " + std::to_string(len));
+  }
+  std::cerr << "XX got shuffled indices from primary; model id: " << m_model->get_model_id() << "\n";
 }
 
 

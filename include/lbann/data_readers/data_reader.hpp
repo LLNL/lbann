@@ -92,7 +92,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_is_partitioned(false),
     m_partition_overlap(0),
     m_partition_mode(0),
-    m_procs_per_partition(1)
+    m_procs_per_partition(1),
+    m_model(nullptr)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -283,6 +284,15 @@ class generic_data_reader : public lbann_image_preprocessor {
    * around, then reshuffle the data indicies.
    */
   virtual bool update(bool is_active_reader);
+
+  /**
+   * This is called at the end of update; it permits data readers to
+   * perform actions that are specific to their data sets, for example,
+   * data_reader_jag_conduit_hdf5 has the 'primary' data reader
+   * bcast its shuffled indices to the other data readers. In general
+   * most data readers will probably not overide this method.
+   * It may also be called outside of update.
+   */
 
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
@@ -666,6 +676,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// support of data store functionality
   void set_data_store(generic_data_store *g);
 
+  void set_model(model *m) { m_model = m; }
+
+  /// experimental; used to ensure all readers for jag_conduit_hdf5
+  /// have identical shuffled indices
+  virtual void post_update() {}
+
  protected:
 
   /**
@@ -686,13 +702,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
- protected:
+  int m_rank;
 
-   int m_rank;
+  generic_data_store *m_data_store;
 
-   generic_data_store *m_data_store;
-
-   lbann_comm *m_comm;
+  lbann_comm *m_comm;
 
   /**
    * Fetch a single sample into a matrix.
@@ -838,6 +852,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
+
+  model *m_model;
 };
 
 template<typename T>

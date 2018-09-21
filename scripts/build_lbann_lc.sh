@@ -399,9 +399,9 @@ fi
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
-        Fortran_FLAGS="${Fortran_FLAGS} -O3"
+        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
+        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
+        Fortran_FLAGS="${Fortran_FLAGS} -g"
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
             CXX_FLAGS="${CXX_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -488,7 +488,8 @@ fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
 if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
+  #MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
+  MPI_HOME=/usr/tce/packages/mvapich2/mvapich2-2.2-gcc-4.9.3
   export MV2_USE_CUDA=1
 fi
 

@@ -134,11 +134,17 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   void set_image_dims(const int width, const int height, const int ch=1);
 
-  void set_use_images(bool b) { m_use_images = b; }
-  void set_use_inputs(bool b) { m_use_inputs = b; }
-  void set_use_scalars(bool b) { m_use_scalars = b; }
+  void set_scalar_keys(const std::string &keys) { m_scalar_keys = keys; }
+  void set_input_keys(const std::string &keys) { m_input_keys = keys; }
+  void set_image_views(const std::string &views) { m_image_views = views; }
+  void set_image_channels(const std::string &channels) { m_image_channels = channels; }
+
+  void post_update() override;
 
  protected:
+
+  friend jag_store;
+
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp);
   virtual void copy_members(const data_reader_jag_conduit_hdf5& rhs);
@@ -154,11 +160,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
   bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
-
-#ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Load a conduit-packed hdf5 data file
-  void load_conduit(const std::string conduit_file_path);
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;
@@ -179,11 +180,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   bool m_is_data_loaded;
 
   int m_num_labels; ///< number of labels
-
-  /// Keys to select a set of scalar simulation outputs to use. By default, use all.
-  std::vector<std::string> m_scalar_keys;
-  /// Keys to select a set of simulation input parameters to use. By default, use all.
-  std::vector<std::string> m_input_keys;
 
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
@@ -216,9 +212,12 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   std::set<std::string> m_emi_selectors;
 
-  bool m_use_scalars;
-  bool m_use_inputs;
-  bool m_use_images;
+  std::string m_scalar_keys;
+  std::string m_input_keys;
+  std::string m_image_views;
+  std::string m_image_channels;
+
+  data_reader_jag_conduit_hdf5* m_primary_reader;
 };
 
 

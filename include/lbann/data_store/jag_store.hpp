@@ -42,6 +42,8 @@
 
 namespace lbann {
 
+class data_reader_jag_conduit_hdf5;
+
 /**
  * Loads the pairs of JAG simulation inputs and results from a conduit-wrapped hdf5 file
  */
@@ -77,32 +79,19 @@ class jag_store {
     return m_data_images[tid];
   }
 
-  /**
-   * Load all keys from the "input" section of the bundle.
-   * This must be called before calling setup()
-   */
-  void load_inputs();
+  void load_inputs(const std::string &keys);
+  void load_scalars(const std::string &keys);
+  void load_image_views(const std::string &keys);
+  void load_image_channels(const std::string &keys);
 
-  /**
-   * Load all keys from the "scalars" section of the bundle.
-   * This must be called before calling setup()
-   */
-  void load_scalars();
-
-  /**
-   * Load the requested images.
-   * This must be called before calling setup()
-   */
-  void load_images(const std::vector<std::string> &keys);
-  
   /**
    * Loads data using the hdf5 conduit API from one or more conduit files.
    * "num_stores" and "my_rank" are used to determine which of the files
-   * (in the conduit_filenames list) will be used. This functionality is 
-   * needed when the jag_store is used in conjunction with 
-   * data_store_jag_conduit
+   * (in the conduit_filenames list) will be used when each processor
+   * is loading a subset of the dataset.
    */
   void setup(const std::vector<std::string> conduit_filenames,
+             data_reader_jag_conduit_hdf5 *reader,
              bool num_stores = 1,
              int my_rank = 0);
 
@@ -110,10 +99,12 @@ class jag_store {
 
   size_t get_linearized_data_size() const;
 
-  size_t get_linearized_image_size() const { return m_image_size; }
-  size_t get_linearized_scalar_size() const { return m_scalars_to_load.size(); }
-  size_t get_linearized_input_size() const { return m_inputs_to_load.size(); }
-  size_t get_num_img_srcs() const { return m_images_to_load.size(); }
+  size_t get_linearized_image_size() const { 
+    return m_image_size * m_image_channels_to_use.size();
+  }
+  size_t get_linearized_scalar_size() const { return m_scalars_to_use.size(); }
+  size_t get_linearized_input_size() const { return m_inputs_to_use.size(); }
+  size_t get_num_img_srcs() const { return m_image_views_to_use.size(); }
 
   const std::vector<size_t> & get_linearized_data_sizes() const { return m_data_sizes; }
 
@@ -129,35 +120,36 @@ class jag_store {
 
   bool m_is_setup;
 
-  bool m_load_inputs;
-
-  bool m_load_scalars;
-
   size_t m_image_size;
 
   size_t m_num_samples;
 
-  std::unordered_map<size_t, std::string> m_id_to_name;
+  // list of keys in the conduit files
+  std::vector<std::string> m_inputs_to_use;
+  std::vector<std::string> m_scalars_to_use;
+  std::vector<std::string> m_image_views_to_use;
+  std::vector<int> m_image_channels_to_use;
 
-  std::vector<std::string> m_inputs_to_load;
-  std::vector<std::string> m_scalars_to_load;
-  std::vector<std::string> m_images_to_load;
-
+  // the actual data. The outer vector has size: omp_get_max_threads()
   std::vector<std::vector<data_reader_jag_conduit_hdf5::input_t>> m_data_inputs;
   std::vector<std::vector<data_reader_jag_conduit_hdf5::scalar_t>> m_data_scalars;
   std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> m_data_images;
 
   lbann_comm *m_comm;
 
-  void get_default_keys(std::string &filename, std::string &sample_id, std::string key1, bool master);
-
   std::vector<size_t> m_data_sizes;
-
   void build_data_sizes();
 
+  // given a data_id, the corresponding sample is in the file
+  // m_conduit_filenames[data_id], and the sample's name (key)
+  // is m_data_id_to_string_id[data_id]
   std::vector<std::string> m_conduit_filenames;
-  std::vector<int> m_sample_id_to_filename_idx;
-  std::vector<std::string> m_sample_id_to_string_id;
+  std::vector<int> m_data_id_to_filename_idx;
+  std::vector<std::string> m_data_id_to_string_id;
+
+  data_reader_jag_conduit_hdf5 *m_reader;
+
+  bool m_master;
 };
 
 } // end of namespace lbann

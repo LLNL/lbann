@@ -351,9 +351,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   } else if (name =="jag_conduit_hdf5") {
     data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
     reader_jag->set_image_dims(width, height);
-    reader_jag->set_use_images(pb_readme.use_images());
-    reader_jag->set_use_scalars(pb_readme.use_scalars());
-    reader_jag->set_use_inputs(pb_readme.use_inputs());
+    reader_jag->set_scalar_keys(pb_readme.scalar_keys());
+    reader_jag->set_input_keys(pb_readme.input_keys());
+    reader_jag->set_image_views(pb_readme.image_views());
+    reader_jag->set_image_channels(pb_readme.image_channels());
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;

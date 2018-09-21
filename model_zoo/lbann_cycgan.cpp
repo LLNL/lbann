@@ -40,7 +40,6 @@ model * build_model_from_prototext(int argc, char **argv,
                                    lbann_comm *comm,
                                    bool first_model);
 
-
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
@@ -353,6 +352,11 @@ model * build_model_from_prototext(int argc, char **argv,
         for (auto t : data_readers) {
           opts->set_ptr((void*)t.second);
         }
+      }
+    } else {
+      // reader gets a copy of the first model's data reader's shuffled indices
+      for (auto t : data_readers) {
+        t.second->post_update();
       }
     }
 

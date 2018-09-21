@@ -50,9 +50,10 @@ message Reader {
   int32 max_files_to_load = 1000;
 
   // for jag_conduit_hdf5
-  bool use_scalars = 1001;
-  bool use_images = 1002;
-  bool use_inputs = 1003;
+  string scalar_keys = 1004;
+  string input_keys = 1005;
+  string image_views = 1006;
+  string image_channels = 1007;
   //------------------  end of only for jag_conduit  -----------------------
 
   int32 num_labels = 99; //for imagenet and synthetic
@@ -199,6 +200,7 @@ message GenericPreprocessor {
 //========================================================================
 
 message Model {
+  string model_id = 1000; //arbitrary identifier
   string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
@@ -1049,9 +1051,10 @@ message Concatenation {
 message Slice {
   int64 slice_axis = 2;
   string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
-  //the following is for jag;
+  //the following is for jag_conduit_hdf5;
   //string should optionally include two or more of the following: 
   //  scalars images inputs
+  // Note: "images" now implies images+scalars
   string get_slice_points_from_reader = 4;
 }
 
@@ -1150,8 +1153,8 @@ message FullyConnected {
   bool num_neurons_is_num_labels = 8;
 
   bool get_input_dimension_from_reader = 9;
-  bool get_image_dimension_from_reader = 10;
-  bool get_scalar_dimension_from_reader = 11;
+  bool get_image_and_scalar_dimension_from_reader = 10;
+  //bool get_scalar_dimension_from_reader = 11;
 }
 
 message Convolution {
