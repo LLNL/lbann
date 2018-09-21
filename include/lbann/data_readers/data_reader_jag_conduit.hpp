@@ -159,13 +159,32 @@ class data_reader_jag_conduit : public generic_data_reader {
   void set_io_buffer_type(const std::string io_buffer);
 
   /// Set the id of this local instance
-  void set_local_id() { m_local_reader_id = m_num_local_readers++; }
+  void set_local_id(const std::string role);
   /// Get the id of this local instance
-  int get_local_id() const { return m_local_reader_id; }
+  int get_local_id(const std::string role) const;
   /// Set the set of open hdf5 data files
   void set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f);
   /// Get the set of open hdf5 data files
   std::shared_ptr<hdf5_file_handles>& get_open_hdf_files();
+  /// Set the leader of local data reader group
+  void set_leading_reader(data_reader_jag_conduit* r);
+  /// Get the leader of local data reader group
+  data_reader_jag_conduit* get_leading_reader();
+
+  /// Export cached data minibatch
+  int reuse_data(CPUMat& X);
+  /// Export cached responses minibatch
+  int reuse_responses(CPUMat& Y);
+  /// Export cached labels minibatch
+  int reuse_labels(CPUMat& Y);
+
+  /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
+  int fetch_data(CPUMat& X) override;
+  /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
+  int fetch_responses(CPUMat& Y) override;
+  /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
+  int fetch_labels(CPUMat& Y) override;
+
 #else
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
@@ -175,6 +194,10 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Return the number of valid samples locally available
   size_t get_num_valid_local_samples() const;
+  /// Allow read-only access to m_valid_samples member data
+  const sample_map_t& get_valid_local_samples() const;
+  /// Allow read-only access to m_unused_samples member data
+  const sample_map_t& get_valid_local_samples_unused() const;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
@@ -416,12 +439,25 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::string m_io_buffer_type;
 
   /// The number of local instances of this reader type
-  static int m_num_local_readers;
+  static std::unordered_map<std::string, int> m_num_local_readers;
   /// locally addressable id in case of multiple data reader instances attached to a model
   int m_local_reader_id;
 
   /// Shared set of the handles of open HDF5 files
   std::shared_ptr<hdf5_file_handles> m_open_hdf5_files;
+
+  /**
+   * The leading data reader among the local readers, which actually does the
+   * file IO and data shuffling.
+   */
+  data_reader_jag_conduit* m_leading_reader;
+
+  CPUMat m_data_cache;
+  CPUMat m_response_cache;
+  CPUMat m_label_cache;
+  int m_cached_data_mb_size;
+  int m_cached_response_mb_size;
+  int m_cached_label_mb_size;
 };
 
 

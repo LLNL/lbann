@@ -48,6 +48,7 @@
 #include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
+#include "lbann/utils/peek_map.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
 
@@ -94,7 +95,7 @@ hid_t hdf5_file_handles::get(const std::string& fname) const {
 }
 
 
-int data_reader_jag_conduit::m_num_local_readers = 0;
+std::unordered_map<std::string, int> data_reader_jag_conduit::m_num_local_readers;
 
 const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "fusion_reaction",
@@ -218,12 +219,28 @@ void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
   m_io_buffer_type = io_buffer;
 }
 
+void data_reader_jag_conduit::set_local_id(const std::string role) {
+  m_local_reader_id = m_num_local_readers[role]++;
+}
+
+int data_reader_jag_conduit::get_local_id(const std::string role) const {
+  return peek_map(m_num_local_readers, role);
+}
+
 void data_reader_jag_conduit::set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f) {
   m_open_hdf5_files = f;
 }
 
 std::shared_ptr<hdf5_file_handles>& data_reader_jag_conduit::get_open_hdf_files() {
   return m_open_hdf5_files;
+}
+
+void data_reader_jag_conduit::set_leading_reader(data_reader_jag_conduit* r) {
+  m_leading_reader = r;
+}
+
+data_reader_jag_conduit* data_reader_jag_conduit::get_leading_reader() {
+  return m_leading_reader;
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
@@ -310,6 +327,15 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_io_buffer_type = rhs.m_io_buffer_type;
   m_local_reader_id = rhs.m_local_reader_id;
   m_open_hdf5_files = rhs.m_open_hdf5_files;
+  //TODO: need  to make sure this is what we want
+  m_leading_reader = rhs.m_leading_reader;
+
+  El::Copy(rhs.m_data_cache, m_data_cache);
+  El::Copy(rhs.m_response_cache, m_response_cache);
+  El::Copy(rhs.m_label_cache, m_label_cache);
+  m_cached_data_mb_size = rhs.m_cached_data_mb_size;
+  m_cached_response_mb_size = rhs.m_cached_response_mb_size;
+  m_cached_label_mb_size = rhs.m_cached_label_mb_size;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -358,6 +384,10 @@ void data_reader_jag_conduit::set_defaults() {
   m_io_buffer_type = "";
   m_local_reader_id = 0;
   m_open_hdf5_files = nullptr;
+  m_leading_reader = this;
+  m_cached_data_mb_size = 0;
+  m_cached_response_mb_size = 0;
+  m_cached_label_mb_size = 0;
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -844,6 +874,14 @@ void data_reader_jag_conduit::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
+  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
+    m_valid_samples = m_leading_reader->get_valid_local_samples();
+    m_unused_samples = m_leading_reader->get_valid_local_samples_unused();
+    m_local_num_samples_to_use = m_leading_reader->get_num_valid_local_samples();
+    m_global_num_samples_to_use = m_leading_reader->get_num_data();
+    return;
+  }
+
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string conduit_file_name = get_data_filename();
   const std::string pattern = data_dir + conduit_file_name;
@@ -953,6 +991,14 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
 
 size_t data_reader_jag_conduit::get_num_valid_local_samples() const {
   return m_valid_samples.size();
+}
+
+const data_reader_jag_conduit::sample_map_t& data_reader_jag_conduit::get_valid_local_samples() const {
+  return m_valid_samples;
+}
+
+const data_reader_jag_conduit::sample_map_t& data_reader_jag_conduit::get_valid_local_samples_unused() const {
+  return m_unused_samples;
 }
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
@@ -1359,6 +1405,52 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   return true;
 }
 
+int data_reader_jag_conduit::reuse_data(CPUMat& X) {
+  El::Copy(m_data_cache, X);
+  return m_cached_data_mb_size;
+}
+
+int data_reader_jag_conduit::reuse_responses(CPUMat& Y) {
+  El::Copy(m_response_cache, Y);
+  return m_cached_response_mb_size;
+}
+
+int data_reader_jag_conduit::reuse_labels(CPUMat& Y) {
+  El::Copy(m_label_cache, Y);
+  return m_cached_label_mb_size;
+}
+
+int data_reader_jag_conduit::fetch_data(CPUMat& X) {
+  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
+    return m_leading_reader->reuse_data(X);
+  }
+  m_cached_data_mb_size = generic_data_reader::fetch_data(X);
+  El::Copy(X, m_data_cache);
+
+  return m_cached_data_mb_size;
+}
+
+int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
+  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
+    return m_leading_reader->reuse_responses(Y);
+  }
+  m_cached_response_mb_size = generic_data_reader::fetch_responses(Y);
+  El::Copy(Y, m_response_cache);
+
+  return m_cached_response_mb_size;
+}
+
+int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
+  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
+    return m_leading_reader->reuse_labels(Y);
+  }
+  m_cached_label_mb_size = generic_data_reader::fetch_labels(Y);
+  El::Copy(Y, m_label_cache);
+
+  return m_cached_label_mb_size;
+}
+
+
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
@@ -1367,6 +1459,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, in
     // The third argument mb_idx below is 0 because it is for the view of X not X itself
     ok = fetch(X_v[i], data_id, 0, tid, m_independent[i], "datum");
   }
+
   return ok;
 }
 
