@@ -270,7 +270,7 @@ protected:
     assert0(dc::tensor::View(
         m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
 
-    this->m_error_signals_t.zero();
+    this->m_error_signals_t.zero(dc::get_backend().get_stream());
     dc::MPIPrintStreamDebug() << "Calling backward_data\n";
     m_conv->backward_data(DataType(1.0), m_kernel_t, this->m_prev_error_signals_t,
                           DataType(1.0), this->m_error_signals_t);
