@@ -29,6 +29,10 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cublas.hpp"
 #endif // LBANN_HAS_GPU
+#include "lbann/models/model.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -59,9 +63,19 @@ void fp_cpu(lbann_comm& comm,
 void fp_gpu(lbann_comm& comm,
             const AbsDistMat& input,
             DataType& value,
-            cuda::event_wrapper& copy_event) {
+            cuda::event_wrapper& copy_event,
+            execution_mode mode) { {
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
+
+#ifdef LBANN_HAS_DISTCONV  
+  if (mode == execution_mode::training &&
+      dc::skip_metrics_while_training()) {
+    El::Zero(sum_d);
+    copy_event.record(stream);    
+    return;
+  }
+#endif
 
   // Local matrix
   const auto& local_input = input.LockedMatrix();
@@ -185,7 +199,7 @@ void abstract_evaluation_layer::fp_compute() {
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
     fp_gpu(*get_comm(), get_prev_activations(), m_value(0, 0),
-           m_copy_event);
+           m_copy_event, get_model()->get_execution_mode());
     break;
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");

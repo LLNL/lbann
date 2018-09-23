@@ -27,9 +27,14 @@
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/models/model.hpp"
 
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
+
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -149,12 +154,21 @@ __global__ void indicate_matrix_entries(El::Int k,
 
 /** GPU implementation of in_top_k layer forward prop. */
 void fp_gpu(lbann_comm& comm,
-            El::Int k, const AbsDistMat& input, AbsDistMat& output) {
+            El::Int k, const AbsDistMat& input, AbsDistMat& output,
+            execution_mode mode) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
     LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
                 "distributed matrices");
   }
-
+#ifdef LBANN_HAS_DISTCONV
+  if (mode == execution_mode::training &&
+      dc::skip_metrics_while_training()) {
+    std::cerr << "Mode is in training\n";
+    El::Zero(output);
+    return;
+  }
+#endif
+  
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
@@ -274,12 +288,14 @@ void fp_gpu(lbann_comm& comm,
 template <>
 void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations(),
+         get_model()->get_execution_mode());
 }
 template <>
 void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations(),
+         get_model()->get_execution_mode());
 }
 
 } // namespace lbann

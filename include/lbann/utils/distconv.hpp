@@ -103,6 +103,10 @@ void finalize();
  */
 bool is_profiling_enabled();
 
+/** Query if metric skipping is enabled
+ */
+bool skip_metrics_while_training();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();

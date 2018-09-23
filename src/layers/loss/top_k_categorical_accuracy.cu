@@ -25,11 +25,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include <thrust/sort.h>
 #include <thrust/iterator/discard_iterator.h>
+
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -166,7 +171,21 @@ void fp_gpu(lbann_comm& comm,
             El::Int k,
             const AbsDistMat& predictions,
             const AbsDistMat& labels,
-            AbsDistMat& loss) {
+            AbsDistMat& loss,
+            execution_mode mode) {
+  if (predictions.Wrap() != El::ELEMENT
+      || labels.Wrap() != El::ELEMENT
+      || loss.Wrap() != El::ELEMENT) {
+    LBANN_ERROR("top-k categorical accuracy layer GPU implementation "
+                "assumes elemental distributed matrices");
+  }
+#ifdef LBANN_HAS_DISTCONV
+  if (mode == execution_mode::training &&
+      dc::skip_metrics_while_training()) {
+    El::Zero(loss);
+    return;
+  }
+#endif
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();
@@ -318,7 +337,8 @@ void top_k_categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::G
          m_k,
          get_prev_activations(0),
          get_prev_activations(1),
-         get_activations());
+         get_activations(),
+         get_model()->get_execution_mode());
 }
 template <>
 void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
@@ -327,7 +347,8 @@ void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GP
          m_k,
          get_prev_activations(0),
          get_prev_activations(1),
-         get_activations());
+         get_activations(),
+         get_model()->get_execution_mode());
 }
 
 } // namespace lbann
