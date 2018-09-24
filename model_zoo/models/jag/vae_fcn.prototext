@@ -203,7 +203,7 @@ model {
     parents: "z_log_sigma"
     name: "kl_exp"
     data_layout: "model_parallel"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
@@ -244,7 +244,7 @@ model {
     parents: "sample_half"
     name: "sample_exp"
     data_layout: "model_parallel"
-    exponential {}
+    exp {}
   }
   layer {
     name: "sample_noise"

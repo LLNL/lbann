@@ -425,7 +425,7 @@ class lbann_comm {
   /** Within-model scalar gather (for root processes). */
   template <typename T>
   void model_gather(T snd, T* rcv) {
-    gather(snd, get_model_master(), model_comm);
+    gather(snd, rcv, model_comm);
   }
   /** Within-model scalar-array gather (for non-root processes). */
   template <typename T>
@@ -608,7 +608,7 @@ class lbann_comm {
   template <typename T, El::Device D>
   void reduce(T *snd, int count, int root, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Reduce(snd, nullptr, count, op, root, std::move(c), syncInfo);
+    El::mpi::Reduce(snd, (T*) NULL, count, op, root, std::move(c), syncInfo);
   }
   /** Scalar-array reduce (for root processes). */
   template <typename T, El::Device D>
@@ -626,7 +626,7 @@ class lbann_comm {
   }
   template <typename T, El::Device D>
   void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
-    if (snd == rcv) { snd = MPI_IN_PLACE; }
+      if (snd == rcv) { snd = (T*)MPI_IN_PLACE; }
     auto const rank_c = El::mpi::Rank(c);
     auto const size_c = El::mpi::Size(c);
     El::mpi::Reduce(snd, rcv, count, op, rank_c, std::move(c), syncInfo);

@@ -74,13 +74,42 @@ Layer* construct_layer(lbann_comm* comm,
   // Fully connected layer
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
-    int num_neurons = params.num_neurons();
-    if (proto_layer.num_neurons_from_data_reader()) {
-      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-      if (!dr) {
-        LBANN_ERROR("training data reader does not exist!");
+    int num_neurons = 0;
+    if (params.get_input_dimension_from_reader() 
+        || params.get_image_dimension_from_reader()
+        || params.get_scalar_dimension_from_reader())
+       {
+    #if defined(LBANN_HAS_CONDUIT)
+       const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
+       lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
+       size_t input_dim = dr->get_linearized_input_size();
+       size_t scalar_dim = dr->get_linearized_scalar_size();
+       size_t image_dim = dr->get_linearized_image_size();
+       size_t num_images = dr->get_num_img_srcs();
+
+       if (params.get_input_dimension_from_reader()) {
+         num_neurons += input_dim;
+       }
+       if (params.get_image_dimension_from_reader()) {
+         num_neurons += (num_images * image_dim);
+       }
+       if (params.get_scalar_dimension_from_reader()) {
+         num_neurons += scalar_dim;
+       }
+    #else
+      err << "get_*_dimension_from_reader() not supported";
+      LBANN_ERROR(err.str());
+      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
+    } else {
+      num_neurons = params.num_neurons();
+      if (proto_layer.num_neurons_from_data_reader()) {
+        const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
+        if (!dr) {
+          LBANN_ERROR("training data reader does not exist!");
+        }
+        num_neurons = dr->get_linearized_data_size();
       }
-      num_neurons = dr->get_linearized_data_size();
     }
     return new fully_connected_layer<layout, Dev>(comm,
                                                   num_neurons,
@@ -186,10 +215,48 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    const auto& slice_points = parse_list<El::Int>(params.slice_points());
-    return new slice_layer<layout, Dev>(comm,
-                                        params.slice_axis(),
-                                        slice_points);
+    if (params.get_slice_points_from_reader() != "") {
+    #if defined(LBANN_HAS_CONDUIT)
+      std::stringstream ss;
+      ss << params.get_slice_points_from_reader();
+      std::string s;
+      std::vector<El::Int> slice_points;
+      size_t total = 0;
+      slice_points.push_back(total);
+      const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
+      lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
+      while (ss >> s) {
+        if (s != "") {  //probably not needed
+          if (s == "scalars") {
+            total += dr->get_linearized_scalar_size();
+            slice_points.push_back(total);
+          } else if (s == "images") {
+            total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
+            slice_points.push_back(total);
+          } else if (s == "inputs") {
+            total += dr->get_linearized_input_size();
+            slice_points.push_back(total);
+          } else {
+            err << __FILE__ << " " << __LINE__ << " :: "
+                << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
+            throw lbann_exception(err.str());
+          }
+        }
+      }
+      return new slice_layer<layout, Dev>(comm,
+                                          params.slice_axis(),
+                                          slice_points);
+    #else
+      err << "get_slice_points_from_reader() not supported";
+      LBANN_ERROR(err.str());
+      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
+    } else {
+      const auto& slice_points = parse_list<El::Int>(params.slice_points());
+      return new slice_layer<layout, Dev>(comm,
+                                          params.slice_axis(),
+                                          slice_points);
+    }
   }
   if (proto_layer.has_hadamard()) {
     return new hadamard_layer<layout, Dev>(comm);
@@ -331,10 +398,12 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new batch_normalization<data_layout::DATA_PARALLEL, Dev>(comm,
-                                                                      params.decay(),
-                                                                      params.epsilon(),
-                                                                      params.global_stats());
+      return new batch_normalization_layer<data_layout::DATA_PARALLEL, Dev>(comm,
+                                                                            params.decay(),
+                                                                            params.epsilon(),
+                                                                            params.global_stats());
+    } else {
+      LBANN_ERROR("batch normalization is only supported in a data-parallel layout");
     }
   }
   if (proto_layer.has_dropout()) {
@@ -363,24 +432,47 @@ Layer* construct_layer(lbann_comm* comm,
     }
   }
 
+  // Math layers
+  if (proto_layer.has_not_())       { return new not_layer<layout, Dev>(comm); }
+  if (proto_layer.has_abs())        { return new abs_layer<layout, Dev>(comm); }
+  if (proto_layer.has_negative())   { return new negative_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sign())       { return new sign_layer<layout, Dev>(comm); }
+  if (proto_layer.has_round())      { return new round_layer<layout, Dev>(comm); }
+  if (proto_layer.has_ceil())       { return new ceil_layer<layout, Dev>(comm); }
+  if (proto_layer.has_floor())      { return new floor_layer<layout, Dev>(comm); }
+  if (proto_layer.has_reciprocal()) { return new reciprocal_layer<layout, Dev>(comm); }
+  if (proto_layer.has_square())     { return new square_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sqrt())       { return new sqrt_layer<layout, Dev>(comm); }
+  if (proto_layer.has_rsqrt())      { return new rsqrt_layer<layout, Dev>(comm); }
+  if (proto_layer.has_exp())        { return new exp_layer<layout, Dev>(comm); }
+  if (proto_layer.has_expm1())      { return new expm1_layer<layout, Dev>(comm); }
+  if (proto_layer.has_log())        { return new log_layer<layout, Dev>(comm); }
+  if (proto_layer.has_log1p())      { return new log1p_layer<layout, Dev>(comm); }
+  if (proto_layer.has_cos())        { return new cos_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sin())        { return new sin_layer<layout, Dev>(comm); }
+  if (proto_layer.has_tan())        { return new tan_layer<layout, Dev>(comm); }
+  if (proto_layer.has_acos())       { return new acos_layer<layout, Dev>(comm); }
+  if (proto_layer.has_asin())       { return new asin_layer<layout, Dev>(comm); }
+  if (proto_layer.has_atan())       { return new atan_layer<layout, Dev>(comm); }
+  if (proto_layer.has_cosh())       { return new cosh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_sinh())       { return new sinh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_tanh())       { return new tanh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_acosh())      { return new acosh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_asinh())      { return new asinh_layer<layout, Dev>(comm); }
+  if (proto_layer.has_atanh())      { return new atanh_layer<layout, Dev>(comm); }
+  
   // Activation layers
   if (proto_layer.has_softmax()) {
     return new softmax_layer<layout, Dev>(comm);
+  }
+  if (proto_layer.has_logsoftmax()) {
+    return new logsoftmax_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_relu()) {
     return new relu_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_sigmoid()) {
     return new sigmoid_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_tanh()) {
-    return new tanh_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_atan()) {
-    return new atan_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_exponential()) {
-    return new exponential_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_identity()) {
     return new identity_layer<layout, Dev>(comm);
@@ -417,19 +509,6 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_power()) {
     const auto& params = proto_layer.power();
     return new power_layer<layout, Dev>(comm, params.exponent());
-  }
-  if (proto_layer.has_log()) {
-    const auto& params = proto_layer.log();
-    const auto& base = params.base();
-    if (base != 0.0) {
-      return new log_layer<layout, Dev>(comm, base);
-    } else {
-      return new log_layer<layout, Dev>(comm);
-    }
-  }
-
-  if (proto_layer.has_abs()) {
-    return new abs_layer<layout, Dev>(comm);
   }
   if (proto_layer.has_l2_loss()) {
     return new l2_loss_layer<layout, Dev>(comm);
