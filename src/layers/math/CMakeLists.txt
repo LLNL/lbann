@@ -1,6 +1,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   unary.cpp
+  binary.cpp
   )
 
 if (LBANN_HAS_CUDA)

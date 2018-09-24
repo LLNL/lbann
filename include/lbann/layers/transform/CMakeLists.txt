@@ -22,8 +22,6 @@ set_full_path(THIS_DIR_HEADERS
   categorical_random.hpp
   discrete_random.hpp
   stop_gradient.hpp
-  max.hpp
-  min.hpp
   in_top_k.hpp
   sort.hpp
   )

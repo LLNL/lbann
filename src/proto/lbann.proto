@@ -797,8 +797,6 @@ message Layer {
    DiscreteRandom discrete_random = 318;
    Dummy dummy = 319;
    StopGradient stop_gradient = 320;
-   Max max = 321;
-   Min min = 322;
    InTopK in_top_k = 324;
    Sort sort = 325;
 
@@ -840,7 +838,24 @@ message Layer {
    Acosh acosh = 425;
    Asinh asinh = 426;
    Atanh atanh = 427;
-   
+   Add add = 450;
+   Subtract subtract = 451;
+   Multiply multiply = 452;
+   Divide divide = 453;
+   Mod mod = 454;
+   Pow pow = 455;
+   Max max = 456;
+   Min min = 457;
+   Equal equal = 458;
+   NotEqual not_equal = 459;
+   Less less = 460;
+   LessEqual less_equal = 461;
+   Greater greater = 462;
+   GreaterEqual greater_equal = 463;
+   And and = 464;
+   Or or = 465;
+   Xor xor = 466;
+
    // Target Layers
    Target target = 18;
    TargetReconstruction reconstruction = 22;
@@ -864,7 +879,6 @@ message Layer {
    Selu selu = 37;
    BentIdentity bent_identity = 40;
    Swish swish = 42;
-   Power power = 43;
    L2Loss l2_loss = 45;
    Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 
@@ -907,6 +921,23 @@ message Tanh {}
 message Acosh {}
 message Asinh {}
 message Atanh {}
+message Add {}
+message Subtract {}
+message Multiply {}
+message Divide {}
+message Mod {}
+message Pow {}
+message Max {}
+message Min {}
+message Equal {}
+message NotEqual {}
+message Less {}
+message LessEqual {}
+message Greater {}
+message GreaterEqual {}
+message And {}
+message Or {}
+message Xor {}
 
 ///////////////////////
 // Activation Layers //
@@ -949,10 +980,6 @@ message Softmax {
 }
 
 message LogSoftmax {
-}
-
-message Power {
-  double exponent = 1;
 }
 
 message L2Loss {
@@ -1120,12 +1147,6 @@ message Dummy {
 }
 
 message StopGradient {
-}
-
-message Max {
-}
-
-message Min {
 }
 
 message InTopK {

@@ -77,7 +77,8 @@ WRAP_CUDA_MATH_FUNCTION(atanh)
 /** Logical not operator. */
 struct not_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return x != DataType(0) ? DataType(1) : DataType(0);
+    const bool b = x != DataType(0) && !isnan(x);
+    return !b ? one : zero;
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return DataType(0);

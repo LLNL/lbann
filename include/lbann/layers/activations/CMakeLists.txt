@@ -13,7 +13,6 @@ set_full_path(THIS_DIR_HEADERS
   logsoftmax.hpp
   softplus.hpp
   swish.hpp
-  power.hpp
   )
 
 # Propagate the files up the tree
