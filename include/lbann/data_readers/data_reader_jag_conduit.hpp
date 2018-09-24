@@ -38,6 +38,7 @@
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <map>
 #include <memory>
 
 namespace lbann {
@@ -49,6 +50,7 @@ namespace lbann {
 class hdf5_file_handles {
  protected:
   std::unordered_map<std::string, hid_t> m_open_hdf5_files;
+  std::map<hid_t, std::string> m_open_hdf5_handles;
 
  public:
   ~hdf5_file_handles();
@@ -59,6 +61,8 @@ class hdf5_file_handles {
    *  Reuturns a negative value if not found.
    */
   hid_t get(const std::string& fname) const;
+
+  std::string get(const hid_t h) const;
 
   /// Returns the read-only access to the internal data
   const std::unordered_map<std::string, hid_t>& get() const { return m_open_hdf5_files; }
@@ -170,13 +174,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   void set_leading_reader(data_reader_jag_conduit* r);
   /// Get the leader of local data reader group
   data_reader_jag_conduit* get_leading_reader();
-
-  /// Export cached data minibatch
-  int reuse_data(CPUMat& X);
-  /// Export cached responses minibatch
-  int reuse_responses(CPUMat& Y);
-  /// Export cached labels minibatch
-  int reuse_labels(CPUMat& Y);
+#else
+  /// Load a data file
+  void load_conduit(const std::string conduit_file_path, size_t& idx);
+  /// See if the image size is consistent with the linearized size
+  void check_image_data();
+#endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
   int fetch_data(CPUMat& X) override;
@@ -184,13 +187,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   int fetch_responses(CPUMat& Y) override;
   /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
   int fetch_labels(CPUMat& Y) override;
-
-#else
-  /// Load a data file
-  void load_conduit(const std::string conduit_file_path, size_t& idx);
-  /// See if the image size is consistent with the linearized size
-  void check_image_data();
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Return the number of valid samples locally available
   size_t get_num_valid_local_samples() const;
@@ -291,6 +287,13 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
+
+  /// Export cached data minibatch
+  int reuse_data(CPUMat& X);
+  /// Export cached responses minibatch
+  int reuse_responses(CPUMat& Y);
+  /// Export cached labels minibatch
+  int reuse_labels(CPUMat& Y);
 
   bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);

@@ -82,8 +82,9 @@ hdf5_file_handles::~hdf5_file_handles() {
 }
 
 bool hdf5_file_handles::add(const std::string fname, hid_t hnd) {
-  auto ret = m_open_hdf5_files.insert(std::pair<std::string, hid_t>(fname, hnd));
-  return ret.second;
+  auto ret1 = m_open_hdf5_files.insert(std::pair<std::string, hid_t>(fname, hnd));
+  auto ret2 = m_open_hdf5_handles.insert(std::pair<hid_t, std::string>(hnd, fname));
+  return ret1.second && ret2.second;
 }
 
 hid_t hdf5_file_handles::get(const std::string& fname) const {
@@ -94,6 +95,9 @@ hid_t hdf5_file_handles::get(const std::string& fname) const {
   return it->second;
 }
 
+std::string hdf5_file_handles::get(const hid_t h) const {
+  return peek_map(m_open_hdf5_handles, h);
+}
 
 std::unordered_map<std::string, int> data_reader_jag_conduit::m_num_local_readers;
 
@@ -209,6 +213,9 @@ void data_reader_jag_conduit::select_subset_of_data() {
 }
 
 void data_reader_jag_conduit::use_unused_index_set() {
+  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
+    return;
+  }
   m_valid_samples.swap(m_unused_samples);
   m_unused_samples.clear();
   m_unused_samples.shrink_to_fit();
@@ -224,7 +231,7 @@ void data_reader_jag_conduit::set_local_id(const std::string role) {
 }
 
 int data_reader_jag_conduit::get_local_id(const std::string role) const {
-  return peek_map(m_num_local_readers, role);
+  return m_local_reader_id;
 }
 
 void data_reader_jag_conduit::set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f) {
@@ -429,17 +436,29 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
 bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
   const std::string& sample_name = m_valid_samples[i].first;
   hid_t h = m_valid_samples[i].second;
-  if (h < static_cast<hid_t>(0)) {
+  if (h <= static_cast<hid_t>(0)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), "Invalid file handle for " + sample_name);
     return false;
   }
-  conduit::relay::io::hdf5_read(h, '/' + sample_name + key, node);
+
+  const std::string path = sample_name + key;
+#if 0
+  // In case that a file handle is closed, reopen and remap it.
+  if (!conduit::relay::io::hdf5_has_path(h, path)) {
+    const std::string conduit_file_path = m_open_hdf5_files->get(h);
+    hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+    m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
+  }
+#endif
+  conduit::relay::io::hdf5_read(h, path, node);
+
   return true;
 }
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const std::string& sample_name = m_valid_samples[i].first;
   hid_t h = m_valid_samples[i].second;
-  return conduit::relay::io::hdf5_has_path(h, '/' + sample_name + key);
+  return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
 }
 
 
@@ -952,6 +971,9 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
   }
   m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
+  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), std::string("cannot add invalid file handle for ") + conduit_file_path);
+  }
 
   // set up mapping: need to do this since some of the data may be bad
   std::vector<std::string> sample_names;
