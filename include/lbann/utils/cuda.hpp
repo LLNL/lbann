@@ -127,16 +127,38 @@ __device__ __inline__ double atomic_add(double* address, double val) {
 }
 
 // Min and max
-__device__ __inline__ int min(int x, int y) { return x <= y ? x : y; }
-__device__ __inline__ El::Int min(El::Int x, El::Int y) { return x <= y ? x : y; }
-__device__ __inline__ float min(float x, float y) { return fminf(x, y); }
-__device__ __inline__ double min(double x, double y) { return fmin(x, y); }
-__device__ __inline__ int max(int x, int y) { return x >= y ? x : y; }
-__device__ __inline__ El::Int max(El::Int x, El::Int y) { return x >= y ? x : y; }
-__device__ __inline__ float max(float x, float y) { return fmaxf(x, y); }
-__device__ __inline__ double max(double x, double y) { return fmax(x, y); }
+template <typename T> __device__ __inline__
+T min(const T& x, const T& y) { return x <= y ? x : y; }
+template <typename T> __device__ __inline__
+T max(const T& x, const T& y) { return x >= y ? x : y; }
+template <> __device__ __inline__
+float min<float>(const float& x, const float& y) { return fminf(x, y); }
+template <> __device__ __inline__
+double min<double>(const double& x, const double& y) { return fmin(x, y); }
+template <> __device__ __inline__
+float max<float>(const float& x, const float& y) { return fmaxf(x, y); }
+template <> __device__ __inline__
+double max<double>(const double& x, const double& y) { return fmax(x, y); }
   
 #endif // __CUDACC__
+
+/** Wrapper class for a CUDA event. */
+class event_wrapper {
+public:
+  event_wrapper();
+  ~event_wrapper();
+  /** Enqueue CUDA event on a CUDA stream. */
+  void record(cudaStream_t stream);
+  /** Check whether CUDA event has completed. */
+  bool query() const;
+  /** Wait until CUDA event has completed. */
+  void synchronize();
+  /** Get CUDA event object. */
+  cudaEvent_t& get_event();
+private:
+  /** CUDA event object. */
+  cudaEvent_t m_event;
+};
   
 // -------------------------------------------------------------
 // Helper functions for entrywise operations
