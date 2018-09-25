@@ -66,6 +66,8 @@ private:
    *  The value may be stored in pinned memory.
    */
   CPUMat m_value;
+  /** Non-blocking allreduce request. */
+  Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
   /** CUDA event after a non-blocking GPU-CPU memory copy. */
   cuda::event_wrapper m_copy_event;

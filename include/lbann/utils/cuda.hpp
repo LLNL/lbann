@@ -146,6 +146,8 @@ double max<double>(const double& x, const double& y) { return fmax(x, y); }
 class event_wrapper {
 public:
   event_wrapper();
+  event_wrapper(const event_wrapper& other);
+  event_wrapper& operator=(const event_wrapper& other);
   ~event_wrapper();
   /** Enqueue CUDA event on a CUDA stream. */
   void record(cudaStream_t stream);
@@ -156,8 +158,14 @@ public:
   /** Get CUDA event object. */
   cudaEvent_t& get_event();
 private:
-  /** CUDA event object. */
+  /** CUDA event object.
+   *  The event object lifetime is managed internally.
+   */
   cudaEvent_t m_event;
+  /** CUDA stream object.
+   *  The stream object lifetime is assumed to be managed externally.
+   */
+  cudaStream_t m_stream;
 };
   
 // -------------------------------------------------------------

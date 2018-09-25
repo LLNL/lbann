@@ -35,16 +35,29 @@ namespace cuda {
 // CUDA event wrapper
 ////////////////////////////////////////////////////////////
 
-event_wrapper::event_wrapper() : m_event(nullptr) {
+event_wrapper::event_wrapper() : m_event(nullptr), m_stream(0) {
   CHECK_CUDA(cudaEventCreate(&m_event));
 }
 
+event_wrapper::event_wrapper(const event_wrapper& other)
+  : m_event(nullptr), m_stream(other.m_stream) {
+  CHECK_CUDA(cudaEventCreate(&m_event));
+  if (!other.query()) { record(m_stream); }
+}
+
+event_wrapper& event_wrapper::operator=(const event_wrapper& other) {
+  m_stream = other.m_stream;
+  if (!other.query()) { record(m_stream); }
+  return *this;
+}
+  
 event_wrapper::~event_wrapper() {
   CHECK_CUDA(cudaEventDestroy(m_event));
 }
 
 void event_wrapper::record(cudaStream_t stream = 0) {
-  CHECK_CUDA(cudaEventRecord(m_event, stream));
+  m_stream = stream;
+  CHECK_CUDA(cudaEventRecord(m_event, m_stream));
 }
 
 bool event_wrapper::query() const {

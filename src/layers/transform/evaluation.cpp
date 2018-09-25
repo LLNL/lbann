@@ -37,7 +37,8 @@ namespace {
 /** CPU implementation of evaluation layer forward prop. */
 void fp_cpu(lbann_comm& comm,
             const AbsDistMat& input,
-            DataType& value) {
+            DataType& value,
+            Al::request& req) {
   const auto& local_input = input.LockedMatrix();
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
@@ -50,7 +51,7 @@ void fp_cpu(lbann_comm& comm,
     }
   }
   value = value / mini_batch_size;
-  comm.allreduce(&value, 1, input.DistComm());
+  comm.nb_allreduce(&value, 1, input.DistComm(), req);
 }
 
 #ifdef LBANN_HAS_GPU
@@ -135,11 +136,13 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 EvalType abstract_evaluation_layer::get_value(bool scaled) {
+  switch (get_device_allocation()) {
+  case El::Device::CPU: get_comm()->wait(m_allreduce_req); break;
 #ifdef LBANN_HAS_GPU
-  if (get_device_allocation() == El::Device::GPU) {
-    m_copy_event.synchronize();
-  }
+  case El::Device::GPU: m_copy_event.synchronize(); break;
 #endif // LBANN_HAS_GPU
+  default: LBANN_ERROR("invalid device");
+  }
   if (scaled) { return m_scale * m_value(0, 0); }
   else        { return m_value(0, 0); }
 }
@@ -160,7 +163,8 @@ void abstract_evaluation_layer::setup_data() {
 void abstract_evaluation_layer::fp_compute() {
   switch (get_device_allocation()) {
   case El::Device::CPU:
-    fp_cpu(*get_comm(), get_prev_activations(), m_value(0, 0));
+    fp_cpu(*get_comm(), get_prev_activations(), m_value(0, 0),
+           m_allreduce_req);
     break;
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
