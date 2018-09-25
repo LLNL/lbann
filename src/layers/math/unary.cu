@@ -25,7 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/math/unary.hpp"
-#include "lbann/utils/entrywise_operator.hpp"
 
 namespace lbann {
 
@@ -78,7 +77,7 @@ WRAP_CUDA_MATH_FUNCTION(atanh)
 struct not_op {
   inline __device__ DataType operator()(const DataType& x) const {
     const bool b = x != DataType(0) && !isnan(x);
-    return !b ? one : zero;
+    return !b ? DataType(1) : DataType(0);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return DataType(0);
