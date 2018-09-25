@@ -1,0 +1,358 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 256
+  block_size: 256
+  num_epochs: 72
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  objective_function {
+    layer_term { layer: "cross_entropy_eval" }
+    l2_weight_regularization {
+      scale_factor: 0.0005
+    }
+  }
+
+  metric { categorical_accuracy {} }
+  metric {
+    top_k_categorical_accuracy {
+       top_k: 5
+    }
+  }
+
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    summary {
+      dir: "."
+      mat_interval: 0
+    }
+  }  
+
+  layer {
+    name: "data"
+    children: "images labels"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+  layer {
+    name: "images"
+    parents: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    name: "labels"
+    parents: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  
+
+  layer {
+    name: "conv1"
+    parents: "images"    
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 7
+      conv_pads_i: 3
+      conv_strides_i: 2
+      has_bias: true
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }
+  }
+  layer {
+    name: "bn1"
+    parents: "conv1"	
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true      
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }
+  }
+  layer {
+    name: "relu1"
+    parents: "bn1"		
+    data_layout: "data_parallel"
+    relu {}
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }
+  }
+  layer {
+    name: "pool1"
+    parents: "relu1"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }
+  }
+
+  layer {
+    name: "conv2"
+    parents: "pool1"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: true
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "bn2"
+    parents: "conv2"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true      
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "relu2"
+    parents: "bn2"
+    data_layout: "data_parallel"
+    relu {}
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "pool2"
+    parents: "relu2"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+
+  layer {
+    name: "conv3"
+    parents: "pool2"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 2
+      has_bias: true
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "bn3"
+    parents: "conv3"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true      
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "relu3"
+    parents: "bn3"
+    data_layout: "data_parallel"
+    relu {}
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+
+  layer {
+    name: "conv4"
+    parents: "relu3"
+    data_layout: "data_parallel"
+    convolution {
+      num_dims: 2
+      num_output_channels: 64
+      conv_dims_i: 3
+      conv_pads_i: 1
+      conv_strides_i: 1
+      has_bias: true
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "bn4"
+    parents: "conv4"
+    data_layout: "data_parallel"
+    batch_normalization {
+      decay: 0.9
+      scale_init: 1.0
+      bias_init: 0.0
+      epsilon: 1e-5
+      global_stats: true      
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "relu4"
+    parents: "bn4"
+    data_layout: "data_parallel"
+    relu {}
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+  layer {
+    name: "pool4"
+    parents: "relu4"
+    data_layout: "data_parallel"
+    pooling {
+      num_dims: 2
+      pool_dims_i: 3
+      pool_pads_i: 0
+      pool_strides_i: 2
+      pool_mode: "max"
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }    
+  }
+
+  layer {
+    name: "fc5"
+    parents: "pool4"
+    data_layout: "data_parallel"
+    fully_connected {
+      num_neurons: 1000
+      has_bias: false
+    }
+  }
+  layer {
+    name: "prob"
+    parents: "fc5"
+    data_layout: "data_parallel"
+    softmax {}
+  }
+
+  layer {
+    name: "cross_entropy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    cross_entropy {}    
+  }
+  layer {
+    name: "cross_entropy_eval"
+    parents: "cross_entropy"
+    data_layout: "data_parallel"
+    evaluation {}    
+  }
+  layer {
+    name: "target"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    target {}
+  }  
+}
