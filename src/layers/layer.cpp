@@ -1409,9 +1409,15 @@ void Layer::setup_tensor_distribution_init(
   if (ps.filter_splits == 0) ps.filter_splits = f;
   if (ps.height_splits == 0) ps.height_splits = h;
   if (ps.width_splits == 0) ps.width_splits = w;
-  
-  Dist prev_activations_dist =  Dist({w, h, c, n});
-  Dist activations_dist =  Dist({w, h, f, n});
+
+  Array4 input_locale_shape({w, h, c, n});
+  Array4 input_split_shape({ps.width_splits, ps.height_splits,
+          ps.channel_splits, ps.sample_splits});
+  Dist prev_activations_dist =  Dist(input_locale_shape, input_split_shape, 0, 0);
+  Array4 output_locale_shape({w, h, f, n});
+  Array4 output_split_shape({ps.width_splits, ps.height_splits,
+          ps.filter_splits, ps.sample_splits});
+  Dist activations_dist =  Dist(output_locale_shape, output_split_shape, 0, 0);
   Dist prev_error_signals_dist =  activations_dist;
   Dist error_signals_dist =  prev_activations_dist;
   std::array<Dist, 4> layer_dists = {prev_activations_dist,
@@ -1511,6 +1517,9 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
     assert_always(m_prev_activations_t.get_requested_local_block()
                   == m_input_decomposition_block);
   }
+
+  MPIPrintStreamInfo() << get_name() << "; "
+                       << "prev activations: " << m_prev_activations_t;
 }
 
 Array4 Layer::get_activations_tensor_local_shape() const {
@@ -1550,6 +1559,8 @@ void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
       m_activations_shuffler_last_mb[i] = nullptr;
     }
   }
+  MPIPrintStreamInfo() << get_name() << "; "
+                       << "activations: " << m_activations_t;
 }
 
 void Layer::setup_tensors_bwd(const std::array<Dist, 4> &dists) {
@@ -1594,6 +1605,8 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
     assert_always(m_prev_error_signals_t.get_requested_local_block() ==
                   m_output_decomposition_block);
   }
+  MPIPrintStreamInfo() << get_name() << "; "
+                       << "prev error signals: " << m_prev_error_signals_t;
 }
 
 void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
@@ -1607,6 +1620,8 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
                                 m_input_decomposition_block);
   assert0(m_error_signals_t.allocate());
   m_error_signals_t.zero();
+  MPIPrintStreamInfo() << get_name() << "; "
+                       << "error signals: " << m_prev_error_signals_t;
 }
 
 void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists) {

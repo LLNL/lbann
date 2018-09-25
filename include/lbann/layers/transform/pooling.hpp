@@ -584,10 +584,10 @@ private:
       int stencil_h = (m_pool_dims[0] - 1) / 2;
       int stencil_w = (m_pool_dims[1] - 1) / 2;
       dc::Array4 overlap(0);
-      if (get_parallel_strategy().width_groups > 1) {
+      if (get_parallel_strategy().width_splits > 1) {
         overlap[0] = stencil_w;
       }
-      if (get_parallel_strategy().height_groups > 1) {
+      if (get_parallel_strategy().height_splits > 1) {
         overlap[1] = stencil_h;
       }
       auto &prev_activations_dist = dists[this][0];
