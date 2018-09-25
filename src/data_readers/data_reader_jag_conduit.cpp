@@ -981,7 +981,10 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   size_t bad = 0u;
   for (auto s : sample_names) {
     conduit::Node n_ok;
-    conduit::relay::io::hdf5_read(hdf5_file_hnd, '/' + s + "/performance/success", n_ok);
+    if (!conduit::relay::io::hdf5_has_path(hdf5_file_hnd, s + "/performance/success")) {
+      _THROW_LBANN_EXCEPTION_(get_type(),  s + "/performance/success does not exist");
+    }
+    conduit::relay::io::hdf5_read(hdf5_file_hnd, s + "/performance/success", n_ok);
     int success = n_ok.to_int64();
     if (success == 1) {
       m_valid_samples.push_back(sample_locator_t(s, hdf5_file_hnd));

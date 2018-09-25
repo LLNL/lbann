@@ -30,7 +30,7 @@ model {
     parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
-      slice_points: "0 16384 16489"
+      slice_points: "0 16384 16389"
     }
   }
   layer {
