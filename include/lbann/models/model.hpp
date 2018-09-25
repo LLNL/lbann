@@ -69,8 +69,14 @@ class model {
   /** Copy model. */
   virtual model* copy() const = 0;
 
-  /** Return the model's name. */
-  virtual std::string name() const = 0;
+  /** Return the model's type. */
+  virtual std::string type() const = 0;
+
+  void set_name(std::string name);
+  
+  std::string get_name() const {
+    return m_name;
+  }
 
   /** Set up the model. */
   virtual void setup();
@@ -226,7 +232,8 @@ class model {
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
-
+  /** Give model a name. */
+  std::string m_name;
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */

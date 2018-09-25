@@ -206,6 +206,10 @@ void model::add_metric(metric *m) {
   m_metrics.push_back(m);
 }
 
+void model::set_name(std::string name) {
+  m_name = name;
+}
+
 void model::set_layers(std::vector<Layer*>& layers) {
 
   // Delete old layers
