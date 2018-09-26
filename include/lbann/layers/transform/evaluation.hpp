@@ -88,7 +88,7 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 };
-  
+
 } // namespace lbann
 
 #endif // LBANN_LAYER_EVALUATION_HPP_INCLUDED

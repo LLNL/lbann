@@ -36,12 +36,12 @@ namespace cuda {
 ////////////////////////////////////////////////////////////
 
 event_wrapper::event_wrapper() : m_event(nullptr), m_stream(0) {
-  CHECK_CUDA(cudaEventCreate(&m_event));
+  CHECK_CUDA(cudaEventCreateWithFlags(&m_event, cudaEventDisableTiming));
 }
 
 event_wrapper::event_wrapper(const event_wrapper& other)
   : m_event(nullptr), m_stream(other.m_stream) {
-  CHECK_CUDA(cudaEventCreate(&m_event));
+  CHECK_CUDA(cudaEventCreateWithFlags(&m_event, cudaEventDisableTiming));
   if (!other.query()) { record(m_stream); }
 }
 
@@ -55,7 +55,7 @@ event_wrapper::~event_wrapper() {
   CHECK_CUDA(cudaEventDestroy(m_event));
 }
 
-void event_wrapper::record(cudaStream_t stream = 0) {
+void event_wrapper::record(cudaStream_t stream) {
   m_stream = stream;
   CHECK_CUDA(cudaEventRecord(m_event, m_stream));
 }
