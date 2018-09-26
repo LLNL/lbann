@@ -65,9 +65,10 @@ bool event_wrapper::query() const {
   switch (status) {
   case cudaSuccess:       return true;
   case cudaErrorNotReady: return false;
-  default:                CHECK_CUDA(status);
+  default:
+    CHECK_CUDA(status);
+    return false;
   }
-  return false;
 }
 
 void event_wrapper::synchronize() {
