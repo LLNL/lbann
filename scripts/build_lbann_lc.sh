@@ -831,6 +831,8 @@ EOF
 
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${CONFIGURE_COMMAND}" |& tee cmake_superbuild_invocation.txt
+else
+    echo "${CONFIGURE_COMMAND}" > cmake_superbuild_invocation.txt
 fi
 eval ${CONFIGURE_COMMAND}
 if [ $? -ne 0 ]; then
