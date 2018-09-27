@@ -225,6 +225,9 @@ void fp_gpu(lbann_comm& comm,
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
+  auto&& event = El::GPUManager::Event();
+  El::SyncInfo<El::Device::GPU> syncInfo{stream, event};
+
   cuda::thrust::allocator<> alloc(stream);
   using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
   using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
@@ -249,9 +252,7 @@ void fp_gpu(lbann_comm& comm,
     El::mpi::AllReduce(label_indices.data().get(),
                        label_indices.size(),
                        El::mpi::MIN,
-                       col_comm,
-                       El::SyncInfo<El::Device::GPU>{stream,
-                               El::GPUManager::Event()});
+                       col_comm, syncInfo);
   }
 
   // Find top-k entries in each column of local prediction matrix
@@ -311,14 +312,14 @@ void fp_gpu(lbann_comm& comm,
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                   top_entries.size() * sizeof(entry),
                   col_comm_root,
-                  col_comm);
+                  col_comm, syncInfo);
     } else {
       entry_array global_top_entries(num_entries);
       index_array global_top_entries_cols(num_entries);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                   top_entries.size() * sizeof(entry),
                   reinterpret_cast<El::byte*>(global_top_entries.data().get()),
-                  col_comm);
+                  col_comm, syncInfo);
       fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
         num_entries, local_width, k, global_top_entries_cols.data().get());
       thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
