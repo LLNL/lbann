@@ -271,7 +271,6 @@ if (LBANN_WITH_CONDUIT)
       "Try specifying CONDUIT_DIR as the root of an CONDUIT install. "
       "Alternatively, build with LBANN_WITH_CONDUIT=OFF.")
   endif(NOT LBANN_HAS_CONDUIT)
-  set(LBANN_NO_OMP_FOR_DATA_READERS TRUE)
 endif (LBANN_WITH_CONDUIT)
 
 # Handle the documentation
@@ -431,3 +430,4 @@ message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
 message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")
 message("  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}")
 message("  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}")
+message("  LBANN_NO_OMP_FOR_DATA_READERS: ${LBANN_NO_OMP_FOR_DATA_READERS}")

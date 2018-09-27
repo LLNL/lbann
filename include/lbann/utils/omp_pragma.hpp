@@ -34,14 +34,14 @@
 #define OMP_CRITICAL _Pragma("omp critical")
 
 #if defined(LBANN_NO_OMP_FOR_DATA_READERS)
-  #define DATA_FETCH_OMP_FOR for
-  #define OMP_THREAD_NUM 0
-  #define DATA_FETCH_OMP_CRITICAL
+  #pragma message "Disable OpenMP parallelism for data fetch loops"
+  #define LBANN_DATA_FETCH_OMP_FOR for
+  #define LBANN_OMP_THREAD_NUM 0
+  #define LBANN_DATA_FETCH_OMP_CRITICAL
 #else
-#error
-  #define DATA_FETCH_OMP_FOR OMP_PARALLEL for
-  #define OMP_THREAD_NUM omp_get_thread_num()
-  #define DATA_FETCH_OMP_CRITICAL OMP_CRITICAL
+  #define LBANN_DATA_FETCH_OMP_FOR OMP_PARALLEL for
+  #define LBANN_OMP_THREAD_NUM omp_get_thread_num()
+  #define LBANN_DATA_FETCH_OMP_CRITICAL OMP_CRITICAL
 #endif
 
 #endif // LBANN_OMP_PRAGMA_HPP
