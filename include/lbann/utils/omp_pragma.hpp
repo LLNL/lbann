@@ -33,11 +33,12 @@
 #define OMP_PARALLEL _Pragma("omp parallel for")
 #define OMP_CRITICAL _Pragma("omp critical")
 
-#if defined(NO_OMP_FOR_DATA_READERS)
+#if defined(LBANN_NO_OMP_FOR_DATA_READERS)
   #define DATA_FETCH_OMP_FOR for
   #define OMP_THREAD_NUM 0
   #define DATA_FETCH_OMP_CRITICAL
 #else
+#error
   #define DATA_FETCH_OMP_FOR OMP_PARALLEL for
   #define OMP_THREAD_NUM omp_get_thread_num()
   #define DATA_FETCH_OMP_CRITICAL OMP_CRITICAL
