@@ -54,7 +54,7 @@ class siamese_model : public directed_acyclic_graph_model {
   siamese_model* copy() const override { return new siamese_model(*this); }
 
   /** Get model name. */
-  std::string name() const override { return "siamese_model"; }
+  std::string type() const override { return "siamese_model"; }
 
  protected:
 

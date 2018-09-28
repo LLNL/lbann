@@ -57,7 +57,7 @@ class directed_acyclic_graph_model : public model {
   directed_acyclic_graph_model* copy() const override { return new directed_acyclic_graph_model(*this); }
 
   /** Get model name. */
-  std::string name() const override { return "directed_acyclic_graph_model"; }
+  std::string type() const override { return "directed_acyclic_graph_model"; }
 
  protected:
 

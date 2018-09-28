@@ -57,7 +57,7 @@ class sequential_model : public model {
   sequential_model* copy() const override { return new sequential_model(*this); }
 
   /** Get model name. */
-  std::string name() const override { return "sequential_model"; }
+  std::string type() const override { return "sequential_model"; }
 
   /** Write model to proto file */
   void write_proto(lbann_data::Model* proto) override;
