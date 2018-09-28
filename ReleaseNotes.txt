@@ -6,12 +6,15 @@ Support for new network structures:
 Support for new layers:
  - LogSoftmax
  - Basic math functions
+ - Weights layer, which outputs a weights tensor
+ - L2 norm squared
 
 Performance optimizations:
 
-Model portability & Usability:
+Model portability & usability:
+ - Option for weight initialization with user-provided list of values
 
-Internals Features:
+Internal features:
 
 I/O & data readers:
 

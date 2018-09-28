@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann.hpp - LBANN top level header
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -53,7 +51,6 @@
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
-#include "lbann/layers/activations/l2_loss.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -64,6 +61,7 @@
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
 
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
@@ -94,6 +92,7 @@
 #include "lbann/layers/transform/stop_gradient.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/weights.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
