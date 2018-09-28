@@ -67,7 +67,6 @@ int assign_partners(lbann_comm* comm) {
     return comm->scatter<int>(0, comm->get_world_comm());
   }
 }
-
 /** Exchange weights with remote model.
  *  Weights from the local model are copied into local_weights and
  *  weights from the remote model are copied into model_weights.
@@ -91,8 +90,27 @@ void exchange_weights(lbann_comm* comm,
       }
     }
     if (size > 0 && send) {
-      comm->sendrecv(local_matrix.LockedBuffer(), size, partner,
-                     remote_matrix->Buffer(), size, partner);
+      switch (remote_matrix->GetLocalDevice()) {
+      case El::Device::CPU:
+        comm->sendrecv(local_matrix.LockedBuffer(), size, partner,
+                       remote_matrix->Buffer(), size, partner,
+                       El::SyncInfo<El::Device::CPU>{});
+        break;
+#ifdef HYDROGEN_HAVE_CUDA
+      case El::Device::GPU:
+        using ValueT
+          = std::remove_pointer<decltype(remote_matrix->Buffer())>::type;
+        comm->sendrecv(
+          local_matrix.LockedBuffer(), size, partner,
+          remote_matrix->Buffer(), size, partner,
+          El::SyncInfo<El::Device::GPU>{
+            static_cast<El::Matrix<ValueT,El::Device::GPU> const&>(
+              remote_matrix->LockedMatrix())});
+        break;
+#endif // HYDROGEN_HAVE_CUDA
+      default:
+        El::LogicError("exchange_weights: Bad device type.");
+      }
       model_weights[i]->set_values(*remote_matrix);
     }
     delete remote_matrix;
@@ -117,12 +135,12 @@ EvalType evaluate(model *m, std::unordered_set<std::string>& eval_metrics) {
 
 } // namespace
 
-lbann_callback_ltfb::lbann_callback_ltfb(int round_size, 
+lbann_callback_ltfb::lbann_callback_ltfb(int round_size,
                                          std::unordered_set<std::string> eval_metrics,
                                          bool increasing_metric_mode,
-                                         std::unordered_set<std::string> weights_tosend, 
+                                         std::unordered_set<std::string> weights_tosend,
                                          lbann_summary *summarizer)
-  : lbann_callback(1, summarizer), m_round_size(round_size), 
+  : lbann_callback(1, summarizer), m_round_size(round_size),
                    m_eval_metrics(std::move(eval_metrics)),
                    m_increasing_metric_mode(increasing_metric_mode),
                    m_weights_tosend(std::move(weights_tosend)){}
@@ -144,7 +162,7 @@ lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& o
   m_comm = other.m_comm;
   m_round_size = other.m_round_size;
   m_eval_metrics = other.m_eval_metrics;
-  m_increasing_metric_mode = other.m_increasing_metric_mode; 
+  m_increasing_metric_mode = other.m_increasing_metric_mode;
   m_weights_tosend = other.m_weights_tosend;
 
   // Deep copy
@@ -160,9 +178,9 @@ lbann_callback_ltfb::~lbann_callback_ltfb() {
 }
 
 void lbann_callback_ltfb::setup(model *m) {
-  
+
   if(m_eval_metrics.size() < 1)
-    LBANN_ERROR("LTFB: specify at least one evaluation metric for tournament voting."); 
+    LBANN_ERROR("LTFB: specify at least one evaluation metric for tournament voting.");
 
   m_comm = m->get_comm();
 
@@ -171,7 +189,7 @@ void lbann_callback_ltfb::setup(model *m) {
   for (auto& w : m_local_weights) { delete w; }
   m_local_weights = m->get_weights();
   for (auto& w : m_local_weights) { w = w->copy(); }
-  
+
   // Make sure model does not have inter-model communication callback
   for (auto&& cb : m->get_callbacks()) {
     if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {

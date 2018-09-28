@@ -180,11 +180,14 @@ int main(int argc, char *argv[]) {
 
   } catch (std::exception& e) {
     El::ReportException(e);
+    finalize(comm);
+    return EXIT_FAILURE;
   }
 
-  // free all resources by El and MPI
+  // Clean up
   finalize(comm);
-  return 0;
+  return EXIT_SUCCESS;
+  
 }
 
 model * build_model_from_prototext(int argc, char **argv,

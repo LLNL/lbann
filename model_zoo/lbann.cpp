@@ -331,11 +331,16 @@ int main(int argc, char *argv[]) {
       e.print_report(fs);
     }
     El::ReportException(e);
+    finalize(comm);
+    return EXIT_FAILURE;
   } catch (std::exception& e) {
     El::ReportException(e);
+    finalize(comm);
+    return EXIT_FAILURE;
   }
 
-  // free all resources by El and MPI
+  // Clean up
   finalize(comm);
-  return 0;
+  return EXIT_SUCCESS;
+  
 }

@@ -377,11 +377,11 @@ void lbann_comm::barrier(const El::mpi::Comm c) {
 }
 
 void lbann_comm::send(const AbsMat& mat, int model, int rank) {
-  send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank);
+  El::Send(mat, get_world_comm(), get_world_rank(model, rank));
 }
 
 void lbann_comm::send(const DistMat& mat, int model, int rank) {
-  send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank);
+  send(mat.LockedMatrix(), model, rank);
 }
 
 void lbann_comm::nb_send(const AbsMat& mat, int model, int rank,
@@ -396,19 +396,19 @@ void lbann_comm::nb_send(const DistMat& mat, int model, int rank,
 }
 
 void lbann_comm::recv(AbsMat& mat, int model, int rank) {
-  recv(mat.Buffer(), mat.Height() * mat.Width(), model, rank);
+  El::Recv(mat, get_world_comm(), get_world_rank(model, rank));
 }
 
 void lbann_comm::recv(DistMat& mat, int model, int rank) {
-  recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank);
+  recv(mat.Matrix(), model, rank);
 }
 
 void lbann_comm::recv(AbsMat& mat) {
-  recv(mat.Buffer(), mat.Height() * mat.Width());
+  El::Recv(mat, get_world_comm(), El::mpi::ANY_SOURCE);
 }
 
 void lbann_comm::recv(DistMat& mat) {
-  recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth());
+  recv(mat.Matrix());
 }
 
 void lbann_comm::nb_recv(AbsMat& mat, int model, int rank,
@@ -496,6 +496,10 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
     throw lbann_exception("lbann_comm: recursive doubling allreduce requires"
                           " a power-of-2 number of participating processes");
   }
+
+  // FIXME
+  El::SyncInfo<El::Device::CPU> fixmeSyncInfo;
+
   uint8_t *max_recv_buf = get_collective_buffer(max_recv_count);
   uint8_t *recv_buf = max_recv_buf;
   unsigned int mask = 1;
@@ -522,7 +526,8 @@ void lbann_comm::recursive_doubling_allreduce_pow2(
     ar_bytes_sent += send_size;
     double sendrecv_start = get_time();
     El::mpi::SendRecv(send_buf, send_size, partner,
-                      recv_buf, recv_size, partner, comm);
+                      recv_buf, recv_size, partner, comm,
+                      fixmeSyncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -544,6 +549,9 @@ void lbann_comm::pe_ring_allreduce(
   std::function<int(uint8_t *, AbsMat&)> recv_transform,
   std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
+
+  El::SyncInfo<D> syncInfo{mat};
+
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
   const int nprocs = El::mpi::Size(comm);
@@ -692,7 +700,8 @@ void lbann_comm::pe_ring_allreduce(
     }
     double sendrecv_start = get_time();
     El::mpi::SendRecv(send_buf, send_size, dst,
-                      recv_buf, max_recv_count, src, comm);
+                      recv_buf, max_recv_count, src, comm,
+                      syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -733,7 +742,8 @@ void lbann_comm::pe_ring_allreduce(
     ar_ag_bytes_sent += send_size;
     double sendrecv_start = get_time();
     El::mpi::SendRecv(recv_buf, send_size, dst,
-                      recv_buf2, max_recv_count, src, comm);
+                      recv_buf2, max_recv_count, src, comm,
+                      syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -765,6 +775,9 @@ void lbann_comm::ring_allreduce(
   std::function<int(uint8_t *, AbsMat&)> recv_transform,
   std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
+
+  El::SyncInfo<D> syncInfo{mat};
+
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
   const int nprocs = El::mpi::Size(comm);
@@ -831,7 +844,7 @@ void lbann_comm::ring_allreduce(
     ar_rs_bytes_sent += send_size;
     double sendrecv_start = get_time();
     El::mpi::SendRecv(send_buf, send_size, dst,
-                      recv_buf, recv_size, src, comm);
+                      recv_buf, recv_size, src, comm, syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -870,7 +883,7 @@ void lbann_comm::ring_allreduce(
     }
     double sendrecv_start = get_time();
     El::mpi::SendRecv(send_buf, send_size, dst,
-                      recv_buf, max_recv_count, src, comm);
+                      recv_buf, max_recv_count, src, comm, syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -907,7 +920,7 @@ void lbann_comm::ring_allreduce(
     ar_ag_bytes_sent += send_size;
     double sendrecv_start = get_time();
     El::mpi::SendRecv(recv_buf, send_size, dst,
-                      recv_buf2, max_recv_count, src, comm);
+                      recv_buf2, max_recv_count, src, comm, syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -950,6 +963,9 @@ void lbann_comm::rabenseifner_allreduce(
     throw lbann_exception("lbann_comm: Rabenseifner allreduce requires"
                           " a power-of-2 number of participating processes");
   }
+
+  El::SyncInfo<D> syncInfo{mat};
+
   // Compute the slices on each processor.
   const El::Int cols_per_proc = mat.Width() / nprocs;
   const El::Int cols_remainder = mat.Width() % nprocs;
@@ -1011,7 +1027,7 @@ void lbann_comm::rabenseifner_allreduce(
     ar_rs_bytes_sent += send_size;
     double sendrecv_start = get_time();
     El::mpi::SendRecv(send_buf, send_size, partner,
-                      recv_buf, recv_size, partner, comm);
+                      recv_buf, recv_size, partner, comm, syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;
@@ -1085,7 +1101,7 @@ void lbann_comm::rabenseifner_allreduce(
     ar_ag_bytes_sent += send_size;
     double sendrecv_start = get_time();
     El::mpi::SendRecv(send_buf, send_size, partner,
-                      recv_buf, recv_size, partner, comm);
+                      recv_buf, recv_size, partner, comm, syncInfo);
     double sendrecv_tot = get_time() - sendrecv_start;
     ar_send_time += sendrecv_tot;
     ar_recv_time += sendrecv_tot;

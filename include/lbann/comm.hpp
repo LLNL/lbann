@@ -389,7 +389,7 @@ class lbann_comm {
               << "this doesn't work!";
       lbann_comm_abort(err.str());
     }
-    El::mpi::AllGather<T>(src.data(), src.size(), rcs.data(), rcv_counts.data(), rcv_disp.data(), std::move(c));
+    El::mpi::AllGather<T>(src.data(), src.size(), rcs.data(), rcv_counts.data(), rcv_disp.data(), std::move(c), El::SyncInfo<El::Device::CPU>{});
   }
   /**
    * Allgatherv over a model communicator;
@@ -477,14 +477,16 @@ class lbann_comm {
   template <typename T>
   void gather(T snd, int root, El::mpi::Comm c) {
     bytes_sent += sizeof(T);
-    El::mpi::Gather(&snd, 1, (T*) nullptr, 0, root, std::move(c));
+    El::mpi::Gather(&snd, 1, (T*) nullptr, 0, root, std::move(c),
+                    El::SyncInfo<El::Device::CPU>{});
   }
   /** Scalar gather (for root processes). */
   template <typename T>
   void gather(T snd, T *rcv, El::mpi::Comm c) {
     auto const size_c = El::mpi::Size(c);
     auto const rank_c = El::mpi::Rank(c);
-    El::mpi::Gather(&snd, 1, rcv, 1, rank_c, std::move(c));
+    El::mpi::Gather(&snd, 1, rcv, 1, rank_c, std::move(c),
+                    El::SyncInfo<El::Device::CPU>{});
     bytes_received += sizeof(T) * (size_c - 1);
   }
   /** Scalar gather (for root processes). */
@@ -494,23 +496,37 @@ class lbann_comm {
   }
   /** Scalar-array gather (for non-root processes). */
   template <typename T>
-  void gather(T *snd, int count, int root, El::mpi::Comm c) {
+  void gather(T *snd, int count, int root, El::mpi::Comm c)
+  {
+    gather(snd, count, root, std::move(c),
+           El::SyncInfo<El::Device::CPU>{});
+  }
+  template <typename T, El::Device D>
+  void gather(T *snd, int count, int root, El::mpi::Comm c,
+              El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Gather(snd, count, (T*) nullptr, 0, root, std::move(c));
+    El::mpi::Gather(snd, count, (T*) nullptr, 0, root, std::move(c),
+                    syncInfo);
   }
   /** Scalar-array gather (for root processes). */
   template <typename T>
   void gather(T *snd, int count, T *rcv, El::mpi::Comm c) {
+      gather(snd, count, rcv, std::move(c), El::SyncInfo<El::Device::CPU>{});
+  }
+  template <typename T, El::Device D>
+  void gather(T *snd, int count, T *rcv, El::mpi::Comm c,
+              El::SyncInfo<D> const& syncInfo) {
     auto const size_c = El::mpi::Size(c);
     auto const rank_c = El::mpi::Rank(c);
-    El::mpi::Gather(snd, count, rcv, count, rank_c, std::move(c));
+    El::mpi::Gather(snd, count, rcv, count, rank_c, std::move(c), syncInfo);
     bytes_received += sizeof(T) * count * (size_c - 1);
   }
   /** Scalar scatter (for non-root processes). */
   template <typename T>
   T scatter(int root, El::mpi::Comm c) {
     T val = {};
-    El::mpi::Scatter((T*) nullptr, 1, &val, 1, root, std::move(c));
+    El::mpi::Scatter((T*) nullptr, 1, &val, 1, root, std::move(c),
+                     El::SyncInfo<El::Device::CPU>{});
     bytes_received += sizeof(T);
     return val;
   }
@@ -520,7 +536,8 @@ class lbann_comm {
     bytes_sent += sizeof(T) * (El::mpi::Size(c) - 1);
     T val = {};
     auto root = El::mpi::Rank(c);
-    El::mpi::Scatter(snd, 1, &val, 1, root, std::move(c));
+    El::mpi::Scatter(snd, 1, &val, 1, root, std::move(c),
+                     El::SyncInfo<El::Device::CPU>{});
     return val;
   }
   /** Inter-model reduce (for non-root processes). */
@@ -591,7 +608,7 @@ class lbann_comm {
   template <typename T, El::Device D>
   void reduce(T *snd, int count, int root, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * count;
-    El::mpi::Reduce(snd, nullptr, count, op, root, std::move(c), syncInfo);
+    El::mpi::Reduce(snd, (T*) NULL, count, op, root, std::move(c), syncInfo);
   }
   /** Scalar-array reduce (for root processes). */
   template <typename T, El::Device D>
@@ -609,7 +626,7 @@ class lbann_comm {
   }
   template <typename T, El::Device D>
   void reduce(T *snd, int count, T *rcv, El::mpi::Comm c, El::mpi::Op op, El::SyncInfo<D> const& syncInfo) {
-    if (snd == rcv) { snd = MPI_IN_PLACE; }
+      if (snd == rcv) { snd = (T*)MPI_IN_PLACE; }
     auto const rank_c = El::mpi::Rank(c);
     auto const size_c = El::mpi::Size(c);
     El::mpi::Reduce(snd, rcv, count, op, rank_c, std::move(c), syncInfo);
@@ -752,11 +769,16 @@ class lbann_comm {
   /** Send a buffer to rank in model. */
   template <typename T>
   void send(const T *data, int count, int model, int rank) {
-    bytes_sent += sizeof(T) * count;
-    El::mpi::Send(data, count, get_world_rank(model, rank), get_world_comm());
+    send(data, count, model, rank, El::SyncInfo<El::Device::CPU>{});
   }
-  template <typename T> void send(const T *data, int count, int model) {
-    send(data, count, model, rank_in_model);
+  template <typename T, El::Device D>
+  void send(const T *data, int count, int model, int rank, El::SyncInfo<D> const& syncInfo) {
+    bytes_sent += sizeof(T) * count;
+    El::mpi::Send(data, count, get_world_rank(model, rank), get_world_comm(), syncInfo);
+  }
+  template <typename T, El::Device D>
+  void send(const T *data, int count, int model, El::SyncInfo<D> const& syncInfo) {
+    send(data, count, model, rank_in_model, syncInfo);
   }
   void send(const AbsMat& mat, int model, int rank);
   void send(const DistMat& mat, int model, int rank);
@@ -797,11 +819,22 @@ class lbann_comm {
 
   /** Corresponding receive to send. */
   template <typename T> void recv(T *data, int count, int model, int rank) {
-    El::mpi::Recv(data, count, get_world_rank(model, rank), get_world_comm());
-    bytes_received += sizeof(T) * count;
+    recv(data, count, model, rank, El::SyncInfo<El::Device::CPU>{});
   }
   template <typename T> void recv(T *data, int count, int model) {
     recv(data, count, model, rank_in_model);
+  }
+  template <typename T> void recv(T *data, int count) {
+    recv(data, count, El::SyncInfo<El::Device::CPU>{});
+  }
+  template <typename T, El::Device D>
+  void recv(T *data, int count, int model, int rank, El::SyncInfo<D> const& syncInfo) {
+    El::mpi::Recv(data, count, get_world_rank(model, rank), get_world_comm(), syncInfo);
+    bytes_received += sizeof(T) * count;
+  }
+  template <typename T, El::Device D>
+  void recv(T *data, int count, int model, El::SyncInfo<D> const& syncInfo) {
+    recv(data, count, model, rank_in_model, syncInfo);
   }
   void recv(AbsMat& mat, int model, int rank);
   void recv(DistMat& mat, int model, int rank);
@@ -812,8 +845,9 @@ class lbann_comm {
     recv(mat, model, rank_in_model);
   }
   /** As above, but receive from anyone. */
-  template <typename T> void recv(T *data, int count) {
-    El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, get_world_comm());
+  template <typename T, El::Device D>
+  void recv(T *data, int count, El::SyncInfo<D> const& syncInfo) {
+    El::mpi::Recv(data, count, El::mpi::ANY_SOURCE, get_world_comm(), syncInfo);
     bytes_received += sizeof(T) * count;
   }
   void recv(AbsMat& mat);
@@ -853,20 +887,37 @@ class lbann_comm {
   void nb_recv(DistMat& mat, El::mpi::Request<DataType>& req);
 
   /** Send/recv to/from ranks. */
-  template <typename T>
+  template <typename T, El::Device D>
   void sendrecv(const T *snd, int send_count, int send_model, int send_rank,
                 T *rcv, int recv_count, int recv_model, int recv_rank) {
+    sendrecv(snd, send_count, send_model, send_rank,
+             rcv, recv_count, recv_model, recv_rank,
+             El::SyncInfo<El::Device::CPU>{});
+  }
+  template <typename T, El::Device D>
+  void sendrecv(const T *snd, int send_count, int send_model,
+                T *rcv, int recv_count, int recv_model) {
+    sendrecv(snd, send_count, send_model, rank_in_model,
+             rcv, recv_count, recv_model, rank_in_model,
+             El::SyncInfo<El::Device::CPU>{});
+  }
+
+  template <typename T, El::Device D>
+  void sendrecv(const T *snd, int send_count, int send_model, int send_rank,
+                T *rcv, int recv_count, int recv_model, int recv_rank,
+                El::SyncInfo<D> const& syncInfo) {
     bytes_sent += sizeof(T) * send_count;
     bytes_received += sizeof(T) * recv_count;
     El::mpi::SendRecv(snd, send_count, get_world_rank(send_model, send_rank),
                       rcv, recv_count, get_world_rank(recv_model, recv_rank),
-                      get_world_comm());
+                      get_world_comm(), syncInfo);
   }
-  template <typename T>
+  template <typename T, El::Device D>
   void sendrecv(const T *snd, int send_count, int send_model,
-                T *rcv, int recv_count, int recv_model) {
+                T *rcv, int recv_count, int recv_model,
+                El::SyncInfo<D> const& syncInfo) {
     sendrecv(snd, send_count, send_model, rank_in_model,
-             rcv, recv_count, recv_model, rank_in_model);
+             rcv, recv_count, recv_model, rank_in_model, syncInfo);
   }
 
   /** Determine the size (count) of an incoming message. */
