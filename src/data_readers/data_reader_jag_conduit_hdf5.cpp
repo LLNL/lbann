@@ -200,10 +200,8 @@ void data_reader_jag_conduit_hdf5::load() {
   // todo: should used a shared_ptr, but I had compilation errors;
   //       will fix later
   bool setup_jag_store = true;
+  #if 0
   options *opts = options::get();
-  if (! opts->get_bool("share_data_reader_data")) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: you must include the command line option: --share_data_reader_data when using data_reader_jag_conduit_hdf5");
-  }
   if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5::load() - getting ptrs to data_readers\n";
   std::vector<void*> p = opts->get_ptrs();
   bool foundit = false;
@@ -228,25 +226,18 @@ void data_reader_jag_conduit_hdf5::load() {
       std::cout << "data_reader_jag_conduit_hdf5::load; I am the primary data reader; role: " << get_role() << "\n";
     }
   }
-  if (is_master()) std::cerr << "DONE! data_reader_jag_conduit_hdf5::load() - getting ptrs to data_readers\n";
+  #endif
 
   if (setup_jag_store) {
     m_jag_store = new jag_store;
-    //m_jag_store = std::make_shared<jag_store>(new jag_store);
   
+    if (is_master()) std::cerr << "calling: m_jag_store->set_image_size\n";
     m_jag_store->set_image_size(m_image_height * m_image_width);
   
-    // for selecting images, per Luc's advise
-    m_emi_selectors.insert("(0.0, 0.0)");
-    m_emi_selectors.insert("(90.0, 0.0)");
-    m_emi_selectors.insert("(90.0, 78.0)");
-  
-    //const std::string data_dir = add_delimiter(get_file_dir());
-    //const std::string conduit_file_name = get_data_filename();
     const std::string pattern = get_file_dir();
     std::vector<std::string> names = glob(pattern);
     if (names.size() < 1) {
-      _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
+      _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames for pattern: " + pattern);
     }
   
     if (m_first_n > 0) {
@@ -261,7 +252,7 @@ void data_reader_jag_conduit_hdf5::load() {
   
     m_jag_store->set_comm(m_comm);
 
-    if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5: calling m_jag_store->setup(names)\n";
+    if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5: calling m_jag_store->setup()\n";
     m_jag_store->setup(names, this);
   }
 
@@ -425,6 +416,7 @@ data_reader_jag_conduit_hdf5::get_image_ptrs(const size_t sample_id) const {
   return image_ptrs;
 }
 
+#if 0
 cv::Mat data_reader_jag_conduit_hdf5::cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height) {
   const int num_pixels = static_cast<int>(img.first);
   const ch_t* ptr = img.second;
@@ -437,9 +429,11 @@ cv::Mat data_reader_jag_conduit_hdf5::cast_to_cvMat(const std::pair<size_t, cons
   // to preserve the constness of the original data
   return (image.reshape(0, height));
 }
+#endif
 
+#if 0
 std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id, int tid) const {
-  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_images(tid);
+  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_views(tid);
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(raw_images.size());
   size_t num_pixels = get_linearized_image_size();
   for (size_t h=0; h<raw_images.size(); h++) {
@@ -454,7 +448,9 @@ std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sa
   }
   return images;
 }
+#endif
 
+#if 0
 std::vector<data_reader_jag_conduit_hdf5::ch_t> data_reader_jag_conduit_hdf5::get_images(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
   std::vector<ch_t> images;
@@ -468,7 +464,9 @@ std::vector<data_reader_jag_conduit_hdf5::ch_t> data_reader_jag_conduit_hdf5::ge
 
   return images;
 }
+#endif
 
+#if 0
 std::vector<data_reader_jag_conduit_hdf5::scalar_t> data_reader_jag_conduit_hdf5::get_scalars(const size_t sample_id) const {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   std::vector<data_reader_jag_conduit_hdf5::scalar_t> r;
@@ -492,7 +490,9 @@ std::vector<data_reader_jag_conduit_hdf5::scalar_t> data_reader_jag_conduit_hdf5
   return scalars;
 #endif
 }
+#endif
 
+#if 0
 std::vector<data_reader_jag_conduit_hdf5::input_t> data_reader_jag_conduit_hdf5::get_inputs(const size_t sample_id) const {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   std::vector<data_reader_jag_conduit_hdf5::input_t> r;
@@ -524,6 +524,7 @@ std::vector<data_reader_jag_conduit_hdf5::input_t> data_reader_jag_conduit_hdf5:
   return inputs;
 #endif
 }
+#endif
 
 std::vector<CPUMat>
 data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
@@ -588,23 +589,45 @@ bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_id
   const std::vector<size_t> & sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
 
+  static bool testme = true;
+  if (testme) {
+    testme = false;
+    std::cerr << "XX data_reader_jag_conduit_hdf5::fetch_datum; sizes: ";
+    size_t tot = 0;
+    for (auto t : sizes) {
+      tot += t;
+      std::cerr << t << " ";
+    }
+    std::cerr << "matrix entries: " << tot << "\n";
+  }
+
   size_t i = 0;
+
+  //
+  const std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> & images = m_jag_store->fetch_views(tid);
+  for(size_t view=0u; view < images.size(); ++view) {
+    for (size_t channel = 0; channel < images[view].size(); channel++) {
+      set_minibatch_item<data_reader_jag_conduit_hdf5::ch_t>(X_v[i++], 0, images[view][channel].data(), images[view][channel].size());
+    }  
+  }
+
+  // set all scalar values
+  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> &scalars = m_jag_store->fetch_scalars(tid);
+  set_minibatch_item<data_reader_jag_conduit_hdf5::scalar_t>(X_v[i++], 0, scalars.data(), m_jag_store->get_linearized_scalar_size());
+
+  // set values for each view separately
+  //std::vector<cv::Mat> images = get_cv_images(data_id, tid);
+  //if (images.size() != get_num_img_srcs()) {
+  //  throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: the number of images is not as expected " + std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
+  //}  
+
+    //int width, height, img_type;
+    //image_utils::process_image(images[k], width, height, img_type, *(m_pps[tid]), X_v[i]);
+
+  // set all input values
   const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(tid);
   set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, inputs.data(), m_jag_store->get_linearized_input_size());
 
-  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> &scalars = m_jag_store->fetch_scalars(tid);
-  set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, scalars.data(), m_jag_store->get_linearized_input_size());
-
-  std::vector<cv::Mat> images = get_cv_images(data_id, tid);
-
-  if (images.size() != get_num_img_srcs()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: the number of images is not as expected " + std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
-  }  
-
-  for(size_t k=0u; k < get_num_img_srcs(); ++k) {
-    int width, height, img_type;
-    image_utils::process_image(images[k], width, height, img_type, *(m_pps[tid]), X_v[i]);
-   }
 
   return ok;
 }

@@ -50,6 +50,12 @@ class data_reader_jag_conduit_hdf5;
 class jag_store {
  public:
 
+   #define METADATA_FN "metadata.txt"
+   #define IMAGE_SIZE_PER_CHANNEL 4096
+   #define IMAGE_CHANNELS 4
+   #define MAX_SAMPLES_PER_BINARY_FILE 10000
+   #define BINARY_FILE_BASENAME "converted"
+
   jag_store();
 
   jag_store(const jag_store&) = default;
@@ -62,6 +68,7 @@ class jag_store {
     m_comm = comm;
   }
 
+  /// load data from disk into RAM buffer for the specified thread
   void load_data(int data_id, int tid);
 
   /// Returns the requested inputs
@@ -74,10 +81,14 @@ class jag_store {
     return m_data_scalars[tid];
   }
 
-  /// Returns the requested images
-  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> & fetch_images(int tid) {
+  /// Returns the requested views (a.k.a. images)
+  const std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> & fetch_views(int tid) {
     return m_data_images[tid];
   }
+
+  /// methods for converting conduit bundle to our binary format
+  void write_binary(const std::string &input_fn, const std::string &output_dir);
+  void write_binary_metadata(std::string dir);
 
   void load_inputs(const std::string &keys);
   void load_scalars(const std::string &keys);
@@ -95,12 +106,15 @@ class jag_store {
              bool num_stores = 1,
              int my_rank = 0);
 
-  void set_image_size(size_t n) { m_image_size = n; }
+  void set_image_size(size_t n) { 
+    //m_image_size = n; 
+  }
 
   size_t get_linearized_data_size() const;
 
+  // this is the number of pixels in one channel from a view;
   size_t get_linearized_image_size() const { 
-    return m_image_size * m_image_channels_to_use.size();
+    return IMAGE_SIZE_PER_CHANNEL * m_image_channels_to_use.size();
   }
   size_t get_linearized_scalar_size() const { return m_scalars_to_use.size(); }
   size_t get_linearized_input_size() const { return m_inputs_to_use.size(); }
@@ -111,6 +125,9 @@ class jag_store {
   void check_sample_id(const size_t sample_id) const { 
     if (sample_id >= m_num_samples) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: sample_id >= m_num_samples");
+    }
+    if (m_sample_map.find(sample_id) == m_sample_map.end()) {
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: sample_id: " + std::to_string(sample_id) + " missing from m_sample_map");
     }
   }
 
@@ -133,7 +150,10 @@ class jag_store {
   // the actual data. The outer vector has size: omp_get_max_threads()
   std::vector<std::vector<data_reader_jag_conduit_hdf5::input_t>> m_data_inputs;
   std::vector<std::vector<data_reader_jag_conduit_hdf5::scalar_t>> m_data_scalars;
-  std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> m_data_images;
+  // outer vector: 
+  //    |thread    |views (3)  |channels (4)  |the data
+  std::vector<std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>>> m_data_images;
+    //std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> m_data_images_2;
 
   lbann_comm *m_comm;
 
@@ -150,6 +170,54 @@ class jag_store {
   data_reader_jag_conduit_hdf5 *m_reader;
 
   bool m_master;
+
+  void convert_conduit(const std::vector<std::string> &conduit_filenames);
+  void test_conversion(const std::string &input_fn, const std::string &output_dir);
+
+  std::unordered_map<std::string, size_t> m_key_map;
+  void read_key_map(const std::string &filename);
+
+  std::ofstream m_name_file;
+  std::ofstream m_binary_file;
+  int m_cur_bin_count;
+  int m_bin_file_count;
+  void open_output_files(const std::string &base);
+  size_t m_sample_len;
+
+  std::vector<std::vector<std::ifstream*>> m_stream;
+
+  // maps a shuffled index to <m_stream[idx], int>
+  std::unordered_map<int, std::pair<int, int>> m_sample_map;
+
+  //normalization scalars for image channels
+  std::vector<double> m_normalize;
+
+  std::vector<std::vector<unsigned char>> m_scratch;
+  //std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> m_scratch;
+
+  void check_entry(std::string &e) {
+    if (m_key_map.find(e) == m_key_map.end()) {
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: m_key_map is missing entry: " + e);
+    }
+  }
+
+  bool m_use_conduit;
+
+  void load_data_from_conduit(int data_id, int tid);
+  void setup_conduit(double tm1);
+  void load_variable_names();
+  void allocate_memory();
+  void report_linearized_sizes();
+
+  std::unordered_set<std::string> m_valid_samples;
+  std::unordered_map<size_t, std::string> m_id_to_name;
+  void get_default_keys(std::string &filename, std::string &sample_id, std::string key1, bool master);
+  std::vector<std::string> m_inputs_to_load;
+  std::vector<std::string> m_scalars_to_load;
+  std::vector<std::string> m_images_to_load;
+
+
+
 };
 
 } // end of namespace lbann
