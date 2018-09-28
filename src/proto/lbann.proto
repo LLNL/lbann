@@ -35,6 +35,15 @@ message Reader {
   ImagePreprocessor image_preprocessor = 13;
 
   //------------------ start of only for jag_conduit -----------------------
+  message JagLinearNormalizationParams {
+    double scale = 1;
+    double bias = 2;
+  }
+
+  repeated JagLinearNormalizationParams jag_image_normalization_params = 86;
+  repeated JagLinearNormalizationParams jag_scalar_normalization_params = 87;
+  repeated JagLinearNormalizationParams jag_input_normalization_params = 88;
+
   bool split_jag_image_channels = 89;
   repeated string jag_image_keys = 90;
   repeated string jag_scalar_keys = 91;

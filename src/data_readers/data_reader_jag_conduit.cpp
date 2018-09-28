@@ -288,6 +288,12 @@ bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
   }
   return true;
 }
+#else // _JAG_OFFLINE_TOOL_MODE_
+void data_reader_jag_conduit::set_num_samples(size_t ns) {
+  m_local_num_samples_to_use = ns;
+  m_global_num_samples_to_use = ns;
+  m_num_samples = ns;
+}
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
@@ -343,6 +349,10 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_cached_data_mb_size = rhs.m_cached_data_mb_size;
   m_cached_response_mb_size = rhs.m_cached_response_mb_size;
   m_cached_label_mb_size = rhs.m_cached_label_mb_size;
+
+  m_image_normalization_params = rhs.m_image_normalization_params;
+  m_scalar_normalization_params = rhs.m_scalar_normalization_params;
+  m_input_normalization_params = rhs.m_input_normalization_params;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -395,6 +405,10 @@ void data_reader_jag_conduit::set_defaults() {
   m_cached_data_mb_size = 0;
   m_cached_response_mb_size = 0;
   m_cached_label_mb_size = 0;
+
+  m_image_normalization_params.clear();
+  m_scalar_normalization_params.clear();
+  m_input_normalization_params.clear();
 }
 
 /// Replicate image processor for each OpenMP thread
@@ -685,6 +699,12 @@ void data_reader_jag_conduit::check_image_data() {
       _THROW_LBANN_EXCEPTION_(_CN_, msg + get_description());
     }
   }
+
+  if (m_image_normalization_params.empty() {
+    m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 1.0));
+  } else if (m_image_normalization_params.size() != m_emi_image_keys.size()*m_image_num_channels) {
+    _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of image normalization parameter sets!");
+  }
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
@@ -720,6 +740,12 @@ void data_reader_jag_conduit::check_scalar_keys() {
       }
     }
     _THROW_LBANN_EXCEPTION_(_CN_, "check_scalar_keys() : " + msg);
+  }
+
+  if (m_scalar_normalization_params.empty()) {
+    m_scalar_normalization_params.assign(m_scalar_keys.size(), linear_transform_t(1.0, 1.0));
+  } else if (m_scalar_normalization_params.size() != m_scalar_keys.size()) {
+     _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of scalar normalization parameter sets!");
   }
 }
 
@@ -765,6 +791,12 @@ void data_reader_jag_conduit::check_input_keys() {
   }
 
   m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_input_t;
+
+  if (m_input_normalization_params.empty()) {
+    m_input_normalization_params.assign(m_input_keys.size(), linear_transform_t(1.0, 1.0));
+  } else if (m_input_normalization_params.size() != m_input_keys.size()) {
+     _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of input normalization parameter sets!");
+  }
 }
 
 
@@ -1282,20 +1314,29 @@ cv::Mat data_reader_jag_conduit::cast_to_cvMat(
   return (image.reshape(num_ch, height));
 }
 
+/// Assumes the same parameters for the same channel from different views
+void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t ch) const {
+  const auto& tr = m_image_normalization_params.at(i*m_image_num_channels + ch);
+  img.convertTo(img, -1, tr.first, tr.second);
+}
+
 std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
   std::vector<cv::Mat> images;
 
   if (m_split_channels) {
     images.reserve(img_ptrs.size()*m_image_num_channels);
+    size_t i = 0u;
     for (const auto& img: img_ptrs) {
       cv::Mat ch[m_image_num_channels];
       cv::split(cast_to_cvMat(img, m_image_height, m_image_num_channels), ch);
       for(int c = 0; c < m_image_num_channels; ++c) {
+        image_normalization(ch[c], i, static_cast<size_t>(c));
         images.emplace_back(ch[c].clone());
       }
+      i++;
     }
-  } else {
+  } else { // currently no hardcoded normalization for this case
     images.reserve(img_ptrs.size());
     for (const auto& img: img_ptrs) {
       images.emplace_back(cast_to_cvMat(img, m_image_height, m_image_num_channels).clone());
@@ -1311,14 +1352,18 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
   if (m_split_channels) {
     images.resize(get_linearized_size(JAG_Image));
     size_t i = 0u;
+    size_t j = 0u;
     for (const auto& img: img_ptrs) {
       const size_t num_vals = img.first;
       const ch_t * const ptr_end = img.second + num_vals;
       for (int c=0; c < m_image_num_channels; ++c) {
+        const auto& tr = m_image_normalization_params.at(j*m_image_num_channels + c);
         for (const ch_t* ptr = img.second + c; ptr < ptr_end; ptr += m_image_num_channels) {
-          images[i++] = *ptr;
+          //images[i++] = *ptr;
+          images[i++] = static_cast<ch_t>(*ptr * tr.first + tr.second);
         }
       }
+      j ++;
     }
   } else {
     images.reserve(get_linearized_size(JAG_Image));
@@ -1340,13 +1385,16 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
+  size_t i = 0u;
   for(const auto key: m_scalar_keys) {
     conduit::Node n_scalar;
     // TODO: optimize by loading the entire set of scalars of the samples
     load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
     // All the scalar output currently seems to be scalar_t
     //add_val(key, n_scalar, scalars);
-    scalars.push_back(static_cast<scalar_t>(n_scalar.to_value()));
+    //scalars.push_back(static_cast<scalar_t>(n_scalar.to_value()));
+    const auto& tr = m_scalar_normalization_params.at(i++);
+    scalars.push_back(static_cast<scalar_t>(static_cast<scalar_t>(n_scalar.to_value()) * tr.first + tr.second));
   }
   return scalars;
 }
@@ -1361,13 +1409,16 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
 
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
+    size_t i = 0u;
     for(const auto key: m_input_keys) {
       conduit::Node n_input;
       // TODO: optimize by loading the entire set of input parameters of the samples
       load_conduit_node(sample_id, "/inputs/" + key, n_input);
-      inputs.push_back(n_input.value()); // less overhead
+      //inputs.push_back(n_input.value()); // less overhead
+      const auto& tr = m_input_normalization_params.at(i++);
+      inputs.push_back(static_cast<input_t>(static_cast<input_t>(n_input.value()) * tr.first + tr.second)); // less overhead
     }
-  } else {
+  } else { // this case does not have normalization
     for(const auto key: m_input_keys) {
       conduit::Node n_input;
       load_conduit_node(sample_id, "/inputs/" + key, n_input);
@@ -1526,6 +1577,18 @@ void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
   conduit::Node n;
   load_conduit_node(sample_id, "", n);
   n.schema().print();
+}
+
+void data_reader_jag_conduit::add_image_normalization_param(const linear_transform_t& t) {
+  m_image_normalization_params.push_back(t);
+}
+
+void data_reader_jag_conduit::add_scalar_normalization_param(const linear_transform_t& t) {
+  m_scalar_normalization_params.push_back(t);
+}
+
+void data_reader_jag_conduit::add_input_normalization_param(const linear_transform_t& t) {
+  m_input_normalization_params.push_back(t);
 }
 
 } // end of namespace lbann

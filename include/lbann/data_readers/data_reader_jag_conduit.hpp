@@ -81,6 +81,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type for the pair of the key string of a sample and the handle of the file that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
+  /// linear transform on X defined as: first * X + second => X'
+  using linear_transform_t = std::pair<double, double>;
 
   /**
    * Dependent/indepdendent variable types
@@ -179,6 +181,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
+  /** Manually set m_global_num_samples_to_use and m_local_num_samples_to_use
+   *  to avoid calling determine_num_samples_to_use();
+   */
+  void set_num_samples(size_t ns);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
@@ -261,6 +267,10 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// print the schema of the specific sample identified by a given id
   void print_schema(const size_t i) const;
+
+  void add_image_normalization_param(const linear_transform_t& t);
+  void add_scalar_normalization_param(const linear_transform_t& t);
+  void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
   virtual void set_defaults();
@@ -461,8 +471,16 @@ class data_reader_jag_conduit : public generic_data_reader {
   int m_cached_data_mb_size;
   int m_cached_response_mb_size;
   int m_cached_label_mb_size;
-};
 
+  /// temporary normalization parameters based on linear transforms
+  std::vector<linear_transform_t> m_image_normalization_params;
+  std::vector<linear_transform_t> m_scalar_normalization_params;
+  std::vector<linear_transform_t> m_input_normalization_params;
+  /** temporary image normalization
+   * The inputs are the image to normalize, the image source id and the channel id.
+   */
+  void image_normalization(cv::Mat& img, size_t i, size_t ch) const;
+};
 
 /**
  * To faciliate the type comparison between a c++ native type and a conduit type id.

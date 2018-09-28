@@ -459,6 +459,33 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       reader_jag->add_input_prefix_filter(pf);
     }
 
+    // add image normalization parameters
+    const int num_image_normalization_params = pb_readme.jag_image_normalization_params_size();
+    for (int i=0; i <  num_image_normalization_params; ++i) {
+      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      const linear_transform_t np = std::make_pair(pb_readme.jag_image_normalization_params(i).scale(),
+                                                   pb_readme.jag_image_normalization_params(i).bias());
+      reader_jag->add_image_normalization_param(np);
+    }
+
+    // add scalar normalization parameters
+    const int num_scalar_normalization_params = pb_readme.jag_scalar_normalization_params_size();
+    for (int i=0; i <  num_scalar_normalization_params; ++i) {
+      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      const linear_transform_t np = std::make_pair(pb_readme.jag_scalar_normalization_params(i).scale(),
+                                                   pb_readme.jag_scalar_normalization_params(i).bias());
+      reader_jag->add_scalar_normalization_param(np);
+    }
+
+    // add input normalization parameters
+    const int num_input_normalization_params = pb_readme.jag_input_normalization_params_size();
+    for (int i=0; i <  num_input_normalization_params; ++i) {
+      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      const linear_transform_t np = std::make_pair(pb_readme.jag_input_normalization_params(i).scale(),
+                                                   pb_readme.jag_input_normalization_params(i).bias());
+      reader_jag->add_input_normalization_param(np);
+    }
+
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
