@@ -9,8 +9,8 @@ model {
       layer: "g_adv2_eval"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_x_eval"
+      scale_factor: 0.025
+      layer: "l_l2_x"
     }
   }
   num_epochs: 1
@@ -501,19 +501,12 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_x"
     data_layout: "data_parallel"
     device_allocation: "cpu"
     parents: "gsample2_minus_x"
-  }
-  layer {
-    name: "l_l2_x_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_x"
-    evaluation {
-    }
   }
   weights {
     name: "gen2fc1linearity"

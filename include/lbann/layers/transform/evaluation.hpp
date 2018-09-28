@@ -53,20 +53,25 @@ public:
                                               El::Device device);
   
 protected:
-
   abstract_evaluation_layer(lbann_comm *comm);
-
+  void setup_data() override;
   void fp_compute() override;
   void bp_compute() override;
 
 private:
 
   /** Scaling factor to apply to evaluated value. */
-  EvalType m_scale;
-  /** Evaluated value. */
-  DataType m_value;
+  EvalType m_scale = 0;
+  /** Evaluated value.
+   *  The value may be stored in pinned memory.
+   */
+  CPUMat m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
+#ifdef LBANN_HAS_GPU
+  /** CUDA event after a non-blocking GPU-CPU memory copy. */
+  cuda::event_wrapper m_copy_event;
+#endif // LBANN_HAS_GPU
   
 };
 
@@ -76,23 +81,12 @@ private:
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class evaluation_layer : public abstract_evaluation_layer {
-
- public:
-
+public:
   evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer(comm) {}
-
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-
-  /** Returns description. */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "evaluation_layer  dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
-  }
-
 };
 
 } // namespace lbann
