@@ -128,12 +128,12 @@ void lbann_callback_timer::timing_end(model *m) {
     // Print results
     if (comm->am_world_master()) {
       for (int i = 0; i < num_models; ++i) {
-        std::cout << "Model " << i << " " << mode_string << " "
+        std::cout << "Model " << i << " " << m->get_name() << " " << mode_string << " "
                   << "run time : " << run_time_list[i] << "s"
                   << std::endl;
       }
       for (int i = 0; i < num_models; ++i) {
-        std::cout << "Model " << i << " " << mode_string << " "
+        std::cout << "Model " << i << " " << m->get_name() << " " << mode_string << " "
                   << "mini-batch time statistics : ";
         if (std::isnan(mean_list[i])) {
           std::cout << "N/A";
