@@ -81,7 +81,7 @@ void fp_cpu(lbann_comm& comm,
   } else if (local_width < 1) {
     return;
   }
-  
+
   // Column communicator
   auto&& col_comm = predictions.ColComm();
   const auto& col_comm_rank = El::mpi::Rank(col_comm);
@@ -129,13 +129,13 @@ void fp_cpu(lbann_comm& comm,
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
                   top_entries.size() * sizeof(entry),
                   col_comm_root,
-                  col_comm);
+                  col_comm, El::SyncInfo<El::Device::CPU>{});
     } else {
       std::vector<entry> global_top_entries(col_comm_size * local_width * k);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
                   top_entries.size() * sizeof(entry),
                   reinterpret_cast<El::byte*>(global_top_entries.data()),
-                  col_comm);
+                  col_comm, El::SyncInfo<El::Device::CPU>{});
 #pragma omp parallel for
       for (El::Int col = 0; col < local_width; ++col) {
         std::vector<entry> col_entries(col_comm_size * k);
@@ -168,7 +168,7 @@ void fp_cpu(lbann_comm& comm,
       }
     }
   }
-  
+
 }
 
 } // namespace

@@ -10,6 +10,7 @@ model {
   ###################################################
   # Objective function
   ###################################################
+
   objective_function {
     layer_term { layer: "cross_entropy" }
   }
@@ -17,6 +18,7 @@ model {
   ###################################################
   # Callbacks
   ###################################################
+  
   callback { print {} }
   callback { timer {} }
   callback {

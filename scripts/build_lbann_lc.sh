@@ -55,6 +55,7 @@ DATATYPE=float
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
+NINJA_NUM_PROCESSES=0 # Let ninja decide
 GEN_DOC=0
 INSTALL_LBANN=0
 BUILD_DIR=
@@ -70,6 +71,7 @@ ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
+USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -126,6 +128,8 @@ Options:
   ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
   ${C}--disable-aluminum-with-nccl     Disable the NCCL backend in Aluminum
   ${C}--with-conduit              Build with conduit interface
+  ${C}--ninja                     Generate ninja files instead of makefiles
+  ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
 EOF
 }
 
@@ -184,6 +188,18 @@ while :; do
             # Set datatype size
             if [ -n "${2}" ]; then
                 DATATYPE=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
+        --ninja)
+            USE_NINJA=1
+            ;;
+        --ninja-processes)
+            if [ -n "${2}" ]; then
+                NINJA_NUM_PROCESSES=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -660,6 +676,22 @@ echo $COMPILER_VERSION
   fi
 fi
 ################################################################
+# Setup Ninja, if using
+################################################################
+
+if [ ${USE_NINJA} -ne 0 ]; then
+    if ! which ninja ; then
+        if [ "${ARCH}" == "x86_64" ]; then
+            export PATH=/usr/workspace/wsb/brain/utils/toss3/ninja/bin:$PATH        
+        elif [ "${ARCH}" == "ppc64le" ]; then
+            export PATH=/usr/workspace/wsb/brain/utils/coral/ninja/bin:$PATH        
+        fi
+    fi
+    if ! which ninja ; then
+        USE_NINJA=0
+    fi
+fi
+################################################################
 # Display parameters
 ################################################################
 
@@ -750,9 +782,16 @@ fi
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
+# Setup the CMake generator
+GENERATOR="\"Unix Makefiles\""
+if [ ${USE_NINJA} -ne 0 ]; then
+    GENERATOR="Ninja"
+fi
+
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
  ${CMAKE_PATH}/cmake \
+-G ${GENERATOR} \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
@@ -792,7 +831,9 @@ EOF
 
 
 if [ ${VERBOSE} -ne 0 ]; then
-    echo "${CONFIGURE_COMMAND}"
+    echo "${CONFIGURE_COMMAND}" |& tee cmake_superbuild_invocation.txt
+else
+    echo "${CONFIGURE_COMMAND}" > cmake_superbuild_invocation.txt
 fi
 eval ${CONFIGURE_COMMAND}
 if [ $? -ne 0 ]; then
@@ -805,13 +846,21 @@ fi
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
 BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+if [ ${USE_NINJA} -ne 0 ]; then
+    if [ ${NINJA_NUM_PROCESSES} -ne 0 ]; then
+        BUILD_COMMAND="ninja -j${NINJA_NUM_PROCESSES}"
+    else
+        # Usually equivalent to -j<num_cpus+2>
+        BUILD_COMMAND="ninja"
+    fi
+fi
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
 fi
 eval ${BUILD_COMMAND}
 if [ $? -ne 0 ]; then
     echo "--------------------"
-    echo "MAKE FAILED"
+    echo "BUILD FAILED"
     echo "--------------------"
     exit 1
 fi
@@ -819,13 +868,21 @@ fi
 # Install LBANN with make
 if [ ${INSTALL_LBANN} -ne 0 ]; then
     INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+    if [ ${USE_NINJA} -ne 0 ]; then
+        if [ ${NINJA_NUM_PROCESSES} -ne 0 ]; then
+            BUILD_COMMAND="ninja -j${NINJA_NUM_PROCESSES} install"
+        else
+            # Usually equivalent to -j<num_cpus+2>
+            BUILD_COMMAND="ninja install"
+        fi
+    fi
     if [ ${VERBOSE} -ne 0 ]; then
         echo "${INSTALL_COMMAND}"
     fi
     eval ${INSTALL_COMMAND}
     if [ $? -ne 0 ]; then
         echo "--------------------"
-        echo "MAKE INSTALL FAILED"
+        echo "INSTALL FAILED"
         echo "--------------------"
         exit 1
     fi
@@ -834,13 +891,16 @@ fi
 # Generate documentation with make
 if [ ${GEN_DOC} -ne 0 ]; then
     DOC_COMMAND="make doc"
+    if [ ${USE_NINJA} -ne 0 ]; then
+        DOC_COMMAND="ninja doc"
+    fi
     if [ ${VERBOSE} -ne 0 ]; then
         echo "${DOC_COMMAND}"
     fi
     eval ${DOC_COMMAND}
     if [ $? -ne 0 ]; then
         echo "--------------------"
-        echo "MAKE DOC FAILED"
+        echo "BUILDING DOC FAILED"
         echo "--------------------"
         exit 1
     fi
