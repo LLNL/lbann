@@ -1621,7 +1621,7 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
   assert0(m_error_signals_t.allocate());
   m_error_signals_t.zero();
   MPIPrintStreamInfo() << get_name() << "; "
-                       << "error signals: " << m_prev_error_signals_t;
+                       << "error signals: " << m_error_signals_t;
 }
 
 void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists) {
