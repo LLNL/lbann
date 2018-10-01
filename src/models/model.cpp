@@ -1803,6 +1803,20 @@ void model::setup_distconv() {
     }
     updated = std::move(updated_new);
   }
+  // displays parent and child layer names for debugging
+  for (const auto& layer : m_layers) {
+    std::stringstream names;
+    names << "parent:";
+    for (const auto &parent: layer->get_parent_layers()) {
+      names << " " << parent->get_name();
+    }
+    names << ", children:";
+    for (const auto &child: layer->get_child_layers()) {
+      names << " " << child->get_name();
+    }
+    dc::MPIRootPrintStreamInfo()
+        << layer->get_name() << "; " << names.str();
+  }
   for (const auto& layer : m_layers) {
     if (layer->distconv_enabled()) {
       dc::MPIRootPrintStreamInfo()
