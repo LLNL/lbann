@@ -700,7 +700,7 @@ void data_reader_jag_conduit::check_image_data() {
     }
   }
 
-  if (m_image_normalization_params.empty() {
+  if (m_image_normalization_params.empty()) {
     m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 1.0));
   } else if (m_image_normalization_params.size() != m_emi_image_keys.size()*m_image_num_channels) {
     _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of image normalization parameter sets!");
@@ -1579,15 +1579,15 @@ void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
   n.schema().print();
 }
 
-void data_reader_jag_conduit::add_image_normalization_param(const linear_transform_t& t) {
+void data_reader_jag_conduit::add_image_normalization_param(const data_reader_jag_conduit::linear_transform_t& t) {
   m_image_normalization_params.push_back(t);
 }
 
-void data_reader_jag_conduit::add_scalar_normalization_param(const linear_transform_t& t) {
+void data_reader_jag_conduit::add_scalar_normalization_param(const data_reader_jag_conduit::linear_transform_t& t) {
   m_scalar_normalization_params.push_back(t);
 }
 
-void data_reader_jag_conduit::add_input_normalization_param(const linear_transform_t& t) {
+void data_reader_jag_conduit::add_input_normalization_param(const data_reader_jag_conduit::linear_transform_t& t) {
   m_input_normalization_params.push_back(t);
 }
 
