@@ -5,7 +5,7 @@ Support for new network structures:
 
 Support for new layers:
  - LogSoftmax
- - Basic unary math functions
+ - Basic math functions
  - Weights layer, which outputs a weights tensor
  - L2 norm squared
 
