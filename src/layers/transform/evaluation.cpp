@@ -64,18 +64,9 @@ void fp_gpu(lbann_comm& comm,
             const AbsDistMat& input,
             DataType& value,
             cuda::event_wrapper& copy_event,
-            execution_mode mode) { {
+            execution_mode mode) {
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-
-#ifdef LBANN_HAS_DISTCONV  
-  if (mode == execution_mode::training &&
-      dc::skip_metrics_while_training()) {
-    El::Zero(sum_d);
-    copy_event.record(stream);    
-    return;
-  }
-#endif
 
   // Local matrix
   const auto& local_input = input.LockedMatrix();
@@ -94,6 +85,15 @@ void fp_gpu(lbann_comm& comm,
   auto&& stream = El::GPUManager::Stream();
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
+#ifdef LBANN_HAS_DISTCONV  
+  if (mode == execution_mode::training &&
+      dc::skip_metrics_while_training()) {
+    El::Zero(sum_d);
+    copy_event.record(stream);    
+    return;
+  }
+#endif
+  
   // Compute sum of local input matrix entries
   if (local_input.IsEmpty()) {
     El::Zero(sum_d);
