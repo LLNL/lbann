@@ -40,7 +40,7 @@ void local_fp_cpu(El::Int height,
   const auto& local_width = local_prediction.Width();
 
   // Compute local contribution to mean squared error
-#pragma omp parallel for
+  LBANN_OMP_TASKLOOP
   for (El::Int col = 0; col < local_width; ++col) {
     DataType sum = 0;
     for (El::Int row = 0; row < local_height; ++row) {
@@ -59,14 +59,14 @@ void local_bp_cpu(El::Int height,
                   const AbsMat& local_gradient_wrt_output,
                   AbsMat& local_gradient_wrt_prediction,
                   AbsMat& local_gradient_wrt_ground_truth) {
-                                                                       
+
   // Useful constants
   const DataType scale = DataType(2) / height;
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
   // Compute gradients
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_TASKLOOP_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& err = (local_prediction(row, col)

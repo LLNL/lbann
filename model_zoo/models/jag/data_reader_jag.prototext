@@ -10,7 +10,7 @@ data_reader {
     percent_of_data_to_use: 1.0
 
     # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
-    independent: [1, 2]
+    independent: [1]
     dependent: [3]
 
     image_preprocessor {
@@ -32,7 +32,7 @@ data_reader {
     percent_of_data_to_use: 1.0
 
     # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
-    independent: [1, 2]
+    independent: [1]
     dependent: [3]
 
     image_preprocessor {

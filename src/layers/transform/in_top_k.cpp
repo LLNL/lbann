@@ -83,10 +83,10 @@ void fp_cpu(lbann_comm& comm,
   // Column communicator
   auto&& col_comm = input.ColComm();
   const auto& col_comm_size = El::mpi::Size(col_comm);
-  
+
   // Find top-k entries in each column of local input matrix
   std::vector<entry> top_entries(local_width * k);
-#pragma omp parallel for
+  LBANN_OMP_TASKLOOP
   for (El::Int col = 0; col < local_width; ++col) {
     std::vector<entry> local_entries(std::max(local_height, k));
     for (El::Int row = 0; row < local_height; ++row) {
@@ -99,7 +99,7 @@ void fp_cpu(lbann_comm& comm,
                            &top_entries[col*k] + k,
                            entry::compare);
   }
-  
+
   // Find top-k entries in each column of global input matrix
   if (col_comm_size > 1) {
     std::vector<entry> global_top_entries(col_comm_size * local_width * k);
@@ -108,7 +108,7 @@ void fp_cpu(lbann_comm& comm,
                     reinterpret_cast<El::byte*>(global_top_entries.data()),
                     top_entries.size() * sizeof(entry),
                     col_comm);
-#pragma omp parallel for
+    LBANN_OMP_TASKLOOP
     for (El::Int col = 0; col < local_width; ++col) {
       std::vector<entry> col_entries(col_comm_size * k);
       for (El::Int rank = 0; rank < col_comm_size; ++rank) {
@@ -125,7 +125,7 @@ void fp_cpu(lbann_comm& comm,
 
   // Indicate output entries corresponding to top-k input entries
   El::Zero(output);
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_TASKLOOP_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int i = 0; i < k; ++i) {
       const auto& global_row = top_entries[col*k+i].index;
@@ -135,7 +135,7 @@ void fp_cpu(lbann_comm& comm,
       }
     }
   }
-  
+
 }
 
 } // namespace

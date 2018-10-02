@@ -27,8 +27,8 @@ model {
     #  layer: "L_cyc_x_eval"
     #}
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_x_eval"
+      scale_factor: 0.025
+      layer: "l_l2_x"
     }
     l2_weight_regularization {
       scale_factor: 1e-4

@@ -149,7 +149,7 @@ bool data_reader_jag_conduit_hdf5::replicate_processor(const cv_process& pp) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  #pragma omp parallel for schedule(static, 1)
+  LBANN_OMP_TASKLOOP
   for (int i = 0; i < nthreads; ++i) {
     //auto ppu = std::make_unique<cv_process>(pp); // c++14
     std::unique_ptr<cv_process> ppu(new cv_process(pp));
@@ -212,14 +212,14 @@ void data_reader_jag_conduit_hdf5::load() {
   if (setup_jag_store) {
     m_jag_store = new jag_store;
     //m_jag_store = std::make_shared<jag_store>(new jag_store);
-  
+
     m_jag_store->set_image_size(m_image_height * m_image_width);
-  
+
     // for selecting images, per Luc's advise
     m_emi_selectors.insert("(0.0, 0.0)");
     m_emi_selectors.insert("(90.0, 0.0)");
     m_emi_selectors.insert("(90.0, 78.0)");
-  
+
     //const std::string data_dir = add_delimiter(get_file_dir());
     //const std::string conduit_file_name = get_data_filename();
     const std::string pattern = get_file_dir();
@@ -227,26 +227,42 @@ void data_reader_jag_conduit_hdf5::load() {
     if (names.size() < 1) {
       _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
     }
-  
+
     if (m_first_n > 0) {
       _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
     }
-  
+
     if (m_max_files_to_load > 0) {
       if (m_max_files_to_load < names.size()) {
         names.resize(m_max_files_to_load);
       }
     }
-  
+
     m_jag_store->set_comm(m_comm);
-    m_jag_store->load_inputs();
-    //m_jag_store.load_scalars();
-  
-    std::vector<std::string> image_names;
-    for (auto t : m_emi_selectors) {
-      image_names.push_back(t);
+    if (m_use_inputs) {
+      if (is_master()) {
+        std::cerr << "USING INPUTS\n";
+      }
+      m_jag_store->load_inputs();
     }
-    m_jag_store->load_images(image_names);
+    if (m_use_scalars) {
+      if (is_master()) {
+        std::cerr << "USING SCALARS\n";
+      }
+      m_jag_store->load_scalars();
+    }
+
+    if (m_use_images) {
+      if (is_master()) {
+        std::cerr << "USING IMAGES\n";
+      }
+      std::vector<std::string> image_names;
+      for (auto t : m_emi_selectors) {
+        image_names.push_back(t);
+      }
+      m_jag_store->load_images(image_names);
+    }
+
     m_jag_store->setup(names);
   }
 
@@ -403,7 +419,7 @@ data_reader_jag_conduit_hdf5::get_image_ptrs(const size_t sample_id) const {
     const size_t num_pixels = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
     image_ptrs.push_back(std::make_pair(num_pixels, emi_data));
-  }  
+  }
 #endif
   return image_ptrs;
 }
@@ -571,7 +587,7 @@ bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_id
 
   if (images.size() != get_num_img_srcs()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: the number of images is not as expected " + std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
-  }  
+  }
 
   for(size_t k=0u; k < get_num_img_srcs(); ++k) {
     int width, height, img_type;

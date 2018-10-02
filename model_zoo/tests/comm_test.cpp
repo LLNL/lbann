@@ -133,19 +133,20 @@ void test_send_recv_blob() {
                    LBANN_COMM_TEST_NUM_MODELS;
   int send_data = 42;
   int recv_data = 0;
+  El::SyncInfo<El::Device::CPU> syncInfoCPU;
   // Test sends/recvs with full model/rank spec.
-  comm->send(&send_data, 1, send_model, comm->get_rank_in_model());
-  comm->recv(&recv_data, 1, recv_model, comm->get_rank_in_model());
+  comm->send(&send_data, 1, send_model, comm->get_rank_in_model(), syncInfoCPU);
+  comm->recv(&recv_data, 1, recv_model, comm->get_rank_in_model(), syncInfoCPU);
   ASSERT_EQ(send_data, recv_data);
   // Test sends/recvs with only the model.
   recv_data = 0;
-  comm->send(&send_data, 1, send_model);
-  comm->recv(&recv_data, 1, recv_model);
+  comm->send(&send_data, 1, send_model, syncInfoCPU);
+  comm->recv(&recv_data, 1, recv_model, syncInfoCPU);
   ASSERT_EQ(send_data, recv_data);
   // Test with receiving from anywhere.
   recv_data = 0;
-  comm->send(&send_data, 1, send_model, comm->get_rank_in_model());
-  comm->recv(&recv_data, 1);
+  comm->send(&send_data, 1, send_model, comm->get_rank_in_model(), syncInfoCPU);
+  comm->recv(&recv_data, 1, syncInfoCPU);
   ASSERT_EQ(send_data, recv_data);
   fini_comm(comm);
 }

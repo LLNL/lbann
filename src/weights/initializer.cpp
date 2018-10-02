@@ -22,11 +22,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// weights_initializer .hpp .cpp - Weights initializer classes
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/initializer.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -39,13 +38,53 @@ void constant_initializer::fill(AbsDistMat& matrix) {
   }
 }
 
+void value_initializer::fill(AbsDistMat& matrix) {
+
+  // Check that number of values matches weights matrix
+  if (matrix.Height() * matrix.Width() != (El::Int) m_values.size()) {
+    std::stringstream err;
+    err << "a value initializer with " << m_values.size() << " values "
+        << "attempted to initialize a "
+        << matrix.Height() << " x " << matrix.Width() << " "
+        << "weights matrix";
+    LBANN_ERROR(err.str());
+  }
+
+  // Copy values to a CPU matrix
+  // Note: If the weights matrix is on CPU, the CPU matrix is a matrix
+  // view. Otherwise, the CPU matrix values are copied to the weights
+  // matrix.
+  CPUMat matrix_cpu;
+  if (matrix.GetLocalDevice() == El::Device::CPU) {
+    El::View(matrix_cpu, matrix.Matrix());
+  } else {
+    matrix_cpu.Resize(matrix.LocalHeight(), matrix.LocalWidth());
+  }
+  LBANN_OMP_TASKLOOP_COLLAPSE2
+  for (El::Int local_col = 0; local_col < matrix.LocalWidth(); ++local_col) {
+    for (El::Int local_row = 0; local_row < matrix.LocalHeight(); ++local_row) {
+      const auto& global_row = matrix.GlobalRow(local_row);
+      const auto& global_col = matrix.GlobalCol(local_col);
+      const auto& global_pos = global_row + matrix.Height() * global_col;
+      matrix_cpu(local_row, local_col) = m_values[global_pos];
+    }
+  }
+  if (matrix.GetLocalDevice() != El::Device::CPU) {
+    El::Copy(matrix_cpu, matrix.Matrix());
+#ifdef HYDROGEN_HAVE_CUDA
+    El::GPUManager::SynchronizeStream(); /// @todo Use new Hydrogen synchronization semantics when available
+#endif // HYDROGEN_HAVE_CUDA
+  }
+
+}
+
 void uniform_initializer::fill(AbsDistMat& matrix) {
-  uniform_fill(matrix, matrix.Height(), matrix.Width(), 
+  uniform_fill(matrix, matrix.Height(), matrix.Width(),
                (m_max + m_min) / 2, (m_max - m_min) / 2);
 }
 
 void normal_initializer::fill(AbsDistMat& matrix) {
-  gaussian_fill(matrix, matrix.Height(), matrix.Width(), 
+  gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
 }
 

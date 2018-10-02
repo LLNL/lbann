@@ -24,47 +24,40 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef POWER_HPP_INCLUDED
-#define POWER_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
-/** Power function. */
-template <data_layout T_layout, El::Device Dev>
-class power_layer : public entrywise_activation_layer {
+/** Dump gradients w.r.t. inputs to file.
+ *  After each layer performs a backward prop step, this callback will
+ *  dump the gradients w.r.t. inputs (the "error signals") to a
+ *  human-readable ASCII file. This is slow and produces a lot of output.
+ */
+class lbann_callback_dump_error_signals : public lbann_callback {
  public:
-  power_layer(lbann_comm *comm, EvalType exponent)
-    : entrywise_activation_layer(comm), m_exponent(exponent) {}
-  power_layer* copy() const override { return new power_layer(*this); }
-  std::string get_type() const override { return "power"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
 
- protected:
-  DataType activation(DataType x) const override {
-    if (m_exponent == EvalType(2)) {
-      return x * x;
-    } else {
-      return std::pow(x, m_exponent);
-    }
+  /** Constructor.
+   *  @param basename The basename for output files.
+   */
+  lbann_callback_dump_error_signals(std::string basename = "")
+    : lbann_callback(), m_basename(basename) {}
+  lbann_callback_dump_error_signals* copy() const override {
+    return new lbann_callback_dump_error_signals(*this);
   }
-  DataType activation_derivative(DataType x) const override {
-    if (m_exponent == EvalType(2)) {
-      return 2 * x;
-    } else {
-      return m_exponent * std::pow(x, m_exponent - EvalType(1));
-    }
-  }
+  std::string name() const override { return "dump error signals"; }
 
+  /** Write error signals to file after each backward prop step. */
+  void on_backward_prop_end(model *m, Layer *l) override;
+  
  private:
-
-  /** Exponent for power function. */
-  const EvalType m_exponent;
+  /** Basename for output files. */
+  std::string m_basename;
 
 };
 
-} // namespace lbann
+}  // namespace lbann
 
-#endif // POWER_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED

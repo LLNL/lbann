@@ -341,6 +341,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                                params.interval(),
                                                layer_names);
   }
+  if (proto_cb.has_dump_error_signals()) {
+    const auto& params = proto_cb.dump_error_signals();
+    return new lbann_callback_dump_error_signals(params.basename());
+  }
   if (proto_cb.has_dump_gradients()) {
     const auto& params = proto_cb.dump_gradients();
     return new lbann_callback_dump_gradients(params.basename(),

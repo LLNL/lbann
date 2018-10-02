@@ -24,32 +24,30 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef EXPONENTIAL_HPP_INCLUDED
-#define EXPONENTIAL_HPP_INCLUDED
-
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/callbacks/callback_dump_error_signals.hpp"
 
 namespace lbann {
 
-/** Exponential activation function. */
-template <data_layout T_layout, El::Device Dev>
-class exponential_layer : public entrywise_activation_layer {
- public:
-  exponential_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
-  exponential_layer* copy() const override { return new exponential_layer(*this); }
-  std::string get_type() const override { return "exponential"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
+void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
 
- protected:
-  DataType activation(DataType x) const override {
-    return std::exp(x);
+  // Write each activation matrix to file
+  for (int i = 0; i < l->get_num_parents(); ++i) {
+
+    // File name
+    std::stringstream file;
+    file << m_basename
+         << "model" << m->get_comm()->get_model_rank() << "-"
+         << "epoch" << m->get_cur_epoch() << "-"
+         << "step" << m->get_cur_step() << "-"
+         << l->get_name() << "-"
+         << "ErrorSignals";
+    if (l->get_num_parents() > 1) { file << i; }
+
+    // Write activations to file
+    El::Write(l->get_error_signals(i), file.str(), El::ASCII);
+
   }
-  DataType activation_derivative(DataType x) const override {
-    return std::exp(x);
-  }
-};
 
-} // namespace lbann
+}
 
-#endif // EXPONENTIAL_HPP_INCLUDED
+}  // namespace lbann

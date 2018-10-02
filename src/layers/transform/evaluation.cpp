@@ -43,7 +43,7 @@ void fp_cpu(lbann_comm& comm,
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
-  value = DataType(0);
+  value = 0;
   int nthreads = omp_get_num_threads();
   std::vector<EvalType> local_value(nthreads, EvalType(0));
   LBANN_OMP_TASKLOOP_COLLAPSE2
@@ -65,7 +65,9 @@ void fp_cpu(lbann_comm& comm,
 void fp_gpu(lbann_comm& comm,
             const AbsDistMat& input,
             DataType& value,
-            Al::request& req) {
+            cuda::event_wrapper& copy_event) {
+  constexpr DataType zero = 0;
+  constexpr DataType one = 1;
 
   // Local matrix
   const auto& local_input = input.LockedMatrix();
@@ -76,57 +78,63 @@ void fp_gpu(lbann_comm& comm,
   // GPU objects
   GPUMat sum_d, ones_d;
 #ifdef HYDROGEN_HAVE_CUB
-  sum_d.SetMemoryMode(1);  // Use CUB GPU memory pool if possible
-  ones_d.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+  sum_d.SetMemoryMode(1);  // Use CUB GPU memory pool
+  ones_d.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
+  sum_d.Resize(1, 1);
   auto&& handle = El::GPUManager::cuBLASHandle();
+  auto&& stream = El::GPUManager::Stream();
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
   // Compute sum of local input matrix entries
-  if (local_height < 1 || local_width < 1) {
-    El::Zeros(sum_d, 1, 1);
-  } else if (local_height == local_input.LDim() || local_width == 1) {
-    sum_d.Resize(1, 1);
+  if (local_input.IsEmpty()) {
+    El::Zero(sum_d);
+  } else if (local_input.Contiguous()) {
     ones_d.Resize(local_height * local_width, 1);
-    El::Fill(ones_d, DataType(1));
+    El::Fill(ones_d, one);
     cublas::dot(handle,
                 local_height * local_width,
                 local_input.LockedBuffer(), 1,
                 ones_d.LockedBuffer(), 1,
                 sum_d.Buffer());
   } else if (local_height == 1) {
-    sum_d.Resize(1, 1);
     ones_d.Resize(local_width, 1);
-    El::Fill(ones_d, DataType(1));
+    El::Fill(ones_d, one);
     cublas::dot(handle,
                 local_width,
                 local_input.LockedBuffer(), local_input.LDim(),
                 ones_d.LockedBuffer(), 1,
                 sum_d.Buffer());
   } else {
-    sum_d.Resize(local_width + 1, 1);
-    ones_d.Resize(std::max(local_height, local_width), 1);
-    El::Fill(ones_d, DataType(1));
-    for (El::Int col = 0; col < local_width; ++col) {
-      cublas::dot(handle,
-                  local_height,
-                  local_input.LockedBuffer(0, col), 1,
-                  ones_d.LockedBuffer(), 1,
-                  sum_d.Buffer(col+1, 0));
+    GPUMat col_sums_d;
+#ifdef HYDROGEN_HAVE_CUB
+    col_sums_d.SetMemoryMode(1);  // Use CUB GPU memory pool
+#endif // HYDROGEN_HAVE_CUB
+    col_sums_d.Resize(local_width, 1);
+    ones_d.Resize(local_height, 1);
+    El::Fill(ones_d, one);
+    El::Gemv(El::TRANSPOSE, one, local_input, ones_d, zero, col_sums_d);
+    if (local_width > local_height) {
+      ones_d.Resize(local_width, 1);
+      El::Fill(ones_d, one);
     }
     cublas::dot(handle,
                 local_width,
-                sum_d.LockedBuffer(1, 0), 1,
+                col_sums_d.LockedBuffer(), 1,
                 ones_d.LockedBuffer(), 1,
-                sum_d.Buffer(0, 0));
+                sum_d.Buffer());
   }
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
 
   // Compute average value across mini-batch
-  CHECK_CUDA(cudaMemcpy(&value, sum_d.LockedBuffer(), sizeof(DataType),
-                        cudaMemcpyDeviceToHost));
-  value = value / mini_batch_size;
-  comm.nb_allreduce(&value, 1, input.DistComm(), req);
+  El::Scale(one / mini_batch_size, sum_d);
+  comm.allreduce(static_cast<AbsMat&>(sum_d), input.DistComm());
+  CHECK_CUDA(cudaMemcpyAsync(&value,
+                             sum_d.LockedBuffer(),
+                             sizeof(DataType),
+                             cudaMemcpyDeviceToHost,
+                             stream));
+  copy_event.record(stream);
 
 }
 #endif // LBANN_HAS_GPU
@@ -134,27 +142,40 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 EvalType abstract_evaluation_layer::get_value(bool scaled) {
-  get_comm()->wait(m_allreduce_req);
-  if (scaled) { return m_scale * m_value; }
-  else        { return m_value; }
+  switch (get_device_allocation()) {
+  case El::Device::CPU: get_comm()->wait(m_allreduce_req); break;
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU: m_copy_event.synchronize(); break;
+#endif // LBANN_HAS_GPU
+  default: LBANN_ERROR("invalid device");
+  }
+  if (scaled) { return m_scale * m_value(0, 0); }
+  else        { return m_value(0, 0); }
 }
 
 abstract_evaluation_layer::abstract_evaluation_layer(lbann_comm *comm)
-  : transform_layer(comm), m_scale(0), m_value(0) {
-
-  // Evaluation layer has no children
+  : transform_layer(comm) {
   m_expected_num_child_layers = 0;
+}
 
+void abstract_evaluation_layer::setup_data() {
+  transform_layer::setup_data();
+#ifdef LBANN_HAS_GPU
+  m_value.SetMemoryMode(1); // Use pinned memory on host
+#endif // LBANN_HAS_GPU
+  El::Zeros(m_value, 1, 1);
 }
 
 void abstract_evaluation_layer::fp_compute() {
   switch (get_device_allocation()) {
   case El::Device::CPU:
-    fp_cpu(*get_comm(), get_prev_activations(), m_value, m_allreduce_req);
+    fp_cpu(*get_comm(), get_prev_activations(), m_value(0, 0),
+           m_allreduce_req);
     break;
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
-    fp_gpu(*get_comm(), get_prev_activations(), m_value, m_allreduce_req);
+    fp_gpu(*get_comm(), get_prev_activations(), m_value(0, 0),
+           m_copy_event);
     break;
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");
@@ -193,5 +214,5 @@ abstract_evaluation_layer::construct(lbann_comm *comm,
   return nullptr;
 
 }
-  
+
 } // namespace lbann

@@ -242,7 +242,11 @@ class generic_input_layer : public io_layer {
       this->m_model->set_current_mini_batch_size(num_samples_in_batch
                                                  + get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()));
 
-      io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
+      if(m_expected_num_child_layers == 1) {
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0));
+      }else {
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
+      }
 
       if(num_samples_in_batch !=
          (expected_num_samples_in_batch - get_current_world_master_mini_batch_adjustment(m_comm->get_model_rank()))) {

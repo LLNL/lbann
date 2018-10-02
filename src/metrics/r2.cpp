@@ -71,7 +71,8 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   }
 
   EvalType res_tot[2] = {ss_res, ss_tot};  // Pack to do one allreduce.
-  El::mpi::AllReduce(res_tot, 2, prediction.DistComm());
+  El::mpi::AllReduce(res_tot, 2, prediction.DistComm(),
+                     El::SyncInfo<El::Device::CPU>{});
   //Keras and TF add epsilon (1e-07) to denominator to avoid inf score
   //We might actually need to do this here and other places too
   EvalType ss_tot_eps = res_tot[1] + 0.0000001;

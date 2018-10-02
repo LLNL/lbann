@@ -81,7 +81,7 @@ void fp_cpu(lbann_comm& comm,
   } else if (local_width < 1) {
     return;
   }
-  
+
   // Column communicator
   auto&& col_comm = predictions.ColComm();
   const auto& col_comm_rank = El::mpi::Rank(col_comm);
@@ -93,7 +93,7 @@ void fp_cpu(lbann_comm& comm,
   // are not one-hot vectors.
   std::vector<El::Int> label_indices(local_width, height);
   Al::request req;
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_TASKLOOP_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       if (local_labels(row, col) > DataType(0)) {
@@ -109,7 +109,7 @@ void fp_cpu(lbann_comm& comm,
 
   // Find top-k entries in each column of local prediction matrix
   std::vector<entry> top_entries(local_width * k);
-#pragma omp parallel for
+  LBANN_OMP_TASKLOOP
   for (El::Int col = 0; col < local_width; ++col) {
     std::vector<entry> local_entries(std::max(local_height, k));
     for (El::Int row = 0; row < local_height; ++row) {
@@ -129,14 +129,14 @@ void fp_cpu(lbann_comm& comm,
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
                   top_entries.size() * sizeof(entry),
                   col_comm_root,
-                  col_comm);
+                  col_comm, El::SyncInfo<El::Device::CPU>{});
     } else {
       std::vector<entry> global_top_entries(col_comm_size * local_width * k);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
                   top_entries.size() * sizeof(entry),
                   reinterpret_cast<El::byte*>(global_top_entries.data()),
-                  col_comm);
-#pragma omp parallel for
+                  col_comm, El::SyncInfo<El::Device::CPU>{});
+      LBANN_OMP_TASKLOOP
       for (El::Int col = 0; col < local_width; ++col) {
         std::vector<entry> col_entries(col_comm_size * k);
         for (El::Int rank = 0; rank < col_comm_size; ++rank) {
@@ -157,7 +157,7 @@ void fp_cpu(lbann_comm& comm,
   El::Zero(loss);
   comm.wait(req);
   if (col_comm_rank == col_comm_root) {
-#pragma omp parallel for collapse(2)
+    LBANN_OMP_TASKLOOP_COLLAPSE2
     for (El::Int col = 0; col < local_width; ++col) {
       for (El::Int i = 0; i < k; ++i) {
         const auto& label_index = label_indices[col];
@@ -168,7 +168,7 @@ void fp_cpu(lbann_comm& comm,
       }
     }
   }
-  
+
 }
 
 } // namespace
