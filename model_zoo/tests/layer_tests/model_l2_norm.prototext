@@ -23,7 +23,7 @@ model {
   callback {
     gradient_check {
       verbose: false
-      fail_on_error: false
+      fail_on_error: true
     }
   }
 
