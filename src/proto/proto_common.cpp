@@ -119,9 +119,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
       if (!peek_map(leading_reader_jag_conduit, readme.role())) {
         leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
-std::cout << "assume the role of leading reader for " + readme.role() << std::endl;
       } else {
-std::cout << "follow leading reader for " + readme.role() << std::endl;
         const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
         *reader_jag_conduit = *leader;
         reader_jag_conduit->set_leading_reader(leader);
@@ -136,7 +134,6 @@ std::cout << "follow leading reader for " + readme.role() << std::endl;
           const auto num_readers = get_requested_num_parallel_readers(comm, p);
           reader_jag_conduit->set_num_parallel_readers(num_readers);
           reader_jag_conduit->set_local_id(readme.role());
-std::cout << "reader " << reader_jag_conduit->get_local_id(readme.role()) << " for " << readme.role() << std::endl;
           break;
         }
       }

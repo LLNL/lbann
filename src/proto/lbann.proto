@@ -1196,6 +1196,7 @@ message FullyConnected {
   bool get_input_dimension_from_reader = 9;
   bool get_image_dimension_from_reader = 10;
   bool get_scalar_dimension_from_reader = 11;
+  repeated string get_num_neurons_from_reader = 12;
 }
 
 message Convolution {

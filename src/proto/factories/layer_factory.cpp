@@ -83,13 +83,13 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
     int num_neurons = 0;
+    const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
     if (params.get_input_dimension_from_reader() 
         || params.get_image_dimension_from_reader()
         || params.get_scalar_dimension_from_reader())
        {
     #if defined(LBANN_HAS_CONDUIT)
-       const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
-       lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
+       const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
        size_t input_dim = dr->get_linearized_input_size();
        size_t scalar_dim = dr->get_linearized_scalar_size();
        size_t image_dim = dr->get_linearized_image_size();
@@ -109,6 +109,12 @@ Layer* construct_layer(lbann_comm* comm,
       LBANN_ERROR(err.str());
       return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
+    } else if (params.get_num_neurons_from_reader_size() > 0) {
+      const int num_dims = params.get_num_neurons_from_reader_size();
+      for (int i = 0; i < num_dims; ++i) {
+        const std::string& contribution = params.get_num_neurons_from_reader(i);
+        num_neurons += dr_generic->get_linearized_size(contribution);
+      }
     } else {
       num_neurons = params.num_neurons();
       if (proto_layer.num_neurons_from_data_reader()) {
@@ -231,24 +237,33 @@ Layer* construct_layer(lbann_comm* comm,
       std::vector<El::Int> slice_points;
       size_t total = 0;
       slice_points.push_back(total);
-      const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
-      lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
-      while (ss >> s) {
-        if (s != "") {  //probably not needed
-          if (s == "scalars") {
-            total += dr->get_linearized_scalar_size();
-            slice_points.push_back(total);
-          } else if (s == "images") {
-            total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
-            slice_points.push_back(total);
-          } else if (s == "inputs") {
-            total += dr->get_linearized_input_size();
-            slice_points.push_back(total);
-          } else {
-            err << __FILE__ << " " << __LINE__ << " :: "
-                << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
-            throw lbann_exception(err.str());
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      if (dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic) != nullptr) {
+        const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
+        while (ss >> s) {
+          if (s != "") {  //probably not needed
+            if (s == "scalars") {
+              total += dr->get_linearized_scalar_size();
+              slice_points.push_back(total);
+            } else if (s == "images") {
+              total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
+              slice_points.push_back(total);
+            } else if (s == "inputs") {
+              total += dr->get_linearized_input_size();
+              slice_points.push_back(total);
+            } else {
+              err << __FILE__ << " " << __LINE__ << " :: "
+                  << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
+              throw lbann_exception(err.str());
+            }
           }
+        }
+      } else if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
+        const auto dr = dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic);
+        const auto& sizes = dr->get_linearized_data_sizes();
+        for (const auto sz: sizes) {
+          total += sz;
+          slice_points.push_back(static_cast<El::Int>(total));
         }
       }
       return new slice_layer<layout, Dev>(comm,
