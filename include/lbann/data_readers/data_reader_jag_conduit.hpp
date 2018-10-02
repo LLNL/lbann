@@ -226,6 +226,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
+  int get_linearized_size(const std::string& desc) const override;
 
   void set_split_image_channels();
   void unset_split_image_channels();

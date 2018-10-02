@@ -703,8 +703,20 @@ void data_reader_jag_conduit::check_image_data() {
   if (m_image_normalization_params.empty()) {
     m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 1.0));
   } else if (m_image_normalization_params.size() != m_emi_image_keys.size()*m_image_num_channels) {
-    _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of image normalization parameter sets!");
+    _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of image normalization parameter sets!" \
+                                + std::to_string(m_image_normalization_params.size()) + " != " \
+                                + std::to_string(m_emi_image_keys.size()) + '*' + std::to_string(m_image_num_channels));
   }
+#if 1
+  std::cout << "image normalization parameters: " << std::endl;
+  for (size_t i = 0u, s = 0u; s < m_emi_image_keys.size(); ++s) {
+    for (int c = 0; c < m_image_num_channels; ++c) {
+      const auto& param = m_image_normalization_params[i];
+      std::cout << " scale: \t" << param.first << " \tbias: \t" << param.second
+                << " \t" << m_emi_image_keys[s] << ":C" << c << std::endl;
+    }
+  }
+#endif
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
@@ -745,8 +757,17 @@ void data_reader_jag_conduit::check_scalar_keys() {
   if (m_scalar_normalization_params.empty()) {
     m_scalar_normalization_params.assign(m_scalar_keys.size(), linear_transform_t(1.0, 1.0));
   } else if (m_scalar_normalization_params.size() != m_scalar_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of scalar normalization parameter sets!");
+     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of scalar normalization parameter sets! " \
+                                 + std::to_string(m_scalar_normalization_params.size()) + " != " \
+                                 + std::to_string(m_scalar_keys.size()));
   }
+#if 1
+  std::cout << "scalar normalization parameters: " << std::endl;
+  for (size_t i = 0u; i < m_scalar_normalization_params.size(); ++i) {
+    const auto& param = m_scalar_normalization_params[i];
+    std::cout << " scale: \t" << param.first << " \tbias: \t" << param.second << "\t " << m_scalar_keys[i] << std::endl;
+  }
+#endif
 }
 
 
@@ -795,8 +816,17 @@ void data_reader_jag_conduit::check_input_keys() {
   if (m_input_normalization_params.empty()) {
     m_input_normalization_params.assign(m_input_keys.size(), linear_transform_t(1.0, 1.0));
   } else if (m_input_normalization_params.size() != m_input_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_,"Incorrect number of input normalization parameter sets!");
+     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of input normalization parameter sets! " \
+                                 + std::to_string(m_input_normalization_params.size()) + " != " \
+                                 + std::to_string(m_input_keys.size()));
   }
+#if 1
+  std::cout << "input normalization parameters: " << std::endl;
+  for (size_t i = 0u; i < m_input_normalization_params.size(); ++i) {
+    const auto& param = m_input_normalization_params[i];
+    std::cout << " scale: \t" << param.first << " \tbias: \t" << param.second << " \t" << m_input_keys[i] << std::endl;
+  }
+#endif
 }
 
 
@@ -1182,6 +1212,16 @@ int data_reader_jag_conduit::get_linearized_label_size() const {
   return m_num_labels;
 }
 
+int data_reader_jag_conduit::get_linearized_size(const std::string& desc) const {
+  if (desc == "JAG_Image") {
+    return get_linearized_size(JAG_Image);
+  } else if (desc == "JAG_Scalar") {
+    return get_linearized_size(JAG_Scalar);
+  } else if (desc == "JAG_Input") {
+    return get_linearized_size(JAG_Input);
+  }
+  return generic_data_reader::get_linearized_size(desc);
+}
 
 void data_reader_jag_conduit::set_split_image_channels() {
   m_split_channels = true;
