@@ -102,13 +102,9 @@ cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags, std:
   const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), buf.data());
 
   // decode the image data in the memory buffer
-  if(cv_buf != nullptr) {
-    cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, cv_buf);
-    return *cv_buf;
-  }else {
-    cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-    return image;
-  }
+  // Note that if cv_buf is not NULL, then the return value is *cv_buf
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, cv_buf);
+  return image;
 }
 
 

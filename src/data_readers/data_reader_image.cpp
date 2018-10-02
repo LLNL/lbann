@@ -140,7 +140,11 @@ void image_data_reader::setup() {
   generic_data_reader::setup();
 
   using InputBuf_T = lbann::cv_image_type<uint8_t>;
-  m_thread_cv_buffer.resize(omp_get_max_threads(), cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1)));
+  auto cvMat = cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1));
+  m_thread_cv_buffer.resize(omp_get_max_threads());
+  for(int tid = 0; tid < omp_get_max_threads(); ++tid) {
+    m_thread_cv_buffer[tid] = cvMat.clone();
+  }
 }
 
 std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
