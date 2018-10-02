@@ -692,6 +692,8 @@ private:
   dc::Pooling *m_pooling;
   
   bool using_distconv() const override {
+    if (!Layer::using_distconv()) return false;
+
     if (!(m_pads[0] == 0 && m_pads[1] == 0)) {
       dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding\n";
       return false;

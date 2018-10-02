@@ -536,7 +536,7 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  public:
-  virtual bool using_distconv() const { return false; }
+  virtual bool using_distconv() const;
   void enable_distconv();
   void setup_distconv();
   void setup_inter_layer_adaptation();

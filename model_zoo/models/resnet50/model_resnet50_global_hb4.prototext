@@ -344,7 +344,14 @@ model {
     parents: "bn2a_branch1 bn2a_branch2c"
     name: "res2a"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -512,7 +519,14 @@ model {
     parents: "res2a_relu bn2b_branch2c"
     name: "res2b"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -680,7 +694,14 @@ model {
     parents: "res2b_relu bn2c_branch2c"
     name: "res2c"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -887,7 +908,14 @@ model {
     parents: "bn3a_branch1 bn3a_branch2c"
     name: "res3a"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -1055,7 +1083,14 @@ model {
     parents: "res3a_relu bn3b_branch2c"
     name: "res3b"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -1223,7 +1258,14 @@ model {
     parents: "res3b_relu bn3c_branch2c"
     name: "res3c"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -1391,7 +1433,14 @@ model {
     parents: "res3c_relu bn3d_branch2c"
     name: "res3d"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -1598,7 +1647,14 @@ model {
     parents: "bn4a_branch1 bn4a_branch2c"
     name: "res4a"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -1766,7 +1822,14 @@ model {
     parents: "res4a_relu bn4b_branch2c"
     name: "res4b"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -1934,7 +1997,14 @@ model {
     parents: "res4b_relu bn4c_branch2c"
     name: "res4c"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -2102,7 +2172,14 @@ model {
     parents: "res4c_relu bn4d_branch2c"
     name: "res4d"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -2270,7 +2347,14 @@ model {
     parents: "res4d_relu bn4e_branch2c"
     name: "res4e"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -2438,7 +2522,14 @@ model {
     parents: "res4e_relu bn4f_branch2c"
     name: "res4f"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -2645,7 +2736,14 @@ model {
     parents: "bn5a_branch1 bn5a_branch2c"
     name: "res5a"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -2811,7 +2909,14 @@ model {
     parents: "res5a_relu bn5b_branch2c"
     name: "res5b"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {
@@ -2976,7 +3081,14 @@ model {
     parents: "res5b_relu bn5c_branch2c"
     name: "res5c"
     data_layout: "data_parallel"
-    sum {
+    sum{
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups:1
     }
   }
   layer {

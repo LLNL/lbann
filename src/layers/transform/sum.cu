@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/sum.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -45,13 +45,13 @@ struct accumulate {
   }
 };
 
-void bp_compute_distconv(dc::TensorDev &error_signals,
-                         dc::TensorDev &prev_error_signals,
-                         std::vector<dc::TensorDev> &prev_error_signals_siblings) {
-  dc::tensor::Copy(error_signals, prev_error_signals);
-  for (auto &child: prev_error_signals_siblings) {
-    child.set_outermost_dimension(error_signals.get_shape()[-1]);
-    distconv::tensor::Transform(error_signals, child, accumulate<DataType>(),
+void fp_compute_distconv(dc::TensorDev &activations,
+                         dc::TensorDev &prev_activations,
+                         std::vector<dc::TensorDev> &prev_activations_siblings) {
+  dc::tensor::Copy(activations, prev_activations);
+  for (auto &p: prev_activations_siblings) {
+    p.set_outermost_dimension(activations.get_shape()[-1]);
+    distconv::tensor::Transform(activations, p, accumulate<DataType>(),
                                 dc::get_backend().get_stream());
   }
 }
@@ -59,26 +59,26 @@ void bp_compute_distconv(dc::TensorDev &error_signals,
 #endif // LBANN_HAS_DISTCONV
 
 template <>
-void split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+void sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    bp_compute_distconv(m_error_signals_t, m_prev_error_signals_t,
-                        m_prev_error_signals_siblings);
-    copy_out_error_signals();
+    fp_compute_distconv(m_activations_t, m_prev_activations_t,
+                        m_prev_activations_siblings);
+    copy_out_activations();
     if (!early_terminate_last_iteration()) {
       return;
     }
   }
 #endif
-  auto& gradient_wrt_input = get_error_signals();
-  if (get_num_children() > 0) {
-    El::Copy(get_prev_error_signals(0), gradient_wrt_input);
+  // Same as the generic fp_compute
+  auto& output = get_activations();
+  if (get_num_parents() < 1) {
+    El::Zero(output);
   } else {
-    El::Zero(gradient_wrt_input);
-  }
-  for (int i = 1; i < get_num_children(); ++i) {
-    El::Axpy(DataType(1), get_prev_error_signals(i),
-             gradient_wrt_input);
+    El::Copy(get_prev_activations(0), output);
+    for (int i = 1; i < get_num_parents(); ++i) {
+      El::Axpy(DataType(1), get_prev_activations(i), output);
+    }
   }
 }
 

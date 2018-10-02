@@ -30,6 +30,10 @@
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif
+
 namespace lbann {
 
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
@@ -102,7 +106,44 @@ protected:
 
   void bp_compute() override {}
 
+#ifdef LBANN_HAS_DISTCONV
+ protected:
+  std::vector<dc::TensorDev> m_prev_activations_siblings;
+
+ public:
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
+    this->setup_prev_activations_tensor(dists);
+    this->setup_activations_tensor(dists);
+    this->setup_activations_copyout_tensor(dists);
+
+    assert_always(!m_parent_shuffle_required &&
+                  !m_parent_copy_in_required);
+    m_prev_activations_siblings.reserve(get_num_parents() - 1);
+    for (int i = 1; i < get_num_parents(); ++i) {
+      m_prev_activations_siblings.emplace_back(
+          get_parent_layers()[i]->get_activations_t());
+    }
+  }
+
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    this->setup_prev_error_signals_tensor(dists);
+    m_error_signals_t = m_prev_error_signals_t;
+    this->setup_error_signals_copyout_tensor(dists);
+  }
+
+#endif // LBANN_HAS_DISTCONV
+
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <>
+void sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute();
+#endif // LBANN_HAS_DISTCONV
 
 } // namespace lbann
 

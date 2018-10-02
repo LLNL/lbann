@@ -67,13 +67,7 @@ protected:
     }
   }
 
-  void fp_compute() override {
-#ifdef LBANN_HAS_DISTCONV
-    if (this->distconv_enabled()) {
-      fp_compute_distconv();
-    }
-#endif
-  }
+  void fp_compute() override {}
 
   void bp_compute() override {
     auto& gradient_wrt_input = get_error_signals();
@@ -89,33 +83,10 @@ protected:
   }
 
 #ifdef LBANN_HAS_DISTCONV
- public:
-  bool using_distconv() const override {
-    char *env = getenv("DISTCONV_DISABLE");
-    if (env) {
-      std::string s(env);
-      if (s.find(get_name()) != std::string::npos) {
-        return false;
-      }
-    }
-
-    // Assumes all child layers are also using distconv. This
-    // simplifies fp and bp as it assumes no copyin/copyout is
-    // required.
-    for (int i = 1; i < get_num_children(); ++i) {
-      if (!get_child_layers()[i]->using_distconv()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
  protected:
-  std::vector<dc::TensorDev> m_prev_error_signals_splits;
+  std::vector<dc::TensorDev> m_prev_error_signals_siblings;
 
-  void fp_compute_distconv() {
-    assert_always(!m_child_shuffle_required);
-  }
+  void fp_compute_distconv() {}
 
  public:
   void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
@@ -138,10 +109,11 @@ protected:
     // Setup copy views for other child layers. Assuming the child
     // layers are also distconv-enabled and using the same parallel
     // strategy.
-    assert_always(!m_child_shuffle_required);
-    m_prev_error_signals_splits.reserve(get_num_children() - 1);
+    assert_always(!m_child_shuffle_required &&
+                  !m_child_copy_out_required);
+    m_prev_error_signals_siblings.reserve(get_num_children() - 1);
     for (int i = 1; i < get_num_children(); ++i) {
-      m_prev_error_signals_splits.emplace_back(
+      m_prev_error_signals_siblings.emplace_back(
           get_child_layers()[i]->get_error_signals_t());
     }
   }

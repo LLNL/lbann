@@ -1264,6 +1264,30 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
 #ifdef LBANN_HAS_DISTCONV
 using namespace dc;
 
+bool Layer::using_distconv() const {
+  // Distconv is disabled if no parallel strategy is defined. When no
+  // strategy is defined, the layer has the default strategy of all
+  // zeros, which is invalid, thus should not be used when distconv is
+  // used.
+  const auto &ps = get_parallel_strategy();
+  ParallelStrategy default_zero_ps;
+  if (ps == default_zero_ps) {
+    return false;
+  }
+
+  // It is also disabled when the layer name is included in
+  // an environment variable
+  char *env = getenv("DISTCONV_DISABLE");
+  if (env) {
+    std::string s(env);
+    if (s.find(get_name()) != std::string::npos) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void Layer::enable_distconv() {
   m_distconv_enabled = using_distconv();
 }
@@ -1307,29 +1331,36 @@ void Layer::setup_inter_layer_adaptation() {
                             << parent_layers.size()
                             << ", parent name: " << parent_layers[0]->get_name()
                             << "\n";
-  assert_always(parent_layers.size() == 1);
 
   const auto &ps = get_parallel_strategy();
-  const auto &parent = *parent_layers[0];
-  if (parent.distconv_enabled()) {
-    m_parent_copy_in_required = false;
-    m_parent_shuffle_required = ps != parent.get_parallel_strategy();
-  } else {
-    m_parent_copy_in_required = true;
+  m_parent_copy_in_required = false;
+  m_parent_shuffle_required = false;
+  for (const auto &p: get_parent_layers()) {
+    if (!p->distconv_enabled()) {
+      m_parent_copy_in_required = true;
+      break;
+    } else {
+      m_parent_shuffle_required |= ps != p->get_parallel_strategy();
+    }
   }
+  m_parent_shuffle_required |= m_parent_copy_in_required;
   MPIRootPrintStreamInfo() << "m_parent_copy_in_required: "
                            << m_parent_copy_in_required
                            << ", m_parent_shuffle_required: "
                            << m_parent_shuffle_required
                            << "\n";
 
-  const auto &child = *child_layers[0];
-  if (child.distconv_enabled()) {
-    m_child_copy_out_required = false;
-    m_child_shuffle_required = ps != child.get_parallel_strategy();
-  } else {
-    m_child_copy_out_required = true;
+  m_child_copy_out_required = false;
+  m_child_shuffle_required = false;
+  for (const auto &c: get_child_layers()) {
+    if (!c->distconv_enabled()) {
+      m_child_copy_out_required = true;
+      break;
+    } else {
+      m_child_shuffle_required |= ps != c->get_parallel_strategy();
+    }
   }
+  m_child_shuffle_required |= m_child_copy_out_required;
   MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
                            << m_child_copy_out_required
                            << ", m_child_shuffle_required: "
@@ -1436,8 +1467,7 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
   if (!distconv_enabled()) return;
   auto &layer_dists = dists[this];
   const auto &ps = get_parallel_strategy();
-  if (get_child_layers().size() > 0) {
-    auto child = get_child_layers()[0];
+  for (auto &child: get_child_layers()) {
     if (child->distconv_enabled() &&
         child->get_parallel_strategy() == ps) {
       invariants[&layer_dists[1]].insert(
@@ -1446,8 +1476,7 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
           &dists[child][2]);
     }
   }
-  if (get_parent_layers().size() > 0) {
-    auto parent = get_parent_layers()[0];
+  for (auto &parent: get_parent_layers()) {
     if (parent->distconv_enabled() &&
         parent->get_parallel_strategy() == ps) {
       invariants[&layer_dists[0]].insert(
