@@ -31,6 +31,10 @@
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif
+
 namespace lbann {
 
 /** @brief Present input tensor to multiple outputs. */
@@ -63,7 +67,13 @@ protected:
     }
   }
 
-  void fp_compute() override {}
+  void fp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      fp_compute_distconv();
+    }
+#endif
+  }
 
   void bp_compute() override {
     auto& gradient_wrt_input = get_error_signals();
@@ -78,7 +88,71 @@ protected:
     }
   }
 
+#ifdef LBANN_HAS_DISTCONV
+ public:
+  bool using_distconv() const override {
+    char *env = getenv("DISTCONV_DISABLE");
+    if (env) {
+      std::string s(env);
+      if (s.find(get_name()) != std::string::npos) {
+        return false;
+      }
+    }
+
+    // Assumes all child layers are also using distconv. This
+    // simplifies fp and bp as it assumes no copyin/copyout is
+    // required.
+    for (int i = 1; i < get_num_children(); ++i) {
+      if (!get_child_layers()[i]->using_distconv()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+ protected:
+  std::vector<dc::TensorDev> m_prev_error_signals_splits;
+
+  void fp_compute_distconv() {
+    assert_always(!m_child_shuffle_required);
+  }
+
+ public:
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
+    this->setup_prev_activations_tensor(dists);
+    // activation is just a copy of prev activation
+    m_activations_t = m_prev_activations_t;
+    this->setup_activations_copyout_tensor(dists);
+  }
+
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    this->setup_prev_error_signals_tensor(dists);
+    this->setup_error_signals_tensor(dists);
+    this->setup_error_signals_copyout_tensor(dists);
+
+    // Setup copy views for other child layers. Assuming the child
+    // layers are also distconv-enabled and using the same parallel
+    // strategy.
+    assert_always(!m_child_shuffle_required);
+    m_prev_error_signals_splits.reserve(get_num_children() - 1);
+    for (int i = 1; i < get_num_children(); ++i) {
+      m_prev_error_signals_splits.emplace_back(
+          get_child_layers()[i]->get_error_signals_t());
+    }
+  }
+#endif
+
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <>
+void split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute();
+#endif // LBANN_HAS_DISTCONV
 
 } // namespace lbann
 

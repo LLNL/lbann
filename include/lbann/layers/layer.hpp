@@ -536,6 +536,7 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  public:
+  virtual bool using_distconv() const { return false; }
   void enable_distconv();
   void setup_distconv();
   void setup_inter_layer_adaptation();
@@ -554,7 +555,8 @@ protected:
   virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, 4> &dists);
   virtual dc::Array4 get_activations_tensor_local_shape() const;
-  virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists);
+  virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists,
+                                        bool allocate=true);
   virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, 4> &dists);  
   virtual void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists);
   virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
@@ -595,7 +597,6 @@ protected:
   }
   
  protected:
-  virtual bool using_distconv() const { return false; }
   virtual bool keep_original_input() const { return m_keep_original_input; }
   virtual bool keep_original_output() const { return m_keep_original_output; }
   virtual void fp_setup_distconv(int mini_batch_size);
@@ -652,15 +653,12 @@ protected:
   dc::Array4 m_input_decomposition_block;
   dc::Array4 m_output_decomposition_block;  
   /** Previous activation tensor */
-  // Created once, view initialized at fp_setup_data
   dc::TensorDev m_prev_activations_t;
   /** View to Elemental matrix of previous activations */
-  // Created once, copied from m_prev_activations_t at fp_setup_data
   dc::TensorDev m_prev_activations_const_view;
   /** Activation tensor */
-  // Created once, copied back to m_activations_e after fp_compute
   dc::TensorDev m_activations_t;
-  /** Elemental-format activation matrix */  
+  /** Elemental-format activation matrix */
   dc::TensorDev m_activations_copyout;
   dc::TensorShuffler *m_prev_activations_shuffler = nullptr;
   dc::TensorShuffler *m_prev_activations_shuffler_last_mb[3];

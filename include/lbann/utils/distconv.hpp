@@ -47,7 +47,7 @@
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle.hpp"
 #include "distconv/tensor/shuffle_p2p.hpp"
-
+#include "distconv/tensor/algorithms.hpp"
 #include "p2p/p2p.hpp"
 
 namespace lbann {

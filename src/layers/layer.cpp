@@ -1307,7 +1307,6 @@ void Layer::setup_inter_layer_adaptation() {
                             << parent_layers.size()
                             << ", parent name: " << parent_layers[0]->get_name()
                             << "\n";
-  assert_always(child_layers.size() == 1);
   assert_always(parent_layers.size() == 1);
 
   const auto &ps = get_parallel_strategy();
@@ -1370,7 +1369,7 @@ void Layer::setup_tensor_distribution_init(
       throw lbann_exception();
     }
     if (c != 1 || f != 1) {
-      MPIRootPrintStreamError() << "Distconv does not support channel/filter parallelization yet.\n";
+      MPIRootPrintStreamError() << "Distconv does not support channel/filter parallelization yet. Layer: " << get_name() << ", ps: " << ps;
       throw lbann_exception();      
     }
     int nchw = n * c * h * w;
@@ -1507,7 +1506,6 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
     m_prev_activations_t.zero();
     m_prev_activations_shuffler = get_tensor_shuffler(
         m_prev_activations_const_view, m_prev_activations_t);
-
     for (int i = 0; i < 3; ++i) {
       m_prev_activations_shuffler_last_mb[i] = nullptr;
     }
@@ -1526,7 +1524,8 @@ Array4 Layer::get_activations_tensor_local_shape() const {
   return m_prev_activations_t.get_local_shape();
 }
 
-void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists) {
+void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
+                                     bool allocate) {
   const LocaleMPI loc(m_comm->get_model_comm().comm, false);
   const Array4 output_tensor_shape =
       {get_output_dims()[2], get_output_dims()[1],
@@ -1536,8 +1535,10 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists) {
   m_activations_t = TensorDev(output_tensor_shape,
                               loc, dists[1], activations_local_shape,
                               m_output_decomposition_block);
-  assert0(m_activations_t.allocate());
-  m_activations_t.zero();
+  if (allocate) {
+    assert0(m_activations_t.allocate());
+    m_activations_t.zero();
+  }
 }
 
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
