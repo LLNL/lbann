@@ -60,7 +60,6 @@ NINJA_NUM_PROCESSES=0 # Let ninja decide
 GEN_DOC=0
 INSTALL_LBANN=0
 BUILD_TOOL="make"
-CMAKE_BUILD_FLAG=
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
@@ -180,7 +179,6 @@ while :; do
             ;;
         --ninja)
             BUILD_TOOL="ninja"
-            CMAKE_BUILD_FLAG="-GNinja "
             ;;
         --mpi)
             # Choose mpi library
@@ -798,12 +796,8 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
-<<<<<<< HEAD
- ${CMAKE_PATH}/cmake ${CMAKE_BUILD_FLAG}\
-=======
  ${CMAKE_PATH}/cmake \
 -G ${GENERATOR} \
->>>>>>> 5625917a67f9439a0ec73d69ac0b6fcc85fac97e
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
