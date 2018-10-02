@@ -31,20 +31,38 @@
 
 namespace lbann {
 
+/** Base class for unary math layers.
+ *  'Name' should be a type such that Name() returns a human-readable
+ *  layer name, e.g. an empty struct that can be converted to a
+ *  string.
+ */
+template <data_layout Layout, El::Device Device, typename Name>
+class unary_math_layer : public Layer {
+public:
+  unary_math_layer(lbann_comm *comm) : Layer(comm) {}
+  unary_math_layer* copy() const override {
+    return new unary_math_layer<Layout,Device,Name>(*this);
+  }
+  std::string get_type() const override { return Name(); }
+  data_layout get_data_layout() const override { return Layout; }
+  El::Device get_device_allocation() const override { return Device; }
+protected:
+  void setup_dims() override {
+    set_output_dims(get_input_dims());
+    Layer::setup_dims();
+  }
+  void fp_compute() override;
+  void bp_compute() override;
+};
+
 // Convenience macro to define a unary math layer class
-#define LBANN_DEFINE_UNARY_MATH_LAYER(layer_name, layer_string)         \
-  template <data_layout Layout, El::Device Device>                      \
-  class layer_name : public Layer {                                     \
-  public:                                                               \
-  layer_name(lbann_comm *comm) : Layer(comm) {}                         \
-  layer_name* copy() const override { return new layer_name(*this); }   \
-  std::string get_type() const override { return layer_string; }        \
-  data_layout get_data_layout() const override { return Layout; }       \
-  El::Device get_device_allocation() const override { return Device; }  \
-  protected:                                                            \
-  void fp_compute() override;                                           \
-  void bp_compute() override;                                           \
-  };
+#define LBANN_DEFINE_UNARY_MATH_LAYER(layer_name, layer_string) \
+  struct layer_name##_name_struct {                             \
+    inline operator std::string() { return layer_string; }      \
+  };                                                            \
+  template <data_layout Layout, El::Device Device>              \
+  using layer_name                                              \
+  = unary_math_layer<Layout, Device, layer_name##_name_struct>;
 
 // Logical operations
 LBANN_DEFINE_UNARY_MATH_LAYER(not_layer, "logical not");

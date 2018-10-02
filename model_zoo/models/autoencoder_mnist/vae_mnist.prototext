@@ -156,17 +156,13 @@ model {
     parents: "sd"
     name: "var"
     data_layout: "data_parallel"
-    power {
-      exponent: 2
-    }
+    square {}
   }
   layer {
     parents: "mu"
     name: "meansq"
     data_layout: "data_parallel"
-    power {
-      exponent: 2
-    }
+    square {}
   }
   layer {
     parents: "meansq var logsd"
@@ -180,9 +176,7 @@ model {
     parents: "kldiv_plus_half"
     name: "kldiv_full"
     data_layout: "data_parallel"
-    power {
-      exponent: -0.5
-    }
+    rsqrt {}
   }
   layer {
     parents: "kldiv_full"

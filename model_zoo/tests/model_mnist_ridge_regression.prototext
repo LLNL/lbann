@@ -1,8 +1,8 @@
 model {
   name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
-  mini_batch_size: 32
-  block_size: 256
+  mini_batch_size: 131
+  block_size: 257
   num_epochs: 4
   num_parallel_readers: 0
   procs_per_model: 0
@@ -44,25 +44,23 @@ model {
     name: "data"
     children: "image label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input { io_buffer: "partitioned" }
   }
   layer {
+    parents: "data"
     name: "image"
-    parents: "data"
     data_layout: "model_parallel"
     split {}
   }
   layer {
+    parents: "data"
     name: "label"
-    parents: "data"
     data_layout: "model_parallel"
     split {}
   }
   layer {
-    name: "fc"
     parents: "image"
+    name: "fc"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 10

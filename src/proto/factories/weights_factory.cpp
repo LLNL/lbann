@@ -39,6 +39,12 @@ weights_initializer* construct_initializer(const lbann_data::Weights& proto_weig
     const auto& params = proto_weights.constant_initializer();
     return new constant_initializer(params.value());
   }
+
+  // Value initialization
+  if (proto_weights.has_value_initializer()) {
+    const auto& params = proto_weights.value_initializer();
+    return new value_initializer(parse_list<DataType>(params.values()));
+  }
   
   // Random initialization
   if (proto_weights.has_uniform_initializer()) {
