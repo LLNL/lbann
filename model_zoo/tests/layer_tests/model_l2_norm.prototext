@@ -1,0 +1,64 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 11
+  block_size: 256
+  num_epochs: 0
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    layer_term { layer: "l2" }
+  }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    gradient_check {
+      verbose: false
+      fail_on_error: false
+    }
+  }
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  layer {
+    name: "data"
+    data_layout: "data_parallel"
+    input {
+      io_buffer: "partitioned"
+    }
+  }
+
+  layer {
+    name: "x"
+    weights_layer {
+      dims: "4"
+    }
+    data_layout: "model_parallel"
+    weights: "x_vals"
+  }
+  weights {
+    name: "x_vals"
+    value_initializer {
+      values: "1 2 3 4"
+    }
+  }
+
+  layer {
+    parents: "x"
+    name: "l2"
+    l2_norm2 {}
+    data_layout: "model_parallel"
+  }
+
+}

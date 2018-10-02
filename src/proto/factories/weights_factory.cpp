@@ -32,18 +32,29 @@ namespace proto {
 namespace {
 
 /** Construct a weights initialization specified with prototext. */  
-weights_initializer* construct_initializer(lbann_comm* comm,
-                                           const lbann_data::Weights& proto_weights) {
+weights_initializer* construct_initializer(const lbann_data::Weights& proto_weights) {
 
+  // Constant initialization
+  if (proto_weights.has_constant_initializer()) {
+    const auto& params = proto_weights.constant_initializer();
+    return new constant_initializer(params.value());
+  }
+
+  // Value initialization
+  if (proto_weights.has_value_initializer()) {
+    const auto& params = proto_weights.value_initializer();
+    return new value_initializer(parse_list<DataType>(params.values()));
+  }
+  
   // Random initialization
   if (proto_weights.has_uniform_initializer()) {
     const auto& params = proto_weights.uniform_initializer();
     const auto& min = params.min();
     const auto& max = params.max();
     if (min != 0.0 || max != 0.0) {
-      return new uniform_initializer(comm, min, max);
+      return new uniform_initializer(min, max);
     } else {
-      return new uniform_initializer(comm);
+      return new uniform_initializer();
     }
   }
   if (proto_weights.has_normal_initializer()) {
@@ -51,31 +62,27 @@ weights_initializer* construct_initializer(lbann_comm* comm,
     const auto& mean = params.mean();
     const auto& standard_deviation = params.standard_deviation();
     if (mean != 0.0 || standard_deviation != 0.0) {
-      return new normal_initializer(comm, mean, standard_deviation);
+      return new normal_initializer(mean, standard_deviation);
     } else {
-      return new normal_initializer(comm);
+      return new normal_initializer();
     }
   }
 
-  // Glorot and He initialization
+  // Variance scaling initialization
   if (proto_weights.has_glorot_normal_initializer()) {
-    return new glorot_normal_initializer(comm);
+    return new glorot_initializer(probability_distribution::gaussian);
   }
   if (proto_weights.has_glorot_uniform_initializer()) {
-    return new glorot_uniform_initializer(comm);
+    return new glorot_initializer(probability_distribution::uniform);
   }
   if (proto_weights.has_he_normal_initializer()) {
-    return new he_normal_initializer(comm);
+    return new he_initializer(probability_distribution::gaussian);
   }
   if (proto_weights.has_he_uniform_initializer()) {
-    return new he_uniform_initializer(comm);
+    return new he_initializer(probability_distribution::uniform);
   }
 
-  // Constant initialization
-  // Note: default is zero-initialization
-  const auto& params = proto_weights.constant_initializer();
-  return new constant_initializer(comm, params.value());
-
+  return nullptr;
 }
 
 } // namespace
@@ -101,12 +108,15 @@ weights* construct_weights(lbann_comm* comm,
   }
 
   // Set weights initializer and optimizer
-  w->set_initializer(construct_initializer(comm, proto_weights));
+  std::unique_ptr<weights_initializer> init(construct_initializer(proto_weights));
+  std::unique_ptr<optimizer> opt;
   if (proto_weights.has_optimizer()) {
-    w->set_optimizer(construct_optimizer(comm, proto_weights.optimizer()));
+    opt.reset(construct_optimizer(comm, proto_weights.optimizer()));
   } else {
-    w->set_optimizer(construct_optimizer(comm, proto_opt));
+    opt.reset(construct_optimizer(comm, proto_opt));
   }
+  w->set_initializer(init);
+  w->set_optimizer(opt);
 
   return w;
 

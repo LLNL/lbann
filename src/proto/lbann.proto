@@ -48,11 +48,16 @@ message Reader {
   repeated int32 independent = 97;
   repeated int32 dependent = 98;
   int32 max_files_to_load = 1000;
+
+  // for jag_conduit_hdf5
+  bool use_scalars = 1001;
+  bool use_images = 1002;
+  bool use_inputs = 1003;
   //------------------  end of only for jag_conduit  -----------------------
 
-  int32 num_labels = 99; //for imagenet
+  int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
-  int64 num_features = 101; //only for synthetic
+  string synth_dimensions = 101; //only for synthetic
   //csv attributes
   string separator = 102;
   int32 skip_cols = 103;
@@ -412,6 +417,7 @@ message Callback {
    CallbackSummary summary = 3;
    CallbackDumpWeights dump_weights = 4;
    CallbackDumpActivations dump_activations = 5;
+   CallbackDumpErrorSignals dump_error_signals = 35;
    CallbackDumpGradients dump_gradients = 6;
    CallbackDumpMBIndices dump_mb_indices = 7;
    CallbackDispIOStats disp_io_stats = 8;
@@ -477,6 +483,7 @@ message CallbackPrint {
 }
 
 message CallbackProfiler {
+  bool sync = 1;
 }
 
 message CallbackTimer {
@@ -497,6 +504,10 @@ message CallbackDumpActivations {
   int64 interval = 2;
   string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
 
+}
+
+message CallbackDumpErrorSignals {
+  string basename = 1;
 }
 
 message CallbackDumpGradients {
@@ -658,20 +669,24 @@ message Weights {
   Optimizer optimizer = 2;
 
   ConstantInitializer constant_initializer = 20;
-  UniformInitializer uniform_initializer = 21;
-  NormalInitializer normal_initializer = 22;
-  GlorotNormalInitializer glorot_normal_initializer = 23;
-  GlorotUniformInitializer glorot_uniform_initializer = 24;
-  HeNormalInitializer he_normal_initializer = 25;
-  HeUniformInitializer he_uniform_initializer = 26;
-  LeCunNormalInitializer lecun_normal_initializer = 27;
-  LeCunUniformInitializer lecun_uniform_initializer = 28;
+  ValueInitializer value_initializer = 21;
+  UniformInitializer uniform_initializer = 22;
+  NormalInitializer normal_initializer = 23;
+  GlorotNormalInitializer glorot_normal_initializer = 24;
+  GlorotUniformInitializer glorot_uniform_initializer = 25;
+  HeNormalInitializer he_normal_initializer = 26;
+  HeUniformInitializer he_uniform_initializer = 27;
+  LeCunNormalInitializer lecun_normal_initializer = 28;
+  LeCunUniformInitializer lecun_uniform_initializer = 29;
 
 }
 
 // Weight initializers
 message ConstantInitializer {
   double value = 1;
+}
+message ValueInitializer {
+  string values = 1;
 }
 message UniformInitializer {
   double min = 1;
@@ -761,11 +776,10 @@ message Layer {
    // motif layer
    MotifLayer motif_layer = 4;
 
-   // input Layers
+   // Input layers
    Input input = 2;
-   RepeatedInput repeated_input = 6; // @todo Remove when possible
 
-   // transform Layers
+   // Transform layers
    Reshape reshape = 306;
    Pooling pooling = 12;
    Concatenation concatenation = 300;
@@ -787,31 +801,80 @@ message Layer {
    DiscreteRandom discrete_random = 318;
    Dummy dummy = 319;
    StopGradient stop_gradient = 320;
-   Max max = 321;
-   Min min = 322;
    InTopK in_top_k = 324;
+   Sort sort = 325;
+   WeightsLayer weights_layer = 326;
 
-   // learning Layers
+   // Learning layers
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
    Deconvolution deconvolution = 305;
 
-   // loss layers
+   // Loss layers
    CrossEntropy cross_entropy = 60;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 61;
+   MeanSquaredError mean_squared_error = 61;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
+   L2Norm2 l2_norm2 = 63;
 
-   // target Layers
+   // Math layers
+   Not not = 401;
+   Abs abs = 402;
+   Negative negative = 403;
+   Sign sign = 404;
+   Round round = 405;
+   Ceil ceil = 406;
+   Floor floor = 407;
+   Reciprocal reciprocal = 408;
+   Square square = 409;
+   Sqrt sqrt = 410;
+   Rsqrt rsqrt = 411;
+   Exp exp = 412;
+   Expm1 expm1 = 413;
+   Log log = 414;
+   Log1p log1p = 415;
+   Cos cos = 416;
+   Sin sin = 417;
+   Tan tan = 418;
+   Acos acos = 419;
+   Asin asin = 420;
+   Atan atan = 421;
+   Cosh cosh = 422;
+   Sinh sinh = 423;
+   Tanh tanh = 424;
+   Acosh acosh = 425;
+   Asinh asinh = 426;
+   Atanh atanh = 427;
+   Add add = 450;
+   Subtract subtract = 451;
+   Multiply multiply = 452;
+   Divide divide = 453;
+   Mod mod = 454;
+   Pow pow = 455;
+   Max max = 456;
+   Min min = 457;
+   Equal equal = 458;
+   NotEqual not_equal = 459;
+   Less less = 460;
+   LessEqual less_equal = 461;
+   Greater greater = 462;
+   GreaterEqual greater_equal = 463;
+   And and = 464;
+   Or or = 465;
+   Xor xor = 466;
+
+   // Target Layers
    Target target = 18;
    TargetReconstruction reconstruction = 22;
 
-   // regularization Layers
+   // Regularization Layers
    BatchNormalization batch_normalization = 19;
    LocalResponseNormalization local_response_normalization = 20;
    Dropout dropout = 21;
    SeluDropout selu_dropout = 229;
 
-   // activation Layers
+   // Activation Layers
    Softmax softmax = 200;
+   LogSoftmax logsoftmax = 203;
    ELU elu = 30;
    Identity identity = 31;
    LeakyRelu leaky_relu = 32;
@@ -820,16 +883,10 @@ message Layer {
    SmoothRelu smooth_relu = 35;
    Softplus softplus = 36;
    Selu selu = 37;
-   Tanh tanh = 38;
-   Atan atan = 39;
    BentIdentity bent_identity = 40;
-   Exponential exponential = 41;
    Swish swish = 42;
-   Power power = 43;
-   Abs   abs = 44;
-   L2Loss l2_loss = 45;
-   Log log = 46;
    Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
+
 }
 ///////////////////////
 // MotifLayer //
@@ -839,6 +896,53 @@ message MotifLayer {
   repeated string variable = 2;
 }
 
+///////////////////////
+// Math Layers       //
+///////////////////////
+message Not {}
+message Abs {}
+message Negative {}
+message Sign {}
+message Round {}
+message Ceil {}
+message Floor {}
+message Reciprocal {}
+message Square {}
+message Sqrt {}
+message Rsqrt {}
+message Exp {}
+message Expm1 {}
+message Log {}
+message Log1p {}
+message Cos {}
+message Sin {}
+message Tan {}
+message Acos {}
+message Asin {}
+message Atan {}
+message Cosh {}
+message Sinh {}
+message Tanh {}
+message Acosh {}
+message Asinh {}
+message Atanh {}
+message Add {}
+message Subtract {}
+message Multiply {}
+message Divide {}
+message Mod {}
+message Pow {}
+message Max {}
+message Min {}
+message Equal {}
+message NotEqual {}
+message Less {}
+message LessEqual {}
+message Greater {}
+message GreaterEqual {}
+message And {}
+message Or {}
+message Xor {}
 
 ///////////////////////
 // Activation Layers //
@@ -866,16 +970,7 @@ message SmoothRelu {
 message Softplus {
 }
 
-message Tanh {
-}
-
-message Atan {
-}
-
 message BentIdentity {
-}
-
-message Exponential {
 }
 
 message Swish {
@@ -889,23 +984,17 @@ message Selu {
 message Softmax {
 }
 
-message Power {
-  double exponent = 1;
-}
-
-message Abs {
-}
-
-message L2Loss {
-}
-
-message Log {
-  double base = 1;
+message LogSoftmax {
 }
 
 message Sigmoid_Binary_Cross_Entropy_With_Logits {
   int32 true_label = 1;
 }
+
+///////////////////////
+// Loss Layers //
+///////////////////////
+message L2Norm2 {}
 
 ///////////////////////////
 // Regularization Layers //
@@ -994,6 +1083,10 @@ message Concatenation {
 message Slice {
   int64 slice_axis = 2;
   string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+  //the following is for jag;
+  //string should optionally include two or more of the following: 
+  //  scalars images inputs
+  string get_slice_points_from_reader = 4;
 }
 
 message Split {
@@ -1063,14 +1156,16 @@ message Dummy {
 message StopGradient {
 }
 
-message Max {
-}
-
-message Min {
-}
-
 message InTopK {
   int64 k = 1;
+}
+
+message Sort {
+  bool descending = 1;
+}
+
+message WeightsLayer {
+  string dims = 1;
 }
 
 /////////////////////
@@ -1085,6 +1180,10 @@ message FullyConnected {
   double group_lasso_regularization_factor = 6; //default: 0
   bool transpose = 7;
   bool num_neurons_is_num_labels = 8;
+
+  bool get_input_dimension_from_reader = 9;
+  bool get_image_dimension_from_reader = 10;
+  bool get_scalar_dimension_from_reader = 11;
 }
 
 message Convolution {

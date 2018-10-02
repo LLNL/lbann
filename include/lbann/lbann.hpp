@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann.hpp - LBANN top level header
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -40,10 +38,8 @@
 #include "lbann/models/siamese.hpp"
 
 /// Activation Layers
-#include "lbann/layers/activations/atan.hpp"
 #include "lbann/layers/activations/bent_identity.hpp"
 #include "lbann/layers/activations/elu.hpp"
-#include "lbann/layers/activations/exponential.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
@@ -51,14 +47,10 @@
 #include "lbann/layers/activations/sigmoid.hpp"
 #include "lbann/layers/activations/smooth_relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/logsoftmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
-#include "lbann/layers/activations/tanh.hpp"
-#include "lbann/layers/activations/power.hpp"
 #include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
-#include "lbann/layers/activations/abs.hpp"
-#include "lbann/layers/activations/l2_loss.hpp"
-#include "lbann/layers/activations/log.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -67,7 +59,13 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
+
+/// Math layers
+#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/math/binary.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -92,9 +90,9 @@
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/discrete_random.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
-#include "lbann/layers/transform/max.hpp"
-#include "lbann/layers/transform/min.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
+#include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/weights.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -105,7 +103,6 @@
 /// I/O Layers
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/target/target_layer.hpp"
-#include "lbann/layers/io/input/repeated_input_layer.hpp"
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
@@ -121,6 +118,7 @@
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
@@ -150,6 +148,7 @@
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
 #include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_error_signals.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/callbacks/callback_early_stopping.hpp"
@@ -171,7 +170,7 @@
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
 
 /// Optimizers
 #include "lbann/optimizers/adagrad.hpp"

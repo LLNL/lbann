@@ -36,14 +36,14 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   const int local_height = prediction.LocalHeight();
   const int local_width = prediction.LocalWidth();
   const int width = prediction.Width();
-  
+
   // Get local matrices
   const Mat& prediction_local = prediction.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
 
   DataType gt_mean, gt_std;
   // Entry-wise mean of ground truth
-  //@todo fix stat class not to compute stdev if not needed 
+  //@todo fix stat class not to compute stdev if not needed
   entrywise_mean_and_stdev(ground_truth, gt_mean, gt_std);
 
   // Compute residual sum of squares ss_res
@@ -63,12 +63,13 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   }
 
   EvalType res_tot[2] = {ss_res, ss_tot};  // Pack to do one allreduce.
-  El::mpi::AllReduce(res_tot, 2, prediction.DistComm());
+  El::mpi::AllReduce(res_tot, 2, prediction.DistComm(),
+                     El::SyncInfo<El::Device::CPU>{});
   //Keras and TF add epsilon (1e-07) to denominator to avoid inf score
   //We might actually need to do this here and other places too
   EvalType ss_tot_eps = res_tot[1] + 0.0000001;
   //Multiply by width because base class divide by mini-batch size
-  return ((1-(res_tot[0]/ss_tot_eps))*width); 
+  return ((1-(res_tot[0]/ss_tot_eps))*width);
 }
 
 }  // namespace lbann

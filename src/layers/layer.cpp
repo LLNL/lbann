@@ -540,26 +540,8 @@ void Layer::setup() {
 void Layer::setup_pointers() {
   std::stringstream err;
 
-  // Check that the number of parents/children are valid
-  if(m_expected_num_parent_layers >= 0
-     && get_num_parents() != m_expected_num_parent_layers) {
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "has an invalid number of parent layers "
-        << "(expected " << m_expected_num_parent_layers << ", "
-        << "found " << get_num_parents() << ")";
-    LBANN_ERROR(err.str());
-  }
-  if(m_expected_num_child_layers >= 0
-     && get_num_children() != m_expected_num_child_layers) {
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "has an invalid number of child layers "
-        << "(expected " << m_expected_num_child_layers << ", "
-        << "found " << get_num_children() << ")";
-    LBANN_ERROR(err.str());
-  }
-
   // Check that the parent pointers are valid
-  for (int i = 0; i < get_num_parents(); ++i) {
+  for (size_t i = 0; i < m_parent_layers.size(); ++i) {
     const auto* parent = m_parent_layers[i];
     if (parent == nullptr) {
       err << "layer \"" << get_name() << "\" "
@@ -578,7 +560,7 @@ void Layer::setup_pointers() {
   }
 
   // Check that the child pointers are valid
-  for (int i = 0; i < get_num_children(); ++i) {
+  for (size_t i = 0; i < m_child_layers.size(); ++i) {
     const auto* child = m_child_layers[i];
     if (child == nullptr) {
       err << "layer \"" << get_name() << "\" "
@@ -594,6 +576,40 @@ void Layer::setup_pointers() {
           << "\"" << child->get_name() << "\"";
       LBANN_ERROR(err.str());
     }
+  }
+  
+  // Check that the number of parents/children are valid
+  if(m_expected_num_parent_layers >= 0
+     && get_num_parents() != m_expected_num_parent_layers) {
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "expects " << m_expected_num_parent_layers << " "
+        << "parent layer" << (m_expected_num_parent_layers != 1 ? "s" : "")
+        << ", but found " << get_num_parents();
+    if (get_num_parents() > 0) {
+      err << " (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        err << (i > 0 ? ", " : "")
+            << "\"" << m_parent_layers[i]->get_name() << "\"";
+      }
+      err << ")";
+    }
+    LBANN_ERROR(err.str());
+  }
+  if(m_expected_num_child_layers >= 0
+     && get_num_children() != m_expected_num_child_layers) {
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "expects " << m_expected_num_child_layers << " "
+        << "child layer" << (m_expected_num_child_layers != 1 ? "s" : "")
+        << ", but found " << get_num_children();
+    if (get_num_children() > 0) {
+      err << " (";
+      for (int i = 0; i < get_num_children(); ++i) {
+        err << (i > 0 ? ", " : "")
+            << "\"" << m_child_layers[i]->get_name() << "\"";
+      }
+      err << ")";
+    }
+    LBANN_ERROR(err.str());
   }
 
 }
@@ -670,6 +686,8 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
 #ifdef LBANN_HAS_GPU
   // Allocate GPU memory with the CUDA API
   if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
+  // Use pinned memory for data on the host.
+  if (device == El::Device::CPU) { mat->Matrix().SetMemoryMode(1); }
 #endif // LBANN_HAS_GPU
 
   return mat;
@@ -894,7 +912,7 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
   const bool align_outputs = get_num_parents() > 0;
   const auto& alignment_dist = (align_outputs ?
                                 get_prev_activations().DistData() :
-                                El::DistData());
+                                get_activations().DistData());
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {

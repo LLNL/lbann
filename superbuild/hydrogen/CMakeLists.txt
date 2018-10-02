@@ -33,17 +33,19 @@ if (TARGET OPENBLAS)
 endif ()
 
 # No Aluminum in hydrogen yet!
-if (FALSE AND TARGET Aluminum)
-  option(Hydrogen_USE_Aluminum "Whether to use Aluminum in Hydrogen" ON)
+if (TARGET Aluminum)
+  option(Hydrogen_ENABLE_ALUMINUM "Whether to use Aluminum in Hydrogen" ON)
 
-  if (Hydrogen_USE_Aluminum)
-    set(LBANN_SB_FWD_HYDROGEN_Aluminum_DIR "${ALUMINUM_DIR}/lib/cmake/aluminum"
+  if (Hydrogen_ENABLE_ALUMINUM)
+    message(STATUS "Building Hydrogen with Aluminum support")
+    set(LBANN_SB_FWD_HYDROGEN_Aluminum_DIR
+      "${ALUMINUM_DIR}/lib/cmake/aluminum"
       CACHE STRING "The path to Aluminum for Hydrogen.")
 
     set(_hydrogen_depends_tag DEPENDS)
     list(APPEND _HYDROGEN_DEPENDS Aluminum)
-  endif (Hydrogen_USE_Aluminum)
-endif (FALSE AND TARGET Aluminum)
+  endif (Hydrogen_ENABLE_ALUMINUM)
+endif (TARGET Aluminum)
 
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)

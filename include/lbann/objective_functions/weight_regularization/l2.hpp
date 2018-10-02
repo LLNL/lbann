@@ -35,7 +35,7 @@ namespace lbann {
  *  Given weights \f$w_1,\cdots,w_n\f$, the L2 weight regularization
  *  term is
  *    \f[
- *    L2(w) = \frac{1}{2} \sum\limits_{i} w_i
+ *    L2(w) = \frac{1}{2} \sum\limits_{i} w_i^2
  *    \f]
  *  Note the \f$1/2\f$ scaling factor.
  */
@@ -64,13 +64,23 @@ class l2_weight_regularization : public objective_function_term {
 
  private:
 
-  /** Holds intermediate term for local contributions. */
-  EvalType m_sqsum;
-  /** Aluminum request for local contribution aggregation. */
+  /** Contributions to evaluated value. */
+  std::map<El::Device, CPUMat> m_contributions;
+  /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
-  /** Whether local contribution aggregation has started. */
-  bool m_allreduce_started;
+#ifdef LBANN_HAS_GPU
+  /** CUDA event after a non-blocking GPU-CPU memory copy. */
+  cuda::event_wrapper m_copy_event;
+#endif // LBANN_HAS_GPU
 
+  /** Accumulate contribution to L2 regularization term.
+   *  The sum of squares of 'vals' is added to the value in
+   *  'contribution'.
+   */
+  template <El::Device Device>
+  static void accumulate_contribution(const DMat<Device>& vals,
+                                      DMat<Device>& contribution);
+  
 };
 
 } // namespace lbann
