@@ -195,6 +195,20 @@ struct rsqrt_op {
   }
 };
 
+/** Safe reciprocal operator. */
+struct safe_reciprocal_op {
+  inline __device__ DataType operator()(const DataType& x) const {
+    const auto& y = 1 / x;
+    if (isfinite(y)) { return y; }
+    else             { return DataType(0); }
+  }
+  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
+    const auto& y = 1 / x;
+    if (isfinite(y)) { return - dy * y*y; }
+    else             { return DataType(0); }
+  }
+};
+  
 /** Exponential operator. */
 struct exp_op {
   inline __device__ DataType operator()(const DataType& x) const {
@@ -397,6 +411,7 @@ struct atanh_op {
   INSTANTIATE(reciprocal_layer, reciprocal_op)
   INSTANTIATE(square_layer, square_op)
   INSTANTIATE(sqrt_layer, sqrt_op)
+  INSTANTIATE(safe_reciprocal_layer, safe_reciprocal_op)
   INSTANTIATE(rsqrt_layer, rsqrt_op)
   INSTANTIATE(exp_layer, exp_op)
   INSTANTIATE(expm1_layer, expm1_op)

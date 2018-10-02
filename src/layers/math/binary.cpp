@@ -181,6 +181,30 @@ struct pow_op {
   }
 };
 
+/** Safe divide operator. */
+struct safe_divide_op {
+  inline DataType operator()(const DataType& x1,
+                             const DataType& x2) const {
+    const auto& y = x1 / x2;
+    if (std::isfinite(y)) { return y; }
+    else                  { return zero; }
+  }
+  inline void operator()(const DataType& x1,
+                         const DataType& x2,
+                         const DataType& dy,
+                         DataType& dx1,
+                         DataType& dx2) const {
+    const auto& y = x1 / x2;
+    if (std::isfinite(y)) {
+      dx1 = dy / x2;
+      dx2 = -dy * x1 / (x2*x2);
+    } else {
+      dx1 = zero;
+      dx2 = zero;
+    }
+  }
+};
+  
 /** Maximum operator. */
 struct max_op {
   inline DataType operator()(const DataType& x1,
@@ -421,6 +445,7 @@ struct xor_op {
   INSTANTIATE(divide_layer, divide_op)
   INSTANTIATE(mod_layer, mod_op)
   INSTANTIATE(pow_layer, pow_op)
+  INSTANTIATE(safe_divide_layer, safe_divide_op)
   INSTANTIATE(max_layer, max_op)
   INSTANTIATE(min_layer, min_op)
   INSTANTIATE(equal_layer, equal_op)

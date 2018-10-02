@@ -828,39 +828,41 @@ message Layer {
    Square square = 409;
    Sqrt sqrt = 410;
    Rsqrt rsqrt = 411;
-   Exp exp = 412;
-   Expm1 expm1 = 413;
-   Log log = 414;
-   Log1p log1p = 415;
-   Cos cos = 416;
-   Sin sin = 417;
-   Tan tan = 418;
-   Acos acos = 419;
-   Asin asin = 420;
-   Atan atan = 421;
-   Cosh cosh = 422;
-   Sinh sinh = 423;
-   Tanh tanh = 424;
-   Acosh acosh = 425;
-   Asinh asinh = 426;
-   Atanh atanh = 427;
+   SafeReciprocal safe_reciprocal = 412;
+   Exp exp = 413;
+   Expm1 expm1 = 414;
+   Log log = 415;
+   Log1p log1p = 416;
+   Cos cos = 417;
+   Sin sin = 418;
+   Tan tan = 419;
+   Acos acos = 420;
+   Asin asin = 421;
+   Atan atan = 422;
+   Cosh cosh = 423;
+   Sinh sinh = 424;
+   Tanh tanh = 425;
+   Acosh acosh = 426;
+   Asinh asinh = 427;
+   Atanh atanh = 428;
    Add add = 450;
    Subtract subtract = 451;
    Multiply multiply = 452;
    Divide divide = 453;
    Mod mod = 454;
    Pow pow = 455;
-   Max max = 456;
-   Min min = 457;
-   Equal equal = 458;
-   NotEqual not_equal = 459;
-   Less less = 460;
-   LessEqual less_equal = 461;
-   Greater greater = 462;
-   GreaterEqual greater_equal = 463;
-   And and = 464;
-   Or or = 465;
-   Xor xor = 466;
+   SafeDivide safe_divide = 456;
+   Max max = 457;
+   Min min = 458;
+   Equal equal = 459;
+   NotEqual not_equal = 460;
+   Less less = 461;
+   LessEqual less_equal = 462;
+   Greater greater = 463;
+   GreaterEqual greater_equal = 464;
+   And and = 465;
+   Or or = 466;
+   Xor xor = 467;
 
    // Target Layers
    Target target = 18;
@@ -910,6 +912,7 @@ message Reciprocal {}
 message Square {}
 message Sqrt {}
 message Rsqrt {}
+message SafeReciprocal {}
 message Exp {}
 message Expm1 {}
 message Log {}
@@ -932,6 +935,7 @@ message Multiply {}
 message Divide {}
 message Mod {}
 message Pow {}
+message SafeDivide {}
 message Max {}
 message Min {}
 message Equal {}

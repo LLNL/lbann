@@ -78,10 +78,11 @@ LBANN_DEFINE_UNARY_MATH_LAYER(ceil_layer,  "ceil");
 LBANN_DEFINE_UNARY_MATH_LAYER(floor_layer, "floor");
 
 // Power operations
-LBANN_DEFINE_UNARY_MATH_LAYER(reciprocal_layer, "reciprocal");
-LBANN_DEFINE_UNARY_MATH_LAYER(square_layer,     "square");
-LBANN_DEFINE_UNARY_MATH_LAYER(sqrt_layer,       "square root");
-LBANN_DEFINE_UNARY_MATH_LAYER(rsqrt_layer,      "reciprocal square root");
+LBANN_DEFINE_UNARY_MATH_LAYER(reciprocal_layer,      "reciprocal");
+LBANN_DEFINE_UNARY_MATH_LAYER(square_layer,          "square");
+LBANN_DEFINE_UNARY_MATH_LAYER(sqrt_layer,            "square root");
+LBANN_DEFINE_UNARY_MATH_LAYER(rsqrt_layer,           "reciprocal square root");
+LBANN_DEFINE_UNARY_MATH_LAYER(safe_reciprocal_layer, "safe reciprocal");
 
 // Exponential and logarithmic operations
 LBANN_DEFINE_UNARY_MATH_LAYER(exp_layer,   "exponential");
