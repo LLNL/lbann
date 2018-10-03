@@ -70,7 +70,7 @@ class model {
   virtual model* copy() const = 0;
 
   /** Return the model's type. */
-  virtual std::string type() const = 0;
+  virtual std::string get_type() const = 0;
 
   void set_name(std::string name);
   
