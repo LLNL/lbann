@@ -45,14 +45,43 @@ struct accumulate {
   }
 };
 
+template <typename DataType>
+struct accumulate2 {
+  __device__ void operator()(DataType &x, DataType &y, DataType &z) const {
+    x = y + z;
+  }
+};
+
 void fp_compute_distconv(dc::TensorDev &activations,
                          dc::TensorDev &prev_activations,
-                         std::vector<dc::TensorDev> &prev_activations_siblings) {
-  dc::tensor::Copy(activations, prev_activations);
-  for (auto &p: prev_activations_siblings) {
-    p.set_outermost_dimension(activations.get_shape()[-1]);
-    distconv::tensor::Transform(activations, p, accumulate<DataType>(),
-                                dc::get_backend().get_stream());
+                         std::vector<dc::TensorDev> &prev_activations_siblings,
+                         int num_parents) {
+  switch (num_parents) {
+    case 0:
+      dc::MPIPrintStreamDebug() << "No parent for sum layer";
+      activations.zero();
+      break;
+    case 1:
+      dc::MPIPrintStreamDebug() << "Just one parent for sum layer";
+      dc::tensor::Copy(activations, prev_activations);
+      break;
+    case 2:
+      // Optimization for layers with 2 parents (e.g.,
+      // Resnet50). Avoids loading destination tensors multiple times
+      prev_activations_siblings.at(0).set_outermost_dimension(
+          activations.get_shape()[-1]);
+      dc::tensor::Transform(activations, prev_activations,
+                            prev_activations_siblings.at(0),
+                            accumulate2<DataType>(),
+                            dc::get_backend().get_stream());
+      break;
+    default:
+      dc::tensor::Copy(activations, prev_activations);      
+      for (auto &p: prev_activations_siblings) {
+        p.set_outermost_dimension(activations.get_shape()[-1]);
+        distconv::tensor::Transform(activations, p, accumulate<DataType>(),
+                                    dc::get_backend().get_stream());
+      }
   }
 }
 } // namespace
@@ -63,7 +92,7 @@ void sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     fp_compute_distconv(m_activations_t, m_prev_activations_t,
-                        m_prev_activations_siblings);
+                        m_prev_activations_siblings, get_num_parents());
     copy_out_activations();
     if (!early_terminate_last_iteration()) {
       return;

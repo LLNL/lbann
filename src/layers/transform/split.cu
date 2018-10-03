@@ -45,14 +45,40 @@ struct accumulate {
   }
 };
 
+template <typename DataType>
+struct accumulate2 {
+  __device__ void operator()(DataType &x, DataType &y, DataType &z) const {
+    x = y + z;
+  }
+};
+
 void bp_compute_distconv(dc::TensorDev &error_signals,
                          dc::TensorDev &prev_error_signals,
-                         std::vector<dc::TensorDev> &prev_error_signals_siblings) {
-  dc::tensor::Copy(error_signals, prev_error_signals);
-  for (auto &child: prev_error_signals_siblings) {
-    child.set_outermost_dimension(error_signals.get_shape()[-1]);
-    distconv::tensor::Transform(error_signals, child, accumulate<DataType>(),
-                                dc::get_backend().get_stream());
+                         std::vector<dc::TensorDev> &prev_error_signals_siblings,
+                         int num_children) {
+  switch (num_children) {
+    case 0:
+      dc::MPIPrintStreamInfo() << "No parent for this sum layer";
+      error_signals.zero();
+      break;
+    case 1:
+      dc::tensor::Copy(error_signals, prev_error_signals);
+      break;
+    case 2:
+      prev_error_signals_siblings.at(0).set_outermost_dimension(
+          error_signals.get_shape()[-1]);
+      dc::tensor::Transform(error_signals, prev_error_signals,
+                            prev_error_signals_siblings.at(0),
+                            accumulate2<DataType>(),
+                            dc::get_backend().get_stream());
+      break;
+    default:
+      dc::tensor::Copy(error_signals, prev_error_signals);
+      for (auto &child: prev_error_signals_siblings) {
+        child.set_outermost_dimension(error_signals.get_shape()[-1]);
+        dc::tensor::Transform(error_signals, child, accumulate<DataType>(),
+                              dc::get_backend().get_stream());
+      }
   }
 }
 } // namespace
@@ -63,7 +89,8 @@ void split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     bp_compute_distconv(m_error_signals_t, m_prev_error_signals_t,
-                        m_prev_error_signals_siblings);
+                        m_prev_error_signals_siblings,
+                        get_num_children());
     copy_out_error_signals();
     if (!early_terminate_last_iteration()) {
       return;
