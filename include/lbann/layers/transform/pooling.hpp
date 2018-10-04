@@ -618,33 +618,32 @@ private:
   dc::Array4 get_activations_tensor_local_shape() const override {
     const int filter_dims[2] = {m_pool_dims[1], m_pool_dims[0]};
     const int strides[2] = {m_strides[1], m_strides[0]};
+    bool use_padding = m_pads[0] != 0;
     dc::Array4 output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
             m_prev_activations_t,
-            filter_dims, strides, false);
+            filter_dims, strides, use_padding);
     return output_spatial_local_shape;
   }
   
   void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_fwd(dists);
-    if (!distconv_enabled()) return;    
-    
+    if (!distconv_enabled()) return;
+
     dc::MPIPrintStreamDebug()
         << "pooling: setup_tensors."
         << " pads: " << m_pads[0] << "x" << m_pads[1]
         << ", pool_dims: " << m_pool_dims[0] << "x" << m_pool_dims[1]
-        << ", m_strides: " << m_strides[0] << "x" << m_strides[1]
-        << "\n";
+        << ", m_strides: " << m_strides[0] << "x" << m_strides[1];
 
-    setup_prev_activations_tensor(dists);    
+    setup_prev_activations_tensor(dists);
     setup_activations_tensor(dists);
-    setup_activations_copyout_tensor(dists);    
-
+    setup_activations_copyout_tensor(dists);
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_bwd(dists);
-    if (!distconv_enabled()) return;    
+    if (!distconv_enabled()) return;
 
     setup_prev_error_signals_tensor(dists);
     setup_error_signals_tensor(dists);
@@ -694,18 +693,21 @@ private:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
-    if (!(m_pads[0] == 0 && m_pads[1] == 0)) {
-      dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding\n";
-      return false;
-    }
-    
     if (!(m_pool_dims[0] % 2 != 0 && m_pool_dims[1] % 2 != 0)) {
-      dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape\n";
+      dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape: "
+                                << m_pool_dims[0] << "x" << m_pool_dims[1];
       return false;
     }
-    
+
     int stencil_h = (m_pool_dims[0] - 1) / 2;
     int stencil_w = (m_pool_dims[1] - 1) / 2;
+
+    if (!((m_pads[0] == 0 && m_pads[1] == 0) ||
+          (m_pads[0] == stencil_w && m_pads[1] == stencil_h))) {
+      dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding: "
+                                << m_pads[0] << "x" << m_pads[1];
+      return false;
+    }
 
     if (!((m_strides[0] == 1 && m_strides[1] == 1) ||
          (m_strides[0] == stencil_h + 1 &&
