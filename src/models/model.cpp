@@ -1806,15 +1806,15 @@ void model::setup_distconv() {
   // displays parent and child layer names for debugging
   for (const auto& layer : m_layers) {
     std::stringstream names;
-    names << "parent:";
+    names << "parents:";
     for (const auto &parent: layer->get_parent_layers()) {
       names << " " << parent->get_name();
     }
-    names << ", children:";
+    names << "; children:";
     for (const auto &child: layer->get_child_layers()) {
       names << " " << child->get_name();
     }
-    dc::MPIRootPrintStreamInfo()
+    dc::MPIRootPrintStreamDebug()
         << layer->get_name() << "; " << names.str();
   }
   for (const auto& layer : m_layers) {
@@ -1824,11 +1824,10 @@ void model::setup_distconv() {
           << "; prev_activations_dist: " << dists[layer][0]
           << ", activations_dist: " << dists[layer][1]
           << ", error_signals_dist: " << dists[layer][2]
-          << ", prev_error_signals_dist: " << dists[layer][3]
-          << "\n";
+          << ", prev_error_signals_dist: " << dists[layer][3];
     } else {
       dc::MPIRootPrintStreamInfo()
-          << layer->get_name() << "; distconv disabled\n";
+          << layer->get_name() << "; distconv disabled";
     }
   }
   for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {

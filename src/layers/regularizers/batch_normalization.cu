@@ -410,7 +410,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
   auto&& stream = El::GPUManager::Stream();
-  
+
   // Matrices
   const auto& input = get_prev_activations();
   const auto& local_input = input.LockedMatrix();

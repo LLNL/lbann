@@ -167,7 +167,7 @@ public:
 
 protected:
 
-  
+
   void fp_compute() override {
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
@@ -276,7 +276,7 @@ protected:
                           DataType(1.0), this->m_error_signals_t);
 
     this->copy_out_error_signals();
-#endif    
+#endif
   }
 
   void compute_gradients_distconv() {
@@ -288,7 +288,7 @@ protected:
     dc::MPIPrintStreamDebug() << this->get_name() << ": Compute gradients\n";
 
     const int effective_mini_batch_size =
-        this->m_model->get_effective_mini_batch_size();    
+        this->m_model->get_effective_mini_batch_size();
 
     optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr && this->m_bias_scaling_factor != DataType(0)) {
@@ -307,7 +307,7 @@ protected:
     optimizer* kernel_optimizer = this->get_weights()[0]->get_optimizer();
     if (kernel_optimizer == nullptr) return;
 
-    dc::MPIPrintStreamDebug() << "Compute kernel gradients\n";          
+    dc::MPIPrintStreamDebug() << "Compute kernel gradients\n";
 
     assert0(dc::tensor::View(
         m_kernel_gradient_e, this->m_kernel_gradient.Buffer()));
@@ -322,12 +322,12 @@ protected:
       kernel_optimizer->add_to_gradient_staging(this->m_kernel_gradient,
                                                 kernel_scale);
     }
-#endif    
+#endif
   }
 
 #ifdef LBANN_HAS_DISTCONV
  public:
-  
+
   dc::Array4 get_prev_activations_overlap() const override {
     if (this->distconv_enabled()) {
       int stencil_h = (this->m_kernel_dims[2] - 1) / 2;
@@ -355,7 +355,7 @@ protected:
   }
 
   void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,      
+      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
@@ -375,12 +375,12 @@ protected:
       prev_activations_dist.set_overlap(overlap);
       updated.insert(&prev_activations_dist);
       fixed.insert(&prev_activations_dist);
-      auto &prev_error_signals_dist = dists[this][3];      
+      auto &prev_error_signals_dist = dists[this][3];
       prev_error_signals_dist.set_overlap(overlap);
       updated.insert(&prev_error_signals_dist);
       fixed.insert(&prev_error_signals_dist);
       // To deal with strides, error signals must have the same size
-      // of overlap 
+      // of overlap
       auto &error_signals_dist = dists[this][2];
       error_signals_dist.set_overlap(overlap);
       updated.insert(&error_signals_dist);
@@ -413,13 +413,13 @@ protected:
     util::print_vector(ss, this->m_kernel_dims.begin(), this->m_kernel_dims.end());
     MPIPrintStreamDebug()
         << "m_kernel_dims: " << ss.str() << "\n";
-    
+
     this->setup_prev_activations_tensor(dists);
     this->setup_activations_tensor(dists);
-    this->setup_activations_copyout_tensor(dists);    
+    this->setup_activations_copyout_tensor(dists);
 
     dc::Dist shared_dist(dists[0].get_locale_shape(), 1, 0, 0);
-    
+
     Array4 kernel_shape = {this->m_kernel_dims[3], this->m_kernel_dims[2],
                            this->m_kernel_dims[1], this->m_kernel_dims[0]};
     const LocaleMPI loc(this->m_comm->get_model_comm().comm, false);
@@ -447,7 +447,7 @@ protected:
       m_conv->setup_bias(m_bias_t);
 
       // Bias backprop
-      optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();      
+      optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
       if (bias_optimizer != nullptr) {
         m_bias_gradient_t = TensorDev(bias_shape, loc, shared_dist);
         assert0(tensor::View(m_bias_gradient_t,
@@ -459,7 +459,7 @@ protected:
 
   void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_bwd(dists);
-    if (!this->distconv_enabled()) return;    
+    if (!this->distconv_enabled()) return;
 
     this->setup_prev_error_signals_tensor(dists);
     this->setup_error_signals_tensor(dists);
@@ -487,7 +487,7 @@ protected:
         m_bwd_filter_algo = bwd_filter_algo_env;
       }
     }
-    
+
     m_conv->setup(this->m_prev_activations_t,
                   m_kernel_t, this->m_activations_t,
                   this->m_error_signals_t, m_kernel_gradient_e,
@@ -497,7 +497,7 @@ protected:
                   m_fwd_algo, m_bwd_data_algo,
                   m_bwd_filter_algo);
   }
-  
+
  protected:
   dc::Convolution *m_conv;
   dc::TensorDev m_kernel_t;
