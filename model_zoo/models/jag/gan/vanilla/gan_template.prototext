@@ -1,0 +1,76 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 64 
+  block_size: 256
+  num_epochs: 1
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    layer_term {
+      scale_factor: 1.0
+      layer: "disc1_real_eval"
+    }
+    layer_term {
+      scale_factor: 1.0
+      layer: "disc1_fake_eval"
+    }
+    layer_term {
+      scale_factor: 0.05
+      layer: "g_adv1_eval"
+    }
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  #metric {
+  #  layer_metric {
+  #    layer: "dis_eval_t"
+  #  }
+  #  layer_metric {
+  #    layer: "dis_eval_f"
+  #  }
+  #}
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback { timer {} }
+  
+  #Add callback for replace_weights
+  callback {
+    replace_weights{
+      source_layers: "d1fc1_real d1fc2_real d1fc3_real" 
+      destination_layers: "d2fc1 d2fc2 d2fc3"
+    }
+  }
+  
+  callback {
+    dump_activations {
+      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jag_imgs/gan/"
+      #interval: 100
+      layer_names: "image_data_dummy gen1fc4"
+    }
+  }
+ 
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+}
