@@ -67,7 +67,13 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {}
+    m_default_optimizer(default_optimizer) { 
+    
+      static int num_models = 0;
+      m_name = "Model" + std::to_string(num_models);
+      num_models++;
+
+  }
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
