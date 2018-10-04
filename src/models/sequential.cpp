@@ -70,7 +70,7 @@ void sequential_model::write_proto(lbann_data::Model* proto) {
   model::write_proto(proto);
   //Add layers
   if (m_comm->am_world_master()) {
-    proto->set_name(name());
+    proto->set_name(type());
     for(size_t l = 0; l < m_layers.size(); l++) {
       auto layer_proto = proto->add_layer();
       m_layers[l]->write_proto(layer_proto);
