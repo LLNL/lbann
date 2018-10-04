@@ -1275,13 +1275,36 @@ bool Layer::using_distconv() const {
     return false;
   }
 
-  // It is also disabled when the layer name is included in
-  // an environment variable
-  char *env = getenv("DISTCONV_DISABLE");
+  // When DISTCONV_ENABLE is defined, all layers included in the
+  // variable are enabled.
+  char *env = getenv("DISTCONV_ENABLE");
   if (env) {
     std::string s(env);
-    if (s.find(get_name()) != std::string::npos) {
-      return false;
+    auto layer_names = util::split(s, ',');
+    for (const auto &name: layer_names) {
+      if (get_name() == name) {
+        return true;
+      }
+    }
+    MPIRootPrintStreamInfo()
+        << "Disable " << get_name()
+        << " as its name is not found in DISTCONV_ENABLE";
+    return false;
+  }
+
+  // It is also disabled when the layer name is included in
+  // an environment variable
+  env = getenv("DISTCONV_DISABLE");
+  if (env) {
+    std::string s(env);
+    auto layer_names = util::split(s, ',');
+    for (const auto &name: layer_names) {
+      if (get_name() == name) {
+        MPIRootPrintStreamInfo()
+            << "Disable " << get_name()
+            << " as its name found in DISTCONV_DISABLE";
+        return false;
+      }
     }
   }
 
