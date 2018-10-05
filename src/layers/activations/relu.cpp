@@ -37,7 +37,7 @@ struct op {
     return x > DataType(0) ? x : DataType(0);
   }
 };
-  
+
 /** Entry-wise operator for backprop.
  *  If the forward propagation step computes \f$ y = f(x) \f$, the
  *  backward propagation step computes
@@ -48,7 +48,7 @@ struct op_backprop {
     return x > DataType(0) ? dy : DataType(0);
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -138,7 +138,7 @@ template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
 fp_compute_distconv() {
   MPIPrintStreamDebug()
-      << get_name() << ": " << __FUNCTION__ << "\n";
+      << get_name() << ": " << __FUNCTION__;
   assert_always(distconv_enabled());
 
   // Useful constants
@@ -154,18 +154,12 @@ template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
 bp_compute_distconv() {
   MPIPrintStreamDebug()
-      << get_name() << ": " << __FUNCTION__ << "\n";
+      << get_name() << ": " << __FUNCTION__;
   assert_always(distconv_enabled());
   const DataType one = 1;
 
-#ifdef DISTCONV_ZERO_OUT_ERROR_SIGNALS
-  m_error_signals_t.zero();
-  m_relu->backward(one, m_activations_t, m_prev_error_signals_t,
-                   m_prev_activations_t, one, m_error_signals_t);
-#else
   m_relu->backward(one, m_activations_t, m_prev_error_signals_t,
                    m_prev_activations_t, DataType(0), m_error_signals_t);
-#endif
   copy_out_error_signals();
 }
 
