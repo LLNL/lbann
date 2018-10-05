@@ -298,7 +298,7 @@ __global__ void backprop2_kernel(
 
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_distconv() {
-  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__ << "\n";
+  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
   assert_always(distconv_enabled());
 
   const bool is_training =
@@ -318,22 +318,32 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   assert0(dc::tensor::View(
       m_running_var_t, get_weights()[3]->get_values().Buffer()));
 
-  m_bn->forward(m_prev_activations_t,
-                m_mean_t,
-                m_var_t,
-                m_running_mean_t,
-                m_running_var_t,
-                m_scale_t,
-                m_bias_t,
-                m_activations_t,
-                is_training);
+  m_bn->forward_stage1(m_prev_activations_t,
+                       m_mean_t,
+                       m_var_t,
+                       is_training, false);
+
+  if (m_use_global_stats) {
+    m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
+    m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+  }
+
+  m_bn->forward_stage2(m_prev_activations_t,
+                       m_mean_t,
+                       m_var_t,
+                       m_running_mean_t,
+                       m_running_var_t,
+                       m_scale_t,
+                       m_bias_t,
+                       m_activations_t,
+                       is_training);
 
   copy_out_activations();
 }
 
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_distconv() {
-  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__ << "\n";
+  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
   assert_always(distconv_enabled());
 
   // Check execution mode
