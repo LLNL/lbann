@@ -792,10 +792,6 @@ model {
     name: "fc"
     parents: "avgpool"
     data_layout: "data_parallel"
-    parallel_strategy {
-      replications: 1
-      procs_per_replica: 1
-    }
     fully_connected {
       num_neurons: 1000
       has_bias: false
@@ -805,20 +801,12 @@ model {
     name: "prob"
     parents: "fc"
     data_layout: "data_parallel"
-    parallel_strategy {
-      replications: 1
-      procs_per_replica: 1
-    }
     softmax {}
   }
   layer {
     name: "cross_entropy"
     parents: "prob labels"
     data_layout: "data_parallel"
-    parallel_strategy {
-      replications: 1
-      procs_per_replica: 1
-    }
     cross_entropy {}
   }
   layer {
