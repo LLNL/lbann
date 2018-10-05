@@ -50,7 +50,6 @@
 #include "lbann/layers/activations/logsoftmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
-#include "lbann/layers/activations/power.hpp"
 #include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
 
 /// Learning Layers
@@ -66,6 +65,7 @@
 
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/math/binary.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -90,8 +90,6 @@
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/discrete_random.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
-#include "lbann/layers/transform/max.hpp"
-#include "lbann/layers/transform/min.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"

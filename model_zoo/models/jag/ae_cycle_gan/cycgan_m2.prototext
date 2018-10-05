@@ -177,9 +177,7 @@ model {
     parents: "z_mean"
     name: "kl_z_mean2"
     data_layout: "model_parallel"
-    power {
-      exponent: 2.0
-    }
+    square {}
   }
   layer {
     parents: "z_log_sigma"
