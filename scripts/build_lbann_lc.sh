@@ -677,8 +677,16 @@ fi
 
 # Temporary Distconv stuff
 ################################################################
-DISTCONV_DIR=$HOME/lbann/install/$CLUSTER/$COMPILER/$BUILD_TYPE/distconv
-P2P_DIR=$HOME/lbann/install/$CLUSTER/$COMPILER/$BUILD_TYPE/p2p
+if [[ $MPI_HOME == *spectrum* ]]; then
+	MPI_TYPE=smpi
+elif [[ $MPI_HOME == *mvapich* ]]; then
+	MPI_TYPE=mvapich
+else
+	echo "Unknown MPI type: $MPI_HOME"
+	exit 1
+fi
+DISTCONV_DIR=$HOME/lbann/install/$CLUSTER/${COMPILER}_$MPI_TYPE/$BUILD_TYPE/distconv
+P2P_DIR=$HOME/lbann/install/$CLUSTER/${COMPILER}_$MPI_TYPE/$BUILD_TYPE/p2p
 
 ################################################################
 # Display parameters
