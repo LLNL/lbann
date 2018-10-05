@@ -42,6 +42,8 @@ class data_reader_synthetic : public generic_data_reader {
   data_reader_synthetic(int num_samples, int num_features, bool shuffle = true);
   data_reader_synthetic(int num_samples, std::vector<int> dims,
                         int num_labels, bool shuffle = true);
+  data_reader_synthetic(int num_samples, std::vector<int> dims,
+                        std::vector<int> response_dims, bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() override {}
@@ -53,11 +55,14 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
   void load() override;
-
-  int get_num_labels() const override { return m_num_labels; }
   
   int get_linearized_data_size() const override {
     return std::accumulate(m_dimensions.begin(), m_dimensions.end(), 1,
+                           std::multiplies<int>());
+  }
+  int get_linearized_response_size() const override {
+    return std::accumulate(m_response_dimensions.begin(),
+                           m_response_dimensions.end(), 1,
                            std::multiplies<int>());
   }
 
@@ -65,9 +70,15 @@ class data_reader_synthetic : public generic_data_reader {
     return m_dimensions;
   }
 
+  int get_num_labels() const override { return m_num_labels; }
+  int get_num_responses() const override {
+    return get_linearized_response_size();
+  }
+
  protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
 
  private:
   /** Number of samples in the dataset. */
@@ -76,6 +87,8 @@ class data_reader_synthetic : public generic_data_reader {
   int m_num_labels;
   /** Shape of the data. */
   std::vector<int> m_dimensions;
+  /** Shape of the responses. */
+  std::vector<int> m_response_dimensions;
 };
 
 }  // namespace lbann

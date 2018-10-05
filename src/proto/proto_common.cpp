@@ -225,9 +225,19 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
 
     } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(
-        readme.num_samples(), proto::parse_list<int>(readme.synth_dimensions()),
-        readme.num_labels(), shuffle);
+      if (readme.num_labels() != 0) {
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          proto::parse_list<int>(readme.synth_dimensions()),
+          readme.num_labels(),
+          shuffle);
+      } else {
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          proto::parse_list<int>(readme.synth_dimensions()),
+          proto::parse_list<int>(readme.synth_response_dimensions()),
+          shuffle);
+      }
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
     } else {

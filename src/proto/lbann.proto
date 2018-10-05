@@ -58,6 +58,7 @@ message Reader {
   int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
   string synth_dimensions = 101; //only for synthetic
+  string synth_response_dimensions = 115; //only for synthetic
   //csv attributes
   string separator = 102;
   int32 skip_cols = 103;
