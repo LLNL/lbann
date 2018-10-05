@@ -535,12 +535,16 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
   set_linearized_image_size();
 }
 
-void data_reader_jag_conduit::set_image_keys(const std::vector<std::string> image_keys) {
+void data_reader_jag_conduit::set_image_choices(const std::vector<std::string> image_keys) {
   m_emi_image_keys = image_keys;
   // For example, in the data reader prototext file, have a line similar to the one below
   // image_keys: ["(0.0, 0.0)/0.0","(90.0, 0.0)/0.0","(90.0, 78.0)/0.0"];
 
   m_num_img_srcs = m_emi_image_keys.size();
+}
+
+const std::vector<std::string>& data_reader_jag_conduit::get_image_choices() const {
+  return m_emi_image_keys;
 }
 
 
@@ -1425,16 +1429,20 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
-  size_t i = 0u;
+  auto tr = m_scalar_normalization_params.cbegin();
+
   for(const auto key: m_scalar_keys) {
     conduit::Node n_scalar;
     // TODO: optimize by loading the entire set of scalars of the samples
     load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
-    // All the scalar output currently seems to be scalar_t
-    //add_val(key, n_scalar, scalars);
-    //scalars.push_back(static_cast<scalar_t>(n_scalar.to_value()));
-    const auto& tr = m_scalar_normalization_params.at(i++);
-    scalars.push_back(static_cast<scalar_t>(static_cast<scalar_t>(n_scalar.to_value()) * tr.first + tr.second));
+    // All the scalar output currently seems to be scalar_t.
+    // If not use add_val(key, n_scalar, scalars);
+
+    // TODO: const auto& tr = get_scalar_normalization_param(key)
+    const scalar_t val_raw = static_cast<scalar_t>(n_scalar.to_value());
+    const scalar_t val = static_cast<scalar_t>(val_raw * tr->first + tr->second);
+    scalars.push_back(val);
+    tr ++;
   }
   return scalars;
 }
@@ -1447,22 +1455,31 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
+  auto tr = m_input_normalization_params.cbegin();
+
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
-    size_t i = 0u;
+    // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
       conduit::Node n_input;
       // TODO: optimize by loading the entire set of input parameters of the samples
       load_conduit_node(sample_id, "/inputs/" + key, n_input);
-      //inputs.push_back(n_input.value()); // less overhead
-      const auto& tr = m_input_normalization_params.at(i++);
-      inputs.push_back(static_cast<input_t>(static_cast<input_t>(n_input.value()) * tr.first + tr.second)); // less overhead
+
+      // TODO: const auto& tr = get_input_normalization_param(key)
+      const input_t val_raw = static_cast<input_t>(n_input.value());
+      const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
+      inputs.push_back(val);
+      tr ++;
     }
-  } else { // this case does not have normalization
+  } else {
     for(const auto key: m_input_keys) {
       conduit::Node n_input;
       load_conduit_node(sample_id, "/inputs/" + key, n_input);
       add_val(key, n_input, inputs); // more overhead but general
+
+      input_t& val = inputs.back();
+      val = static_cast<input_t>(val * tr->first + tr->second);
+      tr ++;
     }
   }
   return inputs;
@@ -1617,6 +1634,18 @@ void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
   conduit::Node n;
   load_conduit_node(sample_id, "", n);
   n.schema().print();
+}
+
+void data_reader_jag_conduit::clear_image_normalization_params() {
+  m_image_normalization_params.clear();
+}
+
+void data_reader_jag_conduit::clear_scalar_normalization_params() {
+  m_scalar_normalization_params.clear();
+}
+
+void data_reader_jag_conduit::clear_input_normalization_params() {
+  m_input_normalization_params.clear();
 }
 
 void data_reader_jag_conduit::add_image_normalization_param(const data_reader_jag_conduit::linear_transform_t& t) {

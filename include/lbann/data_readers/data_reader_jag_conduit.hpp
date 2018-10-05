@@ -121,7 +121,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
   /// Choose images to use. e.g. by measurement views and time indices
-  void set_image_keys(const std::vector<std::string> image_keys);
+  void set_image_choices(const std::vector<std::string> image_keys);
+  /// Report the image choices
+  const std::vector<std::string>& get_image_choices() const;
 
   /// Add a scalar key to filter out
   void add_scalar_filter(const std::string& key);
@@ -269,6 +271,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// print the schema of the specific sample identified by a given id
   void print_schema(const size_t i) const;
 
+  void clear_image_normalization_params();
+  void clear_scalar_normalization_params();
+  void clear_input_normalization_params();
   void add_image_normalization_param(const linear_transform_t& t);
   void add_scalar_normalization_param(const linear_transform_t& t);
   void add_input_normalization_param(const linear_transform_t& t);

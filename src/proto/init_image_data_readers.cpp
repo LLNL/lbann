@@ -385,7 +385,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       image_keys[i] = pb_readme.jag_image_keys(i);
     }
 
-    reader_jag->set_image_keys(image_keys);
+    reader_jag->set_image_choices(image_keys);
 
 
     using var_t = data_reader_jag_conduit::variable_t;
