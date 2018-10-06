@@ -22,65 +22,141 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_save_images .hpp .cpp - Callbacks to save images
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/callback_save_images.hpp"
-#include "lbann/data_readers/image_utils.hpp"
+#ifdef LBANN_HAS_OPENCV
+#include <opencv2/imgcodecs.hpp>
+#endif // LBANN_HAS_OPENCV
 
 namespace lbann {
 
+namespace {
 
-void lbann_callback_save_images::on_epoch_end(model *m) {
-  auto tag = "epoch" + std::to_string(m->get_cur_epoch());
-  save_image(*m,tag);
+void save_image(std::string prefix,
+                std::string extension,
+                const std::vector<Layer*>& layers,
+                const std::vector<std::string>& layer_names) {
+#ifdef LBANN_HAS_OPENCV
+  for (const auto* l : layers) {
+
+    // Only save outputs of layers in list
+    const auto& name = l->get_name();
+    if (std::find(layer_names.begin(), layer_names.end(), name)
+        == layer_names.end()) {
+      continue;
+    }
+
+    // Check that tensor dimensions are valid for images
+    const auto& dims = l->get_output_dims();
+    El::Int num_channels(0), height(0), width(0);
+    if (dims.size() == 2) {
+      num_channels = 1;
+      height = dims[0];
+      width = dims[1];
+    } else if (dims.size() == 3) {
+      num_channels = dims[0];
+      height = dims[1];
+      width = dims[2];
+    }
+    if (!(num_channels == 1 || num_channels == 3)
+        || height < 1 || width < 1) {
+      std::stringstream err;
+      err << "images are assumed to either be "
+          << "2D tensors in HW format or 3D tensors in CHW format, "
+          << "but the output of layer \"" << l->get_name() << "\" "
+          << "has dimensions ";
+        for (size_t i = 0; i < dims.size(); ++i) {
+          err << (i > 0 ? "" : " x ") << dims[i];
+        }
+      LBANN_ERROR(err.str());
+    }
+
+    // Get tensor data
+    const auto& raw_data = l->get_activations();
+    std::unique_ptr<AbsDistMat> raw_data_v(raw_data.Construct(raw_data.Grid(), raw_data.Root()));
+    El::LockedView(*raw_data_v, raw_data, El::ALL, El::IR(0));
+    CircMat<El::Device::CPU> circ_data(raw_data_v->Grid(), raw_data_v->Root());
+    circ_data = *raw_data_v;
+
+    // Export tensor as image
+    if (circ_data.CrossRank() == circ_data.Root()) {
+      auto& data = circ_data.LockedMatrix();
+
+      // Data will be scaled to be in [0,255]
+      DataType lower = data(0, 0);
+      DataType upper = data(0, 0);
+      for (El::Int i = 1; i < data.Height(); ++i) {
+        lower = std::min(lower, data(i, 0));
+        upper = std::max(upper, data(i, 0));
+      }
+      const auto& scale = ((upper > lower) ?
+                           255 / (upper - lower) :
+                           DataType(1));
+
+      // Copy data into OpenCV matrix
+      int type = -1;
+      if (num_channels == 1) { type = CV_8UC1; }
+      if (num_channels == 3) { type = CV_8UC3; }
+      cv::Mat img(height, width, type);
+      for (El::Int row = 0; row < height; ++row) {
+        for (El::Int col = 0; col < width; ++col) {
+          const auto& offset = row * width + col;
+          if (num_channels == 1) {
+            img.at<unsigned char>(row, col)
+              = static_cast<unsigned char>(scale * (data(offset, 0) - lower));
+          } else if (num_channels == 3) {
+            cv::Vec3b pixel;
+            pixel[0] = static_cast<unsigned char>(scale * (data(offset, 0) - lower));
+            pixel[1] = static_cast<unsigned char>(scale * (data(height*width + offset, 0) - lower));
+            pixel[2] = static_cast<unsigned char>(scale * (data(2*height*width + offset, 0) - lower));
+            img.at<cv::Vec3b>(row, col) = pixel;
+          }
+        }
+      }
+
+      // Write image to file
+      cv::imwrite(prefix + "-" + name + "." + extension, img);
+        
+    }
+      
+  }
+#endif // LBANN_HAS_OPENCV
+}
+  
+} // namespace
+
+lbann_callback_save_images::lbann_callback_save_images(std::vector<std::string> layer_names,
+                                                       std::string extension,
+                                                       std::string prefix)
+  : lbann_callback(),
+    m_layer_names(std::move(layer_names)),
+    m_extension(extension.empty() ? "jpg" : extension),
+    m_prefix(std::move(prefix)) {
+#ifndef LBANN_HAS_OPENCV
+  LBANN_ERROR("OpenCV not detected");
+#endif // LBANN_HAS_OPENCV
 }
 
+void lbann_callback_save_images::on_epoch_end(model *m) {
+  save_image(m_prefix + "epoch" + std::to_string(m->get_cur_epoch()),
+             m_extension,
+             m->get_layers(),
+             m_layer_names);
+}
 
 void lbann_callback_save_images::on_phase_end(model *m) {
-  const auto phase = m->get_current_phase();
-  auto tag = "phase" + std::to_string(phase);
-  save_image(*m,tag);
+  save_image(m_prefix + "phase" + std::to_string(m->get_current_phase()),
+             m_extension,
+             m->get_layers(),
+             m_layer_names);
 }
 
 void lbann_callback_save_images::on_test_end(model *m) {
-  save_image(*m,"test");
+  save_image(m_prefix + "test",
+             m_extension,
+             m->get_layers(),
+             m_layer_names);
 }
 
-void lbann_callback_save_images::save_image(model& m,
-                                            std::string tag) {
-
-  // Save image
-  if(m_layer_names.empty()) {
-    if(m.get_comm()->am_world_master())
-      std::cout << "Layer list empty, images not saved " << std::endl;
-    return;
-  }
- //@todo: check that number of neurons (linearized) equal mat heigth?
- if(m.get_comm()->am_world_master())
-      std::cout << "Saving images to " << m_image_dir << std::endl;
-
-  const auto layers = m.get_layers();
-  for(auto& l: layers) {
-    auto layer_name = l->get_name();
-    if(std::find(std::begin(m_layer_names), std::end(m_layer_names),
-                  layer_name) != std::end(m_layer_names)) {
-
-      AbsDistMat* input_col = l->get_activations().Construct(
-                                          l->get_activations().Grid(),
-                                          l->get_activations().Root());
-      El::View(*input_col, l->get_activations(), El::ALL, El::IR(0));
-      CircMat<El::Device::CPU> input_circ = *input_col;
-      delete input_col;
-
-      if(m.get_comm()->am_world_master())
-        m_reader->save_image(input_circ.Matrix(),
-                             m_image_dir+tag+"-"+layer_name+"."+m_extension);
-    }
-  }
-}
-
-
-}  // namespace lbann
+} // namespace lbann

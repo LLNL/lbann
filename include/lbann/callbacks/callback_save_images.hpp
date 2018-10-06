@@ -22,36 +22,32 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_save_images .hpp .cpp - Callbacks to save images, currently used in autoencoder
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
 
-#include <utility>
-
+#include <string>
+#include <vector>
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 
-/**
- * Save images to file
+/** Save layer outputs as image files.
+ *  Image files are in the form
+ *  "<prefix><tag>-<layer name>.<extension>".
  */
 class lbann_callback_save_images : public lbann_callback {
- public:
-  /**
-   * @param data reader type e.g., imagenet, mnist, cifar10....
-   * @param image_dir directory to save image
-   * @param layer_names list of layers from which to save images 
-   * @param image extension e.g., jpg, png, pgm......
+public:
+
+  /** Constructor.
+   *  @param prefix      Prefix for saved image files.
+   *  @param layer_names List of layer names to save as images.
+   *  @param extension   Image file extension (e.g. jpg, png, pgm).
    */
-  lbann_callback_save_images(generic_data_reader *reader, std::string image_dir,
-                             std::vector<std::string> layer_names,
-                             std::string extension="jpg") :
-    lbann_callback(), m_image_dir(std::move(image_dir)), m_extension(std::move(extension)),
-    m_reader(reader), m_layer_names(layer_names) {}
+  lbann_callback_save_images(std::vector<std::string> layer_names,
+                             std::string extension = "",
+                             std::string prefix = "jpg");
   lbann_callback_save_images(const lbann_callback_save_images&) = default;
   lbann_callback_save_images& operator=(
     const lbann_callback_save_images&) = default;
@@ -62,15 +58,20 @@ class lbann_callback_save_images : public lbann_callback {
   void on_phase_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "save images"; }
- private:
-  std::string m_image_dir; //directory to save images
-  std::string m_extension; //image extension; pgm, jpg, png etc
-  generic_data_reader *m_reader;
-  /** List of layers at which to save images*/
+
+private:
+
+  /** List of layer names to save as images. */
   std::vector<std::string> m_layer_names;
-  void save_image(model& m, std::string tag);
+  /** Image file extension.
+   *  Valid options: jpg, png, pgm.
+   */
+  std::string m_extension;
+  /** Prefix for saved image files. */
+  std::string m_prefix;
+
 };
 
-}  // namespace lbann
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED

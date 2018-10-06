@@ -557,16 +557,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
     set_data_readers_percent(p);
   }
 
-  if (opts->has_string("image_dir")) {
-    int sz = model->callback_size();
-    for (int j=0; j<sz; j++) {
-      lbann_data::Callback *c = model->mutable_callback(j);
-      if (c->has_save_images()) {
-        lbann_data::CallbackSaveImages *i = c->mutable_save_images();
-        i->set_image_dir(opts->get_string("image_dir"));
-      }
-    }
-  }
   if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {

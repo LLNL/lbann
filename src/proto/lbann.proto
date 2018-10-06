@@ -473,9 +473,9 @@ message CallbackAdaptiveLearningRate {
 }
 
 message CallbackSaveImages {
-  string image_dir = 1;
-  string layer_names = 2; //layer(s) at which to save images  e.g., "input, reconstruction"
-  string extension = 3;
+  string layers    = 1; // Layer outputs to save as images
+  string extension = 2; // Image file extension (e.g. jpg, png, pgm)
+  string prefix    = 3; // Prefix for saved image files
 }
 
 message CallbackPrint {
