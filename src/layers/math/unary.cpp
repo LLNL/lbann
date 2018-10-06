@@ -118,7 +118,10 @@ struct floor_op {
   }
 };
 
-/** Reciprocal operator. */
+/** Reciprocal operator.
+ *  If a standard reciprocal produces an infinity or NaN, zero is
+ *  output instead.
+ */
 struct reciprocal_op {
   inline DataType operator()(const DataType& x) const {
     return 1 / x;

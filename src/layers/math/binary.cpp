@@ -181,7 +181,10 @@ struct pow_op {
   }
 };
 
-/** Safe divide operator. */
+/** Safe divide operator.
+ *  If a standard division produces an infinity or NaN, zero is output
+ *  instead.
+ */
 struct safe_divide_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {

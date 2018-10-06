@@ -195,7 +195,10 @@ struct rsqrt_op {
   }
 };
 
-/** Safe reciprocal operator. */
+/** Safe reciprocal operator.
+ *  If a standard reciprocal produces an infinity or NaN, zero is
+ *  output instead.
+ */
 struct safe_reciprocal_op {
   inline __device__ DataType operator()(const DataType& x) const {
     const auto& y = 1 / x;
