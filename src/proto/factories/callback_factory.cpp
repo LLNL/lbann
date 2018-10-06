@@ -81,8 +81,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
   if (proto_cb.has_save_images()) {
     const auto& params = proto_cb.save_images();
     return new lbann_callback_save_images(parse_list<>(params.layers()),
-                                          params.extension(),
-                                          params.prefix());
+                                          params.image_format(),
+                                          params.image_prefix());
   }
 
   //////////////////////////////////////////////////////////////////

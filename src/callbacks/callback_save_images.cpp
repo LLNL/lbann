@@ -34,7 +34,7 @@ namespace lbann {
 namespace {
 
 void save_image(std::string prefix,
-                std::string extension,
+                std::string format,
                 const std::vector<Layer*>& layers,
                 const std::vector<std::string>& layer_names) {
 #ifdef LBANN_HAS_OPENCV
@@ -116,7 +116,7 @@ void save_image(std::string prefix,
       }
 
       // Write image to file
-      cv::imwrite(prefix + "-" + name + "." + extension, img);
+      cv::imwrite(prefix + "-" + name + "." + format, img);
         
     }
       
@@ -127,34 +127,34 @@ void save_image(std::string prefix,
 } // namespace
 
 lbann_callback_save_images::lbann_callback_save_images(std::vector<std::string> layer_names,
-                                                       std::string extension,
-                                                       std::string prefix)
+                                                       std::string image_format,
+                                                       std::string image_prefix)
   : lbann_callback(),
     m_layer_names(std::move(layer_names)),
-    m_extension(extension.empty() ? "jpg" : extension),
-    m_prefix(std::move(prefix)) {
+    m_image_format(image_format.empty() ? "jpg" : image_format),
+    m_image_prefix(std::move(image_prefix)) {
 #ifndef LBANN_HAS_OPENCV
   LBANN_ERROR("OpenCV not detected");
 #endif // LBANN_HAS_OPENCV
 }
 
 void lbann_callback_save_images::on_epoch_end(model *m) {
-  save_image(m_prefix + "epoch" + std::to_string(m->get_cur_epoch()),
-             m_extension,
+  save_image(m_image_prefix + "epoch" + std::to_string(m->get_cur_epoch()),
+             m_image_format,
              m->get_layers(),
              m_layer_names);
 }
 
 void lbann_callback_save_images::on_phase_end(model *m) {
-  save_image(m_prefix + "phase" + std::to_string(m->get_current_phase()),
-             m_extension,
+  save_image(m_image_prefix + "phase" + std::to_string(m->get_current_phase()),
+             m_image_format,
              m->get_layers(),
              m_layer_names);
 }
 
 void lbann_callback_save_images::on_test_end(model *m) {
-  save_image(m_prefix + "test",
-             m_extension,
+  save_image(m_image_prefix + "test",
+             m_image_format,
              m->get_layers(),
              m_layer_names);
 }

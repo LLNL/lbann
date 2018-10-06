@@ -35,19 +35,19 @@ namespace lbann {
 
 /** Save layer outputs as image files.
  *  Image files are in the form
- *  "<prefix><tag>-<layer name>.<extension>".
+ *  "<prefix><tag>-<layer name>.<format>".
  */
 class lbann_callback_save_images : public lbann_callback {
 public:
 
   /** Constructor.
-   *  @param prefix      Prefix for saved image files.
-   *  @param layer_names List of layer names to save as images.
-   *  @param extension   Image file extension (e.g. jpg, png, pgm).
+   *  @param layer_names  List of layer names to save as images.
+   *  @param image_format Image file format (e.g. jpg, png, pgm).
+   *  @param image_prefix Prefix for image file names.
    */
   lbann_callback_save_images(std::vector<std::string> layer_names,
-                             std::string extension = "",
-                             std::string prefix = "jpg");
+                             std::string image_format = "jpg",
+                             std::string image_prefix = "");
   lbann_callback_save_images(const lbann_callback_save_images&) = default;
   lbann_callback_save_images& operator=(
     const lbann_callback_save_images&) = default;
@@ -63,12 +63,12 @@ private:
 
   /** List of layer names to save as images. */
   std::vector<std::string> m_layer_names;
-  /** Image file extension.
+  /** Image file format.
    *  Valid options: jpg, png, pgm.
    */
-  std::string m_extension;
+  std::string m_image_format;
   /** Prefix for saved image files. */
-  std::string m_prefix;
+  std::string m_image_prefix;
 
 };
 
