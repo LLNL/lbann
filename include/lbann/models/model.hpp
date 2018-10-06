@@ -72,6 +72,15 @@ class model {
   /** Return the model's name. */
   virtual std::string name() const = 0;
 
+  /** Return the model's id; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
+  std::string get_model_id() { return m_model_id; }
+
+  /** Set the model's arbitrary identifying string */
+  void set_model_id(std::string s) { m_model_id = s; }
+
   /** Set up the model. */
   virtual void setup();
 
@@ -419,6 +428,7 @@ class model {
    */
   void add_split_layers();
 
+  std::string m_model_id;
 };
 
 }  // namespace lbann
