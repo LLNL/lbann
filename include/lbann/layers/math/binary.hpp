@@ -90,12 +90,13 @@ protected:
   = binary_math_layer<Layout, Device, layer_name##_name_struct>;
 
 // Arithmetic operations
-LBANN_DEFINE_BINARY_MATH_LAYER(add_layer,       "add");
-LBANN_DEFINE_BINARY_MATH_LAYER(subtract_layer,  "subtract");
-LBANN_DEFINE_BINARY_MATH_LAYER(multiply_layer,  "multiply");
-LBANN_DEFINE_BINARY_MATH_LAYER(divide_layer,    "divide");
-LBANN_DEFINE_BINARY_MATH_LAYER(mod_layer,       "modulo");
-LBANN_DEFINE_BINARY_MATH_LAYER(pow_layer,       "power");
+LBANN_DEFINE_BINARY_MATH_LAYER(add_layer,         "add");
+LBANN_DEFINE_BINARY_MATH_LAYER(subtract_layer,    "subtract");
+LBANN_DEFINE_BINARY_MATH_LAYER(multiply_layer,    "multiply");
+LBANN_DEFINE_BINARY_MATH_LAYER(divide_layer,      "divide");
+LBANN_DEFINE_BINARY_MATH_LAYER(mod_layer,         "modulo");
+LBANN_DEFINE_BINARY_MATH_LAYER(pow_layer,         "power");
+LBANN_DEFINE_BINARY_MATH_LAYER(safe_divide_layer, "safe divide");
 
 // Comparison operations
 LBANN_DEFINE_BINARY_MATH_LAYER(max_layer,           "maximum");
