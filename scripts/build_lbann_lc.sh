@@ -14,7 +14,7 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
 	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
 	# Version 6.1.0 does not work with CUDA 9.1, either.
 	COMPILER=gnu
-	module load gcc/6.1.0
+	module load gcc/7.3.0
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -109,7 +109,6 @@ Usage: ${SCRIPT} [options]
 Options:
   ${C}--help${N}                  Display this help message and exit.
   ${C}--compiler${N} <val>        Specify compiler ('gnu' or 'intel' or 'clang').
-  ${C}--ninja${N}                 Use njnia instead of make
   ${C}--mpi${N} <val>             Specify MPI library ('mvapich2' or 'openmpi' or 'spectrum').
   ${C}--datatype${N} <val>        Datatype size in bytes (4 for float and 8 for double).
   ${C}--verbose${N}               Verbose output.
@@ -177,9 +176,6 @@ while :; do
                 exit 1
             fi
             ;;
-        --ninja)
-            BUILD_TOOL="ninja"
-            ;;
         --mpi)
             # Choose mpi library
             if [ -n "${2}" ]; then
@@ -202,6 +198,7 @@ while :; do
             ;;
         --ninja)
             USE_NINJA=1
+            BUILD_TOOL="ninja"
             ;;
         --ninja-processes)
             if [ -n "${2}" ]; then
@@ -509,8 +506,13 @@ if [ "${MPI}" == "spectrum" ]; then
 fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
-if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+if [ "${CLUSTER}" == "surface" ]; then
   MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
+  export MV2_USE_CUDA=1
+fi
+
+if [ "${CLUSTER}" == "pascal" ]; then
+  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gnu-7.3.0-cuda-9.2/
   export MV2_USE_CUDA=1
 fi
 
@@ -604,6 +606,10 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
 			. /usr/share/[mM]odules/init/bash
 			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 			;;
+		pascal)
+      module use /opt/modules/modulefiles
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+			;;
 		ray|sierra)
 			module del cuda
 			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
@@ -671,7 +677,7 @@ echo $COMPILER_VERSION
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
       elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
           export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
-      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
+      elif [ "${CLUSTER}" = "catalyst" -o "${CLUSTER}" = "pascal" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-7.3.0
       else
           # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
