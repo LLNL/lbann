@@ -30,7 +30,7 @@
 #include "lbann_config.hpp"
 #include <omp.h>
 
-#define OMP_PARALLEL _Pragma("omp parallel for")
+#define OMP_PARALLEL _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
 #define OMP_CRITICAL _Pragma("omp critical")
 
 #if defined(LBANN_NO_OMP_FOR_DATA_READERS)
