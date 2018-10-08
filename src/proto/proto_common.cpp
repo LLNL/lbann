@@ -73,7 +73,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
-    if ((name == "mnist") || (name == "cifar10")) {
+    if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
     } else if ((name == "imagenet") || (name == "imagenet_patches") ||
@@ -240,6 +240,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
+    } else if (name == "moving_mnist") {
+      reader = new moving_mnist_reader(7, 40, 40, 2);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -363,6 +365,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
+      } else if (name == "moving_mnist") {
+        reader_validation = new moving_mnist_reader(7, 40, 40, 2);
       }
 
       reader_validation->set_role("validate");
@@ -566,7 +570,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
   }
-
   if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
