@@ -44,8 +44,8 @@ model {
   callback { timer {} }
  # callback {
  #   save_images {
- #     image_dir: "vae_fcn_images_"
- #     extension: "jpg"
+ #     image_prefix: "vae_fcn_images_"
+ #     image_format: "jpg"
  #   }
  # }
 

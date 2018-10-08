@@ -48,9 +48,9 @@ model {
   }
   callback {
     save_images {
-      image_dir: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_images_32mb/"
-      layer_names: "fc4_tanh sum"
-      extension: "png"
+      image_prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_images_32mb/"
+      layers: "fc4_tanh sum"
+      image_format: "png"
     }
   }
 
