@@ -81,9 +81,9 @@ void save_image(std::string prefix,
 
     // Export tensor as image
     if (circ_data.CrossRank() == circ_data.Root()) {
-      auto& data = circ_data.LockedMatrix();
+      const auto& data = circ_data.LockedMatrix();
 
-      // Data will be scaled to be in [0,255]
+      // Data will be scaled to be in [0,256]
       DataType lower = data(0, 0);
       DataType upper = data(0, 0);
       for (El::Int i = 1; i < data.Height(); ++i) {
@@ -91,7 +91,7 @@ void save_image(std::string prefix,
         upper = std::max(upper, data(i, 0));
       }
       const auto& scale = ((upper > lower) ?
-                           255 / (upper - lower) :
+                           256 / (upper - lower) :
                            DataType(1));
 
       // Copy data into OpenCV matrix
@@ -103,13 +103,13 @@ void save_image(std::string prefix,
         for (El::Int col = 0; col < width; ++col) {
           const auto& offset = row * width + col;
           if (num_channels == 1) {
-            img.at<unsigned char>(row, col)
-              = static_cast<unsigned char>(scale * (data(offset, 0) - lower));
+            img.at<uchar>(row, col)
+              = cv::saturate_cast<uchar>(scale * (data(offset, 0) - lower));
           } else if (num_channels == 3) {
             cv::Vec3b pixel;
-            pixel[0] = static_cast<unsigned char>(scale * (data(offset, 0) - lower));
-            pixel[1] = static_cast<unsigned char>(scale * (data(height*width + offset, 0) - lower));
-            pixel[2] = static_cast<unsigned char>(scale * (data(2*height*width + offset, 0) - lower));
+            pixel[0] = cv::saturate_cast<uchar>(scale * (data(offset, 0) - lower));
+            pixel[1] = cv::saturate_cast<uchar>(scale * (data(height*width + offset, 0) - lower));
+            pixel[2] = cv::saturate_cast<uchar>(scale * (data(2*height*width + offset, 0) - lower));
             img.at<cv::Vec3b>(row, col) = pixel;
           }
         }
