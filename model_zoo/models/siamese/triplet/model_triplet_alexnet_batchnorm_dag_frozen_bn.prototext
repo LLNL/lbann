@@ -347,6 +347,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -355,6 +356,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -363,6 +365,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -371,6 +374,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -379,6 +383,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -387,6 +392,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -395,6 +401,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -403,6 +410,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -411,6 +419,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -419,6 +428,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -427,6 +437,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -435,6 +446,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -443,6 +455,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -451,6 +464,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -459,6 +473,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -467,6 +482,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -475,6 +491,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -483,6 +500,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -491,6 +509,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -499,6 +518,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -507,6 +527,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
 
@@ -515,6 +536,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -523,6 +545,7 @@ model {
     constant_initializer {
       value: 0.0
     }
+    optimizer {}
   }
 
 
@@ -531,6 +554,7 @@ model {
     constant_initializer {
       value: 1.0
     }
+    optimizer {}
   }
 
   ###################################################
