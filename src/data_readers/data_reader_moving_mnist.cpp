@@ -35,7 +35,7 @@ moving_mnist_reader::moving_mnist_reader(El::Int num_frames,
                                          El::Int image_height,
                                          El::Int image_width,
                                          El::Int num_objects)
-  : generic_data_reader(false),
+  : generic_data_reader(true),
     m_num_frames(num_frames),
     m_image_height(image_height),
     m_image_width(image_width),
