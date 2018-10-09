@@ -56,7 +56,11 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   El::Initialize(argc, argv);
   // Create a new comm object.
   // Initial creation with every process in one model.
-  auto* comm = new lbann_comm(0);
+  MPI_Comm lbann_mpi_comm = MPI_COMM_WORLD;
+#ifdef LBANN_HAS_DISTCONV
+  lbann_mpi_comm = dc::get_mpi_comm_for_scattering_samples(MPI_COMM_WORLD);
+#endif
+  auto* comm = new lbann_comm(0, lbann_mpi_comm);
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
@@ -87,7 +91,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   init_data_seq_random(seed);
 
 #ifdef LBANN_HAS_DISTCONV
-  dc::initialize(comm->get_model_comm().comm);
+  dc::initialize(MPI_COMM_WORLD);
 #endif
 
   return comm;

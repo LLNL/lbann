@@ -326,6 +326,9 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   if (m_use_global_stats) {
     m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
     m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+  } else if (dc::use_partial_aggregation_in_bn()) {
+    m_comm->allreduce(*m_mean, m_spatial_comm, El::mpi::SUM);
+    m_comm->allreduce(*m_var, m_spatial_comm, El::mpi::SUM);
   }
 
   m_bn->forward_stage2(m_prev_activations_t,
@@ -349,7 +352,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   // Check execution mode
   const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
-  //assert_always(is_training && m_use_global_stats);
   assert_always(is_training);
 
   assert0(dc::tensor::View(
@@ -366,12 +368,13 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   // Accumulate gradients
   if (is_training) {
     if (m_use_global_stats) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_mean_gradient->RedundantComm(),
+      m_comm->allreduce(*m_mean_gradient, m_mean_gradient->RedundantComm(),
                         El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_var_gradient->RedundantComm(),
+      m_comm->allreduce(*m_var_gradient, m_var_gradient->RedundantComm(),
                         El::mpi::SUM);
+    } else if (dc::use_partial_aggregation_in_bn()) {
+      m_comm->allreduce(*m_mean_gradient, m_spatial_comm, El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient, m_spatial_comm, El::mpi::SUM);
     }
   } else {
     Zero(*m_mean_gradient);

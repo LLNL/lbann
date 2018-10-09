@@ -422,7 +422,7 @@ protected:
 
     Array4 kernel_shape = {this->m_kernel_dims[3], this->m_kernel_dims[2],
                            this->m_kernel_dims[1], this->m_kernel_dims[0]};
-    const LocaleMPI loc(this->m_comm->get_model_comm().comm, false);
+    const LocaleMPI loc(dc::get_mpi_comm(), false);
     m_kernel_t = TensorDev(kernel_shape, loc, shared_dist);
     assert0(tensor::View(
         m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
