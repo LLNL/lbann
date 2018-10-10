@@ -68,10 +68,14 @@ class Layer {
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
+#ifdef LBANN_HAS_GPU
   virtual ~Layer() {
     // Clean up the event (only needs to be done on LBANN exit).
     cudaEventDestroy(m_async_HtoD_copy_event);
   }
+#else
+   virtual ~Layer() = default;
+#endif // LBANN_HAS_GPU
 
   /** Copy function.
    *  This function dynamically allocates memory for a layer instance
