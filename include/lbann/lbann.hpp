@@ -59,9 +59,10 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/entrywise.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
-#include "lbann/layers/loss/l2_norm2.hpp"
 
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
