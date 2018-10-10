@@ -506,9 +506,11 @@ class Layer {
    */
   std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
+#ifdef LBANN_HAS_GPU
   // API reference: https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html
   cudaEvent_t m_async_HtoD_copy_event;
   bool m_issue_async_HtoD_copy_event;
+#endif // LBANN_HAS_GPU
 };
 
 } // namespace lbann
