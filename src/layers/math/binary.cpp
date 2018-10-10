@@ -356,8 +356,8 @@ struct greater_equal_op {
 struct and_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
-    const bool b1 = x1 != zero && !std::isnan(x1);
-    const bool b2 = x2 != zero && !std::isnan(x2);
+    const auto& b1 = x1 >= DataType(0.5);
+    const auto& b2 = x2 >= DataType(0.5);
     return (b1 && b2) ? one : zero;
   }
   inline void operator()(const DataType& x1,
@@ -374,8 +374,8 @@ struct and_op {
 struct or_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
-    const bool b1 = x1 != zero && !std::isnan(x1);
-    const bool b2 = x2 != zero && !std::isnan(x2);
+    const auto& b1 = x1 >= DataType(0.5);
+    const auto& b2 = x2 >= DataType(0.5);
     return (b1 || b2) ? one : zero;
   }
   inline void operator()(const DataType& x1,
@@ -392,8 +392,8 @@ struct or_op {
 struct xor_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
-    const bool b1 = x1 != zero && !std::isnan(x1);
-    const bool b2 = x2 != zero && !std::isnan(x2);
+    const auto& b1 = x1 >= DataType(0.5);
+    const auto& b2 = x2 >= DataType(0.5);
     return (b1 || b2) && !(b1 && b2) ? one : zero;
   }
   inline void operator()(const DataType& x1,
