@@ -1370,20 +1370,33 @@ std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_
 
   if (m_split_channels) {
     images.reserve(img_ptrs.size()*m_image_num_channels);
-    size_t i = 0u;
-    for (const auto& img: img_ptrs) {
+    for (size_t i = 0u; i < img_ptrs.size(); ++i) {
+      const auto& img = img_ptrs[i];
+      cv::Mat ch[m_image_num_channels];
+      cv::split(cast_to_cvMat(img, m_image_height, m_image_num_channels), ch);
+      for(int c = 0; c < m_image_num_channels; ++c) {
+    #if 1 // with normalization
+        image_normalization(ch[c], i, static_cast<size_t>(c));
+    #endif
+        images.emplace_back(ch[c].clone());
+      }
+    }
+  } else {
+    images.reserve(img_ptrs.size());
+    for (size_t i = 0u; i < img_ptrs.size(); ++i) {
+      const auto& img = img_ptrs[i];
+    #if 1 // with normalization
       cv::Mat ch[m_image_num_channels];
       cv::split(cast_to_cvMat(img, m_image_height, m_image_num_channels), ch);
       for(int c = 0; c < m_image_num_channels; ++c) {
         image_normalization(ch[c], i, static_cast<size_t>(c));
-        images.emplace_back(ch[c].clone());
       }
-      i++;
-    }
-  } else { // currently no hardcoded normalization for this case
-    images.reserve(img_ptrs.size());
-    for (const auto& img: img_ptrs) {
+      cv::Mat img_normalized;
+      cv::merge(ch, m_image_num_channels, img_normalized);
+      images.emplace_back(img_normalized);
+    #else
       images.emplace_back(cast_to_cvMat(img, m_image_height, m_image_num_channels).clone());
+    #endif
     }
   }
   return images;
@@ -1403,8 +1416,11 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
       for (int c=0; c < m_image_num_channels; ++c) {
         const auto& tr = m_image_normalization_params.at(j*m_image_num_channels + c);
         for (const ch_t* ptr = img.second + c; ptr < ptr_end; ptr += m_image_num_channels) {
-          //images[i++] = *ptr;
-          images[i++] = static_cast<ch_t>(*ptr * tr.first + tr.second);
+        #if 1 // with normalization
+          images[i++] = cv::saturate_cast<ch_t>(*ptr * tr.first + tr.second);
+        #else
+          images[i++] = *ptr;
+        #endif
         }
       }
       j ++;
@@ -1412,9 +1428,15 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
   } else {
     images.reserve(get_linearized_size(JAG_Image));
     for (const auto& img: img_ptrs) {
+    #if 1 // with normalization
+      // TODO: normalization needed
+      _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : normalization not implemented yet");
+      (void) img;
+    #else
       const size_t num_vals = img.first;
       const ch_t* ptr = img.second;
       images.insert(images.end(), ptr, ptr + num_vals);
+    #endif
     }
   }
 
