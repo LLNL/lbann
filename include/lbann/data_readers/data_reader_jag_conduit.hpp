@@ -376,8 +376,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Check if a key exist for sample i
   bool has_conduit_path(const size_t i, const std::string& key) const;
 
-  /// Obtain the pointers to read-only image data
-  std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
+  /// Obtain image data
+  std::vector< std::vector<ch_t> > get_image_data(const size_t i) const;
 
  protected:
   /// independent variable type
