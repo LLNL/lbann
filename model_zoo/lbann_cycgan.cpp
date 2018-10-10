@@ -67,6 +67,8 @@ int main(int argc, char *argv[]) {
 
     model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
                                                 comm, true); //D1 solver
+    //hack, overide model name to make reporting easy, what can break?"
+    model_1->set_name("dis_model");
     model *model_2 = nullptr; //G1 solver
     model *model_3 = nullptr; //G2 solver
 
@@ -77,21 +79,25 @@ int main(int argc, char *argv[]) {
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
                                            comm, false);
+      model_2->set_name("fw_model");
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
                                            comm, false);
+      model_3->set_name("inv_model");
     }
      
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
                                            comm, false);
+      ae_model->set_name("ae_model");
     }
 
     if (pbs.size() > 4) {
       ae_cycgan_model = build_model_from_prototext(argc, argv, *(pbs[4]),
                                            comm, false);
+      ae_cycgan_model->set_name("ae_cycgan_model");
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

@@ -1,50 +1,49 @@
 model {
   name: "directed_acyclic_graph_model"
-  random_init_models_differently: true
+  procs_per_model:0 
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
     }
     layer_term {
       scale_factor: 1.0
-      layer: "disc1_real_eval"
+      layer: "disc1_real_bce"
     }
     layer_term {
       scale_factor: 1.0
-      layer: "disc1_fake_eval"
+      layer: "disc1_fake_bce"
     }
     layer_term {
       scale_factor: 0.05
-      layer: "g_adv1_eval"
+      layer: "g_adv1_bce"
+    }
+    layer_term {
+      scale_factor: 0.025
+      layer: "l_l2_y"
+    }
+    layer_term {
+      scale_factor: 1.0
+      layer: "disc1_inv_real_bce"
+    }
+    layer_term {
+      scale_factor: 1.0
+      layer: "disc1_inv_fake_bce"
     }
     layer_term {
       scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      layer: "g_inv_adv1_bce"
     }
-  }
- # metric {
- #   layer_metric {
-      #unit: "%"
- #     layer: "disc1_real_eval"
- #   }
- # }
- # metric {
- #   layer_metric {
-      #unit: "%"
- #     layer: "disc1_fake_eval"
- #   }
- # }
- # metric {
- #   layer_metric {
- #     layer: "g_adv1_eval"
- #   }
- # }
-  metric {
-    layer_metric {
-      layer: "l_l2_y_eval"
+    layer_term {
+      scale_factor: 0.025
+      layer: "l_l2_x"
     }
   }
   num_epochs: 100
+  metric {
+    layer_metric {
+      layer: "l_l2_y"
+    }
+  }
   data_layout: "data_parallel"
   layer {
     input {
@@ -52,14 +51,14 @@ model {
       data_set_per_model: true
       target_mode: "N/A"
     }
-    name: "data1"
+    name: "data"
     data_layout: "data_parallel"
+    parents: " "
   }
-   
   layer {
     name: "slice_data"
     data_layout: "data_parallel"
-    parents: "data1"
+    parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
       slice_points: "0 2500 2511"
@@ -156,7 +155,7 @@ model {
     name: "d1fc1_real"
     data_layout: "data_parallel"
     weights: "d1fc1linearity d1fc1bias"
-    parents: "data1"
+    parents: "data"
   }
   layer {
     relu {
@@ -261,13 +260,6 @@ model {
     parents: "d1fc3_real"
   }
   layer {
-    name: "disc1_real_eval"
-    data_layout: "data_parallel"
-    parents: "disc1_real_bce"
-    evaluation {
-    }
-  }
-  layer {
     bce_with_logits {
       true_label: 0
     }
@@ -275,13 +267,6 @@ model {
     data_layout: "data_parallel"
     device_allocation: "cpu"
     parents: "d1fc3_fake"
-  }
-  layer {
-    name: "disc1_fake_eval"
-    data_layout: "data_parallel"
-    parents: "disc1_fake_bce"
-    evaluation {
-    }
   }
   layer {
     identity {
@@ -344,36 +329,283 @@ model {
     parents: "d2fc3"
   }
   layer {
-    name: "g_adv1_eval"
-    data_layout: "data_parallel"
-    parents: "g_adv1_bce"
-    evaluation {
-    }
-  }
-  #L2loss
-  layer {
     name: "gsample_minus_y"
     data_layout: "data_parallel"
     parents: "gen1fc4 image_data_dummy"
-   weighted_sum {
+    weighted_sum {
       scaling_factors: "1 -1"
     }
   }
   layer {
-    l2_norm2 {
-    }
     name: "l_l2_y"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
+    l2_norm2 {
+    }
     parents: "gsample_minus_y"
   }
-    
   layer {
-    name: "l_l2_y_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_y"
-    evaluation {
+    fully_connected {
+      num_neurons: 16
+      has_bias: true
     }
+    name: "gen2fc1"
+    data_layout: "data_parallel"
+    #weights: "gen2fc1linearity"
+    parents: "image_data_dummy"
+  }
+  layer {
+    relu {
+    }
+    name: "gen2relu1"
+    data_layout: "data_parallel"
+    parents: "gen2fc1"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "gen2fc2"
+    data_layout: "data_parallel"
+    #weights: "gen2fc2linearity"
+    parents: "gen2relu1"
+  }
+  layer {
+    relu {
+    }
+    name: "gen2relu2"
+    data_layout: "data_parallel"
+    parents: "gen2fc2"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 512
+      has_bias: true
+    }
+    name: "gen2fc3"
+    data_layout: "data_parallel"
+    #weights: "gen2fc3linearity"
+    parents: "gen2relu2"
+  }
+  layer {
+    relu {
+    }
+    name: "gen2relu3"
+    data_layout: "data_parallel"
+    parents: "gen2fc3"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 11
+      has_bias: true
+    }
+    name: "gen2fc4"
+    data_layout: "data_parallel"
+    #weights: "gen2fc4linearity"
+    parents: "gen2relu3"
+  }
+  layer {
+    name: "concat_param_n_img"
+    data_layout: "data_parallel"
+    parents: "param_data_id image_data_dummy"
+    concatenation {
+    }
+  }
+  layer {
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "d1_invfc1_real"
+    data_layout: "data_parallel"
+    weights: "d1_invfc1linearity d1_invfc1bias"
+    parents: "concat_param_n_img"
+  }
+  layer {
+    relu {
+    }
+    name: "d1_invrelu1_real"
+    data_layout: "data_parallel"
+    parents: "d1_invfc1_real"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 16
+      has_bias: true
+    }
+    name: "d1_invfc2_real"
+    data_layout: "data_parallel"
+    weights: "d1_invfc2linearity d1_invfc2bias"
+    parents: "d1_invrelu1_real"
+  }
+  layer {
+    relu {
+    }
+    name: "d1_invrelu2_real"
+    data_layout: "data_parallel"
+    parents: "d1_invfc2_real"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 1
+      has_bias: true
+    }
+    name: "d1_invfc3_real"
+    data_layout: "data_parallel"
+    weights: "d1_invfc3linearity d1_invfc3bias"
+    parents: "d1_invrelu2_real"
+  }
+  layer {
+    name: "concat_gsample2_n_img"
+    data_layout: "data_parallel"
+    parents: "gen2fc4 image_data_dummy"
+    children: "d1_inv_stop_gradient d2_inv_dummy"
+    concatenation {
+    }
+  }
+  layer {
+    name: "d1_inv_stop_gradient"
+    data_layout: "data_parallel"
+    parents: "concat_gsample2_n_img"
+    stop_gradient {
+    }
+  }
+  layer {
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "d1_invfc1_fake"
+    data_layout: "data_parallel"
+    weights: "d1_invfc1linearity d1_invfc1bias"
+    parents: "d1_inv_stop_gradient"
+  }
+  layer {
+    relu {
+    }
+    name: "d1_invrelu1_fake"
+    data_layout: "data_parallel"
+    parents: "d1_invfc1_fake"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 16
+      has_bias: true
+    }
+    name: "d1_invfc2_fake"
+    data_layout: "data_parallel"
+    weights: "d1_invfc2linearity d1_invfc2bias"
+    parents: "d1_invrelu1_fake"
+  }
+  layer {
+    relu {
+    }
+    name: "d1_invrelu2_fake"
+    data_layout: "data_parallel"
+    parents: "d1_invfc2_fake"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 1
+      has_bias: true
+    }
+    name: "d1_invfc3_fake"
+    data_layout: "data_parallel"
+    weights: "d1_invfc3linearity d1_invfc3bias"
+    parents: "d1_invrelu2_fake"
+  }
+  layer {
+    bce_with_logits {
+      true_label: 1
+    }
+    name: "disc1_inv_real_bce"
+    data_layout: "data_parallel"
+    device_allocation: "cpu"
+    parents: "d1_invfc3_real"
+  }
+  layer {
+    bce_with_logits {
+      true_label: 0
+    }
+    name: "disc1_inv_fake_bce"
+    data_layout: "data_parallel"
+    device_allocation: "cpu"
+    parents: "d1_invfc3_fake"
+  }
+  layer {
+    identity {
+    }
+    name: "d2_inv_dummy"
+    data_layout: "data_parallel"
+    parents: "concat_gsample2_n_img"
+  }
+  layer {
+    freeze: true
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "d2_invfc1"
+    data_layout: "data_parallel"
+    parents: "d2_inv_dummy"
+  }
+  layer {
+    relu {
+    }
+    name: "d2_invrelu1"
+    data_layout: "data_parallel"
+    parents: "d2_invfc1"
+  }
+  layer {
+    freeze: true
+    fully_connected {
+      num_neurons: 16
+      has_bias: true
+    }
+    name: "d2_invfc2"
+    data_layout: "data_parallel"
+    parents: "d2_invrelu1"
+  }
+  layer {
+    relu {
+    }
+    name: "d2_invrelu2"
+    data_layout: "data_parallel"
+    parents: "d2_invfc2"
+  }
+  layer {
+    freeze: true
+    fully_connected {
+      num_neurons: 1
+      has_bias: true
+    }
+    name: "d2_invfc3"
+    data_layout: "data_parallel"
+    parents: "d2_invrelu2"
+  }
+  layer {
+    bce_with_logits {
+      true_label: 1
+    }
+    name: "g_inv_adv1_bce"
+    data_layout: "data_parallel"
+    device_allocation: "cpu"
+    parents: "d2_invfc3"
+  }
+  layer {
+    name: "gsample2_minus_x"
+    data_layout: "data_parallel"
+    parents: "gen2fc4 param_data_id"
+    weighted_sum {
+      scaling_factors: "1 -1"
+    }
+  }
+  layer {
+    name: "l_l2_x"
+    data_layout: "data_parallel"
+    l2_norm2 {
+    }
+    parents: "gsample2_minus_x"
   }
   weights {
     name: "gen1fc1linearity"
@@ -419,10 +651,54 @@ model {
   weights {
     name: "d1fc3bias"
   }
+  weights {
+    name: "gen2fc1linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc2linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc3linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc4linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "d1_invfc1linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "d1_invfc1bias"
+  }
+  weights {
+    name: "d1_invfc2linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "d1_invfc2bias"
+  }
+  weights {
+    name: "d1_invfc3linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "d1_invfc3bias"
+  }
   mini_batch_size: 64
   callback {
     print {
-      interval: 1
+      interval: 10
     }
   }
   callback {
@@ -431,28 +707,10 @@ model {
   }
   callback {
     replace_weights {
-      source_layers: "d1fc1_real d1fc2_real d1fc3_real"
-      destination_layers: "d2fc1 d2fc2 d2fc3"
+      source_layers: "d1fc1_real d1fc2_real d1fc3_real d1_invfc1_real d1_invfc2_real d1_invfc3_real"
+      destination_layers: "d2fc1 d2fc2 d2fc3 d2_invfc1 d2_invfc2 d2_invfc3"
       batch_interval: 1
     }
   }
-  #callback {
-  #  dump_activations {
-  #    basename: "/dir/to/save/imgs"
-  #    interval: 10
-  #    layer_names: "gen1fc4"
-  #  }
-  #}
-  callback {
-    ltfb {
-      round_size: 100 
-      increasing_metric_mode: false
-      eval_metrics: "l_l2_y_eval"
-      #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias" 
-      weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights" 
-      }
- 
-  }
   block_size: 256
-  procs_per_model: 1
 }

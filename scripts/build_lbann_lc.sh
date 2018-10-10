@@ -4,6 +4,7 @@
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
+CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1)
 
 ################################################################
 # Default options
@@ -319,7 +320,7 @@ else
     CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
-if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
+if [[ $CORAL ]]; then
 	# the latest version, 3.12.1, has several issues
     module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
@@ -387,7 +388,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [ "${CLUSTER}" == "ray" -o "{CLUSTER}" == "sierra" ]; then
+    if [[ $CORAL ]]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -434,7 +435,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
-        elif [ "${CLUSTER}" == "sierra" ]; then
+        elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
 			# no power9 option shown in the manual
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
@@ -574,8 +575,8 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
-	 "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "sierra" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o \
+	 "${CLUSTER}" == "pascal" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
@@ -583,24 +584,19 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
     ELEMENTAL_USE_CUBLAS=OFF
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
-    case $CLUSTER in
-		ray|sierra)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
-			;;
-		*)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
-			;;
-	esac
+	if [[ $CORAL ]]; then
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
+		module del cuda
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
+	else
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
+	fi
 
     # Hack for surface
 	case $CLUSTER in
 		surface)
 			. /usr/share/[mM]odules/init/bash
 			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-			;;
-		ray|sierra)
-			module del cuda
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 			;;
 	esac
 fi
@@ -651,7 +647,7 @@ fi
 ################################################################
 # Library options
 ################################################################
-if [ "${CLUSTER}" == "sierra" ]; then
+if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
 	OPENBLAS_ARCH="TARGET=POWER8"
 else
 	OPENBLAS_ARCH=
@@ -821,6 +817,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
+-D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
