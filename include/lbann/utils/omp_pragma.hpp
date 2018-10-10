@@ -24,47 +24,24 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef POWER_HPP_INCLUDED
-#define POWER_HPP_INCLUDED
+#ifndef LBANN_OMP_PRAGMA_HPP
+#define LBANN_OMP_PRAGMA_HPP
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann_config.hpp"
+#include <omp.h>
 
-namespace lbann {
+#define OMP_PARALLEL _Pragma("omp parallel for")
+#define OMP_CRITICAL _Pragma("omp critical")
 
-/** Power function. */
-template <data_layout T_layout, El::Device Dev>
-class power_layer : public entrywise_activation_layer {
- public:
-  power_layer(lbann_comm *comm, EvalType exponent)
-    : entrywise_activation_layer(comm), m_exponent(exponent) {}
-  power_layer* copy() const override { return new power_layer(*this); }
-  std::string get_type() const override { return "power"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
+#if defined(LBANN_NO_OMP_FOR_DATA_READERS)
+  #pragma message "Disable OpenMP parallelism for data fetch loops"
+  #define LBANN_DATA_FETCH_OMP_FOR for
+  #define LBANN_OMP_THREAD_NUM 0
+  #define LBANN_DATA_FETCH_OMP_CRITICAL
+#else
+  #define LBANN_DATA_FETCH_OMP_FOR OMP_PARALLEL for
+  #define LBANN_OMP_THREAD_NUM omp_get_thread_num()
+  #define LBANN_DATA_FETCH_OMP_CRITICAL OMP_CRITICAL
+#endif
 
- protected:
-  DataType activation(DataType x) const override {
-    if (m_exponent == EvalType(2)) {
-      return x * x;
-    } else {
-      return std::pow(x, m_exponent);
-    }
-  }
-  DataType activation_derivative(DataType x) const override {
-    if (m_exponent == EvalType(2)) {
-      return 2 * x;
-    } else {
-      return m_exponent * std::pow(x, m_exponent - EvalType(1));
-    }
-  }
-
- private:
-
-  /** Exponent for power function. */
-  const EvalType m_exponent;
-
-};
-
-} // namespace lbann
-
-#endif // POWER_HPP_INCLUDED
+#endif // LBANN_OMP_PRAGMA_HPP

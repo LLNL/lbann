@@ -30,44 +30,36 @@
 #include "lbann/utils/cublas.hpp"
 #endif // LBANN_HAS_GPU
 
-namespace {
-
-  /** Compute the entry-wise sum of squares of a local matrix. */
-  EvalType sum_of_squares(const Mat& mat) {
-    const El::Int height = mat.Height();
-    const El::Int width = mat.Width();
-    const El::Int ldim = mat.LDim();
-    const auto& __restrict__ buf = mat.LockedBuffer();
-    EvalType sqsum = EvalType(0);
-    if (ldim == height) {
-      // Parallelize single loop if data is contiguous
-      const El::Int size = height*width;
-      #pragma omp parallel for reduction(+:sqsum)
-      for (El::Int i = 0; i < size; ++i) {
-        const EvalType val = buf[i];
-        sqsum += val * val;
-      }
-    } else {
-      // Parallelize double loop if data is not contiguous
-      #pragma omp parallel for reduction(+:sqsum) collapse(2)
-      for (El::Int j = 0; j < width; ++j) {
-        for (El::Int i = 0; i < height; ++i) {
-          const EvalType val = buf[i + j*ldim];
-          sqsum += val * val;
-        }
-      }
-    }
-    return sqsum;
-  }
-
-} // namespace
-
 namespace lbann {
 
+template <>
+void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CPUMat& vals,
+                                                                        CPUMat& contribution) {
+  auto& sqsum = contribution(0, 0);
+  if (vals.IsEmpty()) {
+  } else if (vals.Contiguous()) {
+    const size_t size = vals.Height() * vals.Width();
+    const auto& __restrict__ vals_buf = vals.LockedBuffer();
+#pragma omp parallel for reduction(+:sqsum)
+    for (size_t i = 0; i < size; ++i) {
+      const auto& val = vals_buf[i];
+      sqsum += val * val;
+    }
+  } else {
+    const El::Int height = vals.Height();
+    const El::Int width = vals.Width();
+#pragma omp parallel for reduction(+:sqsum) collapse(2)
+    for (El::Int col = 0; col < width; ++col) {
+      for (El::Int row = 0; row < height; ++row) {
+        const EvalType val = vals(row, col);
+        sqsum += val * val;
+      }
+    }
+  }
+}
+  
 l2_weight_regularization::l2_weight_regularization(EvalType scale_factor)
-  : objective_function_term(scale_factor),
-    m_sqsum(0),
-    m_allreduce_started(false) {}
+  : objective_function_term(scale_factor) {}
 
 void l2_weight_regularization::setup(model& m) {
   objective_function_term::setup(m);
@@ -79,104 +71,95 @@ void l2_weight_regularization::setup(model& m) {
 
   // Add all weights in model if no weights pointers are provided
   if (m_weights.empty()) {
-    for (weights* w : m.get_weights()) {
+    for (auto* w : m.get_weights()) {
       if (w->get_optimizer() != nullptr) {
         m_weights.push_back(w);
       }
     }
   }
 
+  // Construct accumulation variables for each device
+  for (auto* w : m_weights) {
+    const auto& device = w->get_values().GetLocalDevice();
+    if (m_contributions.count(device) == 0) {
+#ifdef LBANN_HAS_GPU
+      m_contributions[device].SetMemoryMode(1); // Pinned memory
+#endif // LBANN_HAS_GPU
+      m_contributions[device].Resize(1, 1);
+    }
+  }
+  
 }
 
 void l2_weight_regularization::start_evaluation() {
   if (m_scale_factor == EvalType(0)) { return; }
-  const int num_weights = m_weights.size();
+  const El::Int num_weights = m_weights.size();
 
-  // Each weights' local contribution to L2 regularization term
-  CPUMat sqsums;
-  El::Zeros(sqsums, num_weights, 1);
-
-#ifdef LBANN_HAS_GPU
-
-  // Check whether any weights are on GPU
-  bool using_gpus = false;
-  for (const auto& w : m_weights) {
-    if (w->get_values().GetLocalDevice() == El::Device::GPU) {
-      using_gpus = true;
-      break;
-    }
-  }
-
-  // Compute L2 regularization term for weights on GPU
-  // Note: cuBLAS is set to device pointer mode to pipeline GPU
-  // kernels. Local contributions are only computed on one process in
-  // each matrix's redundant communicator.
-  if (using_gpus) {
-    auto&& handle = El::GPUManager::cuBLASHandle();
-    CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
-
-    // Initialize workspace
-    GPUMat sqsums_d;
-#ifdef HYDROGEN_HAVE_CUB
-    sqsums_d.SetMemoryMode(1); // CUB memory pool
-#endif
-    El::Zeros(sqsums_d, num_weights, 1);
-
-    // Compute local contributions
-    for (int i = 0; i < num_weights; ++i) {
+  // Compute contributions from CPU weights
+  if (m_contributions.count(El::Device::CPU) > 0) {
+    auto& contribution = m_contributions[El::Device::CPU];
+    contribution(0, 0) = DataType(0);
+    for (El::Int i = 0; i < num_weights; ++i) {
       const auto& vals = m_weights[i]->get_values();
-      if (vals.Participating()
-          && vals.GetLocalDevice() == El::Device::GPU
+      if (vals.GetLocalDevice() == El::Device::CPU
+          && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
-        if (vals.LDim() == vals.LocalHeight()) {
-          cublas::dot(handle,
-                      vals.LocalHeight() * vals.LocalWidth(),
-                      vals.LockedBuffer(), 1,
-                      vals.LockedBuffer(), 1,
-                      sqsums_d.Buffer(i, 0));
-        } else {
-          /// @todo Support non-contiguous data
-          LBANN_ERROR("we currently assume weights matrices are contiguous");
-        }
+        accumulate_contribution<El::Device::CPU>(
+          static_cast<const CPUMat&>(vals.LockedMatrix()),
+          contribution);
       }
     }
-
-    CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
-    El::Copy(sqsums_d, sqsums);
+    get_comm().nb_allreduce(static_cast<AbsMat&>(contribution),
+                            get_comm().get_model_comm(),
+                            m_allreduce_req);
   }
 
-#endif // LBANN_HAS_GPU
-
-  // Compute local contributions on CPU
-  // Note: Only compute local contribution on one process in each
-  // redundant communicator.
-  m_sqsum = EvalType(0);
-  for (int i = 0; i < num_weights; ++i) {
-    const auto& vals = m_weights[i]->get_values();
-    if (vals.Participating()
-        && vals.GetLocalDevice() == El::Device::CPU
-        && vals.RedundantRank() == i % vals.RedundantSize()) {
-      sqsums(i, 0) = sum_of_squares(vals.LockedMatrix());      
+#ifdef LBANN_HAS_GPU
+  // Compute contributions from GPU weights
+  if (m_contributions.count(El::Device::GPU) > 0) {
+    auto&& stream = El::GPUManager::Stream();
+    GPUMat contribution;
+#ifdef HYDROGEN_HAVE_CUB
+    contribution.SetMemoryMode(1); // CUB GPU memory pool
+#endif // HYDROGEN_HAVE_CUB
+    El::Zeros(contribution, 1, 1);
+    for (El::Int i = 0; i < num_weights; ++i) {
+      const auto& vals = m_weights[i]->get_values();
+      if (vals.GetLocalDevice() == El::Device::GPU
+          && vals.Participating()
+          && vals.RedundantRank() == i % vals.RedundantSize()) {
+        accumulate_contribution<El::Device::GPU>(
+          static_cast<const GPUMat&>(vals.LockedMatrix()),
+          contribution);
+      }
     }
-    m_sqsum += sqsums(i, 0);
+    get_comm().allreduce(static_cast<AbsMat&>(contribution),
+                         get_comm().get_model_comm());
+    CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
+                               contribution.LockedBuffer(),
+                               sizeof(DataType),
+                               cudaMemcpyDeviceToHost,
+                               stream));
+    m_copy_event.record(stream);
   }
-
-  // Start aggregating local contributions
-  get_comm().nb_allreduce(&m_sqsum,
-                          1,
-                          get_comm().get_model_comm(),
-                          m_allreduce_req);
-  m_allreduce_started = true;
+#endif // LBANN_HAS_GPU
 
 }
 
 EvalType l2_weight_regularization::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  if (m_allreduce_started) {
+  EvalType sqsum = 0;
+  if (m_contributions.count(El::Device::CPU) > 0) {
     get_comm().wait(m_allreduce_req);
+    sqsum += m_contributions[El::Device::CPU](0, 0);
   }
-  m_allreduce_started = false;
-  return m_scale_factor * m_sqsum / 2;
+#ifdef LBANN_HAS_GPU
+  if (m_contributions.count(El::Device::GPU) > 0) {
+    m_copy_event.synchronize();
+    sqsum += m_contributions[El::Device::GPU](0, 0);
+  }
+#endif // LBANN_HAS_GPU
+  return m_scale_factor * sqsum / 2;
 }
 
 void l2_weight_regularization::compute_weight_regularization() {
@@ -188,5 +171,5 @@ void l2_weight_regularization::compute_weight_regularization() {
   }
 
 }
-
+                                   
 } // namespace lbann

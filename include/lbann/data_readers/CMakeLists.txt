@@ -21,6 +21,7 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_merge_features.hpp
   data_reader_merge_samples.hpp
   data_reader_mnist.hpp
+  data_reader_moving_mnist.hpp
   data_reader_nci.hpp
   data_reader_numpy.hpp
   data_reader_pilot2_molecular.hpp

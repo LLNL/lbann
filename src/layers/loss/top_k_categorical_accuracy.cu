@@ -31,7 +31,9 @@
 #include <thrust/system/cuda/execution_policy.h>
 #include <thrust/fill.h>
 #include <thrust/sort.h>
+#include <thrust/reduce.h>
 #include <thrust/device_ptr.h>
+#include <thrust/iterator/discard_iterator.h>
 
 namespace lbann {
 
@@ -59,6 +61,19 @@ struct entry {
 struct entry_compare : thrust::binary_function<entry,entry,bool> {
   __host__ __device__ bool operator()(const entry& a, const entry& b) const {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
+  }
+};
+
+/** Reduction operation to get largest sparse vector entry.
+ *  Ties are broken in favor of entries with smaller indices.
+ */
+struct entry_reduce : thrust::binary_function<entry,entry,entry> {
+  __host__ __device__ entry operator()(const entry& a, const entry& b) const {
+    if (a.value > b.value || (a.value == b.value && a.index < b.index)) {
+      return a;
+    } else {
+      return b;
+    }
   }
 };
 
@@ -115,7 +130,7 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < tensor_size; i += num_threads) {
     tensor[i] = (i / dim_stride) % dim;
-  }  
+  }
 }
 
 /** Get indices corresponding to one-hot matrix.
@@ -141,7 +156,7 @@ __global__ void one_hot_matrix_to_indices(El::Int local_height,
                                 + local_row * global_matrix_col_stride);
       indices[local_col] = global_row;
     }
-  }  
+  }
 }
 
 /** Compute categorical accuracy for each matrix column.
@@ -167,7 +182,7 @@ __global__ void compute_categorical_accuracy(El::Int k,
         && label_index <= max_entry) {
       loss[col * loss_stride] = DataType(1);
     }
-  }  
+  }
 }
 
 /** GPU implementation of top-k categorical accuracy layer forward prop. */
@@ -210,6 +225,9 @@ void fp_gpu(lbann_comm& comm,
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
+  auto&& event = El::GPUManager::Event();
+  El::SyncInfo<El::Device::GPU> syncInfo{stream, event};
+
   cuda::thrust::allocator<> alloc(stream);
   using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
   using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
@@ -234,7 +252,7 @@ void fp_gpu(lbann_comm& comm,
     El::mpi::AllReduce(label_indices.data().get(),
                        label_indices.size(),
                        El::mpi::MIN,
-                       col_comm);
+                       col_comm, syncInfo);
   }
 
   // Find top-k entries in each column of local prediction matrix
@@ -254,23 +272,34 @@ void fp_gpu(lbann_comm& comm,
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
-    thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                        local_entries.begin(),
-                        local_entries.end(),
-                        local_entries_cols.begin(),
-                        entry_compare());
-    thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                               local_entries_cols.begin(),
-                               local_entries_cols.end(),
-                               local_entries.begin());
-    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                 k * sizeof(entry),
-                                 local_entries.data().get(),
-                                 num_local_entries_per_col * sizeof(entry),
-                                 k * sizeof(entry),
-                                 local_width,
-                                 cudaMemcpyDeviceToDevice,
-                                 stream));
+    if (k == 1) {
+      thrust::reduce_by_key(thrust::cuda::par(alloc).on(stream),
+                            local_entries_cols.begin(),
+                            local_entries_cols.end(),
+                            local_entries.begin(),
+                            thrust::make_discard_iterator(),
+                            top_entries.begin(),
+                            thrust::equal_to<El::Int>(),
+                            entry_reduce());
+    } else {
+      thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+                          local_entries.begin(),
+                          local_entries.end(),
+                          local_entries_cols.begin(),
+                          entry_compare());
+      thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
+                                 local_entries_cols.begin(),
+                                 local_entries_cols.end(),
+                                 local_entries.begin());
+      CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
+                                   k * sizeof(entry),
+                                   local_entries.data().get(),
+                                   num_local_entries_per_col * sizeof(entry),
+                                   k * sizeof(entry),
+                                   local_width,
+                                   cudaMemcpyDeviceToDevice,
+                                   stream));
+    }
   }
 
   // Find top-k entries in each column of global prediction matrix
@@ -283,14 +312,14 @@ void fp_gpu(lbann_comm& comm,
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                   top_entries.size() * sizeof(entry),
                   col_comm_root,
-                  col_comm);
+                  col_comm, syncInfo);
     } else {
       entry_array global_top_entries(num_entries);
       index_array global_top_entries_cols(num_entries);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                   top_entries.size() * sizeof(entry),
                   reinterpret_cast<El::byte*>(global_top_entries.data().get()),
-                  col_comm);
+                  col_comm, syncInfo);
       fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
         num_entries, local_width, k, global_top_entries_cols.data().get());
       thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
@@ -310,7 +339,7 @@ void fp_gpu(lbann_comm& comm,
                                    local_width,
                                    cudaMemcpyDeviceToDevice,
                                    stream));
-    }   
+    }
   }
 
   // Compute categorical accuracy

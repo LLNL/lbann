@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann.hpp - LBANN top level header
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -40,10 +38,8 @@
 #include "lbann/models/siamese.hpp"
 
 /// Activation Layers
-#include "lbann/layers/activations/atan.hpp"
 #include "lbann/layers/activations/bent_identity.hpp"
 #include "lbann/layers/activations/elu.hpp"
-#include "lbann/layers/activations/exponential.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
 #include "lbann/layers/activations/relu.hpp"
@@ -51,14 +47,10 @@
 #include "lbann/layers/activations/sigmoid.hpp"
 #include "lbann/layers/activations/smooth_relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/logsoftmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
-#include "lbann/layers/activations/tanh.hpp"
-#include "lbann/layers/activations/power.hpp"
 #include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
-#include "lbann/layers/activations/abs.hpp"
-#include "lbann/layers/activations/l2_loss.hpp"
-#include "lbann/layers/activations/log.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -69,6 +61,11 @@
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
+
+/// Math layers
+#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/math/binary.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -81,7 +78,6 @@
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
 #include "lbann/layers/transform/zero.hpp"
 #include "lbann/layers/transform/reduction.hpp"
@@ -93,10 +89,9 @@
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/discrete_random.hpp"
 #include "lbann/layers/transform/stop_gradient.hpp"
-#include "lbann/layers/transform/max.hpp"
-#include "lbann/layers/transform/min.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/weights.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -131,6 +126,7 @@
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
+#include "lbann/data_readers/data_reader_moving_mnist.hpp"
 
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"

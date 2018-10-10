@@ -1,0 +1,138 @@
+model {
+  name: "directed_acyclic_graph_model"
+  objective_function {
+    cross_entropy {
+    }
+    l2_weight_regularization {
+      scale_factor: 0.0001
+    }
+  }
+  num_epochs: 12
+  metric {
+    categorical_accuracy {
+    }
+  }
+  data_layout: "data_parallel"
+  layer {
+    input {
+      io_buffer: "partitioned"
+    }
+    name: "conv2d_1_input"
+  }
+  layer {
+    convolution {
+      num_dims: 2
+      has_vectors: true
+      num_output_channels: 32
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      has_bias: true
+    }
+    name: "conv2d_1"
+    parents: "conv2d_1_input "
+  }
+  layer {
+    relu {
+    }
+    name: "relu_1"
+    parents: "conv2d_1"
+  }
+  layer {
+    convolution {
+      num_dims: 2
+      has_vectors: true
+      num_output_channels: 64
+      conv_dims: "3 3"
+      conv_pads: "0 0"
+      conv_strides: "1 1"
+      has_bias: true
+    }
+    name: "conv2d_2"
+    parents: "relu_1"
+  }
+  layer {
+    relu {
+    }
+    name: "relu_2"
+    parents: "conv2d_2"
+  }
+  layer {
+    pooling {
+      num_dims: 2
+      has_vectors: true
+      pool_dims: "2 2"
+      pool_pads: "0 0"
+      pool_strides: "2 2"
+      pool_mode: "max"
+    }
+    name: "max_pooling2d_1"
+    parents: "relu_2"
+  }
+  layer {
+    dropout {
+      keep_prob: 0.75
+    }
+    name: "dropout_1"
+    parents: "max_pooling2d_1 "
+  }
+  layer {
+    name: "flatten_1"
+    parents: "dropout_1 "
+    reshape {
+      num_dims: 1
+      dims: "9216"
+    }
+  }
+  layer {
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "dense_1"
+    parents: "flatten_1 "
+  }
+  layer {
+    relu {
+    }
+    name: "relu_3"
+    parents: "dense_1"
+  }
+  layer {
+    dropout {
+      keep_prob: 0.5
+    }
+    name: "dropout_2"
+    parents: "relu_3"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 10
+      has_bias: true
+    }
+    name: "dense_2"
+    parents: "dropout_2 "
+  }
+  layer {
+    name: "softmax_1"
+    parents: "dense_2"
+    softmax {
+    }
+  }
+  layer {
+    target {
+    }
+    name: "target"
+    parents: "softmax_1 conv2d_1_input"
+  }
+  mini_batch_size: 128
+  callback {
+    timer {
+    }
+  }
+  callback {
+    print {
+    }
+  }
+  block_size: 256
+}
