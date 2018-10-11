@@ -4,7 +4,7 @@
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
-CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1)
+CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 
 ################################################################
 # Default options
@@ -320,7 +320,7 @@ else
     CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
-if [[ $CORAL ]]; then
+if [[ ${CORAL} -eq 1 ]]; then
 	# the latest version, 3.12.1, has several issues
     module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
@@ -388,7 +388,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [[ $CORAL ]]; then
+    if [[ ${CORAL} -eq 1 ]]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -575,8 +575,7 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o \
-	 "${CLUSTER}" == "pascal" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
@@ -584,7 +583,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o \
     ELEMENTAL_USE_CUBLAS=OFF
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
-	if [[ $CORAL ]]; then
+	if [[ ${CORAL} -eq 1 ]]; then
 		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
