@@ -57,6 +57,19 @@
       LBANN_ERROR(err_CUDA_SYNC.str());                         \
     }                                                           \
   } while (0)
+#define LBANN_CUDA_CHECK_LAST_ERROR(async)                              \
+  do {                                                                  \
+    cudaError_t status = cudaGetLastError();                            \
+    if (status != cudaSuccess) {                                        \
+      cudaDeviceReset();                                                \
+      std::stringstream err_CUDA_CHECK_LAST_ERROR;                      \
+      if (async) { err_CUDA_CHECK_LAST_ERROR << "Asynchronous "; }      \
+      err_CUDA_CHECK_LAST_ERROR << "CUDA error ("                       \
+                                << cudaGetErrorString(status)           \
+                                << ")";                                 \
+      LBANN_ERROR(err_CUDA_CHECK_LAST_ERROR.str());                     \
+    }                                                                   \
+  } while (0)
 #define FORCE_CHECK_CUDA(cuda_call)                             \
   do {                                                          \
     /* Call CUDA API routine, synchronizing before and */       \

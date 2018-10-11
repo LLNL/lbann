@@ -38,7 +38,7 @@
 #include <cudnn.h>
 
 // Error utility macros
-#define CHECK_CUDNN_NOSYNC(cudnn_call)                          \
+#define CHECK_CUDNN_NODEBUG(cudnn_call)                         \
   do {                                                          \
     const cudnnStatus_t status_CHECK_CUDNN = (cudnn_call);      \
     if (status_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
@@ -48,18 +48,15 @@
                   + std::string(")"));                          \
     }                                                           \
   } while (0)
-#define CHECK_CUDNN_SYNC(cudnn_call)                            \
+#define CHECK_CUDNN_DEBUG(cudnn_call)                           \
   do {                                                          \
-    /* Call cuDNN API routine, synchronizing before and */      \
-    /* after to check for errors. */                            \
-    LBANN_CUDA_SYNC(true);                                      \
-    CHECK_CUDNN_NOSYNC(cudnn_call);                             \
-    LBANN_CUDA_SYNC(false);                                     \
+    LBANN_CUDA_CHECK_LAST_ERROR(true);                          \
+    CHECK_CUDNN_NODEBUG(cudnn_call);                            \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_SYNC(cudnn_call)
+#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_DEBUG(cudnn_call)
 #else
-#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_NOSYNC(cudnn_call)
+#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_NODEBUG(cudnn_call)
 #endif // #ifdef LBANN_DEBUG
 
 namespace lbann {
