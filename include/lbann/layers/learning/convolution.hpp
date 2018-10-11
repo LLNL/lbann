@@ -228,7 +228,7 @@ protected:
         std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
         "Layer: DISTCONV not detected");
 #else
-    dc::MPIPrintStreamDebug() << this->get_name() << ": Forward convolution\n";
+    dc::MPIPrintStreamDebug() << this->get_name() << ": Forward convolution";
 
     assert0(dc::tensor::View(
         m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
@@ -246,7 +246,7 @@ protected:
 #else
     if (this->m_bias_scaling_factor == DataType(0)) return;
 
-    dc::MPIPrintStreamDebug() << "Applying bias\n";
+    dc::MPIPrintStreamDebug() << "Applying bias";
 
     assert0(dc::tensor::View(
         m_bias_t, this->get_weights()[1]->get_values().LockedBuffer()));
@@ -261,7 +261,7 @@ protected:
         std::string {} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: " + "Layer: DISTCONV not detected");
 #else
-    dc::MPIPrintStreamDebug() << this->get_name() << ": Backward convolution\n";
+    dc::MPIPrintStreamDebug() << this->get_name() << ": Backward convolution";
 
     // input: m_prev_error_signals_d[0]
     // kernel: m_weights[0]->get_values_gpu()
@@ -285,37 +285,45 @@ protected:
         std::string {} + __FILE__ + " " + std::to_string(__LINE__)
         + " :: " + "Layer: DISTCONV not detected");
 #else
-    dc::MPIPrintStreamDebug() << this->get_name() << ": Compute gradients\n";
+    dc::MPIPrintStreamDebug() << this->get_name() << ": Compute gradients";
 
     const int effective_mini_batch_size =
         this->m_model->get_effective_mini_batch_size();
+    const bool has_local_data = this->m_prev_error_signals_t.get_local_size() > 0;
 
     optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr && this->m_bias_scaling_factor != DataType(0)) {
-      dc::MPIPrintStreamDebug() << "Compute bias gradients\n";
+      dc::MPIPrintStreamDebug() << "Compute bias gradients";
       assert0(dc::tensor::View(m_bias_gradient_t,
                                this->m_bias_gradient.Buffer()));
-      m_conv->backward_bias(DataType(1.0), this->m_prev_error_signals_t,
-                            DataType(0.0), m_bias_gradient_t, false);
-      const DataType bias_scale = this->m_bias_scaling_factor / effective_mini_batch_size;
+      if (!has_local_data) {
+        m_bias_gradient_t.zero(dc::get_stream());
+      } else {
+        m_conv->backward_bias(DataType(1.0), this->m_prev_error_signals_t,
+                              DataType(0.0), m_bias_gradient_t, false);
+      }
       if (!this->early_terminate_last_iteration()) {
-        bias_optimizer->add_to_gradient_staging(this->m_bias_gradient,
-                                                bias_scale);
+        bias_optimizer->add_to_gradient_staging(
+            this->m_bias_gradient,
+            this->m_bias_scaling_factor / effective_mini_batch_size);
       }
     }
 
     optimizer* kernel_optimizer = this->get_weights()[0]->get_optimizer();
     if (kernel_optimizer == nullptr) return;
 
-    dc::MPIPrintStreamDebug() << "Compute kernel gradients\n";
+    dc::MPIPrintStreamDebug() << "Compute kernel gradients";
 
     assert0(dc::tensor::View(
         m_kernel_gradient_e, this->m_kernel_gradient.Buffer()));
+    if (!has_local_data) {
+      m_kernel_gradient_e.zero(dc::get_stream());
+    } else {
+      m_conv->backward_filter(DataType(1.0), this->m_prev_activations_t,
+                              this->m_prev_error_signals_t, DataType(0),
+                              m_kernel_gradient_e, false);
 
-    m_conv->backward_filter(DataType(1.0), this->m_prev_activations_t,
-                            this->m_prev_error_signals_t, DataType(0),
-                            m_kernel_gradient_e, false);
-
+    }
     // Add gradient contribution
     const DataType kernel_scale = DataType(1) / effective_mini_batch_size;
     if (!this->early_terminate_last_iteration()) {
@@ -412,12 +420,14 @@ protected:
     std::stringstream ss;
     util::print_vector(ss, this->m_kernel_dims.begin(), this->m_kernel_dims.end());
     MPIPrintStreamDebug()
-        << "m_kernel_dims: " << ss.str() << "\n";
+        << "m_kernel_dims: " << ss.str();
 
     this->setup_prev_activations_tensor(dists);
     this->setup_activations_tensor(dists);
     this->setup_activations_copyout_tensor(dists);
 
+    // assumes no partitioning on channel/filter dimensions
+    assert_eq(dists[0].get_split_shape()[-2], 1);
     dc::Dist shared_dist(dists[0].get_locale_shape(), 1, 0, 0);
 
     Array4 kernel_shape = {this->m_kernel_dims[3], this->m_kernel_dims[2],
@@ -437,13 +447,13 @@ protected:
     MPIPrintStreamDebug()
         << "Bias desc: "
         << dc::util::tostring(this->m_bias_cudnn_desc)
-        << ", bias factor: " << this->m_bias_scaling_factor
-        << "\n";
+        << ", bias factor: " << this->m_bias_scaling_factor;
     if (this->m_bias_scaling_factor != DataType(0)) {
       Array4 bias_shape = {1, 1, this->get_output_dims()[0], 1};
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
-      assert0(tensor::View(m_bias_t, this->get_weights()[1]->get_values().LockedBuffer()));
-      MPIPrintStreamDebug() << "Bias tensor: " << m_bias_t << "\n";
+      assert0(tensor::View(m_bias_t,
+                           this->get_weights()[1]->get_values().LockedBuffer()));
+      MPIPrintStreamDebug() << "Bias tensor: " << m_bias_t;
       m_conv->setup_bias(m_bias_t);
 
       // Bias backprop
@@ -516,7 +526,8 @@ protected:
     if (!(this->m_kernel_dims[2] == this->m_kernel_dims[3] &&
           this->m_kernel_dims[2] == this->m_pads[0] * 2 + 1 &&
           this->m_kernel_dims[3] == this->m_pads[1] * 2 + 1)) {
-      dc::MPIPrintStreamDebug() << "Unsupported as padding does not match the kernel size\n";
+      dc::MPIPrintStreamDebug()
+          << "Unsupported as padding does not match the kernel size";
       return false;
     }
     char *env = getenv("DISTCONV_DISABLE");
