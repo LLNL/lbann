@@ -58,7 +58,7 @@ lbann_comm* initialize(int& argc, char**& argv, int seed) {
   // Initial creation with every process in one model.
   MPI_Comm lbann_mpi_comm = MPI_COMM_WORLD;
 #ifdef LBANN_HAS_DISTCONV
-  lbann_mpi_comm = dc::get_mpi_comm_for_scattering_samples(MPI_COMM_WORLD);
+  lbann_mpi_comm = dc::get_strided_mpi_comm(MPI_COMM_WORLD);
 #endif
   auto* comm = new lbann_comm(0, lbann_mpi_comm);
 #if defined(LBANN_TOPO_AWARE)

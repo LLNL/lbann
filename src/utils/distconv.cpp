@@ -34,15 +34,50 @@ using namespace distconv;
 
 namespace lbann {
 namespace dc {
-
 namespace {
 bool initialized = false;
 MPI_Comm mpi_comm = MPI_COMM_NULL;
 p2p::P2P *p2p_instance = nullptr;
 Backend *backend_instance = nullptr;
+
+bool options_set = false;
+int opt_rank_stride = 1;
 bool opt_enable_profile = false;
 bool opt_skip_metrics_while_training = false;
 bool opt_use_partial_aggregation_in_bn = false;
+
+void set_options() {
+  if (options_set) return;
+  char *env = std::getenv("LBANN_DISTCONV_RANK_STRIDE");
+  if (env) {
+    opt_rank_stride = std::atoi(env);
+  }
+  if (std::getenv("LBANN_DISTCONV_PROFILE")) {
+    opt_enable_profile = true;
+  }
+  if (std::getenv("LBANN_DISTCONV_SKIP_METRICS_WHILE_TRAINING")) {
+    opt_skip_metrics_while_training = true;
+  }
+  if (std::getenv("LBANN_DISTCONV_USE_PARTIAL_AGGREGATION_IN_BN")) {
+    opt_use_partial_aggregation_in_bn = true;
+  }
+  options_set = true;
+}
+
+void print_options(std::ostream &os) {
+  if (is_mpi_root()) {
+    std::stringstream ss;
+    ss << "LBANN/Distconv options\n";
+    ss << "  rank_stride:" << opt_rank_stride << "\n";
+    ss << "  enable_profile: " << opt_enable_profile << "\n";
+    ss << "  skip_metrics_while_training: "
+       << opt_skip_metrics_while_training << "\n";
+    ss << "  use_partial_aggregation_in_bn: "
+       << opt_use_partial_aggregation_in_bn
+       << std::endl;
+    os << ss.str();
+  }
+}
 
 int get_number_of_local_ranks(MPI_Comm comm) {
   MPI_Comm local_comm;
@@ -84,34 +119,24 @@ bool is_p2p_shuffle_feasible(const TensorDev &tensor) {
 }
 } // namespace
 
-MPI_Comm get_mpi_comm_for_scattering_samples(MPI_Comm comm) {
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-  int size;
-  MPI_Comm_size(comm, &size);
-  int num_local_ranks = get_number_of_local_ranks(comm);
-  int num_active_local_ranks = num_local_ranks;
-  char *env = getenv("LBANN_NUM_LOCAL_RANKS");
-  if (env) {
-    num_active_local_ranks = std::atoi(env);
-    MPIRootPrintStreamInfo() << "Number of ranks for Mapping rank " << rank << " to " << new_rank
-                             << " for scattering samples over nodes";
-
-  }
+MPI_Comm get_strided_mpi_comm(MPI_Comm comm) {
   // Assumes comm is in the packed order of nodes, i.e., let PPN be
   // the number of processes per node, the local rank is rank % PPN,
   // and the node rank is rank / PPN.
-  assert0(size % num_local_ranks);
-  int num_nodes = size / num_local_ranks;
-  int node_rank = rank / num_local_ranks;
-  int local_rank = rank % num_local_ranks;
-  assert0(num_local_ranks % num_active_local_ranks);
-  int new_local_rank = local_rank / num_active_local_ranks;
-  int local_offset = new_local_rank * num_nodes;
-  int inactive_rank_offset = (local_rank % num_active_local_ranks) * num_nodes * num_active_local_ranks;
-  int new_rank = local_offset + inactive_rank_offset;
-  MPIPrintStreamInfo() << "Mapping rank " << rank << " to " << new_rank
-                       << " for scattering samples over nodes";
+  set_options();
+  int stride = opt_rank_stride;
+  if (stride == 1) return comm;
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+  int num_ranks;
+  MPI_Comm_size(comm, &num_ranks);
+  int num_local_ranks = get_number_of_local_ranks(comm);
+  assert_always(stride >= 1);
+  assert0(num_local_ranks % stride);
+  assert0(num_ranks % num_local_ranks);
+  assert0(num_ranks % stride);
+  int new_rank = rank / stride + (rank % stride) * (num_ranks / stride);
+  MPIPrintStreamInfo() << "Mapping rank " << rank << " to " << new_rank;
   MPI_Comm new_comm;
   MPI_Comm_split(comm, 0, new_rank, &new_comm);
   return new_comm;
@@ -119,24 +144,14 @@ MPI_Comm get_mpi_comm_for_scattering_samples(MPI_Comm comm) {
 
 void initialize(MPI_Comm comm) {
   assert_always(!initialized);
+  set_options();
   mpi_comm = comm;
   p2p_instance = new p2p::P2P(mpi_comm);
   auto &cudnn_h = lbann::cudnn::get_handle();
   cudaStream_t s;
   CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
   backend_instance = new Backend(mpi_comm, cudnn_h, s);
-  if (std::getenv("DISTCONV_PROFILE")) {
-    MPIRootPrintStreamInfo() << "opt_enable_profile: true";
-    opt_enable_profile = true;
-  }
-  if (std::getenv("DISTCONV_SKIP_METRICS_WHILE_TRAINING")) {
-    MPIRootPrintStreamInfo() << "opt_skip_metrics_while_training: true";
-    opt_skip_metrics_while_training = true;
-  }
-  if (std::getenv("DISTCONV_USE_PARTIAL_AGGREGATION_IN_BN")) {
-    MPIRootPrintStreamInfo() << "opt_use_partial_aggregation_in_bn: true";
-    opt_use_partial_aggregation_in_bn = true;
-  }
+  print_options(std::cout);
   initialized = true;
 }
 
@@ -152,6 +167,26 @@ void finalize() {
 
 MPI_Comm get_mpi_comm() {
   return mpi_comm;
+}
+
+int get_mpi_rank() {
+  int rank;
+  MPI_Comm_rank(get_mpi_comm(), &rank);
+  return rank;
+}
+
+int get_mpi_num_ranks() {
+  int num_ranks;
+  MPI_Comm_size(get_mpi_comm(), &num_ranks);
+  return num_ranks;
+}
+
+bool is_mpi_root() {
+  return get_mpi_rank() == 0;
+}
+
+int get_rank_stride() {
+  return opt_rank_stride;
 }
 
 bool is_profiling_enabled() {
@@ -172,6 +207,10 @@ p2p::P2P &get_p2p() {
 
 Backend &get_backend() {
   return *backend_instance;
+}
+
+cudaStream_t get_stream() {
+  return get_backend().get_stream();
 }
 
 HaloExchangeMethod get_halo_exchange_method() {
@@ -196,23 +235,24 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
                                     const TensorDev &dst) {
   // Use the P2P shuffler if possible. Otherwise, the default
   // MPI-based shuffler is returned.
-  char *env = std::getenv("DISTCONV_TENSOR_SHUFFLER");
+  char *env = std::getenv("LBANN_DISTCONV_TENSOR_SHUFFLER");
   if (env && std::string(env) == "P2P") {
     bool src_feasible = is_p2p_shuffle_feasible(src);
     bool dst_feasible = is_p2p_shuffle_feasible(dst);
     if (!src_feasible) {
       MPIRootPrintStreamInfo()
-          << "Unable to use P2P shuffler for source tensor\n";
+          << "Unable to use P2P shuffler for source tensor";
     }
     if (!dst_feasible) {
       MPIRootPrintStreamInfo()
-          << "Unable to use P2P shuffler for destination tensor\n";
+          << "Unable to use P2P shuffler for destination tensor";
     }
     if (src_feasible && dst_feasible) {
+      MPIRootPrintStreamInfo() << "Using P2P shuffler";
       return new TensorShufflerP2P(src, dst, get_p2p());
     }
   }
-
+  MPIRootPrintStreamInfo() << "Using MPI-based shuffler";
   return new TensorShuffler(src, dst);
 }
 

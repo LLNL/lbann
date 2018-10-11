@@ -351,9 +351,14 @@ protected:
 
     dc::MPIPrintStreamDebug()
         << "BN prev_activations: " << m_prev_activations_t
-        << ", activations: " << m_activations_t << "\n";
+        << ", activations: " << m_activations_t;
 
     const int num_channels = this->get_output_dims()[0];
+    // Sanity check that the shared tensors have the correct shape
+    assert_ne(num_channels, 0);
+    assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
+              num_channels);
+
     dc::Array4 per_channel_stat_shape = {1, 1, num_channels, 1};
     dc::Dist shared_dist(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();

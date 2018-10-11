@@ -91,9 +91,7 @@ using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;
 
-MPI_Comm get_mpi_comm_for_scattering_samples(MPI_Comm comm,
-                                             int num_active_local_ranks,
-                                             int num_local_ranks);
+MPI_Comm get_strided_mpi_comm(MPI_Comm comm);
 
 /** Initialize Distconv
  */
@@ -103,12 +101,28 @@ void initialize(MPI_Comm comm);
  */
 void finalize();
 
-/** Returns MPI_Comm used for distconv
-    
+/** Return MPI_Comm used for distconv
+
     Note that training only a single model is considered. This should
     be equal to MPI_COMM_WORLD.
  */
 MPI_Comm get_mpi_comm();
+
+/** Return the MPI rank
+ */
+int get_mpi_rank();
+
+/** Return the number of MPI ranks
+ */
+int get_mpi_num_ranks();
+
+/** Query if this rank is the root of the MPI communiator
+ */
+bool is_mpi_root();
+
+/** Query rank stride
+ */
+int get_rank_stride();
 
 /** Query profiling
  */
@@ -130,6 +144,9 @@ p2p::P2P &get_p2p();
 /** Get Distconv backend handle.
  */
 Backend &get_backend();
+/** Get Distconv stream.
+ */
+cudaStream_t get_stream();
 /** Return a HaloExchangeMethod
  */
 ::distconv::HaloExchangeMethod get_halo_exchange_method();

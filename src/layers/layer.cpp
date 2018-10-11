@@ -1527,13 +1527,35 @@ void Layer::setup_tensor_distribution_block() {
 #endif
 }
 
+namespace {
+Dist get_hydrogen_matrix_distribution() {
+  using dc::tensor::index_t;
+  // When rank stride is 1, the distribution is just sample
+  // distribution. When it's greater than 1, multiple consecutive
+  // ranks of length rank stride share a split in the first
+  // dimension. It is assumed that LBANN uses only the
+  // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
+  // training data.
+  Array4 sample_locale_shape =
+      {static_cast<index_t>(dc::get_rank_stride()),
+       index_t(1), index_t(1),
+       static_cast<index_t>(
+           dc::get_mpi_num_ranks() / dc::get_rank_stride())};
+  Array4 sample_split_shape = sample_locale_shape;
+  sample_split_shape[0] = 1;
+  Dist sample_dist(sample_locale_shape, sample_split_shape,
+                   0, 0);
+  return sample_dist;
+}
+} // namespace
+
 void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
   const Array4 input_tensor_shape =
       {get_input_dims()[2], get_input_dims()[1],
        get_input_dims()[0], this->m_model->get_max_mini_batch_size()};
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Array4 sample_block_size = {1, 1, 1, 1};
-  const Dist sample_dist = Dist({1, 1, 1, m_comm->get_procs_per_model()});
+  const Dist sample_dist = get_hydrogen_matrix_distribution();
   Array4 input_local_shape = input_tensor_shape;
   // Assuming single GPU per rank
   //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
@@ -1596,7 +1618,7 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Array4 sample_block_size = {1, 1, 1, 1};
-  const Dist sample_dist = Dist({1, 1, 1, m_comm->get_procs_per_model()});
+  const Dist sample_dist = get_hydrogen_matrix_distribution();
   const Array4 output_tensor_shape =
       {get_output_dims()[2], get_output_dims()[1],
        get_output_dims()[0], this->m_model->get_max_mini_batch_size()};
@@ -1622,7 +1644,7 @@ void Layer::setup_tensors_bwd(const std::array<Dist, 4> &dists) {
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Array4 sample_block_size = {1, 1, 1, 1};
-  const Dist sample_dist = Dist({1, 1, 1, m_comm->get_procs_per_model()});
+  const Dist sample_dist = get_hydrogen_matrix_distribution();
   const Array4 output_tensor_shape =
       {get_output_dims()[2], get_output_dims()[1],
        get_output_dims()[0], this->m_model->get_max_mini_batch_size()};
@@ -1682,7 +1704,7 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists)
       {get_input_dims()[2], get_input_dims()[1],
        get_input_dims()[0], this->m_model->get_max_mini_batch_size()};
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Dist sample_dist = Dist({1, 1, 1, m_comm->get_procs_per_model()});
+  const Dist sample_dist = get_hydrogen_matrix_distribution();
   Array4 input_local_shape = input_tensor_shape;
   // Assuming single GPU per rank
   //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
@@ -1760,31 +1782,35 @@ void Layer::fp_setup_distconv(int mini_batch_size) {
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
   m_prev_activations_t.set_outermost_dimension(mini_batch_size);
-  assert_always((int)m_prev_activations_t.get_shape()[-1] ==
-                mini_batch_size);
+  assert_eq((int)m_prev_activations_t.get_shape()[-1],
+            mini_batch_size);
   if (m_parent_copy_in_required || m_parent_shuffle_required) {
     m_prev_activations_const_view.set_outermost_dimension(
         mini_batch_size);
-    assert_always((int)m_prev_activations_const_view.get_shape()[-1] ==
-                  mini_batch_size);
+    assert_eq((int)m_prev_activations_const_view.get_shape()[-1],
+              mini_batch_size);
     if (m_parent_copy_in_required) {
       // then, parent is assumed to be data parallel, so the local
       // size of the sample dimension should be equal to
-      // the local width of previous activations.
-      assert_always(
-          (int)m_prev_activations_const_view.get_local_shape()[-1] ==
-          get_prev_activations().LocalWidth());
+      // the local width of previous activations. The check only
+      // matters for split root processes as the rest just hold
+      // invalid copy of the root data.
+      if (m_prev_activations_const_view.is_split_root()) {
+        assert_eq(
+            (int)m_prev_activations_const_view.get_local_shape()[-1],
+            get_prev_activations().LocalWidth());
+      }
     }
   }
   m_activations_t.set_outermost_dimension(mini_batch_size);
-  assert_always((int)m_activations_t.get_shape()[-1] ==
-                mini_batch_size);
+  assert_eq((int)m_activations_t.get_shape()[-1],
+            mini_batch_size);
   m_activations_copyout.set_outermost_dimension(mini_batch_size);
-  assert_always((int)m_activations_copyout.get_shape()[-1] ==
-                mini_batch_size);
-  if (keep_original_output()) {
-    assert_always((int)m_activations_copyout.get_local_shape()[-1] ==
-                  get_activations().LocalWidth());
+  assert_eq((int)m_activations_copyout.get_shape()[-1],
+            mini_batch_size);
+  if (keep_original_output() && m_activations_copyout.is_split_root()) {
+    assert_eq((int)m_activations_copyout.get_local_shape()[-1],
+              get_activations().LocalWidth());
   }
 
   ensure_prev_activations();
@@ -1801,23 +1827,24 @@ void Layer::bp_setup_distconv(int mini_batch_size) {
                 mini_batch_size);
   if (m_child_copy_out_required || m_child_shuffle_required) {
     m_prev_error_signals_const_view.set_outermost_dimension(mini_batch_size);
-    assert_always((int)m_prev_error_signals_const_view.get_shape()[-1] ==
-                  mini_batch_size);
-    if (m_child_copy_out_required) {
-      assert_always(
-          (int)m_prev_error_signals_const_view.get_local_shape()[-1] ==
+    assert_eq((int)m_prev_error_signals_const_view.get_shape()[-1],
+              mini_batch_size);
+    if (m_child_copy_out_required &&
+        m_prev_error_signals_const_view.is_split_root()) {
+      assert_eq(
+          (int)m_prev_error_signals_const_view.get_local_shape()[-1],
           get_prev_error_signals().LocalWidth());
     }
   }
   m_error_signals_t.set_outermost_dimension(mini_batch_size);
-  assert_always((int)m_error_signals_t.get_shape()[-1] ==
-                mini_batch_size);
+  assert_eq((int)m_error_signals_t.get_shape()[-1],
+            mini_batch_size);
   m_error_signals_copyout.set_outermost_dimension(mini_batch_size);
-  assert_always((int)m_error_signals_copyout.get_shape()[-1] ==
-                mini_batch_size);
-  if (keep_original_input()) {
-    assert_always((int)m_error_signals_copyout.get_local_shape()[-1] ==
-                  get_error_signals().LocalWidth());
+  assert_eq((int)m_error_signals_copyout.get_shape()[-1],
+            mini_batch_size);
+  if (keep_original_input() && m_error_signals_copyout.is_split_root()) {
+    assert_eq((int)m_error_signals_copyout.get_local_shape()[-1],
+              get_error_signals().LocalWidth());
   }
 
   ensure_prev_error_signals();
