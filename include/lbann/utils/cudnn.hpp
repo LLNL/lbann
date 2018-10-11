@@ -61,7 +61,6 @@
 #else
 #define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_NOSYNC(cudnn_call)
 #endif // #ifdef LBANN_DEBUG
-#define FORCE_CHECK_CUDNN(cudnn_call) CHECK_CUDNN(cudnn_call)
 
 namespace lbann {
 
