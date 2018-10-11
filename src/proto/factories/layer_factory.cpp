@@ -447,6 +447,7 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(square);
   CONSTRUCT_LAYER(sqrt);
   CONSTRUCT_LAYER(rsqrt);
+  CONSTRUCT_LAYER(safe_reciprocal);
   CONSTRUCT_LAYER(exp);
   CONSTRUCT_LAYER(expm1);
   CONSTRUCT_LAYER(log);
@@ -469,6 +470,7 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(divide);
   CONSTRUCT_LAYER(mod);
   CONSTRUCT_LAYER(pow);
+  CONSTRUCT_LAYER(safe_divide);
   CONSTRUCT_LAYER(max);
   CONSTRUCT_LAYER(min);
   CONSTRUCT_LAYER(equal);

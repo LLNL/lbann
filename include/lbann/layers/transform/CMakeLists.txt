@@ -3,7 +3,6 @@ set_full_path(THIS_DIR_HEADERS
   concatenation.hpp
   pooling.hpp
   reshape.hpp
-  safe_inv.hpp
   slice.hpp
   split.hpp
   sum.hpp

@@ -78,7 +78,6 @@
 #include "lbann/layers/transform/concatenation.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
-#include "lbann/layers/transform/safe_inv.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
 #include "lbann/layers/transform/zero.hpp"
 #include "lbann/layers/transform/reduction.hpp"
@@ -127,6 +126,7 @@
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
+#include "lbann/data_readers/data_reader_moving_mnist.hpp"
 
 /// Data Store
 #include "lbann/data_store/generic_data_store.hpp"
