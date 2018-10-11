@@ -816,6 +816,11 @@ message Layer {
    MeanSquaredError mean_squared_error = 61;
    TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
    L2Norm2 l2_norm2 = 63;
+   BinaryCrossEntropy binary_cross_entropy = 64;
+   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 65;
+   BooleanAccuracy boolean_accuracy = 66;
+   BooleanFalseNegative boolean_false_negative = 67;
+   BooleanFalsePositive boolean_false_positive = 68;
 
    // Math layers
    Not not = 401;
@@ -888,7 +893,6 @@ message Layer {
    Selu selu = 37;
    BentIdentity bent_identity = 40;
    Swish swish = 42;
-   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 
 }
 ///////////////////////
@@ -992,14 +996,13 @@ message Softmax {
 message LogSoftmax {
 }
 
-message Sigmoid_Binary_Cross_Entropy_With_Logits {
-  int32 true_label = 1;
-}
-
 ///////////////////////
 // Loss Layers //
 ///////////////////////
 message L2Norm2 {}
+message SigmoidBinaryCrossEntropy {}
+message BooleanFalseNegative {}
+message BooleanFalsePositive {}
 
 ///////////////////////////
 // Regularization Layers //
