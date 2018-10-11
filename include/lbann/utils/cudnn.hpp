@@ -38,11 +38,8 @@
 #include <cudnn.h>
 
 // Error utility macros
-#define FORCE_CHECK_CUDNN(cudnn_call)                           \
+#define CHECK_CUDNN_NOSYNC(cudnn_call)                          \
   do {                                                          \
-    /* Call cuDNN API routine, synchronizing before and */      \
-    /* after to check for errors. */                            \
-    LBANN_CUDA_SYNC(true);                                      \
     const cudnnStatus_t status_CHECK_CUDNN = (cudnn_call);      \
     if (status_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
       cudaDeviceReset();                                        \
@@ -50,13 +47,21 @@
                   + cudnnGetErrorString(status_CHECK_CUDNN)     \
                   + std::string(")"));                          \
     }                                                           \
+  } while (0)
+#define CHECK_CUDNN_SYNC(cudnn_call)                            \
+  do {                                                          \
+    /* Call cuDNN API routine, synchronizing before and */      \
+    /* after to check for errors. */                            \
+    LBANN_CUDA_SYNC(true);                                      \
+    CHECK_CUDNN_NOSYNC(cudnn_call);                             \
     LBANN_CUDA_SYNC(false);                                     \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call);
+#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_SYNC(cudnn_call)
 #else
-#define CHECK_CUDNN(cudnn_call) (cudnn_call)
+#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_NOSYNC(cudnn_call)
 #endif // #ifdef LBANN_DEBUG
+#define FORCE_CHECK_CUDNN(cudnn_call) CHECK_CUDNN(cudnn_call)
 
 namespace lbann {
 
