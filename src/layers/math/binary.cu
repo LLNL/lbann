@@ -413,8 +413,8 @@ struct greater_equal_op {
 struct and_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
+    const auto& b1 = x1 != DataType(0) && !isnan(x1);
+    const auto& b2 = x2 != DataType(0) && !isnan(x2);
     return (b1 && b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
@@ -431,8 +431,8 @@ struct and_op {
 struct or_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
+    const auto& b1 = x1 != DataType(0) && !isnan(x1);
+    const auto& b2 = x2 != DataType(0) && !isnan(x2);
     return (b1 || b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
@@ -449,8 +449,8 @@ struct or_op {
 struct xor_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
+    const auto& b1 = x1 != DataType(0) && !isnan(x1);
+    const auto& b2 = x2 != DataType(0) && !isnan(x2);
     return (b1 || b2) && !(b1 && b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
