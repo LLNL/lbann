@@ -33,6 +33,20 @@
 
 namespace lbann {
 
+namespace {
+
+void fill_matrix(CPUMat& mat) {
+  std::normal_distribution<DataType> dist(DataType(0), DataType(1));
+  auto& gen = get_fast_generator();
+  const El::Int height = mat.Height();  // Width is 1.
+  DataType * __restrict__ buf = mat.Buffer();
+  for (El::Int i = 0; i < height; ++i) {
+    buf[i] = dist(gen);
+  }
+}
+
+}  // anonymous namespace
+
 data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features,
                                              bool shuffle)
   : data_reader_synthetic(num_samples, {num_features}, 0, shuffle) {}
@@ -43,20 +57,33 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
   : generic_data_reader(shuffle), m_num_samples(num_samples),
     m_num_labels(num_labels), m_dimensions(dims) {}
 
-bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int) {
+data_reader_synthetic::data_reader_synthetic(int num_samples,
+                                             std::vector<int> dims,
+                                             std::vector<int> response_dims,
+                                             bool shuffle)
+  : generic_data_reader(shuffle), m_num_samples(num_samples),
+    m_num_labels(0), m_dimensions(dims), m_response_dimensions(response_dims) {}
+
+bool data_reader_synthetic::fetch_datum(CPUMat& X, int data_id, int mb_idx, int) {
   auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  std::normal_distribution<DataType> dist(DataType(0), DataType(1));
-  auto& gen = get_fast_generator();
-  const El::Int height = X_v.Height();  // Width is 1.
-  DataType * __restrict__ buf = X_v.Buffer();
-  for (El::Int i = 0; i < height; ++i) {
-    buf[i] = dist(gen);
-  }
+  fill_matrix(X_v);
   return true;
 }
 
-bool data_reader_synthetic::fetch_label(Mat& Y, int data_id, int mb_idx, int) {
+bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx, int) {
+  if (m_num_labels == 0) {
+    LBANN_ERROR("Synthetic data reader does not have labels");
+  }
   Y.Set(fast_rand_int(get_fast_generator(), m_num_labels), mb_idx, 1);
+  return true;
+}
+
+bool data_reader_synthetic::fetch_response(CPUMat& Y, int data_id, int mb_idx, int) {
+  if (m_response_dimensions.empty()) {
+    LBANN_ERROR("Synthetic data reader does not have responses");
+  }
+  auto Y_v = El::View(Y, El::ALL, El::IR(mb_idx, mb_idx + 1));
+  fill_matrix(Y_v);
   return true;
 }
 

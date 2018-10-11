@@ -80,7 +80,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
           << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
-    for (int i = 0; i < 2; i++) {
+    for (size_t i = 0; i < buf->M_local.size(); i++) {
       El::Int width = sample.Width();
       if(i == 1) { width = response.Width(); }
       CopyFromRoot((*buf->M_local[i])(El::ALL, El::IR(0, width)), *buf->Ms[i]);
@@ -88,7 +88,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
     buf->m_local_data_valid = false;
     buf->m_num_samples_in_batch = 0;
   } else {
-    for (int i = 0; i < 2; i++) {
+    for (size_t i = 0; i < buf->M_local.size(); i++) {
       CopyFromNonRoot(*buf->Ms[i]);
     }
   }
@@ -99,6 +99,37 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
 
   Copy(*buf->Ms[0], sample);
   Copy(*buf->Ms[1], response);
+
+  return;
+}
+
+void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
+  data_buffer *buf = get_data_buffer(mode);
+  buf->Ms[0]->SetRoot(buf->m_root);
+
+  m_comm->model_barrier();
+
+  if (m_comm->get_rank_in_model() == buf->m_root) {
+    if(!buf->m_local_data_valid) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
+      lbann_exception(err.str());
+    }
+    El::Int width = sample.Width();
+    CopyFromRoot((*buf->M_local[0])(El::ALL, El::IR(0, width)), *buf->Ms[0]);
+    buf->m_local_data_valid = false;
+    buf->m_num_samples_in_batch = 0;
+  } else {
+    CopyFromNonRoot(*buf->Ms[0]);
+  }
+
+  m_comm->model_barrier();
+
+  buf->m_root = (buf->m_root + 1) % num_parallel_readers;
+
+  Copy(*buf->Ms[0], sample);
 
   return;
 }

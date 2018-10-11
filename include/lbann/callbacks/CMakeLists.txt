@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_HEADERS
   callback_debug.hpp
   callback_debug_io.hpp
   callback_dump_activations.hpp
+  callback_dump_error_signals.hpp
   callback_dump_gradients.hpp
   callback_dump_minibatch_sample_indices.hpp
   callback_dump_weights.hpp

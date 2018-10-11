@@ -80,12 +80,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_save_images()) {
     const auto& params = proto_cb.save_images();
-    auto&& reader = lbann::peek_map(data_readers, execution_mode::training);
-    const auto& layer_names = parse_list<>(params.layer_names());
-    return new lbann_callback_save_images(reader,
-                                          params.image_dir(),
-                                          layer_names,
-                                          params.extension());
+    return new lbann_callback_save_images(parse_list<>(params.layers()),
+                                          params.image_format(),
+                                          params.image_prefix());
   }
 
   //////////////////////////////////////////////////////////////////
@@ -340,6 +337,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_dump_activations(params.basename(),
                                                params.interval(),
                                                layer_names);
+  }
+  if (proto_cb.has_dump_error_signals()) {
+    const auto& params = proto_cb.dump_error_signals();
+    return new lbann_callback_dump_error_signals(params.basename());
   }
   if (proto_cb.has_dump_gradients()) {
     const auto& params = proto_cb.dump_gradients();

@@ -90,7 +90,7 @@ std::ostream& operator<<(std::ostream& os, const cv_transform& tr) {
 }
 
 
-cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags, std::vector<char>& buf) {
+cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags, std::vector<char>& buf, cv::Mat* cv_buf) {
   // Load an image bytestream into memory
   bool ok = lbann::load_file(img_file_path, buf);
   if (!ok) {
@@ -102,8 +102,8 @@ cv::Mat cv_utils::lbann_imread(const std::string& img_file_path, int flags, std:
   const cv::Mat inbuf(1, buf.size(), InputBuf_T::T(1), buf.data());
 
   // decode the image data in the memory buffer
-  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-
+  // Note that if cv_buf is not NULL, then the return value is *cv_buf
+  cv::Mat image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, cv_buf);
   return image;
 }
 

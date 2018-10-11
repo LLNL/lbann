@@ -181,6 +181,17 @@ public:
   /** Set an entry in the weight matrix. */
   void set_value(DataType value, int row, int col);
 
+  /** Reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  void reconcile_values();
+  /** Asynchronously reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  void reconcile_values(Al::request& req);
+  
   // -----------------------------------------------
   // Freezing
   // -----------------------------------------------

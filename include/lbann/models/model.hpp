@@ -69,8 +69,14 @@ class model {
   /** Copy model. */
   virtual model* copy() const = 0;
 
-  /** Return the model's name. */
-  virtual std::string name() const = 0;
+  /** Return the model's type. */
+  virtual std::string get_type() const = 0;
+
+  void set_name(std::string name);
+  
+  std::string get_name() const {
+    return m_name;
+  }
 
   /** Set up the model. */
   virtual void setup();
@@ -117,7 +123,8 @@ class model {
   void replace_weights(std::vector<weights *>& w);
 
   /** Copy trained weights from input parameter w. 
- *  Only weight values are placed, pointers and layer structure are in place*/
+ *  Only weight values are placed, pointers and layer structure are in place.
+ *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
 
   /** Return the model's weights. */
@@ -225,7 +232,8 @@ class model {
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
-
+  /** Give model a name. */
+  std::string m_name;
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
@@ -344,6 +352,11 @@ class model {
   virtual void update_weights();
   /** Update layers step. */
   virtual bool update_layers();
+  /** Reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  virtual void reconcile_weight_values();
 
   ////////////////////////////////////////////////////////////
   // Callbacks

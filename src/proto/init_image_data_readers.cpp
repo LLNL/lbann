@@ -316,7 +316,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
   if ((name == "imagenet") || (name == "jag_conduit") || (name == "jag_conduit_hdf5") ||
-      (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
+      (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images") ||
+      (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
     pp = std::make_shared<cv_process_patches>();
@@ -347,10 +348,15 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
     reader = new data_reader_multi_images(pp, shuffle);
+  } else if (name == "moving_mnist") {
+    reader = new moving_mnist_reader(7, 40, 40, 2);
 #ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit_hdf5") {
     data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
     reader_jag->set_image_dims(width, height);
+    reader_jag->set_use_images(pb_readme.use_images());
+    reader_jag->set_use_scalars(pb_readme.use_scalars());
+    reader_jag->set_use_inputs(pb_readme.use_inputs());
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
@@ -527,6 +533,8 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
   } else if (name == "cifar10") {
     reader = new cifar10_reader(shuffle);
     if (master) std::cout << "cifar10_reader is set" << std::endl;
+  } else if (name == "moving_mnist") {
+    reader = new moving_mnist_reader(7, 40, 40, 2);
   } else {
     if (master) {
       std::stringstream err;

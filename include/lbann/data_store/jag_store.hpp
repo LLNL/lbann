@@ -27,9 +27,9 @@
 #ifndef _JAG_STORE_HPP__
 #define _JAG_STORE_HPP__
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "lbann_config.hpp" 
+
+#ifdef LBANN_HAS_CONDUIT
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
@@ -58,6 +58,7 @@ class jag_store {
 
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
+    m_master = comm->get_rank_in_world() == 0 ? true : false;
   }
 
   /// Returns the requested inputs
@@ -150,7 +151,9 @@ class jag_store {
 
   lbann_comm *m_comm;
 
-  void get_default_keys(std::string &filename, std::string &sample_id, std::string key1, bool master);
+  bool m_master;
+
+  void get_default_keys(std::string &filename, std::string &sample_id, std::string key1);
 
   std::vector<size_t> m_data_sizes;
 

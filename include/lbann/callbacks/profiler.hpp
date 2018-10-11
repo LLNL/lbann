@@ -45,14 +45,24 @@ class lbann_callback_profiler : public lbann_callback {
   }
   void on_epoch_begin(model *m) override;
   void on_epoch_end(model *m) override;
+  void on_validation_begin(model *m) override;
+  void on_validation_end(model *m) override;
+  void on_test_begin(model *m) override;
+  void on_test_end(model *m) override;
   void on_batch_begin(model *m) override;
   void on_batch_end(model *m) override;
+  void on_batch_evaluate_begin(model *m) override;
+  void on_batch_evaluate_end(model *m) override;
   void on_forward_prop_begin(model *m) override;
   void on_forward_prop_end(model *m) override;
+  void on_evaluate_forward_prop_begin(model *m) override;
+  void on_evaluate_forward_prop_end(model *m) override;
   void on_backward_prop_begin(model *m) override;
   void on_backward_prop_end(model *m) override;
   void on_forward_prop_begin(model *m, Layer *l) override;
   void on_forward_prop_end(model *m, Layer *l) override;
+  void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
+  void on_evaluate_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_begin(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
   void on_optimize_begin(model *m) override;
@@ -61,12 +71,6 @@ class lbann_callback_profiler : public lbann_callback {
   void on_optimize_end(model *m, weights *w) override;
   std::string name() const override { return "profiler"; }
  private:
-  static const int num_colors = 20;
-  // http://there4.io/2012/05/02/google-chart-color-list/
-  const int colors[num_colors] = {0x3366CC, 0xDC3912, 0xFF9900, 0x109618, 0x990099, 0x3B3EAC,
-                                  0x0099C6, 0xDD4477, 0x66AA00, 0xB82E2E, 0x316395, 0x994499,
-                                  0x22AA99, 0xAAAA11, 0x6633CC, 0xE67300, 0x8B0707, 0x329262,
-                                  0x5574A6, 0x3B3EAC};
   /** Get a color to use in the profiler for a layer. */
   int get_color(Layer *l);
   /** Whether to synchronize the when setting up profile regions. */

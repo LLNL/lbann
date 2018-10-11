@@ -219,13 +219,33 @@ void data_reader_jag_conduit_hdf5::load() {
     m_emi_selectors.insert("(0.0, 0.0)");
     m_emi_selectors.insert("(90.0, 0.0)");
     m_emi_selectors.insert("(90.0, 78.0)");
+
+    if (get_file_dir() != "" && get_data_filename() != "") {
+      _THROW_LBANN_EXCEPTION_(_CN_, "either get_file_dir() == \"\" or get_data_filename() == \"\"; i.e, at least one must be empty");
+    }
   
     //const std::string data_dir = add_delimiter(get_file_dir());
     //const std::string conduit_file_name = get_data_filename();
-    const std::string pattern = get_file_dir();
-    std::vector<std::string> names = glob(pattern);
-    if (names.size() < 1) {
-      _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
+    std::vector<std::string> names;
+    if (get_file_dir() != "") {
+      const std::string pattern = get_file_dir();
+      names = glob(pattern);
+      if (names.size() < 1) {
+        _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
+      }
+    } else {
+      const std::string fn = get_data_filename();
+      std::ifstream in(fn.c_str());
+      if (!in.is_open()) {
+      _THROW_LBANN_EXCEPTION_(_CN_, "failed to open " + fn + " for reading");
+      }
+      std::string line;
+      while (! in.eof()) {
+        getline(in, line);
+        if (line != "") {
+          names.push_back(line);
+        }
+      }
     }
   
     if (m_first_n > 0) {
@@ -239,14 +259,30 @@ void data_reader_jag_conduit_hdf5::load() {
     }
   
     m_jag_store->set_comm(m_comm);
-    m_jag_store->load_inputs();
-    //m_jag_store.load_scalars();
-  
-    std::vector<std::string> image_names;
-    for (auto t : m_emi_selectors) {
-      image_names.push_back(t);
+    if (m_use_inputs) {
+      if (is_master()) {
+        std::cerr << "USING INPUTS\n";
+      }
+      m_jag_store->load_inputs();
+    }  
+    if (m_use_scalars) {
+      if (is_master()) {
+        std::cerr << "USING SCALARS\n";
+      }  
+      m_jag_store->load_scalars();
     }
-    m_jag_store->load_images(image_names);
+  
+    if (m_use_images) {
+      if (is_master()) {
+        std::cerr << "USING IMAGES\n";
+      }  
+      std::vector<std::string> image_names;
+      for (auto t : m_emi_selectors) {
+        image_names.push_back(t);
+      }
+      m_jag_store->load_images(image_names);
+    }  
+
     m_jag_store->setup(names);
   }
 

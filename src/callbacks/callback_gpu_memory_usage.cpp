@@ -27,6 +27,30 @@
 
 #include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 #include <iomanip>
+#include <sstream>
+
+namespace {
+template <typename T>
+T get_mean(const std::vector<T> &v) {
+  return std::accumulate(v.begin(), v.end(), 0.0) /
+      v.size();
+}
+template <typename T>
+T get_median(const std::vector<T> &v) {
+  std::vector<T> tmp = v;
+  int median_idx = tmp.size() / 2 - 1 + tmp.size() % 2;  
+  std::nth_element(tmp.begin(), tmp.begin() + median_idx, tmp.end());
+  return tmp[median_idx];
+}
+template <typename T>
+T get_max(const std::vector<T> &v) {
+  return *std::max_element(v.begin(), v.end());  
+}
+template <typename T>
+T get_min(const std::vector<T> &v) {
+  return *std::min_element(v.begin(), v.end());
+}
+}
 
 namespace lbann {
 
@@ -36,16 +60,34 @@ void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
   size_t total;
   FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
   size_t used = total - available;
-  std::cout << "GPU memory usage at epoch " << m->get_cur_epoch()
-            << " of model " << m->get_comm()->get_model_rank()
-            << " at rank " << m->get_comm()->get_rank_in_model()
-            << ": " << used << " bytes ("
-            << std::setprecision(3)
-            << (used / 1024.0 / 1024.0 / 1024.0) << " GiB) used out of "
-            << total << " bytes ("
-            << std::setprecision(3)      
-            << (total / 1024.0 / 1024.0 / 1024.0)
-            << " GiB)" << std::endl;
+  auto comm = m->get_comm();
+  if (comm->am_model_master()) {
+    auto num_procs = comm->get_procs_per_model();
+    std::vector<size_t> used_list(num_procs);
+    comm->model_gather(used, used_list.data());
+    double used_mean = get_mean(used_list) / 1024.0 / 1024.0 / 1024.0;
+    double used_median = get_median(used_list) / 1024.0 / 1024.0 / 1024.0;
+    double used_max = get_max(used_list) / 1024.0 / 1024.0 / 1024.0;
+    double used_min = get_min(used_list) / 1024.0 / 1024.0 / 1024.0;
+    std::stringstream ss;
+    ss << "Model " << m->get_comm()->get_model_rank()
+       << " GPU memory usage statistics : "
+       << std::setprecision(3)        
+       << used_mean  << " GiB mean, "
+       << std::setprecision(3)        
+       << used_median  << " GiB median, "
+       << std::setprecision(3)        
+       << used_max  << " GiB max, "
+       << std::setprecision(3)        
+       << used_min  << " GiB min "
+       << "("
+       << std::setprecision(3)      
+       << (total / 1024.0 / 1024.0 / 1024.0)
+       << " GiB total)" << std::endl;
+    std::cout << ss.str();
+  } else {
+    comm->model_gather(used, comm->get_model_master());
+  }
 #endif
 }
 
