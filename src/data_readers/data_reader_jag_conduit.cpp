@@ -1445,24 +1445,39 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
     _THROW_LBANN_EXCEPTION_(_CN_, "get_scalars() : invalid sample index");
   }
 
+  #define _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_ // fetching by individual file I/O per key
+
+  #if !defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_)
+  conduit::Node n_scalar;
+  load_conduit_node(sample_id, "/outputs/scalars", n_scalar);
+  #endif // !_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_
+
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
   auto tr = m_scalar_normalization_params.cbegin();
 
   for(const auto key: m_scalar_keys) {
+  #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_)
     conduit::Node n_scalar;
     // TODO: optimize by loading the entire set of scalars of the samples
     load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
     // All the scalar output currently seems to be scalar_t.
-    // If not use add_val(key, n_scalar, scalars);
+    // If not, use add_val(key, n_scalar, scalars);
 
-    // TODO: const auto& tr = get_scalar_normalization_param(key)
     const scalar_t val_raw = static_cast<scalar_t>(n_scalar.to_value());
+  #else
+    conduit::Node n_scalar_var = get_conduit_node(n_scalar, key);
+    // All the scalar output currently seems to be scalar_t.
+    // If not, use add_val(key, n_scalar_var, scalars);
+
+    const scalar_t val_raw = static_cast<scalar_t>(n_scalar_var.to_value());
+  #endif // _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_
     const scalar_t val = static_cast<scalar_t>(val_raw * tr->first + tr->second);
     scalars.push_back(val);
     tr ++;
   }
+  #undef _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_
   return scalars;
 }
 
@@ -1471,36 +1486,57 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
   }
 
+  //#define _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_ // fetching by individual file I/O per key
+
+  #if !defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
+  // fetching the entire input parameters of a sample by a single file I/O
+  conduit::Node n_input;
+  load_conduit_node(sample_id, "/inputs", n_input);
+  #endif // !_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_
+
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
+  // The sequence of normalization parameters should follow the same order as
+  // that of the variable keys.
   auto tr = m_input_normalization_params.cbegin();
 
   // automatically determine which method to use based on if all the variables are of input_t
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
+    #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
+      // TODO: whether to fetch by individual I/O or not can be dynamically
+      // determined based on how many of the variables are to be fetched.
       conduit::Node n_input;
-      // TODO: optimize by loading the entire set of input parameters of the samples
       load_conduit_node(sample_id, "/inputs/" + key, n_input);
-
-      // TODO: const auto& tr = get_input_normalization_param(key)
       const input_t val_raw = static_cast<input_t>(n_input.value());
+    #else
+      conduit::Node n_input_var = get_conduit_node(n_input, key);
+      const input_t val_raw = static_cast<input_t>(n_input_var.value());
+    #endif // _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_
       const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
       inputs.push_back(val);
       tr ++;
     }
   } else {
     for(const auto key: m_input_keys) {
+    #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
       conduit::Node n_input;
       load_conduit_node(sample_id, "/inputs/" + key, n_input);
       add_val(key, n_input, inputs); // more overhead but general
+    #else
+      conduit::Node n_input_var = get_conduit_node(n_input, key);
+      add_val(key, n_input_var, inputs); // more overhead but general
+    #endif // _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_
 
       input_t& val = inputs.back();
       val = static_cast<input_t>(val * tr->first + tr->second);
       tr ++;
     }
   }
+  #undef _LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_
+
   return inputs;
 }
 
