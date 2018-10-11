@@ -62,15 +62,6 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return m_num_samples_fetched;
 }
 
-void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
-  /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
-  if(M_local[0] != &(sample.Matrix())) {
-    Copy(*M_local[0], sample.Matrix());
-  }
-  m_num_samples_fetched = 0;
-  return;
-}
-
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
   /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
   if(M_local[0] != &(sample.Matrix())) {
@@ -78,6 +69,15 @@ void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_rea
   }
   if(M_local[1] != &(response.Matrix())) {
     Copy(*M_local[1], response.Matrix());
+  }
+  m_num_samples_fetched = 0;
+  return;
+}
+
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
+  /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
+  if(M_local[0] != &(sample.Matrix())) {
+    Copy(*M_local[0], sample.Matrix());
   }
   m_num_samples_fetched = 0;
   return;
