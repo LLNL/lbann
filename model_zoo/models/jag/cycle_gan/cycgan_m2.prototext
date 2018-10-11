@@ -9,8 +9,8 @@ model {
       layer: "g_adv1_eval"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      scale_factor: 0.025
+      layer: "l_l2_y"
     }
   }
   num_epochs: 1
@@ -333,6 +333,7 @@ model {
     }
     name: "L_cyc_y"
     data_layout: "data_parallel"
+    device_allocation: "cpu"
     parents: "cycy_minus_y"
   }
   layer {
@@ -439,19 +440,12 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_y"
     device_allocation: "cpu"
     data_layout: "data_parallel"
     parents: "gsample_minus_y"
-  }
-  layer {
-    name: "l_l2_y_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_y"
-    evaluation {
-    }
   }
   weights {
     name: "gen1fc1linearity"
@@ -514,12 +508,13 @@ model {
       interval: 1
     }
   }
- # callback {
- #   dump_activations {
- #     basename: "/dir/to/dump_y_activations/"
- #     layer_names: "image_data_dummy gen1fc4_1"
- #   }
- # }
+  #callback {
+  #  dump_activations {
+  #    basename: "/dir/to/dump_y_activations/"
+  #    interval: 100
+  #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
+  #  }
+  #}
   block_size: 256
   super_steps: 10000
   num_batches: 1

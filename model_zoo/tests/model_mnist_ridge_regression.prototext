@@ -1,8 +1,8 @@
 model {
-  name: "sequential_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
-  mini_batch_size: 32
-  block_size: 256
+  mini_batch_size: 131
+  block_size: 257
   num_epochs: 4
   num_parallel_readers: 0
   procs_per_model: 0
@@ -12,7 +12,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mse" }
     l2_weight_regularization {
       scale_factor: 0.01
     }
@@ -22,27 +22,13 @@ model {
   # Metrics
   ###################################################
 
-  metric { mean_squared_error {} }
+  metric { layer_metric { layer: "mse" } }
 
   ###################################################
   # Callbacks
   ###################################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-    }
-  }
-  callback {
-    summary {
-      dir: "."
-      batch_interval: 1
-      mat_interval: 25
-    }
-  }
+  callback { print {} }
+  callback { timer {} }
   callback {
     gradient_check {
       verbose: false
@@ -51,25 +37,29 @@ model {
   }
 
   ###################################################
-  # start of layers
+  # Layers
   ###################################################
 
-  #######
-  # INPUT
-  #######
   layer {
     name: "data"
+    children: "image label"
     data_layout: "data_parallel"
-    children: "fc target"
-    input {
-      io_buffer: "partitioned"
-    }
+    input { io_buffer: "partitioned" }
   }
-
-  #################
-  # FULLY_CONNECTED
-  #################
   layer {
+    parents: "data"
+    name: "image"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "label"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "image"
     name: "fc"
     data_layout: "model_parallel"
     fully_connected {
@@ -77,18 +67,11 @@ model {
       has_bias: true
     }
   }
-
-  ########
-  # Target
-  ########
   layer {
-    parents: "fc data"
-    name: "target"
-    data_layout: "data_parallel"
-    target {}
+    parents: "fc label"
+    name: "mse"
+    data_layout: "model_parallel"
+    mean_squared_error {}
   }
 
-  ###################################################
-  # end of layers
-  ###################################################
 }

@@ -1,28 +1,18 @@
-#message(FATAL_ERROR "JPEG-turbo not yet implemented.")
+enable_language(C)
+enable_language(CXX)
+
+# Match the jpeg-turbo default
+option(JPEG-TURBO_ENABLE_STATIC "Enable the jpeg-turbo static linkage." ON)
+
 set(JPEG-TURBO_URL https://github.com/libjpeg-turbo/libjpeg-turbo
   CACHE STRING "The URL from which to clone LIBJPEG-TURBO")
 
-set(JPEG-TURBO_TAG "1.5.2" 
+set(JPEG-TURBO_TAG "master"
   CACHE STRING "The git tag to checkout for LIBJPEG-TURBO")
 
 # Where to install LIBJPEG-TURBO
 set (JPEG-TURBO_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of LIBJPEG-TURBO.")
-
-set(JPEG-TURBO_MAKE_JOBS "8"
-  CACHE INTERNAL "The number of make jobs to run. Max by default.")
-
-
-find_program(GNU_MAKE_PROGRAM make)
-#if (GNU_MAKE_PROGRAM)
-#  mark_as_advanced(GNU_MAKE_PROGRAM)
-#else ()
-#  message(FATAL_ERROR "GNU-compatible \'make\' program not found."
-#    "LibJpeg-Turbo requires \'make\'.")
-#endif ()
-
-configure_file(jpeg-turbo_configure.sh.in
-  ${CMAKE_CURRENT_BINARY_DIR}/tmp/jpeg-turbo_configure.sh @ONLY)
 
 # Handle the install of LIBJPEG-TURBO
 include(ExternalProject)
@@ -35,9 +25,15 @@ ExternalProject_Add(JPEG-TURBO
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}
-  CONFIGURE_COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tmp/jpeg-turbo_configure.sh
-  BUILD_COMMAND  ${GNU_MAKE_PROGRAM} -j${JPEG-TURBO_MAKE_JOBS} 
-  
+  USES_TERMINAL_BUILD 1
+  CMAKE_ARGS
+  -G${CMAKE_GENERATOR}
+  -DCMAKE_INSTALL_PREFIX=${JPEG-TURBO_CMAKE_INSTALL_PREFIX}
+  -DCMAKE_BUILD_TYPE=${JPEG-TURBO_CMAKE_BUILD_TYPE}
+  -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  -DENABLE_STATIC=${JPEG-TURBO_ENABLE_STATIC}
+  -DCMAKE_MACOSX_RPATH=ON
   )
 
   set(JPEG-TURBO_DIR ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}

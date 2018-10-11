@@ -1,37 +1,18 @@
 model {
-  name: "recurrent_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
   num_epochs: 20
   num_parallel_readers: 0
   procs_per_model: 0
-  recurrent {
-    unroll_depth : 10
-  }
 
   ###################################################
   # Objective function
   ###################################################
-
   objective_function {
-    layer_term {
-      scale_factor: -1
-      layer: "obj_eval"
-    }
     l2_weight_regularization {
       scale_factor: 0.0005
-    }
-  }
-
-  ###################################################
-  # Metrics
-  ###################################################
-
-  metric {
-    layer_metric {
-      unit: "%"
-      layer: "accuracy_eval"
     }
   }
 

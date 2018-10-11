@@ -96,6 +96,9 @@ std::vector<int> balanced_factors(int n, int num_factors) {
     LBANN_ERROR(err.str());
   }
 
+  // Trivial case when n = 1
+  if (n == 1) { return std::vector<int>(num_factors, 1); };
+  
   // Get prime factorization
   const auto& primes = prime_factors(n);
 

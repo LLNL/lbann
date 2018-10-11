@@ -1,7 +1,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  fan_in_fan_out_initializers.cpp
   initializer.cpp
+  variance_scaling_initializers.cpp
   weights.cpp
   )
 

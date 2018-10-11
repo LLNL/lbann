@@ -7,7 +7,7 @@ MODEL_PROTO="--model=${LBANN_DIR}/model_zoo/models/alexnet/model_alexnet.protote
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_sgd.prototext"
 IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
-BUILD=          # default: Release
+BUILD=            # default: Release
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
@@ -82,7 +82,7 @@ case ${CLUSTER} in
         ;;
     "surface")
         SCHEDULER=slurm
-        PARTITION=${PARTITION:-gpgpu}
+        PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
@@ -156,8 +156,8 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
         catalyst|flash|quartz|surface|pascal)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
-                    IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
-                    DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets/ILSVRC2012
+                    DATASET_TARBALLS="${IMAGENET_DIR}/original/train.tar ${IMAGENET_DIR}/original/val.tar ${IMAGENET_DIR}/labels.tar"
                     IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
                     if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
                         IMAGENET_SUFFIX=
@@ -170,9 +170,9 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                             TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                             ;;
                         *)
-                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/original/train/
                             TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                            TEST_DATASET_DIR=${IMAGENET_DIR}/original/val/
                             TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                             ;;
                     esac
@@ -190,7 +190,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
             ;;
         ray)
             IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            DATASET_TARBALLS="${IMAGENET_DIR}/original/train.tar ${IMAGENET_DIR}/original/val.tar ${IMAGENET_DIR}/labels.tar"
             IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
             if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
                 IMAGENET_SUFFIX=
@@ -203,9 +203,9 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                     TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                     ;;
                 *)
-                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/original/train/
                     TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                    TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                    TEST_DATASET_DIR=${IMAGENET_DIR}/original/val/
                     TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                     ;;
             esac
@@ -269,13 +269,13 @@ esac
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-        case ${HAS_GPU} in
-            YES|yes|TRUE|true|ON|on|1)
-                case ${CLUSTER} in
-                    surface|ray)
-                        MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                        ;;
-                esac
+        case ${CLUSTER} in
+            surface|ray)
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default"
+                ;;
+            pascal)
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default --cpu_bind=mask_cpu:0x000001ff,0x0003fe00"
+                ;;
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
@@ -367,9 +367,16 @@ echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        echo "export MV2_CUDA_ALLGATHER_FGP=0"          >> ${BATCH_SCRIPT}
         ;;
 esac
-echo ""
+case ${CLUSTER} in
+    pascal)
+        echo "export OMP_NUM_THREADS=8"                 >> ${BATCH_SCRIPT}
+        echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
+        ;;
+esac
+echo "export MV2_USE_RDMA_CM=0"                         >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

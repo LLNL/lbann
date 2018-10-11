@@ -32,7 +32,7 @@
 #include "lbann/layers/learning/learning.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/weights/fan_in_fan_out_initializers.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/random.hpp"
@@ -216,51 +216,70 @@ class base_convolution_layer : public learning_layer {
     }
     this->m_weights.resize(2, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(this->m_comm);
-      this->m_weights[0]->set_name(this->m_name + "_kernel");
-      this->m_weights[0]->set_initializer(new he_normal_initializer(this->m_comm));
-      this->m_weights[0]->set_optimizer(m_model->create_optimizer());
-      this->m_model->add_weights(this->m_weights[0]);
+      auto* w = new weights(get_comm());
+      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      w->set_name(get_name() + "_kernel");
+      w->set_initializer(init);
+      w->set_optimizer(opt);
+      this->m_weights[0] = w;
+      this->m_model->add_weights(w);
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(this->m_comm);
-      this->m_weights[1]->set_name(this->m_name + "_bias");
-      this->m_weights[1]->set_initializer(new constant_initializer(this->m_comm, DataType(0)));
-      this->m_weights[1]->set_optimizer(m_model->create_optimizer());
-      this->m_model->add_weights(this->m_weights[1]);
+      auto* w = new weights(get_comm());
+      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      w->set_name(get_name() + "_bias");
+      w->set_optimizer(opt);
+      this->m_weights[1] = w;
+      this->m_model->add_weights(w);
     }
-
-    // Initialize Glorot or He weight initialization
+    auto& kernel_weights = *this->m_weights[0];
+    auto& bias_weights = *this->m_weights[1];
+    
+    // Initialize variance scaling initialization
     auto* cast_initializer
-      = dynamic_cast<fan_in_fan_out_initializer*>(&this->m_weights[0]->get_initializer());
+      = dynamic_cast<variance_scaling_initializer*>(kernel_weights.get_initializer());
     if (cast_initializer != nullptr) {
       cast_initializer->set_fan_in(m_kernel_size / output_dims[0]);
       cast_initializer->set_fan_out(m_kernel_size / input_dims[0]);
     }
 
-    // Initialize bias
-    this->m_weights[1]->setup(output_dims[0], Dev);
-    El::Zeros(m_bias_gradient,
-              this->m_weights[1]->get_matrix_height(),
-              this->m_weights[1]->get_matrix_width());
+    // Initialize weight matrices
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    kernel_weights.set_dims(m_kernel_dims);
+    kernel_weights.set_matrix_distribution(dist);
+    bias_weights.set_dims(output_dims[0]);
+    bias_weights.set_matrix_distribution(dist);
 
-    if (m_frozen) {
-      this->m_weights[0]->freeze();
-      this->m_weights[1]->freeze();
-    } else {
-      if (this->m_weights[0]->is_frozen()) {
-        std::stringstream err;
-        err << "unfrozen layer \"" << get_name() << "\" "
-            << "has frozen weights \"" << this->m_weights[0]->get_name() << "\"";
-        LBANN_ERROR(err.str());
+    // Initialize gradients
+    El::Zeros(m_kernel_gradient,
+              kernel_weights.get_matrix_height(),
+              kernel_weights.get_matrix_width());
+    El::Zeros(m_bias_gradient,
+              bias_weights.get_matrix_height(),
+              bias_weights.get_matrix_width());
+
+    // Initialize freeze state
+    for (auto&& w : this->m_weights) {
+      if (m_frozen) {
+        w->freeze();
+      } else {
+        w->unfreeze();
       }
-      if (this->m_weights[1]->is_frozen()) {
+    }
+    for (auto&& w : this->m_weights) {
+      if (w->is_frozen() != m_frozen) {
         std::stringstream err;
-        err << "unfrozen layer \"" << get_name() << "\" "
-            << "has frozen weights \"" << this->m_weights[1]->get_name() << "\"";
+        err << (m_frozen ? "" : "un") << "frozen "
+            << "layer \"" << get_name() << "\" has "
+            << (w->is_frozen() ? "" : "un") << "frozen "
+            << "weights \"" << w->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
     }
+    
   }
 
   /// Initialize GPU objects
@@ -297,36 +316,7 @@ class base_convolution_layer : public learning_layer {
     bias_dims[1] = output_dims[0];
     cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
 
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  virtual void check_setup() override {
-    learning_layer::check_setup();
-    std::stringstream err;
-
-    // Check that kernel and bias weights are both initialized
-    if (this->m_weights.size() != 2
-        || this->m_weights[0] == nullptr
-        || this->m_weights[1] == nullptr) {
-      err << "failed to setup weights in layer \"" << get_name() << "\"";
-      LBANN_ERROR(err.str());
-    }
-
-    // Check that kernel data and kernel gradient data are contiguous
-    const auto& kernel = this->m_weights[0]->get_values();
-    if (kernel.LocalWidth() > 1
-        && kernel.LDim() != kernel.LocalHeight()) {
-      err << "kernel data in layer \"" << m_name << "\" "
-          << "is not contiguous";
-      LBANN_ERROR(err.str());
-    }
-    if (m_kernel_gradient.LocalWidth() > 1
-        && m_kernel_gradient.LDim() != m_kernel_gradient.LocalHeight()) {
-      err << "kernel gradient data in layer \"" << m_name << "\" "
-          << "is not contiguous";
-      LBANN_ERROR(err.str());
-    }
-
+#endif // LBANN_HAS_CUDNN
   }
 
  protected:

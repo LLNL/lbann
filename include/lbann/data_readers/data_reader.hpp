@@ -36,6 +36,7 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/data_readers/image_preprocessor.hpp"
+#include "lbann/utils/options.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -61,6 +62,9 @@ class model;
  */
 class generic_data_reader : public lbann_image_preprocessor {
  public:
+
+ #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
+ #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; } 
 
   /**
    * ctor
@@ -92,7 +96,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_is_partitioned(false),
     m_partition_overlap(0),
     m_partition_mode(0),
-    m_procs_per_partition(1)
+    m_procs_per_partition(1),
+    m_jag_partitioned(false)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -128,7 +133,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * for some data readers (jag_conduit) we load from multiple files;
    * for testing we want to be able to restrict that number
    */
-  void set_max_files_to_load(int n) {
+  void set_max_files_to_load(size_t n) {
     m_max_files_to_load = n;
   }
 
@@ -232,6 +237,13 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual void set_role(std::string role) {
     m_role = role;
+    if (options::get()->has_string("jag_partitioned")
+        && get_role() == "train") {
+      m_jag_partitioned = true;
+      if (is_master()) {
+        std::cerr << "USING JAG DATA PARTITIONING\n";
+      }
+    }
   }
 
   /**
@@ -340,6 +352,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch size across all models (global)
   void set_global_mini_batch_size(const int s) {
+    JAG_NOOP_VOID
     m_global_mini_batch_size = s;
   }
   /// Return the mini_batch_size across all models (global)
@@ -348,6 +361,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the mini batch stride
   void set_stride_to_next_mini_batch(const int s) {
+    JAG_NOOP_VOID
     m_stride_to_next_mini_batch = s;
   }
   /// Return the mini batch stride.
@@ -356,6 +370,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the sample stride
   void set_sample_stride(const int s) {
+    JAG_NOOP_VOID
     m_sample_stride = s;
   }
   /// Return the sample stride.
@@ -372,6 +387,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Return the base offset.
   void set_base_offset(const int s) {
+    JAG_NOOP_VOID
     m_base_offset = s;
   }
   /// Return the base offset.
@@ -380,6 +396,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the model offset
   void set_model_offset(const int s) {
+    JAG_NOOP_VOID
     m_model_offset = s;
   }
   /// Return the model offset.
@@ -388,6 +405,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size
   void set_last_mini_batch_size(const int s) {
+    JAG_NOOP_VOID
     m_last_mini_batch_size = s;
   }
   /// Return the last mini batch size
@@ -396,6 +414,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch size across all models (global)
   void set_global_last_mini_batch_size(const int s) {
+    JAG_NOOP_VOID
     m_global_last_mini_batch_size = s;
   }
   /// Return the last mini batch size across all models (global)
@@ -404,6 +423,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the world master mini batch adjustment (global)
   void set_world_master_mini_batch_adjustment(const int s) {
+    JAG_NOOP_VOID
     m_world_master_mini_batch_adjustment = s;
   }
   /// Return the world master mini batch adjustment (global)
@@ -412,6 +432,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// Set the last mini batch stride
   void set_stride_to_last_mini_batch(const int s) {
+    JAG_NOOP_VOID
     m_stride_to_last_mini_batch = s;
   }
   /// Return the last mini batch stride
@@ -776,7 +797,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_num_parallel_readers; /// How many parallel readers are being used
 
   int m_rank_in_model;  /// What is the rank of the data reader within a given model
-  int m_max_files_to_load;
+  size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
   std::string m_data_fn;
@@ -837,6 +858,15 @@ class generic_data_reader : public lbann_image_preprocessor {
    int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
+
+  /// special handling for 1B jag; each reader
+  /// owns a unique subset of the data
+  bool m_jag_partitioned;
+
+  /// called by fetch_data a single time if m_jag_partitioned = true;
+  /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
+  /// etc.
+  void set_jag_variables(int mb_size);
 };
 
 template<typename T>

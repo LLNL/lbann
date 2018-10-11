@@ -117,15 +117,16 @@ int main(int argc, char *argv[]) {
       delete t;
     }
 
-  } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
   } catch (std::exception& e) {
-    El::ReportException(e);  // Elemental exceptions
+    El::ReportException(e);
+    finalize(comm);
+    return EXIT_FAILURE;
   }
 
-  // free all resources by El and MPI
+  // Clean up
   finalize(comm);
-  return 0;
+  return EXIT_SUCCESS;
+  
 }
 
 model * build_model_from_prototext(int argc, char **argv,
@@ -151,8 +152,8 @@ model * build_model_from_prototext(int argc, char **argv,
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
-      err << __FILE__ << " " << __LINE__ << " :: model does not provide a valid block size: " << pb_model->block_size();
-      throw lbann_exception(err.str());
+      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
+      LBANN_ERROR(err.str());
     }
     El::SetBlocksize(pb_model->block_size());
 
@@ -337,7 +338,7 @@ model * build_model_from_prototext(int argc, char **argv,
 #endif
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   } catch (std::exception& e) {
     El::ReportException(e);  // Elemental exceptions
   }
@@ -363,7 +364,7 @@ bool load_model_weights(std::string ckpt_dir, model * m){
     closeread(fd, latest);
     if(temp_comm->am_model_master())
       sprintf(latest, "%s/shared.model.%d.epoch.%d.step.%d/", ckpt_dir.c_str(), temp_comm->get_model_rank(), epochLast, stepLast);
-    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest));
+    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
   }
 
   DIR *weight_dir;

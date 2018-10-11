@@ -150,14 +150,6 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
 
   }
 
-  void setup_data() override {
-    base_convolution_layer<Dev>::setup_data();
-    this->m_weights[0]->setup(this->m_kernel_dims, Dev);
-    El::Zeros(this->m_kernel_gradient,
-              this->m_weights[0]->get_matrix_height(),
-              this->m_weights[0]->get_matrix_width());
-  }
-
  protected:
 
   void fp_compute() override {

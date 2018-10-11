@@ -73,7 +73,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
-    if ((name == "mnist") || (name == "cifar10")) {
+    if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
     } else if ((name == "imagenet") || (name == "imagenet_patches") ||
@@ -107,6 +107,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
+      init_image_data_reader(readme, master, reader);
+      set_up_generic_preprocessor = false;
+    } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
@@ -222,9 +225,23 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
 
     } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
+      if (readme.num_labels() != 0) {
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          proto::parse_list<int>(readme.synth_dimensions()),
+          readme.num_labels(),
+          shuffle);
+      } else {
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          proto::parse_list<int>(readme.synth_dimensions()),
+          proto::parse_list<int>(readme.synth_response_dimensions()),
+          shuffle);
+      }
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
+    } else if (name == "moving_mnist") {
+      reader = new moving_mnist_reader(7, 40, 40, 2);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -342,13 +359,14 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
-        /*
-        } else if (name == "synthetic") {
-        reader_validation = new data_reader_synthetic(shuffle);
-        */
+      } else if (name == "synthetic") {
+        reader_validation = new data_reader_synthetic(*(data_reader_synthetic *)reader);
+        (*(data_reader_synthetic *) reader_validation) = (*(data_reader_synthetic *)reader);
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
+      } else if (name == "moving_mnist") {
+        reader_validation = new moving_mnist_reader(7, 40, 40, 2);
       }
 
       reader_validation->set_role("validate");
@@ -551,17 +569,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
-  }
-
-  if (opts->has_string("image_dir")) {
-    int sz = model->callback_size();
-    for (int j=0; j<sz; j++) {
-      lbann_data::Callback *c = model->mutable_callback(j);
-      if (c->has_save_images()) {
-        lbann_data::CallbackSaveImages *i = c->mutable_save_images();
-        i->set_image_dir(opts->get_string("image_dir"));
-      }
-    }
   }
   if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
     int sz = model->callback_size();

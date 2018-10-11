@@ -11,6 +11,7 @@ set_full_path(THIS_DIR_SOURCES
   data_store_pilot2_molecular.cpp
   data_store_triplet.cpp
   jag_io.cpp
+  jag_store.cpp
 )
 
 add_executable( jag_converter-bin jag_converter.cpp )

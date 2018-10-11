@@ -67,7 +67,13 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {}
+    m_default_optimizer(default_optimizer) {
+
+      static int num_models = 0;
+      m_name = "Model" + std::to_string(num_models);
+      num_models++;
+
+  }
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
@@ -204,6 +210,10 @@ void model::add_metric(metric *m) {
     throw lbann_exception("model: Attempted to add null pointer as a metric.");
   }
   m_metrics.push_back(m);
+}
+
+void model::set_name(std::string name) {
+  m_name = name;
 }
 
 void model::set_layers(std::vector<Layer*>& layers) {
@@ -501,8 +511,8 @@ void model::setup_weights() {
                                      m_weights.end());
 
   // Find weights used by layers
-  for (const auto& layer : m_layers) {
-    for (const auto& w : layer->get_weights()) {
+  for (const auto* l : m_layers) {
+    for (const auto& w : l->get_weights()) {
       if (weights_set.count(w) == 0) {
         m_weights.push_back(w);
         weights_set.insert(w);
@@ -521,10 +531,13 @@ void model::setup_weights() {
   }
 
   // Delete unused weights
-  for (const auto& w : unused_weights) {
+  for (auto&& w : unused_weights) {
     m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
                     m_weights.end());
   }
+
+  // Setup weights
+  for (auto* w : m_weights) { w->setup(); }
 
 }
 
@@ -624,7 +637,7 @@ void model::add_evaluation_layers() {
   }
 
 }
-  
+
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
@@ -777,28 +790,28 @@ void model::collect_indices(execution_mode mode) {
 void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
-
-    // Stop if training has been terminated
     if (get_terminate_training()) { break; }
 
-    // Setup epoch
+    // Initialize epoch
     reset_mode_and_model(execution_mode::training);
-
     do_epoch_begin_cbs();
-    // Train on num_batches (subepoch) if specified
-    if(num_batches) {
-      for(int i = 0; i < num_batches; i++)
-        train_mini_batch();
-    } else { //train full epoch
+
+    // Training iterations
+    if (num_batches > 0) {
+      for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
+    } else {
       while (!train_mini_batch()) {}
     }
-    // Once the epoch is complete, Increase the count
+
+    // Finalize epoch
     ++m_current_epoch;
+    reconcile_weight_values();
     do_epoch_end_cbs();
     reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
+
   }
   do_train_end_cbs();
 }
@@ -848,6 +861,7 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
+
   bool finished;
 
   #pragma omp parallel
@@ -862,10 +876,6 @@ bool model::train_mini_batch() {
         // Result is not needed until the end of the mini-batch.
         m_objective_function->start_evaluation(execution_mode::training,
                                                get_current_mini_batch_size());
-        for (const auto& m : m_metrics) {
-          m->evaluate(execution_mode::training,
-                      get_current_mini_batch_size());
-        }
 
         // Backward prop step
         m_objective_function->differentiate();
@@ -875,6 +885,10 @@ bool model::train_mini_batch() {
         // Finish evaluation.
         m_objective_function->finish_evaluation(execution_mode::training,
                                                 get_current_mini_batch_size());
+        for (const auto& m : m_metrics) {
+          m->evaluate(execution_mode::training,
+                      get_current_mini_batch_size());
+        }
 
         // Update step
         update_weights();
@@ -960,6 +974,14 @@ bool model::update_layers() {
     finished = m_layers[l]->update() && finished;
   }
   return finished;
+}
+
+void model::reconcile_weight_values() {
+  std::vector<Al::request> reqs(m_weights.size());
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    m_weights[i]->reconcile_values(reqs[i]);
+  }
+  for (auto& req : reqs) { m_comm->wait(req); }
 }
 
 ////////////////////////////////////////////////////////////

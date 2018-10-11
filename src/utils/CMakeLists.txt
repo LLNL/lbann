@@ -3,12 +3,14 @@ set_full_path(THIS_DIR_SOURCES
   cnpy_utils.cpp
   cublas.cpp
   cudnn.cpp
+  exception.cpp
   file_utils.cpp
   graph.cpp
   im2col.cpp
   number_theory.cpp
   omp_diagnostics.cpp
   options.cpp
+  profiling.cpp
   protobuf_utils.cpp
   quantizer.cpp
   random.cpp
@@ -17,6 +19,13 @@ set_full_path(THIS_DIR_SOURCES
   statistics.cpp
   summary.cpp
 )
+
+if (LBANN_HAS_CUDA)
+  # Add the CUDA source files for this directory
+  set_full_path(THIS_DIR_CU_SOURCES
+    cuda.cu
+    )
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

@@ -38,7 +38,11 @@ namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_frozen(false) {
+    m_frozen(false)
+#ifdef LBANN_HAS_GPU
+    , m_issue_async_HtoD_copy_event(false)
+#endif // LBANN_HAS_GPU
+{
 
   // Initialize layer name
   static int num_layers = 0;
@@ -48,6 +52,10 @@ Layer::Layer(lbann_comm *comm)
   // Reset timing counters
   reset_counters();
 
+#ifdef LBANN_HAS_GPU
+  // Initialize event. Disabling timing results in a more efficient event.
+  cudaEventCreateWithFlags(&m_async_HtoD_copy_event, cudaEventDisableTiming);
+#endif // LBANN_HAS_GPU
 }
 
 Layer::Layer(const Layer& other) :
@@ -65,7 +73,11 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_output_dims_list(other.m_output_dims_list) {
+  m_output_dims_list(other.m_output_dims_list)
+#ifdef LBANN_HAS_GPU
+  , m_issue_async_HtoD_copy_event(other.m_issue_async_HtoD_copy_event)
+#endif // LBANN_HAS_GPU
+{
 
   // Deep matrix copies
   m_inputs.reserve(other.m_inputs.size());
@@ -105,6 +117,9 @@ Layer& Layer::operator=(const Layer& other) {
   m_update_time = other.m_update_time;
   m_name = other.m_name;
   m_output_dims_list = other.m_output_dims_list;
+#ifdef LBANN_HAS_GPU
+  m_issue_async_HtoD_copy_event = other.m_issue_async_HtoD_copy_event;
+#endif // LBANN_HAS_GPU
 
   // Deep matrix copies
   m_inputs.clear();
@@ -540,26 +555,8 @@ void Layer::setup() {
 void Layer::setup_pointers() {
   std::stringstream err;
 
-  // Check that the number of parents/children are valid
-  if(m_expected_num_parent_layers >= 0
-     && get_num_parents() != m_expected_num_parent_layers) {
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "has an invalid number of parent layers "
-        << "(expected " << m_expected_num_parent_layers << ", "
-        << "found " << get_num_parents() << ")";
-    LBANN_ERROR(err.str());
-  }
-  if(m_expected_num_child_layers >= 0
-     && get_num_children() != m_expected_num_child_layers) {
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "has an invalid number of child layers "
-        << "(expected " << m_expected_num_child_layers << ", "
-        << "found " << get_num_children() << ")";
-    LBANN_ERROR(err.str());
-  }
-
   // Check that the parent pointers are valid
-  for (int i = 0; i < get_num_parents(); ++i) {
+  for (size_t i = 0; i < m_parent_layers.size(); ++i) {
     const auto* parent = m_parent_layers[i];
     if (parent == nullptr) {
       err << "layer \"" << get_name() << "\" "
@@ -578,7 +575,7 @@ void Layer::setup_pointers() {
   }
 
   // Check that the child pointers are valid
-  for (int i = 0; i < get_num_children(); ++i) {
+  for (size_t i = 0; i < m_child_layers.size(); ++i) {
     const auto* child = m_child_layers[i];
     if (child == nullptr) {
       err << "layer \"" << get_name() << "\" "
@@ -596,6 +593,40 @@ void Layer::setup_pointers() {
     }
   }
 
+  // Check that the number of parents/children are valid
+  if(m_expected_num_parent_layers >= 0
+     && get_num_parents() != m_expected_num_parent_layers) {
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "expects " << m_expected_num_parent_layers << " "
+        << "parent layer" << (m_expected_num_parent_layers != 1 ? "s" : "")
+        << ", but found " << get_num_parents();
+    if (get_num_parents() > 0) {
+      err << " (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        err << (i > 0 ? ", " : "")
+            << "\"" << m_parent_layers[i]->get_name() << "\"";
+      }
+      err << ")";
+    }
+    LBANN_ERROR(err.str());
+  }
+  if(m_expected_num_child_layers >= 0
+     && get_num_children() != m_expected_num_child_layers) {
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "expects " << m_expected_num_child_layers << " "
+        << "child layer" << (m_expected_num_child_layers != 1 ? "s" : "")
+        << ", but found " << get_num_children();
+    if (get_num_children() > 0) {
+      err << " (";
+      for (int i = 0; i < get_num_children(); ++i) {
+        err << (i > 0 ? ", " : "")
+            << "\"" << m_child_layers[i]->get_name() << "\"";
+      }
+      err << ")";
+    }
+    LBANN_ERROR(err.str());
+  }
+
 }
 
 void Layer::setup_dims() {
@@ -609,7 +640,7 @@ void Layer::setup_dims() {
     }
   }
 }
-  
+
 void Layer::setup_matrices(const El::Grid& grid) {
 
   // Destroy previously setup matrices
@@ -637,7 +668,6 @@ void Layer::setup_matrices(const El::Grid& grid) {
     m_gradient_wrt_inputs[i]
       = construct_matrix(grid, "gradient_wrt_input", i);
   }
-
 }
 
 std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
@@ -666,10 +696,12 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
   std::unique_ptr<AbsDistMat> mat;
   mat.reset(AbsDistMat::Instantiate(grid, 0,
                                     col_dist, row_dist, wrap, device));
-  
+
 #ifdef LBANN_HAS_GPU
   // Allocate GPU memory with the CUDA API
   if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
+  // Use pinned memory for data on the host.
+  if (device == El::Device::CPU) { mat->Matrix().SetMemoryMode(1); }
 #endif // LBANN_HAS_GPU
 
   return mat;
@@ -855,6 +887,15 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
   const auto& alignment_dist
     = m_parent_layers.front()->get_activations(*this).DistData();
 
+#ifdef LBANN_HAS_GPU
+  if(m_issue_async_HtoD_copy_event) {
+    // Wait for the event to complete.
+    // After this returns, all work on the stream prior to the event record has completed.
+    cudaEventSynchronize(m_async_HtoD_copy_event);
+    m_issue_async_HtoD_copy_event = false;
+  }
+#endif // LBANN_HAS_GPU
+
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
@@ -867,7 +908,21 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
     } else {
-      El::Copy(parent_output, input);
+#ifdef LBANN_HAS_GPU
+      // If we are going from Host to Device and have the same distribution
+      // then we can use asynchronous local I/O
+      if(parent_output.GetLocalDevice() == El::Device::CPU &&
+         input.GetLocalDevice() == El::Device::GPU &&
+         parent_output.ColDist() == input.ColDist() &&
+         parent_output.RowDist() == input.RowDist()) {
+        El::CopyAsync(parent_output, input);
+        m_issue_async_HtoD_copy_event = true;
+      }else {
+#endif // LBANN_HAS_GPU
+        El::Copy(parent_output, input);
+#ifdef LBANN_HAS_GPU
+      }
+#endif // LBANN_HAS_GPU
     }
 
     // Check input matrix dimensions
@@ -884,7 +939,13 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     }
 
   }
-  
+
+#ifdef LBANN_HAS_GPU
+  if(m_issue_async_HtoD_copy_event) {
+    // Record the asynchronous copy on the stream.
+    cudaEventRecord(m_async_HtoD_copy_event, El::GPUManager::Stream());
+  }
+#endif // LBANN_HAS_GPU
 }
 
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {
@@ -894,7 +955,7 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
   const bool align_outputs = get_num_parents() > 0;
   const auto& alignment_dist = (align_outputs ?
                                 get_prev_activations().DistData() :
-                                El::DistData());
+                                get_activations().DistData());
 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {

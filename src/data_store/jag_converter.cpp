@@ -46,6 +46,7 @@ int main(int argc, char *argv[]) {
 #else
 
   lbann_comm *comm = initialize(argc, argv, 42);
+  std::cerr << "num ranks: " << comm->get_procs_in_world() << "\n";
 
   try {
     options *opts = options::get();
@@ -100,7 +101,7 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    e.print_report();
   }  
 
 #endif //ifdef LBANN_HAS_CONDUIT

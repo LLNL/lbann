@@ -80,7 +80,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
           << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
-    for (int i = 0; i < 2; i++) {
+    for (size_t i = 0; i < buf->M_local.size(); i++) {
       El::Int width = sample.Width();
       if(i == 1) { width = response.Width(); }
       CopyFromRoot((*buf->M_local[i])(El::ALL, El::IR(0, width)), *buf->Ms[i]);
@@ -88,7 +88,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
     buf->m_local_data_valid = false;
     buf->m_num_samples_in_batch = 0;
   } else {
-    for (int i = 0; i < 2; i++) {
+    for (size_t i = 0; i < buf->M_local.size(); i++) {
       CopyFromNonRoot(*buf->Ms[i]);
     }
   }

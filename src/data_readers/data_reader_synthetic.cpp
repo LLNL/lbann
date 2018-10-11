@@ -27,32 +27,70 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
+#include "lbann/utils/random.hpp"
 #include <cstdio>
 #include <string>
 
 namespace lbann {
 
-data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features, bool shuffle)
-  : generic_data_reader(shuffle) {
-  m_num_samples = num_samples;
-  m_num_features = num_features;
+namespace {
+
+void fill_matrix(CPUMat& mat) {
+  std::normal_distribution<DataType> dist(DataType(0), DataType(1));
+  auto& gen = get_fast_generator();
+  const El::Int height = mat.Height();  // Width is 1.
+  DataType * __restrict__ buf = mat.Buffer();
+  for (El::Int i = 0; i < height; ++i) {
+    buf[i] = dist(gen);
+  }
 }
 
-/// Generate one datum of the mini-batch
-bool data_reader_synthetic::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-  Mat X_v;
-  El::View(X_v, X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  //@todo: generalize to take different data distribution/generator
-  El::Gaussian(X_v, m_num_features, 1, DataType(0), DataType(1));
+}  // anonymous namespace
 
+data_reader_synthetic::data_reader_synthetic(int num_samples, int num_features,
+                                             bool shuffle)
+  : data_reader_synthetic(num_samples, {num_features}, 0, shuffle) {}
+
+data_reader_synthetic::data_reader_synthetic(int num_samples,
+                                             std::vector<int> dims,
+                                             int num_labels, bool shuffle)
+  : generic_data_reader(shuffle), m_num_samples(num_samples),
+    m_num_labels(num_labels), m_dimensions(dims) {}
+
+data_reader_synthetic::data_reader_synthetic(int num_samples,
+                                             std::vector<int> dims,
+                                             std::vector<int> response_dims,
+                                             bool shuffle)
+  : generic_data_reader(shuffle), m_num_samples(num_samples),
+    m_num_labels(0), m_dimensions(dims), m_response_dimensions(response_dims) {}
+
+bool data_reader_synthetic::fetch_datum(CPUMat& X, int data_id, int mb_idx, int) {
+  auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
+  fill_matrix(X_v);
+  return true;
+}
+
+bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx, int) {
+  if (m_num_labels == 0) {
+    LBANN_ERROR("Synthetic data reader does not have labels");
+  }
+  Y.Set(fast_rand_int(get_fast_generator(), m_num_labels), mb_idx, 1);
+  return true;
+}
+
+bool data_reader_synthetic::fetch_response(CPUMat& Y, int data_id, int mb_idx, int) {
+  if (m_response_dimensions.empty()) {
+    LBANN_ERROR("Synthetic data reader does not have responses");
+  }
+  auto Y_v = El::View(Y, El::ALL, El::IR(mb_idx, mb_idx + 1));
+  fill_matrix(Y_v);
   return true;
 }
 
 void data_reader_synthetic::load() {
-  //set indices/ number of features
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
-
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
 }
 
