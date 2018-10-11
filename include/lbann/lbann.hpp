@@ -50,7 +50,6 @@
 #include "lbann/layers/activations/logsoftmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
-#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"

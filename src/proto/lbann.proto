@@ -893,7 +893,6 @@ message Layer {
    Selu selu = 37;
    BentIdentity bent_identity = 40;
    Swish swish = 42;
-   Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 
 }
 ///////////////////////
@@ -995,10 +994,6 @@ message Softmax {
 }
 
 message LogSoftmax {
-}
-
-message Sigmoid_Binary_Cross_Entropy_With_Logits {
-  int32 true_label = 1;
 }
 
 ///////////////////////

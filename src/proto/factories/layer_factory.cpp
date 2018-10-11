@@ -543,11 +543,6 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(boolean_false_negative);
   CONSTRUCT_LAYER(boolean_false_positive);
 
-  if (proto_layer.has_bce_with_logits()) {
-    const auto& params = proto_layer.bce_with_logits();
-    return new sigmoid_bce_with_logits_layer<layout, Dev>(comm, params.true_label());
-  }
-
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());
