@@ -224,7 +224,7 @@ protected:
       El::Copy(input, output);
       return;
     }
-    if (local_input.Height() < 1 && local_input.Width() < 1) { return; }
+    if (local_input.Height() < 1 || local_input.Width() < 1) { return; }
 
     // Initialize cuDNN objects
     auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
