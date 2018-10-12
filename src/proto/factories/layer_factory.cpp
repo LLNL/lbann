@@ -530,24 +530,18 @@ Layer* construct_layer(lbann_comm* comm,
   }
 
   // Loss layers
-  if (proto_layer.has_cross_entropy()) {
-    return new cross_entropy_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_mean_squared_error()) {
-    return new mean_squared_error_layer<layout, Dev>(comm);
-  }
+  CONSTRUCT_LAYER(cross_entropy);
+  CONSTRUCT_LAYER(mean_squared_error);
   if (proto_layer.has_top_k_categorical_accuracy()) {
     const auto& params = proto_layer.top_k_categorical_accuracy();
     return new top_k_categorical_accuracy_layer<layout, Dev>(comm, params.k());
   }
-  if (proto_layer.has_l2_norm2()) {
-    return new l2_norm2_layer<layout, Dev>(comm);
-  }
-
-  if (proto_layer.has_bce_with_logits()) {
-    const auto& params = proto_layer.bce_with_logits();
-    return new sigmoid_bce_with_logits_layer<layout, Dev>(comm, params.true_label());
-  }
+  CONSTRUCT_LAYER(l2_norm2);
+  CONSTRUCT_LAYER(binary_cross_entropy);
+  CONSTRUCT_LAYER(sigmoid_binary_cross_entropy);
+  CONSTRUCT_LAYER(boolean_accuracy);
+  CONSTRUCT_LAYER(boolean_false_negative);
+  CONSTRUCT_LAYER(boolean_false_positive);
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
