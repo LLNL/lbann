@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/loss/entrywise.hpp"
 
 namespace lbann {
 
@@ -126,10 +126,9 @@ void apply_binary_backprop_operator(const AbsMat& x1,
     static_cast<void>(static_cast<double (*)(const double&, const double&)>(func##_)); \
     return func(x1, x2);                                                \
   }
-WRAP_CUDA_MATH_UNARY_FUNCTION(floor)
 WRAP_CUDA_MATH_UNARY_FUNCTION(log)
-WRAP_CUDA_MATH_BINARY_FUNCTION(fmod)
-WRAP_CUDA_MATH_BINARY_FUNCTION(pow)
+WRAP_CUDA_MATH_UNARY_FUNCTION(exp)
+WRAP_CUDA_MATH_UNARY_FUNCTION(log1p)
 WRAP_CUDA_MATH_BINARY_FUNCTION(fmax)
 WRAP_CUDA_MATH_BINARY_FUNCTION(fmin)
   
@@ -141,183 +140,81 @@ WRAP_CUDA_MATH_BINARY_FUNCTION(fmin)
 // to back prop step
 // (\f$ \frac{dL}{dx_i} = \frac{dL}{dy} \frac{df}{dx_i}(x_1,x_2) \f$).
 
-/** Add operator. */
-struct add_op {
+/** Binary cross entropy operator. */
+struct binary_cross_entropy_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    return x1 + x2;
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
+    DataType y = zero;
+    if (x2 > zero) { y += -x2 * log_(x1); }
+    if (x2 < one)  { y += -(one-x2) * log_(one-x1); }
+    return y;
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
                                     const DataType& dy,
                                     DataType& dx1,
                                     DataType& dx2) const {
-    dx1 = dy;
-    dx2 = dy;
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
+    dx1 = zero;
+    dx2 = zero;
+    if (dy == zero) { return; }
+    if (x2 > zero) {
+      dx1 += -x2 / x1 * dy;
+      dx2 += -log_(x1) * dy;
+    }
+    if (x2 < one)  {
+      dx1 += (one-x2) / (one-x1) * dy;
+      dx2 += log_(one-x1) * dy;
+    }
   }
 };
 
-/** Subtract operator. */
-struct subtract_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 - x2;
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = dy;
-    dx2 = -dy;
-  }
-};
-  
-/** Multiply operator. */
-struct multiply_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 * x2;
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = dy * x2;
-    dx2 = dy * x1;
-  }
-};
-
-/** Divide operator. */
-struct divide_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 / x2;
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = dy / x2;
-    dx2 = -dy * x1 / (x2*x2);
-  }
-};
-  
-/** Modulo operator. */
-struct mod_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return fmod_(x1, x2);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = dy;
-    dx2 = -dy * floor_(x1 / x2);
-  }
-};
-
-/** Power operator. */
-struct pow_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return pow_(x1, x2);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-
-    dx1 = dy * x2 * pow_(x1, x2 - DataType(1));
-    dx2 = dy * log_(x1) * pow_(x1, x2);
-  }
-};
-
-/** Safe divide operator.
- *  If a standard division produces an infinity or NaN, zero is output
- *  instead.
+/** Sigmoid binary cross entropy operator.
+ *  Equivalent to applying a sigmoid function to the first operand and
+ *  then computing the binary cross entropy. Numerically stable
+ *  implementation is taken from
+ *  https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits.
  */
-struct safe_divide_op {
+struct sigmoid_binary_cross_entropy_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const auto& y = x1 / x2;
-    if (isfinite(y)) { return y; }
-    else             { return DataType(0); }
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
+    const auto& z = fmax_(zero, fmin_(x2, one));
+    if (x1 > zero) {
+      return (one - z) * x1 + log1p_(exp_(-x1));
+    } else {
+      return - x1 * z + log1p_(exp_(x1));
+    }
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
                                     const DataType& dy,
                                     DataType& dx1,
                                     DataType& dx2) const {
-    const auto& y = x1 / x2;
-    if (isfinite(y)) {
-      dx1 = dy / x2;
-      dx2 = -dy * x1 / (x2*x2);
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
+    const auto& z = fmax_(zero, fmin_(x2, one));
+    if (x1 > zero) {
+      dx1 = -z + 1 / (one + exp_(-x1));
     } else {
-      dx1 = DataType(0);
-      dx2 = DataType(0);
+      dx1 = one - z - 1 / (one + exp_(x1));
     }
+    dx1 *= dy;
+    dx2 = (x2 == z) ? -x1 * dy : zero;
   }
 };
   
-/** Maximum operator. */
-struct max_op {
+/** Boolean accuracy operator. */
+struct boolean_accuracy_op {
   inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return fmax_(x1, x2);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    if (x1 > x2) {
-      dx1 = dy;
-      dx2 = DataType(0);
-    } else if (x2 > x1) {
-      dx1 = DataType(0);
-      dx2 = dy;
-    } else {
-      dx1 = dy / 2;
-      dx2 = dy / 2;
-    }
-  }
-};
-
-/** Minimum operator. */
-struct min_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return fmin_(x1, x2);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    if (x1 < x2) {
-      dx1 = dy;
-      dx2 = DataType(0);
-    } else if (x2 < x1) {
-      dx1 = DataType(0);
-      dx2 = dy;
-    } else {
-      dx1 = dy / 2;
-      dx2 = dy / 2;
-    }
-  }
-};
-
-/** Equal operator. */
-struct equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 == x2 ? DataType(1) : DataType(0);
+                                        const DataType& x2) const {    
+    const auto& b1 = x1 >= DataType(0.5);
+    const auto& b2 = x2 >= DataType(0.5);
+    return b1 == b2 ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -329,11 +226,13 @@ struct equal_op {
   }
 };
 
-/** Not equal operator. */
-struct not_equal_op {
+/** Boolean false negative operator. */
+struct boolean_false_negative_op {
   inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 == x2 ? DataType(1) : DataType(0);
+                                        const DataType& x2) const {    
+    const auto& b1 = x1 >= DataType(0.5);
+    const auto& b2 = x2 >= DataType(0.5);
+    return (!b1 && b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -345,113 +244,13 @@ struct not_equal_op {
   }
 };
 
-/** Less than operator. */
-struct less_op {
+/** Boolean false positive operator. */
+struct boolean_false_positive_op {
   inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 < x2 ? DataType(1) : DataType(0);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
-  }
-};
-
-/** Less than or equal operator. */
-struct less_equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 <= x2 ? DataType(1) : DataType(0);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
-  }
-};
-
-/** Greater than operator. */
-struct greater_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 > x2 ? DataType(1) : DataType(0);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
-  }
-};
-
-/** Greater than or equal operator. */
-struct greater_equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 >= x2 ? DataType(1) : DataType(0);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
-  }
-};
-
-/** Logical and operator. */
-struct and_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 != DataType(0) && !isnan(x1);
-    const auto& b2 = x2 != DataType(0) && !isnan(x2);
-    return (b1 && b2) ? DataType(1) : DataType(0);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
-  }
-};
-
-/** Logical or operator. */
-struct or_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 != DataType(0) && !isnan(x1);
-    const auto& b2 = x2 != DataType(0) && !isnan(x2);
-    return (b1 || b2) ? DataType(1) : DataType(0);
-  }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
-  }
-};
-
-/** Logical xor operator. */
-struct xor_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 != DataType(0) && !isnan(x1);
-    const auto& b2 = x2 != DataType(0) && !isnan(x2);
-    return (b1 || b2) && !(b1 && b2) ? DataType(1) : DataType(0);
+                                        const DataType& x2) const {    
+    const auto& b1 = x1 >= DataType(0.5);
+    const auto& b2 = x2 >= DataType(0.5);
+    return (b1 && !b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -499,23 +298,10 @@ struct xor_op {
                                        get_local_error_signals(0),      \
                                        get_local_error_signals(1));     \
   }
-  INSTANTIATE(add_layer, add_op)
-  INSTANTIATE(subtract_layer, subtract_op)
-  INSTANTIATE(multiply_layer, multiply_op)
-  INSTANTIATE(divide_layer, divide_op)
-  INSTANTIATE(mod_layer, mod_op)
-  INSTANTIATE(pow_layer, pow_op)
-  INSTANTIATE(safe_divide_layer, safe_divide_op)
-  INSTANTIATE(max_layer, max_op)
-  INSTANTIATE(min_layer, min_op)
-  INSTANTIATE(equal_layer, equal_op)
-  INSTANTIATE(not_equal_layer, not_equal_op)
-  INSTANTIATE(less_layer, less_op)
-  INSTANTIATE(less_equal_layer, less_equal_op)
-  INSTANTIATE(greater_layer, greater_op)
-  INSTANTIATE(greater_equal_layer, greater_equal_op)
-  INSTANTIATE(and_layer, and_op)
-  INSTANTIATE(or_layer, or_op)
-  INSTANTIATE(xor_layer, xor_op)
+  INSTANTIATE(binary_cross_entropy_layer, binary_cross_entropy_op)
+  INSTANTIATE(sigmoid_binary_cross_entropy_layer, sigmoid_binary_cross_entropy_op)
+  INSTANTIATE(boolean_accuracy_layer, boolean_accuracy_op)
+  INSTANTIATE(boolean_false_negative_layer, boolean_false_negative_op)
+  INSTANTIATE(boolean_false_positive_layer, boolean_false_positive_op)
   
 } // namespace lbann

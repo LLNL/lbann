@@ -46,7 +46,7 @@ constexpr DataType one = 1;
 /** Logical not operator. */
 struct not_op {
   inline DataType operator()(const DataType& x) const {
-    const bool b = x != zero && !std::isnan(x);
+    const auto& b = x != zero && !std::isnan(x);
     return !b ? one : zero;
   }
   inline DataType operator()(const DataType& x, const DataType& dy) const {

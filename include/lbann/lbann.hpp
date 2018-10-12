@@ -50,7 +50,6 @@
 #include "lbann/layers/activations/logsoftmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
-#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -59,9 +58,10 @@
 
 /// Loss Layers
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/entrywise.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
-#include "lbann/layers/loss/l2_norm2.hpp"
 
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
