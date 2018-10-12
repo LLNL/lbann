@@ -377,8 +377,8 @@ data_reader_jag_conduit::~data_reader_jag_conduit() {
 }
 
 void data_reader_jag_conduit::set_defaults() {
-  m_independent.assign(1u, Undefined);
-  m_dependent.assign(1u, Undefined);
+  m_independent.clear();
+  m_dependent.clear();
   m_image_width = 0;
   m_image_height = 0;
   m_image_num_channels = 1;
@@ -478,9 +478,7 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
 
 void data_reader_jag_conduit::set_independent_variable_type(
   const std::vector<data_reader_jag_conduit::variable_t> independent) {
-  if (!independent.empty() && !m_independent.empty() && (m_independent[0] == Undefined)) {
-    m_independent.clear();
-  }
+  m_independent.clear();
   for (const auto t: independent) {
     add_independent_variable_type(t);
   }
@@ -488,8 +486,7 @@ void data_reader_jag_conduit::set_independent_variable_type(
 
 void data_reader_jag_conduit::add_independent_variable_type(
   const data_reader_jag_conduit::variable_t independent) {
-  if (!(independent == JAG_Image || independent == JAG_Scalar ||
-        independent == JAG_Input || independent == Undefined)) {
+  if (!(independent == JAG_Image || independent == JAG_Scalar || independent == JAG_Input)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized independent variable type ");
   }
   m_independent.push_back(independent);
@@ -497,9 +494,7 @@ void data_reader_jag_conduit::add_independent_variable_type(
 
 void data_reader_jag_conduit::set_dependent_variable_type(
   const std::vector<data_reader_jag_conduit::variable_t> dependent) {
-  if (!dependent.empty() && !m_dependent.empty() && (m_dependent[0] == Undefined)) {
-    m_dependent.clear();
-  }
+  m_dependent.clear();
   for (const auto t: dependent) {
     add_dependent_variable_type(t);
   }
@@ -507,8 +502,7 @@ void data_reader_jag_conduit::set_dependent_variable_type(
 
 void data_reader_jag_conduit::add_dependent_variable_type(
   const data_reader_jag_conduit::variable_t dependent) {
-  if (!(dependent == JAG_Image || dependent == JAG_Scalar ||
-        dependent == JAG_Input || dependent == Undefined)) {
+  if (!(dependent == JAG_Image || dependent == JAG_Scalar || dependent == JAG_Input)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized dependent variable type ");
   }
   m_dependent.push_back(dependent);
@@ -1132,9 +1126,6 @@ size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_condui
 int data_reader_jag_conduit::get_linearized_data_size() const {
   size_t sz = 0u;
   for (const auto t: m_independent) {
-    if (t == Undefined) {
-      continue;
-    }
     sz += get_linearized_size(t);
   }
   return static_cast<int>(sz);
@@ -1143,9 +1134,6 @@ int data_reader_jag_conduit::get_linearized_data_size() const {
 int data_reader_jag_conduit::get_linearized_response_size() const {
   size_t sz = 0u;
   for (const auto t: m_dependent) {
-    if (t == Undefined) {
-      continue;
-    }
     sz += get_linearized_size(t);
   }
   return static_cast<int>(sz);
@@ -1155,10 +1143,10 @@ std::vector<size_t> data_reader_jag_conduit::get_linearized_data_sizes() const {
   std::vector<size_t> all_dim;
   all_dim.reserve(m_independent.size());
   for (const auto t: m_independent) {
-    if (t == Undefined) {
-      continue;
-    }
     all_dim.push_back(get_linearized_size(t));
+  }
+  if (all_dim.empty()) {
+    return {0u};
   }
   return all_dim;
 }
@@ -1167,10 +1155,10 @@ std::vector<size_t> data_reader_jag_conduit::get_linearized_response_sizes() con
   std::vector<size_t> all_dim;
   all_dim.reserve(m_dependent.size());
   for (const auto t: m_dependent) {
-    if (t == Undefined) {
-      continue;
-    }
     all_dim.push_back(get_linearized_size(t));
+  }
+  if (all_dim.empty()) {
+    return {0u};
   }
   return all_dim;
 }
@@ -1198,11 +1186,11 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
 #else
   std::vector<int> all_dim;
   for (const auto t: m_independent) {
-    if (t == Undefined) {
-      continue;
-    }
     const std::vector<int> ld = get_dims(t);
     all_dim.insert(all_dim.end(), ld.begin(), ld.end());
+  }
+  if (all_dim.empty()) {
+    return {0u};
   }
   return all_dim;
 #endif
