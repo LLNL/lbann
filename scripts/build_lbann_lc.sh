@@ -64,6 +64,7 @@ INSTALL_DIR=
 BUILD_SUFFIX=
 DETERMINISTIC=OFF
 WITH_CUDA=
+WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
@@ -250,6 +251,7 @@ while :; do
             ;;
         --disable-cuda)
             WITH_CUDA=OFF
+            WITH_CUDA_2=OFF
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
@@ -504,9 +506,11 @@ if [ "${MPI}" == "spectrum" ]; then
 fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
-if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
-  export MV2_USE_CUDA=1
+if [ "${WITH_CUDA_2}" == "ON" ]; then
+  if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+    MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
+    export MV2_USE_CUDA=1
+  fi  
 fi
 
 if [ -z "${MPI_HOME}" ]; then
