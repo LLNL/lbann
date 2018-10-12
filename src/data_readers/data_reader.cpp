@@ -29,9 +29,13 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/utils/omp_pragma.hpp"
+#include "lbann/models/model.hpp"
 #include <omp.h>
 
 namespace lbann {
+
+#undef DEBUG
+//#define DEBUG
 
 void generic_data_reader::shuffle_indices() {
   // Shuffle the data
@@ -68,6 +72,19 @@ void generic_data_reader::setup() {
 
 
 int lbann::generic_data_reader::fetch_data(CPUMat& X) {
+
+  #ifdef DEBUG
+  if (m_current_pos == 0) {
+    if (is_master()) {
+      std::cout << "role: " << get_role() << " model: " << m_model->get_model_id()
+                << " shuffled indices: ";
+      for (size_t j=0; j<15; j++) {
+        std::cout << m_shuffled_indices[j] << " ";
+      }
+      std::cout << "\n";
+    }
+  }
+  #endif
 
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
@@ -123,6 +140,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
         error_message = "invalid datum (index " + std::to_string(index) + ")";
       }
     }
+std::cerr << "\n";
     if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
     /// Allow each thread to perform any postprocessing necessary on the
@@ -290,6 +308,9 @@ bool generic_data_reader::update(bool is_active_reader) {
       }
     }
   }
+
+  post_update();
+
   return reader_not_done;
 }
 
