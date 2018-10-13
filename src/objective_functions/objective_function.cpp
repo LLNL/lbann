@@ -26,6 +26,7 @@
 
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/profiling.hpp"
 #include <numeric>
 
 namespace lbann {
@@ -75,9 +76,13 @@ void objective_function::setup(model& m) {
 void objective_function::start_evaluation(execution_mode mode,
                                           int mini_batch_size) {
   const auto start_time = get_time();
+  prof_region_begin("obj-start-eval", prof_colors[0], false);
   for (const auto& term : m_terms) {
+    prof_region_begin(("obj-start-eval-" + term->name()).c_str(), prof_colors[1], false);
     term->start_evaluation();
+    prof_region_end(("obj-start-eval-" + term->name()).c_str(), false);
   }
+  prof_region_end("obj-start-eval", false);
   m_evaluation_time += get_time() - start_time;
 }
 
@@ -85,9 +90,13 @@ EvalType objective_function::finish_evaluation(execution_mode mode,
                                                int mini_batch_size) {
   const auto start_time = get_time();
   EvalType value = EvalType(0);
+  prof_region_begin("obj-finish-eval", prof_colors[0], false);
   for (const auto& term : m_terms) {
+    prof_region_begin(("obj-finish-eval-" + term->name()).c_str(), prof_colors[1], false);
     value += term->finish_evaluation();
+    prof_region_end(("obj-finish-eval-" + term->name()).c_str(), false);
   }
+  prof_region_end("obj-finish-eval", false);
   m_statistics[mode].add_value(mini_batch_size * value,
                                mini_batch_size);
   m_evaluation_time += get_time() - start_time;
@@ -96,17 +105,25 @@ EvalType objective_function::finish_evaluation(execution_mode mode,
 
 void objective_function::differentiate() {
   const auto start_time = get_time();
+  prof_region_begin("obj-differentiate", prof_colors[0], false);
   for (const auto& term : m_terms) {
+    prof_region_begin(("obj-differentiate-" + term->name()).c_str(), prof_colors[1], false);
     term->differentiate();
+    prof_region_end(("obj-differentiate-" + term->name()).c_str(), false);
   }
+  prof_region_end("obj-differentiate", false);
   m_differentiation_time += get_time() - start_time;
 }
 
 void objective_function::compute_weight_regularization() {
   const auto start_time = get_time();
+  prof_region_begin("obj-weight-regularization", prof_colors[0], false);
   for (const auto& term : m_terms) {
+    prof_region_begin(("obj-weight-regularization-" + term->name()).c_str(), prof_colors[1], false);
     term->compute_weight_regularization();
+    prof_region_end(("obj-weight-regularization-" + term->name()).c_str(), false);
   }
+  prof_region_end("obj-weight-regularization", false);
   m_differentiation_time += get_time() - start_time;
 }
 
