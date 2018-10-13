@@ -69,6 +69,7 @@ INSTRUMENT=
 WITH_ALUMINUM=
 ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
+AVOID_CUDA_AWARE_MPI=OFF
 WITH_CONDUIT=OFF
 WITH_DISTCONV=OFF
 WITH_TBINF=OFF
@@ -128,6 +129,7 @@ Options:
   ${C}--disable-aluminum${N}           Disable the Aluminum communication library
   ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
   ${C}--disable-aluminum-with-nccl     Disable the NCCL backend in Aluminum
+  ${C}--avoid-cuda-aware-mpi      Avoid use of CUDA-aware MPI in Hydrogen
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
@@ -266,6 +268,9 @@ while :; do
         --disable-aluminum-with-nccl)
             ALUMINUM_WITH_NCCL=OFF
             ;;
+		--avoid-cuda-aware-mpi)
+			AVOID_CUDA_AWARE_MPI=ON
+			;;
         --with-conduit)
             WITH_CONDUIT=ON
             ;;
@@ -829,6 +834,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
+-D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
 -D LBANN_SB_FWD_LBANN_DISTCONV_DIR=${DISTCONV_DIR} \
 -D LBANN_SB_FWD_LBANN_P2P_DIR=${P2P_DIR} \
 ${SUPERBUILD_DIR}
