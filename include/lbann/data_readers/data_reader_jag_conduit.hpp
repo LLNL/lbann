@@ -109,9 +109,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   }
 
   /// Choose which data to use for independent variable
-  void set_independent_variable_type(const std::vector<variable_t> independent);
+  void set_independent_variable_type(const std::vector< std::vector<variable_t> >& independent);
   /// Choose which data to use for dependent variable
-  void set_dependent_variable_type(const std::vector<variable_t> dependent);
+  void set_dependent_variable_type(const std::vector< std::vector<variable_t> >& dependent);
 
   /// Tell which data to use for independent variable
   std::vector<variable_t> get_independent_variable_type() const;
@@ -299,6 +299,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   const std::vector<int> get_dims(const variable_t t) const;
   /// A utility function to make a string to show all the variable types in a vector
   static std::string to_string(const std::vector<variable_t>& vec);
+  /// A utility function to make a string to show all the groups of variable types
+  static std::string to_string(const std::vector< std::vector<variable_t> >& vec);
 
 
   virtual std::vector<CPUMat>
@@ -380,10 +382,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector< std::vector<ch_t> > get_image_data(const size_t i) const;
 
  protected:
-  /// independent variable type
+  /// The flat list of independent variable types
   std::vector<variable_t> m_independent;
-  /// dependent variable type
+  /// The list of independent variable types grouped for slicing
+  std::vector< std::vector<variable_t> > m_independent_groups;
+  /// The flat list of dependent variable types
   std::vector<variable_t> m_dependent;
+  /// The list of independent variable types grouped for slicing
+  std::vector< std::vector<variable_t> > m_dependent_groups;
 
   int m_image_width; ///< image width
   int m_image_height; ///< image height

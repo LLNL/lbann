@@ -396,7 +396,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       independent_type[i] = static_cast<var_t>(pb_readme.independent(i));
     }
 
-    reader_jag->set_independent_variable_type(independent_type);
+    reader_jag->set_independent_variable_type({independent_type});
 
     // composite dependent variable
     std::vector<var_t> dependent_type(pb_readme.dependent_size());
@@ -405,7 +405,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       dependent_type[i] = static_cast<var_t>(pb_readme.dependent(i));
     }
 
-    reader_jag->set_dependent_variable_type(dependent_type);
+    reader_jag->set_dependent_variable_type({dependent_type});
 
     // keys of chosen scalar values in jag simulation output
     std::vector<std::string> scalar_keys(pb_readme.jag_scalar_keys_size());

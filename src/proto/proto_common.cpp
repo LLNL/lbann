@@ -95,7 +95,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         independent_type[i] = static_cast<var_t>(readme.independent(i));
       }
 
-      reader_jag->set_independent_variable_type(independent_type);
+      reader_jag->set_independent_variable_type({independent_type});
 
       std::vector<var_t> dependent_type(readme.dependent_size());
 
@@ -103,7 +103,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         dependent_type[i] = static_cast<var_t>(readme.dependent(i));
       }
 
-      reader_jag->set_dependent_variable_type(dependent_type);
+      reader_jag->set_dependent_variable_type({dependent_type});
 
       const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
       reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());

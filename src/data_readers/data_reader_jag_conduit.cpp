@@ -309,7 +309,9 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_independent = rhs.m_independent;
+  m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
+  m_dependent_groups = rhs.m_dependent_groups;
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
@@ -378,7 +380,9 @@ data_reader_jag_conduit::~data_reader_jag_conduit() {
 
 void data_reader_jag_conduit::set_defaults() {
   m_independent.clear();
+  m_independent_groups.clear();
   m_dependent.clear();
+  m_dependent_groups.clear();
   m_image_width = 0;
   m_image_height = 0;
   m_image_num_channels = 1;
@@ -477,10 +481,14 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
 
 
 void data_reader_jag_conduit::set_independent_variable_type(
-  const std::vector<data_reader_jag_conduit::variable_t> independent) {
+  const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& independent) {
+  m_independent_groups = independent;
   m_independent.clear();
-  for (const auto t: independent) {
-    add_independent_variable_type(t);
+
+  for (const auto& group: independent) {
+    for (const auto type: group) {
+      add_independent_variable_type(type);
+    }
   }
 }
 
@@ -493,10 +501,14 @@ void data_reader_jag_conduit::add_independent_variable_type(
 }
 
 void data_reader_jag_conduit::set_dependent_variable_type(
-  const std::vector<data_reader_jag_conduit::variable_t> dependent) {
+  const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& dependent) {
+  m_dependent_groups = dependent;
   m_dependent.clear();
-  for (const auto t: dependent) {
-    add_dependent_variable_type(t);
+
+  for (const auto& group: dependent) {
+    for (const auto type: group) {
+      add_dependent_variable_type(type);
+    }
   }
 }
 
@@ -1211,6 +1223,8 @@ int data_reader_jag_conduit::get_linearized_size(const std::string& desc) const 
     return get_linearized_size(JAG_Scalar);
   } else if (desc == "JAG_Input") {
     return get_linearized_size(JAG_Input);
+  } else {
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_size() : unknown key " + desc);
   }
   return generic_data_reader::get_linearized_size(desc);
 }
@@ -1247,10 +1261,19 @@ std::string data_reader_jag_conduit::to_string(const std::vector<data_reader_jag
   return str;
 }
 
+std::string data_reader_jag_conduit::to_string(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& vec) {
+  std::string str("[");
+  for (const auto& el: vec) {
+    str += ' ' + data_reader_jag_conduit::to_string(el);
+  }
+  str += " ]";
+  return str;
+}
+
 std::string data_reader_jag_conduit::get_description() const {
   std::string ret = std::string("data_reader_jag_conduit:\n")
-    + " - independent: " + data_reader_jag_conduit::to_string(m_independent) + "\n"
-    + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent) + "\n"
+    + " - independent: " + data_reader_jag_conduit::to_string(m_independent_groups) + "\n"
+    + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent_groups) + "\n"
     + " - images: "   + std::to_string(m_num_img_srcs) + " of "
                       + std::to_string(m_image_num_channels) + 'x'
                       + std::to_string(m_image_width) + 'x'
