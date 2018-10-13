@@ -579,19 +579,9 @@ bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   return false;
 }
 
-/**
- * To use no key, set 'Undefined' to the corresponding variable type,
- * or call this with an empty vector argument after loading data.
- */
 void data_reader_jag_conduit::set_scalar_choices(const std::vector<std::string>& keys) {
   m_scalar_keys = keys;
-  // If this call is made after loading data, check the keys
-  if (m_is_data_loaded) {
-    check_scalar_keys();
-  } else if (keys.empty()) {
-    _THROW_LBANN_EXCEPTION2_(_CN_, "set_scalar_choices() : ", \
-                                   "empty keys not allowed before data loading");
-  }
+  check_scalar_keys();
 }
 
 void data_reader_jag_conduit::set_all_scalar_choices() {
@@ -621,13 +611,7 @@ const std::vector<std::string>& data_reader_jag_conduit::get_scalar_choices() co
  */
 void data_reader_jag_conduit::set_input_choices(const std::vector<std::string>& keys) {
   m_input_keys = keys;
-  // If this call is made after loading data, check the keys
-  if (m_is_data_loaded) {
-    check_input_keys();
-  } else if (keys.empty()) {
-    _THROW_LBANN_EXCEPTION2_(_CN_, "set_input_choices() : ", \
-                                   "empty keys not allowed before data loading");
-  }
+  check_input_keys();
 }
 
 void data_reader_jag_conduit::set_all_input_choices() {
@@ -718,10 +702,18 @@ void data_reader_jag_conduit::check_image_data() {
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
-  if (m_valid_samples.empty()) {
-    m_scalar_keys.clear();
+  if (m_scalar_keys.empty()) {
     return;
   }
+  if (!m_is_data_loaded) {
+    return;
+  }
+  if (m_valid_samples.empty()) {
+    //m_scalar_keys.clear();
+    return;
+  }
+
+  // If this call is made after loading data, check if the keys are in data
 
   size_t num_found = 0u;
   std::vector<bool> found(m_scalar_keys.size(), false);
@@ -770,10 +762,18 @@ void data_reader_jag_conduit::check_scalar_keys() {
 
 
 void data_reader_jag_conduit::check_input_keys() {
-  if (m_valid_samples.empty()) {
-    m_input_keys.clear();
+  if (m_input_keys.empty()) {
     return;
   }
+  if (!m_is_data_loaded) {
+    return;
+  }
+  if (m_valid_samples.empty()) {
+    //m_input_keys.clear();
+    return;
+  }
+
+  // If this call is made after loading data, check if the keys
 
   size_t num_found = 0u;
   std::vector<bool> found(m_input_keys.size(), false);
@@ -1059,6 +1059,8 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   }
 
   if (!m_is_data_loaded) {
+    m_is_data_loaded = true;
+
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
     }
@@ -1069,8 +1071,6 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     }
     check_input_keys();
   }
-
-  m_is_data_loaded = true;
 }
 
 
