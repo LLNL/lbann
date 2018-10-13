@@ -389,23 +389,36 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
 
     using var_t = data_reader_jag_conduit::variable_t;
+
     // composite independent variable
-    std::vector<var_t> independent_type(pb_readme.independent_size());
+    std::vector< std::vector<var_t> > independent_type(pb_readme.independent_size());
 
     for (int i=0; i < pb_readme.independent_size(); ++i) {
-      independent_type[i] = static_cast<var_t>(pb_readme.independent(i));
+      const lbann_data::Reader::JAGDataSlice& slice = pb_readme.independent(i);
+      const int slice_size = slice.pieces_size();
+      for (int j=0; j < slice_size; ++j) {
+        // TODO: instead of using cast, use proper conversion function
+        const auto var_type = static_cast<var_t>(slice.pieces(j));
+        independent_type[i].push_back(var_type);
+      }
     }
 
-    reader_jag->set_independent_variable_type({independent_type});
+    reader_jag->set_independent_variable_type(independent_type);
 
     // composite dependent variable
-    std::vector<var_t> dependent_type(pb_readme.dependent_size());
+    std::vector< std::vector<var_t> > dependent_type(pb_readme.dependent_size());
 
     for (int i=0; i < pb_readme.dependent_size(); ++i) {
-      dependent_type[i] = static_cast<var_t>(pb_readme.dependent(i));
+      const lbann_data::Reader::JAGDataSlice& slice = pb_readme.dependent(i);
+      const int slice_size = slice.pieces_size();
+      for (int j=0; j < slice_size; ++j) {
+        // TODO: instead of using cast, use proper conversion function
+        const auto var_type = static_cast<var_t>(slice.pieces(j));
+        dependent_type[i].push_back(var_type);
+      }
     }
 
-    reader_jag->set_dependent_variable_type({dependent_type});
+    reader_jag->set_dependent_variable_type(dependent_type);
 
     // keys of chosen scalar values in jag simulation output
     std::vector<std::string> scalar_keys(pb_readme.jag_scalar_keys_size());

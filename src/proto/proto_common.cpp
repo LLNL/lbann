@@ -89,21 +89,34 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       auto* reader_jag = new data_reader_jag(shuffle);
 
       using var_t = data_reader_jag::variable_t;
-      std::vector<var_t> independent_type(readme.independent_size());
+
+      // composite independent variable
+      std::vector< std::vector<var_t> > independent_type(readme.independent_size());
 
       for (int i=0; i < readme.independent_size(); ++i) {
-        independent_type[i] = static_cast<var_t>(readme.independent(i));
+        const lbann_data::Reader::JAGDataSlice& slice = readme.independent(i);
+        const int slice_size = slice.pieces_size();
+        for (int k=0; k < slice_size; ++k) {
+          const auto var_type = static_cast<var_t>(slice.pieces(k));
+          independent_type[i].push_back(var_type);
+        }
       }
 
-      reader_jag->set_independent_variable_type({independent_type});
+      reader_jag->set_independent_variable_type(independent_type);
 
-      std::vector<var_t> dependent_type(readme.dependent_size());
+      // composite dependent variable
+      std::vector< std::vector<var_t> > dependent_type(readme.dependent_size());
 
       for (int i=0; i < readme.dependent_size(); ++i) {
-        dependent_type[i] = static_cast<var_t>(readme.dependent(i));
+        const lbann_data::Reader::JAGDataSlice& slice = readme.dependent(i);
+        const int slice_size = slice.pieces_size();
+        for (int k=0; k < slice_size; ++k) {
+          const auto var_type = static_cast<var_t>(slice.pieces(k));
+          dependent_type[i].push_back(var_type);
+        }
       }
 
-      reader_jag->set_dependent_variable_type({dependent_type});
+      reader_jag->set_dependent_variable_type(dependent_type);
 
       const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
       reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
