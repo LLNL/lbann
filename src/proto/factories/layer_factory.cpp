@@ -30,6 +30,8 @@
 namespace lbann {
 namespace proto {
 
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr, const std::string& var_category);
+
 template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
                        const std::map<execution_mode, generic_data_reader*>& data_readers,
@@ -109,12 +111,31 @@ Layer* construct_layer(lbann_comm* comm,
       LBANN_ERROR(err.str());
       return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
-    } else if (params.get_num_neurons_from_reader_size() > 0) {
-      const int num_dims = params.get_num_neurons_from_reader_size();
-      for (int i = 0; i < num_dims; ++i) {
-        const std::string& contribution = params.get_num_neurons_from_reader(i);
-        num_neurons += dr_generic->get_linearized_size(contribution);
+    } else if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
+      const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
+    #if defined(LBANN_HAS_CONDUIT)
+      if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
+        const std::string& var = params.get_slice_points_from_reader();
+        const auto slice_points = get_slice_points_from_reader(dr_generic, var);
+        for (int i = 0; i < num_slice_indices; ++i) {
+          const size_t idx = static_cast<size_t>(params.get_num_neurons_of_slice_from_reader(i));
+          if ((idx == 0u) || (idx >= slice_points.size())) {
+            err << "invalid slice index from get_num_neurons_of_slice_from_reader";
+            LBANN_ERROR(err.str());
+          }
+          const int diff = slice_points[idx] - slice_points[idx-1];
+          num_neurons += static_cast<int>(diff);
+        }
+      } else {
+        err << "get_num_neurons_of_slice_from_reader not supported";
+        LBANN_ERROR(err.str());
+        return nullptr;
       }
+    #else
+      err << "get_num_neurons_of_slice_from_reader not supported";
+      LBANN_ERROR(err.str());
+      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       num_neurons = params.num_neurons();
       if (proto_layer.num_neurons_from_data_reader()) {
@@ -258,13 +279,9 @@ Layer* construct_layer(lbann_comm* comm,
             }
           }
         }
-      } else if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
-        const auto dr = dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic);
-        const auto& sizes = dr->get_linearized_data_sizes();
-        for (const auto sz: sizes) {
-          total += sz;
-          slice_points.push_back(static_cast<El::Int>(total));
-        }
+      } else {
+        const std::string& var = params.get_slice_points_from_reader();
+        slice_points = get_slice_points_from_reader(dr_generic, var);
       }
       return new slice_layer<layout, Dev>(comm,
                                           params.slice_axis(),
@@ -596,6 +613,27 @@ template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
   const lbann_data::Layer& proto_layer
 );
 #endif // LBANN_HAS_GPU
+
+/// Obtain the slice points from the data reader
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic, const std::string& var_category) {
+  std::vector<El::Int> slice_points;
+#if defined(LBANN_HAS_CONDUIT)
+  // TODO: remove the dynamic cast when this feature gets merged into the base class
+  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
+
+  if (dr != nullptr) {
+    if (var_category == "independent") {
+      slice_points = dr->get_slice_points_independent();
+    } else if (var_category == "dependent") {
+      slice_points = dr->get_slice_points_independent();
+    } else {
+      LBANN_ERROR("Unknown variable category \"" + var_category \
+                  + "\". Must be either \"independent\" or \"dependent\".");
+    }
+  }
+#endif
+  return slice_points;
+}
 
 } // namespace proto
 } // namespace lbann
