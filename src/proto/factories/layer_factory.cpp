@@ -123,8 +123,8 @@ Layer* construct_layer(lbann_comm* comm,
             err << "invalid slice index from get_num_neurons_of_slice_from_reader";
             LBANN_ERROR(err.str());
           }
-          const int diff = slice_points[idx] - slice_points[idx-1];
-          num_neurons += static_cast<int>(diff);
+          const int diff = static_cast<int>(slice_points[idx] - slice_points[idx-1]);
+          num_neurons += diff;
         }
       } else {
         err << "get_num_neurons_of_slice_from_reader not supported";
