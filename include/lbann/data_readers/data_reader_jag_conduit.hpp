@@ -226,6 +226,11 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
 
+  /// Return the slice points for linearized independent variables
+  std::vector<El::Int> get_slice_points_independent() const;
+  /// Return the slice points for linearized dependent variables
+  std::vector<El::Int> get_slice_points_dependent() const;
+
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
   int get_linearized_size(const std::string& desc) const override;
@@ -297,7 +302,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   size_t get_linearized_size(const variable_t t) const;
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
-  /// A utility function to make a string to show all the variable types in a vector
+  /// Return the slice points for linearized data or responses
+  std::vector<El::Int> get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  /// A utility function to make a string to show all the variable types
   static std::string to_string(const std::vector<variable_t>& vec);
   /// A utility function to make a string to show all the groups of variable types
   static std::string to_string(const std::vector< std::vector<variable_t> >& vec);

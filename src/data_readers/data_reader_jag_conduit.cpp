@@ -1208,6 +1208,27 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
 #endif
 }
 
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
+  std::vector<El::Int> points(var.size()+1u, static_cast<El::Int>(0));
+  for (size_t i = 0u; i < var.size(); ++i) {
+    const auto& group = var[i];
+    size_t size = 0u;
+    for (const auto type: group) {
+      size += get_linearized_size(type);
+    }
+    points[i+1] = points[i] + static_cast<El::Int>(size);
+  }
+  return points;
+}
+
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points_independent() const {
+  return get_slice_points(m_independent_groups);
+}
+
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const {
+  return get_slice_points(m_independent_groups);
+}
+
 int data_reader_jag_conduit::get_num_labels() const {
   return m_num_labels;
 }
