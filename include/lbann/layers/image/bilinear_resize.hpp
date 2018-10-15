@@ -43,8 +43,6 @@ public:
     : Layer(comm), m_height(height), m_width(width) {
     static_assert(Layout == data_layout::DATA_PARALLEL,
                   "bilinear_resize_layer only supports DATA_PARALLEL");
-    static_assert(Device == El::Device::CPU,
-                  "bilinear_resize_layer only supports CPU");
   }
 
   bilinear_resize_layer* copy() const override {

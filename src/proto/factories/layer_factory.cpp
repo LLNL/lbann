@@ -553,11 +553,10 @@ Layer* construct_layer(lbann_comm* comm,
   // Image layers
   if (proto_layer.has_bilinear_resize()) {
     const auto& params = proto_layer.bilinear_resize();
-    if (layout == data_layout::DATA_PARALLEL
-        && Dev == El::Device::CPU) {
-      return new bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm,
-                                                                                    params.height(),
-                                                                                    params.width());
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new bilinear_resize_layer<data_layout::DATA_PARALLEL, Dev>(comm,
+                                                                        params.height(),
+                                                                        params.width());
     }
   }
   
