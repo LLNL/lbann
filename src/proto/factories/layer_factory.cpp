@@ -549,6 +549,18 @@ Layer* construct_layer(lbann_comm* comm,
     return new sigmoid_bce_with_logits_layer<layout, Dev>(comm, params.true_label());
   }
 
+  
+  // Image layers
+  if (proto_layer.has_bilinear_resize()) {
+    const auto& params = proto_layer.bilinear_resize();
+    if (layout == data_layout::DATA_PARALLEL
+        && Dev == El::Device::CPU) {
+      return new bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm,
+                                                                                    params.height(),
+                                                                                    params.width());
+    }
+  }
+  
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());

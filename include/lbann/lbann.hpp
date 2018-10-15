@@ -52,6 +52,9 @@
 #include "lbann/layers/activations/swish.hpp"
 #include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
 
+/// Image Layers
+#include "lbann/layers/image/bilinear_resize.hpp"
+
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"

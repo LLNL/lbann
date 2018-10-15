@@ -890,6 +890,9 @@ message Layer {
    Swish swish = 42;
    Sigmoid_Binary_Cross_Entropy_With_Logits bce_with_logits = 47;
 
+   // Image layers
+   BilinearResize bilinear_resize = 500;
+
 }
 ///////////////////////
 // MotifLayer //
@@ -1246,4 +1249,12 @@ message Target {
 }
 
 message TargetReconstruction {
+}
+
+//////////////////
+// Image Layers //
+//////////////////
+message BilinearResize {
+  int64 height = 1;
+  int64 width = 2;
 }
