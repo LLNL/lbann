@@ -986,6 +986,25 @@ void data_reader_jag_conduit::load() {
     std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
+
+  // handle data partitioning among models (e.g., for LTFB)
+  if (m_is_partitioned) {
+    const size_t one_more = filenames.size() % m_num_partitions;
+    const size_t min_num_files_per_partition = filenames.size()/static_cast<size_t>(m_num_partitions);
+    if (min_num_files_per_partition == 0u) {
+      _THROW_LBANN_EXCEPTION_(get_type(), "Insufficient number of files for the number of models.");
+    }
+    const size_t p = static_cast<size_t>(m_my_partition);
+    const size_t idx_start = min_num_files_per_partition * p
+                           + ((p >= one_more)? one_more : p);
+
+    const size_t idx_end = idx_start + min_num_files_per_partition
+                           + ((p < one_more)? 1u : 0u);
+    std::vector<std::string> filenames_partitioned(filenames.begin()+idx_start, filenames.begin()+idx_end);
+    filenames = filenames_partitioned;
+  }
   const size_t num_files_to_load =
     (m_max_files_to_load > 0u)? std::min(m_max_files_to_load, filenames.size()) : filenames.size();
 
@@ -994,8 +1013,6 @@ void data_reader_jag_conduit::load() {
   double tm1 = get_time();
 
   // Reserve m_valid_samples
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
   const size_t max_num_files_to_load_per_rank = (num_files_to_load + num_readers - 1u) / num_readers;
   bool valid_samples_reserved = false;
   size_t idx = static_cast<size_t>(0ul);
