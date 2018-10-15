@@ -45,6 +45,9 @@ int opt_rank_stride = 1;
 bool opt_enable_profile = false;
 bool opt_skip_metrics_while_training = false;
 bool opt_use_partial_aggregation_in_bn = false;
+std::string opt_convolution_fwd_algorithm("DEFAULT");
+std::string opt_convolution_bwd_data_algorithm("DEFAULT");
+std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
 
 void set_options() {
   if (options_set) return;
@@ -60,6 +63,18 @@ void set_options() {
   }
   if (std::getenv("LBANN_DISTCONV_USE_PARTIAL_AGGREGATION_IN_BN")) {
     opt_use_partial_aggregation_in_bn = true;
+  }
+  env = getenv("LBANN_DISTCONV_CONVOLUTION_FWD_ALGORITHM");
+  if (env) {
+    opt_convolution_fwd_algorithm = env;
+  }
+  env = getenv("LBANN_DISTCONV_CONVOLUTION_BWD_DATA_ALGORITHM");
+  if (env) {
+    opt_convolution_bwd_data_algorithm = env;
+  }
+  env = getenv("LBANN_DISTCONV_CONVOLUTION_BWD_FILTER_ALGORITHM");
+  if (env) {
+    opt_convolution_bwd_filter_algorithm = env;
   }
   options_set = true;
 }
@@ -199,6 +214,18 @@ bool skip_metrics_while_training() {
 
 bool use_partial_aggregation_in_bn() {
   return opt_use_partial_aggregation_in_bn;
+}
+
+std::string get_convolution_fwd_algorithm() {
+  return opt_convolution_fwd_algorithm;
+}
+
+std::string get_convolution_bwd_data_algorithm() {
+  return opt_convolution_bwd_data_algorithm;
+}
+
+std::string get_convolution_bwd_filter_algorithm() {
+  return opt_convolution_bwd_filter_algorithm;
 }
 
 p2p::P2P &get_p2p() {

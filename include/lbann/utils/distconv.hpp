@@ -137,6 +137,18 @@ bool skip_metrics_while_training();
  */
 bool use_partial_aggregation_in_bn();
 
+/** Query convolution forward algorithm name.
+ */
+std::string get_convolution_fwd_algorithm();
+
+/** Query convolution backward data algorithm name.
+ */
+std::string get_convolution_bwd_data_algorithm();
+
+/** Query convolution backward filter algorithm name.
+ */
+std::string get_convolution_bwd_filter_algorithm();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
