@@ -339,7 +339,6 @@ protected:
   dc::TensorDev m_bias_gradient_t;
 
   dc::LocaleMPI m_spatial_loc;
-  El::mpi::Comm m_spatial_comm;
 
   void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_fwd(dists);
@@ -405,7 +404,6 @@ protected:
     // m_use_global_stats = true;
     if (dc::use_partial_aggregation_in_bn()) {
       m_spatial_loc = m_mean_t.get_spatial_locale();
-      m_spatial_comm = m_spatial_loc.get_comm();
     }
   }
 

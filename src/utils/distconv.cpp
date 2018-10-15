@@ -39,6 +39,7 @@ bool initialized = false;
 MPI_Comm mpi_comm = MPI_COMM_NULL;
 p2p::P2P *p2p_instance = nullptr;
 Backend *backend_instance = nullptr;
+std::shared_ptr<El::mpi::Comm> spatial_comm;
 
 bool options_set = false;
 int opt_rank_stride = 1;
@@ -182,6 +183,15 @@ void finalize() {
 
 MPI_Comm get_mpi_comm() {
   return mpi_comm;
+}
+
+std::shared_ptr<El::mpi::Comm> get_spatial_el_comm(const LocaleMPI &spatial_loc) {
+  if (spatial_comm) {
+    assert_eq(spatial_loc.get_size(), spatial_comm->Size());
+  } else {
+    spatial_comm = std::make_shared<El::mpi::Comm>(spatial_loc.get_comm());
+  }
+  return spatial_comm;
 }
 
 int get_mpi_rank() {

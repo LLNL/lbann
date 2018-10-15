@@ -327,8 +327,12 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
     m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
     m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
   } else if (dc::use_partial_aggregation_in_bn()) {
-    m_comm->allreduce(*m_mean, m_spatial_comm, El::mpi::SUM);
-    m_comm->allreduce(*m_var, m_spatial_comm, El::mpi::SUM);
+    m_comm->allreduce(*m_mean,
+                      *dc::get_spatial_el_comm(m_spatial_loc),
+                      El::mpi::SUM);
+    m_comm->allreduce(*m_var,
+                      *dc::get_spatial_el_comm(m_spatial_loc),
+                      El::mpi::SUM);
   }
 
   m_bn->forward_stage2(m_prev_activations_t,
@@ -373,8 +377,10 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
       m_comm->allreduce(*m_var_gradient, m_var_gradient->RedundantComm(),
                         El::mpi::SUM);
     } else if (dc::use_partial_aggregation_in_bn()) {
-      m_comm->allreduce(*m_mean_gradient, m_spatial_comm, El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient, m_spatial_comm, El::mpi::SUM);
+      m_comm->allreduce(*m_mean_gradient,
+                        *dc::get_spatial_el_comm(m_spatial_loc), El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient,
+                        *dc::get_spatial_el_comm(m_spatial_loc), El::mpi::SUM);
     }
   } else {
     Zero(*m_mean_gradient);

@@ -28,6 +28,7 @@
 #define LBANN_UTILS_DISTCONV_HPP
 
 #include "lbann_config.hpp"
+#include "El.hpp"
 #include <vector>
 
 #ifdef LBANN_HAS_DISTCONV
@@ -107,6 +108,10 @@ void finalize();
     be equal to MPI_COMM_WORLD.
  */
 MPI_Comm get_mpi_comm();
+
+/** Return a cached Elemental communicator for the spatial domain
+ */
+std::shared_ptr<El::mpi::Comm> get_spatial_el_comm(const LocaleMPI &spatial_loc);
 
 /** Return the MPI rank
  */
