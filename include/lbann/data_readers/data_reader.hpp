@@ -316,12 +316,23 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual int get_linearized_response_size() const {
     return 1;
   }
+  /// get the linearized size of what is identified by desc.
+  virtual int get_linearized_size(const std::string& desc) const {
+    if (desc == "data") {
+      return get_linearized_data_size();
+    } else if (desc == "label") {
+      return get_linearized_label_size();
+    } else if (desc == "response") {
+      return get_linearized_response_size();
+    }
+    return 0;
+  }
   /// Get the dimensions of the data.
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
   /// True if the data reader's current position is valid.
-  bool position_valid() const {
+  virtual bool position_valid() const {
     return (m_current_pos < (int)m_shuffled_indices.size());
   }
   /// True if the data reader is at the start of an epoch.
@@ -387,7 +398,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_iteration_stride;
   }
   /// Return the base offset.
-  void set_base_offset(const int s) {
+  virtual void set_base_offset(const int s) {
     JAG_NOOP_VOID
     m_base_offset = s;
   }
@@ -449,7 +460,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_num_parallel_readers;
   }
   /// Set the starting mini-batch index for the epoch
-  void set_reset_mini_batch_index(const int s) {
+  virtual void set_reset_mini_batch_index(const int s) {
     m_reset_mini_batch_index = s;
   }
   /// Return the starting mini-batch index for the epoch
@@ -481,7 +492,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return &m_shuffled_indices[0];
   }
   /// Get the number of samples in this dataset.
-  int get_num_data() const {
+  virtual int get_num_data() const {
     return (int)m_shuffled_indices.size();
   }
   /// Get the number of unused samples in this dataset.
@@ -533,7 +544,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /**
    * Select the appropriate subset of data based on settings.
    */
-  void select_subset_of_data();
+  virtual void select_subset_of_data();
 
   /// called by select_subset_of_data() if data set is partitioned
   void select_subset_of_data_partitioned();
@@ -542,7 +553,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
-  void use_unused_index_set();
+  virtual void use_unused_index_set();
 
   /// partition the dataset amongst the models
   void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);

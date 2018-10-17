@@ -30,6 +30,8 @@
 namespace lbann {
 namespace proto {
 
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr, const std::string& var_category);
+
 template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
                        const std::map<execution_mode, generic_data_reader*>& data_readers,
@@ -86,26 +88,52 @@ Layer* construct_layer(lbann_comm* comm,
     if (params.get_input_dimension_from_reader() 
         || params.get_image_dimension_from_reader()
         || params.get_scalar_dimension_from_reader())
-       {
+    {
     #if defined(LBANN_HAS_CONDUIT)
-       const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
-       lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
-       size_t input_dim = dr->get_linearized_input_size();
-       size_t scalar_dim = dr->get_linearized_scalar_size();
-       size_t image_dim = dr->get_linearized_image_size();
-       size_t num_images = dr->get_num_img_srcs();
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
+      size_t input_dim = dr->get_linearized_input_size();
+      size_t scalar_dim = dr->get_linearized_scalar_size();
+      size_t image_dim = dr->get_linearized_image_size();
+      size_t num_images = dr->get_num_img_srcs();
 
-       if (params.get_input_dimension_from_reader()) {
-         num_neurons += input_dim;
-       }
-       if (params.get_image_dimension_from_reader()) {
-         num_neurons += (num_images * image_dim);
-       }
-       if (params.get_scalar_dimension_from_reader()) {
-         num_neurons += scalar_dim;
-       }
+      if (params.get_input_dimension_from_reader()) {
+        num_neurons += input_dim;
+      }
+      if (params.get_image_dimension_from_reader()) {
+        num_neurons += (num_images * image_dim);
+      }
+      if (params.get_scalar_dimension_from_reader()) {
+        num_neurons += scalar_dim;
+      }
     #else
       err << "get_*_dimension_from_reader() not supported";
+      LBANN_ERROR(err.str());
+      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
+    } else if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
+    #if defined(LBANN_HAS_CONDUIT)
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
+      if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
+        const std::string& var = params.get_slice_points_from_reader();
+        const auto slice_points = get_slice_points_from_reader(dr_generic, var);
+        for (int i = 0; i < num_slice_indices; ++i) {
+          const size_t idx = static_cast<size_t>(params.get_num_neurons_of_slice_from_reader(i));
+          if ((idx == 0u) || (idx >= slice_points.size())) {
+            err << "invalid slice index from get_num_neurons_of_slice_from_reader";
+            LBANN_ERROR(err.str());
+          }
+          const int diff = static_cast<int>(slice_points[idx] - slice_points[idx-1]);
+          num_neurons += diff;
+        }
+      } else {
+        err << "get_num_neurons_of_slice_from_reader not supported";
+        LBANN_ERROR(err.str());
+        return nullptr;
+      }
+    #else
+      err << "get_num_neurons_of_slice_from_reader not supported";
       LBANN_ERROR(err.str());
       return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
@@ -231,25 +259,30 @@ Layer* construct_layer(lbann_comm* comm,
       std::vector<El::Int> slice_points;
       size_t total = 0;
       slice_points.push_back(total);
-      const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
-      lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
-      while (ss >> s) {
-        if (s != "") {  //probably not needed
-          if (s == "scalars") {
-            total += dr->get_linearized_scalar_size();
-            slice_points.push_back(total);
-          } else if (s == "images") {
-            total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
-            slice_points.push_back(total);
-          } else if (s == "inputs") {
-            total += dr->get_linearized_input_size();
-            slice_points.push_back(total);
-          } else {
-            err << __FILE__ << " " << __LINE__ << " :: "
-                << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
-            throw lbann_exception(err.str());
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      if (dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic) != nullptr) {
+        const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
+        while (ss >> s) {
+          if (s != "") {  //probably not needed
+            if (s == "scalars") {
+              total += dr->get_linearized_scalar_size();
+              slice_points.push_back(total);
+            } else if (s == "images") {
+              total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
+              slice_points.push_back(total);
+            } else if (s == "inputs") {
+              total += dr->get_linearized_input_size();
+              slice_points.push_back(total);
+            } else {
+              err << __FILE__ << " " << __LINE__ << " :: "
+                  << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
+              throw lbann_exception(err.str());
+            }
           }
         }
+      } else {
+        const std::string& var = params.get_slice_points_from_reader();
+        slice_points = get_slice_points_from_reader(dr_generic, var);
       }
       return new slice_layer<layout, Dev>(comm,
                                           params.slice_axis(),
@@ -588,6 +621,27 @@ template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
   const lbann_data::Layer& proto_layer
 );
 #endif // LBANN_HAS_GPU
+
+/// Obtain the slice points from the data reader
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic, const std::string& var_category) {
+  std::vector<El::Int> slice_points;
+#if defined(LBANN_HAS_CONDUIT)
+  // TODO: remove the dynamic cast when this feature gets merged into the base class
+  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
+
+  if (dr != nullptr) {
+    if (var_category == "independent") {
+      slice_points = dr->get_slice_points_independent();
+    } else if (var_category == "dependent") {
+      slice_points = dr->get_slice_points_independent();
+    } else {
+      LBANN_ERROR("Unknown variable category \"" + var_category \
+                  + "\". Must be either \"independent\" or \"dependent\".");
+    }
+  }
+#endif
+  return slice_points;
+}
 
 } // namespace proto
 } // namespace lbann
