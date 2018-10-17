@@ -85,35 +85,36 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
     int num_neurons = 0;
-    const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
     if (params.get_input_dimension_from_reader() 
         || params.get_image_dimension_from_reader()
         || params.get_scalar_dimension_from_reader())
-       {
+    {
     #if defined(LBANN_HAS_CONDUIT)
-       const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
-       size_t input_dim = dr->get_linearized_input_size();
-       size_t scalar_dim = dr->get_linearized_scalar_size();
-       size_t image_dim = dr->get_linearized_image_size();
-       size_t num_images = dr->get_num_img_srcs();
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
+      size_t input_dim = dr->get_linearized_input_size();
+      size_t scalar_dim = dr->get_linearized_scalar_size();
+      size_t image_dim = dr->get_linearized_image_size();
+      size_t num_images = dr->get_num_img_srcs();
 
-       if (params.get_input_dimension_from_reader()) {
-         num_neurons += input_dim;
-       }
-       if (params.get_image_dimension_from_reader()) {
-         num_neurons += (num_images * image_dim);
-       }
-       if (params.get_scalar_dimension_from_reader()) {
-         num_neurons += scalar_dim;
-       }
+      if (params.get_input_dimension_from_reader()) {
+        num_neurons += input_dim;
+      }
+      if (params.get_image_dimension_from_reader()) {
+        num_neurons += (num_images * image_dim);
+      }
+      if (params.get_scalar_dimension_from_reader()) {
+        num_neurons += scalar_dim;
+      }
     #else
       err << "get_*_dimension_from_reader() not supported";
       LBANN_ERROR(err.str());
       return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
     } else if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
-      const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
     #if defined(LBANN_HAS_CONDUIT)
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
       if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
         const std::string& var = params.get_slice_points_from_reader();
         const auto slice_points = get_slice_points_from_reader(dr_generic, var);
