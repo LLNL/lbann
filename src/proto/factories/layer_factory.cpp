@@ -544,6 +544,10 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(boolean_false_positive);
 
   // Miscellaneous layers
+  if (proto_layer.has_covariance()) {
+    const auto& params = proto_layer.covariance();
+    return new covariance_layer<layout, Dev>(comm, params.biased());
+  }
   if (proto_layer.has_variance()) {
     const auto& params = proto_layer.variance();
     return new variance_layer<layout, Dev>(comm, params.biased());

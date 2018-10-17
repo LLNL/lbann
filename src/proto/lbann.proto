@@ -895,7 +895,8 @@ message Layer {
    Swish swish = 42;
 
    // Miscellaneous layers
-   Variance variance = 600;
+   Covariance covariance = 600;
+   Variance variance = 601;
 
 }
 ///////////////////////
@@ -1257,6 +1258,9 @@ message TargetReconstruction {
 //////////////////////////
 // Miscellaneous Layers //
 //////////////////////////
+message Covariance {
+  bool biased = 1; //Whether to use a biased covariance estimate
+}
 message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
