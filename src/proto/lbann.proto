@@ -894,6 +894,9 @@ message Layer {
    BentIdentity bent_identity = 40;
    Swish swish = 42;
 
+   // Image layers
+   BilinearResize bilinear_resize = 500;
+
    // Miscellaneous layers
    Covariance covariance = 600;
    Variance variance = 601;
@@ -1253,6 +1256,14 @@ message Target {
 }
 
 message TargetReconstruction {
+}
+  
+//////////////////
+// Image Layers //
+//////////////////
+message BilinearResize {
+  int64 height = 1;
+  int64 width = 2;
 }
 
 //////////////////////////

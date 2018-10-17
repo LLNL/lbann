@@ -51,6 +51,9 @@
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 
+/// Image Layers
+#include "lbann/layers/image/bilinear_resize.hpp"
+
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
