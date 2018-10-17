@@ -24,32 +24,24 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef ATAN_HPP_INCLUDED
-#define ATAN_HPP_INCLUDED
+#ifndef LBANN_OMP_PRAGMA_HPP
+#define LBANN_OMP_PRAGMA_HPP
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann_config.hpp"
+#include <omp.h>
 
-namespace lbann {
+#define OMP_PARALLEL _Pragma("omp parallel for")
+#define OMP_CRITICAL _Pragma("omp critical")
 
-/** Arctangent activation function. */
-template <data_layout T_layout, El::Device Dev>
-class atan_layer : public entrywise_activation_layer {
- public:
-  atan_layer(lbann_comm *comm) : entrywise_activation_layer(comm) {}
-  atan_layer* copy() const override { return new atan_layer(*this); }
-  std::string get_type() const override { return "atan"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
+#if defined(LBANN_NO_OMP_FOR_DATA_READERS)
+  #pragma message "Disable OpenMP parallelism for data fetch loops"
+  #define LBANN_DATA_FETCH_OMP_FOR for
+  #define LBANN_OMP_THREAD_NUM 0
+  #define LBANN_DATA_FETCH_OMP_CRITICAL
+#else
+  #define LBANN_DATA_FETCH_OMP_FOR OMP_PARALLEL for
+  #define LBANN_OMP_THREAD_NUM omp_get_thread_num()
+  #define LBANN_DATA_FETCH_OMP_CRITICAL OMP_CRITICAL
+#endif
 
- protected:
-  DataType activation(DataType x) const override {
-    return std::atan(x);
-  }
-  DataType activation_derivative(DataType x) const override {
-    return 1 / (DataType(1) + x * x);
-  }
-};
-
-} // namespace lbann
-
-#endif // ATAN_HPP_INCLUDED
+#endif // LBANN_OMP_PRAGMA_HPP

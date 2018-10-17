@@ -156,8 +156,8 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
         catalyst|flash|quartz|surface|pascal)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
-                    IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
-                    DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets/ILSVRC2012
+                    DATASET_TARBALLS="${IMAGENET_DIR}/original/train.tar ${IMAGENET_DIR}/original/val.tar ${IMAGENET_DIR}/labels.tar"
                     IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
                     if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
                         IMAGENET_SUFFIX=
@@ -170,9 +170,9 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                             TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                             ;;
                         *)
-                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/original/train/
                             TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                            TEST_DATASET_DIR=${IMAGENET_DIR}/original/val/
                             TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                             ;;
                     esac
@@ -190,7 +190,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
             ;;
         ray)
             IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
+            DATASET_TARBALLS="${IMAGENET_DIR}/original/train.tar ${IMAGENET_DIR}/original/val.tar ${IMAGENET_DIR}/labels.tar"
             IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
             if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
                 IMAGENET_SUFFIX=
@@ -203,9 +203,9 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
                     TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                     ;;
                 *)
-                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
+                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/original/train/
                     TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                    TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
+                    TEST_DATASET_DIR=${IMAGENET_DIR}/original/val/
                     TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
                     ;;
             esac

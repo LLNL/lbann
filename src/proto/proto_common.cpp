@@ -42,6 +42,9 @@ int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lban
 
 void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
+#ifdef LBANN_HAS_CONDUIT
+  static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
+#endif
   bool master = comm->am_world_master();
   std::stringstream err;
 
@@ -86,18 +89,31 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       auto* reader_jag = new data_reader_jag(shuffle);
 
       using var_t = data_reader_jag::variable_t;
-      std::vector<var_t> independent_type(readme.independent_size());
+
+      // composite independent variable
+      std::vector< std::vector<var_t> > independent_type(readme.independent_size());
 
       for (int i=0; i < readme.independent_size(); ++i) {
-        independent_type[i] = static_cast<var_t>(readme.independent(i));
+        const lbann_data::Reader::JAGDataSlice& slice = readme.independent(i);
+        const int slice_size = slice.pieces_size();
+        for (int k=0; k < slice_size; ++k) {
+          const auto var_type = static_cast<var_t>(slice.pieces(k));
+          independent_type[i].push_back(var_type);
+        }
       }
 
       reader_jag->set_independent_variable_type(independent_type);
 
-      std::vector<var_t> dependent_type(readme.dependent_size());
+      // composite dependent variable
+      std::vector< std::vector<var_t> > dependent_type(readme.dependent_size());
 
       for (int i=0; i < readme.dependent_size(); ++i) {
-        dependent_type[i] = static_cast<var_t>(readme.dependent(i));
+        const lbann_data::Reader::JAGDataSlice& slice = readme.dependent(i);
+        const int slice_size = slice.pieces_size();
+        for (int k=0; k < slice_size; ++k) {
+          const auto var_type = static_cast<var_t>(slice.pieces(k));
+          dependent_type[i].push_back(var_type);
+        }
       }
 
       reader_jag->set_dependent_variable_type(dependent_type);
@@ -110,19 +126,27 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, master, reader);
+      auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+
+      if (!peek_map(leading_reader_jag_conduit, readme.role())) {
+        leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
+      } else {
+        const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
+        *reader_jag_conduit = *leader;
+        reader_jag_conduit->set_leading_reader(leader);
+      }
 
       for (int i=0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
         if (proto_layer.has_input()) {
           const auto& params = proto_layer.input();
           const auto& io_buffer = params.io_buffer();
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
           reader_jag_conduit->set_io_buffer_type(io_buffer);
           const auto num_readers = get_requested_num_parallel_readers(comm, p);
           reader_jag_conduit->set_num_parallel_readers(num_readers);
-          reader_jag_conduit->set_local_id();
+          reader_jag_conduit->set_local_id(readme.role());
           break;
         }
       }
@@ -348,6 +372,16 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 #ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
         reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+        auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+        if (!peek_map(leading_reader_jag_conduit, readme.role())) {
+          leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
+std::cout << "assume the role of leading reader for " + readme.role() << std::endl;
+        } else {
+std::cout << "follow leading reader for " + readme.role() << std::endl;
+          const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
+          *reader_jag_conduit = *leader;
+          reader_jag_conduit->set_leading_reader(leader);
+        }
 #endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);

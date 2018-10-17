@@ -33,13 +33,41 @@
 #include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
+#include "hdf5.h"
 #include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
 #include <unordered_map>
+#include <map>
+#include <memory>
 
 namespace lbann {
+
+/**
+ * Store the handles of open hdf5 files, and close files at the end of the
+ * life time of this container object.
+ */
+class hdf5_file_handles {
+ protected:
+  std::unordered_map<std::string, hid_t> m_open_hdf5_files;
+  std::map<hid_t, std::string> m_open_hdf5_handles;
+
+ public:
+  ~hdf5_file_handles();
+  /// Add a handle that corresponds to the filename fname
+  bool add(const std::string fname, hid_t hnd);
+  /**
+   *  Returns the handle that corresponds to the given file name.
+   *  Reuturns a negative value if not found.
+   */
+  hid_t get(const std::string& fname) const;
+
+  std::string get(const hid_t h) const;
+
+  /// Returns the read-only access to the internal data
+  const std::unordered_map<std::string, hid_t>& get() const { return m_open_hdf5_files; }
+};
+
 
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
@@ -50,7 +78,11 @@ class data_reader_jag_conduit : public generic_data_reader {
   using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
-  using sample_map_t = std::vector<std::string>; ///< valid sample map type
+  /// Type for the pair of the key string of a sample and the handle of the file that contains it
+  using sample_locator_t = std::pair<std::string, hid_t>;
+  using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
+  /// linear transform on X defined as: first * X + second => X'
+  using linear_transform_t = std::pair<double, double>;
 
   /**
    * Dependent/indepdendent variable types
@@ -77,9 +109,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   }
 
   /// Choose which data to use for independent variable
-  void set_independent_variable_type(const std::vector<variable_t> independent);
+  void set_independent_variable_type(const std::vector< std::vector<variable_t> >& independent);
   /// Choose which data to use for dependent variable
-  void set_dependent_variable_type(const std::vector<variable_t> dependent);
+  void set_dependent_variable_type(const std::vector< std::vector<variable_t> >& dependent);
 
   /// Tell which data to use for independent variable
   std::vector<variable_t> get_independent_variable_type() const;
@@ -89,7 +121,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
   /// Choose images to use. e.g. by measurement views and time indices
-  void set_image_keys(const std::vector<std::string> image_keys);
+  void set_image_choices(const std::vector<std::string> image_keys);
+  /// Report the image choices
+  const std::vector<std::string>& get_image_choices() const;
 
   /// Add a scalar key to filter out
   void add_scalar_filter(const std::string& key);
@@ -133,18 +167,41 @@ class data_reader_jag_conduit : public generic_data_reader {
   void set_io_buffer_type(const std::string io_buffer);
 
   /// Set the id of this local instance
-  void set_local_id() { m_local_reader_id = m_num_local_readers++; }
+  void set_local_id(const std::string role);
   /// Get the id of this local instance
-  int get_local_id() const { return m_local_reader_id; }
+  int get_local_id(const std::string role) const;
+  /// Set the set of open hdf5 data files
+  void set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f);
+  /// Get the set of open hdf5 data files
+  std::shared_ptr<hdf5_file_handles>& get_open_hdf_files();
+  /// Set the leader of local data reader group
+  void set_leading_reader(data_reader_jag_conduit* r);
+  /// Get the leader of local data reader group
+  data_reader_jag_conduit* get_leading_reader();
 #else
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
+  /** Manually set m_global_num_samples_to_use and m_local_num_samples_to_use
+   *  to avoid calling determine_num_samples_to_use();
+   */
+  void set_num_samples(size_t ns);
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
+  /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
+  int fetch_data(CPUMat& X) override;
+  /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
+  int fetch_responses(CPUMat& Y) override;
+  /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
+  int fetch_labels(CPUMat& Y) override;
 
   /// Return the number of valid samples locally available
   size_t get_num_valid_local_samples() const;
+  /// Allow read-only access to m_valid_samples member data
+  const sample_map_t& get_valid_local_samples() const;
+  /// Allow read-only access to m_unused_samples member data
+  const sample_map_t& get_valid_local_samples_unused() const;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
@@ -169,8 +226,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
 
+  /// Return the slice points for linearized independent variables
+  std::vector<El::Int> get_slice_points_independent() const;
+  /// Return the slice points for linearized dependent variables
+  std::vector<El::Int> get_slice_points_dependent() const;
+
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
+  int get_linearized_size(const std::string& desc) const override;
 
   void set_split_image_channels();
   void unset_split_image_channels();
@@ -197,9 +260,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
-  /// Check if the simulation was successful
-  int check_exp_success(const std::string sample_key) const;
-
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
@@ -213,10 +273,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
-  /// print the schema of the all the samples
-  void print_schema() const;
   /// print the schema of the specific sample identified by a given id
   void print_schema(const size_t i) const;
+
+  void clear_image_normalization_params();
+  void clear_scalar_normalization_params();
+  void clear_input_normalization_params();
+  void add_image_normalization_param(const linear_transform_t& t);
+  void add_scalar_normalization_param(const linear_transform_t& t);
+  void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
   virtual void set_defaults();
@@ -237,12 +302,23 @@ class data_reader_jag_conduit : public generic_data_reader {
   size_t get_linearized_size(const variable_t t) const;
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
-  /// A utility function to make a string to show all the variable types in a vector
+  /// Return the slice points for linearized data or responses
+  std::vector<El::Int> get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  /// A utility function to make a string to show all the variable types
   static std::string to_string(const std::vector<variable_t>& vec);
+  /// A utility function to make a string to show all the groups of variable types
+  static std::string to_string(const std::vector< std::vector<variable_t> >& vec);
 
 
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
+
+  /// Export cached data minibatch
+  int reuse_data(CPUMat& X);
+  /// Export cached responses minibatch
+  int reuse_responses(CPUMat& Y);
+  /// Export cached labels minibatch
+  int reuse_labels(CPUMat& Y);
 
   bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
@@ -301,16 +377,26 @@ class data_reader_jag_conduit : public generic_data_reader {
   static bool check_non_numeric(const std::string key);
 
   /// Allow const access to the conduit data structure
-  const conduit::Node& get_conduit_node(const std::string key) const;
+  static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
+  /** Load the conduit node with the data of the sample i identified by key
+   *  from the file that contains the sample.
+   */
+  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
+  /// Check if a key exist for sample i
+  bool has_conduit_path(const size_t i, const std::string& key) const;
 
-  /// Obtain the pointers to read-only image data
-  std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
+  /// Obtain image data
+  std::vector< std::vector<ch_t> > get_image_data(const size_t i) const;
 
  protected:
-  /// independent variable type
+  /// The flat list of independent variable types
   std::vector<variable_t> m_independent;
-  /// dependent variable type
+  /// The list of independent variable types grouped for slicing
+  std::vector< std::vector<variable_t> > m_independent_groups;
+  /// The flat list of dependent variable types
   std::vector<variable_t> m_dependent;
+  /// The list of independent variable types grouped for slicing
+  std::vector< std::vector<variable_t> > m_dependent_groups;
 
   int m_image_width; ///< image width
   int m_image_height; ///< image height
@@ -334,9 +420,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
-
-  /// data wrapped in a conduit structure
-  conduit::Node m_data;
 
   /**
    * Set of keys that are associated with non_numerical values.
@@ -362,9 +445,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<prefix_t> m_input_prefix_filter;
 
   /**
-   * maps integers to sample IDs. In the future the sample IDs may
-   * not be integers; also, this map only includes sample IDs that
-   * have <sample_id>/performance/success = 1
+   * maps integers to sample IDs and the handle of the file that contains it.
+   * In the future the sample IDs may not be integers; also, this map only
+   * includes sample IDs that have <sample_id>/performance/success = 1
    */
   sample_map_t m_valid_samples;
   /// To support validation_percent
@@ -388,11 +471,35 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::string m_io_buffer_type;
 
   /// The number of local instances of this reader type
-  static int m_num_local_readers;
+  static std::unordered_map<std::string, int> m_num_local_readers;
   /// locally addressable id in case of multiple data reader instances attached to a model
   int m_local_reader_id;
-};
 
+  /// Shared set of the handles of open HDF5 files
+  std::shared_ptr<hdf5_file_handles> m_open_hdf5_files;
+
+  /**
+   * The leading data reader among the local readers, which actually does the
+   * file IO and data shuffling.
+   */
+  data_reader_jag_conduit* m_leading_reader;
+
+  CPUMat m_data_cache;
+  CPUMat m_response_cache;
+  CPUMat m_label_cache;
+  int m_cached_data_mb_size;
+  int m_cached_response_mb_size;
+  int m_cached_label_mb_size;
+
+  /// temporary normalization parameters based on linear transforms
+  std::vector<linear_transform_t> m_image_normalization_params;
+  std::vector<linear_transform_t> m_scalar_normalization_params;
+  std::vector<linear_transform_t> m_input_normalization_params;
+  /** temporary image normalization
+   * The inputs are the image to normalize, the image source id and the channel id.
+   */
+  void image_normalization(cv::Mat& img, size_t i, size_t ch) const;
+};
 
 /**
  * To faciliate the type comparison between a c++ native type and a conduit type id.

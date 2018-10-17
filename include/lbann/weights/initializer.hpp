@@ -45,12 +45,13 @@ public:
 
 };
 
-/** Constant weights initializer. */
+/** Constant weights initializer.
+ *  All weight values are set equal to a user-provided value.
+ */
 class constant_initializer : public weights_initializer {
 public:
   constant_initializer(DataType value)
     : weights_initializer(), m_value(value) {}
-  ~constant_initializer() override = default;
   constant_initializer* copy() const override {
     return new constant_initializer(*this);
   }
@@ -62,13 +63,33 @@ private:
 
 };
 
-/** Uniform random weights initializer. */
+/** Weights initializer by value.
+ *  Weight values are set equal to a user-provided list of values. The
+ *  number of weight entries must match the number of provided values.
+ */
+class value_initializer : public weights_initializer {
+public:
+  value_initializer(std::vector<DataType> values)
+    : weights_initializer(), m_values(std::move(values)) {}
+  value_initializer* copy() const override {
+    return new value_initializer(*this);
+  }
+  void fill(AbsDistMat& matrix) override;
+
+private:
+  /** Initializer values. */
+  std::vector<DataType> m_values;
+
+};  
+
+/** Uniform random weights initializer.
+ *  Weight values are drawn i.i.d. from a uniform distribution.
+ */
 class uniform_initializer : public weights_initializer {
  public:
   uniform_initializer(DataType min = DataType(0),
                       DataType max = DataType(1))
     : weights_initializer(), m_min(min), m_max(max) {}
-  ~uniform_initializer() override = default;
   uniform_initializer* copy() const override {
     return new uniform_initializer(*this);
   }
@@ -82,7 +103,9 @@ private:
 
 };
 
-/** Normal random weights initializer. */
+/** Normal random weights initializer.
+ *  Weight values are drawn i.i.d. from a normal distribution.
+ */
 class normal_initializer : public weights_initializer {
 public:
   normal_initializer(DataType mean = DataType(0),
@@ -90,7 +113,6 @@ public:
     : weights_initializer(),
       m_mean(mean),
       m_standard_deviation(standard_deviation) {}
-  ~normal_initializer() override = default;
   normal_initializer* copy() const override {
     return new normal_initializer(*this);
   }

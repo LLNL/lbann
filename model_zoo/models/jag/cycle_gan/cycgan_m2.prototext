@@ -9,8 +9,8 @@ model {
       layer: "g_adv1_eval"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      scale_factor: 0.025
+      layer: "l_l2_y"
     }
   }
   num_epochs: 1
@@ -30,7 +30,8 @@ model {
     parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
-      slice_points: "0 16384 16489"
+      # slice_points: "0 49174 49179"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -108,7 +109,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 16384
+      # num_neurons: 49174
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
     name: "gen1fc4_1"
@@ -243,7 +246,9 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 5
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -312,7 +317,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 16384
+      # num_neurons: 49174
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
     name: "gen1fc4_2"
@@ -400,7 +407,9 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 5
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"
@@ -440,19 +449,12 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_y"
     device_allocation: "cpu"
     data_layout: "data_parallel"
     parents: "gsample_minus_y"
-  }
-  layer {
-    name: "l_l2_y_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_y"
-    evaluation {
-    }
   }
   weights {
     name: "gen1fc1linearity"

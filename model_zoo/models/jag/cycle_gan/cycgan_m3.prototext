@@ -9,8 +9,8 @@ model {
       layer: "g_adv2_eval"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_x_eval"
+      scale_factor: 0.025
+      layer: "l_l2_x"
     }
   }
   num_epochs: 1
@@ -30,7 +30,8 @@ model {
     parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      # slice_points: "0 49174 49179"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -100,7 +101,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_1"
@@ -231,7 +234,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -304,7 +309,9 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 16384
+      # num_neurons: 49174
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
     name: "gen1fc4_2"
@@ -400,7 +407,9 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 16384
+      # num_neurons: 49174
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
     name: "gen1fc4_1"
@@ -461,7 +470,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"
@@ -501,19 +512,12 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_x"
     data_layout: "data_parallel"
     device_allocation: "cpu"
     parents: "gsample2_minus_x"
-  }
-  layer {
-    name: "l_l2_x_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_x"
-    evaluation {
-    }
   }
   weights {
     name: "gen2fc1linearity"

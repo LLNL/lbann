@@ -255,7 +255,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  void setup();
+  virtual void setup();
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
@@ -303,6 +303,17 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Get the linearized size (i.e. number of elements) in a response.
   virtual int get_linearized_response_size() const {
     return 1;
+  }
+  /// get the linearized size of what is identified by desc.
+  virtual int get_linearized_size(const std::string& desc) const {
+    if (desc == "data") {
+      return get_linearized_data_size();
+    } else if (desc == "label") {
+      return get_linearized_label_size();
+    } else if (desc == "response") {
+      return get_linearized_response_size();
+    }
+    return 0;
   }
   /// Get the dimensions of the data.
   virtual const std::vector<int> get_data_dims() const {

@@ -1,4 +1,4 @@
-set(Aluminum_URL https://github.com/ndryden/Aluminum
+set(Aluminum_URL https://github.com/llnl/Aluminum
   CACHE STRING "The URL from which to clone Aluminum")
 
 set(Aluminum_TAG "master"

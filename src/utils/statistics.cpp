@@ -88,7 +88,8 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
     }
   }
   DataType sum_sqsum[2] = {sum, sqsum};  // Pack to do one allreduce.
-  El::mpi::AllReduce(sum_sqsum, 2, data.DistComm());
+  El::mpi::AllReduce(sum_sqsum, 2, data.DistComm(),
+                     El::SyncInfo<El::Device::CPU>{});
 
   // Compute mean and standard deviation
   mean = sum_sqsum[0] / size;

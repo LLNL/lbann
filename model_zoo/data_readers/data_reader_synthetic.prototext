@@ -3,10 +3,10 @@ data_reader {
     name: "synthetic"
     role: "train"
     shuffle: true
-    num_samples: 240000
-    synth_dimensions: "1024"
-    num_labels: 0
-    validation_percent: 0.1
+    num_samples: 4
+    synth_dimensions: "1"
+    num_labels: 1
+    validation_percent: 0.5
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
   }
@@ -14,9 +14,9 @@ data_reader {
     name: "synthetic"
     role: "test"
     shuffle: true
-    num_samples: 32000
-    synth_dimensions: "1024"
-    num_labels: 0
+    num_samples: 32
+    synth_dimensions: "1"
+    num_labels: 1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
   }
