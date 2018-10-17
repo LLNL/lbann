@@ -19,8 +19,8 @@ model {
       layer: "g_adv1_eval"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      scale_factor: 0.025
+      layer: "l_l2_y"
     }
     l2_weight_regularization {
       scale_factor: 1e-4

@@ -7,19 +7,23 @@ model {
     }
     layer_term {
       scale_factor: 1.0
-      layer: "disc1_real_eval"
+      #layer: "disc1_real_eval"
+      layer: "disc1_real_bce"
     }
     layer_term {
       scale_factor: 1.0
-      layer: "disc1_fake_eval"
+      #layer: "disc1_fake_eval"
+      layer: "disc1_fake_bce"
     }
     layer_term {
       scale_factor: 0.05
-      layer: "g_adv1_eval"
+      #layer: "g_adv1_eval"
+      layer: "g_adv1_bce"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      scale_factor: 0.025
+      #layer: "l_l2_y_eval"
+      layer: "l_l2_y"
     }
   }
  # metric {
@@ -41,7 +45,8 @@ model {
  # }
   metric {
     layer_metric {
-      layer: "l_l2_y_eval"
+      #layer: "l_l2_y_eval"
+      layer: "l_l2_y"
     }
   }
   num_epochs: 100
@@ -55,7 +60,24 @@ model {
     name: "data1"
     data_layout: "data_parallel"
   }
-   
+
+  layer {
+    name: "zero"
+    data_layout: "data_parallel"
+    constant {
+      value: 0.0
+      num_neurons: "1"
+    }
+  }
+  layer {
+    name: "one"
+    data_layout: "data_parallel"
+    constant {
+      value: 1.0
+      num_neurons: "1"
+    }
+  }
+
   layer {
     name: "slice_data"
     data_layout: "data_parallel"
@@ -252,37 +274,33 @@ model {
     parents: "d1relu2_fake"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_real_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1fc3_real"
+    parents: "d1fc3_real one"
   }
+  #layer {
+  #  name: "disc1_real_eval"
+  #  data_layout: "data_parallel"
+  #  parents: "disc1_real_bce"
+  #  evaluation {
+  #  }
+  #}
   layer {
-    name: "disc1_real_eval"
-    data_layout: "data_parallel"
-    parents: "disc1_real_bce"
-    evaluation {
-    }
-  }
-  layer {
-    bce_with_logits {
-      true_label: 0
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_fake_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1fc3_fake"
+    parents: "d1fc3_fake zero"
   }
-  layer {
-    name: "disc1_fake_eval"
-    data_layout: "data_parallel"
-    parents: "disc1_fake_bce"
-    evaluation {
-    }
-  }
+  #layer {
+  #  name: "disc1_fake_eval"
+  #  data_layout: "data_parallel"
+  #  parents: "disc1_fake_bce"
+  #  evaluation {
+  #  }
+  #}
   layer {
     identity {
     }
@@ -335,21 +353,19 @@ model {
     parents: "d2relu2"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "g_adv1_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d2fc3"
+    parents: "d2fc3 one"
   }
-  layer {
-    name: "g_adv1_eval"
-    data_layout: "data_parallel"
-    parents: "g_adv1_bce"
-    evaluation {
-    }
-  }
+  #layer {
+  #  name: "g_adv1_eval"
+  #  data_layout: "data_parallel"
+  #  parents: "g_adv1_bce"
+  #  evaluation {
+  #  }
+  #}
   #L2loss
   layer {
     name: "gsample_minus_y"
@@ -360,21 +376,21 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_y"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
+    #device_allocation: "cpu"
     parents: "gsample_minus_y"
   }
     
-  layer {
-    name: "l_l2_y_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_y"
-    evaluation {
-    }
-  }
+  #layer {
+  #  name: "l_l2_y_eval"
+  #  data_layout: "data_parallel"
+  #  parents: "l_l2_y"
+  #  evaluation {
+  #  }
+  #}
   weights {
     name: "gen1fc1linearity"
     he_normal_initializer {

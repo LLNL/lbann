@@ -9,8 +9,8 @@ model {
       layer: "g_adv1_eval"
     }
     layer_term {
-      scale_factor: 0.05
-      layer: "l_l2_y_eval"
+      scale_factor: 0.025
+      layer: "l_l2_y"
     }
   }
   num_epochs: 1
@@ -171,12 +171,18 @@ model {
     parents: "disc1relu2_real"
   }
   layer {
+    name: "one"
+    data_layout: "data_parallel"
+    constant {
+      value: 1.0
+      num_neurons: "1"
+    }
+  }
+  layer {
     name: "g_adv1_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "disc1fc3_real"
-    bce_with_logits {
-      true_label: 1
+    parents: "disc1fc3_real one"
+    sigmoid_binary_cross_entropy {
     }
   }
   layer {
@@ -440,19 +446,12 @@ model {
     }
   }
   layer {
-    l2_loss {
+    l2_norm2 {
     }
     name: "l_l2_y"
     device_allocation: "cpu"
     data_layout: "data_parallel"
     parents: "gsample_minus_y"
-  }
-  layer {
-    name: "l_l2_y_eval"
-    data_layout: "data_parallel"
-    parents: "l_l2_y"
-    evaluation {
-    }
   }
   weights {
     name: "gen1fc1linearity"

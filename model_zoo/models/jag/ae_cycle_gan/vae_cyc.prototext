@@ -44,8 +44,8 @@ model {
   callback { timer {} }
  # callback {
  #   save_images {
- #     image_dir: "vae_fcn_images_"
- #     extension: "jpg"
+ #     image_prefix: "vae_fcn_images_"
+ #     image_format: "jpg"
  #   }
  # }
 
@@ -307,16 +307,14 @@ model {
     name: "kl_z_mean2"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    power {
-      exponent: 2.0
-    }
+    square {}
   }
   layer {
     parents: "z_log_sigma"
     name: "kl_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
@@ -358,7 +356,7 @@ model {
     name: "sample_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     name: "sample_noise"
