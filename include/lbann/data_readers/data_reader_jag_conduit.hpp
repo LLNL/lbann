@@ -129,6 +129,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   void select_subset_of_data() override;
   /// Replace the sample indices with the unused sample indices.
   void use_unused_index_set() override;
+  /// Set the type of io_buffer that will rely on this reader
+  void set_io_buffer_type(const std::string io_buffer);
+
+  /// Set the id of this local instance
+  void set_local_id() { m_local_reader_id = m_num_local_readers++; }
+  /// Get the id of this local instance
+  int get_local_id() const { return m_local_reader_id; }
 #else
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
@@ -246,6 +253,18 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Shuffle sample indices
   void shuffle_indices() override;
+  /**
+   * Compute the number of parallel readers based on the type of io_buffer,
+   * the mini batch size, the requested number of parallel readers.
+   * This is done before populating the sample indices.
+   */
+  int compute_max_num_parallel_readers();
+  /**
+   * Check if there are sufficient number of samples for the given number of
+   * data readers with distributed io buffer, based on the number of samples,
+   * the number of models and the mini batch size.
+   */
+  bool check_num_parallel_readers(long data_set_size);
   /// Determine the number of samples to use
   void determine_num_samples_to_use();
   /**
@@ -361,6 +380,17 @@ class data_reader_jag_conduit : public generic_data_reader {
    * This is the sum of m_local_num_samples_to_use.
    */
   size_t m_global_num_samples_to_use;
+
+  /**
+   * io_buffer type that will rely on this reader.
+   * e.g. distributed_io_buffer, partitioned_io_buffer
+   */
+  std::string m_io_buffer_type;
+
+  /// The number of local instances of this reader type
+  static int m_num_local_readers;
+  /// locally addressable id in case of multiple data reader instances attached to a model
+  int m_local_reader_id;
 };
 
 
