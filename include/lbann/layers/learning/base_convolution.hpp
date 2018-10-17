@@ -186,13 +186,13 @@ class base_convolution_layer : public learning_layer {
   ~base_convolution_layer() {
 #ifdef LBANN_HAS_CUDNN
     if (m_kernel_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
+      cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc);
     }
     if (m_convolution_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
+      cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc);
     }
     if (m_bias_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
+      cudnnDestroyTensorDescriptor(m_bias_cudnn_desc);
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -235,7 +235,7 @@ class base_convolution_layer : public learning_layer {
     }
     auto& kernel_weights = *this->m_weights[0];
     auto& bias_weights = *this->m_weights[1];
-    
+
     // Initialize variance scaling initialization
     auto* cast_initializer
       = dynamic_cast<variance_scaling_initializer*>(kernel_weights.get_initializer());
@@ -279,7 +279,7 @@ class base_convolution_layer : public learning_layer {
         LBANN_ERROR(err.str());
       }
     }
-    
+
   }
 
   /// Initialize GPU objects
@@ -345,7 +345,7 @@ class base_convolution_layer : public learning_layer {
         || output.Height() < 1 || output.Width() < 1) {
       return;
     }
-    
+
     // Initialize GPU workspace
     GPUMat workspace;
 #ifdef HYDROGEN_HAVE_CUB
@@ -575,7 +575,7 @@ class base_convolution_layer : public learning_layer {
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
         #endif
         if (using_transposed_convolution) {
-          #ifndef LBANN_DETERMINISTIC 
+          #ifndef LBANN_DETERMINISTIC
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  gradient_wrt_output_desc,
                                                                  input_desc,
@@ -600,7 +600,7 @@ class base_convolution_layer : public learning_layer {
                                                      m_kernel_gradient.Buffer()));
         }
         else {
-          #ifndef LBANN_DETERMINISTIC 
+          #ifndef LBANN_DETERMINISTIC
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  input_desc,
                                                                  gradient_wrt_output_desc,
