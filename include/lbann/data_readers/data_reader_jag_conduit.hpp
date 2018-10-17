@@ -298,6 +298,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool filter(const std::set<std::string>& key_filter,
               const std::vector<prefix_t>& prefix_filter, const std::string& name) const;
 
+  using generic_data_reader::get_linearized_size;
   /// Return the linearized size of a particular JAG variable type
   size_t get_linearized_size(const variable_t t) const;
   /// Return the dimension of a particular JAG variable type

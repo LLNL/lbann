@@ -134,6 +134,7 @@ class data_reader_jag : public generic_data_reader {
   /// check if type t is used in either the indepedent or the dependent variable
   bool is_used(const variable_t t) const;
 
+  using generic_data_reader::get_linearized_size;
   /// Return the linearized size of a particular JAG variable type
   size_t get_linearized_size(const variable_t t) const;
   /// Return the dimension of a particular JAG variable type
