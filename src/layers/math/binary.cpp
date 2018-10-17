@@ -57,14 +57,14 @@ void apply_binary_backprop_operator(const AbsMat& x1,
     auto* dx1_buffer = dx1.Buffer();
     auto* dx2_buffer = dx2.Buffer();
     const size_t size = x1.Height() * x1.Width();
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       BinaryBackPropOperator op;
       op(x1_buffer[i], x2_buffer[i], dy_buffer[i],
          dx1_buffer[i], dx2_buffer[i]);
     }
   } else {
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int col = 0; col < x1.Width(); ++col) {
       for (El::Int row = 0; row < x2.Height(); ++row) {
         BinaryBackPropOperator op;

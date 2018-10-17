@@ -768,7 +768,7 @@ class base_convolution_layer : public learning_layer {
     const El::Int num_per_output_channel = get_output_size() / num_output_channels;
 
     // Apply bias to each output channel
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_output_channels; ++channel) {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
@@ -803,7 +803,7 @@ class base_convolution_layer : public learning_layer {
     // Note: Sum is computed with Kahan summation
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
-      LBANN_OMP_TASKLOOP
+      LBANN_OMP_PARALLEL_FOR
       for (int channel = 0; channel < num_output_channels; ++channel) {
         const El::Int row_start = channel * num_per_output_channel;
         const El::Int row_end = (channel+1) * num_per_output_channel;

@@ -82,7 +82,7 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   int nthreads = omp_get_num_threads();
   std::vector<EvalType> local_sum(nthreads, EvalType(0));
   std::vector<EvalType> local_sqsum(nthreads, EvalType(0));
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
@@ -119,7 +119,7 @@ void columnwise_mean_and_stdev(const Mat& data,
   stdevs.Resize(1, width);
 
   // Compute mean and standard deviation of each matrix column
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for(El::Int col = 0; col < width; ++col) {
     const DataType shift = data(0, col);
     DataType shifted_sum = 0;
@@ -171,7 +171,7 @@ void columnwise_sums_and_sqsums(const AbsDistMat& data,
   Mat& local_sqsum = sqsums.Matrix();
 
   // Compute sum and sum of squares of each matrix column
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for(El::Int col = 0; col < local_width; ++col) {
     DataType sum_val = 0;
     DataType sqsum_val = 0;
@@ -238,7 +238,7 @@ void rowwise_mean_and_stdev(const Mat& data,
 
   // Iterate through row blocks
   const El::Int block_size = 16;
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for(El::Int row_start = 0; row_start < height; row_start += block_size) {
     const El::Int row_end = std::min(row_start + block_size, height);
 
@@ -316,7 +316,7 @@ void rowwise_sums_and_sqsums(const AbsDistMat& data,
 
   // Iterate through row blocks
   const El::Int block_size = 16;
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for(El::Int row_start = 0; row_start < local_height; row_start += block_size) {
     const El::Int row_end = std::min(row_start + block_size, local_height);
 
@@ -359,7 +359,7 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
   Mat& local_stdevs = stdevs.Matrix();
 
   // Compute mean and standard deviation of each matrix row
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for(El::Int row = 0; row < local_height; ++row) {
     const DataType mean = local_means(row, 0) / width;
     const DataType sqmean = local_stdevs(row, 0) / width;
@@ -408,7 +408,7 @@ void columnwise_covariance(const AbsDistMat& data1,
   CPUMat& local_covs = static_cast<CPUMat&>(covs.Matrix());
 
   // Accumulate sum and divide to get covariance
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for(El::Int col = 0; col < local_width; ++col) {
     DataType sum = 0;
     const DataType mean1 = local_means1(0, col);

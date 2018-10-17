@@ -201,7 +201,7 @@ class logsoftmax_layer : public activation_layer {
       // the maximum across processors is still computed correctly.
       El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
     } else {
-      LBANN_OMP_TASKLOOP
+      LBANN_OMP_PARALLEL_FOR
       for (El::Int col = 0; col < local_width; ++col) {
         DataType max_entry = local_input(0, col);
         for (El::Int row = 1; row < local_height; ++row) {
@@ -222,7 +222,7 @@ class logsoftmax_layer : public activation_layer {
       // the sum across processors is still computed correctly.
       El::Fill(local_workspace, DataType(0));
     } else {
-      LBANN_OMP_TASKLOOP
+      LBANN_OMP_PARALLEL_FOR
       for (El::Int col = 0; col < local_width; ++col) {
         const DataType shift = local_workspace(0, col);
         local_output(0, col) = shift;
@@ -239,7 +239,7 @@ class logsoftmax_layer : public activation_layer {
 
     // Subtract log-sum-exp and shift value from input to get numerically stable output.
     if (local_height > 0) {
-      LBANN_OMP_TASKLOOP
+      LBANN_OMP_PARALLEL_FOR
       for (El::Int col = 0; col < local_width; ++col) {
         const DataType lse = std::log(local_workspace(0, col));
         const DataType shift = local_output(0, col);
@@ -265,7 +265,7 @@ class logsoftmax_layer : public activation_layer {
     const El::Int local_width = local_output.Width();
 
     // Compute column sums for gradient w.r.t. output.
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       DataType sum = 0;
       for (El::Int row = 0; row < local_height; ++row) {
@@ -277,7 +277,7 @@ class logsoftmax_layer : public activation_layer {
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
 
     // Compute gradient w.r.t. input.
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       const DataType sum = local_workspace(0, col);
       for (El::Int row = 0; row < local_height; ++row) {

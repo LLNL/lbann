@@ -42,7 +42,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
   } else if (vals.Contiguous()) {
     const size_t size = vals.Height() * vals.Width();
     const auto& __restrict__ vals_buf = vals.LockedBuffer();
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       const auto& val = vals_buf[i];
       const int tid = omp_get_thread_num();
@@ -51,7 +51,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
   } else {
     const El::Int height = vals.Height();
     const El::Int width = vals.Width();
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int col = 0; col < width; ++col) {
       for (El::Int row = 0; row < height; ++row) {
         const EvalType val = vals(row, col);

@@ -60,13 +60,13 @@ void apply_entrywise_unary_operator(const AbsMat& input,
     const auto* input_buffer = input.LockedBuffer();
     auto* output_buffer = output.Buffer();
     const size_t size = input.Height() * input.Width();
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       UnaryOperator op;
       output_buffer[i] = op(input_buffer[i]);
     }
   } else {
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int col = 0; col < input.Width(); ++col) {
       for (El::Int row = 0; row < input.Height(); ++row) {
         UnaryOperator op;
@@ -112,13 +112,13 @@ void apply_entrywise_binary_operator(const AbsMat& input1,
     const auto* input2_buffer = input2.LockedBuffer();
     auto* output_buffer = output.Buffer();
     const size_t size = input1.Height() * input1.Width();
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       BinaryOperator op;
       output_buffer[i] = op(input1_buffer[i], input2_buffer[i]);
     }
   } else {
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int col = 0; col < input1.Width(); ++col) {
       for (El::Int row = 0; row < input1.Height(); ++row) {
         BinaryOperator op;

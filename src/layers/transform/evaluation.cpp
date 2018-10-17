@@ -46,7 +46,7 @@ void fp_cpu(lbann_comm& comm,
   value = 0;
   int nthreads = omp_get_num_threads();
   std::vector<EvalType> local_value(nthreads, EvalType(0));
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const int tid = omp_get_thread_num();
