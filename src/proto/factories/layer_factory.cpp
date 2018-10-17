@@ -543,6 +543,12 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(boolean_false_negative);
   CONSTRUCT_LAYER(boolean_false_positive);
 
+  // Miscellaneous layers
+  if (proto_layer.has_variance()) {
+    const auto& params = proto_layer.variance();
+    return new variance_layer<layout, Dev>(comm, params.biased());
+  }
+  
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());

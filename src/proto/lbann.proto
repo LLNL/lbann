@@ -894,6 +894,9 @@ message Layer {
    BentIdentity bent_identity = 40;
    Swish swish = 42;
 
+   // Miscellaneous layers
+   Variance variance = 600;
+
 }
 ///////////////////////
 // MotifLayer //
@@ -1249,4 +1252,11 @@ message Target {
 }
 
 message TargetReconstruction {
+}
+
+//////////////////////////
+// Miscellaneous Layers //
+//////////////////////////
+message Variance {
+  bool biased = 1; //Whether to use a biased variance estimate
 }

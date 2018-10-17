@@ -106,6 +106,9 @@
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
 
+/// Miscellaneous Layers
+#include "lbann/layers/misc/variance.hpp"
+
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
