@@ -35,6 +35,15 @@ message Reader {
   ImagePreprocessor image_preprocessor = 13;
 
   //------------------ start of only for jag_conduit -----------------------
+  message JagLinearNormalizationParams {
+    double scale = 1;
+    double bias = 2;
+  }
+
+  repeated JagLinearNormalizationParams jag_image_normalization_params = 86;
+  repeated JagLinearNormalizationParams jag_scalar_normalization_params = 87;
+  repeated JagLinearNormalizationParams jag_input_normalization_params = 88;
+
   bool split_jag_image_channels = 89;
   repeated string jag_image_keys = 90;
   repeated string jag_scalar_keys = 91;
@@ -47,8 +56,19 @@ message Reader {
   repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
   repeated string jag_input_filters = 95;
   repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
-  repeated int32 independent = 97;
-  repeated int32 dependent = 98;
+
+  enum JAG_Data {
+    Undefined  = 0;
+    JAG_Image  = 1;
+    JAG_Scalar = 2;
+    JAG_Input  = 3;
+  }
+  message JAGDataSlice {
+    repeated JAG_Data pieces = 1;
+  }
+  repeated JAGDataSlice independent = 97;
+  repeated JAGDataSlice dependent = 98;
+
   int32 max_files_to_load = 1000;
 
   // for jag_conduit_hdf5
@@ -1195,6 +1215,8 @@ message FullyConnected {
   bool get_input_dimension_from_reader = 9;
   bool get_image_dimension_from_reader = 10;
   bool get_scalar_dimension_from_reader = 11;
+  repeated uint32 get_num_neurons_of_slice_from_reader = 12;
+  string get_slice_points_from_reader = 13;
 }
 
 message Convolution {
