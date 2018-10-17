@@ -126,7 +126,7 @@ const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
 };
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-// These methods are overriden to allow each process to load and consume unique set of data files
+// These methods are overriden to allow each process to load and consume a unique set of data files
 bool data_reader_jag_conduit::position_valid() const {
   const bool ok = (static_cast<size_t>(m_shuffled_indices[m_current_pos]) < m_valid_samples.size())
     && (m_current_pos < (int)m_shuffled_indices.size());
@@ -210,6 +210,7 @@ void data_reader_jag_conduit::select_subset_of_data() {
     std::sort(m_valid_samples.begin(), m_valid_samples.end());
     std::sort(m_unused_samples.begin(), m_unused_samples.end());
   }
+  m_local_num_samples_to_use = get_num_valid_local_samples();
 }
 
 void data_reader_jag_conduit::use_unused_index_set() {
@@ -220,6 +221,7 @@ void data_reader_jag_conduit::use_unused_index_set() {
   m_unused_samples.clear();
   m_unused_samples.shrink_to_fit();
   adjust_num_samples_to_use();
+  m_local_num_samples_to_use = get_num_valid_local_samples();
 }
 
 void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
