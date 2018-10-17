@@ -543,6 +543,17 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(boolean_false_negative);
   CONSTRUCT_LAYER(boolean_false_positive);
 
+  
+  // Image layers
+  if (proto_layer.has_bilinear_resize()) {
+    const auto& params = proto_layer.bilinear_resize();
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new bilinear_resize_layer<data_layout::DATA_PARALLEL, Dev>(comm,
+                                                                        params.height(),
+                                                                        params.width());
+    }
+  }
+  
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());
