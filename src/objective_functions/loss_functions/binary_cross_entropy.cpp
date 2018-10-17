@@ -82,9 +82,7 @@ EvalType binary_cross_entropy::finish_evaluate_compute(
 
   // Compute sum of cross entropy terms
   EvalType sum = 0;
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_sum(nthreads, EvalType(0));
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
@@ -97,15 +95,12 @@ EvalType binary_cross_entropy::finish_evaluate_compute(
                                               pred_val);
       #endif // LBANN_DEBUG
       if (true_val > DataType(0)) {
-        local_sum[tid] += - true_val * std::log(pred_val);
+        sum += - true_val * std::log(pred_val);
       }
       if (true_val < DataType(1)) {
-        local_sum[tid] += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
+        sum += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
       }
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    sum += local_sum[i];
   }
 
   // Compute mean objective function value across mini-batch

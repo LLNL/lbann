@@ -44,17 +44,12 @@ void fp_cpu(lbann_comm& comm,
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
   value = 0;
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_value(nthreads, EvalType(0));
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const int tid = omp_get_thread_num();
-      local_value[tid] += local_input(row, col);
+      value += local_input(row, col);
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    value += local_value[i];
   }
   value = value / mini_batch_size;
   comm.nb_allreduce(&value, 1, input.DistComm(), req);

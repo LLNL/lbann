@@ -43,20 +43,15 @@ void mean_squared_error_loss::start_evaluate_compute(
 
   // Compute sum of squared errors
   EvalType sum = EvalType(0);
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_sum(nthreads, EvalType(0));
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
       const EvalType error = true_val - pred_val;
       const int tid = omp_get_thread_num();
-      local_sum[tid] += error * error;
+      sum += error * error;
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    sum += local_sum[i];
   }
   m_sum = sum / (height * width);  // Can't reduce on class members.
   get_comm().nb_allreduce(&m_sum, 1, predictions.DistComm(), m_allreduce_req);

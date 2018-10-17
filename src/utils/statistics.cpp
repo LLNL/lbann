@@ -79,21 +79,14 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   // Compute sums over matrix entries
   DataType sum = 0;
   DataType sqsum = 0;
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_sum(nthreads, EvalType(0));
-  std::vector<EvalType> local_sqsum(nthreads, EvalType(0));
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum,sqsum) collapse(2))
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
       const int tid = omp_get_thread_num();
-      local_sum[tid] += val;
-      local_sqsum[tid] += val * val;
+      sum += val;
+      sqsum += val * val;
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    sum += local_sum[i];
-    sqsum += local_sqsum[i];
   }
   DataType sum_sqsum[2] = {sum, sqsum};  // Pack to do one allreduce.
   El::mpi::AllReduce(sum_sqsum, 2, data.DistComm(),

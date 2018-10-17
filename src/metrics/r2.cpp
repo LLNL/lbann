@@ -50,24 +50,16 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   // and sum of squares ss_tot as sum(square(ground_truth - mean(ground_truth)))
   EvalType ss_res = 0;
   EvalType ss_tot = 0;
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_ss_res(nthreads, EvalType(0));
-  std::vector<EvalType> local_ss_tot(nthreads, EvalType(0));
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:ss_res,ss_tot) collapse(2))
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = prediction_local(row, col);
       const EvalType val1 = true_val - pred_val;
       const EvalType val2 = true_val - gt_mean;
-      const int tid = omp_get_thread_num();
-      local_ss_res[tid] += val1 * val1;
-      local_ss_tot[tid] += val2 * val2;
+      ss_res += val1 * val1;
+      ss_tot += val2 * val2;
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    ss_res += local_ss_res[i];
-    ss_tot += local_ss_tot[i];
   }
 
   EvalType res_tot[2] = {ss_res, ss_tot};  // Pack to do one allreduce.

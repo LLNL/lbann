@@ -30,7 +30,31 @@
 #include "lbann_config.hpp"
 #include <omp.h>
 
+//#define LBANN_HAVE_OMP_TASKLOOP HYDROGEN_HAVE_OMP_TASKLOOP
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+#define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
+#define LBANN_OMP_PARALLEL_FOR_TEXT(arg) LBANN_OMP_PARALLEL_FOR_HELPER(omp taskloop default(shared) num_tasks(omp_get_num_threads()) arg)
+#define LBANN_OMP_PARALLEL_FOR_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_FOR_TEXT(arg))
+
+#define LBANN_OMP_PARALLEL_FOR _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE2 _Pragma("omp taskloop collapse(2) default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared) num_tasks(omp_get_num_threads())")
+
 #define OMP_PARALLEL _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
+#else
+#define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
+#define LBANN_OMP_PARALLEL_FOR_TEXT(arg) LBANN_OMP_PARALLEL_FOR_HELPER(omp parallel for arg)
+#define LBANN_OMP_PARALLEL_FOR_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_FOR_TEXT(arg))
+
+#define LBANN_OMP_PARALLEL_FOR _Pragma("omp parallel for")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE2 _Pragma("omp parallel for collapse(2)")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp parallel for collapse(3)")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp parallel for collapse(5)")
+
+#define OMP_PARALLEL _Pragma("omp parallel for")
+#endif
+
 #define OMP_CRITICAL _Pragma("omp critical")
 
 #if defined(LBANN_NO_OMP_FOR_DATA_READERS)

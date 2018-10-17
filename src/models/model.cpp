@@ -46,7 +46,7 @@
 #include "mpi.h"
 
 namespace lbann {
-  
+
 ////////////////////////////////////////////////////////////
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
@@ -67,8 +67,8 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) { 
-    
+    m_default_optimizer(default_optimizer) {
+
       static int num_models = 0;
       m_name = "Model" + std::to_string(num_models);
       num_models++;
@@ -802,7 +802,7 @@ void model::train(int num_epochs, int num_batches) {
     } else {
       while (!train_mini_batch()) {}
     }
-    
+
     // Finalize epoch
     ++m_current_epoch;
     reconcile_weight_values();
@@ -811,7 +811,7 @@ void model::train(int num_epochs, int num_batches) {
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
-    
+
   }
   do_train_end_cbs();
 }
@@ -864,7 +864,7 @@ bool model::train_mini_batch() {
 
   bool finished;
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     #pragma omp single
     {
@@ -970,7 +970,7 @@ void model::reconcile_weight_values() {
   }
   for (auto& req : reqs) { m_comm->wait(req); }
 }
-  
+
 ////////////////////////////////////////////////////////////
 // Callbacks
 ////////////////////////////////////////////////////////////

@@ -36,6 +36,9 @@
 // Defines, among other things, lbann::DataType.
 #include "lbann_config.hpp"
 
+// Support for OpenMP macros
+#include "lbann/utils/omp_pragma.hpp"
+
 // Typedefs for Elemental matrices
 using EGrid      = El::Grid;
 using Grid       = El::Grid;
@@ -124,27 +127,6 @@ std::string get_pool_mode_name(pool_mode m);
 
 // NA - Not applicable, used for input layers that don't produce a second output
 enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
-
-#define LBANN_HAVE_OMP_TASKLOOP HYDROGEN_HAVE_OMP_TASKLOOP
-#if defined(LBANN_HAVE_OMP_TASKLOOP)
-#define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
-#define LBANN_OMP_PARALLEL_FOR_TEXT(arg) LBANN_OMP_PARALLEL_FOR_HELPER(omp taskloop default(shared) num_tasks(omp_get_num_threads()) arg)
-#define LBANN_OMP_PARALLEL_FOR_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_FOR_TEXT(arg))
-
-#define LBANN_OMP_PARALLEL_FOR _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
-#define LBANN_OMP_PARALLEL_FOR_COLLAPSE2 _Pragma("omp taskloop collapse(2) default(shared) num_tasks(omp_get_num_threads())")
-#define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared) num_tasks(omp_get_num_threads())")
-#define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared) num_tasks(omp_get_num_threads())")
-#else
-#define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
-#define LBANN_OMP_PARALLEL_FOR_TEXT(arg) LBANN_OMP_PARALLEL_FOR_HELPER(omp parallel for default(shared) num_tasks(omp_get_num_threads()) arg)
-#define LBANN_OMP_PARALLEL_FOR_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_FOR_TEXT(arg))
-
-#define LBANN_OMP_PARALLEL_FOR _Pragma("omp parallel for default(shared) num_tasks(omp_get_num_threads())")
-#define LBANN_OMP_PARALLEL_FOR_COLLAPSE2 _Pragma("omp parallel for collapse(2) default(shared) num_tasks(omp_get_num_threads())")
-#define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp parallel for collapse(3) default(shared) num_tasks(omp_get_num_threads())")
-#define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp parallel for collapse(5) default(shared) num_tasks(omp_get_num_threads())")
-#endif
 
 namespace lbann {
 
