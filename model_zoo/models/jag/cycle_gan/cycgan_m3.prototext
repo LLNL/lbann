@@ -30,7 +30,8 @@ model {
     parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
-      slice_points: "0 2500 2511"
+      # slice_points: "0 49174 49179"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -100,7 +101,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 11
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_1"
@@ -237,7 +240,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 11
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -310,7 +315,9 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 2500
+      # num_neurons: 49174
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
     name: "gen1fc4_2"
@@ -406,7 +413,9 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 2500
+      # num_neurons: 49174
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
     name: "gen1fc4_1"
@@ -467,7 +476,9 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 11
+      # num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"

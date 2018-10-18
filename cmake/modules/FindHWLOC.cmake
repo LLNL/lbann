@@ -12,7 +12,10 @@ if (MPI_FOUND)
     get_filename_component(_TMP_MPI_LIB_DIR "${lib}" DIRECTORY)
     list(APPEND _TMP_MPI_LIBRARY_DIRS ${_TMP_MPI_LIB_DIR})
   endforeach ()
-  list(REMOVE_DUPLICATES _TMP_MPI_LIBRARY_DIRS)
+
+  if (_TMP_MPI_LIBRARY_DIRS)
+    list(REMOVE_DUPLICATES _TMP_MPI_LIBRARY_DIRS)
+  endif ()
 endif (MPI_FOUND)
 
 # Find the library
