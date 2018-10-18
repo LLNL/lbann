@@ -48,7 +48,6 @@ EvalType mean_absolute_deviation_metric::evaluate_compute(const AbsDistMat& pred
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = prediction_local(row, col);
       const EvalType error = true_val - pred_val;
-      const int tid = omp_get_thread_num();
       sum += error >= DataType(0) ? error : - error;
     }
   }

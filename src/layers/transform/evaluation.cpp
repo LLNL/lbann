@@ -47,7 +47,6 @@ void fp_cpu(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
-      const int tid = omp_get_thread_num();
       value += local_input(row, col);
     }
   }

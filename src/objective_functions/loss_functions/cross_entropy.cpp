@@ -45,7 +45,6 @@ void cross_entropy::start_evaluate_compute(const AbsDistMat& predictions,
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
-      const int tid = omp_get_thread_num();
       sum += (true_val != EvalType(0) ?
               - true_val * std::log(predictions_local(row, col)) :
               EvalType(0));

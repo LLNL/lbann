@@ -43,7 +43,6 @@ EvalType boolean_false_positives_metric::evaluate_compute(
     for(El::Int row = 0; row < local_height; ++row) {
       const bool true_val = ground_truth_local(row, col) > DataType(0.5);
       const bool pred_val = prediction_local(row, col) > DataType(0.5);
-      const int tid = omp_get_thread_num();
       sum += EvalType((true_val != pred_val) && pred_val);
     }
   }

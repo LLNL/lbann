@@ -87,7 +87,6 @@ EvalType binary_cross_entropy::finish_evaluate_compute(
     for (int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
       const DataType pred_val = predictions_local(row, col);
-      const int tid = omp_get_thread_num();
       #ifdef LBANN_DEBUG
       binary_cross_entropy_debug::check_entry(ground_truth.GlobalRow(row),
                                               ground_truth.GlobalCol(col),

@@ -72,7 +72,6 @@ EvalType l1_weight_regularization::finish_evaluation() {
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         const EvalType val = values_local(row, col);
-        const int tid = omp_get_thread_num();
         sum += val >= EvalType(0) ? val : - val;
       }
     }

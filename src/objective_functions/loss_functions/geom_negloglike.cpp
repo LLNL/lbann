@@ -47,7 +47,6 @@ EvalType geom_negloglike::finish_evaluate_compute(
     for (int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
-      const int tid = omp_get_thread_num();
       sum += (- true_val * std::log(EvalType(1) - pred_val)
               - std::log(pred_val));
     }

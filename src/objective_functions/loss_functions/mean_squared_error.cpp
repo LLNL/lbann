@@ -49,7 +49,6 @@ void mean_squared_error_loss::start_evaluate_compute(
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
       const EvalType error = true_val - pred_val;
-      const int tid = omp_get_thread_num();
       sum += error * error;
     }
   }

@@ -43,7 +43,6 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum))
     for (size_t i = 0; i < size; ++i) {
       const auto& val = vals_buf[i];
-      const int tid = omp_get_thread_num();
       sqsum += val * val;
     }
   } else {
@@ -53,7 +52,6 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
     for (El::Int col = 0; col < width; ++col) {
       for (El::Int row = 0; row < height; ++row) {
         const EvalType val = vals(row, col);
-        const int tid = omp_get_thread_num();
         sqsum += val * val;
       }
     }

@@ -83,7 +83,6 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const DataType val = local_data(row, col);
-      const int tid = omp_get_thread_num();
       sum += val;
       sqsum += val * val;
     }

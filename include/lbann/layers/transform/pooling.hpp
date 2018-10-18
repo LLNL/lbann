@@ -433,7 +433,7 @@ public:
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
           = &m_max_pool_indices[sample * get_output_size()];
-	      LBANN_OMP_PARALLEL_FOR
+        LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             const int input_index = j + channel * num_per_input_channel;
