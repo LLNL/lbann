@@ -302,8 +302,7 @@ void lbann_quantizer::adaptive_quantize_replace(
   const adaptive_thresholds threshes =
     proportion_threshold(mat, qerror, proportion);
   auto *q_col = (colT *) q.data();
-  /// @todo FIXME BVE
-  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads)
+  LBANN_OMP_PARALLEL_ARGS(firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads))
   {
     const int tid = omp_get_thread_num();
     colT num_quantized = 0;
@@ -381,7 +380,6 @@ void lbann_quantizer::adaptive_quantize_replace(
   const int num_copy_threads =
     get_adaptive_quantization_copy_threads(width);
   LBANN_OMP_PARALLEL_FOR_ARGS(schedule(dynamic, 1) num_threads(num_copy_threads))
-    //#pragma omp taskloop default(shared)
   for (unsigned tid = 0; tid < thread_qs.size(); ++tid) {
     std::copy(thread_qs[tid].begin(),
               thread_qs[tid].begin() + quantized_counts[tid],

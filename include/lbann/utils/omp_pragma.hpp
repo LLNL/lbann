@@ -53,6 +53,10 @@
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp parallel for collapse(5)")
 
 #define OMP_PARALLEL _Pragma("omp parallel for")
+
+#define LBANN_OMP_PARALLEL_HELPER(arg) #arg
+#define LBANN_OMP_PARALLEL_TEXT(arg) LBANN_OMP_PARALLEL_HELPER(omp parallel arg)
+#define LBANN_OMP_PARALLEL_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_TEXT(arg))
 #endif
 
 #define OMP_CRITICAL _Pragma("omp critical")
