@@ -99,7 +99,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
 
   /// Allow each thread to perform any preprocessing necessary on the
   /// data source prior to fetching data
-  LBANN_OMP_PARALLEL_FOR
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int t = 0; t < nthreads; t++) {
     preprocess_data_source(omp_get_thread_num());
   }
@@ -132,7 +132,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
 
   /// Allow each thread to perform any postprocessing necessary on the
   /// data source prior to fetching data
-  LBANN_OMP_PARALLEL_FOR
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int t = 0; t < nthreads; t++) {
     postprocess_data_source(omp_get_thread_num());
   }

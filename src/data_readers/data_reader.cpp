@@ -81,7 +81,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
-    LBANN_DATA_FETCH_OMP_FOR (int t = 0; t < nthreads; t++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
+    for (int t = 0; t < nthreads; t++) {
       preprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
   }
@@ -126,7 +127,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    LBANN_DATA_FETCH_OMP_FOR (int t = 0; t < nthreads; t++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
+    for (int t = 0; t < nthreads; t++) {
       postprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
   }
@@ -147,7 +149,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
 
   m_reset_mini_batch_index = 0;
   m_loaded_mini_batch_idx = 0;
-  m_current_mini_batch_idx = 0;  
+  m_current_mini_batch_idx = 0;
 
   m_stride_to_next_mini_batch = mb_size;
   m_stride_to_last_mini_batch = mb_size;
