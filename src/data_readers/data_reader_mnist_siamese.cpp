@@ -115,7 +115,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
 
   std::string error_message;
-  LBANN_OMP_PARALLEL_FOR
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
@@ -167,7 +167,7 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
 
 //  else {
     std::string error_message;
-    LBANN_OMP_PARALLEL_FOR
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);

@@ -41,7 +41,7 @@
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared) num_tasks(omp_get_num_threads())")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared) num_tasks(omp_get_num_threads())")
 
-#define OMP_PARALLEL _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
+//#define OMP_PARALLEL _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
 #else
 #define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
 #define LBANN_OMP_PARALLEL_FOR_TEXT(arg) LBANN_OMP_PARALLEL_FOR_HELPER(omp parallel for arg)
@@ -52,7 +52,7 @@
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp parallel for collapse(3)")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp parallel for collapse(5)")
 
-#define OMP_PARALLEL _Pragma("omp parallel for")
+//#define OMP_PARALLEL _Pragma("omp parallel for")
 
 #define LBANN_OMP_PARALLEL_HELPER(arg) #arg
 #define LBANN_OMP_PARALLEL_TEXT(arg) LBANN_OMP_PARALLEL_HELPER(omp parallel arg)
@@ -63,11 +63,11 @@
 
 #if defined(LBANN_NO_OMP_FOR_DATA_READERS)
   #pragma message "Disable OpenMP parallelism for data fetch loops"
-  #define LBANN_DATA_FETCH_OMP_FOR for
+  #define LBANN_DATA_FETCH_OMP_PARALLEL_FOR
   #define LBANN_OMP_THREAD_NUM 0
   #define LBANN_DATA_FETCH_OMP_CRITICAL
 #else
-  #define LBANN_DATA_FETCH_OMP_FOR OMP_PARALLEL for
+  #define LBANN_DATA_FETCH_OMP_PARALLEL_FOR _Pragma("omp parallel for")
   #define LBANN_OMP_THREAD_NUM omp_get_thread_num()
   #define LBANN_DATA_FETCH_OMP_CRITICAL OMP_CRITICAL
 

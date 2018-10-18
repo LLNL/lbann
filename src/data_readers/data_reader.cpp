@@ -114,7 +114,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
   else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_datum(X, index, s, LBANN_OMP_THREAD_NUM);
@@ -185,7 +186,8 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
 
 //  else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_label(Y, index, s, LBANN_OMP_THREAD_NUM);
@@ -215,7 +217,8 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
 
   El::Zeros(Y, Y.Height(), Y.Width());
   std::string error_message;
-  LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+  for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_response(Y, index, s, LBANN_OMP_THREAD_NUM);
