@@ -59,6 +59,23 @@
 #define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_NODEBUG(cudnn_call)
 #endif // #ifdef LBANN_DEBUG
 
+#define CHECK_CUDNN_DTOR(cudnn_call)            \
+  try {                                         \
+    CHECK_CUDNN(cudnn_call);                                            \
+  }                                                                     \
+  catch (std::exception const& e) {                                     \
+    std::cerr << "Caught exception:\n\n    what(): "                    \
+              << e.what() << "\n\nCalling std::terminate() now."        \
+              <<  std::endl;                                            \
+    std::terminate();                                                   \
+  }                                                                     \
+  catch (...) {                                                         \
+    std::cerr << "Caught something that isn't an std::exception.\n\n"   \
+              << "Calling std::terminate() now." << std::endl;          \
+    std::terminate();                                                   \
+  }
+
+
 namespace lbann {
 
 // Forward declaration
@@ -87,7 +104,7 @@ cudnnHandle_t& get_handle();
 /** Get cuDNN data type associated with DataType. */
 cudnnDataType_t get_data_type();
 
-/** Set cuDNN tensor descriptor. 
+/** Set cuDNN tensor descriptor.
  *  desc is created if necessary.
  */
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
