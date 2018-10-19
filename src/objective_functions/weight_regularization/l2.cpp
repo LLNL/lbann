@@ -36,32 +36,25 @@ template <>
 void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CPUMat& vals,
                                                                         CPUMat& contribution) {
   auto& sqsum = contribution(0, 0);
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_sqsum(nthreads, EvalType(0));
   if (vals.IsEmpty()) {
   } else if (vals.Contiguous()) {
     const size_t size = vals.Height() * vals.Width();
     const auto& __restrict__ vals_buf = vals.LockedBuffer();
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum))
     for (size_t i = 0; i < size; ++i) {
       const auto& val = vals_buf[i];
-      const int tid = omp_get_thread_num();
-      local_sqsum[tid] += val * val;
+      sqsum += val * val;
     }
   } else {
     const El::Int height = vals.Height();
     const El::Int width = vals.Width();
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum) collapse(2))
     for (El::Int col = 0; col < width; ++col) {
       for (El::Int row = 0; row < height; ++row) {
         const EvalType val = vals(row, col);
-        const int tid = omp_get_thread_num();
-        local_sqsum[tid] += val * val;
+        sqsum += val * val;
       }
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    sqsum += local_sqsum[i];
   }
 }
 

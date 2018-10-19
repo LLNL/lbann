@@ -68,18 +68,12 @@ EvalType l1_weight_regularization::finish_evaluation() {
 
     // Compute L1 regularization term
     EvalType sum = 0;
-    int nthreads = omp_get_num_threads();
-    std::vector<EvalType> local_sum(nthreads, EvalType(0));
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         const EvalType val = values_local(row, col);
-        const int tid = omp_get_thread_num();
-        local_sum[tid] += val >= EvalType(0) ? val : - val;
+        sum += val >= EvalType(0) ? val : - val;
       }
-    }
-    for (int i = 0; i < nthreads; ++i) {
-      sum += local_sum[i];
     }
     value += get_comm().allreduce(sum, values.DistComm());
 
@@ -101,7 +95,7 @@ void l1_weight_regularization::compute_weight_regularization() {
     // Compute gradient
     gradient = values.Copy();
     Mat& gradient_local = gradient->Matrix();
-    LBANN_OMP_TASKLOOP_COLLAPSE2
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         const DataType val = values_local(row, col);

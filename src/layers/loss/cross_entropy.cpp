@@ -41,7 +41,7 @@ void local_fp_cpu(const AbsMat& local_prediction,
   const El::Int local_width = local_prediction.Width();
 
   // Compute local contribution to cross entropy
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     DataType sum = zero;
     for (El::Int row = 0; row < local_height; ++row) {
@@ -71,7 +71,7 @@ void local_bp_cpu(const AbsMat& local_prediction,
   const El::Int local_width = local_prediction.Width();
 
   // Compute gradients
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_prediction(row, col);

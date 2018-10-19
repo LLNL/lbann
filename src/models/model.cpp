@@ -864,7 +864,7 @@ bool model::train_mini_batch() {
 
   bool finished;
 
-  #pragma omp parallel
+#pragma omp parallel
   {
     #pragma omp single
     {

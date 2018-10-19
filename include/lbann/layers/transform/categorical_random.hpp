@@ -74,7 +74,7 @@ class categorical_random_layer : public transform_layer {
     }
 
     // Process each mini-batch sample
-    LBANN_OMP_TASKLOOP
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
 
       // Determine index of output

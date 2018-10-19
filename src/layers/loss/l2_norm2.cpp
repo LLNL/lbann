@@ -32,7 +32,7 @@ namespace {
 
 void local_fp_cpu(const AbsMat& local_input,
                   AbsMat& local_contribution) {
-  LBANN_OMP_TASKLOOP
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     DataType sum = 0;
     for (El::Int row = 0; row < local_input.Height(); ++row) {
@@ -46,7 +46,7 @@ void local_fp_cpu(const AbsMat& local_input,
 void local_bp_cpu(const AbsMat& local_input,
                   const AbsMat& local_gradient_wrt_output,
                   AbsMat& local_gradient_wrt_input) {
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     for (El::Int row = 0; row < local_input.Height(); ++row) {
       const auto& x = local_input(row, col);

@@ -42,21 +42,15 @@ EvalType poisson_negloglike::finish_evaluate_compute(
 
   // Compute sum of cross entropy terms
   EvalType sum = 0;
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_sum(nthreads, EvalType(0));
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
       const EvalType pred_val = predictions_local(row, col);
-      const int tid = omp_get_thread_num();
-      local_sum[tid] += (pred_val
-                         - true_val * std::log(pred_val)
-                         + std::lgamma(true_val + 1)); // \f[\lambda - k\log(\lambda) + \log(k!)\f]
+      sum += (pred_val
+              - true_val * std::log(pred_val)
+              + std::lgamma(true_val + 1)); // \f[\lambda - k\log(\lambda) + \log(k!)\f]
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    sum += local_sum[i];
   }
 
   // Compute mean objective function value across mini-batch
@@ -78,7 +72,7 @@ void poisson_negloglike::differentiate_compute(const AbsDistMat& predictions,
   const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

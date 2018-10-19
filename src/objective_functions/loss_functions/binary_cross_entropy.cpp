@@ -82,14 +82,11 @@ EvalType binary_cross_entropy::finish_evaluate_compute(
 
   // Compute sum of cross entropy terms
   EvalType sum = 0;
-  int nthreads = omp_get_num_threads();
-  std::vector<EvalType> local_sum(nthreads, EvalType(0));
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
       const DataType pred_val = predictions_local(row, col);
-      const int tid = omp_get_thread_num();
       #ifdef LBANN_DEBUG
       binary_cross_entropy_debug::check_entry(ground_truth.GlobalRow(row),
                                               ground_truth.GlobalCol(col),
@@ -97,15 +94,12 @@ EvalType binary_cross_entropy::finish_evaluate_compute(
                                               pred_val);
       #endif // LBANN_DEBUG
       if (true_val > DataType(0)) {
-        local_sum[tid] += - true_val * std::log(pred_val);
+        sum += - true_val * std::log(pred_val);
       }
       if (true_val < DataType(1)) {
-        local_sum[tid] += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
+        sum += - (EvalType(1) - true_val) * std::log(EvalType(1) - pred_val);
       }
     }
-  }
-  for (int i = 0; i < nthreads; ++i) {
-    sum += local_sum[i];
   }
 
   // Compute mean objective function value across mini-batch
@@ -127,7 +121,7 @@ void binary_cross_entropy::differentiate_compute(const AbsDistMat& predictions,
   const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

@@ -90,7 +90,7 @@ bool imagenet_reader::replicate_processor(const cv_process& pp) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  LBANN_OMP_TASKLOOP
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int i = 0; i < nthreads; ++i) {
     //auto ppu = std::make_unique<cv_process>(pp); // c++14
     std::unique_ptr<cv_process> ppu(new cv_process(pp));

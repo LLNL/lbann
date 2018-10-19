@@ -60,7 +60,7 @@ void value_initializer::fill(AbsDistMat& matrix) {
   } else {
     matrix_cpu.Resize(matrix.LocalHeight(), matrix.LocalWidth());
   }
-  LBANN_OMP_TASKLOOP_COLLAPSE2
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int local_col = 0; local_col < matrix.LocalWidth(); ++local_col) {
     for (El::Int local_row = 0; local_row < matrix.LocalHeight(); ++local_row) {
       const auto& global_row = matrix.GlobalRow(local_row);
