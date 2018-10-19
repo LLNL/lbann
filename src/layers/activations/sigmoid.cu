@@ -30,60 +30,16 @@
 
 namespace lbann {
 namespace {
-
-// Sigmoid function
-#if __CUDA_ARCH__ >= 530
-inline __device__ __half sigmoid(__half x) {
-  static_cast<void>(static_cast<__half (*)(__half)>(sigmoid)); // Suppress "unused function" warning
-  return __hdiv(__float2half(1.f),
-                __hadd(__float2half(1.f), hexp(__hneg(x))));
-}
-#endif // __CUDA_ARCH__ >= 530
-inline __device__ float sigmoid(float x) {
-  static_cast<void>(static_cast<float (*)(float)>(sigmoid)); // Suppress "unused function" warning
-  return 1 / (1.0f + expf(-x));
-}
-inline __device__ double sigmoid(double x) {
-  static_cast<void>(static_cast<double (*)(double)>(sigmoid)); // Suppress "unused function" warning
-  return 1 / (1.0 + exp(-x));
-}
-
-// Machine epsilon
-#ifdef __CUDACC_RELAXED_CONSTEXPR__
-template <typename T>
-inline __device__ T epsilon() {
-  return std::numeric_limits<T>::epsilon();
-}
-#else // __CUDACC_RELAXED_CONSTEXPR__
-template <typename T>
-inline __device__ T epsilon();
-#if __CUDA_ARCH__ >= 530
-template <>
-inline __device__ __half epsilon<__half>() {
-  static_cast<void>(static_cast<__half (*)()>(epsilon<__half>)); // Suppress "unused function" warning
-  return __float2half(0.0009765625f);
-}
-#endif // __CUDA_ARCH__ >= 530
-template <>
-inline __device__ float epsilon<float>()   {
-  static_cast<void>(static_cast<float (*)()>(epsilon<float>)); // Suppress "unused function" warning
-  return FLT_EPSILON;
-}
-template <>
-inline __device__ double epsilon<double>() {
-  static_cast<void>(static_cast<double (*)()>(epsilon<double>)); // Suppress "unused function" warning
-  return DBL_EPSILON;
-}
-#endif // __CUDACC_RELAXED_CONSTEXPR__
   
 /** Entry-wise operator. */
 struct op {
   inline __device__ DataType operator()(DataType x) const {
-    const DataType y = sigmoid(x);
+    constexpr DataType one = 1;
+    const DataType y = 1 / (one + cuda::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    const DataType eps = epsilon<DataType>();
+    constexpr DataType eps = cuda::epsilon<DataType>();
     if (y <= eps) { return eps; }
-    else if (y >= DataType(1) - eps) { return DataType(1) - eps; }
+    else if (y >= one - eps) { return one - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return y;
   }
@@ -98,7 +54,7 @@ struct op_backprop {
   inline __device__  DataType operator()(DataType x, DataType dy) const {
     const auto& y = op()(x);
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    const DataType eps = epsilon<DataType>();
+    constexpr DataType eps = cuda::epsilon<DataType>();
     if (y <= eps || y >= DataType(1) - eps) { return DataType(0); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return dy * y * (DataType(1) - y);

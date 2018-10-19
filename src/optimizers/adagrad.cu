@@ -30,19 +30,6 @@ namespace lbann {
 
 namespace {
 
-// Square root functions
-#if __CUDA_ARCH__ >= 530
-__device__ inline float sqrt_(__half x) {
-  return hsqrt(x);
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float sqrt_(float x) {
-  return sqrtf(x);
-}
-__device__ inline double sqrt_(double x) {
-  return sqrt(x);
-}
-
 __global__ void adagrad_kernel(int height,
                                int width,
                                DataType learning_rate,
@@ -62,7 +49,7 @@ __global__ void adagrad_kernel(int height,
     const auto& g = gradient[i + j * gradient_ldim];
     auto& c = cache[i + j * cache_ldim];
     c += g * g;
-    x -= learning_rate * g / (sqrt_(c) + eps);
+    x -= learning_rate * g / (cuda::sqrt(c) + eps);
   }
 }
 

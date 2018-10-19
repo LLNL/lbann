@@ -52,7 +52,7 @@ event_wrapper& event_wrapper::operator=(const event_wrapper& other) {
 }
   
 event_wrapper::~event_wrapper() {
-  CHECK_CUDA(cudaEventDestroy(m_event));
+  cudaEventDestroy(m_event);
 }
 
 void event_wrapper::record(cudaStream_t stream) {
