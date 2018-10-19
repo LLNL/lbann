@@ -835,15 +835,16 @@ message Layer {
    Deconvolution deconvolution = 305;
 
    // Loss layers
-   CrossEntropy cross_entropy = 60;
-   MeanSquaredError mean_squared_error = 61;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 62;
-   L2Norm2 l2_norm2 = 63;
-   BinaryCrossEntropy binary_cross_entropy = 64;
-   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 65;
-   BooleanAccuracy boolean_accuracy = 66;
-   BooleanFalseNegative boolean_false_negative = 67;
-   BooleanFalsePositive boolean_false_positive = 68;
+   CategoricalAccuracy categorical_accuracy = 60;
+   CrossEntropy cross_entropy = 61;
+   MeanSquaredError mean_squared_error = 62;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 63;
+   L2Norm2 l2_norm2 = 64;
+   BinaryCrossEntropy binary_cross_entropy = 65;
+   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 66;
+   BooleanAccuracy boolean_accuracy = 67;
+   BooleanFalseNegative boolean_false_negative = 68;
+   BooleanFalsePositive boolean_false_positive = 69;
 
    // Math layers
    Not not = 401;

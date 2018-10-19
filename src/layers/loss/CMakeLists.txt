@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  categorical_accuracy.cpp
   cross_entropy.cpp
   entrywise.cpp
   l2_norm2.cpp
