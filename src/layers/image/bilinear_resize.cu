@@ -25,20 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
 namespace {
-
-// Wrapper for CUDA math API functions
-__device__ __forceinline__ float floor_(const float& x) {
-  static_cast<void>(static_cast<float (*)(const float&)>(floor_));
-  return floorf(x);
-}
-__device__ __forceinline__ double floor_(const double& x) {
-  static_cast<void>(static_cast<double (*)(const double&)>(floor_));
-  return floor(x);
-}
 
 template <int block_size>
 __global__ void fp_kernel(El::Int num_samples,
@@ -77,10 +68,10 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto& y = (output_row + half) * y_stride;
 
     // Find input pixels near interpolation point
-    const auto input_col = static_cast<El::Int>(floor_(x - half));
+    const auto input_col = static_cast<El::Int>(cuda::floor(x - half));
     const auto& input_col0 = cuda::max(input_col, El::Int(0));
     const auto& input_col1 = cuda::min(input_col+1, input_width-1);
-    const auto input_row = static_cast<El::Int>(floor_(y - half));
+    const auto input_row = static_cast<El::Int>(cuda::floor(y - half));
     const auto& input_row0 = cuda::max(input_row, El::Int(0));
     const auto& input_row1 = cuda::min(input_row+1, input_height-1);
     

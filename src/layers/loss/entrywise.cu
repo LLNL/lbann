@@ -58,7 +58,6 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
        dx2[row + col * dx2_ldim]);
   }
 }
-
   
 /** Apply a binary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
@@ -101,36 +100,6 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   }
 
 }
-
-// Wrappers for CUDA math API functions
-// Note: For example, the CUDA math API provides the 'sqrtf' function
-// for floats and 'sqrt' function for doubles. We wrap these with the
-// overloaded function 'sqrt_'.
-#define WRAP_CUDA_MATH_UNARY_FUNCTION(func)                             \
-  __device__ __forceinline__ float func##_(const float& x) {            \
-    static_cast<void>(static_cast<float (*)(const float&)>(func##_));   \
-    return func##f(x);                                                  \
-  }                                                                     \
-  __device__ __forceinline__ double func##_(const double& x) {          \
-    static_cast<void>(static_cast<double (*)(const double&)>(func##_)); \
-    return func(x);                                                     \
-  }
-#define WRAP_CUDA_MATH_BINARY_FUNCTION(func)                            \
-  __device__ __forceinline__ float func##_(const float& x1,             \
-                                           const float& x2) {           \
-    static_cast<void>(static_cast<float (*)(const float&, const float&)>(func##_)); \
-    return func##f(x1, x2);                                             \
-  }                                                                     \
-  __device__ __forceinline__ double func##_(const double& x1,           \
-                                            const double& x2) {         \
-    static_cast<void>(static_cast<double (*)(const double&, const double&)>(func##_)); \
-    return func(x1, x2);                                                \
-  }
-WRAP_CUDA_MATH_UNARY_FUNCTION(log)
-WRAP_CUDA_MATH_UNARY_FUNCTION(exp)
-WRAP_CUDA_MATH_UNARY_FUNCTION(log1p)
-WRAP_CUDA_MATH_BINARY_FUNCTION(fmax)
-WRAP_CUDA_MATH_BINARY_FUNCTION(fmin)
   
 // =========================================================
 // Operator objects for entry-wise binary layers
@@ -147,8 +116,8 @@ struct binary_cross_entropy_op {
     constexpr DataType zero = 0;
     constexpr DataType one = 1;
     DataType y = zero;
-    if (x2 > zero) { y += -x2 * log_(x1); }
-    if (x2 < one)  { y += -(one-x2) * log_(one-x1); }
+    if (x2 > zero) { y += -x2 * cuda::log(x1); }
+    if (x2 < one)  { y += -(one-x2) * cuda::log(one-x1); }
     return y;
   }
   inline __device__ void operator()(const DataType& x1,
@@ -163,11 +132,11 @@ struct binary_cross_entropy_op {
     if (dy == zero) { return; }
     if (x2 > zero) {
       dx1 += -x2 / x1 * dy;
-      dx2 += -log_(x1) * dy;
+      dx2 += -cuda::log(x1) * dy;
     }
     if (x2 < one)  {
       dx1 += (one-x2) / (one-x1) * dy;
-      dx2 += log_(one-x1) * dy;
+      dx2 += cuda::log(one-x1) * dy;
     }
   }
 };
@@ -183,11 +152,11 @@ struct sigmoid_binary_cross_entropy_op {
                                         const DataType& x2) const {
     constexpr DataType zero = 0;
     constexpr DataType one = 1;
-    const auto& z = fmax_(zero, fmin_(x2, one));
+    const auto& z = cuda::max(zero, cuda::min(x2, one));
     if (x1 > zero) {
-      return (one - z) * x1 + log1p_(exp_(-x1));
+      return (one - z) * x1 + cuda::log1p(cuda::exp(-x1));
     } else {
-      return - x1 * z + log1p_(exp_(x1));
+      return - x1 * z + cuda::log1p(cuda::exp(x1));
     }
   }
   inline __device__ void operator()(const DataType& x1,
@@ -197,11 +166,11 @@ struct sigmoid_binary_cross_entropy_op {
                                     DataType& dx2) const {
     constexpr DataType zero = 0;
     constexpr DataType one = 1;
-    const auto& z = fmax_(zero, fmin_(x2, one));
+    const auto& z = cuda::max(zero, cuda::min(x2, one));
     if (x1 > zero) {
-      dx1 = -z + 1 / (one + exp_(-x1));
+      dx1 = -z + 1 / (one + cuda::exp(-x1));
     } else {
-      dx1 = one - z - 1 / (one + exp_(x1));
+      dx1 = one - z - 1 / (one + cuda::exp(x1));
     }
     dx1 *= dy;
     dx2 = (x2 == z) ? -x1 * dy : zero;
