@@ -95,20 +95,44 @@ namespace cuda {
 #ifdef __CUDACC__
 
 // Atomic add
-template <typename T> __device__ __inline__
+template <typename T> __device__ __forceinline__
 T atomic_add(T* address, T val);
 
-// Min and max
-template <typename T> __device__ __inline__
-T min(const T& x, const T& y) { return x <= y ? x : y; }
-template <typename T> __device__ __inline__
-T max(const T& x, const T& y) { return x >= y ? x : y; }
+// Unary math functions
+template <typename T> __device__ __forceinline__ T abs(const T& x);
+template <typename T> __device__ __forceinline__ T round(const T& x);
+template <typename T> __device__ __forceinline__ T ceil(const T& x);
+template <typename T> __device__ __forceinline__ T floor(const T& x);
+template <typename T> __device__ __forceinline__ T sqrt(const T& x);
+template <typename T> __device__ __forceinline__ T rsqrt(const T& x);
+template <typename T> __device__ __forceinline__ T exp(const T& x);
+template <typename T> __device__ __forceinline__ T expm1(const T& x);
+template <typename T> __device__ __forceinline__ T log(const T& x);
+template <typename T> __device__ __forceinline__ T log1p(const T& x);
+template <typename T> __device__ __forceinline__ T cos(const T& x);
+template <typename T> __device__ __forceinline__ T sin(const T& x);
+template <typename T> __device__ __forceinline__ T tan(const T& x);
+template <typename T> __device__ __forceinline__ T acos(const T& x);
+template <typename T> __device__ __forceinline__ T asin(const T& x);
+template <typename T> __device__ __forceinline__ T atan(const T& x);
+template <typename T> __device__ __forceinline__ T cosh(const T& x);
+template <typename T> __device__ __forceinline__ T sinh(const T& x);
+template <typename T> __device__ __forceinline__ T tanh(const T& x);
+template <typename T> __device__ __forceinline__ T acosh(const T& x);
+template <typename T> __device__ __forceinline__ T asinh(const T& x);
+template <typename T> __device__ __forceinline__ T atanh(const T& x);
 
+// Binary math functions
+template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
+template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
+template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
+template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
+  
 // Numeric limits
-template <typename T> constexpr __device__ __inline__ T min();
-template <typename T> constexpr __device__ __inline__ T max();
-template <typename T> constexpr __device__ __inline__ T epsilon();
-template <typename T> __device__ __inline__ T infinity();
+template <typename T> constexpr __device__ __forceinline__ T min();
+template <typename T> constexpr __device__ __forceinline__ T max();
+template <typename T> constexpr __device__ __forceinline__ T epsilon();
+template <typename T> __device__ __forceinline__ T infinity();
   
 #endif // __CUDACC__
 

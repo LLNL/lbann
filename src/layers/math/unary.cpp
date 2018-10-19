@@ -160,7 +160,7 @@ struct rsqrt_op {
   }
   inline DataType operator()(const DataType& x, const DataType& dy) const {
     const auto& s = std::sqrt(x);
-    return - dy / (2 * s*s*s);
+    return - dy / (2 * x * s);
   }
 };
 
