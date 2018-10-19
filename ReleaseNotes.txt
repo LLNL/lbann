@@ -8,11 +8,15 @@ Support for new layers:
  - Basic math functions
  - Weights layer, which outputs a weights tensor
  - L2 norm squared
+ - Binary cross entropy loss and sigmoid binary cross entropy loss
+ - Boolean accuracy, Boolean false negative rate, Boolean false positive rate
+ - Bilinear resize
 
 Performance optimizations:
 
 Model portability & usability:
  - Option for weight initialization with user-provided list of values
+ - Callback to save any layer output as an image
 
 Internal features:
 
