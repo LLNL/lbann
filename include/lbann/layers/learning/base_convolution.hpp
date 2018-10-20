@@ -39,6 +39,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann_config.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
@@ -411,6 +412,34 @@ public:
 
 protected:
 
+  template <typename AlgoType, typename PerfType>
+  AlgoType find_best_algorithm(const std::vector<PerfType> &perf_results) {
+    std::map<AlgoType, float> time_map;
+    for (const auto &res: perf_results) {
+      assert_always(res.status == CUDNN_STATUS_SUCCESS);
+      if (time_map.find(res.algo) == time_map.end()) {
+        time_map[res.algo] = 0;
+      }
+      time_map[res.algo] += res.time;
+    }
+    AlgoType best_algo = time_map.begin()->first;
+    float min_time = std::numeric_limits<float>::max();
+    for (const auto &x: time_map) {
+      AlgoType algo = x.first;
+      float time = x.second;
+      if (time < min_time) {
+        min_time = time;
+        best_algo = algo;
+      }
+    }
+    return best_algo;
+  }
+
+  bool fwd_algo_found = false;
+  cudnnConvolutionFwdAlgo_t convolution_cudnn_algorithm_autotuned;
+  size_t workspace_size_autotuned;
+  bool fwd_param;
+
   /** Convolution with cuDNN. */
   void apply_convolution_cudnn(bool during_forward_prop) {
 #ifndef LBANN_HAS_CUDNN
@@ -441,10 +470,6 @@ protected:
 #ifdef HYDROGEN_HAVE_CUB
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
-    size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-    workspace.Resize(workspace_size / sizeof(DataType), 1);
-    workspace_size = workspace.Height() * sizeof(DataType);
-
     // Convolution parameters
     std::vector<int> input_dims, output_dims;
     cudnnTensorDescriptor_t input_desc, output_desc;
@@ -464,22 +489,85 @@ protected:
     // Perform convolution on the GPU
     // Determine convolution algorithm
     cudnnConvolutionFwdAlgo_t convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-    CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(cudnn::get_handle(),
-                                                    input_desc,
-                                                    m_kernel_cudnn_desc,
-                                                    m_convolution_cudnn_desc,
-                                                    output_desc,
-                                                    CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
-                                                    workspace_size,
-                                                    &convolution_cudnn_algorithm));
+                             = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+    size_t workspace_size = 0;
+    workspace_size = (1 << 30 ) * 1.15 ; /// @todo Allocate largest free block
+
+    if (!std::getenv("LBANN_CONVOLUTION_AUTOTUNE")) {
+      CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(cudnn::get_handle(),
+                                                      input_desc,
+                                                      m_kernel_cudnn_desc,
+                                                      m_convolution_cudnn_desc,
+                                                      output_desc,
+                                                      CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
+                                                      workspace_size,
+                                                      &convolution_cudnn_algorithm));
 
 #ifdef LBANN_HAS_DISTCONV
       if (getenv("DISTCONV_DETERMINISTIC")) {
-        convolution_cudnn_algorithm = 
+        convolution_cudnn_algorithm =
             CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
       }
 #endif
+    } else {
+      if (!fwd_algo_found) {
+        constexpr int trial_count = 3;
+        constexpr int skip = 1;
+        int algo_count;
+        CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
+            cudnn::get_handle(), &algo_count));
+        cudnnConvolutionFwdAlgoPerf_t *perf_results = new
+            cudnnConvolutionFwdAlgoPerf_t[algo_count];
+        std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results_all;
+        int tested_algo_count = 0;
+        for (int t = 0; t < trial_count + skip; ++t) {
+          CHECK_CUDNN(cudnnFindConvolutionForwardAlgorithm(
+              cudnn::get_handle(), input_desc, m_kernel_cudnn_desc,
+              m_convolution_cudnn_desc, output_desc,
+              algo_count, &tested_algo_count,
+              perf_results));
+          for (int i = 0; i < tested_algo_count; ++i) {
+            const auto &res = perf_results[i];
+#if 0
+            dc::MPIPrintStreamInfo()
+                << "Autotune tested algorithm " << t << "/" << i << ": "
+                << dc::util::CUDNNConvolutionFwdAlgorithms::get_name(res.algo)
+                << ", " << res.time << " ms"
+                << ", " << res.memory / 1000 << " KB";
+#endif
+            if (t > skip && res.status == CUDNN_STATUS_SUCCESS) {
+              perf_results_all.push_back(res);
+            }
+          }
+        }
+        delete[] perf_results;
+        auto best_algo = find_best_algorithm<
+          cudnnConvolutionFwdAlgo_t, cudnnConvolutionFwdAlgoPerf_t>(
+              perf_results_all);
+        convolution_cudnn_algorithm_autotuned = best_algo;
+
+        CHECK_CUDNN(cudnnGetConvolutionForwardWorkspaceSize(
+            cudnn::get_handle(), input_desc, m_kernel_cudnn_desc,
+            m_convolution_cudnn_desc, output_desc,
+            convolution_cudnn_algorithm_autotuned, &workspace_size_autotuned));
+        fwd_algo_found = true;
+        fwd_param = during_forward_prop;
+      }
+      assert_eq(fwd_param, during_forward_prop);
+      convolution_cudnn_algorithm = convolution_cudnn_algorithm_autotuned;
+      //workspace_size = workspace_size_autotuned;
+      assert_always(workspace_size_autotuned <= workspace_size);
+    }
+
+    dc::MPIPrintStreamDebug()
+        << "Convolution forward algorithm: "
+        << dc::util::CUDNNConvolutionFwdAlgorithms::get_name(
+            convolution_cudnn_algorithm);
+
+    workspace.Resize(workspace_size / sizeof(DataType), 1);
+    workspace_size = workspace.Height() * sizeof(DataType);
+
+
     // Apply convolution
     CHECK_CUDNN(cudnnConvolutionForward(cudnn::get_handle(),
                                         &one,
@@ -497,6 +585,11 @@ protected:
 
 #endif // LBANN_HAS_CUDNN
   }
+
+  bool bwd_data_found = false;
+  cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm_autotuned;
+  size_t workspace_size_bwd_data_autotuned = 0;
+  bool bwd_data_param;
 
   /** Transposed convolution with cuDNN. */
   void apply_transposed_convolution_cudnn(bool during_forward_prop) {
@@ -529,9 +622,6 @@ protected:
 #ifdef HYDROGEN_HAVE_CUB
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
-    size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-    workspace.Resize(workspace_size / sizeof(DataType), 1);
-    workspace_size = workspace.Height() * sizeof(DataType);
 
     // Convolution transpose parameters
     std::vector<int> input_dims, output_dims;
@@ -549,23 +639,27 @@ protected:
       output_desc = m_tensors_cudnn_desc.get_error_signals();
     }
 
-    // Perform transposed convolution on the GPU
-    // Determine transposed convolution algorithm
-    #ifndef LBANN_DETERMINISTIC
-    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-    CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(cudnn::get_handle(),
-                                                         m_kernel_cudnn_desc,
-                                                         input_desc,
-                                                         m_convolution_cudnn_desc,
-                                                         output_desc,
-                                                         CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
-                                                         workspace_size,
-                                                         &transposed_convolution_cudnn_algorithm));
-    #else
-    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
-    #endif
+    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm;
+    size_t workspace_size = 0;
+    workspace_size = (1 << 30) * 1.15; /// @todo Allocate largest free block
+    if (!std::getenv("LBANN_CONVOLUTION_AUTOTUNE")) {
+      // Perform transposed convolution on the GPU
+      // Determine transposed convolution algorithm
+#ifndef LBANN_DETERMINISTIC
+      transposed_convolution_cudnn_algorithm
+          = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
+      CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(cudnn::get_handle(),
+                                                           m_kernel_cudnn_desc,
+                                                           input_desc,
+                                                           m_convolution_cudnn_desc,
+                                                           output_desc,
+                                                           CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
+                                                           workspace_size,
+                                                           &transposed_convolution_cudnn_algorithm));
+#else
+      cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
+          = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+#endif
 #ifdef LBANN_HAS_DISTCONV
       if (getenv("DISTCONV_DETERMINISTIC")) {
         // Use deterministic algorithm
@@ -573,6 +667,58 @@ protected:
             = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
       }
 #endif
+    } else {
+      if (!bwd_data_found) {
+        constexpr int trial_count = 3;
+        constexpr int skip = 1;
+        int algo_count;
+        DISTCONV_CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+            cudnn::get_handle(), &algo_count));
+        cudnnConvolutionBwdDataAlgoPerf_t *perf_results = new
+            cudnnConvolutionBwdDataAlgoPerf_t[algo_count];
+        std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results_all;
+        int tested_algo_count = 0;
+        for (int t = 0; t < trial_count + skip; ++t) {
+          DISTCONV_CHECK_CUDNN(cudnnFindConvolutionBackwardDataAlgorithm(
+              cudnn::get_handle(), m_kernel_cudnn_desc, input_desc,
+              m_convolution_cudnn_desc,
+              output_desc, algo_count, &tested_algo_count,
+              perf_results));
+          for (int i = 0; i < tested_algo_count; ++i) {
+            const auto &res = perf_results[i];
+            if (t > skip && res.status == CUDNN_STATUS_SUCCESS) {
+              perf_results_all.push_back(res);
+            }
+          }
+        }
+        delete[] perf_results;
+        auto best_algo = find_best_algorithm<
+          cudnnConvolutionBwdDataAlgo_t, cudnnConvolutionBwdDataAlgoPerf_t>(
+              perf_results_all);
+        transposed_convolution_cudnn_algorithm_autotuned = best_algo;
+
+        CHECK_CUDNN(cudnnGetConvolutionBackwardDataWorkspaceSize(
+            cudnn::get_handle(), m_kernel_cudnn_desc, input_desc,
+            m_convolution_cudnn_desc, output_desc,
+            transposed_convolution_cudnn_algorithm_autotuned,
+            &workspace_size_bwd_data_autotuned));
+        bwd_data_found = true;
+        bwd_data_param = during_forward_prop;
+      }
+      assert_eq(bwd_data_param, during_forward_prop);
+      transposed_convolution_cudnn_algorithm = transposed_convolution_cudnn_algorithm_autotuned;
+      //workspace_size = workspace_size_bwd_data_autotuned;
+      assert_always(workspace_size_bwd_data_autotuned <= workspace_size);
+    }
+
+    workspace.Resize(workspace_size / sizeof(DataType), 1);
+    workspace_size = workspace.Height() * sizeof(DataType);
+
+    dc::MPIPrintStreamDebug()
+        << "Convolution backward data algorithm: "
+        << dc::util::CUDNNConvolutionBwdDataAlgorithms::get_name(
+            transposed_convolution_cudnn_algorithm);
+
     // Perform transposed convolution
     CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn::get_handle(),
                                              &one,
@@ -588,7 +734,7 @@ protected:
                                              output_desc,
                                              output.Buffer()));
 
-    
+
   #endif // LBANN_HAS_CUDNN
   }
 
@@ -612,6 +758,11 @@ protected:
     }
   #endif // LBANN_HAS_CUDNN
   }
+
+  bool bwd_algo_filter_found = false;
+  cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm_autotuned;
+  size_t workspace_size_bwd_filter_autotuned;
+  bool bwd_filter_param;
 
   void compute_gradients_cudnn(bool using_transposed_convolution) {
 #ifndef LBANN_HAS_CUDNN
@@ -661,33 +812,116 @@ protected:
 #ifdef HYDROGEN_HAVE_CUB
         workspace.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
-        size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
+        size_t workspace_size = 0;
+          // Initialize cuDNN objects
+        auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
+        auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
+        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm;
+
+        workspace_size = (1 << 30) * 1.15; /// @todo Allocate largest free block
+        if (!std::getenv("LBANN_CONVOLUTION_AUTOTUNE")) {
+          // Determine algorithm and compute kernel gradient
+#ifndef LBANN_DETERMINISTIC
+          kernel_gradient_cudnn_algorithm
+              = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
+#else
+          kernel_gradient_cudnn_algorithm
+              = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+#endif
+          if (using_transposed_convolution) {
+#ifndef LBANN_DETERMINISTIC
+            CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
+                                                                   gradient_wrt_output_desc,
+                                                                   input_desc,
+                                                                   m_convolution_cudnn_desc,
+                                                                   m_kernel_cudnn_desc,
+                                                                   CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+                                                                   workspace_size,
+                                                                   &kernel_gradient_cudnn_algorithm));
+#endif
+
+          } else {
+#ifndef LBANN_DETERMINISTIC
+            CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
+                                                                   input_desc,
+                                                                   gradient_wrt_output_desc,
+                                                                   m_convolution_cudnn_desc,
+                                                                   m_kernel_cudnn_desc,
+                                                                   CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
+                                                                   workspace_size,
+                                                                   &kernel_gradient_cudnn_algorithm));
+#endif
+          }
+        } else {
+          if (!bwd_algo_filter_found) {
+            constexpr int trial_count = 3;
+            constexpr int skip = 1;
+            int algo_count;
+            DISTCONV_CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
+                cudnn::get_handle(), &algo_count));
+            cudnnConvolutionBwdFilterAlgoPerf_t *perf_results = new
+                cudnnConvolutionBwdFilterAlgoPerf_t[algo_count];
+            std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results_all;
+            int tested_algo_count = 0;
+            for (int t = 0; t < trial_count + skip; ++t) {
+              if (using_transposed_convolution) {
+                CHECK_CUDNN(cudnnFindConvolutionBackwardFilterAlgorithm(
+                    cudnn::get_handle(), gradient_wrt_output_desc, input_desc,
+                    m_convolution_cudnn_desc, m_kernel_cudnn_desc,
+                    algo_count, &tested_algo_count,
+                    perf_results));
+              } else {
+                CHECK_CUDNN(cudnnFindConvolutionBackwardFilterAlgorithm(
+                    cudnn::get_handle(), input_desc, gradient_wrt_output_desc,
+                    m_convolution_cudnn_desc, m_kernel_cudnn_desc,
+                    algo_count, &tested_algo_count,
+                    perf_results));
+              }
+              for (int i = 0; i < tested_algo_count; ++i) {
+                const auto &res = perf_results[i];
+                if (t > skip && res.status == CUDNN_STATUS_SUCCESS) {
+                  perf_results_all.push_back(res);
+                }
+              }
+            }
+            delete[] perf_results;
+            auto best_algo = find_best_algorithm<
+              cudnnConvolutionBwdFilterAlgo_t, cudnnConvolutionBwdFilterAlgoPerf_t>(
+                  perf_results_all);
+            kernel_gradient_cudnn_algorithm_autotuned = best_algo;
+
+            if (using_transposed_convolution) {
+              CHECK_CUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+                  cudnn::get_handle(),  gradient_wrt_output_desc, input_desc,
+                  m_convolution_cudnn_desc, m_kernel_cudnn_desc, best_algo,
+                  &workspace_size_bwd_filter_autotuned));
+            } else {
+              CHECK_CUDNN(cudnnGetConvolutionBackwardFilterWorkspaceSize(
+                  cudnn::get_handle(),  input_desc, gradient_wrt_output_desc,
+                  m_convolution_cudnn_desc, m_kernel_cudnn_desc, best_algo,
+                  &workspace_size_bwd_filter_autotuned));
+            }
+
+            bwd_algo_filter_found = true;
+            bwd_filter_param = using_transposed_convolution;
+          }
+          assert_eq(bwd_filter_param, using_transposed_convolution);
+          kernel_gradient_cudnn_algorithm = kernel_gradient_cudnn_algorithm_autotuned;
+          //workspace_size = workspace_size_bwd_filter_autotuned;
+          if (workspace_size_bwd_filter_autotuned > workspace_size) {
+            dc::MPIPrintStreamError() << "Workspace requirement error: "
+                                      << workspace_size_bwd_filter_autotuned
+                                      << ", available: "
+                                      << workspace_size;
+          }
+          assert_always(workspace_size_bwd_filter_autotuned <= workspace_size);
+        }
+
         workspace.Resize(workspace_size / sizeof(DataType), 1);
         workspace_size = workspace.Height() * sizeof(DataType);
 
-        // Initialize cuDNN objects
-        auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
-        auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
 
-        // Determine algorithm and compute kernel gradient
-        #ifndef LBANN_DETERMINISTIC
-        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
-          = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-        #else
-        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
-          = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
-        #endif
         if (using_transposed_convolution) {
-          #ifndef LBANN_DETERMINISTIC
-          CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
-                                                                 gradient_wrt_output_desc,
-                                                                 input_desc,
-                                                                 m_convolution_cudnn_desc,
-                                                                 m_kernel_cudnn_desc,
-                                                                 CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-                                                                 workspace_size,
-                                                                 &kernel_gradient_cudnn_algorithm));
-          #endif
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(cudnn::get_handle(),
                                                      &one,
                                                      gradient_wrt_output_desc,
@@ -703,16 +937,6 @@ protected:
                                                      m_kernel_gradient.Buffer()));
         }
         else {
-          #ifndef LBANN_DETERMINISTIC
-          CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
-                                                                 input_desc,
-                                                                 gradient_wrt_output_desc,
-                                                                 m_convolution_cudnn_desc,
-                                                                 m_kernel_cudnn_desc,
-                                                                 CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-                                                                 workspace_size,
-                                                                 &kernel_gradient_cudnn_algorithm));
-          #endif
           CHECK_CUDNN(cudnnConvolutionBackwardFilter(cudnn::get_handle(),
                                                      &one,
                                                      input_desc,
@@ -726,9 +950,7 @@ protected:
                                                      &zero,
                                                      m_kernel_cudnn_desc,
                                                      m_kernel_gradient.Buffer()));
-
         }
-
       }
 
       // Add gradient contribution

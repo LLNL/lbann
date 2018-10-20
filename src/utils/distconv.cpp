@@ -91,6 +91,15 @@ void print_options(std::ostream &os) {
     ss << "  use_partial_aggregation_in_bn: "
        << opt_use_partial_aggregation_in_bn
        << std::endl;
+    ss << "  convolution_fwd_algorithm: "
+       << opt_convolution_fwd_algorithm
+       << std::endl;
+    ss << "  convolution_bwd_data_algorithm: "
+       << opt_convolution_bwd_data_algorithm
+       << std::endl;
+    ss << "  convolution_bwd_filter_algorithm: "
+       << opt_convolution_bwd_filter_algorithm
+       << std::endl;
     os << ss.str();
   }
 }
