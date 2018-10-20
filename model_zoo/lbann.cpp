@@ -36,6 +36,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
+  std::cerr << "Starting LBANN" << std::endl;
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();

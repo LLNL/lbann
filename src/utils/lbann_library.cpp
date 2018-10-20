@@ -129,7 +129,7 @@ model *build_model_from_prototext(int argc, char **argv,
       procs_per_trainer = comm->get_procs_in_world();
     }
     if (first_model) {
-      comm->split_trainers(procs_per_trainer);
+      //comm->split_trainers(procs_per_trainer);
       if (pb_model->num_parallel_readers() > procs_per_trainer) {
         pb_model->set_num_parallel_readers(procs_per_trainer);
       }
