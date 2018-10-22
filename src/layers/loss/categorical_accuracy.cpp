@@ -47,6 +47,7 @@ void fp_cpu(lbann_comm& comm,
   const auto& height = predictions.Height();
   const auto& local_height = local_predictions.Height();
   const auto& local_width = local_predictions.Width();
+  if (local_width < 1) { return; }
 
   // Column communicator
   auto&& col_comm = predictions.ColComm();
