@@ -576,7 +576,6 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(boolean_false_negative);
   CONSTRUCT_LAYER(boolean_false_positive);
 
-  
   // Image layers
   if (proto_layer.has_bilinear_resize()) {
     const auto& params = proto_layer.bilinear_resize();
@@ -585,6 +584,16 @@ Layer* construct_layer(lbann_comm* comm,
                                                                         params.height(),
                                                                         params.width());
     }
+  }
+  
+  // Miscellaneous layers
+  if (proto_layer.has_covariance()) {
+    const auto& params = proto_layer.covariance();
+    return new covariance_layer<layout, Dev>(comm, params.biased());
+  }
+  if (proto_layer.has_variance()) {
+    const auto& params = proto_layer.variance();
+    return new variance_layer<layout, Dev>(comm, params.biased());
   }
   
   // Throw exception if layer has not been constructed

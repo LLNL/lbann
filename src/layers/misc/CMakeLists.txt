@@ -1,17 +1,16 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  layer.cpp
+  covariance.cpp
+  variance.cpp
   )
 
-# Add the subdirectories
-add_subdirectory(activations)
-add_subdirectory(image)
-add_subdirectory(learning)
-add_subdirectory(loss)
-add_subdirectory(math)
-add_subdirectory(misc)
-add_subdirectory(regularizers)
-add_subdirectory(transform)
+if (LBANN_HAS_CUDA)
+  # Add the CUDA source files for this directory
+  set_full_path(THIS_DIR_CU_SOURCES
+    covariance.cu
+    variance.cu
+    )
+endif ()
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
