@@ -36,6 +36,7 @@
 #include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
 #include <thrust/system/cuda/detail/par.h>
+#include <thrust/device_vector.h>
 
 // -------------------------------------------------------------
 // Error utility macros
@@ -227,7 +228,8 @@ using execute_on_stream
 #endif
 
 /** GPU memory allocator that can interact with Thrust.
- *  Uses Hydrogen's CUB memory pool if available.
+ *  Operations are performed on a provided CUDA stream. Uses
+ *  Hydrogen's CUB memory pool if available.
  */
 template <typename T = El::byte>
 class allocator
@@ -263,6 +265,10 @@ private:
   
 };
 
+/** Thrust device vector. */
+template <typename T>
+using vector = ::thrust::device_vector<T, allocator<T>>;
+  
 } // namespace thrust
 
 } // namespace cuda
