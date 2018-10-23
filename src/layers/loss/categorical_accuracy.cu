@@ -129,10 +129,11 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
                                         El::Int loss_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int nthreads = blockDim.x * gridDim.x;
+  constexpr El::Int max_ind = cuda::max<El::Int>();
   for (El::Int col = gid; col < local_width; col += nthreads) {
     const auto& prediction = prediction_indices[col];
     const auto& label = label_indices[col];
-    loss[col*loss_ldim] = (prediction == label ?
+    loss[col*loss_ldim] = (prediction == label && prediction < max_ind ?
                            DataType(1) : DataType(0));
   }
 }
