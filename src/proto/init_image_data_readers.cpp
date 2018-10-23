@@ -251,6 +251,9 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   // final size of image
   width = pb_preprocessor.raw_width();
   height = pb_preprocessor.raw_height();
+  if (pb_preprocessor.raw_num_channels() > 0) {
+    channels = pb_preprocessor.raw_num_channels();
+  }
 
   if (pb_preprocessor.has_subtractor() && !has_channel_wise_subtractor(pb_preprocessor)) {
     // decolorizer and colorizer are exclusive
@@ -316,7 +319,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
   if ((name == "imagenet") || (name == "jag_conduit") || (name == "jag_conduit_hdf5") ||
-      (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
+      (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images") ||
+      (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
     pp = std::make_shared<cv_process_patches>();
@@ -331,7 +335,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 
   // final size of image
   int width = 0, height = 0;
-  int channels = 3;
+  int channels = 0;
 
   // setup preprocessor
   init_image_preprocessor(pb_readme, master, pp, width, height, channels);
@@ -347,33 +351,74 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
     reader = new data_reader_multi_images(pp, shuffle);
+  } else if (name == "moving_mnist") {
+    reader = new moving_mnist_reader(7, 40, 40, 2);
 #ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit_hdf5") {
     data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
-    reader_jag->set_image_dims(width, height);
+    if (channels == 0) {
+      channels = 1;
+    }
+    reader_jag->set_image_dims(width, height, channels);
+    reader_jag->set_use_images(pb_readme.use_images());
+    reader_jag->set_use_scalars(pb_readme.use_scalars());
+    reader_jag->set_use_inputs(pb_readme.use_inputs());
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
 
-    reader_jag->set_image_dims(width, height);
+    if (channels == 0) {
+      channels = 1;
+    }
+    reader_jag->set_image_dims(width, height, channels);
+
+    // Whether to split channels of an image before preprocessing
+    if (pb_readme.split_jag_image_channels()) {
+      reader_jag->set_split_image_channels();
+    } else {
+      reader_jag->unset_split_image_channels();
+    }
+
+    // declare the set of images to use
+    std::vector<std::string> image_keys(pb_readme.jag_image_keys_size());
+
+    for (int i=0; i < pb_readme.jag_image_keys_size(); ++i) {
+      image_keys[i] = pb_readme.jag_image_keys(i);
+    }
+
+    reader_jag->set_image_choices(image_keys);
+
 
     using var_t = data_reader_jag_conduit::variable_t;
+
     // composite independent variable
-    std::vector<var_t> independent_type(pb_readme.independent_size());
+    std::vector< std::vector<var_t> > independent_type(pb_readme.independent_size());
 
     for (int i=0; i < pb_readme.independent_size(); ++i) {
-      independent_type[i] = static_cast<var_t>(pb_readme.independent(i));
+      const lbann_data::Reader::JAGDataSlice& slice = pb_readme.independent(i);
+      const int slice_size = slice.pieces_size();
+      for (int j=0; j < slice_size; ++j) {
+        // TODO: instead of using cast, use proper conversion function
+        const auto var_type = static_cast<var_t>(slice.pieces(j));
+        independent_type[i].push_back(var_type);
+      }
     }
 
     reader_jag->set_independent_variable_type(independent_type);
 
     // composite dependent variable
-    std::vector<var_t> dependent_type(pb_readme.dependent_size());
+    std::vector< std::vector<var_t> > dependent_type(pb_readme.dependent_size());
 
     for (int i=0; i < pb_readme.dependent_size(); ++i) {
-      dependent_type[i] = static_cast<var_t>(pb_readme.dependent(i));
+      const lbann_data::Reader::JAGDataSlice& slice = pb_readme.dependent(i);
+      const int slice_size = slice.pieces_size();
+      for (int j=0; j < slice_size; ++j) {
+        // TODO: instead of using cast, use proper conversion function
+        const auto var_type = static_cast<var_t>(slice.pieces(j));
+        dependent_type[i].push_back(var_type);
+      }
     }
 
     reader_jag->set_dependent_variable_type(dependent_type);
@@ -430,10 +475,41 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       reader_jag->add_input_prefix_filter(pf);
     }
 
+    // add image normalization parameters
+    const int num_image_normalization_params = pb_readme.jag_image_normalization_params_size();
+    for (int i=0; i <  num_image_normalization_params; ++i) {
+      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      const linear_transform_t np = std::make_pair(pb_readme.jag_image_normalization_params(i).scale(),
+                                                   pb_readme.jag_image_normalization_params(i).bias());
+      reader_jag->add_image_normalization_param(np);
+    }
+
+    // add scalar normalization parameters
+    const int num_scalar_normalization_params = pb_readme.jag_scalar_normalization_params_size();
+    for (int i=0; i <  num_scalar_normalization_params; ++i) {
+      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      const linear_transform_t np = std::make_pair(pb_readme.jag_scalar_normalization_params(i).scale(),
+                                                   pb_readme.jag_scalar_normalization_params(i).bias());
+      reader_jag->add_scalar_normalization_param(np);
+    }
+
+    // add input normalization parameters
+    const int num_input_normalization_params = pb_readme.jag_input_normalization_params_size();
+    for (int i=0; i <  num_input_normalization_params; ++i) {
+      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      const linear_transform_t np = std::make_pair(pb_readme.jag_input_normalization_params(i).scale(),
+                                                   pb_readme.jag_input_normalization_params(i).bias());
+      reader_jag->add_input_normalization_param(np);
+    }
+
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
 #endif // LBANN_HAS_CONDUIT
+  }
+
+  if (channels == 0) {
+    channels = 3;
   }
 
   auto* image_data_reader_ptr = dynamic_cast<image_data_reader*>(reader);
@@ -527,6 +603,8 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
   } else if (name == "cifar10") {
     reader = new cifar10_reader(shuffle);
     if (master) std::cout << "cifar10_reader is set" << std::endl;
+  } else if (name == "moving_mnist") {
+    reader = new moving_mnist_reader(7, 40, 40, 2);
   } else {
     if (master) {
       std::stringstream err;

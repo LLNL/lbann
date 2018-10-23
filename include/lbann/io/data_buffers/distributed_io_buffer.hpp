@@ -125,12 +125,15 @@ class distributed_io_buffer : public generic_io_buffer {
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) override;
   bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) override;
 
   void calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader);
   void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
   void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
+  static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
+  static bool check_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers, const lbann_comm* comm);
 
   data_buffer *get_data_buffer(const execution_mode mode) const {
     data_buffer *data_buffer = nullptr;

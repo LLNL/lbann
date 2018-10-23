@@ -3,26 +3,34 @@
 # Experiment parameters
 EXPERIMENT_NAME=lbann_cycgan_jag
 LBANN_DIR=$(git rev-parse --show-toplevel)
-MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m3.prototext}"
-READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/jag_data.prototext"
+### Big model for JAG10K data with autoencoder
+MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m3.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae_cyc.prototext}"
+##small model for JAG100k data
+#MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m3.prototext} --num_epochs=10"
+## JAG10K 64x64x4 data 
+READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/jag10k_data.prototext"
+## JAG100K 50x50x1 data 
+#READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/jag_data.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext"
 IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
+BUILD=            # default: Release
 
 # Hardware configuration
 NUM_NODES=      # default: number of allocated nodes (1 if none)
-PROCS_PER_NODE= # default: 2 (1 if NUM_NODES=1)
+PROCS_PER_NODE= # default: GPUs per node (2 if cluster has no GPUs)
 CLUSTER=
 PARTITION=
 ACCOUNT=
-TIME_LIMIT=4:00     # default: 1:00 (format is hours:minutes)
+TIME_LIMIT=     # default: 1:00 (format is hours:minutes)
 
 # Additional parameters
-SUBMIT_JOB=     # default: YES
-USE_GPU=        # default: YES (ignored if built without GPUs)
-CACHE_DATASET=  # default: NO
-USE_VTUNE=      # default: NO
-USE_NVPROF=     # default: NO
-HOME_DIR=${LBANN_DIR}/experiments
+SUBMIT_JOB=       # default: YES
+USE_GPU=          # default: YES (ignored if built without GPUs)
+CACHE_DATASET=    # default: NO
+USE_VTUNE=        # default: NO
+USE_NVPROF=       # default: NO
+USE_CUDAMEMCHECK= # default: NO
+EXPERIMENT_HOME_DIR=${EXPERIMENT_HOME_DIR:-${LBANN_DIR}/experiments}
 TRAIN_DATASET_DIR=
 TRAIN_DATASET_LABELS=
 TEST_DATASET_DIR=
@@ -32,9 +40,11 @@ CACHE_DIR=
 EXPERIMENT_SCRIPT=$(readlink -f "$0")
 VTUNE_EXE="amplxe-cl-mpi -collect hotspots"
 NVPROF_EXE="nvprof --profile-child-processes --unified-memory-profiling off"
+CUDAMEMCHECK_EXE="${LBANN_DIR}/scripts/debug/cuda-memcheck.sh"
 
 # Set defaults
 EXPERIMENT_NAME=${EXPERIMENT_NAME:-lbann}
+BUILD=${BUILD:-Release}
 if [ -z "${NUM_NODES}" ]; then
     if [ -n "${SLURM_JOB_NUM_NODES}" ]; then
         NUM_NODES=${SLURM_JOB_NUM_NODES}
@@ -42,20 +52,13 @@ if [ -z "${NUM_NODES}" ]; then
         NUM_NODES=1
     fi
 fi
-if [ -z "${PROCS_PER_NODE}" ]; then
-    if [ "${NUM_NODES}" -eq 1 ]; then
-        PROCS_PER_NODE=1
-    else
-        PROCS_PER_NODE=2
-    fi
-fi
-NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 TIME_LIMIT=${TIME_LIMIT:-1:00}
 SUBMIT_JOB=${SUBMIT_JOB:-YES}
 USE_GPU=${USE_GPU:-YES}
 CACHE_DATASET=${CACHE_DATASET:-NO}
 USE_VTUNE=${USE_VTUNE:-NO}
 USE_NVPROF=${USE_NVPROF:-NO}
+USE_CUDAMEMCHECK=${USE_CUDAMEMCHECK:-NO}
 
 # Set cluster-specific defaults
 CLUSTER=${CLUSTER:-$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')}
@@ -71,7 +74,6 @@ case ${CLUSTER} in
     "flash")
         SCHEDULER=slurm
         PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT}
         CACHE_DIR=${CACHE_DIR:-/l/ssd}
         CORES_PER_NODE=20
         HAS_GPU=NO
@@ -86,11 +88,19 @@ case ${CLUSTER} in
         ;;
     "surface")
         SCHEDULER=slurm
-        PARTITION=${PARTITION:-gpgpu}
+        PARTITION=${PARTITION:-pbatch}
         ACCOUNT=${ACCOUNT:-hpclearn}
         CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
         CORES_PER_NODE=16
         HAS_GPU=YES
+        case ${PARTITION} in
+            "pbatch")
+                GPUS_PER_NODE=2
+                ;;
+            "gpgpu")
+                GPUS_PER_NODE=4
+                ;;
+        esac
         ;;
     "ray")
         SCHEDULER=lsf
@@ -99,6 +109,7 @@ case ${CLUSTER} in
         CACHE_DIR=${CACHE_DIR:-/tmp}
         CORES_PER_NODE=20
         HAS_GPU=YES
+        GPUS_PER_NODE=4
         ;;
     "pascal")
         SCHEDULER=slurm
@@ -120,6 +131,19 @@ case ${CLUSTER} in
         exit 1
         ;;
 esac
+if [ -z "${PROCS_PER_NODE}" ]; then
+    PROCS_PER_NODE=2
+    case ${HAS_GPU} in
+        YES|yes|TRUE|true|ON|on|1)
+            case ${USE_GPU} in
+                YES|yes|TRUE|true|ON|on|1)
+                    PROCS_PER_NODE=${GPUS_PER_NODE}
+                    ;;
+            esac
+            ;;
+    esac
+fi
+NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 
 # Initialize dataset
@@ -211,7 +235,7 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann_cycgan"
+LBANN_EXE="${LBANN_DIR}/build/gnu.${BUILD}.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann_cycgan"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
@@ -230,14 +254,20 @@ EXPERIMENT_COMMAND="${LBANN_EXE} ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROT
 # Initialize profiler command
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${PROFILER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${VTUNE_EXE} -r ./vtune --"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_vtune
         ;;
 esac
 case ${USE_NVPROF} in
     YES|yes|TRUE|true|ON|on|1)
-        PROFILER_COMMAND="${PROFILER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${NVPROF_EXE} --log-file nvprof_output-%h-%p.txt --export-profile %h-%p.prof"
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nvprof
+        ;;
+esac
+case ${USE_CUDAMEMCHECK} in
+    YES|yes|TRUE|true|ON|on|1)
+        DEBUGGER_COMMAND="${DEBUGGER_COMMAND} ${CUDAMEMCHECK_EXE}"
+        EXPERIMENT_NAME=${EXPERIMENT_NAME}_cudamemcheck
         ;;
 esac
 
@@ -245,13 +275,13 @@ esac
 case ${SCHEDULER} in
     slurm)
         MPIRUN="srun --nodes=${NUM_NODES} --ntasks=${NUM_PROCS}"
-        case ${HAS_GPU} in
-            YES|yes|TRUE|true|ON|on|1)
-                case ${CLUSTER} in
-                    surface|ray)
-                        MPIRUN="${MPIRUN} --nvidia_compute_mode=default"
-                        ;;
-                esac
+        case ${CLUSTER} in
+            surface|ray)
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default"
+                ;;
+            pascal)
+                MPIRUN="${MPIRUN} --mpibind=off --nvidia_compute_mode=default --cpu_bind=mask_cpu:0x000001ff,0x0003fe00"
+                ;;
         esac
         MPIRUN1="srun --nodes=${NUM_NODES} --ntasks=${NUM_NODES}"
         MPIRUN2="srun --nodes=${NUM_NODES} --ntasks=$((2*${NUM_NODES}))"
@@ -267,7 +297,7 @@ esac
 EXPERIMENT_NAME=${EXPERIMENT_NAME}_${CLUSTER}_${PARTITION}_N${NUM_NODES}
 
 # Make directories
-EXPERIMENT_DIR=${HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
+EXPERIMENT_DIR=${EXPERIMENT_HOME_DIR}/$(date +%Y%m%d_%H%M%S)_${EXPERIMENT_NAME}
 mkdir -p ${EXPERIMENT_DIR}
 case ${USE_VTUNE} in
     YES|yes|TRUE|true|ON|on|1)
@@ -332,7 +362,8 @@ echo "# USE_GPU: ${USE_GPU}"                            >> ${BATCH_SCRIPT}
 echo "# CACHE_DATASET: ${CACHE_DATASET}"                >> ${BATCH_SCRIPT}
 echo "# USE_VTUNE: ${USE_VTUNE}"                        >> ${BATCH_SCRIPT}
 echo "# USE_NVPROF: ${USE_NVPROF}"                      >> ${BATCH_SCRIPT}
-echo "# HOME_DIR: ${HOME_DIR}"                          >> ${BATCH_SCRIPT}
+echo "# USE_CUDAMEMCHECK: ${USE_CUDAMEMCHECK}"          >> ${BATCH_SCRIPT}
+echo "# EXPERIMENT_HOME_DIR: ${EXPERIMENT_HOME_DIR}"    >> ${BATCH_SCRIPT}
 echo "# CACHE_DIR: ${CACHE_DIR}"                        >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
@@ -344,7 +375,12 @@ case ${USE_GPU} in
         echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
         ;;
 esac
-echo ""
+case ${CLUSTER} in
+    pascal)
+        echo "export OMP_NUM_THREADS=8"                 >> ${BATCH_SCRIPT}
+        echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
+        ;;
+esac
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory
@@ -371,7 +407,7 @@ esac
 
 # Set experiment
 echo "# ======== Experiment ========" >> ${BATCH_SCRIPT}
-echo "${MPIRUN} ${PROFILER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
+echo "${MPIRUN} ${DEBUGGER_COMMAND} ${EXPERIMENT_COMMAND}" >> ${BATCH_SCRIPT}
 
 # Submit batch script
 SUBMIT_EXE=sh

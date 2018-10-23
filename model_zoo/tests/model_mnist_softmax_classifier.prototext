@@ -1,0 +1,87 @@
+model {
+  name: "directed_acyclic_graph_model"
+  data_layout: "data_parallel"
+  mini_batch_size: 103
+  block_size: 199
+  num_epochs: 4
+  num_parallel_readers: 0
+  procs_per_model: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    layer_term { layer: "cross_entropy" }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+  
+  metric { layer_metric { layer: "accuracy" } }
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  
+  callback { print {} }
+  callback { timer {} }
+  callback {
+    gradient_check {
+      verbose: false
+      fail_on_error: true
+    }
+  }
+
+  ###################################################
+  # Layers
+  ###################################################
+
+  layer {
+    name: "data"
+    children: "image label"
+    data_layout: "data_parallel"
+    input { io_buffer: "partitioned" }
+  }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "label"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "image"
+    name: "fc"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons: 10
+      has_bias: false
+    }
+  }
+  layer {
+    parents: "fc"
+    name: "prob"
+    data_layout: "model_parallel"
+    softmax {}
+  }
+  layer {
+    parents: "prob label"
+    name: "cross_entropy"
+    data_layout: "model_parallel"
+    cross_entropy {}
+  }
+  layer {
+    parents: "prob label"
+    name: "accuracy"
+    data_layout: "model_parallel"
+    top_k_categorical_accuracy { k: 1 }
+  }
+
+}

@@ -6,7 +6,7 @@ set(PROTOBUF_URL "https://github.com/google/protobuf.git"
   CACHE STRING "The URL from which to clone PROTOBUF")
 
 # ... then the tag.
-set(PROTOBUF_TAG "master"
+set(PROTOBUF_TAG "v3.6.1"
   CACHE STRING "The git tag or hash to checkout for PROTOBUF")
 
 # Where to install PROTOBUF

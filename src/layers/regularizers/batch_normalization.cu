@@ -24,96 +24,39 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "math.h"
-#include "lbann/base.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
 namespace {
 
-// Atomic add functions
-#if __CUDA_ARCH__ >= 530
-__device__ inline __half atomic_add(__half* address, __half val) {
-#if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
-  return atomicAdd(address, val);
-#else
-  unsigned int* address_as_uint = (unsigned int*) address;
-  unsigned int old = *address_as_uint;
-  __half* old_as_half = (__half*) &old;
-  unsigned int assumed;
-  unsigned int updated;
-  __half* updated_as_half = (__half*) &updated;
-  do {
-    assumed = old;
-    updated = old;
-    *updated_as_half += value;
-    old = atomicCAS(address_as_uint, assumed, updated);
-  } while (assumed != old);
-  return *old_as_half;
-#endif // 0
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float atomic_add(float* address, float val) {
-  return atomicAdd(address, val);
-}
-__device__ inline double atomic_add(double* address, double val) {
-#if __CUDA_ARCH__ >= 600
-  return atomicAdd(address, val);
-#else
-  unsigned long long int* address_as_ull =
-    (unsigned long long int*)address;
-  unsigned long long int old = *address_as_ull, assumed;
-  do {
-    assumed = old;
-    old = atomicCAS(address_as_ull, assumed,
-                    __double_as_longlong(val +
-                                         __longlong_as_double(assumed)));
-  } while (assumed != old);
-  return __longlong_as_double(old);
-#endif // __CUDA_ARCH__ < 600
-}
-
-// Reciprocal square root functions
-#if __CUDA_ARCH__ >= 530
-__device__ inline float rsqrt_(__half x) {
-  return hrsqrt(x);
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float rsqrt_(float x) {
-  return rsqrtf(x);
-}
-__device__ inline double rsqrt_(double x) {
-  return rsqrt(x);
-}
-
 /** CUDA kernel to compute channel sums.
  *  Sums and squares of sums are used to compute mean and variance.
  */
-template <int block_size>
+template <El::Int block_size>
 __global__ void channel_sums_kernel(
-  int channel_height,
-  int width,
-  const DataType * __restrict__ data, int data_ldim,
+  El::Int channel_height,
+  El::Int width,
+  const DataType * __restrict__ data, El::Int data_ldim,
         DataType * __restrict__ sums,
         DataType * __restrict__ sqsums) {
 
   // Indices
-  const int tid = threadIdx.x;
-  const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
-  const int bidy = blockIdx.y;
+  const El::Int tid = threadIdx.x;
+  const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int bidy = blockIdx.y;
 
   // Initialize shared memory
   __shared__ DataType shared_sums[block_size];
- __shared__ DataType shared_sqsums[block_size];
+  __shared__ DataType shared_sqsums[block_size];
 
   // Compute row sums in shared memory
-  DataType private_sum = DataType(0);
-  DataType private_sqsum = DataType(0);
+  DataType private_sum = 0;
+  DataType private_sqsum = 0;
   if (gidx < channel_height) {
-    const int row = gidx + bidy * channel_height;
-    for (int col = 0; col < width; ++col) {
+    const auto& row = gidx + bidy * channel_height;
+    for (El::Int col = 0; col < width; ++col) {
       const auto& x = data[row + col * data_ldim];
       private_sum += x;
       private_sqsum += x * x;
@@ -124,7 +67,7 @@ __global__ void channel_sums_kernel(
 
   // Compute channel sum with shared memory reduction
   /// @todo unroll loops
-  for (int stride = block_size / 2; stride > 0; stride /= 2) {
+  for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
     __syncthreads();
     if(tid < stride) {
       shared_sums[tid] += shared_sums[tid + stride];
@@ -134,8 +77,8 @@ __global__ void channel_sums_kernel(
 
   // Output channel sum to global memory
   if (tid == 0) {
-    atomic_add(&sums[bidy], shared_sums[0]);
-    atomic_add(&sqsums[bidy], shared_sqsums[0]);
+    cuda::atomic_add(&sums[bidy], shared_sums[0]);
+    cuda::atomic_add(&sqsums[bidy], shared_sqsums[0]);
   }
 
 }
@@ -145,18 +88,18 @@ __global__ void channel_sums_kernel(
  *  and squares of sums, respectively.
  */
 __global__ void compute_statistics_kernel(
-  int num_sums,
-  int num_per_sum,
+  El::Int num_sums,
+  El::Int num_per_sum,
   DataType epsilon,
   DataType decay,
   DataType * __restrict__ global_mean,
   DataType * __restrict__ global_var,
   DataType * __restrict__ global_running_mean,
   DataType * __restrict__ global_running_var) {
-  const DataType one = DataType(1);
-  const int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const int num_threads = blockDim.x * gridDim.x;
-  for (int i = gid; i < num_sums; i += num_threads) {
+  constexpr DataType one = 1;
+  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int num_threads = blockDim.x * gridDim.x;
+  for (El::Int i = gid; i < num_sums; i += num_threads) {
 
     // Compute mean and variance
     const auto& mean = global_mean[i] / num_per_sum;
@@ -177,21 +120,21 @@ __global__ void compute_statistics_kernel(
 }
 
 /** CUDA kernel to apply batch normalization. */
-template <int block_size>
+template <El::Int block_size>
 __global__ void batch_normalization_kernel(
-  int channel_height,
-  int width,
-  const DataType * __restrict__ global_input, int input_ldim,
+  El::Int channel_height,
+  El::Int width,
+  const DataType * __restrict__ global_input, El::Int input_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
   const DataType * __restrict__ global_scale,
   const DataType * __restrict__ global_bias,
-        DataType * __restrict__ global_output, int output_ldim) {
+        DataType * __restrict__ global_output, El::Int output_ldim) {
 
   // Indices
-  const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
-  const int bidy = blockIdx.y;
+  const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int bidy = blockIdx.y;
 
   // Copy batch normalization parameters to private memory
   const auto& mean = global_mean[bidy];
@@ -200,12 +143,12 @@ __global__ void batch_normalization_kernel(
   const auto& bias = global_bias[bidy];
 
   // Get reciprocal of standard deviation
-  const auto& inv_stdev = rsqrt_(var + epsilon);
+  const auto& inv_stdev = cuda::rsqrt(var + epsilon);
 
   // Apply batch normalization
   if (gidx < channel_height) {
-    const int row = gidx + bidy * channel_height;
-    for (int col = 0; col < width; ++col) {
+    const auto& row = gidx + bidy * channel_height;
+    for (El::Int col = 0; col < width; ++col) {
       const auto& x = global_input[row + col * input_ldim];
       const auto& xhat = (x - mean) * inv_stdev;
       const auto& y = scale * xhat + bias;
@@ -216,14 +159,14 @@ __global__ void batch_normalization_kernel(
 }
 
 /** CUDA kernel to compute gradients w.r.t. batch norm parameters. */
-template <int block_size>
+template <El::Int block_size>
 __global__ void backprop1_kernel(
-  int channel_height,
-  int width,
+  El::Int channel_height,
+  El::Int width,
   const DataType * __restrict__ global_input,
-  int input_ldim,
+  El::Int input_ldim,
   const DataType * __restrict__ global_gradient_wrt_output,
-  int gradient_wrt_output_ldim,
+  El::Int gradient_wrt_output_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
@@ -234,9 +177,9 @@ __global__ void backprop1_kernel(
         DataType * __restrict__ global_dvar) {
 
   // Indices
-  const int tid = threadIdx.x;
-  const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
-  const int bidy = blockIdx.y;
+  const El::Int tid = threadIdx.x;
+  const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int bidy = blockIdx.y;
 
   // Initialize shared memory
   __shared__ DataType shared_dscale[block_size];
@@ -250,8 +193,8 @@ __global__ void backprop1_kernel(
   const auto& scale = global_scale[bidy];
 
   // Compute useful constants
-  const DataType zero = DataType(0);
-  const auto& inv_stdev = rsqrt_(var + epsilon);
+  constexpr DataType zero = 0;
+  const auto& inv_stdev = cuda::rsqrt(var + epsilon);
   const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
 
   // Compute row-wise gradient contributions in shared memory
@@ -260,8 +203,8 @@ __global__ void backprop1_kernel(
   auto dmean = zero;
   auto dvar = zero;
   if (gidx < channel_height) {
-    const int row = gidx + bidy * channel_height;
-    for(int col = 0; col < width; ++col) {
+    const auto& row = gidx + bidy * channel_height;
+    for(El::Int col = 0; col < width; ++col) {
       const auto& x = global_input[row + col * input_ldim];
       const auto& xhat = (x - mean) * inv_stdev;
       const auto& dy = global_gradient_wrt_output[row + col * gradient_wrt_output_ldim];
@@ -279,7 +222,7 @@ __global__ void backprop1_kernel(
 
   // Compute gradients with shared memory reduction
   // @todo unroll loops
-  for (int stride = block_size / 2; stride > 0; stride /= 2) {
+  for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
     __syncthreads();
     if (tid < stride) {
       shared_dscale[tid] += shared_dscale[tid + stride];
@@ -291,24 +234,24 @@ __global__ void backprop1_kernel(
 
   // Output channel sum to global memory
   if (tid == 0) {
-    atomic_add(&global_dscale[bidy], shared_dscale[0]);
-    atomic_add(&global_dbias[bidy], shared_dbias[0]);
-    atomic_add(&global_dmean[bidy], shared_dmean[0]);
-    atomic_add(&global_dvar[bidy], shared_dvar[0]);
+    cuda::atomic_add(&global_dscale[bidy], shared_dscale[0]);
+    cuda::atomic_add(&global_dbias[bidy], shared_dbias[0]);
+    cuda::atomic_add(&global_dmean[bidy], shared_dmean[0]);
+    cuda::atomic_add(&global_dvar[bidy], shared_dvar[0]);
   }
 
 }
 
 /** CUDA kernel to compute gradients w.r.t. input. */
-template <int block_size>
+template <El::Int block_size>
 __global__ void backprop2_kernel(
-  int channel_height,
-  int local_width,
-  int global_width,
+  El::Int channel_height,
+  El::Int local_width,
+  El::Int num_per_sum,
   const DataType * __restrict__ global_input,
-  int input_ldim,
+  El::Int input_ldim,
   const DataType * __restrict__ global_gradient_wrt_output,
-  int gradient_wrt_output_ldim,
+  El::Int gradient_wrt_output_ldim,
   const DataType * __restrict__ global_mean,
   const DataType * __restrict__ global_var,
   DataType epsilon,
@@ -316,11 +259,11 @@ __global__ void backprop2_kernel(
   const DataType * __restrict__ global_dmean,
   const DataType * __restrict__ global_dvar,
         DataType * __restrict__ global_gradient_wrt_input,
-  int gradient_wrt_input_ldim) {
+  El::Int gradient_wrt_input_ldim) {
 
   // Indices
-  const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
-  const int bidy = blockIdx.y;
+  const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const El::Int bidy = blockIdx.y;
 
   // Copy batch normalization parameters to private memory
   const auto& mean = global_mean[bidy];
@@ -330,291 +273,226 @@ __global__ void backprop2_kernel(
   const auto& dvar = global_dvar[bidy];
 
   // Compute useful constants
-  const auto& inv_stdev = rsqrt_(var + epsilon);
-  const auto& dmean_term = dmean / (global_width * channel_height);
-  const auto& dvar_term = dvar * 2 / (global_width * channel_height - 1);
+  const auto& inv_stdev = cuda::rsqrt(var + epsilon);
+  const auto& dmean_term = dmean / num_per_sum;
+  const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 
   // Apply batch normalization
   if (gidx < channel_height) {
-    const int row = gidx + bidy * channel_height;
-    for (int col = 0; col < local_width; ++col) {
+    const auto& row = gidx + bidy * channel_height;
+    for (El::Int col = 0; col < local_width; ++col) {
       const auto& x = global_input[row + col * input_ldim];
       const auto& dy = global_gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       const auto& dxhat = dy * scale;
-      auto dx = dxhat * inv_stdev;
-      dx += dmean_term;
-      dx += dvar_term * (x - mean);
-      global_gradient_wrt_input[row + col * gradient_wrt_input_ldim] = dx;
+      auto& dx = global_gradient_wrt_input[row + col * gradient_wrt_input_ldim];
+      dx = dxhat * inv_stdev + dmean_term + dvar_term * (x - mean);
     }
   }
 
 }
 
 } // namespace
+  
+template <>
+void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+  constexpr DataType one = 1;
+  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
 
-namespace batch_normalization_cuda {
+  // CUDA objects
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  auto&& stream = El::GPUManager::Stream();
+  
+  // Matrices
+  const auto& input = get_prev_activations();
+  const auto& local_input = input.LockedMatrix();
+  auto& local_output = get_local_activations();
 
-void channel_sums(int num_channels,
-                  const AbsMat& data,
-                  AbsMat& sums,
-                  AbsMat& sqsums) {
+  // Matrix parameters
+  const auto& width = input.Width();
+  const auto& local_width = local_input.Width();
+  const auto& output_dims = get_output_dims();
+  const auto& num_channels = output_dims[0];
+  const auto& channel_size = get_output_size() / num_channels;
 
-#ifdef LBANN_DEBUG
-  // Check that inputs are valid
-  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
-  if (data.Height() % num_channels != 0) {
-    LBANN_ERROR("number of channels does not divide input matrix height"); 
-  }
-  if (data.GetDevice() != El::Device::GPU
-      || sums.GetDevice() != El::Device::GPU
-      || sqsums.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("matrices do not reside on GPU");
-  }
-#endif // LBANN_DEBUG  
+  // Compute statistics
+  if (is_training) {
 
-  // Compute channel sums and squares of sums
-  El::Zeros(sums, num_channels, 1);
-  El::Zeros(sqsums, num_channels, 1);
-  if (data.Height() > 0 && data.Width() > 0) {
-    const int channel_height = data.Height() / num_channels;
-    const int block_size = 256;
-    dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    grid_dims.x = (channel_height + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    channel_sums_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        channel_height, data.Width(),
-        data.LockedBuffer(), data.LDim(),
-        sums.Buffer(), sqsums.Buffer());
-  }
-}
+    // Local matrices
+    auto& local_mean = m_mean->Matrix();
+    auto& local_var = m_var->Matrix();
+    auto& local_running_mean = this->m_weights[2]->get_values().Matrix();
+    auto& local_running_var = this->m_weights[3]->get_values().Matrix();
 
-void compute_statistics(int num_per_sum,
-                        DataType epsilon,
-                        DataType decay,
-                        AbsMat& mean,
-                        AbsMat& var,
-                        AbsMat& running_mean,
-                        AbsMat& running_var) {
-
-#ifdef LBANN_DEBUG
-  // Check that inputs are valid
-  if (mean.Height() != var.Height()
-      || mean.Height() != running_mean.Height()
-      || mean.Height() != running_var.Height()
-      || mean.Width() != 1 || var.Width() != 1
-      || running_mean.Width() != 1 || running_var.Width() != 1) {
-    LBANN_ERROR("invalid matrix dimensions");
-  }
-  if (mean.GetDevice() != El::Device::GPU
-      || var.GetDevice() != El::Device::GPU
-      || running_mean.GetDevice() != El::Device::GPU
-      || running_var.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("matrices do not reside on GPU");
-  }
-#endif // LBANN_DEBUG  
-
-  // Compute statistics from sums
-  const int block_dim = 256;
-  const int grid_dim = (mean.Height() + block_dim - 1) / block_dim;
-  if (num_per_sum > 1) {
-    if (grid_dim > 0) {
-      CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-      compute_statistics_kernel
-        <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-          mean.Height(), num_per_sum, epsilon, decay,
-          mean.Buffer(), var.Buffer(),
-          running_mean.Buffer(), running_var.Buffer());
-    }
-  } else {
-    El::Fill(var, DataType(1));
-  }
-
-}
-
-void batch_normalization(const AbsMat& input,
-                         const AbsMat& mean,
-                         const AbsMat& var,
-                         DataType epsilon,
-                         const AbsMat& scale,
-                         const AbsMat& bias,
-                         AbsMat& output) {
-  const int num_channels = mean.Height();
-
-#ifdef LBANN_DEBUG
-  // Check that inputs are valid
-  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
-  if (input.Height() % num_channels != 0) {
-    LBANN_ERROR("number of channels does not divide input matrix height"); 
-  }
-  if (mean.Height() != num_channels || var.Height() != num_channels
-      || scale.Height() != num_channels || bias.Height() != num_channels
-      || mean.Width() != 1 || var.Width() != 1
-      || scale.Width() != 1 || bias.Width() != 1
-      || input.Height() != output.Height()
-      || input.Width() != output.Width()) {
-    LBANN_ERROR("invalid matrix dimensions");
-  }
-  if (input.GetDevice() != El::Device::GPU
-      || mean.GetDevice() != El::Device::GPU
-      || var.GetDevice() != El::Device::GPU
-      || scale.GetDevice() != El::Device::GPU
-      || bias.GetDevice() != El::Device::GPU
-      || output.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("matrices do not reside on GPU");
-  }
-#endif // LBANN_DEBUG  
-
-  // Apply batch normalization
-  if (input.Height() > 0 && input.Width() > 0) {
-    const int channel_height = input.Height() / num_channels;
-    const int block_size = 256;
-    dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    grid_dims.x = (channel_height + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    batch_normalization_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        channel_height, input.Width(),
-        input.LockedBuffer(), input.LDim(),
-        mean.LockedBuffer(), var.LockedBuffer(), epsilon,
-        scale.LockedBuffer(), bias.LockedBuffer(),
-        output.Buffer(), output.LDim());
-  }
-
-}
-
-void backprop1(const AbsMat& input,
-               const AbsMat& gradient_wrt_output,
-               const AbsMat& mean,
-               const AbsMat& var,
-               DataType epsilon,
-               const AbsMat& scale,
-               AbsMat& dscale,
-               AbsMat& dbias,
-               AbsMat& dmean,
-               AbsMat& dvar) {
-  const int num_channels = mean.Height();
-
-#ifdef LBANN_DEBUG
-  // Check that inputs are valid
-  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
-  if (input.Height() % num_channels != 0) {
-    LBANN_ERROR("number of channels does not divide input matrix height"); 
-  }
-  if (mean.Height() != num_channels || var.Height() != num_channels
-      || scale.Height() != num_channels
-      || mean.Width() != 1 || var.Width() != 1 || scale.Width() != 1
-      || input.Height() != gradient_wrt_output.Height()
-      || input.Width() != gradient_wrt_output.Width()) {
-    LBANN_ERROR("invalid matrix dimensions");
-  }
-  if (input.GetDevice() != El::Device::GPU
-      || gradient_wrt_output.GetDevice() != El::Device::GPU
-      || mean.GetDevice() != El::Device::GPU
-      || var.GetDevice() != El::Device::GPU
-      || scale.GetDevice() != El::Device::GPU
-      || dscale.GetDevice() != El::Device::GPU
-      || dbias.GetDevice() != El::Device::GPU
-      || dmean.GetDevice() != El::Device::GPU
-      || dvar.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("matrices do not reside on GPU");
-  }
-#endif // LBANN_DEBUG  
-
-  // Compute gradients w.r.t. batch norm parameters
-  El::Zeros(dscale, num_channels, 1);
-  El::Zeros(dbias, num_channels, 1);
-  El::Zeros(dmean, num_channels, 1);
-  El::Zeros(dvar, num_channels, 1);
-  if (input.Height() > 0 && input.Width() > 0) {
-    const int channel_height = input.Height() / num_channels;
-    const int block_size = 256;
-    dim3 block_dims, grid_dims;
-    block_dims.x = block_size;
-    grid_dims.x = (channel_height + block_size - 1) / block_size;
-    grid_dims.y = num_channels;
-    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    backprop1_kernel<block_size>
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        channel_height, input.Width(),
-        input.LockedBuffer(), input.LDim(),
-        gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-        mean.LockedBuffer(), var.LockedBuffer(), epsilon,
-        scale.LockedBuffer(), dscale.Buffer(), dbias.Buffer(),
-        dmean.Buffer(), dvar.Buffer());
-  }
-
-}
-
-void backprop2(int global_width,
-               const AbsMat& input,
-               const AbsMat& gradient_wrt_output,
-               const AbsMat& mean,
-               const AbsMat& var,
-               DataType epsilon,
-               const AbsMat& scale,
-               const AbsMat& dmean,
-               const AbsMat& dvar,
-               AbsMat& gradient_wrt_input) {
-  const int num_channels = mean.Height();
-
-#ifdef LBANN_DEBUG
-  // Check that inputs are valid
-  if (num_channels < 1) { LBANN_ERROR("non-positive number of channels"); }
-  if (input.Height() % num_channels != 0) {
-    LBANN_ERROR("number of channels does not divide input matrix height"); 
-  }
-  if (mean.Height() != num_channels || var.Height() != num_channels
-      || scale.Height() != num_channels
-      || dmean.Height() != num_channels || dvar.Height() != num_channels
-      || mean.Width() != 1 || var.Width() != 1 || scale.Width() != 1
-      || dmean.Width() != 1 || dvar.Width() != 1
-      || input.Height() != gradient_wrt_output.Height()
-      || input.Height() != gradient_wrt_input.Height()
-      || input.Width() != gradient_wrt_output.Width()
-      || input.Width() != gradient_wrt_input.Width()) {
-    LBANN_ERROR("invalid matrix dimensions");
-  }
-  if (input.GetDevice() != El::Device::GPU
-      || gradient_wrt_output.GetDevice() != El::Device::GPU
-      || mean.GetDevice() != El::Device::GPU
-      || var.GetDevice() != El::Device::GPU
-      || scale.GetDevice() != El::Device::GPU
-      || dmean.GetDevice() != El::Device::GPU
-      || dvar.GetDevice() != El::Device::GPU
-      || gradient_wrt_input.GetDevice() != El::Device::GPU) {
-    LBANN_ERROR("matrices do not reside on GPU");
-  }
-#endif // LBANN_DEBUG  
-
-  // Compute gradient w.r.t. input
-  const int channel_height = input.Height() / num_channels;
-  if (channel_height * global_width <= 1) {
-    // El::Zero(gradient_wrt_input);
-  } else {
-    if (input.Height() > 0 && input.Width() > 0) {
-      const int block_size = 256;
+    // Compute sums and sums of squares
+    El::Zero(local_mean);
+    El::Zero(local_var);
+    if (!local_input.IsEmpty()) {
+      const El::Int block_size = 256;
       dim3 block_dims, grid_dims;
       block_dims.x = block_size;
-      grid_dims.x = (channel_height + block_size - 1) / block_size;
+      grid_dims.x = (channel_size + block_size - 1) / block_size;
       grid_dims.y = num_channels;
-      CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-      backprop2_kernel<block_size>
-        <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-          channel_height, input.Width(), global_width,
-          input.LockedBuffer(), input.LDim(),
-          gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
-          mean.LockedBuffer(), var.LockedBuffer(), epsilon,
-          scale.LockedBuffer(), dmean.LockedBuffer(), dvar.LockedBuffer(),
-          gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
+      channel_sums_kernel<block_size>
+        <<<grid_dims, block_dims, 0, stream>>>(
+          channel_size, local_width,
+          local_input.LockedBuffer(), local_input.LDim(),
+          local_mean.Buffer(), local_var.Buffer());
     }
+    El::Int num_per_sum;
+    if (m_use_global_stats) {
+      m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
+      m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+      num_per_sum = channel_size * width;
+    } else {
+      num_per_sum = channel_size * local_width;
+    }
+
+    // Compute minibatch statistics
+    if (num_per_sum <= 1) {
+      El::Fill(local_var, one);
+    } else if (num_channels > 0) {
+      const El::Int block_dim = 256;
+      const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
+      compute_statistics_kernel
+        <<<grid_dim, block_dim, 0, stream>>>(
+          num_channels, num_per_sum, m_epsilon, m_decay,
+          local_mean.Buffer(), local_var.Buffer(),
+          local_running_mean.Buffer(), local_running_var.Buffer());
+    }
+
   }
 
+  // Apply batch normalization
+  const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
+  const auto& local_bias = this->m_weights[1]->get_values().LockedMatrix();
+  const auto& local_mean = (is_training ?
+                            m_mean->LockedMatrix() :
+                            this->m_weights[2]->get_values().LockedMatrix());
+  const auto& local_var = (is_training ?
+                           m_var->LockedMatrix() :
+                           this->m_weights[3]->get_values().LockedMatrix());
+  if (!local_input.IsEmpty()) {
+    const El::Int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_size + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    batch_normalization_kernel<block_size>
+      <<<grid_dims, block_dims, 0, stream>>>(
+        channel_size, local_width,
+        local_input.LockedBuffer(), local_input.LDim(),
+        local_mean.LockedBuffer(), local_var.LockedBuffer(), m_epsilon,
+        local_scale.LockedBuffer(), local_bias.LockedBuffer(),
+        local_output.Buffer(), local_output.LDim());
+  }
+  
 }
 
-} // namespace batch_normalization
+template <>
+void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+  constexpr DataType one = 1;
+  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+
+  // CUDA objects
+  CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+  auto&& stream = El::GPUManager::Stream();
+
+  // Matrices
+  const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
+  const auto& local_mean = (is_training ?
+                            m_mean->LockedMatrix() :
+                            this->m_weights[2]->get_values().LockedMatrix());
+  const auto& local_var = (is_training ?
+                           m_var->LockedMatrix() :
+                           this->m_weights[3]->get_values().LockedMatrix());
+  const auto& input = get_prev_activations();
+  const auto& local_input = input.LockedMatrix();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+  auto& local_mean_gradient = m_mean_gradient->Matrix();
+  auto& local_var_gradient = m_var_gradient->Matrix();
+  auto& local_scale_gradient = m_scale_gradient->Matrix();
+  auto& local_bias_gradient = m_bias_gradient->Matrix();
+
+  // Matrix parameters
+  const El::Int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const auto& width = input.Width();
+  const auto& local_width = local_input.Width();
+  const auto& output_dims = get_output_dims();
+  const auto& num_channels = output_dims[0];
+  const auto& channel_size = get_output_size() / num_channels;
+
+  // Compute local gradients
+  // Compute gradients w.r.t. batch norm parameters
+  El::Zero(local_scale_gradient);
+  El::Zero(local_bias_gradient);
+  El::Zero(local_mean_gradient);
+  El::Zero(local_var_gradient);
+  if (!local_input.IsEmpty()) {
+    const El::Int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_size + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    backprop1_kernel<block_size>
+      <<<grid_dims, block_dims, 0, stream>>>(
+        channel_size, local_width,
+        local_input.LockedBuffer(), local_input.LDim(),
+        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+        local_mean.LockedBuffer(), local_var.LockedBuffer(), m_epsilon,
+        local_scale.LockedBuffer(),
+        local_scale_gradient.Buffer(), local_bias_gradient.Buffer(),
+        local_mean_gradient.Buffer(), local_var_gradient.Buffer());
+  }
+
+  // Accumulate gradients
+  if (is_training) {
+    if (m_use_global_stats) {
+      m_comm->allreduce(*m_mean_gradient,
+                        m_mean_gradient->RedundantComm(),
+                        El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient,
+                        m_var_gradient->RedundantComm(),
+                        El::mpi::SUM);
+    }
+  } else {
+    El::Zero(*m_mean_gradient);
+    El::Zero(*m_var_gradient);
+  }
+  optimizer* scale_optimizer = m_weights[0]->get_optimizer();
+  if (scale_optimizer != nullptr) {
+    scale_optimizer->add_to_gradient_staging(*m_scale_gradient,
+                                             one / effective_mini_batch_size);
+  }
+  optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+  if (bias_optimizer != nullptr) {
+    bias_optimizer->add_to_gradient_staging(*m_bias_gradient,
+                                            one / effective_mini_batch_size);
+  }
+
+  // Compute error signal
+  const auto& num_per_sum = (m_use_global_stats ?
+                             width * channel_size :
+                             local_width * channel_size);
+  if (num_per_sum <= 1) {
+    El::Zero(local_gradient_wrt_input);
+  } else if (!local_input.IsEmpty()) {
+    const El::Int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (channel_size + block_size - 1) / block_size;
+    grid_dims.y = num_channels;
+    backprop2_kernel<block_size>
+      <<<grid_dims, block_dims, 0, stream>>>(
+        channel_size, local_width, num_per_sum,
+        local_input.LockedBuffer(), local_input.LDim(),
+        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+        local_mean.LockedBuffer(), local_var.LockedBuffer(), m_epsilon,
+        local_scale.LockedBuffer(),
+        local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
+        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
+  }
+  
+}
+  
 } // namespace lbann

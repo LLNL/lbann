@@ -64,6 +64,12 @@ void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_rea
   return;
 }
 
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
+
+  /// Nothing to do here, it is already done
+  return;
+}
+
 bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) {
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
@@ -78,22 +84,26 @@ bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *da
 }
 
 int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
+  return partitioned_io_buffer::compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, m_comm);
+}
+
+int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm) {
   int num_parallel_readers = requested_num_parallel_readers;
 
-  if(m_comm->get_procs_per_model() != num_parallel_readers) {
-    if (m_comm->am_model_master()) {
+  if(comm->get_procs_per_model() != num_parallel_readers) {
+    if (comm->am_model_master()) {
       std::cout << "Warning the requested number of parallel readers "
                 << num_parallel_readers
                 << " does not match the grid size "
-                << m_comm->get_procs_per_model()
+                << comm->get_procs_per_model()
                 << " OVERRIDING requested number of parallel readers."
                 << std::endl;
     }
-    num_parallel_readers = m_comm->get_procs_per_model();
+    num_parallel_readers = comm->get_procs_per_model();
   }
 
   if(mini_batch_size < num_parallel_readers) {
-    if (m_comm->am_model_master()) {
+    if (comm->am_model_master()) {
       std::cout << "Warning the requested number of parallel readers "
                 << num_parallel_readers
                 << " is larger than the requested mini-batch size "

@@ -3,7 +3,6 @@ set_full_path(THIS_DIR_HEADERS
   input_layer.hpp
   input_layer_distributed_minibatch.hpp
   input_layer_partitioned_minibatch.hpp
-  repeated_input_layer.hpp
   )
 
 # Propagate the files up the tree

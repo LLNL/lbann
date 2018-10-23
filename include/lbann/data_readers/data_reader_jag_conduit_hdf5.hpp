@@ -134,6 +134,10 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   void set_image_dims(const int width, const int height, const int ch=1);
 
+  void set_use_images(bool b) { m_use_images = b; }
+  void set_use_inputs(bool b) { m_use_inputs = b; }
+  void set_use_scalars(bool b) { m_use_scalars = b; }
+
  protected:
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp);
@@ -166,8 +170,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
 
   jag_store * get_jag_store() const { return m_jag_store; }
-
- protected:
 
   int m_image_width; ///< image width
   int m_image_height; ///< image height
@@ -213,6 +215,10 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   std::unordered_map<int, std::string> m_success_map;
 
   std::set<std::string> m_emi_selectors;
+
+  bool m_use_scalars;
+  bool m_use_inputs;
+  bool m_use_images;
 };
 
 
