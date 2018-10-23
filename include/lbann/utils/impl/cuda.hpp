@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <thrust/system/cuda/execution_policy.h>
 #ifdef __CUDACC__
 #include <math_constants.h>
 #include <cuda_fp16.hpp>
@@ -390,6 +391,11 @@ void apply_entrywise_binary_operator(const AbsDistMat& input1,
 namespace thrust {
 
 template <typename T>
+allocator<T>::allocator(cudaStream_t stream)
+  : m_stream(stream),
+    m_system(stream) {}
+  
+template <typename T>
 typename allocator<T>::pointer allocator<T>::allocate(allocator<T>::size_type size) {
   value_type* buffer = nullptr;
   if (size > 0) {
@@ -419,6 +425,11 @@ void allocator<T>::deallocate(allocator<T>::pointer buffer,
   }
 }
 
+template <typename T>
+typename allocator<T>::system_type& allocator<T>::system() {
+  return m_system;
+}
+  
 } // namespace thrust
 
 } // namespace cuda
