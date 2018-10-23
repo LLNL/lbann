@@ -660,7 +660,7 @@ if [ "${WITH_CONDUIT}" = "ON" ] ; then
 echo $COMPILER_VERSION
   if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
       echo "CONDUIT_DIR not available."
-      if [ "${CLUSTER}" = "sierra" ]; then
+      if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
       elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
           export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1

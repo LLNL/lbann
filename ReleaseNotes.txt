@@ -11,6 +11,7 @@ Support for new layers:
  - Binary cross entropy loss and sigmoid binary cross entropy loss
  - Boolean accuracy, Boolean false negative rate, Boolean false positive rate
  - Bilinear resize
+ - Variance and covariance
 
 Performance optimizations:
 

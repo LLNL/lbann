@@ -921,6 +921,10 @@ message Layer {
    // Image layers
    BilinearResize bilinear_resize = 500;
 
+   // Miscellaneous layers
+   Covariance covariance = 600;
+   Variance variance = 601;
+
 }
 ///////////////////////
 // MotifLayer //
@@ -1279,11 +1283,21 @@ message Target {
 
 message TargetReconstruction {
 }
-
+  
 //////////////////
 // Image Layers //
 //////////////////
 message BilinearResize {
   int64 height = 1;
   int64 width = 2;
+}
+
+//////////////////////////
+// Miscellaneous Layers //
+//////////////////////////
+message Covariance {
+  bool biased = 1; //Whether to use a biased covariance estimate
+}
+message Variance {
+  bool biased = 1; //Whether to use a biased variance estimate
 }
