@@ -31,6 +31,13 @@
 
 namespace lbann {
 
+/** Cross entropy layer.
+ *  Given a predicted distribution \f$y\f$ and ground truth
+ *  distribution \f$\hat{y}\f$, the cross entropy is
+ *    \f[
+ *    CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i
+ *    \f]
+ */
 template <data_layout T_layout, El::Device Dev>
 class cross_entropy_layer : public Layer {
 public:

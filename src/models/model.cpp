@@ -67,7 +67,13 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {}
+    m_default_optimizer(default_optimizer) { 
+    
+      static int num_models = 0;
+      m_name = "Model" + std::to_string(num_models);
+      num_models++;
+
+  }
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
@@ -204,6 +210,10 @@ void model::add_metric(metric *m) {
     throw lbann_exception("model: Attempted to add null pointer as a metric.");
   }
   m_metrics.push_back(m);
+}
+
+void model::set_name(std::string name) {
+  m_name = name;
 }
 
 void model::set_layers(std::vector<Layer*>& layers) {

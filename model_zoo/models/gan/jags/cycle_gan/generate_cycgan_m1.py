@@ -154,6 +154,14 @@ def configure_model(model):
     l.children = 'image_data_dummy param_data_id'
     l.slice.slice_points = str_list(slice_points)
 
+    #Useful constants
+    zero = new_layer(model,'zero','','constant')
+    zero.constant.value = 0.0
+    zero.constant.num_neurons = '1'
+    one = new_layer(model,'one','','constant')
+    one.constant.value = 1.0
+    one.constant.num_neurons = '1'
+
     #ID Image (Y) data
     l = new_layer(model,'image_data_dummy','slice_data','identity')
 
@@ -194,20 +202,16 @@ def configure_model(model):
     D_fake2 = add_discriminator(model,'concat_gsample2_n_img','disc2', False, False, '_fake')
 
     #Objective and evaluation layers here
-    l = new_layer(model, 'disc1_real_bce', D_real, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
+    l = new_layer(model, 'disc1_real_bce', [D_real, one.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'disc1_real_eval','disc1_real_bce', 'evaluation')
 
-    l = new_layer(model, 'disc1_fake_bce', D_fake, 'bce_with_logits')
-    l.bce_with_logits.true_label = 0
+    l = new_layer(model, 'disc1_fake_bce', [D_fake, zero.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'disc1_fake_eval','disc1_fake_bce', 'evaluation')
  
-    l = new_layer(model, 'disc2_real_bce', D_real2, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
+    l = new_layer(model, 'disc2_real_bce', [D_real2, one.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'disc2_real_eval','disc2_real_bce', 'evaluation')
 
-    l = new_layer(model, 'disc2_fake_bce', D_fake2, 'bce_with_logits')
-    l.bce_with_logits.true_label = 0
+    l = new_layer(model, 'disc2_fake_bce', [D_fake2, zero.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'disc2_fake_eval','disc2_fake_bce', 'evaluation')
 
 

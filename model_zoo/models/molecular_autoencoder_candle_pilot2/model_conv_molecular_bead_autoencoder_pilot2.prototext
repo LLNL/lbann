@@ -32,8 +32,8 @@ model {
   }
   # callback {
   #   save_images {
-  #     image_dir: "images_"
-  #     extension: "pgm"
+  #     image_prefix: "images_"
+  #     image_format: "pgm"
   #   }
   # }
 

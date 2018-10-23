@@ -162,7 +162,7 @@ void lbann_callback_print::report_results(model *m) {
       comm->intermodel_gather(obj_fn, obj_fn_list);
       comm->intermodel_gather(obj_fn_samples, num_samples_list);
       for (int i = 0; i < num_models; ++i) {
-        std::cout << "Model " << i << " " << mode_string << " "
+        std::cout << m->get_name() << " (instance " <<  i <<  ") "  << mode_string << " "
                   << "objective function : " << obj_fn_list[i]
                   << std::endl;
       }
@@ -174,7 +174,7 @@ void lbann_callback_print::report_results(model *m) {
                                      / std::accumulate(num_samples_list.begin(),
                                                        num_samples_list.end(),
                                                        0));
-        std::cout << "World average " << mode_string << " "
+        std::cout << m->get_name() << " global average " << mode_string << " "
                   << "objective function : " << avg_obj_fn
                   << std::endl;
       }
@@ -193,7 +193,7 @@ void lbann_callback_print::report_results(model *m) {
         comm->intermodel_gather(score, score_list);
         comm->intermodel_gather(score_samples, num_samples_list);
         for (int i = 0; i < num_models; ++i) {
-          std::cout << "Model " << i << " " << mode_string << " "
+          std::cout << m->get_name() << " (instance " << i <<  ") " << mode_string << " "
                     << met->name() << " : "
                     << score_list[i] << met->get_unit()
                     << std::endl;
@@ -206,7 +206,7 @@ void lbann_callback_print::report_results(model *m) {
                                       / std::accumulate(num_samples_list.begin(),
                                                         num_samples_list.end(),
                                                         0));
-          std::cout << "World " << mode_string << " "
+          std::cout << m->get_name() << " (global) "  << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()
                     << std::endl;

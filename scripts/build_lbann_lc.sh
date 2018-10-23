@@ -4,6 +4,7 @@
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
+CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 
 ################################################################
 # Default options
@@ -44,7 +45,6 @@ if [ "${ARCH}" == "x86_64" ]; then
     fi
 fi
 
-#CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3
 
 ELEMENTAL_MATH_LIBS=
 PATCH_OPENBLAS=ON
@@ -56,6 +56,7 @@ DATATYPE=float
 VERBOSE=0
 CMAKE_INSTALL_MESSAGE=LAZY
 MAKE_NUM_PROCESSES=$(($(nproc) + 1))
+NINJA_NUM_PROCESSES=0 # Let ninja decide
 GEN_DOC=0
 INSTALL_LBANN=0
 BUILD_DIR=
@@ -63,14 +64,16 @@ INSTALL_DIR=
 BUILD_SUFFIX=
 DETERMINISTIC=OFF
 WITH_CUDA=
+WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
-WITH_ALUMINUM=OFF
+WITH_ALUMINUM=
 ALUMINUM_WITH_MPI_CUDA=OFF
-ALUMINUM_WITH_NCCL=OFF
+ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
+USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -123,9 +126,12 @@ Options:
   ${C}--instrument${N}            Use -finstrument-functions flag, for profiling stack traces
   ${C}--disable-cuda${N}          Disable CUDA
   ${C}--disable-topo-aware${N}    Disable topological-aware configuration (no HWLOC)
-  ${C}--with-aluminum${N}              Use Aluminum allreduce library
+  ${C}--disable-aluminum${N}           Disable the Aluminum communication library
   ${C}--aluminum-with-mpi-cuda         Enable MPI-CUDA backend in Aluminum
-  ${C}--aluminum-with-nccl             Enable NCCL backend in Aluminum
+  ${C}--disable-aluminum-with-nccl     Disable the NCCL backend in Aluminum
+  ${C}--with-conduit              Build with conduit interface
+  ${C}--ninja                     Generate ninja files instead of makefiles
+  ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
 EOF
 }
 
@@ -190,6 +196,18 @@ while :; do
                 exit 1
             fi
             ;;
+        --ninja)
+            USE_NINJA=1
+            ;;
+        --ninja-processes)
+            if [ -n "${2}" ]; then
+                NINJA_NUM_PROCESSES=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
         -v|--verbose)
             # Verbose output
             VERBOSE=1
@@ -233,20 +251,20 @@ while :; do
             ;;
         --disable-cuda)
             WITH_CUDA=OFF
+            WITH_CUDA_2=OFF
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
             ;;
-        --with-aluminum)
-            WITH_ALUMINUM=ON
+        --disable-aluminum)
+            WITH_ALUMINUM=OFF
             ;;
         --aluminum-with-mpi-cuda)
             WITH_ALUMINUM=ON
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
-        --aluminum-with-nccl)
-            WITH_ALUMINUM=ON
-            ALUMINUM_WITH_NCCL=ON
+        --disable-aluminum-with-nccl)
+            ALUMINUM_WITH_NCCL=OFF
             ;;
         --with-conduit)
             WITH_CONDUIT=ON
@@ -304,7 +322,7 @@ else
     CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
-if [ ${CLUSTER} == "ray" -o ${CLUSTER} == "sierra" ]; then
+if [[ ${CORAL} -eq 1 ]]; then
 	# the latest version, 3.12.1, has several issues
     module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
@@ -372,7 +390,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [ "${CLUSTER}" == "ray" -o "{CLUSTER}" == "sierra" ]; then
+    if [[ ${CORAL} -eq 1 ]]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -419,7 +437,7 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
-        elif [ "${CLUSTER}" == "sierra" ]; then
+        elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
 			# no power9 option shown in the manual
             C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
@@ -488,9 +506,11 @@ if [ "${MPI}" == "spectrum" ]; then
 fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
-if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
-  export MV2_USE_CUDA=1
+if [ "${WITH_CUDA_2}" == "ON" ]; then
+  if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+    MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
+    export MV2_USE_CUDA=1
+  fi  
 fi
 
 if [ -z "${MPI_HOME}" ]; then
@@ -559,31 +579,27 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o \
-	 "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "sierra" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
     WITH_CUB=ON
     ELEMENTAL_USE_CUBLAS=OFF
-	case $CLUSTER in
-		ray|sierra)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
-			;;
-		*)
-			export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
-			;;
-	esac
+    WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
+    ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
+	if [[ ${CORAL} -eq 1 ]]; then
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
+		module del cuda
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
+	else
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
+	fi
 
     # Hack for surface
 	case $CLUSTER in
 		surface)
 			. /usr/share/[mM]odules/init/bash
 			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-			;;
-		ray|sierra)
-			module del cuda
-			CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 			;;
 	esac
 fi
@@ -634,12 +650,45 @@ fi
 ################################################################
 # Library options
 ################################################################
-if [ "${CLUSTER}" == "sierra" ]; then
+if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
 	OPENBLAS_ARCH="TARGET=POWER8"
 else
 	OPENBLAS_ARCH=
 fi
 
+if [ "${WITH_CONDUIT}" = "ON" ] ; then
+echo $COMPILER_VERSION
+  if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
+      echo "CONDUIT_DIR not available."
+      if [ "${CLUSTER}" = "sierra" ]; then
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
+      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
+          export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
+      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-7.3.0
+      else
+          # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
+          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-dev
+      fi
+      echo "Set to the default CONDUIT_DIR="$CONDUIT_DIR
+  fi
+fi
+################################################################
+# Setup Ninja, if using
+################################################################
+
+if [ ${USE_NINJA} -ne 0 ]; then
+    if ! which ninja ; then
+        if [ "${ARCH}" == "x86_64" ]; then
+            export PATH=/usr/workspace/wsb/brain/utils/toss3/ninja/bin:$PATH        
+        elif [ "${ARCH}" == "ppc64le" ]; then
+            export PATH=/usr/workspace/wsb/brain/utils/coral/ninja/bin:$PATH        
+        fi
+    fi
+    if ! which ninja ; then
+        USE_NINJA=0
+    fi
+fi
 ################################################################
 # Display parameters
 ################################################################
@@ -731,9 +780,16 @@ fi
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
 
+# Setup the CMake generator
+GENERATOR="\"Unix Makefiles\""
+if [ ${USE_NINJA} -ne 0 ]; then
+    GENERATOR="Ninja"
+fi
+
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
  ${CMAKE_PATH}/cmake \
+-G ${GENERATOR} \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
@@ -764,6 +820,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
 -D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
+-D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
@@ -773,7 +830,9 @@ EOF
 
 
 if [ ${VERBOSE} -ne 0 ]; then
-    echo "${CONFIGURE_COMMAND}"
+    echo "${CONFIGURE_COMMAND}" |& tee cmake_superbuild_invocation.txt
+else
+    echo "${CONFIGURE_COMMAND}" > cmake_superbuild_invocation.txt
 fi
 eval ${CONFIGURE_COMMAND}
 if [ $? -ne 0 ]; then
@@ -786,13 +845,21 @@ fi
 # Build LBANN with make
 # Note: Ensure Elemental to be built before LBANN. Dependency violation appears to occur only when using cuda_add_library.
 BUILD_COMMAND="make -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+if [ ${USE_NINJA} -ne 0 ]; then
+    if [ ${NINJA_NUM_PROCESSES} -ne 0 ]; then
+        BUILD_COMMAND="ninja -j${NINJA_NUM_PROCESSES}"
+    else
+        # Usually equivalent to -j<num_cpus+2>
+        BUILD_COMMAND="ninja"
+    fi
+fi
 if [ ${VERBOSE} -ne 0 ]; then
     echo "${BUILD_COMMAND}"
 fi
 eval ${BUILD_COMMAND}
 if [ $? -ne 0 ]; then
     echo "--------------------"
-    echo "MAKE FAILED"
+    echo "BUILD FAILED"
     echo "--------------------"
     exit 1
 fi
@@ -800,13 +867,21 @@ fi
 # Install LBANN with make
 if [ ${INSTALL_LBANN} -ne 0 ]; then
     INSTALL_COMMAND="make install -j${MAKE_NUM_PROCESSES} VERBOSE=${VERBOSE}"
+    if [ ${USE_NINJA} -ne 0 ]; then
+        if [ ${NINJA_NUM_PROCESSES} -ne 0 ]; then
+            BUILD_COMMAND="ninja -j${NINJA_NUM_PROCESSES} install"
+        else
+            # Usually equivalent to -j<num_cpus+2>
+            BUILD_COMMAND="ninja install"
+        fi
+    fi
     if [ ${VERBOSE} -ne 0 ]; then
         echo "${INSTALL_COMMAND}"
     fi
     eval ${INSTALL_COMMAND}
     if [ $? -ne 0 ]; then
         echo "--------------------"
-        echo "MAKE INSTALL FAILED"
+        echo "INSTALL FAILED"
         echo "--------------------"
         exit 1
     fi
@@ -815,13 +890,16 @@ fi
 # Generate documentation with make
 if [ ${GEN_DOC} -ne 0 ]; then
     DOC_COMMAND="make doc"
+    if [ ${USE_NINJA} -ne 0 ]; then
+        DOC_COMMAND="ninja doc"
+    fi
     if [ ${VERBOSE} -ne 0 ]; then
         echo "${DOC_COMMAND}"
     fi
     eval ${DOC_COMMAND}
     if [ $? -ne 0 ]; then
         echo "--------------------"
-        echo "MAKE DOC FAILED"
+        echo "BUILDING DOC FAILED"
         echo "--------------------"
         exit 1
     fi
