@@ -885,7 +885,6 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   std::vector<std::vector<char>> m_thread_buffer;
 
-<<<<<<< HEAD
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data
   bool m_jag_partitioned;
@@ -894,9 +893,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
   /// etc.
   void set_jag_variables(int mb_size);
-=======
   model *m_model;
->>>>>>> ef9f22783716ee1bcd4c85b826824b78a786ad53
 };
 
 template<typename T>

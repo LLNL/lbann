@@ -72,7 +72,6 @@ void generic_data_reader::setup() {
 
 
 int lbann::generic_data_reader::fetch_data(CPUMat& X) {
-
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
@@ -140,7 +139,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
         error_message = "invalid datum (index " + std::to_string(index) + ")";
       }
     }
-std::cerr << "\n";
     if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
     /// Allow each thread to perform any postprocessing necessary on the

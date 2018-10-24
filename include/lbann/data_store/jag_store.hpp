@@ -39,6 +39,7 @@
 #include <unordered_set>
 #include <vector>
 #include "lbann/comm.hpp"
+#include "hdf5.h"
 
 namespace lbann {
 
@@ -53,8 +54,10 @@ class jag_store {
   #define METADATA_FN "metadata.txt"
   #define IMAGE_SIZE_PER_CHANNEL 4096
   #define NUM_IMAGE_CHANNELS 4
-  #define MAX_SAMPLES_PER_BINARY_FILE 10000
+  #define MAX_SAMPLES_PER_BINARY_FILE 1000
+  //#define MAX_SAMPLES_PER_BINARY_FILE 10000
   #define BINARY_FILE_BASENAME "converted"
+  #define FILES_PER_DIR 1000
 
   jag_store();
 
@@ -66,7 +69,6 @@ class jag_store {
 
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
-    m_master = comm->get_rank_in_world() == 0 ? true : false;
   }
 
   /// Returns the requested inputs
@@ -87,13 +89,6 @@ class jag_store {
     return m_data_images[tid];
   }
 
-  /**
-   * Loads data using the hdf5 conduit API from one or more conduit files.
-   * "num_stores" and "my_rank" are used to determine which of the files
-   * (in the conduit_filenames list) will be used. This functionality is 
-   * needed when the jag_store is used in conjunction with 
-   * data_store_jag_conduit
-   */
   void setup(const std::vector<std::string> conduit_filenames,
              data_reader_jag_conduit_hdf5 *reader,
              bool num_stores = 1,
@@ -102,13 +97,26 @@ class jag_store {
   void set_image_size(size_t n) { m_image_size = n; }
 
   size_t get_linearized_data_size() const;
-  size_t get_linearized_image_size() const { return m_image_size; }
-  size_t get_num_channels() const { return NUM_IMAGE_CHANNELS; }
+  size_t get_linearized_image_size() const { return 4096*4; }
+  //size_t get_linearized_image_size() const { return m_image_size; }
   size_t get_linearized_channel_size() const { return IMAGE_SIZE_PER_CHANNEL; }
+
+  /// returns the total number of channels in a view (image)
+  /// Note: probably should be deleted, since we can chose which
+  ///       channels to use
+  //size_t get_num_channels() const { return NUM_IMAGE_CHANNELS; }
   size_t get_linearized_scalar_size() const { return m_scalars_to_use.size(); }
   size_t get_linearized_input_size() const { return m_inputs_to_use.size(); }
+
+  /// returns the number of views (images) that we're actually using
+  /// (so currently may be 0, 1, 2, or 3)
   size_t get_num_img_srcs() const { return m_image_views_to_use.size(); }
+
+  /// returns the number of channels that we're actually using per view,
+  /// i.e, may be 1, 2, 3, or 4
   size_t get_num_channels_per_view() const { return m_image_channels_to_use.size(); }
+
+  /// returns the number channels that we're actually using, * num_views
   size_t get_total_num_channels() const { return get_num_img_srcs() * get_num_channels_per_view(); }
 
   const std::vector<size_t> & get_linearized_data_sizes() const { return m_data_sizes; }
@@ -117,85 +125,59 @@ class jag_store {
 
   size_t get_num_samples() const { return m_num_samples; }
 
-  void load_data(int data_id, int tid);
+  void load_data(int data_id, int tid) {
+    check_sample_id(data_id);
+    if (m_mode == 1) {
+      load_data_conduit(data_id, tid);
+    } else if (m_mode == 2) {
+      load_data_binary(data_id, tid);
+    } 
+  }
 
  private:
 
-  bool m_is_setup;
+  /// one of these is called by load_data()
+  void load_data_conduit(int data_id, int tid);
+  void load_data_binary(int data_id, int tid);
 
   size_t m_image_size;
 
   size_t m_num_samples;
 
-  bool m_run_tests;
-
   lbann_comm *m_comm;
 
   bool m_master;
 
-  bool m_use_conduit;
-
-  size_t m_sample_len;
-
   data_reader_jag_conduit_hdf5 *m_reader;
 
-  std::unordered_set<std::string> m_valid_samples;
+  /// next three will contain the actual sample data;
+  /// they are filled in by one of the load_data_XX methods;
+  /// each thread has a separate set of buffers
+  std::vector<std::vector<data_reader_jag_conduit_hdf5::input_t>> m_data_inputs;
+  std::vector<std::vector<data_reader_jag_conduit_hdf5::scalar_t>> m_data_scalars;
+  std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> m_data_images;
 
-  std::unordered_map<size_t, std::string> m_id_to_name;
+  /// next four are called by setup()
+  void build_data_sizes();
+  void load_variable_names();
+  void report_linearized_sizes();
+  void allocate_memory(); 
 
+  /// these hold the names of the dependent and independant variables
+  /// that we're using
   std::vector<std::string> m_inputs_to_use;
   std::vector<std::string> m_scalars_to_use;
   std::vector<std::string> m_image_views_to_use;
   std::vector<int> m_image_channels_to_use;
 
-  void load_inputs(const std::string &keys);
-  void load_scalars(const std::string &keys);
-  void load_image_views(const std::string &keys);
-  void load_image_channels(const std::string &keys);
-
-  std::vector<std::vector<data_reader_jag_conduit_hdf5::input_t>> m_data_inputs;
-  std::vector<std::vector<data_reader_jag_conduit_hdf5::scalar_t>> m_data_scalars;
-  std::vector<std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>>> m_data_images;
-
-  lbann_comm *m_comm;
-
-  bool m_master;
-
-  void get_default_keys(std::string &filename, std::string &sample_id, std::string key1);
-  // given a data_id, the corresponding sample is in the file
-  // m_conduit_filenames[data_id], and the sample's name (key)
-  // is m_data_id_to_string_id[data_id]
-  std::vector<std::string> m_conduit_filenames;
-  std::vector<int> m_data_id_to_filename_idx;
-  std::vector<std::string> m_data_id_to_string_id;
+  /// these fill in the above four variables;
+  /// they are called by load_variable_names()
+  void load_inputs_to_use(const std::string &keys);
+  void load_scalars_to_use(const std::string &keys);
+  void load_image_views_to_use(const std::string &keys);
+  void load_image_channels_to_use(const std::string &keys);
 
   std::vector<size_t> m_data_sizes;
-
-  void build_data_sizes();
-
-  void run_tests(const std::vector<std::string> &conduit_filenames); 
-
-  void load_variable_names();
-  void report_linearized_sizes();
-  void allocate_memory(); 
-
-  void convert_conduit(const std::vector<std::string> &conduit_filenames);
-  void open_output_files(const std::string &dir); 
-  void write_binary_metadata(std::string dir); 
-  void write_binary(const std::string &input, const std::string &dir); 
-
-  std::unordered_map<std::string, size_t> m_key_map;
-  void read_key_map(const std::string &filename); 
-
-  // maps a shuffled index to <m_stream[idx], int>
-  std::unordered_map<int, std::pair<int, int>> m_sample_map;
-  std::unordered_map<int, std::string> m_sample_id_map;
-  std::vector<std::vector<unsigned char>> m_scratch;
-
-  std::vector<std::vector<std::ifstream*>> m_stream;
-
-  //normalization scalars for image channels
-  std::vector<double> m_normalize;
 
   void check_entry(std::string &e) {
     if (m_key_map.find(e) == m_key_map.end()) {
@@ -203,10 +185,70 @@ class jag_store {
     }
   }
 
+  /// one of the next three methods is called by setup(), depending 
+  /// on the value of --mode=<int>
+  int m_mode;
+  void setup_conduit();  // mode = 1
+  void setup_binary();   // mode = 2
+  void setup_testing();  // mode = 3
+
+  size_t m_max_samples;
+
+  /// next three are used when reading samples from conduit files
+  std::vector<std::string> m_conduit_filenames;
+  std::vector<int> m_data_id_to_conduit_filename_idx;
+  std::vector<std::string> m_data_id_to_sample_id;
+
+
+  // these are used when reading samples from binary formatted files
+  std::vector<std::vector<unsigned char>> m_scratch;
+  std::unordered_map<std::string, size_t> m_key_map;
+  // maps a shuffled index to <file_idx, local_idx>
+  std::unordered_map<int, std::pair<int, int>> m_sample_map;
+  std::unordered_map<std::string, int> m_sample_id_to_global_idx;
+  std::vector<std::string> m_binary_filenames;
+  // maps global idx (i.e: shuffled indices subscript) to sample ID 
+  // (e.g: 0.9.99.57:1)
+  std::unordered_map<int, std::string> m_sample_id_map;
+  size_t m_sample_len;
+  void read_key_map(const std::string &filename); 
+
+  /// methods and variables for dealing with normalization
+  void load_normalization_values();
+  void load_normalization_values_impl(
+      std::vector<std::pair<double, double>> &values,
+      const std::vector<std::string> &variables); 
+
+  std::vector<std::pair<double, double>> m_normalize_inputs;
+  std::vector<std::pair<double, double>> m_normalize_scalars;
+  std::vector<std::pair<double, double>> m_normalize_views;
+
+  // magic numbers (from Rushil); these are for normalizing the images
+  // 0.035550589898738466
+  // 0.0012234476453273034
+  // 1.0744965260584181e-05
+  // 2.29319120949361e-07
+
+  // testing and other special methods: if these are invoked something 
+  // special happens, the the code exits; in the case a model is not run
+  void compute_min_max();
+  void compute_bandwidth();
+  void build_conduit_index(const std::vector<std::string> &filenames);
+  void compute_bandwidth_binary();
+  void convert_conduit_to_binary(const std::vector<std::string> &filenames);
+  void test_converted_files();
+
+  /// functions and variables for converting conduit files to a binary format;
+  /// these are used by convert_conduit_to_binary
+  void write_binary_metadata(std::string dir); 
+  void write_binary(const std::vector<std::string> &input, const std::string &dir); 
   std::ofstream m_name_file;
-  std::ofstream m_binary_file;
-  int m_cur_bin_count;
-  int m_bin_file_count;
+  size_t m_global_file_idx;
+  size_t m_num_converted_samples;
+  void open_binary_file_for_output(const std::string &dir);
+  std::ofstream m_binary_output_file;
+  std::ofstream m_binary_output_file_names;
+  std::string m_binary_output_filename;
 };
 
 } // end of namespace lbann

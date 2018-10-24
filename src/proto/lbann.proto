@@ -1120,7 +1120,8 @@ message Slice {
   int64 slice_axis = 2;
   string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
   //the following is for jag_conduit_hdf5;
-  bool get_slice_points_from_reader = 4;
+  string get_slice_points_from_reader = 4;
+  bool get_slice_points_from_reader_bool = 5;
 }
 
 message Split {
@@ -1217,10 +1218,10 @@ message FullyConnected {
 
   bool get_input_dimension_from_reader = 9;
   bool get_image_and_scalar_dimension_from_reader = 10;
-  bool get_image_dimension_from_reader = 10;
-  bool get_scalar_dimension_from_reader = 11;
-  repeated uint32 get_num_neurons_of_slice_from_reader = 12;
-  string get_slice_points_from_reader = 13;
+  bool get_image_dimension_from_reader = 11;
+  bool get_scalar_dimension_from_reader = 12;
+  repeated uint32 get_num_neurons_of_slice_from_reader = 13;
+  string get_slice_points_from_reader = 14;
 }
 
 message Convolution {

@@ -306,26 +306,38 @@ void data_reader_jag_conduit_hdf5::load() {
     }  
     */
   
+  /*
     if (is_master()) std::cerr << "calling:  glob(pattern)\n";
     const std::string pattern = get_file_dir();
     std::vector<std::string> names = glob(pattern);
     if (is_master()) std::cerr << "DONE! calling:  glob(pattern)\n";
-    if (names.size() < 1) {
-      _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames for pattern: " + pattern);
-    }
+    */
   
     if (m_first_n > 0) {
       _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
     }
+
+    std::vector<std::string> filenames;
+    std::ifstream in(get_data_filename().c_str());
+    if (!in) {
+      std::string msg(" failed to open " + get_data_filename() + " for reading");
+      _THROW_LBANN_EXCEPTION_(get_type(), msg);
+    }
+
+    std::string fn;
+    while (getline(in, fn)) {
+      filenames.push_back(fn);
+    }
+    in.close();
   
     if (m_max_files_to_load > 0) {
-      if (m_max_files_to_load < names.size()) {
-        names.resize(m_max_files_to_load);
+      if (m_max_files_to_load < filenames.size()) {
+        filenames.resize(m_max_files_to_load);
       }
     }
   
     if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5: calling m_jag_store->setup()\n";
-    m_jag_store->setup(names, this);
+    m_jag_store->setup(filenames, this);
   }
 
   m_is_data_loaded = true;
@@ -352,7 +364,7 @@ unsigned int data_reader_jag_conduit_hdf5::get_num_img_srcs() const {
 }
 
 unsigned int data_reader_jag_conduit_hdf5::get_num_channels() const {
-  return m_jag_store->get_num_channels();
+  return m_jag_store->get_num_channels_per_view();
 }
 
 size_t data_reader_jag_conduit_hdf5::get_linearized_channel_size() const {

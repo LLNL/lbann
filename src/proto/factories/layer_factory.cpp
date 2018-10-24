@@ -86,22 +86,30 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.fully_connected();
     int num_neurons = 0;
     if (params.get_input_dimension_from_reader() 
-        || params.get_image_and_scalar_dimension_from_reader()) {
+        || params.get_image_dimension_from_reader()
+        || params.get_scalar_dimension_from_reader()
+        || params.get_image_and_scalar_dimension_from_reader())
     {
     #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
       size_t input_dim = dr->get_linearized_input_size();
       size_t scalar_dim = dr->get_linearized_scalar_size();
-      size_t image_dim = dr->get_linearized_image_size();
+      size_t image_dim = dr->get_linearized_channel_size() * dr->get_num_channels();
       size_t num_images = dr->get_num_img_srcs();
 
-       if (params.get_input_dimension_from_reader()) {
-         num_neurons += input_dim;
-       }
-       if (params.get_image_and_scalar_dimension_from_reader()) {
-         num_neurons += (num_images * image_dim) + scalar_dim;
-       }
+      if (params.get_input_dimension_from_reader()) {
+        num_neurons += input_dim;
+      }
+      if (params.get_image_dimension_from_reader()) {
+        num_neurons += (num_images * image_dim);
+      }
+      if (params.get_scalar_dimension_from_reader()) {
+        num_neurons += scalar_dim;
+      }
+      if (params.get_image_and_scalar_dimension_from_reader()) {
+        num_neurons += (num_images * image_dim + scalar_dim);
+      }
     #else
       err << "get_*_dimension_from_reader() not supported";
       LBANN_ERROR(err.str());
@@ -247,69 +255,31 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    if (params.get_slice_points_from_reader()) {
+    if (params.get_slice_points_from_reader_bool()) {
     #if defined(LBANN_HAS_CONDUIT)
-      /*
-      std::stringstream ss;
-      ss << params.get_slice_points_from_reader();
-      std::string s;
-      */
       std::vector<El::Int> slice_points;
       size_t total = 0;
       slice_points.push_back(total);
-<<<<<<< HEAD
-      const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      if (dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic) != nullptr) {
+
+        const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
       lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
-      total += dr->get_num_img_srcs() * dr->get_linearized_image_size() 
+      total += dr->get_num_img_srcs() * dr->get_linearized_channel_size() * dr->get_num_channels()
             + dr->get_linearized_scalar_size();
       slice_points.push_back(total);
       total += dr->get_linearized_input_size();
       slice_points.push_back(total);
-      /*
-      while (ss >> s) {
-        if (s != "") {  //probably not needed
-          if (s == "images") {
-            total += dr->get_num_img_srcs() * dr->get_linearized_image_size() 
-                  + dr->get_linearized_scalar_size();
-            slice_points.push_back(total);
-          } else if (s == "inputs") {
-            total += dr->get_linearized_input_size();
-            slice_points.push_back(total);
-          } else {
-            err << __FILE__ << " " << __LINE__ << " :: "
-                << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
-            throw lbann_exception(err.str());
-=======
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      if (dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic) != nullptr) {
-        const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
-        while (ss >> s) {
-          if (s != "") {  //probably not needed
-            if (s == "scalars") {
-              total += dr->get_linearized_scalar_size();
-              slice_points.push_back(total);
-            } else if (s == "images") {
-              total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
-              slice_points.push_back(total);
-            } else if (s == "inputs") {
-              total += dr->get_linearized_input_size();
-              slice_points.push_back(total);
-            } else {
-              err << __FILE__ << " " << __LINE__ << " :: "
-                  << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
-              throw lbann_exception(err.str());
-            }
->>>>>>> 55de339e9d8ceb184da3905bd8cb744db0b324e4
-          }
-        }
-      } else {
-        const std::string& var = params.get_slice_points_from_reader();
-        slice_points = get_slice_points_from_reader(dr_generic, var);
-      }
-      */
       return new slice_layer<layout, Dev>(comm,
                                           params.slice_axis(),
                                           slice_points);
+    } else {
+      const std::string& var = params.get_slice_points_from_reader();
+      slice_points = get_slice_points_from_reader(dr_generic, var);
+    }
+    return new slice_layer<layout, Dev>(comm,
+                                        params.slice_axis(),
+                                        slice_points);
     #else
       err << "get_slice_points_from_reader() not supported";
       LBANN_ERROR(err.str());
