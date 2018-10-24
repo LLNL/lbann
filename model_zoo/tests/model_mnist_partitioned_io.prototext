@@ -1,5 +1,5 @@
 model {
-  name: "sequential_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
   mini_batch_size: 10
   block_size: 256
@@ -12,7 +12,7 @@ model {
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -23,7 +23,11 @@ model {
   ###################################################
 
   metric {
-    categorical_accuracy {}
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "accuracy"
+      unit: "%"
+    }
   }
 
   ###################################################
@@ -101,16 +105,29 @@ model {
   ######################
   layer {
     name: "1"
-    children: "2 13"
+    children: "1a 1b"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
+  layer {
+    parents: "1"
+    name: "1a"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "1"
+    name: "1b"
+    data_layout: "data_parallel"
+    split {}
+  }
 
   # FULLY_CONNECTED 2
   ######################
   layer {
+    parents: "1"
     name: "2"
     data_layout: "model_parallel"
     fully_connected {
@@ -123,6 +140,7 @@ model {
   # RELU 3
   ######################
   layer {
+    parents: "2"
     name: "3"
     data_layout: "model_parallel"
     relu {
@@ -132,6 +150,7 @@ model {
   # DROPOUT 4
   ######################
   layer {
+    parents: "3"
     name: "4"
     data_layout: "model_parallel"
     dropout {
@@ -142,6 +161,7 @@ model {
   # FULLY_CONNECTED 5
   ######################
   layer {
+    parents: "4"
     name: "5"
     data_layout: "model_parallel"
     fully_connected {
@@ -154,6 +174,7 @@ model {
   # RELU 6
   ######################
   layer {
+    parents: "5"
     name: "6"
     data_layout: "model_parallel"
     relu {
@@ -163,6 +184,7 @@ model {
   # DROPOUT 7
   ######################
   layer {
+    parents: "6"
     name: "7"
     data_layout: "model_parallel"
     dropout {
@@ -173,6 +195,7 @@ model {
   # FULLY_CONNECTED 8
   ######################
   layer {
+    parents: "7"
     name: "8"
     data_layout: "model_parallel"
     fully_connected {
@@ -185,6 +208,7 @@ model {
   # RELU 9
   ######################
   layer {
+    parents: "8"
     name: "9"
     data_layout: "model_parallel"
     relu {
@@ -194,6 +218,7 @@ model {
   # DROPOUT 10
   ######################
   layer {
+    parents: "9"
     name: "10"
     data_layout: "model_parallel"
     dropout {
@@ -204,6 +229,7 @@ model {
   # FULLY_CONNECTED 11
   ######################
   layer {
+    parents: "10"
     name: "11"
     data_layout: "model_parallel"
     fully_connected {
@@ -216,18 +242,26 @@ model {
   # SOFTMAX 12
   ######################
   layer {
+    parents: "11"
     name: "12"
     data_layout: "model_parallel"
     softmax {
     }
   }
 
-  # TARGET 13
+  # Evaluation
   ######################
   layer {
-    parents: "12 1"
-    name: "13"
-    data_layout: "data_parallel"
-    target {}
+    parents: "12 1b"
+    name: "cross_entropy"
+    data_layout: "model_parallel"
+    cross_entropy {}
   }
+  layer {
+    parents: "12 1b"
+    name: "accuracy"
+    data_layout: "model_parallel"
+    categorical_accuracy {}
+  }
+
 }
