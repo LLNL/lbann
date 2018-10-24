@@ -30,6 +30,7 @@
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/utils/options.hpp" // for add_delimiter() in load()
 #include "lbann/data_store/jag_store.hpp"
+#include "lbann/models/model.hpp"
 #else
 #include "data_reader_jag_conduit_hdf5.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
@@ -40,6 +41,7 @@
 #include "lbann/data_readers/image_utils.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
+#include <thread>
 
 
 // This macro may be moved to a global scope
@@ -66,7 +68,8 @@ namespace lbann {
 data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle),
     m_jag_store(nullptr),
-    m_owns_jag_store(false) {
+    m_owns_jag_store(false),
+    m_primary_reader(nullptr) {
 
   set_defaults();
 
@@ -191,10 +194,17 @@ void data_reader_jag_conduit_hdf5::load() {
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
+  // this block contains functionality to permit only one of the
+  // three models to read the data (i.e, setup the jag_store);
+  // the jag_store is then passed to the other two readers.
+  // todo: should used a shared_ptr, but I had compilation errors;
+  //       will fix later
   bool setup_jag_store = true;
+  #if 0
   options *opts = options::get();
   if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5::load() - getting ptrs to data_readers\n";
   std::vector<void*> p = opts->get_ptrs();
+  bool foundit = false;
   for (auto t : p) {
     data_reader_jag_conduit_hdf5 *other = static_cast<data_reader_jag_conduit_hdf5*>(t);
     if (other == nullptr) {
@@ -205,20 +215,35 @@ void data_reader_jag_conduit_hdf5::load() {
       m_jag_store = other->get_jag_store();
       m_owns_jag_store = false;
       setup_jag_store = false;
+      m_primary_reader = other;
+      foundit = true;
       break;
     }
   }
+  if (! foundit) {
+    m_owns_jag_store = true;
+    if (is_master()) {
+      std::cout << "data_reader_jag_conduit_hdf5::load; I am the primary data reader; role: " << get_role() << "\n";
+    }
+  }
+  #endif
 
   if (setup_jag_store) {
     m_jag_store = new jag_store;
-    //m_jag_store = std::make_shared<jag_store>(new jag_store);
   
+    m_jag_store->set_comm(m_comm);
+    if (is_master()) std::cerr << "calling: m_jag_store->set_image_size\n";
     m_jag_store->set_image_size(m_image_height * m_image_width);
-  
+
+/*
+    m_jag_store->load_inputs();
+
+    std::vector<std::string> image_names;
     // for selecting images, per Luc's advise
     m_emi_selectors.insert("(0.0, 0.0)");
     m_emi_selectors.insert("(90.0, 0.0)");
     m_emi_selectors.insert("(90.0, 78.0)");
+<<<<<<< HEAD
 
     if (get_file_dir() != "" && get_data_filename() != "") {
       _THROW_LBANN_EXCEPTION_(_CN_, "either get_file_dir() == \"\" or get_data_filename() == \"\"; i.e, at least one must be empty");
@@ -250,15 +275,12 @@ void data_reader_jag_conduit_hdf5::load() {
   
     if (m_first_n > 0) {
       _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
+    for (auto t : m_emi_selectors) {
+      image_names.push_back(t);
     }
-  
-    if (m_max_files_to_load > 0) {
-      if (m_max_files_to_load < names.size()) {
-        names.resize(m_max_files_to_load);
-      }
-    }
-  
-    m_jag_store->set_comm(m_comm);
+    m_jag_store->load_images(image_names);
+    */
+    /*
     if (m_use_inputs) {
       if (is_master()) {
         std::cerr << "USING INPUTS\n";
@@ -282,8 +304,40 @@ void data_reader_jag_conduit_hdf5::load() {
       }
       m_jag_store->load_images(image_names);
     }  
+    */
+  
+  /*
+    if (is_master()) std::cerr << "calling:  glob(pattern)\n";
+    const std::string pattern = get_file_dir();
+    std::vector<std::string> names = glob(pattern);
+    if (is_master()) std::cerr << "DONE! calling:  glob(pattern)\n";
+    */
+  
+    if (m_first_n > 0) {
+      _THROW_LBANN_EXCEPTION_(_CN_, "load() does not support first_n feature.");
+    }
 
-    m_jag_store->setup(names);
+    std::vector<std::string> filenames;
+    std::ifstream in(get_data_filename().c_str());
+    if (!in) {
+      std::string msg(" failed to open " + get_data_filename() + " for reading");
+      _THROW_LBANN_EXCEPTION_(get_type(), msg);
+    }
+
+    std::string fn;
+    while (getline(in, fn)) {
+      filenames.push_back(fn);
+    }
+    in.close();
+  
+    if (m_max_files_to_load > 0) {
+      if (m_max_files_to_load < filenames.size()) {
+        filenames.resize(m_max_files_to_load);
+      }
+    }
+  
+    if (is_master()) std::cerr << "data_reader_jag_conduit_hdf5: calling m_jag_store->setup()\n";
+    m_jag_store->setup(filenames, this);
   }
 
   m_is_data_loaded = true;
@@ -307,6 +361,14 @@ size_t data_reader_jag_conduit_hdf5::get_num_samples() const {
 
 unsigned int data_reader_jag_conduit_hdf5::get_num_img_srcs() const {
   return m_jag_store->get_num_img_srcs();
+}
+
+unsigned int data_reader_jag_conduit_hdf5::get_num_channels() const {
+  return m_jag_store->get_num_channels_per_view();
+}
+
+size_t data_reader_jag_conduit_hdf5::get_linearized_channel_size() const {
+  return m_jag_store->get_linearized_channel_size();
 }
 
 size_t data_reader_jag_conduit_hdf5::get_linearized_image_size() const {
@@ -368,11 +430,13 @@ const std::vector<int> data_reader_jag_conduit_hdf5::get_data_dims() const {
 }
 
 int data_reader_jag_conduit_hdf5::get_num_labels() const {
+  return 0;
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   return m_num_labels;
 }
 
 int data_reader_jag_conduit_hdf5::get_linearized_label_size() const {
+  return 0;
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   return m_num_labels;
 }
@@ -419,7 +483,9 @@ std::string data_reader_jag_conduit_hdf5::get_description() const {
 
 
 bool data_reader_jag_conduit_hdf5::check_sample_id(const size_t sample_id) const {
-  return m_jag_store->check_sample_id(sample_id);
+  //return m_jag_store->check_sample_id(sample_id);
+  m_jag_store->check_sample_id(sample_id);
+  return true;
 }
 
 std::vector< std::pair<size_t, const data_reader_jag_conduit_hdf5::ch_t*> >
@@ -457,8 +523,8 @@ cv::Mat data_reader_jag_conduit_hdf5::cast_to_cvMat(const std::pair<size_t, cons
   return (image.reshape(0, height));
 }
 
-std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id) const {
-  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_images(sample_id);
+std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sample_id, int tid) const {
+  const std::vector<std::vector<data_reader_jag_conduit_hdf5::ch_t>> &raw_images = m_jag_store->fetch_views(sample_id, tid);
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(raw_images.size());
   size_t num_pixels = get_linearized_image_size();
   for (size_t h=0; h<raw_images.size(); h++) {
@@ -474,6 +540,7 @@ std::vector<cv::Mat> data_reader_jag_conduit_hdf5::get_cv_images(const size_t sa
   return images;
 }
 
+#if 0
 std::vector<data_reader_jag_conduit_hdf5::ch_t> data_reader_jag_conduit_hdf5::get_images(const size_t sample_id) const {
   std::vector< std::pair<size_t, const ch_t*> > img_ptrs(get_image_ptrs(sample_id));
   std::vector<ch_t> images;
@@ -487,7 +554,9 @@ std::vector<data_reader_jag_conduit_hdf5::ch_t> data_reader_jag_conduit_hdf5::ge
 
   return images;
 }
+#endif
 
+#if 0
 std::vector<data_reader_jag_conduit_hdf5::scalar_t> data_reader_jag_conduit_hdf5::get_scalars(const size_t sample_id) const {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   std::vector<data_reader_jag_conduit_hdf5::scalar_t> r;
@@ -511,7 +580,9 @@ std::vector<data_reader_jag_conduit_hdf5::scalar_t> data_reader_jag_conduit_hdf5
   return scalars;
 #endif
 }
+#endif
 
+#if 0
 std::vector<data_reader_jag_conduit_hdf5::input_t> data_reader_jag_conduit_hdf5::get_inputs(const size_t sample_id) const {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   std::vector<data_reader_jag_conduit_hdf5::input_t> r;
@@ -543,6 +614,7 @@ std::vector<data_reader_jag_conduit_hdf5::input_t> data_reader_jag_conduit_hdf5:
   return inputs;
 #endif
 }
+#endif
 
 std::vector<CPUMat>
 data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
@@ -557,13 +629,18 @@ data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<si
   return X_v;
 }
 
+#if 0
 bool data_reader_jag_conduit_hdf5::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   const data_reader_jag_conduit_hdf5::variable_t vt, const std::string tag) {
+
+//dah - sanity check: I don't think this method is ever called ...
+if (is_master()) std::cerr << "XXXXXX STARTING data_reader_jag_conduit_hdf5::fetch\n";
+
   switch (vt) {
     case JAG_Image: {
       const std::vector<size_t> sizes(get_num_img_srcs(), get_linearized_image_size());
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector<cv::Mat> images = get_cv_images(data_id);
+      std::vector<cv::Mat> images = get_cv_images(data_id, tid);
 
       if (images.size() != get_num_img_srcs()) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
@@ -592,29 +669,28 @@ bool data_reader_jag_conduit_hdf5::fetch(CPUMat& X, int data_id, int mb_idx, int
   }
   return true;
 }
+#endif
 
 bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-  bool ok = true;
+  m_jag_store->load_data(data_id, tid);
 
-  const std::vector<size_t> & sizes = get_linearized_data_sizes();
+  std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
 
   size_t i = 0;
-  const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(data_id);
-  set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, inputs.data(), m_jag_store->get_linearized_input_size());
-
-  std::vector<cv::Mat> images = get_cv_images(data_id);
-
-  if (images.size() != get_num_img_srcs()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: the number of images is not as expected " + std::to_string(images.size()) + "!=" + std::to_string(get_num_img_srcs()));
-  }  
+  std::vector<cv::Mat> images = get_cv_images(data_id, tid);
 
   for(size_t k=0u; k < get_num_img_srcs(); ++k) {
     int width, height, img_type;
-    image_utils::process_image(images[k], width, height, img_type, *(m_pps[tid]), X_v[i]);
+    image_utils::process_image(images[k], width, height, img_type, *(m_pps[tid]), X_v[i++]);
    }
 
-  return ok;
+  const std::vector<data_reader_jag_conduit_hdf5::scalar_t> &scalars = m_jag_store->fetch_scalars(data_id, tid);
+  set_minibatch_item<data_reader_jag_conduit_hdf5::scalar_t>(X_v[i++], 0, scalars.data(), m_jag_store->get_linearized_scalar_size());
+
+  const std::vector<data_reader_jag_conduit_hdf5::input_t> &inputs = m_jag_store->fetch_inputs(data_id, tid);
+  set_minibatch_item<data_reader_jag_conduit_hdf5::input_t>(X_v[i++], 0, inputs.data(), m_jag_store->get_linearized_input_size());
+  return true;
 }
 
 bool data_reader_jag_conduit_hdf5::fetch_response(CPUMat& X, int data_id, int mb_idx, int tid) {
@@ -651,6 +727,23 @@ void data_reader_jag_conduit_hdf5::setup_data_store(model *m) {
     m_data_store->setup();
   }
 */
+}
+
+
+void data_reader_jag_conduit_hdf5::post_update() {
+  return;
+  if (m_owns_jag_store) {
+    return;
+  }
+  size_t len = m_shuffled_indices.size();
+  if (m_primary_reader == nullptr) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: m_primary_reader == nullptr; model id: " + m_model->get_model_id() + " role: " + get_role());
+  }
+  m_shuffled_indices = m_primary_reader->get_shuffled_indices();
+  if (m_shuffled_indices.size() != len) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: got shuffled indices from primary reader; size is: " + std::to_string(m_shuffled_indices.size()) + " but my previous indices size was: " + std::to_string(len));
+  }
+  std::cerr << "XX got shuffled indices from primary; model id: " << m_model->get_model_id() << "\n";
 }
 
 
