@@ -338,44 +338,7 @@ message LayerTerm {
 //========================================================================
 
 message Metric {
-  // a Metric should contain exactly one of the following
-  CategoricalAccuracy categorical_accuracy = 1;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
-  MeanSquaredError mean_squared_error = 3;
-  MeanAbsoluteDeviation mean_absolute_deviation = 4;
-  MeanAbsoluteError mean_absolute_error = 6;
-  PearsonCorrelation pearson_correlation = 5;
-  R2 r2 = 7;
-  BooleanAccuracy boolean_accuracy = 8;
-  BooleanFalsePositives boolean_false_positives = 9;
-  BooleanFalseNegatives boolean_false_negatives = 10;
   LayerMetric layer_metric = 11;
-}
-
-message CategoricalAccuracy {
-}
-
-// Already defined as an objective function
-// message MeanSquaredError {}
-
-message TopKCategoricalAccuracy {
-  int64 k = 1;
-  int64 top_k = 2; //deprecated
-}
-
-message PearsonCorrelation {
-}
-
-message R2 {
-}
-
-message BooleanAccuracy {
-}
-
-message BooleanFalsePositives {
-}
-
-message BooleanFalseNegatives {
 }
 
 message LayerMetric {
@@ -1031,6 +994,11 @@ message LogSoftmax {
 ///////////////////////
 message L2Norm2 {}
 message SigmoidBinaryCrossEntropy {}
+message CategoricalAccuracy {}
+message TopKCategoricalAccuracy {
+  int64 k = 1;
+}
+message BooleanAccuracy {}
 message BooleanFalseNegative {}
 message BooleanFalsePositive {}
 
