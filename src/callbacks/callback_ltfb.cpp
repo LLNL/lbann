@@ -83,7 +83,9 @@ void exchange_weights(lbann_comm* comm,
     *local_weights[i] = *model_weights[i];
     const auto& local_matrix = local_weights[i]->get_values();
     auto&& remote_matrix = local_matrix.Copy();
-    const auto& size = local_matrix.LocalHeight() * local_matrix.LocalWidth();
+    const auto& local_height = local_matrix.LocalHeight();
+    const auto& local_width = local_matrix.LocalWidth();
+    const auto& local_size = local_height * local_width;
     bool send  = true;
     if(!selected_weights.empty()) {
       if(std::find(std::begin(selected_weights), std::end(selected_weights),
@@ -91,11 +93,11 @@ void exchange_weights(lbann_comm* comm,
         send = false;
       }
     }
-    if (size > 0 && send) {
+    if (local_size > 0 && send) {
       switch (remote_matrix->GetLocalDevice()) {
       case El::Device::CPU:
-        comm->sendrecv(local_matrix.LockedBuffer(), size, partner,
-                       remote_matrix->Buffer(), size, partner,
+        comm->sendrecv(local_matrix.LockedBuffer(), local_size, partner,
+                       remote_matrix->Buffer(), local_size, partner,
                        El::SyncInfo<El::Device::CPU>{});
         break;
 #ifdef HYDROGEN_HAVE_CUDA
@@ -103,8 +105,8 @@ void exchange_weights(lbann_comm* comm,
         using ValueT
           = std::remove_pointer<decltype(remote_matrix->Buffer())>::type;
         comm->sendrecv(
-          local_matrix.LockedBuffer(), size, partner,
-          remote_matrix->Buffer(), size, partner,
+          local_matrix.LockedBuffer(), local_size, partner,
+          remote_matrix->Buffer(), local_size, partner,
           El::SyncInfo<El::Device::GPU>{
             static_cast<El::Matrix<ValueT,El::Device::GPU> const&>(
               remote_matrix->LockedMatrix())});
@@ -120,12 +122,18 @@ void exchange_weights(lbann_comm* comm,
       auto* local_opt = dynamic_cast<adam*>(local_weights[i]->get_optimizer());
       auto* remote_opt = dynamic_cast<adam*>(model_weights[i]->get_optimizer());
       if (local_opt != nullptr && remote_opt != nullptr) {
-        comm->sendrecv(local_opt->m_moment1->LockedBuffer(), size, partner,
-                       remote_opt->m_moment1->Buffer(), size, partner,
+        CPUMat send_buf(local_height, local_width);
+        CPUMat recv_buf(local_height, local_width);
+        El::Copy(local_opt->m_moment1->LockedMatrix(), send_buf);
+        comm->sendrecv(send_buf.LockedBuffer(), local_size, partner,
+                       recv_buf.Buffer(), local_size, partner,
                        El::SyncInfo<El::Device::CPU>{});
-        comm->sendrecv(local_opt->m_moment2->LockedBuffer(), size, partner,
-                       remote_opt->m_moment2->Buffer(), size, partner,
+        El::Copy(recv_buf, remote_opt->m_moment1->Matrix());
+        El::Copy(local_opt->m_moment2->LockedMatrix(), send_buf);
+        comm->sendrecv(send_buf.LockedBuffer(), local_size, partner,
+                       recv_buf.Buffer(), local_size, partner,
                        El::SyncInfo<El::Device::CPU>{});
+        El::Copy(recv_buf, remote_opt->m_moment2->Matrix());
         std::vector<DataType> local_params(3), remote_params(3);
         local_params[0] = local_opt->get_learning_rate();
         local_params[1] = local_opt->m_beta1;
