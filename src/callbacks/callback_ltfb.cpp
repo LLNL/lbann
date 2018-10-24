@@ -121,15 +121,18 @@ void exchange_weights(lbann_comm* comm,
       auto* remote_opt = dynamic_cast<adam*>(model_weights[i]->get_optimizer());
       if (local_opt != nullptr && remote_opt != nullptr) {
         comm->sendrecv(local_opt->m_moment1->LockedBuffer(), size, partner,
-                       remote_opt->m_moment1->Buffer(), size, partner);
+                       remote_opt->m_moment1->Buffer(), size, partner,
+                       El::SyncInfo<El::Device::CPU>{});
         comm->sendrecv(local_opt->m_moment2->LockedBuffer(), size, partner,
-                       remote_opt->m_moment2->Buffer(), size, partner);
+                       remote_opt->m_moment2->Buffer(), size, partner,
+                       El::SyncInfo<El::Device::CPU>{});
         std::vector<DataType> local_params(3), remote_params(3);
         local_params[0] = local_opt->get_learning_rate();
         local_params[1] = local_opt->m_beta1;
         local_params[2] = local_opt->m_beta2;
         comm->sendrecv(local_params.data(), 3, partner,
-                       remote_params.data(), 3, partner);
+                       remote_params.data(), 3, partner,
+                       El::SyncInfo<El::Device::CPU>{});
         remote_opt->set_learning_rate(remote_params[0]);
         remote_opt->m_beta1 = remote_params[1];
         remote_opt->m_beta2 = remote_params[2];
@@ -177,7 +180,8 @@ void exchange_dropout(lbann_comm* comm,
   }
   remote_keep_probs.assign(num_layers, EvalType(0));
   comm->sendrecv(local_keep_probs.data(), num_layers, partner,
-                 remote_keep_probs.data(), num_layers, partner);
+                 remote_keep_probs.data(), num_layers, partner,
+                 El::SyncInfo<El::Device::CPU>{});
 }
 
 void use_remote_dropout(lbann_comm* comm,
