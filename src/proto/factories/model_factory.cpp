@@ -45,11 +45,11 @@ model* instantiate_model(lbann_comm* comm,
   // Construct model
   const auto& type = proto_model.name();
   const auto& mini_batch_size = proto_model.mini_batch_size();
-  if (type == "sequential_model" || type == "") {
-    return new sequential_model(comm, mini_batch_size, obj, opt);
-  }
-  if (type == "directed_acyclic_graph_model") {
+  if (type.empty() || type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
+  }
+  if (type == "sequential_model") {
+    return new sequential_model(comm, mini_batch_size, obj, opt);
   }
   if (type == "siamese_model") {
     const auto& params = proto_model.siamese();

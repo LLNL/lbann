@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   num_epochs: 20
   data_layout: "data_parallel"
 
