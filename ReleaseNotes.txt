@@ -21,6 +21,7 @@ Model portability & usability:
 
 Internal features:
  - Provide compile time option to selectively disable OpenMP for data fetching loop
+ - Thrust calls no longer involve the default CUDA stream
 
 I/O & data readers:
  - Reworked jag_conduit data reader:

@@ -28,7 +28,6 @@
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 
-#include <thrust/system/cuda/execution_policy.h>
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
 
@@ -38,24 +37,17 @@ namespace {
 
 /** Sparse vector entry. */
 struct entry {
-
   /** Vector entry value. */
   DataType value;
   /** Vector entry index. */
   El::Int index;
-
-  /** Minimum possible value. */
-  static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
-  /** Maximum possible index. */
-  static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
-
 };
 
 /** Comparison operation to sort sparse vector entries.
  *  Entries are sorted by value in decreasing order, with ties broken
  *  in favor of entries with smaller indices.
  */
-struct entry_compare : thrust::binary_function<entry,entry,bool> {
+struct entry_compare : ::thrust::binary_function<entry,entry,bool> {
   __host__ __device__ bool operator()(const entry& a, const entry& b) const {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
   }
@@ -89,7 +81,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
       current_entry.value = local_matrix[local_row + local_col * local_matrix_ldim];
       current_entry.index = global_row;
     } else {
-      current_entry.value = entry::min_value;
+      current_entry.value = -cuda::infinity<DataType>();
       current_entry.index = global_matrix_height;
     }
   }
@@ -166,9 +158,9 @@ void fp_gpu(lbann_comm& comm,
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();
-  const El::Int height = input.Height();
-  const El::Int local_height = local_input.Height();
-  const El::Int local_width = local_input.Width();
+  const auto& height = input.Height();
+  const auto& local_height = local_input.Height();
+  const auto& local_width = local_input.Width();
 
   // Trivial cases
   if (k < 1) {
@@ -190,18 +182,16 @@ void fp_gpu(lbann_comm& comm,
   auto&& stream = El::GPUManager::Stream();
   auto&& event = El::GPUManager::Event();
   cuda::thrust::allocator<> alloc(stream);
-  using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
-  using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
 
   // Find top-k entries in each column of local prediction matrix
-  entry_array top_entries(local_width * k);
+  cuda::thrust::vector<entry> top_entries(local_width * k);
   {
     const auto& num_local_entries_per_col = std::max(local_height, k);
     const auto& num_local_entries = local_width * num_local_entries_per_col;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_local_entries + block_dim - 1) / block_dim;
-    entry_array local_entries(num_local_entries);
-    index_array local_entries_cols(num_local_entries);
+    cuda::thrust::vector<entry> local_entries(num_local_entries);
+    cuda::thrust::vector<El::Int> local_entries_cols(num_local_entries);
     dense_matrix_to_sparse_vectors<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries_per_col, local_height, local_width, height,
       input.ColShift(), input.ColStride(),
@@ -210,15 +200,15 @@ void fp_gpu(lbann_comm& comm,
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
-    thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                        local_entries.begin(),
-                        local_entries.end(),
-                        local_entries_cols.begin(),
-                        entry_compare());
-    thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                               local_entries_cols.begin(),
-                               local_entries_cols.end(),
-                               local_entries.begin());
+    ::thrust::sort_by_key(alloc.system(),
+                          local_entries.begin(),
+                          local_entries.end(),
+                          local_entries_cols.begin(),
+                          entry_compare());
+    ::thrust::stable_sort_by_key(alloc.system(),
+                                 local_entries_cols.begin(),
+                                 local_entries_cols.end(),
+                                 local_entries.begin());
     CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
                                  k * sizeof(entry),
                                  local_entries.data().get(),
@@ -235,8 +225,8 @@ void fp_gpu(lbann_comm& comm,
     const auto& num_entries = col_comm_size * num_entries_per_rank;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    entry_array global_top_entries(num_entries);
-    index_array global_top_entries_cols(num_entries);
+    cuda::thrust::vector<entry> global_top_entries(num_entries);
+    cuda::thrust::vector<El::Int> global_top_entries_cols(num_entries);
     comm.all_gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                     top_entries.size() * sizeof(entry),
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),
@@ -244,15 +234,15 @@ void fp_gpu(lbann_comm& comm,
                     col_comm, El::SyncInfo<El::Device::GPU>{stream, event});
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_entries, local_width, k, global_top_entries_cols.data().get());
-    thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                        global_top_entries.begin(),
-                        global_top_entries.end(),
-                        global_top_entries_cols.begin(),
-                        entry_compare());
-    thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                               global_top_entries_cols.begin(),
-                               global_top_entries_cols.end(),
-                               global_top_entries.begin());
+    ::thrust::sort_by_key(alloc.system(),
+                          global_top_entries.begin(),
+                          global_top_entries.end(),
+                          global_top_entries_cols.begin(),
+                          entry_compare());
+    ::thrust::stable_sort_by_key(alloc.system(),
+                                 global_top_entries_cols.begin(),
+                                 global_top_entries_cols.end(),
+                                 global_top_entries.begin());
     CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
                                  k * sizeof(entry),
                                  global_top_entries.data().get(),
