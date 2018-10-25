@@ -2,7 +2,6 @@ model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
   ### This network description is anologous to AutoEncoder_Chem_Sigmoid
-  name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -15,7 +14,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
   }
 
   ###################################################
@@ -37,11 +36,6 @@ model {
       mat_interval: 25
     }
   }
-#  callback {
-#    debug {
-#      phase: "train"
-#    }
-#  }
 
   ###################################################
   # start of layers
@@ -51,24 +45,36 @@ model {
   # INPUT
   #######
   layer {
-    name: "data"
-    children: "encode1 reconstruction"
+    name: "data_input"
+    children: "data label"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
       target_mode: "reconstruction"
     }
   }
+  layer {
+    parents: "data_input"
+    name: "data"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "data_input"
+    name: "label"
+    data_layout: "model_parallel"
+    split {}
+  }
 
   #################
   # FULLY_CONNECTED encode1
   #################
   layer {
+    parents: "data"
     name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -77,6 +83,7 @@ model {
   # SIGMOID sigmoid1
   ######
   layer {
+    parents: "encode1"
     name: "sigmoid1"
     data_layout: "model_parallel"
     sigmoid {
@@ -87,11 +94,11 @@ model {
   # FULLY_CONNECTED encode2
   #################
   layer {
+    parents: "sigmoid1"
     name: "encode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -100,6 +107,7 @@ model {
   # SIGMOID sigmoid2
   #######
   layer {
+    parents: "encode2"
     name: "sigmoid2"
     data_layout: "model_parallel"
     sigmoid {
@@ -110,11 +118,11 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
+    parents: "sigmoid2"
     name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -123,6 +131,7 @@ model {
   # SIGMOID sigmoid3
   #######
   layer {
+    parents: "encode3"
     name: "sigmoid3"
     data_layout: "model_parallel"
     sigmoid {
@@ -134,11 +143,11 @@ model {
   # FULLY_CONNECTED decode3
   #################
   layer {
+    parents: "sigmoid3"
     name: "decode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -147,6 +156,7 @@ model {
   # SIGMOID sigmoid4
   #######
   layer {
+    parents: "decode3"
     name: "sigmoid4"
     data_layout: "model_parallel"
     sigmoid {
@@ -157,11 +167,11 @@ model {
   # FULLY_CONNECTED decode2
   #################
   layer {
+    parents: "sigmoid4"
     name: "decode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -171,6 +181,7 @@ model {
   # SIGMOID sigmoid5
   #######
   layer {
+    parents: "decode2"
     name: "sigmoid5"
     data_layout: "model_parallel"
     sigmoid {
@@ -181,11 +192,11 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "sigmoid5"
     name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -194,6 +205,7 @@ model {
   # SIGMOID sigmoid6
   #######
   layer {
+    parents: "decode1"
     name: "sigmoid6"
     data_layout: "model_parallel"
     sigmoid {
@@ -205,10 +217,16 @@ model {
   # RECONSTRUCTION
   #################
   layer {
+    parents: "relu10"
     name: "reconstruction"
-    parents: "sigmoid6 data"
     data_layout: "model_parallel"
-    reconstruction {}
+    split {}
+  }
+  layer {
+    parents: "reconstruction data"
+    name: "mean_squared_error"
+    data_layout: "model_parallel"
+    mean_squared_error {}
   }
 
   ###################################################

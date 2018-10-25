@@ -1,7 +1,6 @@
 #Example taken from:https://github.com/ECP-CANDLE/Benchmarks/tree/frameworks/Pilot1/Combo
 #Timestamp 03/07/2018 8:30PM
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -14,7 +13,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
   }
 
   ###################################################
@@ -22,10 +21,16 @@ model {
   ###################################################
 
   metric {
-    mean_squared_error {}
+    layer_metric {
+      name: "mean squared error"
+      layer: "mean_squared_error"
+    }
   }
   metric {
-    r2{}
+    layer_metric {
+      name: "R2"
+      layer: "r2"
+    }
   }
 
   ###################################################
@@ -44,13 +49,25 @@ model {
 
   # INPUT (Merged Features)
   layer {
-    name: "data"
-    children: "slice_data target"
+    name: "data_input"
+    children: "data response"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
       target_mode: "regression"
     }
+  }
+  layer {
+    parents: "data_input"
+    name: "data"
+    data_layout: "model_parallel"
+    split {}    
+  }
+  layer {
+    parents: "data_input"
+    name: "response"
+    data_layout: "model_parallel"
+    split {}    
   }
 
   # SLICE
@@ -482,10 +499,39 @@ model {
 
   #TARGET
   layer {
-    parents: "fc data"
-    name: "target"
-    target {}
+    parents: "fc response"
+    name: "mean_squared_error"
     data_layout: "model_parallel"
+    mean_squared_error {}
+  }
+
+  layer {
+    parents: "fc"
+    name: "r2_var"
+    data_layout: "model_parallel"
+    variance {
+      biased: true
+    }
+  }
+  layer {
+    parents: "mean_squared_error r2_var"
+    name: "r2_div"
+    data_layout: "model_parallel"
+    divide {}
+  }
+  layer {
+    name: "r2_one"
+    data_layout: "model_parallel"
+    constant {
+      value: 1
+      num_neurons: "1"
+    }
+  }
+  layer {
+    parents: "r2_one r2_div"
+    name: "r2"
+    data_layout: "model_parallel"
+    subtract {}
   }
 
   ###################################################
