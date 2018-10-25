@@ -32,4 +32,3 @@ add_mpi_ctest( quantizer_test )
 if (NOT APPLE) # FIXME: Weird linking errors; ignoring for now...
   add_mpi_ctest( collective_test )
 endif ()
-# add_mpi_ctest( lbann_self_test )
