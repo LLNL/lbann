@@ -81,7 +81,7 @@ model {
     parents: "prob label"
     name: "accuracy"
     data_layout: "model_parallel"
-    top_k_categorical_accuracy { k: 1 }
+    categorical_accuracy {}
   }
 
 }
