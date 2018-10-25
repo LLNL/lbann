@@ -556,6 +556,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
 
   // Loss layers
+  CONSTRUCT_LAYER(categorical_accuracy);
   CONSTRUCT_LAYER(cross_entropy);
   CONSTRUCT_LAYER(mean_squared_error);
   if (proto_layer.has_top_k_categorical_accuracy()) {

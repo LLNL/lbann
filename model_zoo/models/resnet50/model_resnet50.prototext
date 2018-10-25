@@ -1893,7 +1893,7 @@ model {
     name: "top1_accuracy"
     parents: "prob labels"
     data_layout: "data_parallel"
-    top_k_categorical_accuracy { k: 1 }
+    categorical_accuracy {}
   }
   layer {
     name: "top5_accuracy"
