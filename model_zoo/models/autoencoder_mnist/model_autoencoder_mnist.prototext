@@ -1,5 +1,5 @@
 model {
-  name: "sequential_model"
+  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
   mini_batch_size: 10
   block_size: 256
@@ -12,7 +12,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
   }
 
   ###################################################
@@ -23,16 +23,6 @@ model {
       interval: 1
     }
   }
-#  callback {
-#    timer {
-#    }
-#  }
-#  callback {
-#    save_images {
-#      image_prefix: "images_"
-#      image_format: "pgm"
-#    }
-#  }
 
   ###################################################
   # start of layers
@@ -43,17 +33,29 @@ model {
   #######
   layer {
     name: "data"
-    children: "encode1 reconstruction"
+    children: "image label"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
-      target_mode: "reconstruction"
     }
+  }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "label"
+    data_layout: "model_parallel"
+    split {}
   }
 
   # FULLY_CONNECTED encode1
   #################
   layer {
+    parents: "image"
     name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
@@ -66,6 +68,7 @@ model {
   # RELU relu1
   ######
   layer {
+    parents: "encode1"
     name: "relu1"
     data_layout: "model_parallel"
     relu {
@@ -75,6 +78,7 @@ model {
   # FULLY_CONNECTED encode2
   #################
   layer {
+    parents: "relu1"
     name: "encode2"
     data_layout: "model_parallel"
     fully_connected {
@@ -87,6 +91,7 @@ model {
   # RELU relu2
   #######
   layer {
+    parents: "encode2"
     name: "relu2"
     data_layout: "model_parallel"
     relu {
@@ -96,6 +101,7 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
+    parents: "relu2"
     name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
@@ -109,6 +115,7 @@ model {
   # RELU relu3
   #######
   layer {
+    parents: "encode3"
     name: "relu3"
     data_layout: "model_parallel"
     relu {
@@ -118,6 +125,7 @@ model {
   # FULLY_CONNECTED encode4
   #################
   layer {
+    parents: "relu3"
     name: "encode4"
     data_layout: "model_parallel"
     fully_connected {
@@ -130,6 +138,7 @@ model {
   # FULLY_CONNECTED decode4
   #################
   layer {
+    parents: "encode4"
     name: "decode4"
     data_layout: "model_parallel"
     fully_connected {
@@ -142,6 +151,7 @@ model {
   # RELU 4
   #######
   layer {
+    parents: "decode4"
     name: "relu4"
     data_layout: "model_parallel"
     relu {
@@ -151,6 +161,7 @@ model {
   # FULLY_CONNECTED decode3
   #################
   layer {
+    parents: "relu4"
     name: "decode3"
     data_layout: "model_parallel"
     fully_connected {
@@ -164,6 +175,7 @@ model {
   # RELU relu5
   #######
   layer {
+    parents: "decode3"
     name: "relu5"
     data_layout: "model_parallel"
     relu {
@@ -173,6 +185,7 @@ model {
   # FULLY_CONNECTED decode2
   #################
   layer {
+    parents: "relu5"
     name: "decode2"
     data_layout: "model_parallel"
     fully_connected {
@@ -185,6 +198,7 @@ model {
   # RELU relu6
   #######
   layer {
+    parents: "decode2"
     name: "relu6"
     data_layout: "model_parallel"
     relu {
@@ -194,6 +208,7 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "relu6"
     name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
@@ -207,7 +222,8 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "sigmoid"
+    parents: "decode1"
+    name: "reconstruction"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -218,10 +234,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "reconstruction"
-    parents: "sigmoid data"
+    parents: "reconstruction image"
+    name: "mean_squared_error"
     data_layout: "model_parallel"
-    reconstruction {}
+    mean_squared_error {}
   }
 
   ###################################################
