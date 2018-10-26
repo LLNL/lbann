@@ -64,7 +64,7 @@ model {
     }
     name: "input"
     data_layout: "data_parallel"
-    children: "data label"
+    children: "data dummy"
   }
   layer {
     parents: "input"
@@ -74,9 +74,9 @@ model {
   }
   layer {
     parents: "input"
-    name: "label"
+    name: "dummy"
     data_layout: "data_parallel"
-    split {}
+    dummy {}
   }
   layer {
     name: "slice_data"

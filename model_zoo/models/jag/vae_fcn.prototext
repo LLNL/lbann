@@ -64,7 +64,7 @@ model {
   ######################
   layer {
     name: "input"
-    children: "data label"
+    children: "data dummy"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
@@ -79,9 +79,9 @@ model {
   }
   layer {
     parents: "input"
-    name: "label"
+    name: "dummy"
     data_layout: "model_parallel"
-    split {}
+    dummy {}
   }
 
   ######################
