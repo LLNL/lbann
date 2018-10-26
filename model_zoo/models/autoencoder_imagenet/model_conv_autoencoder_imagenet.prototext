@@ -45,7 +45,7 @@ model {
   #######
   layer {
     name: "data"
-    children: "image label"
+    children: "image dummy"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -59,9 +59,9 @@ model {
   }
   layer {
     parents: "data"
-    name: "label"
+    name: "dummy"
     data_layout: "data_parallel"
-    split {}
+    dummy {}
   }
 
   #############

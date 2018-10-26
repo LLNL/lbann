@@ -89,8 +89,7 @@ class jag_store {
     return m_data_images[tid];
   }
 
-  void setup(const std::vector<std::string> conduit_filenames,
-             data_reader_jag_conduit_hdf5 *reader,
+  void setup(data_reader_jag_conduit_hdf5 *reader,
              bool num_stores = 1,
              int my_rank = 0);
 
