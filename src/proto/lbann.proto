@@ -225,7 +225,7 @@ message GenericPreprocessor {
 
 message Model {
   string model_id = 1000; //arbitrary identifier
-  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
+  string name = 1; //deprecated
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
