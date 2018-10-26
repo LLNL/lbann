@@ -693,6 +693,8 @@ void jag_store::setup_conduit() {
   std::string filename;
   std::string sample_id;
   int j = -1;
+  std::vector<std::string> tmp;
+  if (m_master) std::cerr << "XX m_conduit_filenames.size(): " << m_conduit_filenames.size() << "\n";
   for (auto t : m_conduit_filenames) {
     if (m_data_id_to_sample_id.size() == m_max_samples) {
       break;
@@ -700,7 +702,7 @@ void jag_store::setup_conduit() {
     ++j;
     std::stringstream s(t);
     s >> filename;
-    m_conduit_filenames.push_back(filename);
+    tmp.push_back(filename);
     while (s >> sample_id) {
       m_data_id_to_conduit_filename_idx.push_back(j);
       m_data_id_to_sample_id.push_back(sample_id);
@@ -709,6 +711,7 @@ void jag_store::setup_conduit() {
       }
     }
   }
+  m_conduit_filenames = tmp;
   m_num_samples = m_data_id_to_sample_id.size();
   if (m_master) std::cerr << "finished reading " << m_num_samples << " sample names\n";
 }
