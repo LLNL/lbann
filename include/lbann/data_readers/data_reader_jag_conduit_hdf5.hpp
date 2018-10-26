@@ -113,18 +113,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   /// Return the image simulation output of the i-th sample
   std::vector<cv::Mat> get_cv_images(const size_t i, int tid) const;
 
-  /**
-   * Return the images of the i-th sample as an 1-D vector of lbann::DataType
-   * There is one image per view, each of which is taken at closest to the bang time.
-   */
-  std::vector<ch_t> get_images(const size_t i) const;
-
-  /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i) const;
-
-  /// Return the simulation input parameters of the i-th sample
-  std::vector<input_t> get_inputs(const size_t i) const;
-
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
@@ -133,8 +121,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   /// A untiliy function to convert the pointer to image data into an opencv image
   static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height);
-  /// A utility function to convert a JAG variable type to name string
-  static std::string to_string(const variable_t t);
 
   void set_image_dims(const int width, const int height, const int ch=1);
 
@@ -153,16 +139,11 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   virtual bool replicate_processor(const cv_process& pp);
   virtual void copy_members(const data_reader_jag_conduit_hdf5& rhs);
 
-  static std::string to_string(const std::vector<variable_t>& vec);
-
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid); 
 
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
-             const variable_t vt, const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
   bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
 
   /// Check if the given sample id is valid
@@ -170,9 +151,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   /// Choose the image closest to the bang time among those associated with the i-th sample
   std::vector<int> choose_image_near_bang_time(const size_t i) const;
-
-  /// Obtain the pointers to read-only image data
-  std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
 
   jag_store * get_jag_store() const { return m_jag_store; }
 
