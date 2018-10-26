@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   procs_per_model:0 
   objective_function {
     l2_weight_regularization {
