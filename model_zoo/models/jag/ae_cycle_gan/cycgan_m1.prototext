@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -86,7 +85,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -114,7 +112,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -141,7 +138,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -171,7 +167,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons:20
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -182,7 +177,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons:20
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
