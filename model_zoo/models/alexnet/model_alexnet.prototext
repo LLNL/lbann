@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -321,14 +320,14 @@ model {
     cross_entropy {}    
   }
 
-layer {
+  layer {
     name: "top1_accuracy"
     parents: "prob labels"
     data_layout: "data_parallel"
     categorical_accuracy {}
   }
 
-layer {
+  layer {
     name: "top5_accuracy"
     parents: "prob labels"
     data_layout: "data_parallel"
