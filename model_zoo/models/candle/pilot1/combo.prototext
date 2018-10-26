@@ -497,7 +497,7 @@ model {
     }
   }
 
-  #TARGET
+  #MEAN_SQUARED_ERROR
   layer {
     parents: "fc response"
     name: "mean_squared_error"
@@ -505,6 +505,7 @@ model {
     mean_squared_error {}
   }
 
+  # R2(x,y) = 1 - sum( (x-y)^2 ) / sum( (x-mean(x))^2 )
   layer {
     parents: "fc"
     name: "r2_var"

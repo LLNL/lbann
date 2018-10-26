@@ -322,6 +322,7 @@ model {
   #####################
   # PEARSON CORRELATION
   #####################
+  # rho(x,y) = covariance(x,y) / sqrt( variance(x) * variance(y) )
   layer {
     parents: "reconstruction data"
     name: "pearson_r_cov"
