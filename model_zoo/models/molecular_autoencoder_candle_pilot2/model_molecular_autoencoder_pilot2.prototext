@@ -1,5 +1,4 @@
 model {
-  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 512
   block_size: 256
@@ -12,7 +11,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -30,12 +29,7 @@ model {
     timer {
     }
   }
-  # callback {
-  #   save_images {
-  #     image_prefix: "images_"
-  #     image_format: "pgm"
-  #   }
-  # }
+
   ###################################################
   # start of layers
   ###################################################
@@ -44,24 +38,36 @@ model {
   # INPUT
   #######
   layer {
-    name: "data"
-    children: "encode1 reconstruction"
+    name: "input"
+    children: "data label"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
       target_mode: "reconstruction"
     }
   }
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "label"
+    data_layout: "data_parallel"
+    split {}
+  }
 
   #############
   # FULLY CONNECTED ENCODE 1
   #############
   layer {
+    parents: "data"
     name: "encode1"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 12
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -70,6 +76,7 @@ model {
   # RELU encode1
   ######
   layer {
+    parents: "encode1"
     name: "encode_relu1"
     data_layout: "data_parallel"
     relu {
@@ -80,11 +87,11 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "encode_relu1"
     name: "decode1"
     data_layout: "data_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -93,6 +100,7 @@ model {
   # RELU decode1
   #######
   layer {
+    parents: "decode1"
     name: "decode_relu10"
     data_layout: "data_parallel"
     relu {
@@ -103,10 +111,16 @@ model {
   # RECONSTRUCTION
   #################
   layer {
+    parents: "decode_relu10"
     name: "reconstruction"
-    parents: "decode_relu10 data"
     data_layout: "data_parallel"
-    reconstruction {}
+    split {}
+  }
+  layer {
+    parents: "reconstruction label"
+    name: "mean_squared_error"
+    data_layout: "data_parallel"
+    mean_squared_error {}
   }
 
   ###################################################

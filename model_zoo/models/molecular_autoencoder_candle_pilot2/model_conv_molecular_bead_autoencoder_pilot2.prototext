@@ -1,5 +1,4 @@
 model {
-  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 32
   block_size: 256
@@ -12,7 +11,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -30,12 +29,6 @@ model {
     timer {
     }
   }
-  # callback {
-  #   save_images {
-  #     image_prefix: "images_"
-  #     image_format: "pgm"
-  #   }
-  # }
 
   ###################################################
   # start of layers
@@ -45,19 +38,32 @@ model {
   # INPUT
   #######
   layer {
-    name: "data"
-    children: "reshape1 reconstruction"
+    name: "input"
+    children: "data label"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
       target_mode: "reconstruction"
     }
   }
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "label"
+    data_layout: "data_parallel"
+    split {}
+  }
 
   #######
   # Flatten the data to 1d
   ######
   layer {
+    parents: "data"
     name: "reshape1"
     data_layout: "data_parallel"
     num_neurons_from_data_reader: true
@@ -70,6 +76,7 @@ model {
   # CONVOLUTION 1
   #############
   layer {
+    parents: "reshape1"
     name: "bead_conv1"
     data_layout: "data_parallel"
     convolution {
@@ -78,13 +85,13 @@ model {
       conv_dims: "20"
       conv_pads: "0"
       conv_strides: "20"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
     }
   }
 
   layer {
+    parents: "bead_conv1"
     name: "bead_batch_norm1"
     data_layout: "data_parallel"
     batch_normalization {
@@ -99,6 +106,7 @@ model {
   # RELU 1
   ######
   layer {
+    parents: "bead_batch_norm1"
     name: "bead_relu1"
     data_layout: "data_parallel"
     relu {
@@ -109,6 +117,7 @@ model {
   # CONVOLUTION 1
   #############
   layer {
+    parents: "bead_relu1"
     name: "mol_conv1"
     data_layout: "data_parallel"
     convolution {
@@ -117,13 +126,13 @@ model {
       conv_dims: "12"
       conv_pads: "0"
       conv_strides: "12"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
     }
   }
 
   layer {
+    parents: "mol_conv1"
     name: "batch_norm1"
     data_layout: "data_parallel"
     batch_normalization {
@@ -138,6 +147,7 @@ model {
   # RELU 1
   ######
   layer {
+    parents: "batch_norm1"
     name: "mol_relu1"
     data_layout: "data_parallel"
     relu {
@@ -148,16 +158,17 @@ model {
   # FC 1
   #############
   layer {
+    parents: "mol_relu1"
     name: "fc1"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 12
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
 
   layer {
+    parents: "fc1"
     name: "batch_norm2"
     data_layout: "data_parallel"
     batch_normalization {
@@ -172,6 +183,7 @@ model {
   # RELU 1
   ######
   layer {
+    parents: "batch_norm2"
     name: "relu_fc1"
     data_layout: "data_parallel"
     relu {
@@ -184,16 +196,17 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "relu_fc1"
     name: "d_fc1"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 11264
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
 
   layer {
+    parents: "d_fc1"
     name: "batch_norm3"
     data_layout: "data_parallel"
     batch_normalization {
@@ -208,6 +221,7 @@ model {
   # RELU relu10
   #######
   layer {
+    parents: "batch_norm3"
     name: "d_relu_fc1"
     data_layout: "data_parallel"
     relu {
@@ -215,6 +229,7 @@ model {
   }
 
   layer {
+    parents: "d_relu_fc1"
     name: "d_reshape1"
     data_layout: "data_parallel"
     reshape {
@@ -227,6 +242,7 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
+    parents: "d_reshape1"
     name: "molecular_deconv1"
     data_layout: "data_parallel"
 #    num_neurons_from_data_reader: true
@@ -242,6 +258,7 @@ model {
   }
 
   layer {
+    parents: "molecular_deconv1"
     name: "batch_norm4"
     data_layout: "data_parallel"
     batch_normalization {
@@ -256,6 +273,7 @@ model {
   # RELU 1
   ######
   layer {
+    parents: "batch_norm4"
     name: "dc_mol_relu1"
     data_layout: "data_parallel"
     relu {
@@ -266,6 +284,7 @@ model {
   # CONVOLUTION 1
   #############
   layer {
+    parents: "dc_mol_relu1"
     name: "dc_bead_conv1"
     data_layout: "data_parallel"
     deconvolution {
@@ -274,13 +293,13 @@ model {
       conv_dims: "20"
       conv_pads: "0"
       conv_strides: "20"
-      weight_initialization: "he_normal"
       has_bias: true
       has_vectors: true
     }
   }
 
   layer {
+    parents: "dc_bead_conv1"
     name: "dc_bead_batch_norm1"
     data_layout: "data_parallel"
     batch_normalization {
@@ -295,6 +314,7 @@ model {
   # ELU sigmoid
   #######
   layer {
+    parents: "dc_bead_batch_norm1"
     name: "elu20"
     data_layout: "data_parallel"
     elu {
@@ -306,10 +326,16 @@ model {
   # RECONSTRUCTION
   #################
   layer {
+    parents: "elu20"
     name: "reconstruction"
-    parents: "elu20 data"
     data_layout: "data_parallel"
-    reconstruction {}
+    split {}    
+  }
+  layer {
+    parents: "reconstruction label"
+    name: "mean_squared_error"
+    data_layout: "data_parallel"
+    mean_squared_error {}    
   }
 
   ###################################################
