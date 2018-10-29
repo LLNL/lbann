@@ -60,9 +60,11 @@ void value_initializer::fill(AbsDistMat& matrix) {
   } else {
     matrix_cpu.Resize(matrix.LocalHeight(), matrix.LocalWidth());
   }
+  auto const width = matrix.LocalWidth();
+  auto const height = matrix.LocalHeight();
 #pragma omp parallel for collapse(2)
-  for (El::Int local_col = 0; local_col < matrix.LocalWidth(); ++local_col) {
-    for (El::Int local_row = 0; local_row < matrix.LocalHeight(); ++local_row) {
+  for (El::Int local_col = 0; local_col < width; ++local_col) {
+    for (El::Int local_row = 0; local_row < height; ++local_row) {
       const auto& global_row = matrix.GlobalRow(local_row);
       const auto& global_col = matrix.GlobalCol(local_col);
       const auto& global_pos = global_row + matrix.Height() * global_col;
@@ -75,16 +77,16 @@ void value_initializer::fill(AbsDistMat& matrix) {
     El::GPUManager::SynchronizeStream(); /// @todo Use new Hydrogen synchronization semantics when available
 #endif // HYDROGEN_HAVE_CUDA
   }
-  
+
 }
-  
+
 void uniform_initializer::fill(AbsDistMat& matrix) {
-  uniform_fill(matrix, matrix.Height(), matrix.Width(), 
+  uniform_fill(matrix, matrix.Height(), matrix.Width(),
                (m_max + m_min) / 2, (m_max - m_min) / 2);
 }
 
 void normal_initializer::fill(AbsDistMat& matrix) {
-  gaussian_fill(matrix, matrix.Height(), matrix.Width(), 
+  gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
 }
 
