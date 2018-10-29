@@ -51,14 +51,6 @@ model* instantiate_model(lbann_comm* comm,
   if (type == "sequential_model") {
     return new sequential_model(comm, mini_batch_size, obj, opt);
   }
-  if (type == "siamese_model") {
-    const auto& params = proto_model.siamese();
-    return new siamese_model(comm,
-                             mini_batch_size,
-                             obj,
-                             opt,
-                             params.num_heads());
-  }
 
   // Throw error if model type is not supported
   err << "unknown model type (" << type << ")";
