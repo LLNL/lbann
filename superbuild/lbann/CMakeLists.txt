@@ -81,6 +81,14 @@ if (TARGET PROTOBUF)
   set(LBANN_SB_FWD_LBANN_PROTOBUF_DIR "${PROTOBUF_DIR}")
   set(LBANN_SB_FWD_LBANN_protobuf_MODULE_COMPATIBLE ON)
   set(LBANN_SB_FWD_LBANN_protobuf_BUILD_SHARED_LIBS ON)
+
+  if (TARGET HOST-PROTOBUF)
+    list(APPEND _LBANN_DEPENDS HOST-PROTOBUF)
+    set(LBANN_USE_PROTOBUF_MODULE ON)
+    set(LBANN_SB_FWD_LBANN_Protobuf_PROTOC_EXECUTABLE
+      "${HOST_PROTOBUF_protoc_EXE}")
+    # This will exist by the time LBANN configures.
+  endif ()
 endif ()
 
 # Get the list of LBANN variables

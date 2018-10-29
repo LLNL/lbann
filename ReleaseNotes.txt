@@ -35,6 +35,9 @@ I/O & data readers:
    - Interface to describe how to slice JAG data
    - Avoid redundant fetching and incoherent random number pulls in the group of local data readers
 
+Build system:
+ - Support cross-compilation configurations in superbuild and SetupProtobuf
+
 ============================== Release Notes: v0.95 ==============================
 Support for new training algorithms:
   - Generative Adversarial Networks (GAN)
