@@ -757,7 +757,7 @@ message Layer {
    bool num_neurons_from_data_reader = 53;
    bool freeze = 5;
    string hint_layer = 56;
-   ParallelStrategy parallel_strategy = 500;
+   ParallelStrategy parallel_strategy = 1000;
 
    repeated WeightsData weights_data = 153;
    string top = 154;
