@@ -3,7 +3,7 @@ data_reader {
     name: "synthetic"
     role: "train"
     shuffle: true
-    num_samples: 1281167
+    num_samples: 128
     num_labels: 1000
     synth_dimensions: "3 224 224"
     validation_percent: 0.01
@@ -15,7 +15,7 @@ data_reader {
     name: "synthetic"
     role: "test"
     shuffle: true
-    num_samples: 50000
+    num_samples: 32
     num_labels: 1000
     synth_dimensions: "3 224 224"
     absolute_sample_count: 0
