@@ -171,9 +171,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Get the id of this local instance
   int get_local_id(const std::string role) const;
   /// Set the set of open hdf5 data files
-  void set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f);
+  void set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f);
   /// Get the set of open hdf5 data files
-  std::shared_ptr<hdf5_file_handles>& get_open_hdf_files();
+  std::shared_ptr<hdf5_file_handles>& get_open_hdf5_files();
   /// Set the leader of local data reader group
   void set_leading_reader(data_reader_jag_conduit* r);
   /// Get the leader of local data reader group
