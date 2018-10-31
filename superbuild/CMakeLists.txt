@@ -1,13 +1,7 @@
 cmake_minimum_required(VERSION 3.9)
 
 message("\nWelcome to the LBANN SuperBuild system.\n\n"
-  "This attempts to fill the shoes of a real package manager by building "
-  "LBANN's dependencies, as well as LBANN itself.\n\n"
-  "A few notes before we begin:\n"
-  "  1. Read the README.md file.\n"
-  "  2. Actually read the README.md file.\n"
-  "  3. See 1 and 2.\n"
-  "  4. You should probably use a real package manager instead (e.g., Spack)\n\n"
+  "Please report issues on https://github.com/llnl/lbann/issues\n\n"
   "Good luck!\n\n")
 
 project(LBANN_SuperBuild NONE)
