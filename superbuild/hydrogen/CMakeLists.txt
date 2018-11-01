@@ -47,11 +47,14 @@ if (TARGET Aluminum)
     list(APPEND _HYDROGEN_DEPENDS Aluminum)
 
     if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
-      enable_language(CUDA)
       set(Hydrogen_ENABLE_CUDA ON)
     endif ()
   endif (Hydrogen_ENABLE_ALUMINUM)
 endif (TARGET Aluminum)
+
+if (Hydrogen_ENABLE_CUDA)
+  enable_language(CUDA)
+endif ()
 
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
