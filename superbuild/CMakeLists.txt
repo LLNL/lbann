@@ -117,5 +117,26 @@ if (UNIX)
       VERBATIM
       COMMAND_EXPAND_LISTS
       USES_TERMINAL)
+
+    add_custom_target(gather-all)
+    add_dependencies(gather-all gather-logs)
+    if (CMAKE_GENERATOR STREQUAL "Ninja")
+      set(__cmd "${__FIND_EXE};.;-name;*.ninja;-exec;${__TAR_EXE};czf;all_build_files.tar.gz;{};+")
+    elseif (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+      set(__cmd "${__FIND_EXE};.;\(;-name;link.txt;-o;-name;build.make;-o;-name;flags.make;\);-exec;${__TAR_EXE};czf;all_build_files.tar.gz;{};+")
+    else ()
+      set(__cmd)
+    endif ()
+    if (__cmd)
+      add_custom_target(gather-build
+        COMMAND "${__cmd}"
+        BYPRODUCTS "${__WORKING_DIR}/all_build_files.tar.gz"
+        WORKING_DIRECTORY "${__WORKING_DIR}"
+        COMMENT "Gathering all build files."
+        VERBATIM
+        COMMAND_EXPAND_LISTS
+        USES_TERMINAL)
+      add_dependencies(gather-all gather-build)
+    endif ()
   endif (__TAR_EXE AND __FIND_EXE)
 endif (UNIX)
