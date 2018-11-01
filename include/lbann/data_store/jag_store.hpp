@@ -31,6 +31,7 @@
 
 #ifdef LBANN_HAS_CONDUIT
 
+#include "lbann/utils/timer.hpp"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
@@ -69,6 +70,7 @@ class jag_store {
 
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
+    m_num_procs_in_world = m_comm->get_procs_in_world();
   }
 
   /// Returns the requested inputs
@@ -130,7 +132,7 @@ class jag_store {
       load_data_conduit(data_id, tid);
     } else if (m_mode == 2) {
       load_data_binary(data_id, tid);
-    } 
+    }
   }
 
  private:
@@ -144,6 +146,8 @@ class jag_store {
   size_t m_num_samples;
 
   lbann_comm *m_comm;
+
+  int m_num_procs_in_world;
 
   bool m_master;
 
@@ -210,6 +214,7 @@ class jag_store {
   // (e.g: 0.9.99.57:1)
   std::unordered_map<int, std::string> m_sample_id_map;
   size_t m_sample_len;
+  std::vector<std::vector<std::ifstream*>> m_streams;
   void read_key_map(const std::string &filename); 
 
   /// methods and variables for dealing with normalization
