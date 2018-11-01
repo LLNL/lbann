@@ -401,6 +401,11 @@ get_directory_property( DirDefs COMPILE_DEFINITIONS )
 # Configuration summary
 ################################################################
 
+# NOTE: message() outputs to stderr by default. We now use a string to
+# maintain this information and then have cmake echo it to stdout. The
+# only side effects are that if you use the CMake GUI, you won't see
+# this output anymore (they only report stderr) and that if you add
+# something to the list, you must remember your newline!
 set(_str "== Configuration Summary ==\n")
 string(APPEND _str "  PROJECT_SOURCE_DIR:   ${PROJECT_SOURCE_DIR}\n"
   "  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}\n"
