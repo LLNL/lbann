@@ -1,5 +1,6 @@
-enable_language(C)
 enable_language(CXX)
+
+option(Hydrogen_ENABLE_CUDA "Enable CUDA support in Hydrogen" OFF)
 
 option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
 
@@ -44,15 +45,23 @@ if (TARGET Aluminum)
 
     set(_hydrogen_depends_tag DEPENDS)
     list(APPEND _HYDROGEN_DEPENDS Aluminum)
+
+    if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
+      enable_language(CUDA)
+      set(Hydrogen_ENABLE_CUDA ON)
+    endif ()
   endif (Hydrogen_ENABLE_ALUMINUM)
 endif (TARGET Aluminum)
 
 # Get the list of HYDROGEN variables
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX
-  "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*\|^LBANN_SB_FWD_Hydrogen_.*")
+  "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*\|^LBANN_SB_FWD_Hydrogen_.*\|CMAKE_\(CXX\|CUDA\)_*")
 list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX
   "Hydrogen_URL\|Hydrogen_TAG\|Hydrogen_CMAKE_GENERATOR")
+
+list(FILTER ALUMINUM_VARIABLES INCLUDE REGEX
+  "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*\|CMAKE_\(CXX\|CUDA\)_COMPILER\|CMAKE_BUILD_TYPE")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE HYDROGEN_CMAKE_ARGS
@@ -61,10 +70,6 @@ create_cmake_arguments(
   EXTRA_REMOVE_PREFIXES "LBANN_SB_FWD_HYDROGEN" "LBANN_SB_FWD_Hydrogen"
   VARIABLES ${HYDROGEN_VARIABLES})
 
-# Set the generator
-set(Hydrogen_CMAKE_GENERATOR "${CMAKE_GENERATOR}"
-  CACHE STRING "The generator used by CMake for Hydrogen.")
-
 # Handle the clone mechanism. First URL
 set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
   CACHE STRING "The URL from which to clone Hydrogen")
@@ -72,7 +77,6 @@ set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
 # ... then the tag.
 set(Hydrogen_TAG "hydrogen"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
-
 
 include(ExternalProject)
 ExternalProject_Add(HYDROGEN
@@ -94,9 +98,6 @@ ExternalProject_Add(HYDROGEN
   LOG_TEST 1
   LIST_SEPARATOR |
   CMAKE_ARGS
-  -G${Hydrogen_CMAKE_GENERATOR}
-  -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   ${HYDROGEN_CMAKE_ARGS}
   )
 

@@ -1,5 +1,6 @@
 enable_language(C)
 enable_language(CXX)
+enable_language(ASM)
 
 # Match the jpeg-turbo default
 option(JPEG-TURBO_ENABLE_STATIC "Enable the jpeg-turbo static linkage." ON)

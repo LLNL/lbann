@@ -2,9 +2,10 @@ cmake_minimum_required(VERSION 3.9)
 
 message("\nWelcome to the LBANN SuperBuild system.\n\n"
   "Please report issues on https://github.com/llnl/lbann/issues\n\n"
-  "Good luck!\n\n")
+  "Good luck!\n")
 
-project(LBANN_SuperBuild NONE)
+# CXX is always required
+project(LBANN_SuperBuild CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 

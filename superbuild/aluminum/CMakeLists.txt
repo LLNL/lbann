@@ -1,3 +1,5 @@
+enable_language(CXX)
+
 set(Aluminum_URL https://github.com/llnl/Aluminum
   CACHE STRING "The URL from which to clone Aluminum")
 
@@ -15,6 +17,10 @@ set (Aluminum_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 option(ALUMINUM_ENABLE_CUDA "Enable CUDA support." OFF)
 option(ALUMINUM_ENABLE_MPI_CUDA "Enable MPI-CUDA support." OFF)
 option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." OFF)
+
+if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
+  enable_language(CUDA)
+endif ()
 
 # Get the list of ALUMINUM variables
 get_property(ALUMINUM_VARIABLES DIRECTORY PROPERTY VARIABLES)

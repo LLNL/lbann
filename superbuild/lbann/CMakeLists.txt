@@ -11,6 +11,10 @@ set(LBANN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 set(LBANN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for LBANN.")
 
+if (LBANN_ENABLE_CUDA)
+  enable_language(CUDA)
+endif ()
+
 # Fixes an RPATH issue with LBANN in which all packages get installed
 # to the same prefix
 #
