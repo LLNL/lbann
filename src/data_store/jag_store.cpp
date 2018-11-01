@@ -3,7 +3,6 @@
 #ifdef LBANN_HAS_CONDUIT
 
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/timer.hpp"
 #include "lbann/utils/options.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
@@ -18,6 +17,7 @@ namespace lbann {
 
 jag_store::jag_store() 
   : m_image_size(0),
+    m_comm(nullptr),
     m_master(false),
     m_max_samples(INT_MAX)
   { 
@@ -166,6 +166,7 @@ void jag_store::setup(
   if (! (m_mode == 1 || m_mode == 2 || m_mode == 3)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: you must pass --mode=<int> on cmd line, where <int> is 1 (to use conduit files) or 2 (to use binary files); or 4 (for testing) you passed: " + std::to_string(m_mode));
   }
+  if (m_master) std::cerr << "Running in mode: " << m_mode << "\n";
 
   // optionally convert conduit files to our binary format, then exit
   if (opts->has_string("convert_conduit")) {
@@ -260,22 +261,26 @@ void jag_store::report_linearized_sizes() {
 
 void jag_store::load_data_binary(int data_id, int tid) {
   const int file_idx = m_sample_map[data_id].first;
-  std::string fn = m_binary_filenames[file_idx];
+//  std::string fn = m_binary_filenames[file_idx];
   const int sample_idx = m_sample_map[data_id].second;
 
-  std::ifstream in(fn.c_str(), std::ios::out | std::ios::binary);
+ // std::ifstream in(fn.c_str(), std::ios::out | std::ios::binary);
+  /*
   if (!in.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open: " + fn + " for reading; data_id: " + std::to_string(data_id) + " tid: " + std::to_string(tid));
   }
+  */
 
-  in.seekg(sample_idx*m_sample_len);
-  in.read((char*)m_scratch[tid].data(), m_sample_len);
-  in.close();
+//  in.seekg(sample_idx*m_sample_len);
+  m_streams[tid][file_idx]->seekg(sample_idx*m_sample_len);
+  m_streams[tid][file_idx]->read((char*)m_scratch[tid].data(), m_sample_len);
+  //in.read((char*)m_scratch[tid].data(), m_sample_len);
+//  in.close();
 
-  size_t offset = sample_idx * m_sample_len;
+//  size_t offset = sample_idx * m_sample_len;
 
-  in.seekg(offset);
-  in.read((char*)m_scratch[tid].data(), m_sample_len);
+//  in.seekg(offset);
+ // in.read((char*)m_scratch[tid].data(), m_sample_len);
 
   for (size_t j=0; j<m_inputs_to_use.size(); j++) {
     check_entry(m_inputs_to_use[j]);
@@ -456,9 +461,7 @@ void jag_store::write_binary(const std::vector<std::string> &filenames, const st
         }
       }
     }
-    if (m_master) std::cerr << "XX calling close hdf5\n";
     conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-    if (m_master) std::cerr << "XX DONE! calling close hdf5\n";
   }
 EARLY_EXIT : 
   m_binary_output_file.close();
@@ -569,15 +572,15 @@ void jag_store::load_variable_names() {
   load_image_channels_to_use(m_reader->m_image_channels);
 
   if (m_master) {
-    std::cerr << "using these inputs:\n ";
+    std::cerr << "using these inputs:\n";
     for (auto t : m_inputs_to_use) {
       std::cerr << "    " << t << "\n";
     }
-    std::cerr << "\nusing these scalars:\n ";
+    std::cerr << "\nusing these scalars:\n";
     for (auto t : m_scalars_to_use) {
       std::cerr << "    " << t << "\n";
     }
-    std::cerr << "\nusing these views:\n ";
+    std::cerr << "\nusing these views:\n";
     for (auto t : m_image_views_to_use) {
       std::cerr << "    " << t << "\n";
     }
@@ -694,7 +697,6 @@ void jag_store::setup_conduit() {
   std::string sample_id;
   int j = -1;
   std::vector<std::string> tmp;
-  if (m_master) std::cerr << "XX m_conduit_filenames.size(): " << m_conduit_filenames.size() << "\n";
   for (auto t : m_conduit_filenames) {
     if (m_data_id_to_sample_id.size() == m_max_samples) {
       break;
@@ -730,20 +732,39 @@ void jag_store::setup_binary() {
   }
   if (m_master) std::cerr << "opened " << fn << " for reading\n";
 
+  std::string filename;
+  size_t num_files = 0;
+  while (in >> filename) {
+    ++num_files;
+  }
+  in.close();
+
+  in.open(fn.c_str());
+  size_t nthreads = omp_get_max_threads();
+  m_streams.resize(nthreads);
+  for (size_t j=0; j<nthreads; j++) {
+    m_streams[j].resize(num_files);
+  }
+
   size_t global_idx = 0;
   int file_idx = -1;
-  std::string filename;
   while (in >> filename) {
     if (m_master) std::cerr << "next binary filename: " << filename << "\n";
     ++file_idx;
+
+    for (size_t tid=0; tid<nthreads; tid++) {
+      m_streams[tid][file_idx] = new std::ifstream(filename.c_str(), std::ios::out | std::ios::binary);
+    }
+
     if (global_idx == m_max_samples) {
       break;
     }
 
     m_binary_filenames.push_back(filename);
+
     size_t j = filename.rfind(".bin"); 
     if (j == std::string::npos) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: t.rfind('.bin') failed");
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: t.rfind('.bin') failed for filename: " + filename);
     }
 
     std::stringstream s;
@@ -783,7 +804,6 @@ void jag_store::setup_binary() {
   key_fn += "/metadata.txt";
   read_key_map(key_fn);
 
-  size_t nthreads = omp_get_max_threads();
   m_scratch.resize(nthreads);
   for (size_t j=0; j<nthreads; j++) {
     for (size_t i=0; i<m_scratch.size(); i++) {
