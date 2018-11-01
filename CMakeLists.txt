@@ -214,7 +214,7 @@ endif (LBANN_HAS_CUDA)
 # guarantee. There's no harm including it multiple times.
 find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
 if (DL_LIBRARY)
-  message("Found dl: ${DL_LIBRARY}")
+  message(STATUS "Found dl: ${DL_LIBRARY}")
 else ()
   message(FATAL_ERROR
     "dl library not found! This is a required library.\n"
@@ -401,33 +401,42 @@ get_directory_property( DirDefs COMPILE_DEFINITIONS )
 # Configuration summary
 ################################################################
 
-message("== Configuration Summary ==")
-message("  PROJECT_SOURCE_DIR:   ${PROJECT_SOURCE_DIR}")
-message("  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}")
-message("  CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-message("  CMAKE_BUILD_TYPE:     ${CMAKE_BUILD_TYPE}")
+set(_str "== Configuration Summary ==\n")
+string(APPEND _str "  PROJECT_SOURCE_DIR:   ${PROJECT_SOURCE_DIR}\n"
+  "  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}\n"
+  "  CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}\n"
+  "  CMAKE_BUILD_TYPE:     ${CMAKE_BUILD_TYPE}\n")
 if (CMAKE_BUILD_TYPE MATCHES None)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS}\n")
 elseif (CMAKE_BUILD_TYPE MATCHES Release)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}\n")
 elseif (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}\n")
 elseif (CMAKE_BUILD_TYPE MATCHES Debug)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}\n")
 endif ()
-message("  LBANN_GNU_LINUX:      ${LBANN_GNU_LINUX}")
-message("  LBANN_HAS_HYDROGEN:   ${LBANN_HAS_HYDROGEN}")
-message("  LBANN_HAS_OPENCV:     ${LBANN_HAS_OPENCV}")
-message("  LBANN_HAS_CUDA:       ${LBANN_HAS_CUDA}")
-message("  LBANN_HAS_CUDNN:      ${LBANN_HAS_CUDNN}")
-message("  LBANN_HAS_NCCL2:      ${LBANN_HAS_NCCL2}")
-message("  LBANN_HAS_PROTOBUF:   ${LBANN_HAS_PROTOBUF}")
-message("  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}")
-message("  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}")
-message("  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}")
-message("  LBANN_NVPROF:         ${LBANN_NVPROF}")
-message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
-message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")
-message("  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}")
-message("  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}")
-message("  LBANN_NO_OMP_FOR_DATA_READERS: ${LBANN_NO_OMP_FOR_DATA_READERS}")
+string(APPEND _str
+  "  LBANN_GNU_LINUX:      ${LBANN_GNU_LINUX}\n"
+  "  LBANN_HAS_HYDROGEN:   ${LBANN_HAS_HYDROGEN}\n"
+  "  LBANN_HAS_OPENCV:     ${LBANN_HAS_OPENCV}\n"
+  "  LBANN_HAS_CUDA:       ${LBANN_HAS_CUDA}\n"
+  "  LBANN_HAS_CUDNN:      ${LBANN_HAS_CUDNN}\n"
+  "  LBANN_HAS_NCCL2:      ${LBANN_HAS_NCCL2}\n"
+  "  LBANN_HAS_PROTOBUF:   ${LBANN_HAS_PROTOBUF}\n"
+  "  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}\n"
+  "  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}\n"
+  "  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}\n"
+  "  LBANN_NVPROF:         ${LBANN_NVPROF}\n"
+  "  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}\n"
+  "  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}\n"
+  "  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}\n"
+  "  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}\n"
+  "  LBANN_NO_OMP_FOR_DATA_READERS: ${LBANN_NO_OMP_FOR_DATA_READERS}\n")
+
+# Output to stdout
+execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${_str}")
+set(_str)
