@@ -126,15 +126,13 @@ void fp_cpu(lbann_comm& comm,
   // Find top-k entries in each column of global prediction matrix
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
-      comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
-                  top_entries.size() * sizeof(entry),
-                  col_comm_root,
-                  col_comm, El::SyncInfo<El::Device::CPU>{});
+      comm.gather(top_entries.data(), top_entries.size(),
+                  col_comm_root, col_comm,
+                  El::SyncInfo<El::Device::CPU>{});
     } else {
       std::vector<entry> global_top_entries(col_comm_size * local_width * k);
-      comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
-                  top_entries.size() * sizeof(entry),
-                  reinterpret_cast<El::byte*>(global_top_entries.data()),
+      comm.gather(top_entries.data(), top_entries.size(),
+                  global_top_entries.data(),
                   col_comm, El::SyncInfo<El::Device::CPU>{});
 #pragma omp parallel for
       for (El::Int col = 0; col < local_width; ++col) {

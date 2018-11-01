@@ -191,7 +191,7 @@ void fp_cpu(lbann_comm& comm,
                             DataType(1) : DataType(0));
     }
   }
-  
+
 }
 
 } // namespace
