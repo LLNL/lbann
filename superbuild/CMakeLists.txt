@@ -100,3 +100,21 @@ foreach (pkg ${_BUILD_PKGS})
   endif ()
 endforeach ()
 message("\n-----------------------------------------------------------------\n")
+
+# Add a custom target for bundling all things up
+if (UNIX)
+  find_program(__TAR_EXE tar)
+  find_program(__FIND_EXE find)
+  set(__WORKING_DIR "${CMAKE_BINARY_DIR}")
+  if (__TAR_EXE AND __FIND_EXE)
+    set(__cmd "${__FIND_EXE};.;\(;-ipath;*/stamp/*.log;-o;-ipath;*/CMakeFiles/CMake*.log;-o;-name;CMakeCache.txt;\);-exec;${__TAR_EXE};czf;all_output_logs.tar.gz;{};+")
+    add_custom_target(gather-logs
+      COMMAND "${__cmd}"
+      BYPRODUCTS "${__WORKING_DIR}/all_output_logs.tar.gz"
+      WORKING_DIRECTORY "${__WORKING_DIR}"
+      COMMENT "Gathering all output logs."
+      VERBATIM
+      COMMAND_EXPAND_LISTS
+      USES_TERMINAL)
+  endif (__TAR_EXE AND __FIND_EXE)
+endif (UNIX)
