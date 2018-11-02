@@ -131,6 +131,10 @@ void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   system(s3.str().c_str());
   s3.clear();
   s3.str("");
+  s3 << "chmod 660 " << output_fn;
+  system(s3.str().c_str());
+  s3.clear();
+  s3.str("");
   s3 << "rm -f num_samples_tmp ";
   for (int k=0; k<m_num_procs_in_world; k++) {
     s3 << output_fn << "." << k << " ";

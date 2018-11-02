@@ -1,16 +1,11 @@
 cmake_minimum_required(VERSION 3.9)
 
 message("\nWelcome to the LBANN SuperBuild system.\n\n"
-  "This attempts to fill the shoes of a real package manager by building "
-  "LBANN's dependencies, as well as LBANN itself.\n\n"
-  "A few notes before we begin:\n"
-  "  1. Read the README.md file.\n"
-  "  2. Actually read the README.md file.\n"
-  "  3. See 1 and 2.\n"
-  "  4. You should probably use a real package manager instead (e.g., Spack)\n\n"
-  "Good luck!\n\n")
+  "Please report issues on https://github.com/llnl/lbann/issues\n\n"
+  "Good luck!\n")
 
-project(LBANN_SuperBuild NONE)
+# CXX is always required
+project(LBANN_SuperBuild CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
@@ -106,3 +101,41 @@ foreach (pkg ${_BUILD_PKGS})
   endif ()
 endforeach ()
 message("\n-----------------------------------------------------------------\n")
+
+# Add a custom target for bundling all things up
+if (UNIX)
+  find_program(__FIND_EXE find)
+  set(__WORKING_DIR "${CMAKE_BINARY_DIR}")
+  if (__FIND_EXE)
+    set(__cmd "${__FIND_EXE};.;\(;-ipath;*/stamp/*.log;-o;-ipath;*/CMakeFiles/CMake*.log;-o;-name;CMakeCache.txt;\);-exec;${CMAKE_COMMAND};-E;tar;czf;all_output_logs.tar.gz;--;{};+")
+    add_custom_target(gather-logs
+      COMMAND "${__cmd}"
+      BYPRODUCTS "${__WORKING_DIR}/all_output_logs.tar.gz"
+      WORKING_DIRECTORY "${__WORKING_DIR}"
+      COMMENT "Gathering all output logs."
+      VERBATIM
+      COMMAND_EXPAND_LISTS
+      USES_TERMINAL)
+
+    add_custom_target(gather-all)
+    add_dependencies(gather-all gather-logs)
+    if (CMAKE_GENERATOR STREQUAL "Ninja")
+      set(__cmd "${__FIND_EXE};.;-name;*.ninja;-exec;${CMAKE_COMMAND};-E;tar;czf;all_build_files.tar.gz;{};+")
+    elseif (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+      set(__cmd "${__FIND_EXE};.;\(;-name;link.txt;-o;-name;build.make;-o;-name;flags.make;\);-exec;${CMAKE_COMMAND};-E;tar;czf;all_build_files.tar.gz;{};+")
+    else ()
+      set(__cmd)
+    endif ()
+    if (__cmd)
+      add_custom_target(gather-build
+        COMMAND "${__cmd}"
+        BYPRODUCTS "${__WORKING_DIR}/all_build_files.tar.gz"
+        WORKING_DIRECTORY "${__WORKING_DIR}"
+        COMMENT "Gathering all build files."
+        VERBATIM
+        COMMAND_EXPAND_LISTS
+        USES_TERMINAL)
+      add_dependencies(gather-all gather-build)
+    endif ()
+  endif (__FIND_EXE)
+endif (UNIX)

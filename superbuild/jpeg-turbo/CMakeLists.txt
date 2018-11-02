@@ -1,5 +1,6 @@
 enable_language(C)
 enable_language(CXX)
+enable_language(ASM_NASM)
 
 # Match the jpeg-turbo default
 option(JPEG-TURBO_ENABLE_STATIC "Enable the jpeg-turbo static linkage." ON)
@@ -26,6 +27,12 @@ ExternalProject_Add(JPEG-TURBO
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${JPEG-TURBO_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
+  LOG_DOWNLOAD 1
+  LOG_UPDATE 1
+  LOG_CONFIGURE 1
+  LOG_BUILD 1
+  LOG_INSTALL 1
+  LOG_TEST 1
   CMAKE_ARGS
   -G${CMAKE_GENERATOR}
   -DCMAKE_INSTALL_PREFIX=${JPEG-TURBO_CMAKE_INSTALL_PREFIX}
