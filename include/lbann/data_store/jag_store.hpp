@@ -71,6 +71,7 @@ class jag_store {
   void set_comm(lbann_comm *comm) {
     m_comm = comm;
     m_num_procs_in_world = m_comm->get_procs_in_world();
+    m_rank_in_world = m_comm->get_rank_in_world();
   }
 
   /// Returns the requested inputs
@@ -148,6 +149,8 @@ class jag_store {
   lbann_comm *m_comm;
 
   int m_num_procs_in_world;
+
+  int m_rank_in_world;
 
   bool m_master;
 
