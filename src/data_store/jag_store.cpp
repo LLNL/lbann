@@ -68,36 +68,74 @@ void jag_store::load_image_channels_to_use(const std::string &keys) {
 
 void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   options *opts = options::get();
+  const std::string base_dir = opts->get_string("base_dir");
   const std::string output_fn = opts->get_string("build_conduit_index");
-  std::ofstream out(output_fn.c_str()); 
+  std::stringstream ss;
+  ss << output_fn << "." << m_rank_in_world;
+  std::ofstream out(ss.str().c_str()); 
   if (!out.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + output_fn + " for writing");
   }
   if (m_master) std::cerr << "writing index file: " << output_fn << "\n";
+  if (m_rank_in_world == 0) {
+    out << base_dir << "\n";
+  }
 
-  for (auto t : filenames) {
+  int global_num_samples = 0;
+  for (size_t j=m_rank_in_world; j<filenames.size(); j+=m_num_procs_in_world) {
     std::stringstream s2;
-    s2 << t;
-    std::string fn;
-    s2 >> fn;
-    out << fn << " ";
+    filenames[j];
+    std::string fn(base_dir);
+    fn += '/';
+    fn += filenames[j];
+    out << filenames[j] << " ";
     hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( fn );
     std::vector<std::string> cnames;
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
+    size_t is_good = 0;
+    size_t is_bad = 0;
+    std::stringstream s5;
     conduit::Node n_ok;
-    for (auto sample_name : cnames) {
-      const std::string key_1 = "/" + sample_name + "/performance/success";
+    for (size_t h=0; h<cnames.size(); h++) {
+      const std::string key_1 = "/" + cnames[h] + "/performance/success";
       conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
       int success = n_ok.to_int64();
       if (success == 1) {
-        out << sample_name << " ";
+        ++is_good;
+      } else {
+        s5 << h << " ";
+        ++is_bad;
       }
     }
-    out << "\n";
+    global_num_samples += is_good;
+    out << is_good << " " << is_bad << " " << s5.str() << "\n";
     conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
-
   out.close();
+  m_comm->global_barrier();
+
+  int num_samples;
+  MPI_Reduce(&global_num_samples, &num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  //m_comm->reduce<int>(&global_num_samples, 1, 0, m_comm->get_world_comm(), El::mpi::SUM);
+
+  std::stringstream s3;
+  s3 << "echo " << global_num_samples << " > num_samples_tmp";
+  system(s3.str().c_str());
+  s3.clear();
+  s3.str("");
+  s3 << "cat num_samples_tmp ";
+  for (int k=0; k<m_num_procs_in_world; k++) {
+    s3 << output_fn << "." << k << " ";
+  }
+  s3 << "> " << output_fn;
+  system(s3.str().c_str());
+  s3.clear();
+  s3.str("");
+  s3 << "rm -f num_samples_tmp ";
+  for (int k=0; k<m_num_procs_in_world; k++) {
+    s3 << output_fn << "." << k << " ";
+  }
+  system(s3.str().c_str());
 }
 
 void jag_store::setup_testing() {
