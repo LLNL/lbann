@@ -119,7 +119,7 @@ void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   //m_comm->reduce<int>(&global_num_samples, 1, 0, m_comm->get_world_comm(), El::mpi::SUM);
 
   std::stringstream s3;
-  s3 << "echo " << global_num_samples << " > num_samples_tmp";
+  s3 << "echo " << global_num_samples << " " << filenames.size() << " >  num_samples_tmp";
   system(s3.str().c_str());
   s3.clear();
   s3.str("");
