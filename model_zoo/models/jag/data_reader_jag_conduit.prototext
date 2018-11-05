@@ -15,9 +15,9 @@ data_reader {
 
     split_jag_image_channels: true
 
-    # 1: JAG_Image,  2: JAG_Scalar,  3: JAG_Input
-    independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: JAG_Input } ]
-    dependent: [ { pieces: JAG_Input } ]
+    # JAG_Image, JAG_Scalar, JAG_Input
+    independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: [ JAG_Input ] } ]
+    dependent: [ { pieces: [ JAG_Input ] } ]
 
     jag_image_keys: ["(0.0, 0.0)/0.0", "(90.0, 0.0)/0.0", "(90.0, 78.0)/0.0"]
 
