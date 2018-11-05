@@ -172,14 +172,22 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.convolution();
     const auto& num_output_channels = params.num_output_channels();
     const auto& bias = params.has_bias();
+    int num_groups = params.num_groups();
+    if (num_groups == 0) {
+      num_groups = 1;
+    }
     if (params.has_vectors()) {
       const auto& dims = parse_list<int>(params.conv_dims());
       const auto& pads = parse_list<int>(params.conv_pads());
       const auto& strides = parse_list<int>(params.conv_strides());
+      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
+      if (dilations.empty()) {
+        dilations.resize(dims.size(), 1);
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new convolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, dims.size(), num_output_channels,
-                     dims, pads, strides, bias
+                     dims, pads, strides, dilations, num_groups, bias
                    );
       }
     } else {
@@ -187,10 +195,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& dim = params.conv_dims_i();
       const auto& pad = params.conv_pads_i();
       const auto& stride = params.conv_strides_i();
+      int dilation = params.conv_dilations_i();
+      if (dilation == 0) {
+        dilation = 1;
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new convolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, num_dims, num_output_channels,
-                     dim, pad, stride, bias
+                     dim, pad, stride, dilation, num_groups, bias
                    );
       }
     }
@@ -199,6 +211,10 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.deconvolution();
     const auto& bias = params.has_bias();
     int num_output_channels = params.num_output_channels();
+    int num_groups = params.num_groups();
+    if (num_groups == 0) {
+      num_groups = 1;
+    }
     if (proto_layer.num_neurons_from_data_reader()) {
       const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
       if (!dr) {
@@ -210,10 +226,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& dims = parse_list<int>(params.conv_dims());
       const auto& pads = parse_list<int>(params.conv_pads());
       const auto& strides = parse_list<int>(params.conv_strides());
+      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
+      if (dilations.empty()) {
+        dilations.resize(dims.size(), 1);
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new deconvolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, dims.size(), num_output_channels,
-                     dims, pads, strides, bias
+                     dims, pads, strides, dilations, num_groups, bias
                    );
       }
     } else {
@@ -221,10 +241,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& dim = params.conv_dims_i();
       const auto& pad = params.conv_pads_i();
       const auto& stride = params.conv_strides_i();
+      int dilation = params.conv_dilations_i();
+      if (dilation == 0) {
+        dilation = 1;
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new deconvolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, num_dims, num_output_channels,
-                     dim, pad, stride, bias
+                     dim, pad, stride, dilation, num_groups, bias
                    );
       }
     }
