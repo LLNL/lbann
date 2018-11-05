@@ -301,7 +301,7 @@ model {
     parents: "drop7"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons_is_num_labels: true
+      num_neurons: 1000
       has_bias: false
     }
   }
@@ -317,7 +317,7 @@ model {
     name: "cross_entropy"
     parents: "prob labels"
     data_layout: "data_parallel"
-    cross_entropy {}    
+    cross_entropy {}
   }
 
   layer {
