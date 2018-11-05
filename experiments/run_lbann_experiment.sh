@@ -366,7 +366,6 @@ echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
-        echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
         echo "export MV2_CUDA_ALLGATHER_FGP=0"          >> ${BATCH_SCRIPT}
         ;;
 esac
