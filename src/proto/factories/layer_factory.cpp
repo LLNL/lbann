@@ -48,7 +48,7 @@ Layer* construct_layer(lbann_comm* comm,
       return new name##_layer<layout, Dev>(comm);       \
     }                                                   \
   } while (false)
-  
+
   // Input layers
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
@@ -87,20 +87,17 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
     int num_neurons = 0;
-    bool is_supported = false;
     std::string num_neurons_method_name;
 
-    if (params.get_input_dimension_from_reader() 
+    if (params.get_input_dimension_from_reader()
         || params.get_image_dimension_from_reader()
         || params.get_scalar_dimension_from_reader()
-        || params.get_image_and_scalar_dimension_from_reader())
-    {
+        || params.get_image_and_scalar_dimension_from_reader()) {
       num_neurons_method_name = "get_*_dimension_from_reader";
     #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
       if (dr != nullptr) {
-        is_supported = true;
         size_t input_dim = dr->get_linearized_input_size();
         size_t scalar_dim = dr->get_linearized_scalar_size();
         size_t image_dim = dr->get_linearized_channel_size() * dr->get_num_channels();
@@ -127,6 +124,7 @@ Layer* construct_layer(lbann_comm* comm,
       const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
       if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
         const std::string& var = params.get_slice_points_from_reader();
+        bool is_supported = false; /// @todo Remove unneeded function parameter
         const auto slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
         for (int i = 0; i < num_slice_indices; ++i) {
           const size_t idx = static_cast<size_t>(params.get_num_neurons_of_slice_from_reader(i));
@@ -141,7 +139,6 @@ Layer* construct_layer(lbann_comm* comm,
     #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       num_neurons_method_name = "num_neurons";
-      is_supported = true;
       num_neurons = params.num_neurons();
       if (proto_layer.num_neurons_from_data_reader()) {
         const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
@@ -150,15 +147,6 @@ Layer* construct_layer(lbann_comm* comm,
         }
         num_neurons = dr->get_linearized_data_size();
       }
-    }
-    if (num_neurons < 1) {
-      if (is_supported) {
-        err << "Failed to get num neurons via " << num_neurons_method_name << '.';
-      } else {
-        err << num_neurons_method_name << " is not supported by the reader.";
-      }
-      LBANN_ERROR(err.str());
-      return nullptr;
     }
     return new fully_connected_layer<layout, Dev>(comm,
                                                   num_neurons,
@@ -526,7 +514,7 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_and_()) { return new and_layer<layout, Dev>(comm); }
   if (proto_layer.has_or_())  { return new or_layer<layout, Dev>(comm); }
   if (proto_layer.has_xor_()) { return new xor_layer<layout, Dev>(comm); }
-  
+
   // Activation layers
   if (proto_layer.has_softmax()) {
     return new softmax_layer<layout, Dev>(comm);
@@ -597,7 +585,7 @@ Layer* construct_layer(lbann_comm* comm,
                                                                         params.width());
     }
   }
-  
+
   // Miscellaneous layers
   if (proto_layer.has_covariance()) {
     const auto& params = proto_layer.covariance();
@@ -607,7 +595,7 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.variance();
     return new variance_layer<layout, Dev>(comm, params.biased());
   }
-  
+
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());
