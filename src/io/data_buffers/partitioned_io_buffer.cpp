@@ -44,15 +44,15 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   /// Check to make sure that the local matrix has space for data
   if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local[0]->Height() != 0 && M_local[0]->Width() != 0)) {
     for(auto& m : M_local) {
-      Zero(*m);
+      Zero_seq(*m);
     }
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     if(M_local.size() == 2) {
-      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
+      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], m_indices_fetched_per_mb, data_reader);
     }else {
-      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], data_reader);
+      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], m_indices_fetched_per_mb, data_reader);
     }
     bool data_valid = (m_num_samples_fetched > 0);
     if(data_valid) {

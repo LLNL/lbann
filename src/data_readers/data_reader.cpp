@@ -52,10 +52,6 @@ void generic_data_reader::setup() {
   m_global_last_mini_batch_size = 0;
   m_world_master_mini_batch_adjustment = 0;
 
-  /// The amount of space needed will vary based on input layer type,
-  /// but the batch size is the maximum space necessary
-  El::Zeros(m_indices_fetched_per_mb, m_mini_batch_size, 1);
-
   set_initial_position();
 
   shuffle_indices();
@@ -67,7 +63,7 @@ void generic_data_reader::setup() {
 }
 
 
-int lbann::generic_data_reader::fetch_data(CPUMat& X) {
+  int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
 
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
@@ -81,7 +77,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
+    //    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
     for (int t = 0; t < nthreads; t++) {
       preprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
@@ -100,8 +96,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
 
   if (!m_save_minibatch_indices) {
-    El::Zeros(X, X.Height(), X.Width());
-    El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+    El::Zeros_seq(X, X.Height(), X.Width());
+    El::Zeros_seq(indices_fetched, mb_size, 1);
   }
 
   if (m_save_minibatch_indices) {
@@ -114,21 +110,23 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
   else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    //    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
+
       bool valid = fetch_datum(X, index, s, LBANN_OMP_THREAD_NUM);
       if (!valid) {
-        LBANN_DATA_FETCH_OMP_CRITICAL
+        //        LBANN_DATA_FETCH_OMP_CRITICAL
         error_message = "invalid datum (index " + std::to_string(index) + ")";
       }
+      indices_fetched.Set(s, 0, index);
     }
     if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
+    //    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
     for (int t = 0; t < nthreads; t++) {
       postprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
@@ -177,7 +175,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
-  El::Zeros(Y, Y.Height(), Y.Width());
+  El::Zeros_seq(Y, Y.Height(), Y.Width());
 
 //  if (m_data_store != nullptr) {
     //@todo: get it to work, then add omp support
@@ -186,13 +184,13 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
 
 //  else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    //    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_label(Y, index, s, LBANN_OMP_THREAD_NUM);
       if (!valid) {
-        LBANN_DATA_FETCH_OMP_CRITICAL
+        //        LBANN_DATA_FETCH_OMP_CRITICAL
         error_message = "invalid label (index " + std::to_string(index) + ")";
       }
     }
@@ -215,15 +213,15 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
-  El::Zeros(Y, Y.Height(), Y.Width());
+  El::Zeros_seq(Y, Y.Height(), Y.Width());
   std::string error_message;
-  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+  //  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_response(Y, index, s, LBANN_OMP_THREAD_NUM);
     if (!valid) {
-      LBANN_DATA_FETCH_OMP_CRITICAL
+      //      LBANN_DATA_FETCH_OMP_CRITICAL
       error_message = "invalid response (index " + std::to_string(index) + ")";
     }
   }
@@ -237,12 +235,6 @@ bool generic_data_reader::update(bool is_active_reader) {
 
   if(is_active_reader) {
     m_current_pos = get_next_position();
-
-    /// Maintain the current height of the matrix
-    if (!m_save_minibatch_indices) {
-      El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
-    }
-
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
   if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {

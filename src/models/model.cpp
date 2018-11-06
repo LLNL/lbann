@@ -36,6 +36,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -67,7 +68,8 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {
+    m_default_optimizer(default_optimizer),
+    m_io_thread_pool() {
 
       static int num_models = 0;
       m_name = "Model" + std::to_string(num_models);
@@ -415,6 +417,46 @@ void model::freeze_layers_under_frozen_surface() {
   }
 }
 
+void set_offset_affinity(int cpu_id = 0, int offset = 0) {
+  cpu_set_t cpuset, ht_cpuset;
+  CPU_ZERO(&cpuset);
+  CPU_ZERO(&ht_cpuset);
+
+  auto error = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (error != 0)
+    std::cerr << "error in pthread_getaffinity_np, error=" << error
+              << std::endl;
+
+  // std::cout << "Set returned by pthread_getaffinity_np() contained: {";
+  for (int j = 0; j < CPU_SETSIZE; j++)
+    if (CPU_ISSET(j, &cpuset)) {
+      // std::cout << " " << j;
+      CPU_SET(j+offset, &ht_cpuset);
+    }
+  // std::cout << " }" << std::endl;
+
+  // if (CPU_COUNT(&cpuset) > 1 || !CPU_ISSET(cpu_id, &cpuset)) {
+  //   CPU_ZERO(&cpuset);
+  //   CPU_SET(cpu_id, &cpuset);
+
+    error = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &ht_cpuset);
+    if (error != 0)
+      std::cerr << "error in pthread_setaffinity_np, error=" << error
+                << std::endl;
+
+  //   error = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //   if (error != 0)
+  //     std::cerr << "error in pthread_getaffinity_np, error=" << error
+  //               << std::endl;
+
+  //   std::cout << "Set returned by pthread_getaffinity_np() contained: {";
+  //   for (int j = 0; j < CPU_SETSIZE; j++)
+  //     if (CPU_ISSET(j, &cpuset))
+  //       std::cout << " " << j;
+  //   std::cout << " }" << std::endl;
+  // }
+}
+
 ////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////
@@ -440,6 +482,19 @@ void model::setup() {
   // Set up callbacks
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
+  }
+
+  // Setup I/O threads
+  // auto hw_cc = std::thread::hardware_concurrency();
+  // auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+
+  int num_io_threads = 1;
+  m_io_thread_pool.launch_threads(num_io_threads);
+  auto initialize_thread = [](int thread_id, int max_io_threads){
+    set_offset_affinity(0, 24);
+  };
+  for (int i = 0; i < num_io_threads; i++) {
+    m_io_thread_pool.submit_job(std::bind(initialize_thread,i,num_io_threads));
   }
 
 }
@@ -864,48 +919,29 @@ bool model::train_mini_batch() {
 
   bool finished;
 
-#pragma omp parallel
-  {
-    #pragma omp single
-    {
-      #pragma omp task
-      {
-        // Forward prop step
-        clear_gradients();
-        forward_prop(execution_mode::training);
-        // Result is not needed until the end of the mini-batch.
-        m_objective_function->start_evaluation(execution_mode::training,
-                                               get_current_mini_batch_size());
+  // Forward prop step
+  clear_gradients();
+  forward_prop(execution_mode::training);
+  // Result is not needed until the end of the mini-batch.
+  m_objective_function->start_evaluation(execution_mode::training,
+                                         get_current_mini_batch_size());
 
-        // Backward prop step
-        m_objective_function->differentiate();
-        backward_prop();
-        m_objective_function->compute_weight_regularization();
+  // Backward prop step
+  m_objective_function->differentiate();
+  backward_prop();
+  m_objective_function->compute_weight_regularization();
 
-        // Finish evaluation.
-        m_objective_function->finish_evaluation(execution_mode::training,
-                                                get_current_mini_batch_size());
-        for (const auto& m : m_metrics) {
-          m->evaluate(execution_mode::training,
-                      get_current_mini_batch_size());
-        }
+  // Finish evaluation.
+  m_objective_function->finish_evaluation(execution_mode::training,
+                                          get_current_mini_batch_size());
+  for (const auto& m : m_metrics) {
+    m->evaluate(execution_mode::training,
+                get_current_mini_batch_size());
+  }
 
-        // Update step
-        update_weights();
-        finished = update_layers();
-      } // end FP/BP task
-
-      #pragma omp task
-      {
-        for (const auto& layer : m_layers) {
-          auto *input = dynamic_cast<generic_input_layer*>(layer);
-          if(input != nullptr) {
-            input->fetch_data_in_background();
-          }
-        }
-      }
-    } /* end OMP single */
-  } /* end OMP parallel */
+  // Update step
+  update_weights();
+  finished = update_layers();
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);

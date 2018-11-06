@@ -87,7 +87,7 @@ void data_reader_mnist_siamese::set_input_params(
  * Fill the input minibatch matrix with the samples of image pairs by using
  * the overloaded fetch_datum()
  */
-int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
+int data_reader_mnist_siamese::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
     throw lbann_exception(
@@ -111,8 +111,8 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     X.Width());
 
-  El::Zeros(X, X.Height(), X.Width());
-  El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
+  El::Zeros_seq(X, X.Height(), X.Width());
+  El::Zeros_seq(indices_fetched, mb_size, 1);
 
   std::string error_message;
   LBANN_DATA_FETCH_OMP_PARALLEL_FOR
@@ -122,7 +122,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
     bool valid = fetch_datum(X, index, s, omp_get_thread_num());
     if (valid) {
       El::Int index_coded = m_shuffled_indices[n] + m_shuffled_indices2[n]*(std::numeric_limits<label_t>::max()+1);
-      m_indices_fetched_per_mb.Set(s, 0, index_coded);
+      indices_fetched.Set(s, 0, index_coded);
     } else{
 #pragma omp critical
       error_message = "invalid datum";

@@ -77,7 +77,7 @@ class data_reader_mnist_siamese : public data_reader_multi_images {
   void load() override;
 
   /// Fetch this mini-batch's samples into X by calling the new overloaded fetch_datum()
-  int fetch_data(CPUMat& X) override;
+  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
   /// Fetch this mini-batch's labels into Y by calling the new overloaded fetch_label()
   int fetch_labels(CPUMat& Y) override;
 

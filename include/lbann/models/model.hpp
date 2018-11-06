@@ -40,6 +40,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <lbann.pb.h>
 #include <vector>
 #include <string>
@@ -73,7 +74,7 @@ class model {
   virtual std::string get_type() const = 0;
 
   void set_name(std::string name);
-  
+
   std::string get_name() const {
     return m_name;
   }
@@ -122,13 +123,16 @@ class model {
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
-  /** Copy trained weights from input parameter w. 
+  /** Copy trained weights from input parameter w.
  *  Only weight values are placed, pointers and layer structure are in place.
  *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
 
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
+
+  /** Return the I/O thread pool */
+  thread_pool& get_io_thread_pool() { return m_io_thread_pool; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
@@ -284,6 +288,9 @@ class model {
   /** List of weights in model. */
   std::vector<weights *> m_weights;
 
+  /** Threads available for I/O */
+  thread_pool m_io_thread_pool;
+
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
   /** Print out the description of a layer set up. */
@@ -343,7 +350,7 @@ class model {
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each optimizer's gradient. 
+  /** Clear each optimizer's gradient.
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */

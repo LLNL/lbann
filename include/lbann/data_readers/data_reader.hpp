@@ -64,7 +64,7 @@ class generic_data_reader : public lbann_image_preprocessor {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
- #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; } 
+ #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
 
   /**
    * ctor
@@ -273,7 +273,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X);
+  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's labels into Y.
   virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
@@ -490,10 +490,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Get a pointer to the start of the unused sample indices.
   int *get_unused_data() {
     return &m_unused_indices[0];
-  }
-  /// Get a pointer to the fetched indices matrix.
-  El::Matrix<El::Int>* get_indices_fetched_per_mb() {
-    return &m_indices_fetched_per_mb;
   }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
@@ -810,9 +806,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_role;
 
   bool m_master;
-
-  /// 1-D Matrix of which indices were fetched in this mini-batch
-  El::Matrix<El::Int> m_indices_fetched_per_mb;
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;

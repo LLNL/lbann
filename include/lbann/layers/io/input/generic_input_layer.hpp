@@ -34,6 +34,9 @@
 #include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+
+#include <future>
 
 namespace lbann {
 class generic_input_layer : public io_layer {
@@ -48,7 +51,7 @@ class generic_input_layer : public io_layer {
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
     : io_layer(comm, data_set_spans_models, dr_mode),
       m_io_buffers(),
-      m_active_buffer(0),
+      m_active_buffer(-1),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
@@ -76,7 +79,6 @@ class generic_input_layer : public io_layer {
     if(m_data_readers[execution_mode::testing] != nullptr) {
       m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
-    omp_init_lock(&dr_lock);
   }
 
   ~generic_input_layer() override {
@@ -87,7 +89,6 @@ class generic_input_layer : public io_layer {
     for (auto& dr : m_data_readers) {
       delete dr.second;
     }
-    omp_destroy_lock(&dr_lock);
   }
 
   // Input layers copy their datareaders.
@@ -228,20 +229,20 @@ class generic_input_layer : public io_layer {
     }
   }
 
-  void fetch_data_in_background() {
-    int active_buffer = m_active_buffer % m_io_buffers.size();
+  void fetch_data_in_background(int future_active_buffer, std::string foo) {
+    int active_buffer = future_active_buffer % m_io_buffers.size();
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
 
     if(!m_data_set_processed && m_io_buffers.size() > 1) {
-      //      if(omp_test_lock(&dr_lock)) {
-      //      std::cout << "I am about to fetch some data in the background" << std::endl;
+      std::lock_guard<std::mutex> guard(dr_mutex);
       execution_mode mode = this->m_model->get_execution_mode();
-      io_buffer = m_io_buffers[active_buffer];
-      omp_set_lock(&dr_lock);
+      if (m_comm->am_model_master()) {
+        std::cout << foo << ": I am about to fetch some data in the background for execution mode " << _to_string(mode) << " and placing it in the buffer id " << future_active_buffer  << " and the buffer pointer is " << io_buffer << std::endl;
+      }
       setup_next_io_buffer(io_buffer);
       io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
-      omp_unset_lock(&dr_lock);
     }
+    return;
   }
 
   void fp_compute() override {
@@ -251,17 +252,31 @@ class generic_input_layer : public io_layer {
     /// the data_store (via the data_reader) to read in the
     /// next mb from file, then exchange data as needed
     get_data_reader()->init_minibatch();
+    m_active_buffer++;
 
     generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
 
-    omp_set_lock(&dr_lock);
+    // If there is no valid data and there is not already a background
+    // thread to fetch the data, queue up the background thread
+    if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->fetch_data_in_background) {
+      io_buffer->data_fetch_future = this->m_model->get_io_thread_pool().submit_job(
+        std::bind(&generic_input_layer::fetch_data_in_background, this, m_active_buffer.load(), "PRIMARY"));
+      io_buffer->fetch_data_in_background = true;
+    }
+
+    // Wait for the background thread to complete fetching the data
+    if(io_buffer->fetch_data_in_background) {
+      io_buffer->data_fetch_future.get();
+      io_buffer->fetch_data_in_background = false;
+    }
+
     int num_samples_in_batch;
     if(io_buffer->num_samples_ready(mode) > 0) {
       num_samples_in_batch = io_buffer->num_samples_ready(mode);
       //      std::cout << "fp_compute already has data" << std::endl;
     }else {
       num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
-      //      std::cout << "fp_compute is fetching data" << std::endl;
+            std::cout << "fp_compute is fetching data" << std::endl;
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
@@ -314,9 +329,15 @@ class generic_input_layer : public io_layer {
     }
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
-    /// Only update the active buffer index once the entire FP, BP, update phases are completed
-    m_active_buffer++;
-    omp_unset_lock(&dr_lock);
+
+    if(!m_data_set_processed) {
+      int next_active_buffer = m_active_buffer + 1;
+      std::future<void> background_fetch_done = this->m_model->get_io_thread_pool().submit_job(
+        std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, "BACKGROUND"));
+      generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
+      next_io_buffer->data_fetch_future = std::move(background_fetch_done);
+      next_io_buffer->fetch_data_in_background = true;
+    }
   }
 
   void setup_next_io_buffer(generic_io_buffer* io_buffer) {
@@ -558,8 +579,8 @@ class generic_input_layer : public io_layer {
    * Return the sample indices fetched in the current mini-batch.
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
-    generic_data_reader *dr = get_data_reader();
-    return dr->get_indices_fetched_per_mb();
+    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
+    return &(io_buffer->m_indices_fetched_per_mb);
   }
 
   /**
@@ -907,7 +928,7 @@ class generic_input_layer : public io_layer {
 
  protected:
   std::vector<generic_io_buffer*> m_io_buffers;
-  int m_active_buffer;
+  std::atomic<int> m_active_buffer;
 
   dataset m_training_dataset;
   dataset m_testing_dataset;
@@ -917,7 +938,7 @@ class generic_input_layer : public io_layer {
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
   bool m_data_set_processed;
-  omp_lock_t dr_lock;
+  std::mutex dr_mutex;
 };
 
 template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {

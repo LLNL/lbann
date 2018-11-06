@@ -140,10 +140,10 @@ std::vector<data_reader_multi_images::sample_t> data_reader_multi_images::get_im
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-    ret.push_back(m_image_list[index]);
-  }
+  // for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+  //   El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  //   ret.push_back(m_image_list[index]);
+  // }
   return ret;
 }
 

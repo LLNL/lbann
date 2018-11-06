@@ -27,6 +27,8 @@ if (LBANN_HAS_CUDA)
     )
 endif ()
 
+add_subdirectory(threads)
+
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
 set(CUDA_SOURCES "${CUDA_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
