@@ -30,7 +30,11 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 
-// Output has minimum value to avoid denormalized floats
+// Threshold outputs to a minimum value.
+// If enabled, the minimum output value is sqrt(min), where min is the
+// minimum, normalized, positive value (~1e-19 for float and ~1e-154
+// for double). The gradients w.r.t. input will be inaccurate, on the
+// order of the minimum output value.
 #define LBANN_ENABLE_SOFTMAX_CUTOFF
 
 namespace lbann {

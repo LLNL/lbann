@@ -31,13 +31,31 @@ namespace lbann {
 namespace {
 
 /** Minimum output value to avoid denormalized floats. */
-__device__ DataType get_min_output() {
+inline __device__ DataType get_min_output() {
 #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
   return cuda::sqrt(cuda::min<DataType>());
 #else
   return DataType(0);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 }
+
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+/** Operator for thresholding output. */
+struct fp_threshold_op {
+  const DataType min_output = get_min_output();
+  inline __device__ DataType operator()(const DataType& y) const {
+    return cuda::max(y, min_output);
+  }
+};
+/** Operator for thresholding gradient w.r.t. input. */
+struct bp_threshold_op {
+  const DataType min_output = get_min_output();
+  inline __device__ DataType operator()(const DataType& y,
+                                        const DataType& dx) const {
+    return (y > min_output) ? dx : DataType(0);
+  }
+};
+#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
 /** Find largest entry within each CUDA block.
  *  Each block is assigned several entries from the same mini-batch
@@ -182,16 +200,13 @@ __global__ void bp_dot_product_kernel(El::Int height, El::Int width,
   const El::Int nblocksy = gridDim.y;
 
   // Compute dot product for each matrix column independently
-  const auto& min_output = get_min_output();
   for (El::Int col = bidy; col < width; col += nblocksy) {
 
     // Compute dot product contribution for each thread
     DataType private_dot_product = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& y = output[row + col * output_ldim];
-      const auto& dy = (y > min_output ?
-                        gradient_wrt_output[row + col * gradient_wrt_output_ldim] :
-                        DataType(0));
+      const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       private_dot_product += y * dy;
     }
 
@@ -235,24 +250,72 @@ __global__ void bp_kernel(El::Int height, El::Int width,
     const auto& y_dot_dy = dot_products[col * dot_products_stride];
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& y = output[row + col * output_ldim];
-      const auto& dy = (y > min_output ?
-                        gradient_wrt_output[row + col * gradient_wrt_output_ldim] :
-                        DataType(0));
+      const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-      dx = y * (dy - y_dot_dy);
+      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
     }
   }
 }
 
-void fp(lbann_comm& comm,
-        const AbsDistMat& input,
-        AbsDistMat& output,
-        AbsDistMat& workspace) {
+} // namespace
+
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+  constexpr DataType zero = 0;
+  constexpr DataType one = 1;
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+  if (!local_input.IsEmpty()) {
+    CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
+                                    CUDNN_SOFTMAX_ACCURATE,
+                                    CUDNN_SOFTMAX_MODE_INSTANCE,
+                                    &one,
+                                    m_tensors_cudnn_desc.get_prev_activations(),
+                                    local_input.LockedBuffer(),
+                                    &zero,
+                                    m_tensors_cudnn_desc.get_activations(),
+                                    local_output.Buffer()));
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+    cuda::apply_entrywise_unary_operator<fp_threshold_op>(local_output,
+                                                          local_output);
+#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+  }
+}
+
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+  constexpr DataType zero = 0;
+  constexpr DataType one = 1;
+  const auto& local_output = get_local_activations();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+  if (!local_output.IsEmpty()) {
+    CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
+                                     CUDNN_SOFTMAX_ACCURATE,
+                                     CUDNN_SOFTMAX_MODE_INSTANCE,
+                                     &one,
+                                     m_tensors_cudnn_desc.get_activations(),
+                                     local_output.LockedBuffer(),
+                                     m_tensors_cudnn_desc.get_prev_error_signals(),
+                                     local_gradient_wrt_output.LockedBuffer(),
+                                     &zero,
+                                     m_tensors_cudnn_desc.get_error_signals(),
+                                     local_gradient_wrt_input.Buffer()));
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+    cuda::apply_entrywise_binary_operator<bp_threshold_op>(local_output,
+                                                           local_gradient_wrt_input,
+                                                           local_gradient_wrt_input);
+#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+  }
+}
+
+template <>
+void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 
   // Local matrices
-  const auto& local_input = input.LockedMatrix();
-  auto& local_output = output.Matrix();
-  auto& local_workspace = workspace.Matrix();
+  const auto& local_input = get_local_prev_activations();
+  auto& local_output = get_local_activations();
+  auto& local_workspace = m_workspace->Matrix();
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -288,11 +351,11 @@ void fp(lbann_comm& comm,
       max_vals.data().get());
   }
   El::mpi::AllReduce(max_vals.data().get(), max_vals.size(),
-                     El::mpi::MAX, workspace.RedundantComm(),
+                     El::mpi::MAX, m_workspace->RedundantComm(),
                      sync_info);
 
   // Exponentiate outputs and compute column sums
-  El::Zero(workspace);
+  El::Zero(*m_workspace);
   if (!local_output.IsEmpty()) {
     grid_dims.x = (local_height + block_size - 1) / block_size;
     fp_exp_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
@@ -302,7 +365,7 @@ void fp(lbann_comm& comm,
       max_vals.data().get(), 1,
       local_workspace.Buffer(), 1);
   }
-  El::AllReduce(workspace, workspace.RedundantComm());
+  El::AllReduce(*m_workspace, m_workspace->RedundantComm());
 
   // Divide activations by column sums
   if (!local_output.IsEmpty()) {
@@ -315,17 +378,14 @@ void fp(lbann_comm& comm,
 
 }
 
-void bp(lbann_comm& comm,
-        const AbsDistMat& output,
-        const AbsDistMat& gradient_wrt_output,
-        AbsDistMat& gradient_wrt_input,
-        AbsDistMat& workspace) {
+template <>
+void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
 
   // Local matrices
-  const auto& local_output = output.LockedMatrix();
-  const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-  auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
-  auto& local_workspace = workspace.Matrix();
+  const auto& local_output = get_local_activations();
+  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = get_local_error_signals();
+  auto& local_workspace = m_workspace->Matrix();
   const auto& local_height = local_output.Height();
   const auto& local_width = local_output.Width();
 
@@ -355,7 +415,7 @@ void bp(lbann_comm& comm,
         local_gradient_wrt_output.LDim(),
         local_workspace.Buffer(), 1);
   }
-  El::AllReduce(workspace, workspace.RedundantComm());
+  El::AllReduce(*m_workspace, m_workspace->RedundantComm());
 
   // Compute gradient w.r.t. input
   if (!local_output.IsEmpty()) {
@@ -371,42 +431,6 @@ void bp(lbann_comm& comm,
       local_gradient_wrt_input.LDim());
   }
 
-}
-
-} // namespace
-
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
-     *m_workspace);
-}
-
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
-     *m_workspace);
-}
-
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
-     *m_workspace);
-}
-
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
-     *m_workspace);
 }
 
 } // namespace lbann

@@ -112,9 +112,7 @@ void bp(lbann_comm& comm,
     auto& y_dot_dy = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& y = local_output(row, col);
-      const auto& dy = (y > min_output ?
-                        local_gradient_wrt_output(row, col) :
-                        DataType(0));
+      const auto& dy = local_gradient_wrt_output(row, col);
       y_dot_dy += y * dy;
     }
   }
@@ -126,11 +124,9 @@ void bp(lbann_comm& comm,
     const auto& y_dot_dy = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& y = local_output(row, col);
-      const auto& dy = (y > min_output ?
-                        local_gradient_wrt_output(row, col) :
-                        DataType(0));
+      const auto& dy = local_gradient_wrt_output(row, col);
       auto& dx = local_gradient_wrt_input(row, col);
-      dx = y * (dy - y_dot_dy);
+      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
     }
   }
 
