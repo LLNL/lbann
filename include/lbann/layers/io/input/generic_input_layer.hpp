@@ -233,15 +233,13 @@ class generic_input_layer : public io_layer {
     int active_buffer = future_active_buffer % m_io_buffers.size();
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
 
-    if(!m_data_set_processed && m_io_buffers.size() > 1) {
-      std::lock_guard<std::mutex> guard(dr_mutex);
-      execution_mode mode = this->m_model->get_execution_mode();
-      if (m_comm->am_model_master()) {
-        std::cout << foo << ": I am about to fetch some data in the background for execution mode " << _to_string(mode) << " and placing it in the buffer id " << future_active_buffer  << " and the buffer pointer is " << io_buffer << std::endl;
-      }
-      setup_next_io_buffer(io_buffer);
-      io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    std::lock_guard<std::mutex> guard(dr_mutex);
+    execution_mode mode = this->m_model->get_execution_mode();
+    if (m_comm->am_model_master()) {
+      std::cout << foo << ": I am about to fetch some data in the background for execution mode " << _to_string(mode) << " and placing it in the buffer id " << future_active_buffer  << " and the buffer pointer is " << io_buffer << std::endl;
     }
+    setup_next_io_buffer(io_buffer);
+    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
     return;
   }
 
