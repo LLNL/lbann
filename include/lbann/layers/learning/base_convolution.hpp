@@ -131,13 +131,13 @@ class base_convolution_layer : public learning_layer {
         break;
       }
     }
-    if (Dev != El::Device::GPU && nonunit_dilation) {
+    if (Dev == El::Device::CPU && nonunit_dilation) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
           << "has nonunit dilation which is only supported on GPUs";
       LBANN_ERROR(err.str());
     }
-    if (Dev != El::Device::GPU && m_num_groups > 1) {
+    if (Dev == El::Device::CPU && m_num_groups > 1) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
           << "has nonunit groups " << m_num_groups
@@ -274,7 +274,7 @@ class base_convolution_layer : public learning_layer {
     }
     auto& kernel_weights = *this->m_weights[0];
     auto& bias_weights = *this->m_weights[1];
-    
+
     // Initialize variance scaling initialization
     auto* cast_initializer
       = dynamic_cast<variance_scaling_initializer*>(kernel_weights.get_initializer());
@@ -318,7 +318,7 @@ class base_convolution_layer : public learning_layer {
         LBANN_ERROR(err.str());
       }
     }
-    
+
   }
 
   /// Initialize GPU objects
@@ -384,7 +384,7 @@ class base_convolution_layer : public learning_layer {
         || output.Height() < 1 || output.Width() < 1) {
       return;
     }
-    
+
     // Initialize GPU workspace
     GPUMat workspace;
 #ifdef HYDROGEN_HAVE_CUB
@@ -614,7 +614,7 @@ class base_convolution_layer : public learning_layer {
           = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
         #endif
         if (using_transposed_convolution) {
-          #ifndef LBANN_DETERMINISTIC 
+          #ifndef LBANN_DETERMINISTIC
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  gradient_wrt_output_desc,
                                                                  input_desc,
@@ -639,7 +639,7 @@ class base_convolution_layer : public learning_layer {
                                                      m_kernel_gradient.Buffer()));
         }
         else {
-          #ifndef LBANN_DETERMINISTIC 
+          #ifndef LBANN_DETERMINISTIC
           CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
                                                                  input_desc,
                                                                  gradient_wrt_output_desc,
