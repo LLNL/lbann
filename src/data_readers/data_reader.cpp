@@ -122,6 +122,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
         LBANN_DATA_FETCH_OMP_CRITICAL
         error_message = "invalid datum (index " + std::to_string(index) + ")";
       }
+      m_indices_fetched_per_mb.Set(s, 0, index);
     }
     if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
@@ -149,7 +150,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
 
   m_reset_mini_batch_index = 0;
   m_loaded_mini_batch_idx = 0;
-  m_current_mini_batch_idx = 0;  
+  m_current_mini_batch_idx = 0;
 
   m_stride_to_next_mini_batch = mb_size;
   m_stride_to_last_mini_batch = mb_size;
@@ -246,11 +247,6 @@ bool generic_data_reader::update(bool is_active_reader) {
 
   if(is_active_reader) {
     m_current_pos = get_next_position();
-
-    /// Maintain the current height of the matrix
-    if (!m_save_minibatch_indices) {
-      El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
-    }
 
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
