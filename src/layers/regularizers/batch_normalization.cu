@@ -31,67 +31,6 @@ namespace lbann {
 
 namespace {
 
-// Atomic add functions
-#if __CUDA_ARCH__ >= 530
-__device__ inline __half atomic_add(__half* address, __half val) {
-  static_cast<void>(static_cast<__half (*)(__half*, __half)>(atomic_add)); // Suppress "unused function" warning
-#if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
-  return atomicAdd(address, val);
-#else
-  unsigned int* address_as_uint = (unsigned int*) address;
-  unsigned int old = *address_as_uint;
-  __half* old_as_half = (__half*) &old;
-  unsigned int assumed;
-  unsigned int updated;
-  __half* updated_as_half = (__half*) &updated;
-  do {
-    assumed = old;
-    updated = old;
-    *updated_as_half += value;
-    old = atomicCAS(address_as_uint, assumed, updated);
-  } while (assumed != old);
-  return *old_as_half;
-#endif // 0
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float atomic_add(float* address, float val) {
-  static_cast<void>(static_cast<float (*)(float*, float)>(atomic_add)); // Suppress "unused function" warning
-  return atomicAdd(address, val);
-}
-__device__ inline double atomic_add(double* address, double val) {
-  static_cast<void>(static_cast<double (*)(double*, double)>(atomic_add)); // Suppress "unused function" warning
-#if __CUDA_ARCH__ >= 600
-  return atomicAdd(address, val);
-#else
-  unsigned long long int* address_as_ull =
-    (unsigned long long int*)address;
-  unsigned long long int old = *address_as_ull, assumed;
-  do {
-    assumed = old;
-    old = atomicCAS(address_as_ull, assumed,
-                    __double_as_longlong(val +
-                                         __longlong_as_double(assumed)));
-  } while (assumed != old);
-  return __longlong_as_double(old);
-#endif // __CUDA_ARCH__ < 600
-}
-
-// Reciprocal square root functions
-#if __CUDA_ARCH__ >= 530
-__device__ inline float rsqrt_(__half x) {
-  static_cast<void>(static_cast<__half (*)(__half)>(rsqrt_)); // Suppress "unused function" warning
-  return hrsqrt(x);
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float rsqrt_(float x) {
-  static_cast<void>(static_cast<float (*)(float)>(rsqrt_)); // Suppress "unused function" warning
-  return rsqrtf(x);
-}
-__device__ inline double rsqrt_(double x) {
-  static_cast<void>(static_cast<double (*)(double)>(rsqrt_)); // Suppress "unused function" warning
-  return rsqrt(x);
-}
-
 /** CUDA kernel to compute channel sums.
  *  Sums and squares of sums are used to compute mean and variance.
  */
@@ -138,8 +77,8 @@ __global__ void channel_sums_kernel(
 
   // Output channel sum to global memory
   if (tid == 0) {
-    atomic_add(&sums[bidy], shared_sums[0]);
-    atomic_add(&sqsums[bidy], shared_sqsums[0]);
+    cuda::atomic_add(&sums[bidy], shared_sums[0]);
+    cuda::atomic_add(&sqsums[bidy], shared_sqsums[0]);
   }
 
 }
@@ -204,7 +143,7 @@ __global__ void batch_normalization_kernel(
   const auto& bias = global_bias[bidy];
 
   // Get reciprocal of standard deviation
-  const auto& inv_stdev = rsqrt_(var + epsilon);
+  const auto& inv_stdev = cuda::rsqrt(var + epsilon);
 
   // Apply batch normalization
   if (gidx < channel_height) {
@@ -255,7 +194,7 @@ __global__ void backprop1_kernel(
 
   // Compute useful constants
   constexpr DataType zero = 0;
-  const auto& inv_stdev = rsqrt_(var + epsilon);
+  const auto& inv_stdev = cuda::rsqrt(var + epsilon);
   const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
 
   // Compute row-wise gradient contributions in shared memory
@@ -295,10 +234,10 @@ __global__ void backprop1_kernel(
 
   // Output channel sum to global memory
   if (tid == 0) {
-    atomic_add(&global_dscale[bidy], shared_dscale[0]);
-    atomic_add(&global_dbias[bidy], shared_dbias[0]);
-    atomic_add(&global_dmean[bidy], shared_dmean[0]);
-    atomic_add(&global_dvar[bidy], shared_dvar[0]);
+    cuda::atomic_add(&global_dscale[bidy], shared_dscale[0]);
+    cuda::atomic_add(&global_dbias[bidy], shared_dbias[0]);
+    cuda::atomic_add(&global_dmean[bidy], shared_dmean[0]);
+    cuda::atomic_add(&global_dvar[bidy], shared_dvar[0]);
   }
 
 }
@@ -334,7 +273,7 @@ __global__ void backprop2_kernel(
   const auto& dvar = global_dvar[bidy];
 
   // Compute useful constants
-  const auto& inv_stdev = rsqrt_(var + epsilon);
+  const auto& inv_stdev = cuda::rsqrt(var + epsilon);
   const auto& dmean_term = dmean / num_per_sum;
   const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 

@@ -50,7 +50,9 @@
 #include "lbann/layers/activations/logsoftmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
-#include "lbann/layers/activations/sigmoid_bce_with_logits.hpp"
+
+/// Image Layers
+#include "lbann/layers/image/bilinear_resize.hpp"
 
 /// Learning Layers
 #include "lbann/layers/learning/fully_connected.hpp"
@@ -58,10 +60,12 @@
 #include "lbann/layers/learning/deconvolution.hpp"
 
 /// Loss Layers
+#include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/entrywise.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
 #include "lbann/layers/loss/mean_squared_error.hpp"
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
-#include "lbann/layers/loss/l2_norm2.hpp"
 
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
@@ -105,6 +109,10 @@
 
 /// Reconstruction Layer
 #include "lbann/layers/io/target/reconstruction.hpp"
+
+/// Miscellaneous Layers
+#include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/variance.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"

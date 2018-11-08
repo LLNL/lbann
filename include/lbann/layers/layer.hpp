@@ -68,14 +68,7 @@ class Layer {
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
-#ifdef LBANN_HAS_GPU
-  virtual ~Layer() {
-    // Clean up the event (only needs to be done on LBANN exit).
-    cudaEventDestroy(m_async_HtoD_copy_event);
-  }
-#else
-   virtual ~Layer() = default;
-#endif // LBANN_HAS_GPU
+  virtual ~Layer() = default;
 
   /** Copy function.
    *  This function dynamically allocates memory for a layer instance
@@ -510,11 +503,6 @@ class Layer {
    */
   std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
-#ifdef LBANN_HAS_GPU
-  // API reference: https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__EVENT.html
-  cudaEvent_t m_async_HtoD_copy_event;
-  bool m_issue_async_HtoD_copy_event;
-#endif // LBANN_HAS_GPU
 };
 
 } // namespace lbann

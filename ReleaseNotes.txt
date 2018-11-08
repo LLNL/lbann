@@ -8,15 +8,35 @@ Support for new layers:
  - Basic math functions
  - Weights layer, which outputs a weights tensor
  - L2 norm squared
+ - Binary cross entropy loss and sigmoid binary cross entropy loss
+ - Boolean accuracy, Boolean false negative rate, Boolean false positive rate
+ - Bilinear resize
+ - Variance and covariance
 
 Performance optimizations:
 
 Model portability & usability:
  - Option for weight initialization with user-provided list of values
+ - Callback to save any layer output as an image
 
 Internal features:
+ - Provide compile time option to selectively disable OpenMP for data fetching loop
+ - Thrust calls no longer involve the default CUDA stream
 
 I/O & data readers:
+ - Reworked jag_conduit data reader:
+   - Support the updated JAG simulation data output format
+   - Use direct HDF5 I/O for on-demand data loading with Conduit
+   - Ingest a unique set of data files per instance
+   - Allow exclusive data partitioning among multiple trainers
+   - Multi-channel images
+   - Normalization of JAG data
+   - Interface to select images of specific views and time indices
+   - Interface to describe how to slice JAG data
+   - Avoid redundant fetching and incoherent random number pulls in the group of local data readers
+
+Build system:
+ - Support cross-compilation configurations in superbuild and SetupProtobuf
 
 ============================== Release Notes: v0.95 ==============================
 Support for new training algorithms:

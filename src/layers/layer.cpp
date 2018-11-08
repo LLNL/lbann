@@ -34,15 +34,17 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+// Asynchronous memory transfers for input data
+// Note: This introduces a race condition. It is possible for the
+// input data to be modified by another layer before it is used by
+// this layer.
+// #define ASYNC_INPUT_MEMORY_TRANSFER
+
 namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
   : m_comm(comm),
-    m_frozen(false)
-#ifdef LBANN_HAS_GPU
-    , m_issue_async_HtoD_copy_event(false)
-#endif // LBANN_HAS_GPU
-{
+    m_frozen(false) {
 
   // Initialize layer name
   static int num_layers = 0;
@@ -51,11 +53,7 @@ Layer::Layer(lbann_comm *comm)
 
   // Reset timing counters
   reset_counters();
-
-#ifdef LBANN_HAS_GPU
-  // Initialize event. Disabling timing results in a more efficient event.
-  cudaEventCreateWithFlags(&m_async_HtoD_copy_event, cudaEventDisableTiming);
-#endif // LBANN_HAS_GPU
+  
 }
 
 Layer::Layer(const Layer& other) :
@@ -73,11 +71,7 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_output_dims_list(other.m_output_dims_list)
-#ifdef LBANN_HAS_GPU
-  , m_issue_async_HtoD_copy_event(other.m_issue_async_HtoD_copy_event)
-#endif // LBANN_HAS_GPU
-{
+  m_output_dims_list(other.m_output_dims_list) {
 
   // Deep matrix copies
   m_inputs.reserve(other.m_inputs.size());
@@ -117,9 +111,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_update_time = other.m_update_time;
   m_name = other.m_name;
   m_output_dims_list = other.m_output_dims_list;
-#ifdef LBANN_HAS_GPU
-  m_issue_async_HtoD_copy_event = other.m_issue_async_HtoD_copy_event;
-#endif // LBANN_HAS_GPU
 
   // Deep matrix copies
   m_inputs.clear();
@@ -887,15 +878,6 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
   const auto& alignment_dist
     = m_parent_layers.front()->get_activations(*this).DistData();
 
-#ifdef LBANN_HAS_GPU
-  if(m_issue_async_HtoD_copy_event) {
-    // Wait for the event to complete.
-    // After this returns, all work on the stream prior to the event record has completed.
-    cudaEventSynchronize(m_async_HtoD_copy_event);
-    m_issue_async_HtoD_copy_event = false;
-  }
-#endif // LBANN_HAS_GPU
-
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
@@ -908,21 +890,21 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
     } else {
-#ifdef LBANN_HAS_GPU
-      // If we are going from Host to Device and have the same distribution
-      // then we can use asynchronous local I/O
-      if(parent_output.GetLocalDevice() == El::Device::CPU &&
-         input.GetLocalDevice() == El::Device::GPU &&
-         parent_output.ColDist() == input.ColDist() &&
-         parent_output.RowDist() == input.RowDist()) {
-        El::CopyAsync(parent_output, input);
-        m_issue_async_HtoD_copy_event = true;
-      }else {
-#endif // LBANN_HAS_GPU
-        El::Copy(parent_output, input);
-#ifdef LBANN_HAS_GPU
+      bool async_copy = false;
+#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
+      if (parent_output.GetLocalDevice() == El::Device::CPU
+          && input.GetLocalDevice() == El::Device::GPU) {
+        auto parent_dist_data = parent_output.DistData();
+        parent_dist_data.device = El::Device::GPU;
+        async_copy = parent_dist_data == input.DistData();
       }
-#endif // LBANN_HAS_GPU
+#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      if (async_copy) {
+        El::CopyAsync(parent_output, input);
+      } else {
+        El::Copy(parent_output, input);
+      }
     }
 
     // Check input matrix dimensions
@@ -939,13 +921,7 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     }
 
   }
-
-#ifdef LBANN_HAS_GPU
-  if(m_issue_async_HtoD_copy_event) {
-    // Record the asynchronous copy on the stream.
-    cudaEventRecord(m_async_HtoD_copy_event, El::GPUManager::Stream());
-  }
-#endif // LBANN_HAS_GPU
+  
 }
 
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {
@@ -980,7 +956,21 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
         == gradient_wrt_output.DistData()) {
       El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
     } else {
-      El::Copy(child_gradient_wrt_input, gradient_wrt_output);
+      bool async_copy = false;
+#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
+      if (child_gradient_wrt_input.GetLocalDevice() == El::Device::CPU
+          && gradient_wrt_output.GetLocalDevice() == El::Device::GPU) {
+        auto child_dist_data = child_gradient_wrt_input.DistData();
+        child_dist_data.device = El::Device::GPU;
+        async_copy = child_dist_data == gradient_wrt_output.DistData();
+      }
+#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      if (async_copy) {
+        El::CopyAsync(child_gradient_wrt_input, gradient_wrt_output);
+      } else {
+        El::Copy(child_gradient_wrt_input, gradient_wrt_output);
+      }
     }
 
     // Check gradient w.r.t. output matrix dimensions
