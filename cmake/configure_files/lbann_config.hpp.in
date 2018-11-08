@@ -32,6 +32,7 @@
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 
+#cmakedefine LBANN_VTUNE
 #cmakedefine LBANN_NVPROF
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
