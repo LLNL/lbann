@@ -415,8 +415,8 @@ if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()
 
-if (TARGET CXX::werror)
-  target_link_libraries(lbann PUBLIC CXX::werror)
+if (TARGET LBANN_CXX_FLAGS::werror)
+  target_link_libraries(lbann PUBLIC LBANN_CXX_FLAGS::werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
