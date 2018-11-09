@@ -490,7 +490,7 @@ install(
 # Install export
 install(EXPORT LBANNTargets
   NAMESPACE LBANN::
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/lbann")
+  DESTINATION "${CMAKE_INSTALL_DIR}")
 
 # Install the cmake stuff
 install(FILES
@@ -499,7 +499,8 @@ install(FILES
   RENAME "LBANNConfig.cmake")
 install(FILES "${PROJECT_BINARY_DIR}/LBANNConfigVersion.cmake"
   DESTINATION ${CMAKE_INSTALL_DIR})
-install(DIRECTORY cmake/modules DESTINATION lib/cmake/lbann
+install(DIRECTORY cmake/modules
+  DESTINATION "${CMAKE_INSTALL_DIR}"
   FILES_MATCHING PATTERN "*.cmake")
 
 # Install header files
