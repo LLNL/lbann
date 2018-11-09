@@ -84,7 +84,7 @@ if (${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS)
   lbann_check_and_append_flag(_WERROR_FLAGS -Werror)
   separate_arguments(_WERROR_FLAGS NATIVE_COMMAND "${_WERROR_FLAGS}")
   if (NOT TARGET CXX::werror)
-    add_library(CXX::werror INTERFACE IMPORTED)
+    add_library(CXX::werror INTERFACE)
     set_property(TARGET CXX::werror PROPERTY
       INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:${_WERROR_FLAGS}>)
 
