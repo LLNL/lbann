@@ -83,13 +83,13 @@ lbann_check_and_append_flag(CMAKE_CXX_FLAGS_DEBUG -O0)
 if (${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS)
   lbann_check_and_append_flag(_WERROR_FLAGS -Werror)
   separate_arguments(_WERROR_FLAGS NATIVE_COMMAND "${_WERROR_FLAGS}")
-  if (NOT TARGET LBANN_CXX_FLAGS::werror)
-    add_library(LBANN_CXX_FLAGS::werror INTERFACE)
-    set_property(TARGET LBANN_CXX_FLAGS::werror PROPERTY
-      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:${_WERROR_FLAGS}>)
+  if (NOT TARGET LBANN_CXX_FLAGS_werror)
+    add_library(LBANN_CXX_FLAGS_werror INTERFACE)
+    target_compile_options(LBANN_CXX_FLAGS_werror
+      $<$<COMPILE_LANGUAGE:CXX>:${_WERROR_FLAGS}>)
 
     # Add the "library" to the export
-    install(TARGETS LBANN_CXX_FLAGS::werror EXPORT LBANNTargets)
+    install(TARGETS LBANN_CXX_FLAGS_werror EXPORT LBANNTargets)
   endif ()
 endif ()
 
