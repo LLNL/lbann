@@ -1,3 +1,4 @@
+#include "lbann/utils/timer.hpp"
 #include "sample_list.hpp"
 #include <deque>
 #include <memory>
@@ -44,7 +45,7 @@ struct send_request {
 void handle_mpi_error(int ierr) {
   int errclass, resultlen;;
   char err_buffer[MPI_MAX_ERROR_STRING];
- 
+
   if (ierr != MPI_SUCCESS) {
     MPI_Error_class(ierr, &errclass);
     if (errclass == MPI_ERR_RANK) {
@@ -56,6 +57,17 @@ void handle_mpi_error(int ierr) {
   }
 }
 
+
+void distribute_sample_list(const std::string& sample_list_file,
+                            std::string& my_samples,
+                            MPI_Comm& comm);
+
+
+void write_sample_list(const std::string& my_samples, MPI_Comm& comm);
+void print_sample_list(const std::string& my_samples, MPI_Comm& comm);
+void deserialize_sample_list(const std::string& my_samples, MPI_Comm& comm);
+
+
 int main(int argc, char** argv)
 {
   if (argc != 2) {
@@ -63,25 +75,45 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  // The file name of the sample file list
+  std::string sample_list_file(argv[1]);
+
   std::string my_samples;
 
   // The number of ranks to divide samples with
-  int num_ranks = 1;
-  int my_rank = 0;
-  int ierr;
-  int root_rank = 0;
-  int size_tag = 0;
-  int data_tag = 1;
   MPI_Comm comm = MPI_COMM_WORLD;
 
   MPI_Init(&argc, &argv);
+
+  double tm1 = get_time();
+  distribute_sample_list(sample_list_file, my_samples, comm);
+  //write_sample_list(my_samples, comm);
+  double tm2 = get_time();
+
+  deserialize_sample_list(my_samples, comm);
+  double tm3 = get_time();
+  std::cout << "Time: " << tm2 - tm1 << " " << tm3 - tm2 << std::endl;
+
+  MPI_Finalize();
+
+  return 0;
+}
+
+
+void distribute_sample_list(const std::string& sample_list_file,
+                            std::string& my_samples,
+                            MPI_Comm& comm) {
+  int num_ranks = 1;
+  int my_rank = 0;
+  int root_rank = 0;
+  int size_tag = 0;
+  int data_tag = 1;
+
   MPI_Comm_rank(comm, &my_rank);
   MPI_Comm_size(comm, &num_ranks);
-  MPI_Errhandler_set(MPI_COMM_WORLD,MPI_ERRORS_RETURN);
-  
+  MPI_Errhandler_set(comm, MPI_ERRORS_RETURN);
+
   if (my_rank == root_rank) {
-    // The file name of the sample file list
-    std::string sample_list_file(argv[1]);
 
     sample_list<> sn;
     sn.set_num_partitions(num_ranks);
@@ -108,12 +140,13 @@ int main(int argc, char** argv)
       sn.to_string(static_cast<size_t>(i), sstr);
       unsigned long& bufsize = req1.size();
 
+      int ierr;
       ierr = MPI_Isend(reinterpret_cast<void*>(&bufsize), 1,
-                       MPI_UNSIGNED_LONG, i, size_tag, comm, &(req0.request())); 
+                       MPI_UNSIGNED_LONG, i, size_tag, comm, &(req0.request()));
       handle_mpi_error(ierr);
 
       ierr = MPI_Isend(reinterpret_cast<void*>(const_cast<char*>(sstr.data())), static_cast<int>(sstr.size()),
-                       MPI_BYTE, i, data_tag, comm, &(req1.request())); 
+                       MPI_BYTE, i, data_tag, comm, &(req1.request()));
       handle_mpi_error(ierr);
 
       const int n_prev_reqs = static_cast<int>(send_requests.size() - 2);
@@ -128,7 +161,6 @@ int main(int argc, char** argv)
         if (!flag) {
           break;
         }
-        std::cout << "completnig Isend for recv by rank " << req.get_receiver() << std::endl;
         send_requests.pop_front();
       }
     }
@@ -136,14 +168,15 @@ int main(int argc, char** argv)
     for (auto& req: send_requests) {
       MPI_Status status;
       MPI_Wait(&(req.request()), &status);
-      std::cout << "finally completnig Isend for recv by rank " << req.get_receiver() << std::endl;
     }
 
     send_requests.clear();
   } else {
     // Start of serialization and transmission
     MPI_Barrier(comm);
+
     MPI_Status status;
+    int ierr;
     unsigned long bufsize = 0u;
     ierr = MPI_Recv(reinterpret_cast<void*>(&bufsize), 1,
                     MPI_UNSIGNED_LONG, root_rank, size_tag, comm, &status);
@@ -158,6 +191,26 @@ int main(int argc, char** argv)
 
   // End of serialization and transmission
   MPI_Barrier(MPI_COMM_WORLD);
+}
+
+
+void write_sample_list(const std::string& my_samples, MPI_Comm& comm) {
+  int num_ranks = 1;
+  int my_rank = 0;
+  MPI_Comm_size(comm, &num_ranks);
+  MPI_Comm_rank(comm, &my_rank);
+  std::string out_filename = "sample_list." + std::to_string(my_rank) + ".txt";
+  std::ofstream ofs(out_filename);
+  ofs << my_samples;
+  ofs.close();
+}
+
+
+void print_sample_list(const std::string& my_samples, MPI_Comm& comm) {
+  int num_ranks = 1;
+  int my_rank = 0;
+  MPI_Comm_size(comm, &num_ranks);
+  MPI_Comm_rank(comm, &my_rank);
 
   for(int i = 0; i < num_ranks; ++i) {
     if (i == my_rank) {
@@ -165,9 +218,13 @@ int main(int argc, char** argv)
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
-  MPI_Finalize();
-
-  return 0;
 }
 
 
+void deserialize_sample_list(const std::string& my_samples, MPI_Comm& comm) {
+  sample_list<> sn;
+  sn.load_from_string(my_samples);
+  int my_rank = 0;
+  MPI_Comm_rank(comm, &my_rank);
+  sn.write("sample_list." + std::to_string(my_rank) + ".txt");
+}

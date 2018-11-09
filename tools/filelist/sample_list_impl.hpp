@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <list>
+#include <regex>
 #include <algorithm>
 #include "sample_list.hpp"
 
@@ -37,25 +38,49 @@ inline bool sample_list<SN>::set_num_partitions(size_t n) {
 template <typename SN>
 inline bool sample_list<SN>::load(const std::string& samplelist_file) {
   bool ok = true;
-  ok = get_samples_per_file(samplelist_file);
+#if 1
+  std::ifstream istr(samplelist_file);
+  ok = get_samples_per_file(istr);
+  istr.close();
+#else
+  std::ifstream ifs(samplelist_file);
+  std::string samplelist((std::istreambuf_iterator<char>(ifs)),
+                          std::istreambuf_iterator<char>());
+
+  ok = get_samples_per_file(samplelist);
+#endif
   ok = ok && get_sample_range_per_file();
   ok = ok && get_sample_range_per_part();
   return ok;
 }
 
 template <typename SN>
-inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelist_file)
+inline bool sample_list<SN>::load_from_string(const std::string& samplelist) {
+  bool ok = true;
+#if 1
+  std::istringstream istr(samplelist);
+  ok = get_samples_per_file(istr);
+#else
+  ok = get_samples_per_file(samplelist);
+#endif
+  ok = ok && get_sample_range_per_file();
+  ok = ok && get_sample_range_per_part();
+  return ok;
+}
+
+template <typename SN>
+inline size_t sample_list<SN>::get_samples_per_file(std::istream& ifstr)
 {
-  std::ifstream ifstr(samplelist_file);
   if (!ifstr.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: failed to open " + samplelist_file + " for reading");
+                          + " :: unable to read from the data input stream");
   }
 
   std::string line;
 
   size_t total_num_samples = 0u;
   m_filenames.clear();
+  m_samples_per_file.clear();
 
   while (getline(ifstr, line)) {
     std::stringstream sstr(line);
@@ -77,7 +102,43 @@ inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelis
     total_num_samples += num_samples_of_current_file;
   }
 
-  ifstr.close();
+  return total_num_samples;
+}
+
+
+template <typename SN>
+inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelist)
+{ // This might be slower than the strean-based on, but require less memory space and copying.
+  size_t total_num_samples = 0u;
+  m_filenames.clear();
+  m_samples_per_file.clear();
+
+  static const std::regex newline("[\\r|\\n]+[\\s]*");
+  static const std::regex space("[^\\S]+");
+
+  std::sregex_token_iterator line(samplelist.cbegin(), samplelist.cend(), newline, -1);
+  std::sregex_token_iterator end_of_lines;
+
+  //m_filenames.reserve(line.size());
+  //m_samples_per_file.reserve(line.size());
+
+  for ( ; line != end_of_lines ; ++line ) {
+    const std::string& linestr = line->str();
+    std::sregex_token_iterator word(linestr.cbegin(), linestr.cend(), space, -1);
+    std::sregex_token_iterator end_of_words;
+
+    m_filenames.emplace_back(word->str());
+
+    m_samples_per_file.emplace_back();
+    auto& samples_of_current_file = m_samples_per_file.back();
+
+    for (++word ; word != end_of_words ; ++word ) {
+      samples_of_current_file.emplace_back(word->str());
+    }
+
+    const size_t num_samples_of_current_file = samples_of_current_file.size();
+    total_num_samples += num_samples_of_current_file;
+  }
 
   return total_num_samples;
 }
@@ -200,7 +261,10 @@ inline void sample_list<SN>::clear() {
   m_sample_range_per_part.clear();
 }
 
-
+/**
+ * TODO: Instead of string, vector<unsigned char> might be a better choice.
+ * as it will allow space compression for numeric sample names.
+ */
 template <typename SN>
 inline bool sample_list<SN>::to_string(size_t p, std::string& sstr)
 {

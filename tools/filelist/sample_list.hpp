@@ -1,6 +1,7 @@
 #ifndef __SAMPLE_LIST_HPP__
 #define __SAMPLE_LIST_HPP__
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <list>
@@ -30,6 +31,9 @@ class sample_list {
   /// Load a sample list from a file
   bool load(const std::string& samplelist_file);
 
+  /// Extract a sample list from a serialized sample list in a string
+  bool load_from_string(const std::string& samplelist);
+
   /// Write the current sample list into a file
   bool write(const std::string& out_filename) const;
 
@@ -41,8 +45,11 @@ class sample_list {
 
  protected:
 
-  /// Populate m_samples_per_file and m_filenames by reading samplelist_file
-  size_t get_samples_per_file(const std::string& samplelist_file);
+  /// Populate m_samples_per_file and m_filenames by reading from input stream
+  size_t get_samples_per_file(std::istream& istr);
+
+  /// Extract m_samples_per_file and m_filenames by parsing a serialized string
+  size_t get_samples_per_file(const std::string& samplelist);
 
   /// Populate the list of starting sample id for each sample file
   bool get_sample_range_per_file();
