@@ -508,6 +508,9 @@ install(
   DIRECTORY "${PROJECT_SOURCE_DIR}/include/lbann"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+install(
+  FILES "${PROJECT_BINARY_DIR}/lbann_config.hpp"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 # Install contributor list, license, readme
 install(
