@@ -79,7 +79,6 @@ inline size_t sample_list<SN>::get_samples_per_file(std::istream& ifstr)
   std::string line;
 
   size_t total_num_samples = 0u;
-  m_filenames.clear();
   m_samples_per_file.clear();
 
   while (getline(ifstr, line)) {
@@ -87,10 +86,10 @@ inline size_t sample_list<SN>::get_samples_per_file(std::istream& ifstr)
     std::string filename;
 
     sstr >> filename;
-    m_filenames.emplace_back(filename);
 
     m_samples_per_file.emplace_back();
-    auto& samples_of_current_file = m_samples_per_file.back();
+    (m_samples_per_file.back()).first = filename;
+    auto& samples_of_current_file = (m_samples_per_file.back()).second;
 
     sample_name_t sample_name;
 
@@ -110,7 +109,6 @@ template <typename SN>
 inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelist)
 { // This might be slower than the strean-based on, but require less memory space and copying.
   size_t total_num_samples = 0u;
-  m_filenames.clear();
   m_samples_per_file.clear();
 
   static const std::regex newline("[\\r|\\n]+[\\s]*");
@@ -119,7 +117,6 @@ inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelis
   std::sregex_token_iterator line(samplelist.cbegin(), samplelist.cend(), newline, -1);
   std::sregex_token_iterator end_of_lines;
 
-  //m_filenames.reserve(line.size());
   //m_samples_per_file.reserve(line.size());
 
   for ( ; line != end_of_lines ; ++line ) {
@@ -127,10 +124,9 @@ inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelis
     std::sregex_token_iterator word(linestr.cbegin(), linestr.cend(), space, -1);
     std::sregex_token_iterator end_of_words;
 
-    m_filenames.emplace_back(word->str());
-
     m_samples_per_file.emplace_back();
-    auto& samples_of_current_file = m_samples_per_file.back();
+    (m_samples_per_file.back()).first = word->str();
+    auto& samples_of_current_file = (m_samples_per_file.back()).second;
 
     for (++word ; word != end_of_words ; ++word ) {
       samples_of_current_file.emplace_back(word->str());
@@ -150,8 +146,8 @@ inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelis
  * The last element of m_sample_range_per_file is the total number of samples.
  */
 template <typename SN>
-inline bool sample_list<SN>::get_sample_range_per_file()
-{
+inline bool sample_list<SN>::get_sample_range_per_file() {
+  // populates m_sample_range_per_file, and requires m_samples_per_file is loaded.
   if (m_samples_per_file.empty()) {
     return false;
   }
@@ -163,7 +159,7 @@ inline bool sample_list<SN>::get_sample_range_per_file()
   size_t total_so_far = 0u;
 
   for (const auto slist: m_samples_per_file) {
-    total_so_far += slist.size();
+    total_so_far += slist.second.size();
     m_sample_range_per_file.push_back(total_so_far);
   }
   return true;
@@ -171,8 +167,11 @@ inline bool sample_list<SN>::get_sample_range_per_file()
 
 
 template <typename SN>
-inline bool sample_list<SN>::get_sample_range_per_part()
-{
+inline bool sample_list<SN>::get_sample_range_per_part() {
+  // Populates m_sample_range_per_part, requires the total number of samples
+  // and number of partitions are known.
+  // The former can be obtained once m_sample_range_per_file is populated
+  // by calling get_sample_range_per_file()
   const size_t total = static_cast<size_t>(m_sample_range_per_file.back());
   const size_t one_more = total % m_num_partitions;
   const size_t min_per_partition = total/m_num_partitions;
@@ -198,8 +197,8 @@ inline bool sample_list<SN>::get_sample_range_per_part()
 
 
 template <typename SN>
-inline bool sample_list<SN>::find_sample_files_of_part(size_t p, size_t& sf_begin, size_t& sf_end) const
-{
+inline bool sample_list<SN>::find_sample_files_of_part(size_t p, size_t& sf_begin, size_t& sf_end) const {
+  // requires both m_sample_range_per_file and m_sample_range_per_part is populated
   if (p+1 >= m_sample_range_per_part.size()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + " :: invalid partition id or uninitialized m_sample_range_per_part.");
@@ -226,21 +225,20 @@ inline bool sample_list<SN>::find_sample_files_of_part(size_t p, size_t& sf_begi
 
 
 template <typename SN>
-inline bool sample_list<SN>::write(const std::string& out_filename) const
-{
-  const size_t num_files = m_filenames.size();
+inline bool sample_list<SN>::write(const std::string& out_filename) const {
+  // Requires m_samples_per_file is populated.
+  const size_t num_files = m_samples_per_file.size();
   std::ofstream ofstr(out_filename);
 
   if (!ofstr.good() || (m_samples_per_file.size() != num_files)) {
     return false;
   }
 
-  file_name_list_t::const_iterator it_filename = m_filenames.cbegin();
-  typename sample_files_t::const_iterator it_samples = m_samples_per_file.cbegin();
+  typename sample_files_t::const_iterator it_samplefiles = m_samples_per_file.cbegin();
 
-  for (size_t i = 0u; i < num_files; ++i, ++it_filename, ++it_samples) {
-    const auto& samples_of_current_file = *it_samples;
-    ofstr << *it_filename;
+  for (size_t i = 0u; i < num_files; ++i, ++it_samplefiles) {
+    const auto& samples_of_current_file = it_samplefiles->second;
+    ofstr << it_samplefiles->first;
     for (const auto& sample : samples_of_current_file) {
       ofstr << ' ' << sample;
     }
@@ -255,7 +253,6 @@ inline bool sample_list<SN>::write(const std::string& out_filename) const
 template <typename SN>
 inline void sample_list<SN>::clear() {
   m_num_partitions = 1u;
-  m_filenames.clear();
   m_samples_per_file.clear();
   m_sample_range_per_file.clear();
   m_sample_range_per_part.clear();
@@ -276,12 +273,6 @@ inline bool sample_list<SN>::to_string(size_t p, std::string& sstr)
   // Find the range of sample files that covers the range of samples of the partition.
   find_sample_files_of_part(p, sf_begin, sf_end);
 
-  file_name_list_t::const_iterator it_fl_begin = m_filenames.cbegin();
-  file_name_list_t::const_iterator it_fl_end = m_filenames.cbegin();
-  std::advance(it_fl_begin, sf_begin);
-  std::advance(it_fl_end, sf_end);
-  file_name_list_t::const_iterator it_fl = it_fl_begin; // filenmae iterator
-
   typename sample_files_t::const_iterator it_sfl_begin = m_samples_per_file.cbegin();
   typename sample_files_t::const_iterator it_sfl_end = m_samples_per_file.cbegin();
   std::advance(it_sfl_begin, sf_begin);
@@ -290,22 +281,22 @@ inline bool sample_list<SN>::to_string(size_t p, std::string& sstr)
   size_t s_begin = m_sample_range_per_part[p] - m_sample_range_per_file[sf_begin];
   size_t s_end = m_sample_range_per_part[p+1] - m_sample_range_per_file[sf_end];
 
-  if (s_begin >= it_sfl_begin->size() || s_end > it_sfl_end->size()) {
+  if (s_begin >= it_sfl_begin->second.size() || s_end > it_sfl_end->second.size()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + " :: incorrect sample indices.");
     return false;
   }
 
   typename sample_files_t::const_iterator it_sfl = it_sfl_begin;
-  typename samples_t::const_iterator it_s = it_sfl->cbegin(); // sample name iterator
+  typename samples_t::const_iterator it_s = (it_sfl->second).cbegin(); // sample name iterator
   std::advance(it_s, s_begin);
-  const size_t b_s_begin = std::min(it_sfl_begin->size(), num_local_samples + s_begin);
+  const size_t b_s_begin = std::min((it_sfl_begin->second).size(), num_local_samples + s_begin);
 
-  const size_t estimated_len = (sf_end - sf_begin) * it_fl->size() +
+  const size_t estimated_len = (sf_end - sf_begin) * (it_sfl_begin->first).size() +
     ((to_string(*it_s)).size() + 1u) * static_cast<size_t>(num_local_samples * 1.2);
   sstr.reserve(estimated_len);
 
-  sstr += *(it_fl++);
+  sstr += it_sfl->first;
   for (size_t s = s_begin; s < b_s_begin; ++s, ++it_s) {
     sstr += ' ' + to_string(*it_s);
   }
@@ -313,15 +304,15 @@ inline bool sample_list<SN>::to_string(size_t p, std::string& sstr)
 
   if (sf_begin < sf_end) {
     for (size_t sf = sf_begin+1; sf < sf_end; ++sf) {
-      sstr += *(it_fl++);
-      for (const auto& s : *(++it_sfl)) {
+      sstr += (++it_sfl)->first;
+      for (const auto& s : it_sfl->second) {
         sstr += ' ' + to_string(s);
       }
       sstr += '\n';
     }
 
-    typename samples_t::const_iterator it_s = (++it_sfl)->cbegin();
-    sstr += *(it_fl++);
+    sstr += (++it_sfl)->first;
+    typename samples_t::const_iterator it_s = it_sfl->second.cbegin();
     for (size_t s = 0u; s < s_end; ++s, ++it_s) {
       sstr += ' ' + to_string(*it_s);
     }

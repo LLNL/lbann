@@ -19,9 +19,7 @@ class sample_list {
   /// Type for list of sample names in a sample file
   using samples_t = std::template list<sample_name_t>;
   /// Type for list where an element is the list of samples in a sample file
-  using sample_files_t = std::template list<samples_t>;
-  /// Type for list of sample file names
-  using file_name_list_t = std::list<std::string>;
+  using sample_files_t = std::template list< std::pair<std::string, samples_t> >;
 
   sample_list() : m_num_partitions(1u) {}
 
@@ -45,10 +43,10 @@ class sample_list {
 
  protected:
 
-  /// Populate m_samples_per_file and m_filenames by reading from input stream
+  /// Populate m_samples_per_file by reading from input stream
   size_t get_samples_per_file(std::istream& istr);
 
-  /// Extract m_samples_per_file and m_filenames by parsing a serialized string
+  /// Extract m_samples_per_file by parsing a serialized string
   size_t get_samples_per_file(const std::string& samplelist);
 
   /// Populate the list of starting sample id for each sample file
@@ -69,9 +67,6 @@ class sample_list {
 
   /// The number of partitions to divide samples into
   size_t m_num_partitions;
-
-  /// The sample file names
-  file_name_list_t m_filenames;
 
   /** In a sample file list, each line begins with a sample file name
    * that is followed by the names of the samples in the file.
