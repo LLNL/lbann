@@ -4,7 +4,7 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
- - LogSoftmax
+ - Log softmax
  - Basic math functions
  - Weights layer, which outputs a weights tensor
  - L2 norm squared
@@ -14,6 +14,7 @@ Support for new layers:
  - Variance and covariance
 
 Performance optimizations:
+ - Optimized GPU model-parallel softmax layer
 
 Model portability & usability:
  - Option for weight initialization with user-provided list of values
