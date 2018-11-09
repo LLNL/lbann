@@ -87,6 +87,9 @@ if (${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS)
     add_library(CXX::werror INTERFACE IMPORTED)
     set_property(TARGET CXX::werror PROPERTY
       INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CXX>:${_WERROR_FLAGS}>)
+
+    # Add the "library" to the export
+    install(TARGETS CXX::werror EXPORT LBANNTargets)
   endif ()
 endif ()
 
