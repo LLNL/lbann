@@ -9,6 +9,7 @@
 
 /* Version string for LBANN */
 #define LBANN_VERSION @LBANN_VERSION@
+#define LBANN_GIT_VERSION @LBANN_GIT_VERSION@
 
 /* Defined if LBANN is in debug mode */
 #cmakedefine LBANN_DEBUG

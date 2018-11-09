@@ -37,26 +37,45 @@ endif ()
 # Version setup
 #
 
-# Check to see if we are in a git repo
-execute_process(
-  COMMAND git rev-parse --is-inside-work-tree
-  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-  OUTPUT_VARIABLE GIT_REPO
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(LBANN_VERSION_MAJOR 0)
+set(LBANN_VERSION_MINOR 95)
 
-if (GIT_REPO)
-  # Get the git version so that we can embed it into the executable
+set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}")
+
+# Check to see if we are in a git repo
+find_program(__GIT_EXECUTABLE git)
+mark_as_advanced(__GIT_EXECUTABLE)
+if (__GIT_EXECUTABLE)
+
   execute_process(
-    COMMAND git --git-dir .git describe --abbrev=7 --dirty --always --tags
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    OUTPUT_VARIABLE GIT_VERSION
+    COMMAND ${__GIT_EXECUTABLE} rev-parse --is-inside-work-tree
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE __BUILDING_FROM_GIT_SOURCES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(${UPPER_PROJECT_NAME}_VERSION ${GIT_VERSION}
-    CACHE STRING "LBANN's version string")
-else ()
-  set(${UPPER_PROJECT_NAME}_VERSION v0.95
-    CACHE STRING "LBANN's version string")
-endif (GIT_REPO)
+
+  if (__BUILDING_FROM_GIT_SOURCES)
+    # Get the git version so that we can embed it into the executable
+    execute_process(
+      COMMAND ${__GIT_EXECUTABLE} rev-parse --show-toplevel
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      OUTPUT_VARIABLE __GIT_TOPLEVEL_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+      COMMAND ${__GIT_EXECUTABLE} rev-parse --git-dir
+      WORKING_DIRECTORY "${__GIT_TOPLEVEL_DIR}"
+      OUTPUT_VARIABLE __GIT_GIT_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+      COMMAND ${__GIT_EXECUTABLE} --git-dir "${__GIT_GIT_DIR}" describe
+      --abbrev=7 --always --dirty --tags
+      WORKING_DIRECTORY "${__GIT_TOPLEVEL_DIR}"
+      OUTPUT_VARIABLE __GIT_DESCRIBE_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    set(LBANN_GIT_VERSION "${__GIT_DESCRIBE_VERSION}"
+      CACHE STRING "LBANN's version string as told by git.")
+  endif (__BUILDING_FROM_GIT_SOURCES)
+endif (__GIT_EXECUTABLE)
 
 if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
   set(LBANN_GNU_LINUX TRUE)
