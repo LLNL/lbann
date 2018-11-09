@@ -57,12 +57,18 @@ set(LBANN_TOPO_AWARE @LBANN_TOPO_AWARE@)
 # Start with Hydrogen. We can probably inherit Aluminum-ness from
 # there, as well as MPI and OpenMP.
 if (LBANN_HAS_HYDROGEN)
+  if (NOT Hydrogen_DIR AND NOT HYDROGEN_DIR)
+    set(Hydrogen_DIR "@Hydrogen_DIR@")
+  endif ()
   set(MIN_H_VERSION "@HYDROGEN_VERSION@")
   find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE
     HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
     PATH_SUFFIXES lib/cmake/hydrogen
     NO_DEFAULT_PATH)
-  find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE REQUIRED)
+
+  if (NOT Hydrogen_FOUND)
+    find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE REQUIRED)
+  endif ()
 
   # Fake Hydrogen components
   set(__hydrogen_have_cuda @_HYDROGEN_HAVE_CUDA@)
@@ -119,27 +125,36 @@ if (LBANN_HAS_ALUMINUM)
       "Incompatible Aluminum version found: ${ALUMINUM_VERSION}. "
       "Required minimum version is: ${MIN_AL_VERSION}")
   endif ()
-
-
+endif (LBANN_HAS_ALUMINUM)
 
 include(SetupOpenMP)
 include(SetupMPI)
+
+if (NOT Protobuf_DIR AND NOT PROTOBUF_DIR)
+  set(Protobuf_DIR "@Protobuf_DIR@")
+endif ()
 include(SetupProtobuf)
 
 if (LBANN_HAS_CNPY)
+  if (NOT CNPY_DIR)
+    set(CNPY_DIR "@CNPY_DIR@")
+  endif ()
+
   find_package(CNPY REQUIRED)
-endif ()
+endif (LBANN_HAS_CNPY)
 
 if (LBANN_HAS_OPENCV)
-  find_package(OPENCV REQUIRED)
-endif ()
-
-# Setup the linear algebra library
-find_package(Hydrogen 1.0.0 NO_MODULE
-  HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
-  PATH_SUFFIXES lib/cmake/hydrogen
-  NO_DEFUALT_PATH)
-find_package(Hydrogen 1.0.0 NO_MODULE REQUIRED)
+  if (NOT OPENCV_DIR AND NOT OpenCV_DIR)
+    set(OpenCV_DIR "@OpenCV_DIR@")
+    find_package(OpenCV NO_MODULE
+      HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+      PATH_SUFFIXES share/OpenCV
+      NO_DEFAULT_PATH)
+    if (NOT OpenCV_FOUND)
+      find_package(OpenCV NO_MODULE REQUIRED)
+    endif ()
+  endif ()
+endif (LBANN_HAS_OPENCV)
 
 # Setup CUDA dependencies
 if (LBANN_HAS_CUDA)
@@ -149,7 +164,16 @@ if (LBANN_HAS_CUDA)
   endif ()
   set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 
+  if (NOT CUDNN_DIR)
+    set(CUDNN_DIR "@CUDNN_DIR@")
+  endif ()
+  if (NOT CUDNN_DIR AND NOT CUDNN_LIBRARY AND NOT CUDNN_INCLUDE_PATH)
+    set(CUDNN_LIBRARY "@CUDNN_LIBRARY@")
+    set(CUDNN_INCLUDE_PATH "@CUDNN_INCLUDE_PATH@")
+  endif ()
+
   enable_language(CUDA)
+  include(SetupCUDAToolkit)
 endif (LBANN_HAS_CUDA)
 
 @PACKAGE_INIT@
