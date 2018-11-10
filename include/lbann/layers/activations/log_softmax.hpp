@@ -24,39 +24,35 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_ACTIVATION_SOFTMAX_HPP_INCLUDED
-#define LBANN_LAYER_ACTIVATION_SOFTMAX_HPP_INCLUDED
+#ifndef LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
+#define LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 
-// Threshold outputs to a minimum value.
-// If enabled, the minimum output value is sqrt(min), where min is the
-// minimum, normalized, positive value (~1e-19 for float and ~1e-154
-// for double). The gradients w.r.t. input will be inaccurate, on the
-// order of the minimum output value.
-#define LBANN_ENABLE_SOFTMAX_CUTOFF
-
 namespace lbann {
 
-/** Softmax layer.
- *  \f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} \f]
+/** Log softmax layer.
+ *  The softmax function is defined:
+ *    \f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} \f]
+ *  This layer computes:
+ *    \f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} \f]
  */
 template <data_layout Layout, El::Device Device>
-class softmax_layer : public Layer {
+class log_softmax_layer : public Layer {
 public:
 
-  softmax_layer(lbann_comm *comm)
+  log_softmax_layer(lbann_comm *comm)
     : Layer(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {}
 
-  softmax_layer(const softmax_layer& other)
+  log_softmax_layer(const log_softmax_layer& other)
     : Layer(other),
       m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy(), nullptr)
+                  other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
@@ -66,7 +62,7 @@ public:
 #endif // LBANN_HAS_CUDNN
   }
 
-  softmax_layer& operator=(const softmax_layer& other) {
+  log_softmax_layer& operator=(const log_softmax_layer& other) {
     Layer::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
@@ -77,10 +73,10 @@ public:
     return *this;
   }
 
-  ~softmax_layer() = default;
+  ~log_softmax_layer() = default;
 
-  softmax_layer* copy() const override { return new softmax_layer(*this); }
-  std::string get_type() const override { return "softmax"; }
+  log_softmax_layer* copy() const override { return new log_softmax_layer(*this); }
+  std::string get_type() const override { return "log softmax"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
@@ -121,4 +117,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_ACTIVATION_SOFTMAX_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED

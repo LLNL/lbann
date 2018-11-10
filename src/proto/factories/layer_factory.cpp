@@ -48,7 +48,7 @@ Layer* construct_layer(lbann_comm* comm,
       return new name##_layer<layout, Dev>(comm);       \
     }                                                   \
   } while (false)
-  
+
   // Input layers
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
@@ -90,7 +90,7 @@ Layer* construct_layer(lbann_comm* comm,
     bool is_supported = false;
     std::string num_neurons_method_name;
 
-    if (params.get_input_dimension_from_reader() 
+    if (params.get_input_dimension_from_reader()
         || params.get_image_dimension_from_reader()
         || params.get_scalar_dimension_from_reader()
         || params.get_image_and_scalar_dimension_from_reader())
@@ -550,38 +550,18 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_and_()) { return new and_layer<layout, Dev>(comm); }
   if (proto_layer.has_or_())  { return new or_layer<layout, Dev>(comm); }
   if (proto_layer.has_xor_()) { return new xor_layer<layout, Dev>(comm); }
-  
+
   // Activation layers
-  if (proto_layer.has_softmax()) {
-    return new softmax_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_logsoftmax()) {
-    return new logsoftmax_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_relu()) {
-    return new relu_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_sigmoid()) {
-    return new sigmoid_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_identity()) {
-    return new identity_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_bent_identity()) {
-    return new bent_identity_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_softplus()) {
-    return new softplus_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_smooth_relu()) {
-    return new smooth_relu_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_leaky_relu()) {
-    return new leaky_relu_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_swish()) {
-    return new swish_layer<layout, Dev>(comm);
-  }
+  CONSTRUCT_LAYER(softmax);
+  CONSTRUCT_LAYER(log_softmax);
+  CONSTRUCT_LAYER(relu);
+  CONSTRUCT_LAYER(sigmoid);
+  CONSTRUCT_LAYER(identity);
+  CONSTRUCT_LAYER(bent_identity);
+  CONSTRUCT_LAYER(softplus);
+  CONSTRUCT_LAYER(smooth_relu);
+  CONSTRUCT_LAYER(leaky_relu);
+  CONSTRUCT_LAYER(swish);
   if (proto_layer.has_elu()) {
     const auto& params = proto_layer.elu();
     return new elu_layer<layout, Dev>(comm, params.alpha());
@@ -621,7 +601,7 @@ Layer* construct_layer(lbann_comm* comm,
                                                                         params.width());
     }
   }
-  
+
   // Miscellaneous layers
   if (proto_layer.has_covariance()) {
     const auto& params = proto_layer.covariance();
@@ -631,7 +611,7 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.variance();
     return new variance_layer<layout, Dev>(comm, params.biased());
   }
-  
+
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());

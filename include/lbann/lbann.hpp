@@ -47,7 +47,7 @@
 #include "lbann/layers/activations/sigmoid.hpp"
 #include "lbann/layers/activations/smooth_relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/layers/activations/logsoftmax.hpp"
+#include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 
