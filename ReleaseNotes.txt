@@ -12,7 +12,7 @@ Support for new layers:
  - Boolean accuracy, Boolean false negative rate, Boolean false positive rate
  - Bilinear resize
  - Variance and covariance
- - Dilated and grouped convolution
+ - Dilated and grouped convolution (GPU only)
 
 Performance optimizations:
  - Optimized GPU model-parallel softmax layer
