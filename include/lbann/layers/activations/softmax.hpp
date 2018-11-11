@@ -56,7 +56,7 @@ public:
   softmax_layer(const softmax_layer& other)
     : Layer(other),
       m_workspace(other.m_workspace ?
-                  other.m_workspace->Copy(), nullptr)
+                  other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
