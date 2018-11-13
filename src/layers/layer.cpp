@@ -53,7 +53,7 @@ Layer::Layer(lbann_comm *comm)
 
   // Reset timing counters
   reset_counters();
-  
+
 }
 
 Layer::Layer(const Layer& other) :
@@ -137,42 +137,132 @@ Layer& Layer::operator=(const Layer& other) {
   return *this;
 }
 
-std::string Layer::get_description() const {
+void Layer::print_description(std::ostream& os,
+                              std::string separator,
+                              bool trailing_newline) const {
   std::stringstream ss;
-  ss << get_name() << " (" << get_type() << "): ";
-  return ss.str();
+  const auto& desc = get_description();
+  for (size_t i = 0; i < desc.size(); ++i) {
+    ss << (i > 0 ? separator : "") << desc[i];
+  }
+  os << ss.str();
+  if (trailing_newline) { os << std::endl; }
 }
 
-std::string Layer::get_topo_description() const {
+std::vector<std::string> Layer::get_description() const {
+  std::vector<std::string> description;
   std::stringstream ss;
-  const size_t num_children = get_num_children();
-  for (size_t i = 0; i < num_children; ++i) {
-    const auto& dims = get_output_dims(i);
-    if (i > 0) { ss << ", "; }
-    ss << "activations";
-    if (num_children > 1) { ss << "[" << i << "]"; }
-    ss << " = [";
-    switch (dims.size()) {
-    case 0:
-      ss << "0"; break;
-    case 2:
-      ss << dims[0] << "c x "
-         << dims[1] << "w";
-      break;
-    case 3:
-      ss << dims[0] << "c x "
-         << dims[1] << "w x "
-         << dims[2] << "h";
-      break;
-    default:
-      ss << dims[0];
-      for (size_t j = 1; j < dims.size(); ++j) {
-        ss << " x " << dims[j];
+
+  // Name and type
+  ss.str(std::string());
+  ss.clear();
+  ss << get_type() << " layer \"" << get_name() << "\"";
+  description.push_back(ss.str());
+
+  // Input dimensions
+  const auto& parents = get_parent_layers();
+  if (!parents.empty()) {
+    ss.str(std::string());
+    ss.clear();
+    ss << "Input dimensions: ";
+    for (size_t i = 0; i < parents.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      const auto& dims = get_input_dims(i);
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j == 0 ? "" : " x ") << dims[j];
+      }
+      ss << " (from ";
+      if (parents[i] == nullptr) {
+        ss << "unknown layer";
+      } else {
+        ss << parents[i]->get_type() << " layer "
+           << "\"" << parents[i]->get_name() << "\"";
+      }
+      ss << ")";
+    }
+    description.push_back(ss.str());
+  }
+
+  // Output dimensions
+  const auto& children = get_child_layers();
+  if (!children.empty()) {
+    ss.str(std::string());
+    ss.clear();
+    ss << "Output dimensions: ";
+    for (size_t i = 0; i < children.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      const auto& dims = get_output_dims(i);
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j == 0 ? "" : " x ") << dims[j];
+      }
+      ss << " (to ";
+      if (children[i] == nullptr) {
+        ss << "unknown layer";
+      } else {
+        ss << children[i]->get_type() << " layer "
+           << "\"" << children[i]->get_name() << "\"";
+      }
+      ss << ")";
+    }
+    description.push_back(ss.str());
+  }
+
+  // Weights
+  const auto& weights_list = get_weights();
+  if (!weights_list.empty()) {
+    ss.str(std::string());
+    ss.clear();
+    ss << "Weights: ";
+    for (size_t i = 0; i < weights_list.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      if (weights_list[i] == nullptr) {
+        ss << "unknown weights";
+      } else {
+        const auto& dims = weights_list[i]->get_dims();
+        ss << weights_list[i]->get_name() << " (";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          ss << (j > 0 ? " x " : "") << dims[j];
+        }
+        ss << ")";
       }
     }
-    ss << ", " << get_activations(i).Width() << "s]";
+    description.push_back(ss.str());
   }
-  return ss.str();
+
+  // Data layout
+  ss.str(std::string());
+  ss.clear();
+  ss << "Data layout: ";
+  switch (get_data_layout()) {
+  case data_layout::DATA_PARALLEL:  ss << "data-parallel";  break;
+  case data_layout::MODEL_PARALLEL: ss << "model-parallel"; break;
+  case data_layout::invalid:
+  default:
+    ss << "invalid";
+  }
+  description.push_back(ss.str());
+
+  // Device
+  ss.str(std::string());
+  ss.clear();
+  ss << "Device: ";
+  switch (get_device_allocation()) {
+  case El::Device::CPU: ss << "CPU";     break;
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU: ss << "GPU";     break;
+#endif // LBANN_HAS_GPU
+  default:              ss << "unknown";
+  }
+  description.push_back(ss.str());
+
+  // Freeze state
+  if (is_frozen()) {
+    description.push_back("Frozen");
+  }
+
+  // Result
+  return description;
+
 }
 
 void Layer::forward_prop() {
@@ -921,7 +1011,7 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     }
 
   }
-  
+
 }
 
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {

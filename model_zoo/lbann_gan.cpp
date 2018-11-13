@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
+
 }
 
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
@@ -301,14 +301,10 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
+      model->print_description(std::cout);
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
-      }
-      std::cout << std::endl;
-      const std::vector<Layer *>& layers = model->get_layers();
-      for (size_t h=0; h<layers.size(); h++) {
-        std::cout << h << " " << layers[h]->get_description() << std::endl;
       }
     }
 

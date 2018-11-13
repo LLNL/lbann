@@ -42,7 +42,7 @@ namespace lbann {
  */
 template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
- private:
+private:
 
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
@@ -63,7 +63,7 @@ class fully_connected_layer : public learning_layer {
   /** Whether the transpose of the linearity matrix is applied. */
   bool m_transpose;
 
- public:
+public:
 
   fully_connected_layer(lbann_comm *comm,
                         int output_size,  /// @todo Accept a vector
@@ -83,14 +83,14 @@ class fully_connected_layer : public learning_layer {
 
   }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} +
-     " fully_connected; num_neurons: "
-     + std::to_string(get_output_size())
-     + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
-     + " dataLayout: " + this->get_data_layout_string(get_data_layout())
-     + " device alloc: " + this->get_device_allocation_string(get_device_allocation());
+  std::vector<std::string> get_description() const override {
+    auto&& desc = learning_layer::get_description();
+    if (m_bias_scaling_factor == DataType(0)) {
+      desc.push_back("Bias: disabled");
+    } else {
+      desc.push_back("Bias: enabled");
+    }
+    return desc;
   }
 
   fully_connected_layer(const fully_connected_layer& other) :
@@ -151,7 +151,7 @@ class fully_connected_layer : public learning_layer {
     learning_layer::set_output_dims(dims);
   }
 
- protected:
+protected:
 
   void setup_matrices(const El::Grid& grid) override;
 
@@ -241,7 +241,7 @@ class fully_connected_layer : public learning_layer {
         LBANN_ERROR(err.str());
       }
     }
-    
+
   }
 
   void fp_compute() override;

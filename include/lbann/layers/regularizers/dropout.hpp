@@ -111,18 +111,17 @@ public:
   }
 
   dropout* copy() const override { return new dropout(*this); }
-
   std::string get_type() const override { return "dropout"; }
-
-  std::string get_description() const override {
-    return " dropout keep_prob: " + std::to_string(m_keep_prob)
-           + " dataLayout: " + get_data_layout_string(get_data_layout());
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  std::vector<std::string> get_description() const override {
+    auto&& desc = regularizer_layer::get_description();
+    desc.push_back("Keep probability: " + std::to_string(m_keep_prob));
+    return desc;
+  }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
@@ -211,7 +210,7 @@ protected:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    
+
     // Matrices
     const auto& input = get_prev_activations();
     const auto& local_input = input.LockedMatrix();

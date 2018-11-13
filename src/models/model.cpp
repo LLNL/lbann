@@ -46,7 +46,7 @@
 #include "mpi.h"
 
 namespace lbann {
-  
+
 ////////////////////////////////////////////////////////////
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
@@ -67,8 +67,8 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) { 
-    
+    m_default_optimizer(default_optimizer) {
+
       static int num_models = 0;
       m_name = "Model" + std::to_string(num_models);
       num_models++;
@@ -322,27 +322,33 @@ void model::permute_layers(const std::vector<int>& permutation) {
   }
 }
 
-std::string model::print_layer_description(const Layer* layer) const {
-  if (layer == nullptr) return std::string();
-  std::stringstream os;
-  /// @todo Clean up
-  //std::string description = layer->get_description();
-  os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
-     << layer->get_type()
-     << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
-     <<  "] Set up a layer with input " << std::setw(7)
-     << (layer->get_num_parents() > 0 ? layer->get_input_size() : 0)
-     << " and " << std::setw(7)
-     << (layer->get_num_children() > 0 ? layer->get_output_size() : 0)
-     << " neurons.";
-  std::string s = layer->get_topo_description();
-  if(s != "") {
-    os << " (" << s << ")";
+void model::print_description(std::ostream& os,
+                              std::string separator,
+                              bool trailing_newline) const {
+
+  // Model properties
+  std::stringstream ss;
+  ss << "model \"" << get_name() << "\""
+     << separator << "Type: " << get_type();
+
+  // Layers
+  ss << separator << "Layers:";
+  for (const auto* l : m_layers) {
+    ss << separator << "  ";
+    if (l == nullptr) {
+      ss << "unknown layer";
+    } else {
+      l->print_description(ss, separator + "    ", false);
+    }
   }
-  if (layer->is_frozen()) {
-    os << " frozen";
-  }
-  return os.str();
+
+  /// @todo Descriptions for objective function, weights, metrics,
+  /// callbacks
+
+  // Output result to stream
+  os << ss.str();
+  if (trailing_newline) { os << std::endl; }
+
 }
 
 void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
@@ -496,9 +502,6 @@ void model::setup_layers() {
     layer->set_model(this);
     layer->setup();
     layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
   }
 }
 
@@ -538,7 +541,7 @@ void model::setup_weights() {
 
   // Setup weights
   for (auto* w : m_weights) { w->setup(); }
-  
+
 }
 
 void model::add_connected_layers() {
@@ -637,7 +640,7 @@ void model::add_evaluation_layers() {
   }
 
 }
-  
+
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
@@ -802,7 +805,7 @@ void model::train(int num_epochs, int num_batches) {
     } else {
       while (!train_mini_batch()) {}
     }
-    
+
     // Finalize epoch
     ++m_current_epoch;
     reconcile_weight_values();
@@ -811,7 +814,7 @@ void model::train(int num_epochs, int num_batches) {
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
-    
+
   }
   do_train_end_cbs();
 }
@@ -961,7 +964,7 @@ void model::reconcile_weight_values() {
   }
   for (auto& req : reqs) { m_comm->wait(req); }
 }
-  
+
 ////////////////////////////////////////////////////////////
 // Callbacks
 ////////////////////////////////////////////////////////////

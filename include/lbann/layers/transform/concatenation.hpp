@@ -65,23 +65,14 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " concatenation; concat_dim: "
-      << m_concat_dim << " parents: ";
-    for (size_t h=0; h<this->m_parent_layers.size(); h++) {
-      s << this->m_parent_layers[h]->get_name() << " " << this->m_parent_layers[h]->get_type() << " ";
-    }
-    s << " concat_points: ";
-    for (size_t h=0; h<this->m_concat_points.size(); h++) {
-      s << this->m_concat_points[h] << " ";
-    }
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    return s.str();
-  }
-
 protected:
+
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.push_back("Concatenation dimension: "
+                   + std::to_string(m_concat_dim));
+    return desc;
+  }
 
   void setup_pointers() override {
     transform_layer::setup_pointers();
@@ -185,7 +176,7 @@ protected:
                         1, std::multiplies<int>());
     const auto& output_block_stride = (output_num_unit_slices
                                        * unit_block_size);
-    
+
     // Populate slices of output tensor with input tensors
     for (int i = 0; i < num_inputs; ++i) {
       const auto& input_dims = get_input_dims(i);
@@ -212,7 +203,7 @@ protected:
         El::Copy(*m_input_v, *m_output_v);
       }
 
-    }    
+    }
 
   }
 
@@ -234,7 +225,7 @@ protected:
                         1, std::multiplies<int>());
     const auto& output_block_stride = (output_num_unit_slices
                                        * unit_block_size);
-    
+
     // Populate gradient w.r.t. input tensors
     const auto& gradient_wrt_output = get_prev_error_signals();
     for (int i = 0; i < num_inputs; ++i) {
@@ -274,7 +265,7 @@ protected:
         El::LockedView(gradient_wrt_input, *m_output_v);
       }
 
-    }    
+    }
 
   }
 

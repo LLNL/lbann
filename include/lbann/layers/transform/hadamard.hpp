@@ -38,14 +38,11 @@ namespace lbann {
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class hadamard_layer : public transform_layer {
- public:
+public:
 
   hadamard_layer(lbann_comm *comm)
     : transform_layer(comm) {
-
-    // Hadamard layer has no limit on parents
-    m_expected_num_parent_layers = -1;
-
+    m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }
@@ -53,18 +50,7 @@ class hadamard_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " Hadamard; parents: ";
-    for (size_t i=0; i<this->m_parent_layers.size(); i++) {
-      s << this->m_parent_layers[i]->get_name() << " " << this->m_parent_layers[i]->get_type() << " ";
-    }
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    return s.str();
-  }
-
-  protected:
+protected:
 
   void setup_dims() override {
     transform_layer::setup_dims();

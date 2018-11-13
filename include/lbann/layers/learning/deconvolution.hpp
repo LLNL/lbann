@@ -39,11 +39,11 @@ class lbann_callback_imcomm;
 /// Deconvolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Dev> {
- private:
+private:
 
   friend class lbann_callback_imcomm;
 
-  public:
+public:
 
   deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
@@ -85,33 +85,6 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
 
-  }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " deconvolution; conv_dims: ";
-    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-      s << this->m_kernel_dims[h] << " ";
-    }
-    s << " pads: ";
-    for (size_t h=0; h<this->m_pads.size(); h++) {
-      s << this->m_pads[h] << " ";
-    }
-    s << " strides: ";
-    for (size_t h=0; h<this->m_strides.size(); h++) {
-      s << this->m_strides[h] << " ";
-    }
-    s << " dilation: ";
-    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
-      s << this->m_dilations[h] << " ";
-    }
-    s << " groups: " << this->m_num_groups;
-    s << " num_output_channels: " << this->get_output_dims()[0]
-      << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
-    return s.str();
   }
 
   deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
@@ -182,7 +155,7 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
 
   }
 
- protected:
+protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {

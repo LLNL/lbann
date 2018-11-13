@@ -151,9 +151,6 @@ void siamese_model::setup_layers() {
     layer->set_model(this);
     layer->setup();
     layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
   }
 }
 

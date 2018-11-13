@@ -41,7 +41,7 @@ namespace lbann {
  */
 template <data_layout T_layout, El::Device Dev>
 class selu_layer : public entrywise_activation_layer {
- public:
+public:
   selu_layer(lbann_comm *comm,
              DataType alpha = DataType(1.6732632423543772848170429916717),
              DataType scale = DataType(1.0507009873554804934193349852946))
@@ -51,14 +51,15 @@ class selu_layer : public entrywise_activation_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  std::string get_description() const override {
-    return std::string {}
-      + " selu" + " alpha: " + std::to_string(m_alpha) + " scale: "
-      + std::to_string(m_scale) + " dataLayout: "
-      + this->get_data_layout_string(get_data_layout());
+protected:
+
+  std::vector<std::string> get_description() const override {
+    auto&& desc = activation_layer::get_description();
+    desc.push_back("alpha: " + std::to_string(m_alpha));
+    desc.push_back("scale: " + std::to_string(m_scale));
+    return desc;
   }
 
- protected:
   DataType activation(DataType x) const override {
     return (x >= DataType(0) ?
             m_scale * x :
@@ -69,11 +70,13 @@ class selu_layer : public entrywise_activation_layer {
             m_scale :
             m_scale * m_alpha * std::exp(x));
   }
- private:
+
+private:
   /** Alpha parameter for the ELU. */
   DataType m_alpha;
   /** Scaling parameter for the result of the ELU. */
   DataType m_scale;
+
 };
 
 } // namespace lbann

@@ -50,11 +50,6 @@ class reconstruction_layer : public generic_target_layer {
 
   std::string get_type() const override { return "reconstruction"; }
 
-  std::string get_description() const override {
-    return std::string{} + " reconstruction_layer " +
-                           " dataLayout: " + this->get_data_layout_string(get_data_layout());
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
 
   El::Device get_device_allocation() const override { return Dev; }
