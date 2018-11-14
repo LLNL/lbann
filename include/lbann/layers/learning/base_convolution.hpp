@@ -225,13 +225,13 @@ class base_convolution_layer : public learning_layer {
   ~base_convolution_layer() {
 #ifdef LBANN_HAS_CUDNN
     if (m_kernel_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
     }
     if (m_convolution_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
     }
     if (m_bias_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
     }
 #endif // LBANN_HAS_CUDNN
   }
