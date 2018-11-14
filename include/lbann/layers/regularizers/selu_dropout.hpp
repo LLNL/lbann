@@ -93,6 +93,11 @@ class selu_dropout : public regularizer_layer {
 
   El::Device get_device_allocation() const override { return Dev; }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }

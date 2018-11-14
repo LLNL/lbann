@@ -48,8 +48,8 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 protected:
   void setup_dims() override {
-    set_output_dims(get_input_dims());
     Layer::setup_dims();
+    set_output_dims(get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;
@@ -66,7 +66,7 @@ protected:
 
 // Logical operations
 LBANN_DEFINE_UNARY_MATH_LAYER(not_layer, "logical not");
-  
+
 // Sign operations
 LBANN_DEFINE_UNARY_MATH_LAYER(abs_layer,      "absolute value");
 LBANN_DEFINE_UNARY_MATH_LAYER(negative_layer, "negative");
@@ -108,5 +108,5 @@ LBANN_DEFINE_UNARY_MATH_LAYER(atanh_layer, "hyperbolic arctangent");
 
 } // namespace lbann
 
-#undef LBANN_DEFINE_UNARY_MATH_LAYER 
+#undef LBANN_DEFINE_UNARY_MATH_LAYER
 #endif // LBANN_LAYER_MATH_UNARY_HPP_INCLUDED

@@ -39,9 +39,7 @@ template <data_layout T_layout, El::Device Dev>
 class l2_norm2_layer : public Layer {
 public:
 
-  l2_norm2_layer(lbann_comm *comm) : Layer(comm) {
-    set_output_dims({1});
-  }
+  l2_norm2_layer(lbann_comm *comm) : Layer(comm) {}
 
   l2_norm2_layer(const l2_norm2_layer& other)
     : Layer(other),
@@ -59,6 +57,11 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims({1});
+  }
+
   void setup_data() override {
     Layer::setup_data();
 
@@ -71,7 +74,7 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-    
+
   }
 
   void fp_compute() override {
@@ -90,9 +93,9 @@ public:
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
-  
+
   void bp_compute() override {
 
     // Initialize workspace
@@ -122,7 +125,7 @@ private:
 
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMat> m_workspace;
-  
+
 };
 
 } // namespace lbann

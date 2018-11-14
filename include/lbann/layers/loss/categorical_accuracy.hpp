@@ -42,7 +42,7 @@ class categorical_accuracy_layer : public Layer {
 public:
 
   categorical_accuracy_layer(lbann_comm *comm) : Layer(comm) {
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
 
   categorical_accuracy_layer* copy() const override {
@@ -88,9 +88,9 @@ public:
       LBANN_ERROR(err.str());
     }
   }
-  
+
   void fp_compute() override;
-  
+
 };
 
 } // namespace lbann

@@ -51,7 +51,7 @@ class gaussian_layer : public transform_layer {
                  DataType stdev = DataType(1))
     : transform_layer(comm), m_mean(mean), m_stdev(stdev) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
   gaussian_layer* copy() const override { return new gaussian_layer(*this); }
   std::string get_type() const override { return "Gaussian"; }

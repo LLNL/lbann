@@ -48,7 +48,7 @@ public:
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "crop layer only supports DATA_PARALLEL");
     set_output_dims(dims);
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
 
   crop_layer(const crop_layer& other)
@@ -90,7 +90,7 @@ public:
                                                (dist.blockWidth == 1 ?
                                                 El::ELEMENT : El::BLOCK),
                                                El::Device::CPU));
-    
+
   }
 
   void setup_dims() override {
@@ -152,7 +152,7 @@ private:
 
   /** Forward prop implementation for n-dimensional tensors. */
   void fp_compute_nd() {
-    
+
     // Input and output tensors
     const auto& input = get_prev_activations(0);
     auto& output = get_activations();
@@ -227,9 +227,9 @@ private:
             ++output_pos[d-1];
           }
         }
-      
+
       }
-    
+
     }
 
   }
@@ -307,7 +307,7 @@ private:
         }
 
       }
-      
+
     }
 
   }
@@ -320,7 +320,7 @@ private:
    *  E.g. image data.
    */
   void bp_compute_3d();
-  
+
 };
 
 } // namespace lbann

@@ -40,7 +40,7 @@ template <data_layout Layout, El::Device Device, typename Name>
 class binary_math_layer : public Layer {
 public:
   binary_math_layer(lbann_comm *comm) : Layer(comm) {
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
   binary_math_layer* copy() const override {
     return new binary_math_layer<Layout,Device,Name>(*this);
@@ -48,12 +48,12 @@ public:
   std::string get_type() const override { return Name(); }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
-  
+
 protected:
-  
+
   void setup_dims() override {
-    set_output_dims(get_input_dims());
     Layer::setup_dims();
+    set_output_dims(get_input_dims());
 
     // Check that input dimensions match
     if (get_input_dims(0) != get_input_dims(1)) {
@@ -72,12 +72,12 @@ protected:
       err << ")";
       LBANN_ERROR(err.str());
     }
-    
+
   }
-  
+
   void fp_compute() override;
   void bp_compute() override;
-  
+
 };
 
 // Convenience macro to define a binary math layer class
@@ -107,7 +107,7 @@ LBANN_DEFINE_BINARY_MATH_LAYER(less_layer,          "less than");
 LBANN_DEFINE_BINARY_MATH_LAYER(less_equal_layer,    "less than or equal");
 LBANN_DEFINE_BINARY_MATH_LAYER(greater_layer,       "greater than");
 LBANN_DEFINE_BINARY_MATH_LAYER(greater_equal_layer, "greater than or equal");
-  
+
 // Logical operations
 LBANN_DEFINE_BINARY_MATH_LAYER(and_layer, "logical and");
 LBANN_DEFINE_BINARY_MATH_LAYER(or_layer,  "logical or");
@@ -115,5 +115,5 @@ LBANN_DEFINE_BINARY_MATH_LAYER(xor_layer, "logical xor");
 
 } // namespace lbann
 
-#undef LBANN_DEFINE_BINARY_MATH_LAYER 
+#undef LBANN_DEFINE_BINARY_MATH_LAYER
 #endif // LBANN_LAYER_MATH_BINARY_HPP_INCLUDED

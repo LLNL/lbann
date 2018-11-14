@@ -43,6 +43,11 @@ public:
 
 protected:
 
+  void setup_dims() override {
+    activation_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
