@@ -551,7 +551,7 @@ void lbann_comm::pe_ring_allreduce(
   std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
 
-  El::SyncInfo<D> syncInfo{mat};
+  auto syncInfo = El::SyncInfoFromMatrix(mat);
 
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -777,7 +777,7 @@ void lbann_comm::ring_allreduce(
   std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
 
-  El::SyncInfo<D> syncInfo{mat};
+  auto syncInfo = SyncInfoFromMatrix(mat);
 
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -965,7 +965,7 @@ void lbann_comm::rabenseifner_allreduce(
                           " a power-of-2 number of participating processes");
   }
 
-  El::SyncInfo<D> syncInfo{mat};
+  auto syncInfo = SyncInfoFromMatrix(mat);
 
   // Compute the slices on each processor.
   const El::Int cols_per_proc = mat.Width() / nprocs;

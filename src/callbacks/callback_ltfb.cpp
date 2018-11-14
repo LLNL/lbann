@@ -103,9 +103,9 @@ void exchange_weights(lbann_comm* comm,
         comm->sendrecv(
           local_matrix.LockedBuffer(), size, partner,
           remote_matrix->Buffer(), size, partner,
-          El::SyncInfo<El::Device::GPU>{
+          El::SyncInfoFromMatrix(
             static_cast<El::Matrix<ValueT,El::Device::GPU> const&>(
-              remote_matrix->LockedMatrix())});
+              remote_matrix->LockedMatrix())));
         break;
 #endif // HYDROGEN_HAVE_CUDA
       default:
