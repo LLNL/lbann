@@ -6,22 +6,21 @@ CANcer Distributed Learning Enviroment ([CANDLE](http://candle.cels.anl.gov/)) i
 [Autoencoder](https://en.wikipedia.org/wiki/Autoencoder) is one of deep learning techniques being explored in the **CANDLE** team. In this blog, I will explain how to build autoencoder of interest to **CANDLE** project within LBANN framework. Examples in this blog were taken from Tensorflow version of similar deep learning network architecture provided by the **CANDLE** research team.
 
 ## Autoencoder in LBANN
-A network architecture in LBANN is a collection of layers as a sequential list or graph. To build an autoencoder model in LBANN, the user simply describe how the layers are connected in a [model prototext file](https://github.com/LLNL/lbann/tree/develop/model_zoo/models/autoencoder_candle_pilot1), provide training optimization paratemers in the [optimizer prototext file](https://github.com/LLNL/lbann/tree/develop/model_zoo/optimizers), and input data (and labels in case of classification) in the [data reader prototext file ](https://github.com/LLNL/lbann/tree/develop/model_zoo/data_readers). The prototext files provide the flexibility for users to change a number of network and optimization hyperparameters at run time. For example, an LBANN fully connected (also known as linear or inner product in other deep learning toolkits) layer can be described as shown:
+A network architecture in LBANN is a collection of layers as a directed acyclic graph. To build an autoencoder model in LBANN, the user simply describe how the layers are connected in a [model prototext file](https://github.com/LLNL/lbann/tree/develop/model_zoo/models/autoencoder_candle_pilot1), provide training optimization paratemers in the [optimizer prototext file](https://github.com/LLNL/lbann/tree/develop/model_zoo/optimizers), and input data (and labels in case of classification) in the [data reader prototext file ](https://github.com/LLNL/lbann/tree/develop/model_zoo/data_readers). The prototext files provide the flexibility for users to change a number of network and optimization hyperparameters at run time. For example, an LBANN fully connected (also known as linear or inner product in other deep learning toolkits) layer can be described as shown:
  ```
 layer {
-    index: 8
-    parent: 7
+    name: "8"
+    parents: "7"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 5000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
   
   ```
 
-Most of the attributes are self descriptive and some of them can be changed "on-the-fly". For instance, the glorot_uniform weight initialization scheme can be replaced with other schemes such as uniform, normal, he_normal, he_uniform, glorot_normal and so on.
+Most of the attributes are self descriptive and some of them can be changed "on-the-fly".
 
 
 ## Execute LBANN Autoencoder Example on LC

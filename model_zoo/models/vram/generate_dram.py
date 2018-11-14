@@ -354,8 +354,7 @@ def configure_model(model):
 
         # Categorical accuracy
         acc1 = new_layer(model, "top1_accuracy_step%d" % step,
-                         [class_prob, label], "top_k_categorical_accuracy")
-        acc1.top_k_categorical_accuracy.k = 1
+                         [class_prob, label], "categorical_accuracy")
         acc5 = new_layer(model, "top5_accuracy_step%d" % step,
                          [class_prob, label], "top_k_categorical_accuracy")
         acc5.top_k_categorical_accuracy.k = 5

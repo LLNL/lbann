@@ -1,6 +1,5 @@
 #Discriminator Model
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
   mini_batch_size: 32
   block_size: 256
@@ -14,7 +13,7 @@ model {
   ###################################################
 
   objective_function {
-    binary_cross_entropy {}
+    layer_term { layer: "binary_cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -25,7 +24,11 @@ model {
   ###################################################
 
   metric {
-    categorical_accuracy {}
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "categorical_accuracy"
+      unit: "%"
+    }
   }
 
   ###################################################
@@ -54,14 +57,25 @@ model {
 
   # INPUT real data
   layer {
-    name: "data"
-    children: "zero_data target"
+    name: "input"
+    children: "input label"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
-
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "data_parallel"
+    split {}    
+  }
+  layer {
+    parents: "input"
+    name: "label"
+    data_layout: "data_parallel"
+    split {}    
+  }
 
   #ZERO
   layer {
@@ -102,7 +116,6 @@ model {
     weights: "gen_fc1_weights"
     fully_connected {
       num_neurons: 256
-     # weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -141,7 +154,6 @@ model {
     weights: "gen_fc2_weights"
     fully_connected {
       num_neurons: 512
-      #weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -180,7 +192,6 @@ model {
     weights: "gen_fc3_weights"
     fully_connected {
       num_neurons: 1024
-     # weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -219,7 +230,6 @@ model {
     weights: "gen_fc4_weights"
     fully_connected {
       num_neurons: 784
-      #weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -275,7 +285,6 @@ model {
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 784
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -287,7 +296,6 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 512
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -307,7 +315,6 @@ model {
     #weights: "gen_fc_weights"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -327,7 +334,6 @@ model {
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 2
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -349,10 +355,16 @@ model {
   }
 
   layer {
-    parents: "prob data"
-    name: "target"
+    parents: "prob label"
+    name: "binary_cross_entropy"
     data_layout: "data_parallel"
-    target {}
+    binary_cross_entropy {}
+  }
+  layer {
+    parents: "prob label"
+    name: "categorical_accuracy"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
   }
 
 }

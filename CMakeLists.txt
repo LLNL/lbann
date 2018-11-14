@@ -37,26 +37,45 @@ endif ()
 # Version setup
 #
 
-# Check to see if we are in a git repo
-execute_process(
-  COMMAND git rev-parse --is-inside-work-tree
-  WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-  OUTPUT_VARIABLE GIT_REPO
-  OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(LBANN_VERSION_MAJOR 0)
+set(LBANN_VERSION_MINOR 96)
 
-if (GIT_REPO)
-  # Get the git version so that we can embed it into the executable
+set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}")
+
+# Check to see if we are in a git repo
+find_program(__GIT_EXECUTABLE git)
+mark_as_advanced(__GIT_EXECUTABLE)
+if (__GIT_EXECUTABLE)
+
   execute_process(
-    COMMAND git --git-dir .git describe --abbrev=7 --dirty --always --tags
-    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    OUTPUT_VARIABLE GIT_VERSION
+    COMMAND ${__GIT_EXECUTABLE} rev-parse --is-inside-work-tree
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    OUTPUT_VARIABLE __BUILDING_FROM_GIT_SOURCES
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  set(${UPPER_PROJECT_NAME}_VERSION ${GIT_VERSION}
-    CACHE STRING "LBANN's version string")
-else ()
-  set(${UPPER_PROJECT_NAME}_VERSION v0.95
-    CACHE STRING "LBANN's version string")
-endif (GIT_REPO)
+
+  if (__BUILDING_FROM_GIT_SOURCES)
+    # Get the git version so that we can embed it into the executable
+    execute_process(
+      COMMAND ${__GIT_EXECUTABLE} rev-parse --show-toplevel
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      OUTPUT_VARIABLE __GIT_TOPLEVEL_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+      COMMAND ${__GIT_EXECUTABLE} rev-parse --git-dir
+      WORKING_DIRECTORY "${__GIT_TOPLEVEL_DIR}"
+      OUTPUT_VARIABLE __GIT_GIT_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    execute_process(
+      COMMAND ${__GIT_EXECUTABLE} --git-dir "${__GIT_GIT_DIR}" describe
+      --abbrev=7 --always --dirty --tags
+      WORKING_DIRECTORY "${__GIT_TOPLEVEL_DIR}"
+      OUTPUT_VARIABLE __GIT_DESCRIBE_VERSION
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    set(LBANN_GIT_VERSION "${__GIT_DESCRIBE_VERSION}"
+      CACHE STRING "LBANN's version string as told by git.")
+  endif (__BUILDING_FROM_GIT_SOURCES)
+endif (__GIT_EXECUTABLE)
 
 if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
   set(LBANN_GNU_LINUX TRUE)
@@ -214,7 +233,7 @@ endif (LBANN_HAS_CUDA)
 # guarantee. There's no harm including it multiple times.
 find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
 if (DL_LIBRARY)
-  message("Found dl: ${DL_LIBRARY}")
+  message(STATUS "Found dl: ${DL_LIBRARY}")
 else ()
   message(FATAL_ERROR
     "dl library not found! This is a required library.\n"
@@ -401,33 +420,47 @@ get_directory_property( DirDefs COMPILE_DEFINITIONS )
 # Configuration summary
 ################################################################
 
-message("== Configuration Summary ==")
-message("  PROJECT_SOURCE_DIR:   ${PROJECT_SOURCE_DIR}")
-message("  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}")
-message("  CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
-message("  CMAKE_BUILD_TYPE:     ${CMAKE_BUILD_TYPE}")
+# NOTE: message() outputs to stderr by default. We now use a string to
+# maintain this information and then have cmake echo it to stdout. The
+# only side effects are that if you use the CMake GUI, you won't see
+# this output anymore (they only report stderr) and that if you add
+# something to the list, you must remember your newline!
+set(_str "== Configuration Summary ==\n")
+string(APPEND _str "  PROJECT_SOURCE_DIR:   ${PROJECT_SOURCE_DIR}\n"
+  "  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}\n"
+  "  CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}\n"
+  "  CMAKE_BUILD_TYPE:     ${CMAKE_BUILD_TYPE}\n")
 if (CMAKE_BUILD_TYPE MATCHES None)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS}\n")
 elseif (CMAKE_BUILD_TYPE MATCHES Release)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}\n")
 elseif (CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}\n")
 elseif (CMAKE_BUILD_TYPE MATCHES Debug)
-  message("  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  string(APPEND _str
+    "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}\n")
 endif ()
-message("  LBANN_GNU_LINUX:      ${LBANN_GNU_LINUX}")
-message("  LBANN_HAS_HYDROGEN:   ${LBANN_HAS_HYDROGEN}")
-message("  LBANN_HAS_OPENCV:     ${LBANN_HAS_OPENCV}")
-message("  LBANN_HAS_CUDA:       ${LBANN_HAS_CUDA}")
-message("  LBANN_HAS_CUDNN:      ${LBANN_HAS_CUDNN}")
-message("  LBANN_HAS_NCCL2:      ${LBANN_HAS_NCCL2}")
-message("  LBANN_HAS_PROTOBUF:   ${LBANN_HAS_PROTOBUF}")
-message("  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}")
-message("  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}")
-message("  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}")
-message("  LBANN_NVPROF:         ${LBANN_NVPROF}")
-message("  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}")
-message("  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}")
-message("  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}")
-message("  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}")
-message("  LBANN_NO_OMP_FOR_DATA_READERS: ${LBANN_NO_OMP_FOR_DATA_READERS}")
+string(APPEND _str
+  "  LBANN_GNU_LINUX:      ${LBANN_GNU_LINUX}\n"
+  "  LBANN_HAS_HYDROGEN:   ${LBANN_HAS_HYDROGEN}\n"
+  "  LBANN_HAS_OPENCV:     ${LBANN_HAS_OPENCV}\n"
+  "  LBANN_HAS_CUDA:       ${LBANN_HAS_CUDA}\n"
+  "  LBANN_HAS_CUDNN:      ${LBANN_HAS_CUDNN}\n"
+  "  LBANN_HAS_NCCL2:      ${LBANN_HAS_NCCL2}\n"
+  "  LBANN_HAS_PROTOBUF:   ${LBANN_HAS_PROTOBUF}\n"
+  "  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}\n"
+  "  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}\n"
+  "  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}\n"
+  "  LBANN_NVPROF:         ${LBANN_NVPROF}\n"
+  "  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}\n"
+  "  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}\n"
+  "  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}\n"
+  "  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}\n"
+  "  LBANN_NO_OMP_FOR_DATA_READERS: ${LBANN_NO_OMP_FOR_DATA_READERS}\n")
+
+# Output to stdout
+execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${_str}")
+set(_str)
