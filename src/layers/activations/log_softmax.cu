@@ -24,38 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/log_softmax.hpp"
 
 namespace lbann {
 
 namespace {
-
-/** Minimum output value to avoid denormalized floats. */
-inline __device__ DataType get_min_output() {
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-  return cuda::sqrt(cuda::min<DataType>());
-#else
-  return DataType(0);
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-}
-
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-/** Operator for thresholding output. */
-struct fp_threshold_op {
-  const DataType min_output = get_min_output();
-  inline __device__ DataType operator()(const DataType& y) const {
-    return cuda::max(y, min_output);
-  }
-};
-/** Operator for thresholding gradient w.r.t. input. */
-struct bp_threshold_op {
-  const DataType min_output = get_min_output();
-  inline __device__ DataType operator()(const DataType& y,
-                                        const DataType& dx) const {
-    return (y > min_output) ? dx : DataType(0);
-  }
-};
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
 /** Find largest entry within each CUDA block.
  *  Each block is assigned several entries from the same mini-batch
@@ -105,9 +78,9 @@ __global__ void reduce_max_kernel(El::Int height, El::Int width,
 
 }
 
-/** Exponentiate outputs and compute column sums.
- *  Subtracting by the column max prevents output from blowing
- *  up. Large negative values underflow to 0.
+/** Exponentiate inputs and compute sum(exp(x)).
+ *  Inputs are shifted by the column max to prevent LogSumExp from
+ *  blowing up.
  */
 template <El::Int block_size>
 __global__ void fp_exp_kernel(El::Int height, El::Int width,
@@ -131,13 +104,13 @@ __global__ void fp_exp_kernel(El::Int height, El::Int width,
   for (El::Int col = bidy; col < width; col += nblocksy) {
     const auto& shift = shifts[col * shifts_stride];
 
-    // Exponentiate and compute sum for each thread
+    // Exponentiate inputs and compute sum for each thread
     DataType private_sum = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row + col * input_ldim];
       auto& y = output[row + col * output_ldim];
-      y = cuda::exp(x - shift);
-      private_sum += y;
+      y = x - shift;
+      private_sum += cuda::exp(y);
     }
 
     // Shared memory reduction to get sum for each block
@@ -159,38 +132,34 @@ __global__ void fp_exp_kernel(El::Int height, El::Int width,
 
 }
 
-/** Divide outputs by column sums.
- *  Small values can be rounded to minimum output value to avoid
- *  denormalized floats.
+/** Subtract LogSumExp from outputs.
+ *  sums should contain sum(exp(x)) for each column.
  */
-__global__ void fp_scale_kernel(El::Int height, El::Int width,
-                                DataType* __restrict__ output,
-                                El::Int output_ldim,
-                                const DataType* __restrict__ sums,
-                                El::Int sums_stride) {
+__global__ void fp_lse_kernel(El::Int height, El::Int width,
+                              DataType* __restrict__ output,
+                              El::Int output_ldim,
+                              const DataType* __restrict__ sums,
+                              El::Int sums_stride) {
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int bidy = blockIdx.y;
   const El::Int nthreadsx = blockDim.x * gridDim.x;
   const El::Int nblocksy = gridDim.y;
-  const auto& min_output = get_min_output();
   for (El::Int col = bidy; col < width; col += nblocksy) {
-    const auto& scale = 1 / sums[col * sums_stride];
+    const auto& log_sum_exp = cuda::log(sums[col * sums_stride]);
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       auto& y = output[row + col * output_ldim];
-      y = cuda::max(scale * y, min_output);
+      y -= log_sum_exp;
     }
   }
 }
 
-/** Compute dot products between output and gradient w.r.t. output. */
+/** Compute sum of entries in gradient w.r.t. output. */
 template <El::Int block_size>
-__global__ void bp_dot_product_kernel(El::Int height, El::Int width,
-                                      const DataType* __restrict__ output,
-                                      El::Int output_ldim,
-                                      const DataType* __restrict__ gradient_wrt_output,
-                                      El::Int gradient_wrt_output_ldim,
-                                      DataType* __restrict__ dot_products,
-                                      El::Int dot_products_stride) {
+__global__ void bp_sum_kernel(El::Int height, El::Int width,
+                              const DataType* __restrict__ gradient_wrt_output,
+                              El::Int gradient_wrt_output_ldim,
+                              DataType* __restrict__ sums,
+                              El::Int sums_stride) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -199,31 +168,29 @@ __global__ void bp_dot_product_kernel(El::Int height, El::Int width,
   const El::Int nthreadsx = blockDim.x * gridDim.x;
   const El::Int nblocksy = gridDim.y;
 
-  // Compute dot product for each matrix column independently
+  // Compute sum for each matrix column independently
   for (El::Int col = bidy; col < width; col += nblocksy) {
 
-    // Compute dot product contribution for each thread
-    DataType private_dot_product = 0;
+    // Compute sum for each thread
+    DataType private_sum = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
-      const auto& y = output[row + col * output_ldim];
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
-      private_dot_product += y * dy;
+      private_sum += dy;
     }
 
-    // Shared memory reduction to get contribution for each block
-    __shared__ DataType shared_dot_products[block_size];
-    shared_dot_products[tid] = private_dot_product;
+    // Shared memory reduction to get sum for each block
+    __shared__ DataType shared_sums[block_size];
+    shared_sums[tid] = private_sum;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
       if (tid < stride) {
-        shared_dot_products[tid] += shared_dot_products[tid + stride];
+        shared_sums[tid] += shared_sums[tid + stride];
       }
     }
 
-    // Atomic add to global dot product
+    // Atomic add to global sum
     if (tid == 0) {
-      cuda::atomic_add(&dot_products[col * dot_products_stride],
-                       shared_dot_products[0]);
+      cuda::atomic_add(&sums[col * sums_stride], shared_sums[0]);
     }
 
   }
@@ -237,22 +204,21 @@ __global__ void bp_kernel(El::Int height, El::Int width,
                           El::Int output_ldim,
                           const DataType* __restrict__ gradient_wrt_output,
                           El::Int gradient_wrt_output_ldim,
-                          const DataType* __restrict__ dot_products,
-                          El::Int dot_products_stride,
+                          const DataType* __restrict__ sums,
+                          El::Int sums_stride,
                           DataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int bidy = blockIdx.y;
   const El::Int nthreadsx = blockDim.x * gridDim.x;
   const El::Int nblocksy = gridDim.y;
-  const auto& min_output = get_min_output();
   for (El::Int col = bidy; col < width; col += nblocksy) {
-    const auto& y_dot_dy = dot_products[col * dot_products_stride];
+    const auto& sum = sums[col * sums_stride];
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& y = output[row + col * output_ldim];
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
+      dx = dy - cuda::exp(y) * sum;
     }
   }
 }
@@ -260,14 +226,14 @@ __global__ void bp_kernel(El::Int height, El::Int width,
 } // namespace
 
 template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
   if (!local_input.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
-                                    CUDNN_SOFTMAX_ACCURATE,
+                                    CUDNN_SOFTMAX_LOG,
                                     CUDNN_SOFTMAX_MODE_INSTANCE,
                                     &one,
                                     m_tensors_cudnn_desc.get_prev_activations(),
@@ -275,15 +241,11 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
                                     &zero,
                                     m_tensors_cudnn_desc.get_activations(),
                                     local_output.Buffer()));
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-    cuda::apply_entrywise_unary_operator<fp_threshold_op>(local_output,
-                                                          local_output);
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
   }
 }
 
 template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
   const auto& local_output = get_local_activations();
@@ -291,7 +253,7 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   auto& local_gradient_wrt_input = get_local_error_signals();
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
-                                     CUDNN_SOFTMAX_ACCURATE,
+                                     CUDNN_SOFTMAX_LOG,
                                      CUDNN_SOFTMAX_MODE_INSTANCE,
                                      &one,
                                      m_tensors_cudnn_desc.get_activations(),
@@ -301,16 +263,11 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                      &zero,
                                      m_tensors_cudnn_desc.get_error_signals(),
                                      local_gradient_wrt_input.Buffer()));
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-    cuda::apply_entrywise_binary_operator<bp_threshold_op>(local_output,
-                                                           local_gradient_wrt_input,
-                                                           local_gradient_wrt_input);
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
   }
 }
 
 template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 
   // Local matrices
   const auto& local_input = get_local_prev_activations();
@@ -354,7 +311,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
                      El::mpi::MAX, m_workspace->RedundantComm(),
                      sync_info);
 
-  // Exponentiate outputs and compute column sums
+  // Shift inputs and compute sum(exp(x)) for each column
   El::Zero(*m_workspace);
   if (!local_output.IsEmpty()) {
     grid_dims.x = (local_height + block_size - 1) / block_size;
@@ -367,10 +324,10 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   }
   El::AllReduce(*m_workspace, m_workspace->RedundantComm());
 
-  // Divide activations by column sums
+  // Compute output by subtracting LogSumExp
   if (!local_output.IsEmpty()) {
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    fp_scale_kernel<<<grid_dims, block_dims, 0, stream>>>(
+    fp_lse_kernel<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_output.Buffer(), local_output.LDim(),
       local_workspace.LockedBuffer(), 1);
@@ -379,7 +336,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 }
 
 template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
 
   // Local matrices
   const auto& local_output = get_local_activations();
@@ -402,15 +359,13 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
   block_dims.x = block_size;
   grid_dims.y = local_width;
 
-  // Compute dot products between output and gradient w.r.t. output
+  // Compute sum of entries in gradient w.r.t. output
   El::Zero(local_workspace);
   if (!local_output.IsEmpty()) {
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    bp_dot_product_kernel<block_size>
+    bp_sum_kernel<block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         local_height, local_width,
-        local_output.LockedBuffer(),
-        local_output.LDim(),
         local_gradient_wrt_output.LockedBuffer(),
         local_gradient_wrt_output.LDim(),
         local_workspace.Buffer(), 1);

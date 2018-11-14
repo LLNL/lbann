@@ -24,18 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/activations/log_softmax.hpp"
 
 namespace lbann {
 
 namespace {
-
-// Minimum output value to avoid denormalized floats
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-const DataType min_output = std::sqrt(std::numeric_limits<DataType>::min());
-#else
-const DataType min_output = 0;
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
 
 void fp(lbann_comm& comm,
         const AbsDistMat& input,
@@ -60,9 +53,8 @@ void fp(lbann_comm& comm,
   }
   comm.allreduce(workspace, workspace.RedundantComm(), El::mpi::MAX);
 
-  // Exponentiate outputs and compute column sums
-  // Note: Subtracting by the column max prevents output from blowing
-  // up. Large negative values underflow to 0.
+  // Shift inputs and compute sum(exp(x)) for each column
+  // Note: Shifting by the max prevents LogSumExp from blowing up.
 #pragma omp parallel for
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
@@ -70,22 +62,20 @@ void fp(lbann_comm& comm,
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_input(row, col);
       auto& y = local_output(row, col);
-      y = std::exp(x - shift);
-      sum += y;
+      y = x - shift;
+      sum += std::exp(y);
     }
     local_workspace(0, col) = sum;
   }
   comm.allreduce(workspace, workspace.RedundantComm());
 
-  // Divide outputs by column sums
-  // Note: Small values can be rounded to minimum output value to
-  // avoid denormalized floats.
+  // Compute output by subtracting LogSumExp
 #pragma omp parallel for
   for (El::Int col = 0; col < local_width; ++col) {
-    const auto& scale = 1 / local_workspace(0, col);
+    const DataType log_sum_exp = std::log(local_workspace(0, col));
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
-      y = std::max(scale * y, min_output);
+      y -= log_sum_exp;
     }
   }
 
@@ -105,15 +95,14 @@ void bp(lbann_comm& comm,
   const auto& local_height = local_output.Height();
   const auto& local_width = local_output.Width();
 
-  // Compute dot products between output and gradient w.r.t. output
-  El::Zero(local_workspace);
+  // Compute sum of entries in gradient w.r.t. output
+  El::Zero(workspace);
 #pragma omp parallel for
   for (El::Int col = 0; col < local_width; ++col) {
-    auto& y_dot_dy = local_workspace(0, col);
+    auto& sum = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
-      const auto& y = local_output(row, col);
       const auto& dy = local_gradient_wrt_output(row, col);
-      y_dot_dy += y * dy;
+      sum += dy;
     }
   }
   comm.allreduce(workspace, workspace.RedundantComm());
@@ -121,12 +110,12 @@ void bp(lbann_comm& comm,
   // Compute gradient w.r.t. input
 #pragma omp parallel for
   for (El::Int col = 0; col < local_width; ++col) {
-    const auto& y_dot_dy = local_workspace(0, col);
+    const auto& sum = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& y = local_output(row, col);
       const auto& dy = local_gradient_wrt_output(row, col);
       auto& dx = local_gradient_wrt_input(row, col);
-      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
+      dx = dy - std::exp(y) * sum;
     }
   }
 
@@ -135,14 +124,14 @@ void bp(lbann_comm& comm,
 } // namespace
 
 template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
+void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   fp(*get_comm(),
      get_prev_activations(),
      get_activations(),
      *m_workspace);
 }
 template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
+void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   bp(*get_comm(),
      get_activations(),
      get_prev_error_signals(),
@@ -150,14 +139,14 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
      *m_workspace);
 }
 template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
+void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   fp(*get_comm(),
      get_prev_activations(),
      get_activations(),
      *m_workspace);
 }
 template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
+void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
   bp(*get_comm(),
      get_activations(),
      get_prev_error_signals(),
