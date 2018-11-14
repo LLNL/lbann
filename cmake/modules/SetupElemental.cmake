@@ -8,7 +8,7 @@
 # Hydrogen, this file is no longer necessary as it's just one
 # find_package() line.
 
-set(_MIN_H_VERSION 1.0.0)
+set(_MIN_H_VERSION 1.1.0)
 find_package(Hydrogen ${_MIN_H_VERSION} NO_MODULE
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
