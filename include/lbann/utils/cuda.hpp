@@ -33,10 +33,10 @@
 
 #include <cuda.h>
 #include <thrust/memory.h>
+#include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
-#ifdef __CUDACC__
-#include <cuda_fp16.hpp>
-#endif // __CUDACC__
+#include <thrust/system/cuda/detail/par.h>
+#include <thrust/device_vector.h>
 
 // -------------------------------------------------------------
 // Error utility macros
@@ -56,6 +56,19 @@
                     << ")";                                     \
       LBANN_ERROR(err_CUDA_SYNC.str());                         \
     }                                                           \
+  } while (0)
+#define LBANN_CUDA_CHECK_LAST_ERROR(async)                              \
+  do {                                                                  \
+    cudaError_t status = cudaGetLastError();                            \
+    if (status != cudaSuccess) {                                        \
+      cudaDeviceReset();                                                \
+      std::stringstream err_CUDA_CHECK_LAST_ERROR;                      \
+      if (async) { err_CUDA_CHECK_LAST_ERROR << "Asynchronous "; }      \
+      err_CUDA_CHECK_LAST_ERROR << "CUDA error ("                       \
+                                << cudaGetErrorString(status)           \
+                                << ")";                                 \
+      LBANN_ERROR(err_CUDA_CHECK_LAST_ERROR.str());                     \
+    }                                                                   \
   } while (0)
 #define FORCE_CHECK_CUDA(cuda_call)                             \
   do {                                                          \
@@ -79,133 +92,190 @@
 namespace lbann {
 namespace cuda {
 
-#ifdef __CUDACC__
 // -------------------------------------------------------------
 // Device functions
 // -------------------------------------------------------------
+#ifdef __CUDACC__
 
-// Atomic add functions
-#if __CUDA_ARCH__ >= 530
-__device__ __inline__ __half atomic_add(__half* address, __half val) {
-#if 0 // TODO: replace this once Nvidia implements atomicAdd for __half
-  return atomicAdd(address, val);
-#else
-  unsigned int* address_as_uint = (unsigned int*) address;
-  unsigned int old = *address_as_uint;
-  __half* old_as_half = (__half*) &old;
-  unsigned int assumed;
-  unsigned int updated;
-  __half* updated_as_half = (__half*) &updated;
-  do {
-    assumed = old;
-    updated = old;
-    *updated_as_half += val;
-    old = atomicCAS(address_as_uint, assumed, updated);
-  } while (assumed != old);
-  return *old_as_half;
-#endif // 0
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ __inline__ float atomic_add(float* address, float val) {
-  return atomicAdd(address, val);
-}
-__device__ __inline__ double atomic_add(double* address, double val) {
-#if __CUDA_ARCH__ >= 600
-  return atomicAdd(address, val);
-#else
-  unsigned long long int* address_as_ull =
-    (unsigned long long int*)address;
-  unsigned long long int old = *address_as_ull, assumed;
-  do {
-    assumed = old;
-    old = atomicCAS(address_as_ull, assumed,
-                    __double_as_longlong(val +
-                                         __longlong_as_double(assumed)));
-  } while (assumed != old);
-  return __longlong_as_double(old);
-#endif // __CUDA_ARCH__ < 600
-}
+// Atomic add
+template <typename T> __device__ __forceinline__
+T atomic_add(T* address, T val);
 
-// Min and max
-__device__ __inline__ int min(int x, int y) { return x <= y ? x : y; }
-__device__ __inline__ El::Int min(El::Int x, El::Int y) { return x <= y ? x : y; }
-__device__ __inline__ float min(float x, float y) { return fminf(x, y); }
-__device__ __inline__ double min(double x, double y) { return fmin(x, y); }
-__device__ __inline__ int max(int x, int y) { return x >= y ? x : y; }
-__device__ __inline__ El::Int max(El::Int x, El::Int y) { return x >= y ? x : y; }
-__device__ __inline__ float max(float x, float y) { return fmaxf(x, y); }
-__device__ __inline__ double max(double x, double y) { return fmax(x, y); }
+// Unary math functions
+template <typename T> __device__ __forceinline__ T abs(const T& x);
+template <typename T> __device__ __forceinline__ T round(const T& x);
+template <typename T> __device__ __forceinline__ T ceil(const T& x);
+template <typename T> __device__ __forceinline__ T floor(const T& x);
+template <typename T> __device__ __forceinline__ T sqrt(const T& x);
+template <typename T> __device__ __forceinline__ T rsqrt(const T& x);
+template <typename T> __device__ __forceinline__ T exp(const T& x);
+template <typename T> __device__ __forceinline__ T expm1(const T& x);
+template <typename T> __device__ __forceinline__ T log(const T& x);
+template <typename T> __device__ __forceinline__ T log1p(const T& x);
+template <typename T> __device__ __forceinline__ T cos(const T& x);
+template <typename T> __device__ __forceinline__ T sin(const T& x);
+template <typename T> __device__ __forceinline__ T tan(const T& x);
+template <typename T> __device__ __forceinline__ T acos(const T& x);
+template <typename T> __device__ __forceinline__ T asin(const T& x);
+template <typename T> __device__ __forceinline__ T atan(const T& x);
+template <typename T> __device__ __forceinline__ T cosh(const T& x);
+template <typename T> __device__ __forceinline__ T sinh(const T& x);
+template <typename T> __device__ __forceinline__ T tanh(const T& x);
+template <typename T> __device__ __forceinline__ T acosh(const T& x);
+template <typename T> __device__ __forceinline__ T asinh(const T& x);
+template <typename T> __device__ __forceinline__ T atanh(const T& x);
+
+// Binary math functions
+template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
+template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
+template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
+template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
+  
+// Numeric limits
+template <typename T> constexpr __device__ __forceinline__ T min();
+template <typename T> constexpr __device__ __forceinline__ T max();
+template <typename T> constexpr __device__ __forceinline__ T epsilon();
+template <typename T> __device__ __forceinline__ T infinity();
   
 #endif // __CUDACC__
+
+// -------------------------------------------------------------
+// Utilities for CUDA events
+// -------------------------------------------------------------
   
+/** Wrapper class for a CUDA event. */
+class event_wrapper {
+public:
+  event_wrapper();
+  event_wrapper(const event_wrapper& other);
+  event_wrapper& operator=(const event_wrapper& other);
+  ~event_wrapper();
+  /** Enqueue CUDA event on a CUDA stream. */
+  void record(cudaStream_t stream);
+  /** Check whether CUDA event has completed. */
+  bool query() const;
+  /** Wait until CUDA event has completed. */
+  void synchronize();
+  /** Get CUDA event object. */
+  cudaEvent_t& get_event();
+private:
+  /** CUDA event object.
+   *  The event object lifetime is managed internally.
+   */
+  cudaEvent_t m_event;
+  /** CUDA stream object.
+   *  The stream object lifetime is assumed to be managed externally.
+   */
+  cudaStream_t m_stream;
+};
+  
+// -------------------------------------------------------------
+// Helper functions for entrywise operations
+// -------------------------------------------------------------
+#ifdef __CUDACC__
+
+/** Apply an entry-wise unary operator to GPU data.
+ *  The input and output data must be on GPU and must have the same
+ *  dimensions.
+ */
+template <typename UnaryOperator>
+void apply_entrywise_unary_operator(const AbsMat& input,
+                                    AbsMat& output);
+
+/** Apply an entry-wise binary operator to GPU data.
+ *  The input and output data must be on GPU and must have the same
+ *  dimensions.
+ */
+template <typename BinaryOperator>
+void apply_entrywise_binary_operator(const AbsMat& input1,
+                                     const AbsMat& input2,
+                                     AbsMat& output);
+  
+
+/** Apply an entry-wise unary operator to GPU data.
+ *  The input and output data must be on GPU, have the same
+ *  dimensions, and be aligned.
+ */
+template <typename UnaryOperator>
+void apply_entrywise_unary_operator(const AbsDistMat& input,
+                                    AbsDistMat& output);
+
+/** Apply an entry-wise binary operator to GPU data.
+ *  The input and output data must be on GPU, have the same
+ *  dimensions, and be aligned.
+ */
+template <typename BinaryOperator>
+void apply_entrywise_binary_operator(const AbsDistMat& input1,
+                                     const AbsDistMat& input2,
+                                     AbsDistMat& output);
+  
+#endif // __CUDACC__
+
 // -------------------------------------------------------------
 // Utilities for Thrust
 // -------------------------------------------------------------
 namespace thrust {
 
+/** Thrust execution policy. */
+using execute_on_stream
+#if THRUST_MAJOR_VERSION > 1 || THRUST_MINOR_VERSION >= 9
+  = ::thrust::cuda_cub::execute_on_stream; // >= 1.9.1
+#elif THRUST_MAJOR_VERSION == 1 && THRUST_MINOR_VERSION == 8
+  = ::thrust::system::cuda::detail::execute_on_stream;
+#else
+  = std::nullptr_t;
+  static_assert(false, "Thrust 1.8 or newer is required");
+#endif
+
 /** GPU memory allocator that can interact with Thrust.
- *  Uses Hydrogen's CUB memory pool if available.
+ *  Operations are performed on a provided CUDA stream. Uses
+ *  Hydrogen's CUB memory pool if available.
  */
 template <typename T = El::byte>
 class allocator
   : public ::thrust::detail::tagged_allocator<
-      T,
-      ::thrust::system::cuda::tag,
-      ::thrust::pointer<T, ::thrust::system::cuda::tag>> {
-private:
-  typedef typename ::thrust::detail::tagged_allocator<
-    T,
-    ::thrust::system::cuda::tag,
-    ::thrust::pointer<T, ::thrust::system::cuda::tag>> parent_class;
-
-  /** Active CUDA stream. */
-  cudaStream_t m_stream;
-
+               T, execute_on_stream,
+               ::thrust::pointer<T, execute_on_stream>> {
 public:
-  typedef typename parent_class::value_type value_type;
-  typedef typename parent_class::pointer    pointer;
-  typedef typename parent_class::size_type  size_type;
+  // Convenient typedefs
+  typedef ::thrust::detail::tagged_allocator<
+              T, execute_on_stream,
+              ::thrust::pointer<T, execute_on_stream>> parent_class;
+  typedef typename parent_class::value_type  value_type;
+  typedef typename parent_class::pointer     pointer;
+  typedef typename parent_class::size_type   size_type;
+  typedef typename parent_class::system_type system_type;
 
-  allocator(cudaStream_t stream = El::GPUManager::Stream())
-    : m_stream(stream) {}
-
+  /** Default constructor. */
+  allocator(cudaStream_t stream = El::GPUManager::Stream());
   /** Allocate GPU buffer. */
-  pointer allocate(size_type size) {
-    value_type* buffer = nullptr;
-    if (size > 0) {
-#ifdef HYDROGEN_HAVE_CUB
-      auto& memory_pool = El::cub::MemoryPool();
-      CHECK_CUDA(memory_pool.DeviceAllocate(reinterpret_cast<void**>(&buffer),
-                                            size * sizeof(value_type),
-                                            m_stream));
-#else
-      CHECK_CUDA(cudaMalloc(&buffer, size * sizeof(value_type)));
-#endif // HYDROGEN_HAVE_CUB
-    }
-    return pointer(buffer);
-  }
-
+  pointer allocate(size_type size);
   /** Deallocate GPU buffer.
    *  'size' is unused and maintained for compatibility with Thrust.
    */
-  void deallocate(pointer buffer, size_type size = 0) {
-    auto&& ptr = buffer.get();
-    if (ptr != nullptr) {
-#ifdef HYDROGEN_HAVE_CUB
-      auto& memory_pool = El::cub::MemoryPool();
-      CHECK_CUDA(memory_pool.DeviceFree(ptr));
-#else
-      CHECK_CUDA(cudaFree(ptr));
-#endif // HYDROGEN_HAVE_CUB
-    }
-  }
+  void deallocate(pointer buffer, size_type size = 0);
+  /** Get Thrust execution policy. */
+  system_type& system();
 
+private:
+  /** Active CUDA stream. */
+  cudaStream_t m_stream;
+  /** Thrust execution policy. */
+  system_type m_system;
+  
 };
 
+/** Thrust device vector. */
+template <typename T>
+using vector = ::thrust::device_vector<T, allocator<T>>;
+  
 } // namespace thrust
 
 } // namespace cuda
 } // namespace lbann
+
+// Header implementations
+#include "lbann/utils/impl/cuda.hpp"
 
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UTILS_CUDA_HPP

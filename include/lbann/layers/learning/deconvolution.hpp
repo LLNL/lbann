@@ -51,6 +51,8 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                       int conv_dim,
                       int pad,
                       int stride,
+                      int dilation,
+                      int groups,
                       bool has_bias = true)
     : deconvolution_layer(comm,
                           num_data_dims,
@@ -58,6 +60,8 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                           std::vector<int>(num_data_dims, conv_dim),
                           std::vector<int>(num_data_dims, pad),
                           std::vector<int>(num_data_dims, stride),
+                          std::vector<int>(num_data_dims, dilation),
+                          groups,
                           has_bias) {}
 
   deconvolution_layer(lbann_comm *comm,
@@ -66,14 +70,18 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                       std::vector<int> conv_dims,
                       std::vector<int> pads,
                       std::vector<int> strides,
+                      std::vector<int> dilations,
+                      int groups,
                       bool has_bias = true)
     : base_convolution_layer<Dev>(comm,
-                             num_data_dims,
-                             num_output_channels,
-                             conv_dims,
-                             pads,
-                             strides,
-                             has_bias) {
+                                  num_data_dims,
+                                  num_output_channels,
+                                  conv_dims,
+                                  pads,
+                                  strides,
+                                  dilations,
+                                  groups,
+                                  has_bias) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
 
@@ -94,6 +102,11 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     for (size_t h=0; h<this->m_strides.size(); h++) {
       s << this->m_strides[h] << " ";
     }
+    s << " dilation: ";
+    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
+      s << this->m_dilations[h] << " ";
+    }
+    s << " groups: " << this->m_num_groups;
     s << " num_output_channels: " << this->get_output_dims()[0]
       << " has_bias: " << this->m_bias_scaling_factor
       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
@@ -117,6 +130,25 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
 
+    bool nonunit_dilation = false;
+    for (const auto& d : this->m_dilations) {
+      if (d != 1) {
+        nonunit_dilation = true;
+        break;
+      }
+    }
+    if (nonunit_dilation) {
+      std::stringstream err;
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
+          << " does not support dilated convolutions";
+      LBANN_ERROR(err.str());
+    }
+    if (this->m_num_groups != 1) {
+      std::stringstream err;
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
+          << " does not support grouped convolutions";
+      LBANN_ERROR(err.str());
+    }
     // Initialize deconvolution kernel dimensions
     // Note: Unlike the convolutional kernel, the previous layer's
     // number of channels is now the leading position -- keep in mind

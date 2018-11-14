@@ -67,9 +67,9 @@ class data_reader_jag : public generic_data_reader {
   }
 
   /// Choose which data to use for independent variable
-  void set_independent_variable_type(const std::vector<variable_t> independent);
+  void set_independent_variable_type(const std::vector< std::vector<variable_t> >& independent);
   /// Choose which data to use for dependent variable
-  void set_dependent_variable_type(const std::vector<variable_t> dependent);
+  void set_dependent_variable_type(const std::vector< std::vector<variable_t> >& dependent);
 
   /// Tell which data to use for independent variable
   std::vector<variable_t> get_independent_variable_type() const;
@@ -134,6 +134,7 @@ class data_reader_jag : public generic_data_reader {
   /// check if type t is used in either the indepedent or the dependent variable
   bool is_used(const variable_t t) const;
 
+  using generic_data_reader::get_linearized_size;
   /// Return the linearized size of a particular JAG variable type
   size_t get_linearized_size(const variable_t t) const;
   /// Return the dimension of a particular JAG variable type

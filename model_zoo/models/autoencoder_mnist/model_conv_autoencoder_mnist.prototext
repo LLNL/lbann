@@ -1,5 +1,4 @@
 model {
-  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -12,7 +11,7 @@ model {
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -32,8 +31,8 @@ model {
   }
   callback {
     save_images {
-      image_dir: "images_"
-      extension: "pgm"
+      layers: "image reconstruction"
+      image_format: "pgm"
     }
   }
 
@@ -46,18 +45,30 @@ model {
   #######
   layer {
     name: "data"
-    children: "conv1 reconstruction"
+    children: "image dummy"
     data_layout: "data_parallel"
     input {
       io_buffer: "distributed"
-      target_mode: "reconstruction"
     }
+  }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "dummy"
+    data_layout: "data_parallel"
+    dummy {}
   }
 
   #############
   # CONVOLUTION 1
   #############
   layer {
+    parents: "image"
     name: "conv1"
     data_layout: "data_parallel"
     convolution {
@@ -75,6 +86,7 @@ model {
   # RELU 1
   ######
   layer {
+    parents: "conv1"
     name: "relu1"
     data_layout: "data_parallel"
     relu {
@@ -85,6 +97,7 @@ model {
   # POOLING 1
   #########
   layer {
+    parents: "relu1"
     name: "pool1"
     data_layout: "data_parallel"
     pooling {
@@ -101,6 +114,7 @@ model {
   # CONVOLUTION 2
   #############
   layer {
+    parents: "pool1"
     name: "conv2"
     data_layout: "data_parallel"
     convolution {
@@ -118,6 +132,7 @@ model {
   # RELU 2
   ######
   layer {
+    parents: "conv2"
     name: "relu2"
     data_layout: "data_parallel"
     relu {
@@ -128,6 +143,7 @@ model {
   # POOLING 2
   #########
   layer {
+    parents: "relu2"
     name: "pool2"
     data_layout: "data_parallel"
     pooling {
@@ -144,6 +160,7 @@ model {
   # CONVOLUTION 3
   #############
   layer {
+    parents: "pool2"
     name: "conv3"
     data_layout: "data_parallel"
     convolution {
@@ -161,6 +178,7 @@ model {
   # RELU 3
   ######
   layer {
+    parents: "conv3"
     name: "relu3"
     data_layout: "data_parallel"
     relu {
@@ -171,6 +189,7 @@ model {
   # POOLING 3
   #########
   layer {
+    parents: "relu3"
     name: "pool3"
     data_layout: "data_parallel"
     pooling {
@@ -187,6 +206,7 @@ model {
   # UNPOOLING 3
   #########
   layer {
+    parents: "pool3"
     name: "unpool3"
     data_layout: "data_parallel"
     unpooling {
@@ -199,6 +219,7 @@ model {
   # DECONVOLUTION 3
   #############
   layer {
+    parents: "unpool3"
     name: "deconv3"
     data_layout: "data_parallel"
     deconvolution {
@@ -216,6 +237,7 @@ model {
   # RELU 4
   ######
   layer {
+    parents: "deconv3"
     name: "relu4"
     data_layout: "data_parallel"
     relu {
@@ -226,6 +248,7 @@ model {
   # UNPOOLING 2
   #########
   layer {
+    parents: "relu4"
     name: "unpool2"
     data_layout: "data_parallel"
     unpooling {
@@ -238,6 +261,7 @@ model {
   # DECONVOLUTION 2
   #############
   layer {
+    parents: "unpool2"
     name: "deconv2"
     data_layout: "data_parallel"
     deconvolution {
@@ -255,6 +279,7 @@ model {
   # RELU 5
   ######
   layer {
+    parents: "deconv2"
     name: "relu5"
     data_layout: "data_parallel"
     relu {
@@ -265,6 +290,7 @@ model {
   # UNPOOLING 1
   #########
   layer {
+    parents: "relu5"
     name: "unpool1"
     data_layout: "data_parallel"
     unpooling {
@@ -277,6 +303,7 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
+    parents: "unpool1"
     name: "deconv1"
     data_layout: "data_parallel"
     deconvolution {
@@ -294,6 +321,7 @@ model {
   # RELU 6
   ######
   layer {
+    parents: "deconv1"
     name: "relu6"
     data_layout: "data_parallel"
     relu {
@@ -305,6 +333,7 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "relu6"
     name: "decode1"
     data_layout: "data_parallel"
     num_neurons_from_data_reader: true
@@ -317,7 +346,8 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "sigmoid"
+    parents: "decode1"
+    name: "reconstruction"
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -328,10 +358,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "reconstruction"
-    parents: "sigmoid data"
+    parents: "reconstruction image"
+    name: "mean_squared_error"
     data_layout: "data_parallel"
-    reconstruction {}
+    mean_squared_error {}
   }
 
   ###################################################

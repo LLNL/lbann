@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 31
   block_size: 257
@@ -10,6 +9,7 @@ model {
   ###################################################
   # Objective function
   ###################################################
+
   objective_function {
     layer_term { layer: "cross_entropy" }
   }
@@ -17,6 +17,7 @@ model {
   ###################################################
   # Callbacks
   ###################################################
+  
   callback { print {} }
   callback { timer {} }
   callback {

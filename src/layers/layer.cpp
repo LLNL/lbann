@@ -34,6 +34,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+// Asynchronous memory transfers for input data
+// Note: This introduces a race condition. It is possible for the
+// input data to be modified by another layer before it is used by
+// this layer.
+// #define ASYNC_INPUT_MEMORY_TRANSFER
+
 namespace lbann {
 
 Layer::Layer(lbann_comm *comm)
@@ -47,7 +53,7 @@ Layer::Layer(lbann_comm *comm)
 
   // Reset timing counters
   reset_counters();
-
+  
 }
 
 Layer::Layer(const Layer& other) :
@@ -577,7 +583,7 @@ void Layer::setup_pointers() {
       LBANN_ERROR(err.str());
     }
   }
-  
+
   // Check that the number of parents/children are valid
   if(m_expected_num_parent_layers >= 0
      && get_num_parents() != m_expected_num_parent_layers) {
@@ -625,7 +631,7 @@ void Layer::setup_dims() {
     }
   }
 }
-  
+
 void Layer::setup_matrices(const El::Grid& grid) {
 
   // Destroy previously setup matrices
@@ -653,7 +659,6 @@ void Layer::setup_matrices(const El::Grid& grid) {
     m_gradient_wrt_inputs[i]
       = construct_matrix(grid, "gradient_wrt_input", i);
   }
-
 }
 
 std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
@@ -682,7 +687,7 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
   std::unique_ptr<AbsDistMat> mat;
   mat.reset(AbsDistMat::Instantiate(grid, 0,
                                     col_dist, row_dist, wrap, device));
-  
+
 #ifdef LBANN_HAS_GPU
   // Allocate GPU memory with the CUDA API
   if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
@@ -885,7 +890,21 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     if (parent_output.DistData() == input.DistData()) {
       El::LockedView(input, parent_output);
     } else {
-      El::Copy(parent_output, input);
+      bool async_copy = false;
+#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
+      if (parent_output.GetLocalDevice() == El::Device::CPU
+          && input.GetLocalDevice() == El::Device::GPU) {
+        auto parent_dist_data = parent_output.DistData();
+        parent_dist_data.device = El::Device::GPU;
+        async_copy = parent_dist_data == input.DistData();
+      }
+#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      if (async_copy) {
+        El::CopyAsync(parent_output, input);
+      } else {
+        El::Copy(parent_output, input);
+      }
     }
 
     // Check input matrix dimensions
@@ -937,7 +956,21 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
         == gradient_wrt_output.DistData()) {
       El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
     } else {
-      El::Copy(child_gradient_wrt_input, gradient_wrt_output);
+      bool async_copy = false;
+#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
+      if (child_gradient_wrt_input.GetLocalDevice() == El::Device::CPU
+          && gradient_wrt_output.GetLocalDevice() == El::Device::GPU) {
+        auto child_dist_data = child_gradient_wrt_input.DistData();
+        child_dist_data.device = El::Device::GPU;
+        async_copy = child_dist_data == gradient_wrt_output.DistData();
+      }
+#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      if (async_copy) {
+        El::CopyAsync(child_gradient_wrt_input, gradient_wrt_output);
+      } else {
+        El::Copy(child_gradient_wrt_input, gradient_wrt_output);
+      }
     }
 
     // Check gradient w.r.t. output matrix dimensions

@@ -46,8 +46,8 @@ class ElMatLike {
  protected:
   Int m_width;
   Int m_height;
-  IR row_range;
-  IR col_range;
+  IR m_row_range;
+  IR m_col_range;
 
   std::shared_ptr< std::vector<T> > m_buf;
 
@@ -62,11 +62,11 @@ class ElMatLike {
   T& operator()(const Int r, const Int c) const;
 
   Int Width() const {
-    return col_range.IsInitialized() ? (col_range.End() - col_range.Beg()) : m_width;
+    return m_col_range.IsInitialized() ? (m_col_range.End() - m_col_range.Beg()) : m_width;
   }
 
   Int Height() const {
-    return row_range.IsInitialized() ? (row_range.End() - row_range.Beg()) : m_height;
+    return m_row_range.IsInitialized() ? (m_row_range.End() - m_row_range.Beg()) : m_height;
   }
 
   Int LDim() const {
@@ -80,6 +80,8 @@ class ElMatLike {
 
   void Set(const Int r, const Int c, const T d);
   T Get(const Int r, const Int c) const;
+
+  ElMatLike<T>& Copy(const ElMatLike<T>& src);
 };
 
 
@@ -89,8 +91,8 @@ inline Int ElMatLike<T>::Offset(const Int r, const Int c) const {
     throw lbann::lbann_exception("invalid point : (" + std::to_string(r) + ',' + std::to_string(c) + ')');
   }
 
-  const Int rv = r + row_range.Beg();
-  const Int cv = c + col_range.Beg();
+  const Int rv = r + m_row_range.Beg();
+  const Int cv = c + m_col_range.Beg();
 
   return (LDim()*cv + rv);
 }
@@ -107,11 +109,11 @@ inline ElMatLike<T> ElMatLike<T>::operator()(const IR& rr, const IR& cr) const {
       ("(cols End " + to_string(cr.End()) + " < Width " + to_string(Width()) + ")")));
   }
 
-  Int r_beg = row_range.IsInitialized()? row_range.Beg() : 0;
-  Int c_beg = col_range.IsInitialized()? col_range.Beg() : 0;
+  Int r_beg = m_row_range.IsInitialized()? m_row_range.Beg() : 0;
+  Int c_beg = m_col_range.IsInitialized()? m_col_range.Beg() : 0;
 
-  view.row_range = rr + r_beg;
-  view.col_range = cr + c_beg;
+  view.m_row_range = rr + r_beg;
+  view.m_col_range = cr + c_beg;
   return view;
 }
 
@@ -137,8 +139,8 @@ inline void ElMatLike<T>::Resize(const Int h, const Int w) {
     m_buf->resize(static_cast<size_t>(m_width*m_height));
   }
 
-  row_range.Init();
-  col_range.Init();
+  m_row_range.Init();
+  m_col_range.Init();
 }
 
 
@@ -175,8 +177,22 @@ inline T ElMatLike<T>::Get(const Int r, const Int c) const {
 
 
 template<typename T>
+inline ElMatLike<T>& ElMatLike<T>::Copy(const ElMatLike<T>& src) {
+  m_buf = nullptr;
+  Resize(src.m_height, src.m_width);
+  m_row_range = src.m_row_range;
+  m_col_range = src.m_col_range;
+  return (*this);
+}
+
+template<typename T>
 inline void View(ElMatLike<T>& V, const ElMatLike<T>& X, const IR& r, const IR& c) {
   V = X(r, c);
+}
+
+template<typename T>
+inline void Copy(const ElMatLike<T>& S, ElMatLike<T>& D) {
+  D.Copy(S);
 }
 
 } // end of namespace

@@ -28,11 +28,7 @@
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 
-#include <thrust/system/cuda/execution_policy.h>
-#include <thrust/fill.h>
 #include <thrust/sort.h>
-#include <thrust/reduce.h>
-#include <thrust/device_ptr.h>
 #include <thrust/iterator/discard_iterator.h>
 
 namespace lbann {
@@ -41,39 +37,19 @@ namespace {
 
 /** Sparse vector entry. */
 struct entry {
-
   /** Vector entry value. */
   DataType value;
   /** Vector entry index. */
   El::Int index;
-
-  /** Minimum possible value. */
-  static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
-  /** Maximum possible index. */
-  static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
-
 };
 
 /** Comparison operation to sort sparse vector entries.
  *  Entries are sorted by value in decreasing order, with ties broken
  *  in favor of entries with smaller indices.
  */
-struct entry_compare : thrust::binary_function<entry,entry,bool> {
+struct entry_compare : ::thrust::binary_function<entry,entry,bool> {
   __host__ __device__ bool operator()(const entry& a, const entry& b) const {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
-  }
-};
-
-/** Reduction operation to get largest sparse vector entry.
- *  Ties are broken in favor of entries with smaller indices.
- */
-struct entry_reduce : thrust::binary_function<entry,entry,entry> {
-  __host__ __device__ entry operator()(const entry& a, const entry& b) const {
-    if (a.value > b.value || (a.value == b.value && a.index < b.index)) {
-      return a;
-    } else {
-      return b;
-    }
   }
 };
 
@@ -105,7 +81,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
       current_entry.value = local_matrix[local_row + local_col * local_matrix_ldim];
       current_entry.index = global_row;
     } else {
-      current_entry.value = entry::min_value;
+      current_entry.value = -cuda::infinity<DataType>();
       current_entry.index = global_matrix_height;
     }
   }
@@ -130,7 +106,7 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < tensor_size; i += num_threads) {
     tensor[i] = (i / dim_stride) % dim;
-  }  
+  }
 }
 
 /** Get indices corresponding to one-hot matrix.
@@ -156,7 +132,7 @@ __global__ void one_hot_matrix_to_indices(El::Int local_height,
                                 + local_row * global_matrix_col_stride);
       indices[local_col] = global_row;
     }
-  }  
+  }
 }
 
 /** Compute categorical accuracy for each matrix column.
@@ -182,7 +158,7 @@ __global__ void compute_categorical_accuracy(El::Int k,
         && label_index <= max_entry) {
       loss[col * loss_stride] = DataType(1);
     }
-  }  
+  }
 }
 
 /** GPU implementation of top-k categorical accuracy layer forward prop. */
@@ -191,20 +167,14 @@ void fp_gpu(lbann_comm& comm,
             const AbsDistMat& predictions,
             const AbsDistMat& labels,
             AbsDistMat& loss) {
-  if (predictions.Wrap() != El::ELEMENT
-      || labels.Wrap() != El::ELEMENT
-      || loss.Wrap() != El::ELEMENT) {
-    LBANN_ERROR("top-k categorical accuracy layer GPU implementation "
-                "assumes elemental distributed matrices");
-  }
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();
   const auto& local_labels = labels.LockedMatrix();
   auto& local_loss = loss.Matrix();
-  const El::Int height = predictions.Height();
-  const El::Int local_height = local_predictions.Height();
-  const El::Int local_width = local_predictions.Width();
+  const auto& height = predictions.Height();
+  const auto& local_height = local_predictions.Height();
+  const auto& local_width = local_predictions.Width();
 
   // Trivial cases
   if (k < 1) {
@@ -225,20 +195,16 @@ void fp_gpu(lbann_comm& comm,
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
+  auto&& event = El::GPUManager::Event();
+  El::SyncInfo<El::Device::GPU> syncInfo{stream, event};
   cuda::thrust::allocator<> alloc(stream);
-  using entry_array = thrust::device_vector<entry, cuda::thrust::allocator<entry>>;
-  using index_array = thrust::device_vector<El::Int, cuda::thrust::allocator<El::Int>>;
 
   // Get label indices
-  index_array label_indices(local_width);
+  cuda::thrust::vector<El::Int> label_indices(local_width, height);
   {
     const auto& local_size = local_height * local_width;
     const auto& block_dim = 256;
     const auto& grid_dim = (local_size + block_dim - 1) / block_dim;
-    thrust::fill(thrust::cuda::par(alloc).on(stream),
-                 label_indices.begin(),
-                 label_indices.end(),
-                 height);
     one_hot_matrix_to_indices<<<grid_dim, block_dim, 0, stream>>>(
       local_height, local_width,
       labels.ColShift(), labels.ColStride(),
@@ -249,18 +215,18 @@ void fp_gpu(lbann_comm& comm,
     El::mpi::AllReduce(label_indices.data().get(),
                        label_indices.size(),
                        El::mpi::MIN,
-                       col_comm);
+                       col_comm, syncInfo);
   }
 
   // Find top-k entries in each column of local prediction matrix
-  entry_array top_entries(local_width * k);
+  cuda::thrust::vector<entry> top_entries(local_width * k);
   {
     const auto& num_local_entries_per_col = std::max(local_height, k);
     const auto& num_local_entries = local_width * num_local_entries_per_col;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_local_entries + block_dim - 1) / block_dim;
-    entry_array local_entries(num_local_entries);
-    index_array local_entries_cols(num_local_entries);
+    cuda::thrust::vector<entry> local_entries(num_local_entries);
+    cuda::thrust::vector<El::Int> local_entries_cols(num_local_entries);
     dense_matrix_to_sparse_vectors<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries_per_col, local_height, local_width, height,
       predictions.ColShift(), predictions.ColStride(),
@@ -269,34 +235,23 @@ void fp_gpu(lbann_comm& comm,
     fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
-    if (k == 1) {
-      thrust::reduce_by_key(thrust::cuda::par(alloc).on(stream),
-                            local_entries_cols.begin(),
-                            local_entries_cols.end(),
-                            local_entries.begin(),
-                            thrust::make_discard_iterator(),
-                            top_entries.begin(),
-                            thrust::equal_to<El::Int>(),
-                            entry_reduce());
-    } else {
-      thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
+    ::thrust::sort_by_key(alloc.system(),
                           local_entries.begin(),
                           local_entries.end(),
                           local_entries_cols.begin(),
                           entry_compare());
-      thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
+    ::thrust::stable_sort_by_key(alloc.system(),
                                  local_entries_cols.begin(),
                                  local_entries_cols.end(),
                                  local_entries.begin());
-      CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                   k * sizeof(entry),
-                                   local_entries.data().get(),
-                                   num_local_entries_per_col * sizeof(entry),
-                                   k * sizeof(entry),
-                                   local_width,
-                                   cudaMemcpyDeviceToDevice,
-                                   stream));
-    }
+    CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
+                                 k * sizeof(entry),
+                                 local_entries.data().get(),
+                                 num_local_entries_per_col * sizeof(entry),
+                                 k * sizeof(entry),
+                                 local_width,
+                                 cudaMemcpyDeviceToDevice,
+                                 stream));
   }
 
   // Find top-k entries in each column of global prediction matrix
@@ -309,25 +264,25 @@ void fp_gpu(lbann_comm& comm,
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                   top_entries.size() * sizeof(entry),
                   col_comm_root,
-                  col_comm);
+                  col_comm, syncInfo);
     } else {
-      entry_array global_top_entries(num_entries);
-      index_array global_top_entries_cols(num_entries);
+      cuda::thrust::vector<entry> global_top_entries(num_entries);
+      cuda::thrust::vector<El::Int> global_top_entries_cols(num_entries);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
                   top_entries.size() * sizeof(entry),
                   reinterpret_cast<El::byte*>(global_top_entries.data().get()),
-                  col_comm);
+                  col_comm, syncInfo);
       fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
         num_entries, local_width, k, global_top_entries_cols.data().get());
-      thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
-                          global_top_entries.begin(),
-                          global_top_entries.end(),
-                          global_top_entries_cols.begin(),
-                          entry_compare());
-      thrust::stable_sort_by_key(thrust::cuda::par(alloc).on(stream),
-                                 global_top_entries_cols.begin(),
-                                 global_top_entries_cols.end(),
-                                 global_top_entries.begin());
+      ::thrust::sort_by_key(alloc.system(),
+                            global_top_entries.begin(),
+                            global_top_entries.end(),
+                            global_top_entries_cols.begin(),
+                            entry_compare());
+      ::thrust::stable_sort_by_key(alloc.system(),
+                                   global_top_entries_cols.begin(),
+                                   global_top_entries_cols.end(),
+                                   global_top_entries.begin());
       CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
                                    k * sizeof(entry),
                                    global_top_entries.data().get(),
@@ -336,7 +291,7 @@ void fp_gpu(lbann_comm& comm,
                                    local_width,
                                    cudaMemcpyDeviceToDevice,
                                    stream));
-    }   
+    }
   }
 
   // Compute categorical accuracy

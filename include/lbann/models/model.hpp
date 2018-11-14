@@ -69,8 +69,23 @@ class model {
   /** Copy model. */
   virtual model* copy() const = 0;
 
-  /** Return the model's name. */
-  virtual std::string name() const = 0;
+  /** Return the model's type. */
+  virtual std::string get_type() const = 0;
+
+  void set_name(std::string name);
+  
+  std::string get_name() const {
+    return m_name;
+  }
+
+  /** Return the model's id; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
+  std::string get_model_id() { return m_model_id; }
+
+  /** Set the model's arbitrary identifying string */
+  void set_model_id(std::string s) { m_model_id = s; }
 
   /** Set up the model. */
   virtual void setup();
@@ -226,7 +241,8 @@ class model {
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
-
+  /** Give model a name. */
+  std::string m_name;
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
@@ -419,6 +435,7 @@ class model {
    */
   void add_split_layers();
 
+  std::string m_model_id;
 };
 
 }  // namespace lbann

@@ -2,7 +2,6 @@
 #https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
 #Timestamp 02/26/2018 8:45AM
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
   #mini_batch_size: 128
   mini_batch_size: 100 #more last minibatch images to save
@@ -16,12 +15,8 @@ model {
   ###################################################
 
   objective_function {
-    binary_cross_entropy {}
-    #mean_squared_error {}
-    layer_term {
-      scale_factor: 1.0
-      layer: "kl_divergence"
-    }
+    layer_term { layer: "binary_cross_entropy" }
+    layer_term { layer: "kl_divergence" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -31,7 +26,12 @@ model {
   # Metrics
   ###################################################
 
-  metric { mean_squared_error {} }
+  metric {
+    layer_metric {
+      name: "mean squared error"
+      layer: "mean_squared_error"
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -44,8 +44,8 @@ model {
   callback { timer {} }
  # callback {
  #   save_images {
- #     image_dir: "vae_fcn_images_"
- #     extension: "jpg"
+ #     image_prefix: "vae_fcn_images_"
+ #     image_format: "jpg"
  #   }
  # }
 
@@ -62,9 +62,21 @@ model {
       io_buffer: "partitioned"
       target_mode: "N/A"
     }
+    name: "input"
+    data_layout: "data_parallel"
+    children: "data dummy"
+  }
+  layer {
+    parents: "input"
     name: "data"
     data_layout: "data_parallel"
-    parents: " "
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "dummy"
+    data_layout: "data_parallel"
+    dummy {}
   }
   layer {
     name: "slice_data"
@@ -193,7 +205,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -220,7 +231,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -246,36 +256,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
-      has_bias: true
-    }
-  }
-  layer {
-    parents: "encode3"
-    name: "encode3_tanh"
-    data_layout: "model_parallel"
-    tanh {}
-  }
-  layer {
-    parents: "encode3_tanh"
-    name: "encode3_dropout"
-    data_layout: "model_parallel"
-    dropout {
-      keep_prob: 0.95
-    }
-  }
-
-  ######################
-  # Latent space
-  ######################
-
-  layer {
-    parents: "encode3_dropout"
-    name: "z_mean"
-    data_layout: "model_parallel"
-    fully_connected {
-      num_neurons:20
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -285,7 +265,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons:20
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -307,16 +286,14 @@ model {
     name: "kl_z_mean2"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    power {
-      exponent: 2.0
-    }
+    square {}
   }
   layer {
     parents: "z_log_sigma"
     name: "kl_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
@@ -358,7 +335,7 @@ model {
     name: "sample_exp"
     data_layout: "model_parallel"
     device_allocation: "cpu"
-    exponential {}
+    exp {}
   }
   layer {
     name: "sample_noise"
@@ -395,7 +372,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -421,7 +397,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -447,7 +422,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -475,7 +449,6 @@ model {
     data_layout: "model_parallel"
     #num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_normal"
       num_neurons: 16384
       has_bias: true
     }
@@ -492,12 +465,22 @@ model {
   ######################
 
   layer {
-    #parents: "sigmoid data"
-    #parents: "sigmoid gen1fc4_1"
-    parents: "sigmoid image_data_id"
+    parents: "sigmoid"
     name: "reconstruction"
     data_layout: "model_parallel"
-    reconstruction {}
+    split {}    
+  }
+  layer {
+    parents: "reconstruction image_data_id"
+    name: "binary_cross_entropy"
+    data_layout: "model_parallel"
+    binary_cross_entropy {}
+  }
+  layer {
+    parents: "reconstruction image_data_id"
+    name: "mean_squared_error"
+    data_layout: "model_parallel"
+    mean_squared_error {}
   }
 
   ###################################################

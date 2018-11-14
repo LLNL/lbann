@@ -9,6 +9,7 @@
 
 /* Version string for LBANN */
 #define LBANN_VERSION @LBANN_VERSION@
+#cmakedefine LBANN_GIT_VERSION @LBANN_GIT_VERSION@
 
 /* Defined if LBANN is in debug mode */
 #cmakedefine LBANN_DEBUG
@@ -25,6 +26,7 @@
 #cmakedefine LBANN_HAS_ALUMINUM
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
 #cmakedefine LBANN_HAS_CONDUIT
+#cmakedefine LBANN_NO_OMP_FOR_DATA_READERS
 
 #cmakedefine LBANN_DETERMINISTIC
 
