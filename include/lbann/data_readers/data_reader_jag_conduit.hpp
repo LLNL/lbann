@@ -213,9 +213,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load a conduit-packed hdf5 data file

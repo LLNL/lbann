@@ -143,7 +143,8 @@ std::vector<CPUMat> imagenet_reader_patches::create_datum_views(CPUMat& X, const
   return X_v;
 }
 
-bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  int tid = io_thread_pool.get_local_thread_id();
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;

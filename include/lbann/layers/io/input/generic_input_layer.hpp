@@ -232,14 +232,13 @@ class generic_input_layer : public io_layer {
   void fetch_data_in_background(int future_active_buffer, std::string foo) {
     int active_buffer = future_active_buffer % m_io_buffers.size();
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
-
     std::lock_guard<std::mutex> guard(dr_mutex);
     execution_mode mode = this->m_model->get_execution_mode();
-    if (m_comm->am_model_master()) {
-      std::cout << foo << ": I am about to fetch some data in the background for execution mode " << _to_string(mode) << " and placing it in the buffer id " << future_active_buffer  << " and the buffer pointer is " << io_buffer << std::endl;
-    }
+    // if (m_comm->am_model_master()) {
+    //   std::cout << foo << ": I am about to fetch some data in the background for execution mode " << _to_string(mode) << " and placing it in the buffer id " << future_active_buffer  << " and the buffer pointer is " << io_buffer << std::endl;
+    // }
     setup_next_io_buffer(io_buffer);
-    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    io_buffer->fetch_to_local_matrix(get_data_reader(), mode, this->m_model->get_io_thread_pool());
     return;
   }
 
@@ -254,6 +253,7 @@ class generic_input_layer : public io_layer {
 
     generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
 
+#if 0
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->fetch_data_in_background) {
@@ -267,14 +267,14 @@ class generic_input_layer : public io_layer {
       io_buffer->data_fetch_future.get();
       io_buffer->fetch_data_in_background = false;
     }
-
+ #endif
     int num_samples_in_batch;
     if(io_buffer->num_samples_ready(mode) > 0) {
       num_samples_in_batch = io_buffer->num_samples_ready(mode);
       //      std::cout << "fp_compute already has data" << std::endl;
     }else {
-      num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
-            std::cout << "fp_compute is fetching data" << std::endl;
+      num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode, this->m_model->get_io_thread_pool());
+      //      std::cout << "fp_compute is fetching data" << std::endl;
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
@@ -328,13 +328,18 @@ class generic_input_layer : public io_layer {
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
 
-    if(!m_data_set_processed) {
+    if(0 &&!m_data_set_processed) {
       int next_active_buffer = m_active_buffer + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, "BACKGROUND"));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->data_fetch_future = std::move(background_fetch_done);
       next_io_buffer->fetch_data_in_background = true;
+
+    // if(next_io_buffer->fetch_data_in_background) {
+    //   next_io_buffer->data_fetch_future.get();
+    //   next_io_buffer->fetch_data_in_background = false;
+    // }
     }
   }
 

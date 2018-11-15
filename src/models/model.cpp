@@ -417,46 +417,6 @@ void model::freeze_layers_under_frozen_surface() {
   }
 }
 
-void set_offset_affinity(int cpu_id = 0, int offset = 0) {
-  cpu_set_t cpuset, ht_cpuset;
-  CPU_ZERO(&cpuset);
-  CPU_ZERO(&ht_cpuset);
-
-  auto error = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (error != 0)
-    std::cerr << "error in pthread_getaffinity_np, error=" << error
-              << std::endl;
-
-  // std::cout << "Set returned by pthread_getaffinity_np() contained: {";
-  for (int j = 0; j < CPU_SETSIZE; j++)
-    if (CPU_ISSET(j, &cpuset)) {
-      // std::cout << " " << j;
-      CPU_SET(j+offset, &ht_cpuset);
-    }
-  // std::cout << " }" << std::endl;
-
-  // if (CPU_COUNT(&cpuset) > 1 || !CPU_ISSET(cpu_id, &cpuset)) {
-  //   CPU_ZERO(&cpuset);
-  //   CPU_SET(cpu_id, &cpuset);
-
-    error = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &ht_cpuset);
-    if (error != 0)
-      std::cerr << "error in pthread_setaffinity_np, error=" << error
-                << std::endl;
-
-  //   error = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  //   if (error != 0)
-  //     std::cerr << "error in pthread_getaffinity_np, error=" << error
-  //               << std::endl;
-
-  //   std::cout << "Set returned by pthread_getaffinity_np() contained: {";
-  //   for (int j = 0; j < CPU_SETSIZE; j++)
-  //     if (CPU_ISSET(j, &cpuset))
-  //       std::cout << " " << j;
-  //   std::cout << " }" << std::endl;
-  // }
-}
-
 ////////////////////////////////////////////////////////////
 // Setup
 ////////////////////////////////////////////////////////////
@@ -488,15 +448,11 @@ void model::setup() {
   // auto hw_cc = std::thread::hardware_concurrency();
   // auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
 
-  int num_io_threads = 1;
-  m_io_thread_pool.launch_threads(num_io_threads);
-  auto initialize_thread = [](int thread_id, int max_io_threads){
-    set_offset_affinity(0, 24);
-  };
-  for (int i = 0; i < num_io_threads; i++) {
-    m_io_thread_pool.submit_job(std::bind(initialize_thread,i,num_io_threads));
-  }
-
+  int num_io_threads = 2;
+  //  m_io_thread_pool.launch_threads(num_io_threads);
+  //  m_io_thread_pool.launch_pinned_threads(num_io_threads, 24);
+  std::vector<std::future<void>> io_thread_futures;
+  io_thread_futures.reserve(num_io_threads);
 }
 
 void model::setup_layer_topology() {

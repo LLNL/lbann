@@ -1039,7 +1039,8 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   return true;
 }
 
-bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  int tid = io_thread_pool::get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
@@ -1050,7 +1051,8 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, in
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  int tid = io_thread_pool::get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
@@ -1060,7 +1062,8 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx,
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  int tid = io_thread_pool::get_local_thread_id();
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);

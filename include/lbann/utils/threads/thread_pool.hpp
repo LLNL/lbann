@@ -4,6 +4,7 @@
 #include <future>
 #include <thread>
 #include <vector>
+#include <unordered_map>
 
 #include "thread_safe_queue.hpp"
 #include "type_erased_function.hpp"
@@ -46,6 +47,8 @@ public:
 
   /** \brief Launch the threads */
   void launch_threads(size_type num_threads);
+  /** \brief Launch the threads and pin them to the Hyperthreaded cores */
+  void launch_pinned_threads(size_type num_threads, int cpu_offset);
 
   /** \brief Submit a job to the pool's queue */
   template <typename FunctionT>
@@ -63,9 +66,13 @@ public:
   /** Query the number of worker threads actually present */
   size_type get_num_threads() const noexcept { return threads_.size(); }
 
+  /** Convert the C++ thread id into a local thread pool id */
+  int get_local_thread_id();
+
 private:
   /** \brief The task executed by each thread */
   void do_thread_work_();
+  void do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set);
 
 private:
 
@@ -80,6 +87,9 @@ private:
 
   /** \brief Flag to track if more work is to be done */
   std::atomic<bool> all_work_done_;
+
+  std::mutex m_thread_map_mutex;
+  std::unordered_map<std::thread::id, int> m_thread_id_to_local_id_map;
 
 };// class thread_pool
 

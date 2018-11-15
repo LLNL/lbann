@@ -59,17 +59,31 @@ class partitioned_io_buffer : public generic_io_buffer {
     M_local[idx] = m;
   }
   void fp_setup_data(El::Int cur_mini_batch_size, int idx) override {
-    M_local[idx]->Resize(M_local[idx]->Height(), cur_mini_batch_size);
+    /// @todo BVE FIXME - need to improve how this would work with odd
+    /// mini-batch sizes
+    El::Int local_mini_batch_size = cur_mini_batch_size / m_comm->get_procs_per_model();
+    El::Int partial_mini_batch_size = cur_mini_batch_size % m_comm->get_procs_per_model();
+    if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
+      local_mini_batch_size++;
+    }
+    M_local[idx]->Resize(M_local[idx]->Height(), local_mini_batch_size);
   }
   void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override {
-    M_local[0]->Resize(num_neurons, max_minibatch_size);
-    M_local[1]->Resize(num_targets, max_minibatch_size);
+    /// @todo BVE FIXME - need to improve how this would work with odd
+    /// mini-batch sizes
+    El::Int local_mini_batch_size = max_minibatch_size / m_comm->get_procs_per_model();
+    El::Int partial_mini_batch_size = max_minibatch_size % m_comm->get_procs_per_model();
+    if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
+      local_mini_batch_size++;
+    }
+    M_local[0]->Resize(num_neurons, local_mini_batch_size);
+    M_local[1]->Resize(num_targets, local_mini_batch_size);
     /// The amount of space needed will vary based on input layer type,
     /// but the batch size is the maximum space necessary
-    El::Zeros_seq(m_indices_fetched_per_mb, max_minibatch_size, 1);
+    El::Zeros_seq(m_indices_fetched_per_mb, local_mini_batch_size, 1);
   }
 
-  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
+  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode, thread_pool& io_thread_pool) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;

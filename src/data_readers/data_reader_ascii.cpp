@@ -33,8 +33,9 @@ namespace lbann {
 ascii_reader::ascii_reader(int sequence_length, bool shuffle)
   : generic_data_reader(shuffle), m_sequence_length(sequence_length) {}
 
-bool ascii_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool ascii_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
 
+  //  int tid = io_thread_pool.get_local_thread_id();
   // Get text sequence from file
   const int pos = data_id - m_sequence_length;
   const int num_chars = (std::min(pos + m_sequence_length, m_file_size)
@@ -60,8 +61,9 @@ bool ascii_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool ascii_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool ascii_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
 
+  //  int tid = io_thread_pool.get_local_thread_id();
   // Get text sequence from file
   const int pos = data_id - m_sequence_length + 1;
   const int num_chars = (std::min(pos + m_sequence_length, m_file_size)

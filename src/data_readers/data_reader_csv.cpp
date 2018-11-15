@@ -269,7 +269,8 @@ void csv_reader::load() {
   select_subset_of_data();
 }
 
-bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  //  int tid = io_thread_pool.get_local_thread_id();
   if (m_data_store != nullptr) {
     std::vector<DataType> *buf;
     m_data_store->get_data_buf_DataType(data_id, buf);
@@ -286,12 +287,12 @@ bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
   Y(m_labels[data_id], mb_idx) = 1;
   return true;
 }
 
-bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
   Y(0, mb_idx) = m_responses[data_id];
   return true;
 }

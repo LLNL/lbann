@@ -76,9 +76,9 @@ class numpy_reader : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
 
   /// Number of samples.
   int m_num_samples = 0;

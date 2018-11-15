@@ -155,7 +155,8 @@ void pilot2_molecular_reader::load() {
 }
 
 bool pilot2_molecular_reader::fetch_datum(
-  CPUMat& X, int data_id, int mb_idx, int tid) {
+  CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  int tid = io_thread_pool.get_local_thread_id();
 
   if (m_data_store != nullptr) {
     std::vector<double> *buf;

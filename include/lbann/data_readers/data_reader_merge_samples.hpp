@@ -75,9 +75,9 @@ class data_reader_merge_samples : public generic_compound_data_reader {
   void setup_data_store(model *m) override;
 
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
 
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;
@@ -91,7 +91,7 @@ class data_reader_merge_samples : public generic_compound_data_reader {
 
   /// code common to both load() and load_using_data_store()
   size_t compute_num_samples_psum();
-  
+
   /// code common to both load() and load_using_data_store()
   void sanity_check_for_consistency(int num_labels, int data_size, int label_size, const std::vector<int> &data_dims);
 

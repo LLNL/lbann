@@ -103,7 +103,7 @@ class image_data_reader : public generic_data_reader {
  protected:
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();
-  bool fetch_label(Mat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(Mat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
   void set_linearized_image_size();
 
  protected:

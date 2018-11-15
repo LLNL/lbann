@@ -37,6 +37,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -273,11 +274,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
+  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool);
   /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(CPUMat& Y);
+  virtual int fetch_labels(CPUMat& Y, thread_pool& io_thread_pool);
   /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(CPUMat& Y);
+  virtual int fetch_responses(CPUMat& Y, thread_pool& io_thread_pool);
 
   /**
    * Save pixels to an image. The implementing data reader is responsible for
@@ -716,7 +717,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -727,7 +728,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -738,7 +739,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }

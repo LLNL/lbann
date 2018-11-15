@@ -137,11 +137,11 @@ class csv_reader : public generic_data_reader {
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.
    */
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
   /// Fetch the label associated with data_id.
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
   /// Fetch the response associated with data_id.
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
 
   /**
    * Return the parsed CSV line. This does not extract the label/response.
@@ -154,7 +154,7 @@ class csv_reader : public generic_data_reader {
   /// Initialize the ifstreams vector.
   void setup_ifstreams();
 
-  /** Return a raw line from the CSV file. 
+  /** Return a raw line from the CSV file.
    *  (Made public to support data store functionality)
    */
   std::string fetch_raw_line(int data_id);

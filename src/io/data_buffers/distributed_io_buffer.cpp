@@ -36,7 +36,7 @@ lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_pa
   m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
 }
 
-int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
+int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode, thread_pool& io_thread_pool) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   /// Check to see if this rank has valid data -- if not read in the next batch
@@ -51,9 +51,9 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
       if(buf->M_local.size() == 2) {
-        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], *buf->M_local[1], m_indices_fetched_per_mb, data_reader);
+        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], *buf->M_local[1], m_indices_fetched_per_mb, data_reader, io_thread_pool);
       }else {
-        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], m_indices_fetched_per_mb, data_reader);
+        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], m_indices_fetched_per_mb, data_reader, io_thread_pool);
       }
       bool data_valid = (buf->m_num_samples_in_batch > 0);
       if(data_valid) {

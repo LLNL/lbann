@@ -48,7 +48,8 @@ void mnist_reader::set_defaults() {
   m_num_labels=10;
 }
 
-bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  //  int tid = io_thread_pool.get_local_thread_id();
   int pixelcount = m_image_width * m_image_height;
   std::vector<unsigned char>& tmp = m_image_data[data_id];
 
@@ -63,7 +64,7 @@ bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
   if(!m_gan_labelling) { //default
     unsigned char label = m_image_data[data_id][0];
     Y.Set(label, mb_idx, 1);

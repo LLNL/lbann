@@ -60,7 +60,7 @@ class imagenet_reader_patches : public image_data_reader {
   void set_defaults() override;
   virtual bool replicate_processor(const cv_process_patches& pp);
   virtual std::vector<CPUMat> create_datum_views(CPUMat& X, const int mb_idx) const;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
 
  protected:
   int m_num_patches; ///< number of patches extracted

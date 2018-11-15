@@ -123,7 +123,7 @@ class distributed_io_buffer : public generic_io_buffer {
     }
   }
 
-  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
+  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode, thread_pool& io_thread_pool) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;
