@@ -19,8 +19,16 @@ option(LBANN_SB_BUILD_PROTOBUF_HOST_VERSION
   OFF)
 
 # Handle the clone mechanism. First URL
-set(PROTOBUF_URL "https://github.com/google/protobuf.git"
-  CACHE STRING "The URL from which to clone PROTOBUF")
+option(PROTOBUF_CLONE_VIA_SSH
+  "Clone PROTOBUF using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (PROTOBUF_CLONE_VIA_SSH)
+  set(PROTOBUF_URL git@github.com:google/protobuf.git
+    CACHE STRING "The URL from which to clone PROTOBUF")
+else ()
+  set(PROTOBUF_URL "https://github.com/google/protobuf.git"
+    CACHE STRING "The URL from which to clone PROTOBUF")
+endif ()
 
 # ... then the tag.
 set(PROTOBUF_TAG "v3.6.1"

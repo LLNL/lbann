@@ -109,9 +109,16 @@ create_cmake_arguments(
 option(LBANN_SB_CLONE_CLEAN_LBANN "Will pull a clean LBANN repository." OFF)
 
 if (LBANN_SB_CLONE_CLEAN_LBANN)
+  option(LBANN_CLONE_VIA_SSH
+    "Clone LBANN using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
 
-  set(LBANN_URL "https://github.com/llnl/lbann"
-    CACHE STRING "The URL from which to clone LBANN")
+  if (LBANN_CLONE_VIA_SSH)
+    set(LBANN_URL git@github.com:LLNL/lbann.git
+      CACHE STRING "The URL from which to clone LBANN")
+  else ()
+    set(LBANN_URL "https://github.com/llnl/lbann"
+      CACHE STRING "The URL from which to clone LBANN")
+  endif ()
 
   set(LBANN_TAG "develop"
     CACHE STRING "The git tag or hash to checkout for LBANN")

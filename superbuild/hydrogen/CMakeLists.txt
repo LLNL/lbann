@@ -71,8 +71,16 @@ create_cmake_arguments(
   VARIABLES ${HYDROGEN_VARIABLES})
 
 # Handle the clone mechanism. First URL
-set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
-  CACHE STRING "The URL from which to clone Hydrogen")
+option(Hydrogen_CLONE_VIA_SSH
+  "Clone Hydrogen using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (Hydrogen_CLONE_VIA_SSH)
+  set(Hydrogen_URL git@github.com:LLNL/Elemental.git
+    CACHE STRING "The URL from which to clone Hydrogen")
+else ()
+  set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
+    CACHE STRING "The URL from which to clone Hydrogen")
+endif ()
 
 # ... then the tag.
 set(Hydrogen_TAG "hydrogen"

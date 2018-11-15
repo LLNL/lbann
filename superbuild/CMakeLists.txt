@@ -9,6 +9,9 @@ project(LBANN_SuperBuild CXX)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
+option(LBANN_SB_CLONE_VIA_SSH
+  "Use SSH protocol instead of HTTPS for github." OFF)
+
 option(LBANN_SB_BUILD_ALUMINUM "Pull and build Aluminum from Github" OFF)
 
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)

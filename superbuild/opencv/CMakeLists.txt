@@ -30,8 +30,16 @@ create_cmake_arguments(
   REMOVE_PKG_NAME
   VARIABLES ${OPENCV_VARIABLES})
 
-set(OPENCV_URL "https://github.com/opencv/opencv"
-  CACHE STRING "The URL from which to clone OpenCV")
+option(OPENCV_CLONE_VIA_SSH
+  "Clone OPENCV using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (OPENCV_CLONE_VIA_SSH)
+  set(OPENCV_URL git@github.com:opencv/opencv.git
+    CACHE STRING "The URL from which to clone OPENCV")
+else ()
+  set(OPENCV_URL "https://github.com/opencv/opencv"
+    CACHE STRING "The URL from which to clone OpenCV")
+endif ()
 
 set(OPENCV_TAG "3.3.0"
   CACHE STRING "The git tag or hash to checkout for OpenCV")

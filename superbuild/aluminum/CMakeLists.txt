@@ -1,7 +1,15 @@
 enable_language(CXX)
 
-set(Aluminum_URL https://github.com/llnl/Aluminum
-  CACHE STRING "The URL from which to clone Aluminum")
+option(Aluminum_CLONE_VIA_SSH
+  "Clone Aluminum using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (Aluminum_CLONE_VIA_SSH)
+  set(Aluminum_URL git@github.com:llnl/Aluminum.git
+    CACHE STRING "The URL from which to clone Aluminum")
+else ()
+  set(Aluminum_URL https://github.com/llnl/Aluminum
+    CACHE STRING "The URL from which to clone Aluminum")
+endif ()
 
 set(Aluminum_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
