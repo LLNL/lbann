@@ -2,6 +2,15 @@ cmake_minimum_required(VERSION 3.8)
 
 project(LBANN CXX)
 
+# Prevent in-source builds
+if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(FATAL_ERROR
+    "In-source build attempted; please clean the CMake cache and then "
+    "switch to an out-of-source build, e.g.,\n"
+    "rm -rf CMakeCache.txt CMakeFiles/\nmkdir build && "
+    "cd build && cmake <options> ..\n")
+endif ()
+
 # Add CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
