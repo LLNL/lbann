@@ -163,10 +163,16 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
 }  // namespace lbann
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _display_matrix(ElMat *m, const char *name) {
+static void __attribute__((used)) _display_matrix(AbsDistMat *m, const char *name) {
   std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
 }
 #define DISPLAY_MATRIX(x) _display_matrix(x, #x);
+
+/// Print the dimensions and name of a Elemental matrix
+static void __attribute__((used)) _display_local_matrix(AbsMat *m, const char *name) {
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
+}
+#define DISPLAY_LOCAL_MATRIX(x) _display_local_matrix(x, #x);
 
 // FIXME
 #if 1
