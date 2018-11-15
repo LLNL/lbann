@@ -1,5 +1,13 @@
-set(CUB_URL https://github.com/NVlabs/cub.git
-  CACHE STRING "The URL from which to clone CUB.")
+option(CUB_CLONE_VIA_SSH
+  "Clone CUB using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (CUB_CLONE_VIA_SSH)
+  set(CUB_URL git@github.com:NVlabs/cub.git
+    CACHE STRING "The URL from which to clone CUB")
+else ()
+  set(CUB_URL https://github.com/NVlabs/cub.git
+    CACHE STRING "The URL from which to clone CUB.")
+endif ()
 
 set(CUB_TAG "1.5.2" CACHE STRING "The git tag or hash to checkout for CUB")
 

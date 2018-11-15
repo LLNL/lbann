@@ -7,7 +7,31 @@ message("\nWelcome to the LBANN SuperBuild system.\n\n"
 # CXX is always required
 project(LBANN_SuperBuild CXX)
 
+if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(FATAL_ERROR
+    "You have attempted an in-source build of LBANN.\n"
+    "Please clean the CMake cache and switch to an out-of-source build.\n"
+    "Example:\n"
+    "rm -rf CMakeCache.txt CMakeFiles\n"
+    "mkdir build && cd build\n"
+    "cmake <lbann options> ..\n")
+endif ()
+
+get_filename_component(LBANN_SRC_DIR "${PROJECT_SOURCE_DIR}" PATH)
+if (LBANN_SRC_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(FATAL_ERROR
+    "You have attempted a superbuild in the LBANN source directory.\n"
+    "Please clean the CMake cache and switch to an out-of-source build.\n"
+    "Example:\n"
+    "rm -rf CMakeCache.txt CMakeFiles\n"
+    "mkdir build && cd build\n"
+    "cmake <superbuild options> ../superbuild\n")
+endif ()
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
+option(LBANN_SB_CLONE_VIA_SSH
+  "Use SSH protocol instead of HTTPS for github." OFF)
 
 option(LBANN_SB_BUILD_ALUMINUM "Pull and build Aluminum from Github" OFF)
 
