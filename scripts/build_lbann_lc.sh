@@ -588,7 +588,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda9.2_ppc64le
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 	else
@@ -660,7 +660,7 @@ if [ "${WITH_CONDUIT}" = "ON" ] ; then
 echo $COMPILER_VERSION
   if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
       echo "CONDUIT_DIR not available."
-      if [ "${CLUSTER}" = "sierra" ]; then
+      if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
       elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
           export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1

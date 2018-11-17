@@ -10,7 +10,7 @@ set_full_path(THIS_DIR_HEADERS
   sigmoid.hpp
   smooth_relu.hpp
   softmax.hpp
-  logsoftmax.hpp
+  log_softmax.hpp
   softplus.hpp
   swish.hpp
   )

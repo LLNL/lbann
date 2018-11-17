@@ -1,5 +1,4 @@
 model {
-  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 64
   block_size: 256
@@ -12,7 +11,7 @@ model {
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -23,7 +22,11 @@ model {
   ###################################################
 
   metric {
-    categorical_accuracy {}
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "accuracy"
+      unit: "%"
+    }
   }
 
   ###################################################
@@ -51,13 +54,27 @@ model {
 
   layer {
     name: "data"
+    children: "image label"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "label"
+    data_layout: "data_parallel"
+    split {}
+  }
 
   layer {
+    parents: "image"
     name: "ip1"
     data_layout: "model_parallel"
     fully_connected {
@@ -67,12 +84,14 @@ model {
   }
 
   layer {
+    parents: "ip1"
     name: "relu1"
     data_layout: "model_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu1"
     name: "ip2"
     data_layout: "model_parallel"
     fully_connected {
@@ -82,16 +101,24 @@ model {
   }
 
   layer {
+    parents: "ip2"
     name: "prob"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     softmax {}
   }
 
   layer {
-    parents: "prob data"
-    name: "target"
+    parents: "prob label"
+    name: "cross_entropy"
     data_layout: "data_parallel"
-    target {}
+    cross_entropy {}
+  }
+
+  layer {
+    parents: "prob label"
+    name: "accuracy"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
   }
 
 }

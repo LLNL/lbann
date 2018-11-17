@@ -2,7 +2,6 @@
 #https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
 #Timestamp 02/26/2018 8:45AM
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
   #mini_batch_size: 128
   mini_batch_size: 100 #more last minibatch images to save
@@ -16,12 +15,8 @@ model {
   ###################################################
 
   objective_function {
-    binary_cross_entropy {}
-    #mean_squared_error {}
-    layer_term {
-      scale_factor: 1.0
-      layer: "kl_divergence"
-    }
+    layer_term { layer: "binary_cross_entropy" }
+    layer_term { layer: "kl_divergence" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -31,7 +26,12 @@ model {
   # Metrics
   ###################################################
 
-  metric { mean_squared_error {} }
+  metric {
+    layer_metric {
+      name: "mean squared error"
+      layer: "mean_squared_error"
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -78,9 +78,21 @@ model {
       io_buffer: "partitioned"
       target_mode: "N/A"
     }
+    name: "input"
+    data_layout: "data_parallel"
+    children: "data dummy"
+  }
+  layer {
+    parents: "input"
     name: "data"
     data_layout: "data_parallel"
-    parents: " "
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "dummy"
+    data_layout: "data_parallel"
+    dummy {}
   }
   layer {
     name: "slice_data"
@@ -117,7 +129,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -144,7 +155,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -170,7 +180,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -199,7 +208,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons:20
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -209,7 +217,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons:20
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -315,7 +322,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -341,7 +347,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -367,7 +372,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -395,7 +399,6 @@ model {
     data_layout: "model_parallel"
     #num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_normal"
       num_neurons: 16384
       has_bias: true
     }
@@ -412,11 +415,22 @@ model {
   ######################
 
   layer {
-    #parents: "sigmoid data"
-    parents: "sigmoid image_data_dummy"
+    parents: "sigmoid"
     name: "reconstruction"
     data_layout: "model_parallel"
-    reconstruction {}
+    split {}    
+  }
+  layer {
+    parents: "reconstruction image_data_dummy"
+    name: "binary_cross_entropy"
+    data_layout: "model_parallel"
+    binary_cross_entropy {}
+  }
+  layer {
+    parents: "reconstruction image_data_dummy"
+    name: "mean_squared_error"
+    data_layout: "model_parallel"
+    mean_squared_error {}
   }
 
   ###################################################

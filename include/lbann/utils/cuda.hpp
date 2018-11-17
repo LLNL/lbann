@@ -33,7 +33,10 @@
 
 #include <cuda.h>
 #include <thrust/memory.h>
+#include <thrust/version.h>
 #include <thrust/detail/allocator/tagged_allocator.h>
+#include <thrust/system/cuda/detail/par.h>
+#include <thrust/device_vector.h>
 
 // -------------------------------------------------------------
 // Error utility macros
@@ -213,48 +216,65 @@ void apply_entrywise_binary_operator(const AbsDistMat& input1,
 // -------------------------------------------------------------
 namespace thrust {
 
+/** Thrust execution policy. */
+using execute_on_stream
+#if THRUST_MAJOR_VERSION > 1 || THRUST_MINOR_VERSION >= 9
+  = ::thrust::cuda_cub::execute_on_stream; // >= 1.9.1
+#elif THRUST_MAJOR_VERSION == 1 && THRUST_MINOR_VERSION == 8
+  = ::thrust::system::cuda::detail::execute_on_stream;
+#else
+  = std::nullptr_t;
+  static_assert(false, "Thrust 1.8 or newer is required");
+#endif
+
 /** GPU memory allocator that can interact with Thrust.
- *  Uses Hydrogen's CUB memory pool if available.
+ *  Operations are performed on a provided CUDA stream. Uses
+ *  Hydrogen's CUB memory pool if available.
  */
 template <typename T = El::byte>
 class allocator
   : public ::thrust::detail::tagged_allocator<
-      T,
-      ::thrust::system::cuda::tag,
-      ::thrust::pointer<T, ::thrust::system::cuda::tag>> {
-private:
-  typedef typename ::thrust::detail::tagged_allocator<
-    T,
-    ::thrust::system::cuda::tag,
-    ::thrust::pointer<T, ::thrust::system::cuda::tag>> parent_class;
-
-  /** Active CUDA stream. */
-  cudaStream_t m_stream;
-
+               T, execute_on_stream,
+               ::thrust::pointer<T, execute_on_stream>> {
 public:
-  typedef typename parent_class::value_type value_type;
-  typedef typename parent_class::pointer    pointer;
-  typedef typename parent_class::size_type  size_type;
+  // Convenient typedefs
+  typedef ::thrust::detail::tagged_allocator<
+              T, execute_on_stream,
+              ::thrust::pointer<T, execute_on_stream>> parent_class;
+  typedef typename parent_class::value_type  value_type;
+  typedef typename parent_class::pointer     pointer;
+  typedef typename parent_class::size_type   size_type;
+  typedef typename parent_class::system_type system_type;
 
-  allocator(cudaStream_t stream = El::GPUManager::Stream())
-    : m_stream(stream) {}
-
+  /** Default constructor. */
+  allocator(cudaStream_t stream = El::GPUManager::Stream());
   /** Allocate GPU buffer. */
   pointer allocate(size_type size);
-
   /** Deallocate GPU buffer.
    *  'size' is unused and maintained for compatibility with Thrust.
    */
   void deallocate(pointer buffer, size_type size = 0);
+  /** Get Thrust execution policy. */
+  system_type& system();
 
+private:
+  /** Active CUDA stream. */
+  cudaStream_t m_stream;
+  /** Thrust execution policy. */
+  system_type m_system;
+  
 };
 
+/** Thrust device vector. */
+template <typename T>
+using vector = ::thrust::device_vector<T, allocator<T>>;
+  
 } // namespace thrust
 
 } // namespace cuda
 } // namespace lbann
 
-// Template implementations
+// Header implementations
 #include "lbann/utils/impl/cuda.hpp"
 
 #endif // LBANN_HAS_GPU

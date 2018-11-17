@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   random_init_models_differently: true
   objective_function {
     l2_weight_regularization {

@@ -236,11 +236,11 @@ int data_reader_jag_conduit::get_local_id(const std::string role) const {
   return m_local_reader_id;
 }
 
-void data_reader_jag_conduit::set_open_hdf_files(std::shared_ptr<hdf5_file_handles>& f) {
+void data_reader_jag_conduit::set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f) {
   m_open_hdf5_files = f;
 }
 
-std::shared_ptr<hdf5_file_handles>& data_reader_jag_conduit::get_open_hdf_files() {
+std::shared_ptr<hdf5_file_handles>& data_reader_jag_conduit::get_open_hdf5_files() {
   return m_open_hdf5_files;
 }
 
@@ -703,7 +703,7 @@ void data_reader_jag_conduit::check_image_data() {
                                 + std::to_string(m_image_normalization_params.size()) + " != " \
                                 + std::to_string(m_emi_image_keys.size()) + '*' + std::to_string(m_image_num_channels));
   }
-#if 1
+#if defined(LBANN_DEBUG)
   std::cout << "image normalization parameters: " << std::endl;
   for (size_t i = 0u, s = 0u; s < m_emi_image_keys.size(); ++s) {
     for (int c = 0; c < m_image_num_channels; ++c) {
@@ -765,7 +765,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
                                  + std::to_string(m_scalar_normalization_params.size()) + " != " \
                                  + std::to_string(m_scalar_keys.size()));
   }
-#if 1
+#if defined(LBANN_DEBUG)
   std::cout << "scalar normalization parameters: " << std::endl;
   for (size_t i = 0u; i < m_scalar_normalization_params.size(); ++i) {
     const auto& param = m_scalar_normalization_params[i];
@@ -832,7 +832,7 @@ void data_reader_jag_conduit::check_input_keys() {
                                  + std::to_string(m_input_normalization_params.size()) + " != " \
                                  + std::to_string(m_input_keys.size()));
   }
-#if 1
+#if defined(LBANN_DEBUG)
   std::cout << "input normalization parameters: " << std::endl;
   for (size_t i = 0u; i < m_input_normalization_params.size(); ++i) {
     const auto& param = m_input_normalization_params[i];
@@ -972,6 +972,7 @@ void data_reader_jag_conduit::load() {
     m_unused_samples = m_leading_reader->get_valid_local_samples_unused();
     m_local_num_samples_to_use = m_leading_reader->get_num_valid_local_samples();
     m_global_num_samples_to_use = m_leading_reader->get_num_data();
+    m_open_hdf5_files = m_leading_reader->get_open_hdf5_files();
     return;
   }
 
