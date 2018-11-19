@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   procs_per_model:0 
   objective_function {
     l2_weight_regularization {
@@ -54,6 +53,22 @@ model {
     name: "data"
     data_layout: "data_parallel"
     parents: " "
+  }
+  layer {
+    name: "zero"
+    data_layout: "data_parallel"
+    constant {
+      value: 0.0
+      num_neurons: "1"
+    }
+  }
+  layer {
+    name: "one"
+    data_layout: "data_parallel"
+    constant {
+      value: 1.0
+      num_neurons: "1"
+    }
   }
   layer {
     name: "slice_data"
@@ -251,22 +266,18 @@ model {
     parents: "d1relu2_fake"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_real_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1fc3_real"
+    parents: "d1fc3_real one"
   }
   layer {
-    bce_with_logits {
-      true_label: 0
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_fake_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1fc3_fake"
+    parents: "d1fc3_fake zero"
   }
   layer {
     identity {
@@ -320,13 +331,11 @@ model {
     parents: "d2relu2"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "g_adv1_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d2fc3"
+    parents: "d2fc3 one"
   }
   layer {
     name: "gsample_minus_y"
@@ -515,22 +524,18 @@ model {
     parents: "d1_invrelu2_fake"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_inv_real_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1_invfc3_real"
+    parents: "d1_invfc3_real one"
   }
   layer {
-    bce_with_logits {
-      true_label: 0
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_inv_fake_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1_invfc3_fake"
+    parents: "d1_invfc3_fake zero"
   }
   layer {
     identity {
@@ -584,13 +589,11 @@ model {
     parents: "d2_invrelu2"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "g_inv_adv1_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d2_invfc3"
+    parents: "d2_invfc3 one"
   }
   layer {
     name: "gsample2_minus_x"

@@ -57,12 +57,14 @@ data_reader_jag::~data_reader_jag() {
 
 
 void data_reader_jag::set_independent_variable_type(
-  const std::vector<data_reader_jag::variable_t> independent) {
+  const std::vector< std::vector<data_reader_jag::variable_t> >& independent) {
   if (!independent.empty() && !m_independent.empty() && (m_independent[0] == Undefined)) {
     m_independent.clear();
   }
-  for (const auto t: independent) {
-    add_independent_variable_type(t);
+  for (const auto& group: independent) {
+    for (const auto type: group) {
+      add_independent_variable_type(type);
+    }
   }
 }
 
@@ -77,12 +79,14 @@ void data_reader_jag::add_independent_variable_type(
 }
 
 void data_reader_jag::set_dependent_variable_type(
-  const std::vector<data_reader_jag::variable_t> dependent) {
+  const std::vector < std::vector<data_reader_jag::variable_t> >& dependent) {
   if (!dependent.empty() && !m_dependent.empty() && (m_dependent[0] == Undefined)) {
     m_dependent.clear();
   }
-  for (const auto t: dependent) {
-    add_dependent_variable_type(t);
+  for (const auto& group: dependent) {
+    for (const auto type: group) {
+      add_dependent_variable_type(type);
+    }
   }
 }
 

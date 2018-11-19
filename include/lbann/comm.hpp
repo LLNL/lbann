@@ -189,6 +189,10 @@ class lbann_comm {
   inline Grid& get_model_grid() {
     return *grid;
   }
+  /** Return a read-only grid to use for this model. */
+  inline const Grid& get_model_grid() const {
+    return *grid;
+  }
   /** Return the total number of models. */
   inline int get_num_models() const {
     return num_models;
@@ -671,7 +675,7 @@ class lbann_comm {
     ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
 #endif
     ::Al::Allreduce<::Al::MPIBackend>(
-      snd, rcv, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
+      snd, rcv, count, mpi_op_to_al_op(op), c.template GetComm<::Al::MPIBackend>(), algo);
 #else
     El::mpi::AllReduce(snd, rcv, count, op, std::move(c),
                        El::SyncInfo<El::Device::CPU>{});
@@ -690,7 +694,7 @@ class lbann_comm {
     ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
 #endif
     ::Al::Allreduce<::Al::MPIBackend>(
-      data, count, mpi_op_to_al_op(op), *get_al_comm(c), algo);
+      data, count, mpi_op_to_al_op(op), c.template GetComm<::Al::MPIBackend>(), algo);
 #else
     El::mpi::AllReduce(data, count, op, std::move(c),
                        El::SyncInfo<El::Device::CPU>{});
@@ -733,7 +737,7 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
     req.mpi_req = Al::mpi_null_req;
     ::Al::NonblockingAllreduce<::Al::MPIBackend>(
-      data, count, mpi_op_to_al_op(op), *get_al_comm(c), req.mpi_req);
+      data, count, mpi_op_to_al_op(op), c.template GetComm<::Al::MPIBackend>(), req.mpi_req);
     bytes_received += count * sizeof(T) * (El::mpi::Size(c) - 1);
 #else
     allreduce(data, count, std::move(c), op);
@@ -1252,19 +1256,6 @@ class lbann_comm {
     allreduce_algorithm::DYNAMIC;
 
 #ifdef LBANN_HAS_ALUMINUM
-  using al_comms_key_type = std::pair<MPI_Comm, std::type_index>;
-  using al_comms_val_type = std::unique_ptr<::Al::MPICommunicator>;
-  std::map<al_comms_key_type, al_comms_val_type> m_al_comms;
-
-  /** Get an Aluminum communicator.
-   *  The communicator will have the same process configuration as the
-   *  Elemental communicator c and use the backend corresponding to
-   *  type index t. An Aluminum communicator will be created if
-   *  needed.
-   */
-  ::Al::MPICommunicator* get_al_comm(
-    El::mpi::Comm c, std::type_index t = std::type_index(typeid(Al::mpi_backend)));
-
   /** Convert an MPI_Op to an Aluminum reduction operator. */
   ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
 #endif

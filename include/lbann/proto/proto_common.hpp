@@ -17,7 +17,7 @@ void init_data_readers(
   std::map<execution_mode, lbann::generic_data_reader *>& data_readers);
 
 /// adjusts the number of parallel data readers
-void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
+void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 
 /// adjusts the values in p by querying the options db
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p);

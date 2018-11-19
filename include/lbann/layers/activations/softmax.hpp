@@ -24,291 +24,101 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_SOFTMAX_HPP_INCLUDED
-#define LBANN_LAYER_SOFTMAX_HPP_INCLUDED
+#ifndef LBANN_LAYER_ACTIVATION_SOFTMAX_HPP_INCLUDED
+#define LBANN_LAYER_ACTIVATION_SOFTMAX_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/io/file_io.hpp"
-#include "lbann/utils/random.hpp"
-#include "lbann/models/model.hpp"
-#include "lbann/utils/cuda.hpp"
 #include "lbann/utils/cudnn.hpp"
-#include <unistd.h>
-#include <string>
 
-#include <cassert>
-
-// Output has minimum value to avoid denormalized floats
+// Threshold outputs to a minimum value.
+// If enabled, the minimum output value is sqrt(min), where min is the
+// minimum, normalized, positive value (~1e-19 for float and ~1e-154
+// for double). The gradients w.r.t. input will be inaccurate, on the
+// order of the minimum output value.
 #define LBANN_ENABLE_SOFTMAX_CUTOFF
 
 namespace lbann {
 
-#ifdef LBANN_HAS_GPU
-namespace softmax_cuda {
-/** Apply minimum cutoff to activation entries.
- *  A minimum output value helps avoid denormalized floats. Data is
- *  assumed to be on GPU.
+/** Softmax layer.
+ *  \f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} \f]
  */
-void fp_cutoff(int height, int width,
-               DataType* output,
-               int output_leading_dim,
-               DataType cutoff,
-               cudaStream_t stream);
-/** Error signal correction if activations have minimum cutoff.
- *  Data is assumed to be on GPU.
- */
-void bp_cutoff(int height, int width,
-               const DataType* output,
-               int output_leading_dim,
-               DataType* gradient_wrt_input,
-               int gradient_wrt_input_leading_dim,
-               DataType cutoff,
-               cudaStream_t stream);
-/** Compute the maximum entry in input for each column.
- * Data is assumed to be on the GPU.
- */
-void max_local_col_entry(int height, int width,
-                         const DataType * __restrict__ input,
-                         int input_ldim,
-                         DataType * __restrict__ workspace,
-                         cudaStream_t stream);
-/** Exponentiate the (shifted) input, and compute its sum.
- * Data is assumed to be on the GPU.
- */
-void exp_and_col_sum(int height, int width,
-                     const DataType * __restrict__ input,
-                     int intput_ldim,
-                     DataType * __restrict__ output,
-                     int output_ldim,
-                     DataType * __restrict__ workspace,
-                     cudaStream_t stream);
-/** Divide each entry in a column by the pre-computed sum of the column.
- * Apply a minimum cutoff to the entries if needed.
- * Data is assumed to be on the GPU.
- */
-void div_by_col_sums_and_cutoff(int height, int width,
-                                DataType * __restrict__ output,
-                                int output_ldim,
-                                const DataType * __restrict__ workspace,
-                                const DataType cutoff,
-                                cudaStream_t stream);
-/** Compute the gradient w.r.t. the input and apply a cutoff if needed.
- * Data is assumed to be on the GPU.
- */
-void grad_wrt_input_and_cutoff(int height, int width,
-                               const DataType * __restrict__ output,
-                               int output_ldim,
-                               const DataType * __restrict__ workspace,
-                               const DataType * __restrict__ grad_wrt_output,
-                               int grad_wrt_output_ldim,
-                               DataType * __restrict__ grad_wrt_input,
-                               int grad_wrt_input_ldim,
-                               const DataType cutoff,
-                               cudaStream_t stream);
-}  // namespace softmax_cuda
-#endif // LBANN_HAS_CUDA
-
-/** Softmax layer. */
-template <data_layout T_layout, El::Device Dev>
-class softmax_layer : public activation_layer {
-
- private:
-
-  /** Workspace for column-wise reductions. */
-  AbsDistMat *m_workspace;
-
-  /** Lower bound for outputs.
-   *  This should be sufficiently large to avoid denormalized
-   *  floats.
-   */
-  DataType m_min_output;
-
-#ifdef LBANN_HAS_CUDNN
-  /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
-
- public:
+template <data_layout Layout, El::Device Device>
+class softmax_layer : public Layer {
+public:
 
   softmax_layer(lbann_comm *comm)
-    : activation_layer(comm),
-      m_workspace(nullptr),
-      m_min_output(std::sqrt(std::numeric_limits<DataType>::min()))
+    : Layer(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {}
 
   softmax_layer(const softmax_layer& other)
-    : activation_layer(other),
-      m_min_output(other.m_min_output)
+    : Layer(other),
+      m_workspace(other.m_workspace ?
+                  other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
 #endif // LBANN_HAS_CUDNN
   {
-
-    // Matrix deep copy
-    m_workspace = other.m_workspace;
-    if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
-
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
-
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
-    activation_layer::operator=(other);
-    m_min_output = other.m_min_output;
-
-    // Deep matrix copy
-    if (m_workspace != nullptr) { delete m_workspace; }
-    m_workspace = other.m_workspace;
-    if (m_workspace != nullptr) { m_workspace = m_workspace->Copy(); }
-
+    Layer::operator=(other);
+    m_workspace.reset(other.m_workspace ?
+                      other.m_workspace->Copy() : nullptr);
 #ifdef LBANN_HAS_CUDNN
-    // Copy cuDNN objects
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
-
+    return *this;
   }
 
-  ~softmax_layer() {
-    if (m_workspace != nullptr) { delete m_workspace; }
-  }
+  ~softmax_layer() = default;
 
   softmax_layer* copy() const override { return new softmax_layer(*this); }
   std::string get_type() const override { return "softmax"; }
+  data_layout get_data_layout() const override { return Layout; }
+  El::Device get_device_allocation() const override { return Device; }
 
-  std::string get_description() const override {
-    return std::string {} + " softmax" + " dataLayout: "
-           + this->get_data_layout_string(get_data_layout());
-  }
-
-  data_layout get_data_layout() const override { return T_layout; }
-
-  El::Device get_device_allocation() const override { return Dev; }
-
-  void setup_matrices(const El::Grid& grid) override;
-
-  void setup_data() override {
-    activation_layer::setup_data();
-    const int mini_batch_size = this->m_model->get_max_mini_batch_size();
-    m_workspace->Resize(1, mini_batch_size);
+  void setup_matrices(const El::Grid& grid) override {
+    Layer::setup_matrices(grid);
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    m_workspace.reset(AbsDistMat::Instantiate(dist));
+#ifdef HYDROGEN_HAVE_CUB
+    if (m_workspace->GetLocalDevice() == El::Device::GPU) {
+      m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
+    }
+#endif // HYDROGEN_HAVE_CUB
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    activation_layer::fp_setup_outputs(mini_batch_size);
+    Layer::fp_setup_outputs(mini_batch_size);
+    const auto& dist_data = get_prev_activations().DistData();
+    m_workspace->Empty(false);
+    m_workspace->AlignWith(dist_data);
     m_workspace->Resize(1, mini_batch_size);
   }
 
   void fp_compute() override;
   void bp_compute() override;
 
-  virtual void fp_compute_cpu() {
+private:
 
-    // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
-    auto& local_workspace = m_workspace->Matrix();
+  /** Workspace for column-wise reductions. */
+  std::unique_ptr<AbsDistMat> m_workspace;
 
-    // Matrix parameters
-    const El::Int local_height = local_input.Height();
-    const El::Int local_width = local_input.Width();
-
-    // Find maximum entry in each column
-    if (local_height == 0) {
-      // When there's no local data, fill the workspace with a small value so
-      // the maximum across processors is still computed correctly.
-      El::Fill(local_workspace, std::numeric_limits<DataType>::lowest());
-    } else {
-      LBANN_OMP_PARALLEL_FOR
-      for (El::Int col = 0; col < local_width; ++col) {
-        DataType max_entry = local_input(0, col);
-        for (El::Int row = 1; row < local_height; ++row) {
-          max_entry = std::max(max_entry, local_input(row, col));
-        }
-        local_workspace(0, col) = max_entry;
-      }
-    }
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm(),
-                      El::mpi::MAX);
-
-    // Exponentiate activations and compute column sums
-    // Note: Subtracting by the column max prevents activations from
-    // blowing up. Large negative values underflow to 0.
-    LBANN_OMP_PARALLEL_FOR
-    for (El::Int col = 0; col < local_width; ++col) {
-      const DataType shift = local_workspace(0, col);
-      DataType sum = 0;
-      for (El::Int row = 0; row < local_height; ++row) {
-        const DataType x = local_input(row, col);
-        const DataType y = std::exp(x - shift);
-        local_output(row, col) = y;
-        sum += y;
-      }
-      local_workspace(0, col) = sum;
-    }
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
-
-    // Divide activations by column sums
-    // Note: Small values are rounded to minimum output value to avoid
-    // denormalized floats.
-    LBANN_OMP_PARALLEL_FOR
-    for (El::Int col = 0; col < local_width; ++col) {
-      const DataType scale = DataType(1) / local_workspace(0, col);
-      for (El::Int row = 0; row < local_height; ++row) {
-        DataType& y = local_output(row, col);
-        y *= scale;
-      #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-        y = std::max(y, m_min_output);
-      #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-      }
-    }
-
-  }
-
-  virtual void bp_compute_cpu() {
-
-    // Local matrices
-    const DMat<Dev>& local_output = get_local_activations();
-    const DMat<Dev>& local_gradient_wrt_output = get_local_prev_error_signals();
-    DMat<Dev>& local_gradient_wrt_input = get_local_error_signals();
-    DMat<Dev>& local_workspace = m_workspace->Matrix();
-
-    // Matrix parameters
-    const El::Int local_height = local_output.Height();
-    const El::Int local_width = local_output.Width();
-
-    // Compute dot products between output and gradient w.r.t. output
-    for (El::Int col = 0; col < local_width; ++col) {
-      const auto& y = local_output(El::ALL, El::IR(col));
-      const auto& dy = local_gradient_wrt_output(El::ALL, El::IR(col));
-      local_workspace(0, col) = El::Dot(y, dy);
-    }
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
-
-    // Compute gradient w.r.t. input
-    LBANN_OMP_PARALLEL_FOR
-    for (El::Int col = 0; col < local_width; ++col) {
-      const DataType y_dot_dy = local_workspace(0, col);
-      for (El::Int row = 0; row < local_height; ++row) {
-        const DataType y = local_output(row, col);
-        const DataType dy = local_gradient_wrt_output(row, col);
-        DataType dx = y * (dy - y_dot_dy);
-      #ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-        if (y <= m_min_output) { dx = DataType(0); }
-      #endif
-        local_gradient_wrt_input(row, col) = dx;
-      }
-    }
-
-  }
+#ifdef LBANN_HAS_CUDNN
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_SOFTMAX_HPP_INCLUDED
+#endif // LBANN_LAYER_ACTIVATION_SOFTMAX_HPP_INCLUDED

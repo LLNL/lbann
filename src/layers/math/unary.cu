@@ -29,41 +29,6 @@
 namespace lbann {
 
 namespace {
-
-// Wrappers for CUDA math API functions
-// Note: For example, the CUDA math API provides the 'sqrtf' function
-// for floats and 'sqrt' function for doubles. We wrap these with the
-// overloaded function 'sqrt_'.
-#define WRAP_CUDA_MATH_FUNCTION(func)                                   \
-  __device__ __forceinline__ float func##_(const float& x) {            \
-    static_cast<void>(static_cast<float (*)(const float&)>(func##_));   \
-    return func##f(x);                                                  \
-  }                                                                     \
-  __device__ __forceinline__ double func##_(const double& x) {          \
-    static_cast<void>(static_cast<double (*)(const double&)>(func##_)); \
-    return func(x);                                                     \
-  }
-WRAP_CUDA_MATH_FUNCTION(fabs)
-WRAP_CUDA_MATH_FUNCTION(round)
-WRAP_CUDA_MATH_FUNCTION(ceil)
-WRAP_CUDA_MATH_FUNCTION(floor)
-WRAP_CUDA_MATH_FUNCTION(sqrt)
-WRAP_CUDA_MATH_FUNCTION(exp)
-WRAP_CUDA_MATH_FUNCTION(expm1)
-WRAP_CUDA_MATH_FUNCTION(log)
-WRAP_CUDA_MATH_FUNCTION(log1p)
-WRAP_CUDA_MATH_FUNCTION(cos)
-WRAP_CUDA_MATH_FUNCTION(sin)
-WRAP_CUDA_MATH_FUNCTION(tan)
-WRAP_CUDA_MATH_FUNCTION(acos)
-WRAP_CUDA_MATH_FUNCTION(asin)
-WRAP_CUDA_MATH_FUNCTION(atan)
-WRAP_CUDA_MATH_FUNCTION(cosh)
-WRAP_CUDA_MATH_FUNCTION(sinh)
-WRAP_CUDA_MATH_FUNCTION(tanh)
-WRAP_CUDA_MATH_FUNCTION(acosh)
-WRAP_CUDA_MATH_FUNCTION(asinh)
-WRAP_CUDA_MATH_FUNCTION(atanh)
   
 // =========================================================
 // Operator objects for entry-wise unary layers
@@ -76,7 +41,7 @@ WRAP_CUDA_MATH_FUNCTION(atanh)
 /** Logical not operator. */
 struct not_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    const bool b = x != DataType(0) && !isnan(x);
+    const auto& b = x != DataType(0) && !isnan(x);
     return !b ? DataType(1) : DataType(0);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
@@ -87,7 +52,7 @@ struct not_op {
 /** Absolute value operator. */
 struct abs_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return fabs_(x);
+    return cuda::abs(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     constexpr DataType zero = 0;
@@ -124,7 +89,7 @@ struct sign_op {
 /** Round operator. */
 struct round_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return round_(x);
+    return cuda::round(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return DataType(0);
@@ -134,7 +99,7 @@ struct round_op {
 /** Ceiling operator. */
 struct ceil_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return ceil_(x);
+    return cuda::ceil(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return DataType(0);
@@ -144,7 +109,7 @@ struct ceil_op {
 /** Floor operator. */
 struct floor_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return floor_(x);
+    return cuda::floor(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return DataType(0);
@@ -177,21 +142,21 @@ struct square_op {
 /** Square root operator. */
 struct sqrt_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return sqrt_(x);
+    return cuda::sqrt(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (2 * sqrt_(x));
+    return dy / (2 * cuda::sqrt(x));
   }
 };
 
 /** Reciprocal square root operator. */
 struct rsqrt_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return 1 / sqrt_(x);
+    return cuda::rsqrt(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    const auto& s = sqrt_(x);
-    return - dy / (2 * s*s*s);
+    const auto& s = cuda::sqrt(x);
+    return - dy / (2 * x * s);
   }
 };
 
@@ -215,27 +180,27 @@ struct safe_reciprocal_op {
 /** Exponential operator. */
 struct exp_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return exp_(x);
+    return cuda::exp(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy * exp_(x);
+    return dy * cuda::exp(x);
   }
 };
 
 /** Exponential minus one operator. */
 struct expm1_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return expm1_(x);
+    return cuda::expm1(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy * exp_(x);
+    return dy * cuda::exp(x);
   }
 };
 
 /** Natural logarithm operator. */
 struct log_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return log_(x);
+    return cuda::log(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return dy / x;
@@ -245,7 +210,7 @@ struct log_op {
 /** Natural logarithm one plus operator. */
 struct log1p_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return log1p_(x);
+    return cuda::log1p(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return dy / (x + DataType(1));
@@ -255,30 +220,30 @@ struct log1p_op {
 /** Cosine operator. */
 struct cos_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return cos_(x);
+    return cuda::cos(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return -dy * sin_(x);
+    return -dy * cuda::sin(x);
   }
 };
 
 /** Sine operator. */
 struct sin_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return sin_(x);
+    return cuda::sin(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy * cos_(x);
+    return dy * cuda::cos(x);
   }
 };
 
 /** Tangent operator. */
 struct tan_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return tan_(x);
+    return cuda::tan(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    const auto& c = cos_(x);
+    const auto& c = cuda::cos(x);
     return dy / (c*c);
   }
 };
@@ -286,27 +251,27 @@ struct tan_op {
 /** Arccosine operator. */
 struct acos_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return acos_(x);
+    return cuda::acos(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return -dy / sqrt_(DataType(1) - x*x);
+    return -dy / cuda::sqrt(DataType(1) - x*x);
   }
 };
 
 /** Arcsine operator. */
 struct asin_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return asin_(x);
+    return cuda::asin(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / sqrt_(DataType(1) - x*x);
+    return dy / cuda::sqrt(DataType(1) - x*x);
   }
 };
 
 /** Arctangent operator. */
 struct atan_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return atan_(x);
+    return cuda::atan(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return dy / (DataType(1) + x*x);
@@ -316,30 +281,30 @@ struct atan_op {
 /** Hyperbolic cosine operator. */
 struct cosh_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return cosh_(x);
+    return cuda::cosh(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy * sinh_(x);
+    return dy * cuda::sinh(x);
   }
 };
 
 /** Hyperbolic sine operator. */
 struct sinh_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return sinh_(x);
+    return cuda::sinh(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy * cosh_(x);
+    return dy * cuda::cosh(x);
   }
 };
 
 /** Hyperbolic tangent operator. */
 struct tanh_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return tanh_(x);
+    return cuda::tanh(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    const auto& c = cosh_(x);
+    const auto& c = cuda::cosh(x);
     return dy / (c*c);
   }
 };
@@ -347,27 +312,27 @@ struct tanh_op {
 /** Hyperbolic arccosine operator. */
 struct acosh_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return acosh_(x);
+    return cuda::acosh(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return -dy / (sqrt_(x - DataType(1)) * sqrt_(x + DataType(1)));
+    return -dy / (cuda::sqrt(x - DataType(1)) * cuda::sqrt(x + DataType(1)));
   }
 };
 
 /** Hyperbolic arcsine operator. */
 struct asinh_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return asinh_(x);
+    return cuda::asinh(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / sqrt_(DataType(1) + x*x);
+    return dy / cuda::sqrt(DataType(1) + x*x);
   }
 };
 
 /** Hyperbolic arctangent operator. */
 struct atanh_op {
   inline __device__ DataType operator()(const DataType& x) const {
-    return atanh_(x);
+    return cuda::atanh(x);
   }
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     return dy / (DataType(1) - x*x);
