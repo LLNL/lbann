@@ -883,7 +883,7 @@ bool model::train_mini_batch() {
 
   // Update step
   update_weights();
-  bool finished = update_layers();
+  const bool finished = update_layers();
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
