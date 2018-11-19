@@ -630,7 +630,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
 		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.2.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.4.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
 			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		fi
