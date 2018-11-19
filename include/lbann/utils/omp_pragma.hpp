@@ -39,6 +39,7 @@
 #define LBANN_OMP_PARALLEL_FOR _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE2 _Pragma("omp taskloop collapse(2) default(shared) num_tasks(omp_get_num_threads())")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp taskloop collapse(3) default(shared) num_tasks(omp_get_num_threads())")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE4 _Pragma("omp taskloop collapse(4) default(shared) num_tasks(omp_get_num_threads())")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp taskloop collapse(5) default(shared) num_tasks(omp_get_num_threads())")
 
 //#define OMP_PARALLEL _Pragma("omp taskloop default(shared) num_tasks(omp_get_num_threads())")
@@ -50,6 +51,7 @@
 #define LBANN_OMP_PARALLEL_FOR _Pragma("omp parallel for")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE2 _Pragma("omp parallel for collapse(2)")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE3 _Pragma("omp parallel for collapse(3)")
+#define LBANN_OMP_PARALLEL_FOR_COLLAPSE4 _Pragma("omp parallel for collapse(4)")
 #define LBANN_OMP_PARALLEL_FOR_COLLAPSE5 _Pragma("omp parallel for collapse(5)")
 
 //#define OMP_PARALLEL _Pragma("omp parallel for")
@@ -59,6 +61,7 @@
 #define LBANN_OMP_PARALLEL_ARGS(arg) _Pragma(LBANN_OMP_PARALLEL_TEXT(arg))
 #endif
 
+#define LBANN_OMP_PARALLEL _Pragma("omp parallel")
 #define OMP_CRITICAL _Pragma("omp critical")
 
 #if defined(LBANN_NO_OMP_FOR_DATA_READERS)

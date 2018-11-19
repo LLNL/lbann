@@ -34,7 +34,7 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
   // Useful constants
   constexpr DataType half = 0.5;
   constexpr DataType one = 1;
-  
+
   // Matrices
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
@@ -53,7 +53,7 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
   // Perform bilinear interpolation for each output pixel
   const auto& x_stride = static_cast<DataType>(input_width) / m_width;
   const auto& y_stride = static_cast<DataType>(input_height) / m_height;
-#pragma omp parallel for collapse(4)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE4
   for (El::Int sample = 0; sample < num_samples; ++sample) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
       for (El::Int output_row = 0; output_row < m_height; ++output_row) {
@@ -102,12 +102,12 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
                     + pixel01 * unit_x * (one - unit_y)
                     + pixel10 * (one - unit_x) * unit_y
                     + pixel11 * unit_x * unit_y);
-          
+
         }
       }
     }
   }
-  
+
 }
-  
+
 } // namespace lbann

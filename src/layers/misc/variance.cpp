@@ -44,7 +44,7 @@ void fp_cpu(const AbsDistMat& input,
   const auto& local_input = static_cast<const CPUMat&>(input.LockedMatrix());
   auto& local_means = static_cast<CPUMat&>(means.Matrix());
   auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input.Height();
   const auto& width = input.Width();
@@ -55,7 +55,7 @@ void fp_cpu(const AbsDistMat& input,
   means.Empty(false);
   means.AlignWith(input);
   means.Resize(1, width);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     DataType sum = 0;
     for (El::Int row = 0; row < local_height; ++row) {
@@ -69,7 +69,7 @@ void fp_cpu(const AbsDistMat& input,
   workspace.Empty(false);
   workspace.AlignWith(input);
   workspace.Resize(1, width);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& mean = local_means(0, col);
     DataType sum = 0;
@@ -81,7 +81,7 @@ void fp_cpu(const AbsDistMat& input,
   }
   El::AllReduce(workspace, workspace.RedundantComm());
   El::Copy(workspace, output);
-  
+
 }
 
 /** CPU backprop implementation.
@@ -99,7 +99,7 @@ void bp_cpu(const AbsDistMat& input,
   auto& local_gradient_wrt_input = static_cast<CPUMat&>(gradient_wrt_input.Matrix());
   const auto& local_means = static_cast<const CPUMat&>(means.LockedMatrix());
   auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input.Height();
   const auto& local_height = local_input.Height();
@@ -110,7 +110,7 @@ void bp_cpu(const AbsDistMat& input,
 
   // Compute gradients w.r.t. input
   const DataType scale = DataType(2) / (biased? height : height - 1);
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& dy = local_workspace(0, col);
@@ -124,7 +124,7 @@ void bp_cpu(const AbsDistMat& input,
 }
 
 } // namespace
-  
+
 template <>
 void variance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
