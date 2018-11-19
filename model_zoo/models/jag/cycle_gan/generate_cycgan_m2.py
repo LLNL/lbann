@@ -180,8 +180,10 @@ def configure_model(model):
     #freeze discriminator, fake it as real
     D_real = add_discriminator(model,'concat_gsample_n_param','disc1',True, True, '_real')
     #objective function
-    l = new_layer(model, 'g_adv1_bce', D_real, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
+    one = new_layer(model,'one','','constant')
+    one.constant.value = 1.0
+    one.constant.num_neurons = '1'
+    l = new_layer(model, 'g_adv1_bce', [D_real, one.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'g_adv1_eval','g_adv1_bce', 'evaluation')
     
     #************************************************

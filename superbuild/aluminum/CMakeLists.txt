@@ -1,5 +1,15 @@
-set(Aluminum_URL https://github.com/llnl/Aluminum
-  CACHE STRING "The URL from which to clone Aluminum")
+enable_language(CXX)
+
+option(Aluminum_CLONE_VIA_SSH
+  "Clone Aluminum using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (Aluminum_CLONE_VIA_SSH)
+  set(Aluminum_URL git@github.com:llnl/Aluminum.git
+    CACHE STRING "The URL from which to clone Aluminum")
+else ()
+  set(Aluminum_URL https://github.com/llnl/Aluminum
+    CACHE STRING "The URL from which to clone Aluminum")
+endif ()
 
 set(Aluminum_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
@@ -16,10 +26,14 @@ option(ALUMINUM_ENABLE_CUDA "Enable CUDA support." OFF)
 option(ALUMINUM_ENABLE_MPI_CUDA "Enable MPI-CUDA support." OFF)
 option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." OFF)
 
+if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
+  enable_language(CUDA)
+endif ()
+
 # Get the list of ALUMINUM variables
 get_property(ALUMINUM_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER ALUMINUM_VARIABLES INCLUDE REGEX
-  "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*\|CMAKE_\(CXX\|CUDA\)_COMPILER\|CMAKE_BUILD_TYPE")
+  "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*")
 list(FILTER ALUMINUM_VARIABLES EXCLUDE REGEX "Aluminum_URL\|Aluminum_TAG")
 
 create_cmake_arguments(
@@ -40,8 +54,19 @@ ExternalProject_Add(Aluminum
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${Aluminum_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
+  LOG_DOWNLOAD 1
+  LOG_UPDATE 1
+  LOG_CONFIGURE 1
+  LOG_BUILD 1
+  LOG_INSTALL 1
+  LOG_TEST 1
   LIST_SEPARATOR |
   CMAKE_ARGS
+  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+  -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
+  -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
+  -DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CXX_COMPILER}
   ${ALUMINUM_CMAKE_ARGS}
   )
 

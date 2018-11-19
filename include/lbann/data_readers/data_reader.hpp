@@ -97,7 +97,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_partition_overlap(0),
     m_partition_mode(0),
     m_procs_per_partition(1),
-    m_jag_partitioned(false)
+    m_jag_partitioned(false),
+    m_model(nullptr)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -296,6 +297,15 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual bool update(bool is_active_reader);
 
+  /**
+   * This is called at the end of update; it permits data readers to
+   * perform actions that are specific to their data sets, for example,
+   * data_reader_jag_conduit_hdf5 has the 'primary' data reader
+   * bcast its shuffled indices to the other data readers. In general
+   * most data readers will probably not overide this method.
+   * It may also be called outside of update.
+   */
+
   /// Return the number of labels (classes) in this dataset.
   virtual int get_num_labels() const {
     return 0;
@@ -316,12 +326,23 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual int get_linearized_response_size() const {
     return 1;
   }
+  /// get the linearized size of what is identified by desc.
+  virtual int get_linearized_size(const std::string& desc) const {
+    if (desc == "data") {
+      return get_linearized_data_size();
+    } else if (desc == "label") {
+      return get_linearized_label_size();
+    } else if (desc == "response") {
+      return get_linearized_response_size();
+    }
+    return 0;
+  }
   /// Get the dimensions of the data.
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
   /// True if the data reader's current position is valid.
-  bool position_valid() const {
+  virtual bool position_valid() const {
     return (m_current_pos < (int)m_shuffled_indices.size());
   }
   /// True if the data reader is at the start of an epoch.
@@ -387,7 +408,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_iteration_stride;
   }
   /// Return the base offset.
-  void set_base_offset(const int s) {
+  virtual void set_base_offset(const int s) {
     JAG_NOOP_VOID
     m_base_offset = s;
   }
@@ -449,7 +470,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return m_num_parallel_readers;
   }
   /// Set the starting mini-batch index for the epoch
-  void set_reset_mini_batch_index(const int s) {
+  virtual void set_reset_mini_batch_index(const int s) {
     m_reset_mini_batch_index = s;
   }
   /// Return the starting mini-batch index for the epoch
@@ -481,7 +502,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     return &m_shuffled_indices[0];
   }
   /// Get the number of samples in this dataset.
-  int get_num_data() const {
+  virtual int get_num_data() const {
     return (int)m_shuffled_indices.size();
   }
   /// Get the number of unused samples in this dataset.
@@ -533,7 +554,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /**
    * Select the appropriate subset of data based on settings.
    */
-  void select_subset_of_data();
+  virtual void select_subset_of_data();
 
   /// called by select_subset_of_data() if data set is partitioned
   void select_subset_of_data_partitioned();
@@ -542,7 +563,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Replaced the shuffled index set with the unused index set, empying the
    * unused set.
    */
-  void use_unused_index_set();
+  virtual void use_unused_index_set();
 
   /// partition the dataset amongst the models
   void set_partitioned(bool is_partitioned=true, double overlap=0.0, int mode=0);
@@ -687,6 +708,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// support of data store functionality
   void set_data_store(generic_data_store *g);
 
+  void set_model(model *m) { m_model = m; }
+
+  /// experimental; used to ensure all readers for jag_conduit_hdf5
+  /// have identical shuffled indices
+  virtual void post_update() {}
+
  protected:
 
   /**
@@ -707,13 +734,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
- protected:
+  int m_rank;
 
-   int m_rank;
+  generic_data_store *m_data_store;
 
-   generic_data_store *m_data_store;
-
-   lbann_comm *m_comm;
+  lbann_comm *m_comm;
 
   /**
    * Fetch a single sample into a matrix.
@@ -868,6 +893,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
   /// etc.
   void set_jag_variables(int mb_size);
+  model *m_model;
 };
 
 template<typename T>

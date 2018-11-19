@@ -61,6 +61,11 @@ class convolution_layer : public base_convolution_layer<Dev> {
     for (size_t h=0; h<this->m_strides.size(); h++) {
       s << this->m_strides[h] << " ";
     }
+    s << " dilation: ";
+    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
+      s << this->m_dilations[h] << " ";
+    }
+    s << " groups: " << this->m_num_groups;
     s << " num_output_channels: " << this->get_output_dims()[0]
       << " has_bias: " << this->m_bias_scaling_factor
       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
@@ -91,7 +96,7 @@ class convolution_layer : public base_convolution_layer<Dev> {
         }
       }
     }
-    return s.str();;
+    return s.str();
   }
 
   convolution_layer(lbann_comm *comm,
@@ -100,6 +105,8 @@ class convolution_layer : public base_convolution_layer<Dev> {
                     int conv_dim,
                     int pad,
                     int stride,
+                    int dilation,
+                    int groups,
                     bool has_bias = true)
     : convolution_layer(comm,
                         num_data_dims,
@@ -107,6 +114,8 @@ class convolution_layer : public base_convolution_layer<Dev> {
                         std::vector<int>(num_data_dims, conv_dim),
                         std::vector<int>(num_data_dims, pad),
                         std::vector<int>(num_data_dims, stride),
+                        std::vector<int>(num_data_dims, dilation),
+                        groups,
                         has_bias) {}
 
   convolution_layer(lbann_comm *comm,
@@ -115,6 +124,8 @@ class convolution_layer : public base_convolution_layer<Dev> {
                     std::vector<int> conv_dims,
                     std::vector<int> pads,
                     std::vector<int> strides,
+                    std::vector<int> dilations,
+                    int groups,
                     bool has_bias = true)
     : base_convolution_layer<Dev>(comm,
                                   num_data_dims,
@@ -122,6 +133,8 @@ class convolution_layer : public base_convolution_layer<Dev> {
                                   conv_dims,
                                   pads,
                                   strides,
+                                  dilations,
+                                  groups,
                                   has_bias) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
@@ -145,7 +158,15 @@ class convolution_layer : public base_convolution_layer<Dev> {
     auto output_dims = input_dims;
 
     // Initialize convolution kernel dimensions
-    kernel_dims.insert(kernel_dims.begin() + 1, input_dims[0]);
+    if (input_dims[0] % this->m_num_groups != 0) {
+      std::stringstream err;
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
+          << " has input tensor with channels " << input_dims[0]
+          << " but groups " << this->m_num_groups
+          << "; groups must evenly divide input channels";
+      LBANN_ERROR(err.str());
+    }
+    kernel_dims.insert(kernel_dims.begin() + 1, input_dims[0] / this->m_num_groups);
     this->m_kernel_size = std::accumulate(kernel_dims.begin(),
                                           kernel_dims.end(),
                                           1,
@@ -167,12 +188,21 @@ class convolution_layer : public base_convolution_layer<Dev> {
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
       const auto& stride = this->m_strides[i];
       const auto& pad = this->m_pads[i];
+      const auto& dilation = this->m_dilations[i];
       const auto& effective_dim = (input_dims[i+1]
                                    + 2 * pad
-                                   - kernel_dims[i+2] + 1);
+                                   - dilation*(kernel_dims[i+2] - 1));
       output_dims[i+1] = (effective_dim + stride - 1) / stride;
     }
     this->set_output_dims(output_dims);
+    if (output_dims[0] % this->m_num_groups != 0) {
+      std::stringstream err;
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
+          << " has output tensor with filters " << output_dims[0]
+          << " but groups " << this->m_num_groups
+          << "; groups must evenly divide output filters";
+      LBANN_ERROR(err.str());
+    }
 
   }
 

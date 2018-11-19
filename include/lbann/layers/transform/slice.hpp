@@ -87,9 +87,9 @@ public:
   }
 
   /** Get slice points. */
-  std::vector<int>& get_slice_points() { return m_slice_points; }
+  std::vector<El::Int>& get_slice_points() { return m_slice_points; }
   /** Get slice points (const). */
-  std::vector<int> get_slice_points() const { return m_slice_points; }
+  std::vector<El::Int> get_slice_points() const { return m_slice_points; }
 
 protected:
 
@@ -205,14 +205,14 @@ protected:
         El::LockedView(output, *m_input_v);
       }
 
-    }    
+    }
 
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     const auto& num_outputs = get_num_children();
     const auto& input_dims = get_input_dims();
-    
+
     // Initialize gradient w.r.t. input tensor
     auto& gradient_wrt_input = get_error_signals();
     gradient_wrt_input.Empty(false);
@@ -262,7 +262,7 @@ protected:
         El::Copy(*m_output_v, *m_input_v);
       }
 
-    }    
+    }
 
   }
 

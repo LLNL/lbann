@@ -22,16 +22,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_timer .hpp .cpp - Callback hooks to time training
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED
 
-#include <chrono>
-#include <vector>
 #include "lbann/callbacks/callback.hpp"
+#include <chrono>
+#include <map>
+#include <vector>
 
 namespace lbann {
 
@@ -41,64 +40,64 @@ namespace lbann {
  *  master process in each model.
  */
 class lbann_callback_timer : public lbann_callback {
- public:
+public:
 
-  /** Constructor. */
-  lbann_callback_timer(lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer) {}
-  /** Copy constructor. */
+  lbann_callback_timer(lbann_summary *summarizer = nullptr)
+    : lbann_callback(1, summarizer) {}
   lbann_callback_timer(const lbann_callback_timer&) = default;
-  /** Copy assignment operator. */
   lbann_callback_timer& operator=(const lbann_callback_timer&) = default;
-  /** Copy function. */
   lbann_callback_timer* copy() const override {
     return new lbann_callback_timer(*this);
   }
 
   /** Start timing for a training epoch. */
-  void on_epoch_begin(model *m) override      { timing_begin(m); }
+  void on_epoch_begin(model *m) override      { timing_begin(*m); }
   /** Report timing for a training epoch. */
-  void on_epoch_end(model *m) override        { timing_end(m); }
+  void on_epoch_end(model *m) override        { timing_end(*m);   }
   /** Start timing for validation. */
-  void on_validation_begin(model *m) override { timing_begin(m); }
+  void on_validation_begin(model *m) override { timing_begin(*m); }
   /** Report timing for validation. */
-  void on_validation_end(model *m) override   { timing_end(m); }
+  void on_validation_end(model *m) override   { timing_end(*m);   }
   /** Start timing for testing. */
-  void on_test_begin(model *m) override       { timing_begin(m); }
+  void on_test_begin(model *m) override       { timing_begin(*m); }
   /** Report timing for testing. */
-  void on_test_end(model *m) override         { timing_end(m); }
+  void on_test_end(model *m) override         { timing_end(*m);   }
   /** Record training mini-batch start time. */
-  void on_batch_begin(model *m) override          { batch_timing_begin(m); }
+  void on_batch_begin(model *m) override          { batch_timing_begin(*m); }
   /** Record training mini-batch run time. */
-  void on_batch_end(model *m) override            { batch_timing_end(m); }
+  void on_batch_end(model *m) override            { batch_timing_end(*m);   }
   /** Record evaluation mini-batch start time. */
-  void on_batch_evaluate_begin(model *m) override { batch_timing_begin(m); }
+  void on_batch_evaluate_begin(model *m) override { batch_timing_begin(*m); }
   /** Record evaluation mini-batch run time. */
-  void on_batch_evaluate_end(model *m) override   { batch_timing_end(m); }
+  void on_batch_evaluate_end(model *m) override   { batch_timing_end(*m);   }
 
   /** Callback name. */
   std::string name() const override { return "timer"; }
 
- private:
+private:
 
-  /** Start time for the current timing. */
-  EvalType m_start_time;
-  /** Start time for the current mini-batch. */
-  EvalType m_batch_start_time;
-  /** History of mini-batch times for the current timing. */
-  std::vector<EvalType> m_batch_times;
+  /** Timing session start times. */
+  std::map<execution_mode,EvalType> m_start_times;
+  /** Mini-batch timing session start times. */
+  std::map<execution_mode,EvalType> m_batch_start_times;
+  /** Mini-batch times. */
+  std::map<execution_mode,std::vector<EvalType>> m_batch_times;
 
-  /** Start timing. */
-  void timing_begin(model *m);
-  /** Print timing results to standard output. */
-  void timing_end(model *m);
-  /** Start mini-batch timing. */
-  void batch_timing_begin(model *m);
-  /** Record mini-batch timing. */
-  void batch_timing_end(model *m);
+  /** Start timing session. */
+  void timing_begin(const model& m);
+  /** End timing session.
+   *  Prints results to standard output.
+   */
+  void timing_end(model& m);
+  /** Start mini-batch timing session. */
+  void batch_timing_begin(const model& m);
+  /** End mini-batch timing session.
+   *  Prints results to standard output.
+   */
+  void batch_timing_end(const model& m);
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED

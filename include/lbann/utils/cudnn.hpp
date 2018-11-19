@@ -38,11 +38,8 @@
 #include <cudnn.h>
 
 // Error utility macros
-#define FORCE_CHECK_CUDNN(cudnn_call)                           \
+#define CHECK_CUDNN_NODEBUG(cudnn_call)                         \
   do {                                                          \
-    /* Call cuDNN API routine, synchronizing before and */      \
-    /* after to check for errors. */                            \
-    LBANN_CUDA_SYNC(true);                                      \
     const cudnnStatus_t status_CHECK_CUDNN = (cudnn_call);      \
     if (status_CHECK_CUDNN != CUDNN_STATUS_SUCCESS) {           \
       cudaDeviceReset();                                        \
@@ -50,13 +47,34 @@
                   + cudnnGetErrorString(status_CHECK_CUDNN)     \
                   + std::string(")"));                          \
     }                                                           \
-    LBANN_CUDA_SYNC(false);                                     \
+  } while (0)
+#define CHECK_CUDNN_DEBUG(cudnn_call)                           \
+  do {                                                          \
+    LBANN_CUDA_CHECK_LAST_ERROR(true);                          \
+    CHECK_CUDNN_NODEBUG(cudnn_call);                            \
   } while (0)
 #ifdef LBANN_DEBUG
-#define CHECK_CUDNN(cudnn_call) FORCE_CHECK_CUDNN(cudnn_call);
+#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_DEBUG(cudnn_call)
 #else
-#define CHECK_CUDNN(cudnn_call) (cudnn_call)
+#define CHECK_CUDNN(cudnn_call) CHECK_CUDNN_NODEBUG(cudnn_call)
 #endif // #ifdef LBANN_DEBUG
+
+#define CHECK_CUDNN_DTOR(cudnn_call)            \
+  try {                                         \
+    CHECK_CUDNN(cudnn_call);                                            \
+  }                                                                     \
+  catch (std::exception const& e) {                                     \
+    std::cerr << "Caught exception:\n\n    what(): "                    \
+              << e.what() << "\n\nCalling std::terminate() now."        \
+              <<  std::endl;                                            \
+    std::terminate();                                                   \
+  }                                                                     \
+  catch (...) {                                                         \
+    std::cerr << "Caught something that isn't an std::exception.\n\n"   \
+              << "Calling std::terminate() now." << std::endl;          \
+    std::terminate();                                                   \
+  }
+
 
 namespace lbann {
 
@@ -86,7 +104,7 @@ cudnnHandle_t& get_handle();
 /** Get cuDNN data type associated with DataType. */
 cudnnDataType_t get_data_type();
 
-/** Set cuDNN tensor descriptor. 
+/** Set cuDNN tensor descriptor.
  *  desc is created if necessary.
  */
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,

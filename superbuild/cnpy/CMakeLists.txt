@@ -8,8 +8,16 @@ enable_language(CXX)
 option(CNPY_ENABLE_STATIC "Enable the CNPY static linkage." ON)
 
 # Handle the clone mechanism. First URL
-set(CNPY_URL "https://github.com/rogersce/cnpy.git"
-  CACHE STRING "The URL from which to clone CNPY")
+option(CNPY_CLONE_VIA_SSH
+  "Clone CNPY using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (CNPY_CLONE_VIA_SSH)
+  set(CNPY_URL git@github.com:rogersce/cnpy.git
+    CACHE STRING "The URL from which to clone CNPY")
+else ()
+  set(CNPY_URL "https://github.com/rogersce/cnpy.git"
+    CACHE STRING "The URL from which to clone CNPY")
+endif ()
 
 # ... then the tag.
 set(CNPY_TAG "f19917f6c442885dcf171de485ba8b17bd178da6"
@@ -36,6 +44,12 @@ ExternalProject_Add(CNPY
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${CNPY_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
+  LOG_DOWNLOAD 1
+  LOG_UPDATE 1
+  LOG_CONFIGURE 1
+  LOG_BUILD 1
+  LOG_INSTALL 1
+  LOG_TEST 1
   CMAKE_ARGS
   -G${CMAKE_GENERATOR}
   -DCMAKE_INSTALL_PREFIX=${CNPY_CMAKE_INSTALL_PREFIX}
