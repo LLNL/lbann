@@ -861,9 +861,6 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
-
-  bool finished;
-
   // Forward prop step
   clear_gradients();
   forward_prop(execution_mode::training);
@@ -886,7 +883,7 @@ bool model::train_mini_batch() {
 
   // Update step
   update_weights();
-  finished = update_layers();
+  bool finished = update_layers();
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
