@@ -16,7 +16,10 @@ if (${PROJECT_NAME}_USE_PROTOBUF_MODULE)
   endif ()
 
   # At this point, throw an error if Protobuf is not found.
-  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE)
+  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE QUIET)
+  if(NOT Protobuf_FOUND)
+    find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE REQUIRED)
+  endif ()
 
   if (__remove_protobuf_from_paths)
     list(REMOVE_ITEM CMAKE_LIBRARY_PATH ${PROTOBUF_DIR}/lib)
@@ -29,7 +32,7 @@ else ()
   set(protobuf_MODULE_COMPATIBLE ON)
   set(protobuf_BUILD_SHARED_LIBS ON)
 
-  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG
+  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG QUIET
     HINTS
     "${Protobuf_DIR}/lib64/cmake/protobuf"
     "${PROTOBUF_DIR}/lib64/cmake/protobuf"
@@ -38,11 +41,16 @@ else ()
     "$ENV{Protobuf_DIR}/lib64/cmake/protobuf"
     "$ENV{PROTOBUF_DIR}/lib64/cmake/protobuf"
     "$ENV{Protobuf_DIR}/lib/cmake/protobuf"
-    "$ENV{PROTOBUF_DIR}/lib/cmake/protobuf")
+    "$ENV{PROTOBUF_DIR}/lib/cmake/protobuf"
+    NO_DEFAULT_PATH)
+  if(NOT Protobuf_FOUND)
+    find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG REQUIRED)
+  endif ()
 endif ()
 
-if(NOT PROTOBUF_FOUND AND NOT Protobuf_FOUND)
-  message(FATAL_ERROR "Protobuf not found.")
+if (NOT Protobuf_FOUND)
+  message(FATAL_ERROR
+    "Protobuf still not found. This should never throw.")
 endif ()
 
 # Setup the imported target for old versions of CMake
