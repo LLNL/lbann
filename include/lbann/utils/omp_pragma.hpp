@@ -32,10 +32,6 @@
 
 /// Allow OpenMP parallel for loops to be replaced with taskloop constructs
 /// Requires OpenMP 5.0 support for taskloop reduction clauses
-#if defined(HYDROGEN_HAVE_OMP_TASKLOOP)
-  #define LBANN_HAVE_OMP_TASKLOOP
-#endif
-
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   #pragma message "Using OpenMP taskloops instead of parallel for loops"
   #define LBANN_OMP_PARALLEL_FOR_HELPER(arg) #arg
