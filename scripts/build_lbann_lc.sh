@@ -12,8 +12,9 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
-	COMPILER=gnu
-	module load gcc/4.9.3
+    # NVCC in CUDA 9.1 does not support GCC versions later than 6
+    COMPILER=gnu
+    module load gcc/4.9.3
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
