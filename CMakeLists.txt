@@ -89,49 +89,53 @@ endif (__GIT_EXECUTABLE)
 if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
   set(LBANN_GNU_LINUX TRUE)
 endif ()
+
 #
 # Options
 #
 
 # This option is off by default because non-developers should not use
 # this option under normal circumstances.
-option(${UPPER_PROJECT_NAME}_WARNINGS_AS_ERRORS
+option(LBANN_WARNINGS_AS_ERRORS
   "Build with warnings promoted to errors." OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_CUDA "Include Nvidia CUDA" OFF)
+option(LBANN_WITH_CUDA "Include Nvidia CUDA" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_CUDNN "Include Nvidia cuDNN" ON)
+option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_CNPY "Include cnpy" ON)
+option(LBANN_WITH_CNPY "Include cnpy" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_TBINF "Include Tensorboard interface" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_VTUNE
+option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_NVPROF
+option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE
+option(LBANN_WITH_TOPO_AWARE
   "Enable topology-aware profiling (HWLOC)" ON)
 
-option(${UPPER_PROJECT_NAME}_WITH_ALUMINUM
+option(LBANN_WITH_ALUMINUM
   "Enable Aluminum all-reduce library" OFF)
 
-option(${UPPER_PROJECT_NAME}_WITH_CONDUIT
+option(LBANN_WITH_CONDUIT
   "Enable Conduit library" OFF)
 
-option(${UPPER_PROJECT_NAME}_VERBOSE "Enable verbose output" OFF)
+option(LBANN_VERBOSE "Enable verbose output" OFF)
 
-option(${UPPER_PROJECT_NAME}_SEQUENTIAL_INITIALIZATION
+option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
 
+option(LBANN_DEBUG_PRINT_SUBTARGETS
+  "Turn on debugging output of internal target properties." OFF)
+
 # FIXME what if "fp16"?
-set(${UPPER_PROJECT_NAME}_DATATYPE "float"
+set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
 
 # Enable CUDA if necessary
-if (${UPPER_PROJECT_NAME}_WITH_CUDA)
+if (LBANN_WITH_CUDA)
   include(CheckLanguage)
   check_language(CUDA)
   if (CMAKE_CUDA_COMPILER)
@@ -157,10 +161,10 @@ if (${UPPER_PROJECT_NAME}_WITH_CUDA)
 endif ()
 
 # Handle a few of the easy ones straight-away
-set(LBANN_TOPO_AWARE ${${UPPER_PROJECT_NAME}_WITH_TOPO_AWARE})
+set(LBANN_TOPO_AWARE ${LBANN_WITH_TOPO_AWARE})
 
 # Enable parallel random matrix generation, if possible
-if (${UPPER_PROJECT_NAME}_DETERMINISTIC)
+if (LBANN_DETERMINISTIC)
   set(LBANN_DETERMINISTIC TRUE)
 else()
   set(LBANN_DETERMINISTIC FALSE)
@@ -181,38 +185,69 @@ include(SetupCXX)
 ################################################################
 
 # Required dependencies
+
+# Setup the linear algebra library
+find_package(Hydrogen 1.1.0 NO_MODULE
+  HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
+  PATH_SUFFIXES lib/cmake/hydrogen
+  NO_DEFAULT_PATH)
+if (NOT Hydrogen_FOUND)
+  find_package(Hydrogen 1.1.0 NO_MODULE REQUIRED)
+endif ()
+set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
 include(SetupOpenMP)
 include(SetupMPI)
 include(SetupProtobuf)
 
-# Setup the linear algebra library
-include(SetupElemental)
-
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV REQUIRED)
+find_package(OpenCV NO_MODULE
+  HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+  PATH_SUFFIXES share/OpenCV
+  NO_DEFAULT_PATH)
+if (NOT OpenCV_FOUND)
+  find_package(OpenCV NO_MODULE REQUIRED)
+endif ()
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
 if (LBANN_WITH_ALUMINUM)
-  find_package(Aluminum)
+  # Aluminum may have already been found by Hydrogen
+  if (NOT Aluminum_FOUND)
+    find_package(Aluminum NO_MODULE
+      HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
+      $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
+      PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
+      NO_DEFAULT_PATH)
+    if (NOT Aluminum_FOUND)
+      find_package(Aluminum NO_MODULE)
+    endif ()
+  endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
+
+  # Report failure.
   if (NOT LBANN_HAS_ALUMINUM)
-    message(FATAL_ERROR
+    message(WARNING
       "Requested LBANN_WITH_ALUMINUM but Aluminum not found. "
       "Aluminum is now disabled. "
       "Try specifying ALUMINUM_DIR as the root of an ALUMINUM install. "
-      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF.")
+      "Alternatively, build with LBANN_WITH_ALUMINUM=OFF to suppress "
+      "this warning.")
     set(LBANN_WITH_ALUMINUM OFF)
-  endif(NOT LBANN_HAS_ALUMINUM)
 
-  if (AL_HAS_CUDA AND NOT LBANN_WITH_CUDA)
-    message(WARNING
-      "Aluminum has CUDA but LBANN is configured with LBANN_WITH_CUDA=OFF")
-  endif ()
+  else ()
 
-  option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
-  if (LBANN_BUILT_WITH_SPECTRUM)
-    set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
-  endif (LBANN_BUILT_WITH_SPECTRUM)
+    if (AL_HAS_CUDA AND NOT LBANN_WITH_CUDA)
+      message(WARNING
+        "Aluminum has CUDA support but LBANN has been configured "
+        "with LBANN_WITH_CUDA=OFF.")
+    endif ()
+
+    option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
+    if (LBANN_BUILT_WITH_SPECTRUM)
+      set(LBANN_ALUMINUM_MPI_PASSTHROUGH ON)
+    endif (LBANN_BUILT_WITH_SPECTRUM)
+
+  endif (NOT LBANN_HAS_ALUMINUM)
 endif (LBANN_WITH_ALUMINUM)
 
 # Setup some additional CUDA-y things
@@ -234,20 +269,21 @@ if (LBANN_HAS_CUDA)
   else ()
     set(LBANN_HAS_NCCL2 FALSE)
   endif ()
-
 endif (LBANN_HAS_CUDA)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
-find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
-if (DL_LIBRARY)
-  message(STATUS "Found dl: ${DL_LIBRARY}")
-else ()
-  message(FATAL_ERROR
-    "dl library not found! This is a required library.\n"
-    "Please add the path to libdl to CMAKE_LIBRARY_PATH.")
-endif (DL_LIBRARY)
+if (NOT DL_LIBRARY)
+  find_library(DL_LIBRARY dl DOC "The dynamic loader library.")
+  if (DL_LIBRARY)
+    message(STATUS "Found dl: ${DL_LIBRARY}")
+  else ()
+    message(FATAL_ERROR
+      "dl library not found! This is a required library.\n"
+      "Please add the path to libdl to CMAKE_LIBRARY_PATH.")
+  endif (DL_LIBRARY)
+endif ()
 
 # Other optional dependencies
 if (LBANN_WITH_TBINF)
@@ -255,8 +291,22 @@ if (LBANN_WITH_TBINF)
 endif ()
 
 if (LBANN_WITH_VTUNE)
-  include(SetupVTune)
-endif ()
+  find_package(VTune MODULE)
+
+  if (VTune_FOUND)
+    set(LBANN_VTUNE TRUE)
+    set(LBANN_HAS_VTUNE TRUE)
+  else ()
+    set(LBANN_VTUNE FALSE)
+    set(LBANN_HAS_VTUNE FALSE)
+    set(LBANN_WITH_VTUNE OFF)
+    message(WARNING
+      "Requested LBANN_WITH_VTUNE=ON, but VTUNE support not detected. "
+      "Support NOT enabled. "
+      "Try setting VTUNE_DIR to point to the VTune install prefix "
+      "and reconfigure.")
+  endif (VTune_FOUND)
+endif (LBANN_WITH_VTUNE)
 
 if (LBANN_WITH_NVPROF)
   set(LBANN_NVPROF TRUE)
@@ -355,8 +405,6 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(lbann PUBLIC CONDUIT::CONDUIT)
 endif ()
 
-#== FIXME HERE DOWN ==
-
 if (LBANN_HAS_CUDA)
   target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
   target_link_libraries(lbann PUBLIC cuda::toolkit)
@@ -376,11 +424,25 @@ if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()
 
-if (TARGET CXX::werror)
-  target_link_libraries(lbann PUBLIC CXX::werror)
+if (TARGET LBANN_CXX_FLAGS_werror)
+  target_link_libraries(lbann PUBLIC LBANN_CXX_FLAGS_werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+
+# Clean things up
+include(LBANNDebugUtilities)
+lbann_remove_default_include_paths_from_all_subtargets(lbann)
+# This is to fix a bug with certain compilers interacting poorly with
+# NVCC. In particular, the NVCC include line would have things like
+# "-isystem=/usr/include" which would cause issues resolving STL
+# include paths. Since compilers include "/usr/include" in their
+# system include paths anyway (things searched by #include <...>), we
+# can safely remove these from the explicit link line.
+
+if (LBANN_DEBUG_PRINT_SUBTARGETS)
+  lbann_print_all_subtargets(lbann)
+endif ()
 
 # Add the rest of the things
 add_subdirectory(model_zoo)
@@ -391,54 +453,115 @@ add_subdirectory(tests)
 # Install LBANN
 ################################################################
 
+include(CMakePackageConfigHelpers)
+
+# Write the version file. This is independent of build/install tree.
+write_basic_package_version_file(
+  LBANNConfigVersion.cmake
+  VERSION "${LBANN_VERSION}"
+  COMPATIBILITY SameMajorVersion)
+
+# This is for the build tree
+set(INCLUDE_INSTALL_DIRS "${CMAKE_SOURCE_DIR}/include"
+  "${CMAKE_SOURCE_DIR}/include"
+  "${CMAKE_SOURCE_DIR}/include/lbann"
+  "${CMAKE_BINARY_DIR}/include/lbann")
+set(LIB_INSTALL_DIR "${CMAKE_BINARY_DIR}")
+set(EXTRA_CMAKE_MODULE_DIR "${CMAKE_SOURCE_DIR}/cmake/modules")
+configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
+  "${CMAKE_BINARY_DIR}/LBANNConfig.cmake"
+  INSTALL_DESTINATION "${CMAKE_BINARY_DIR}"
+  PATH_VARS INCLUDE_INSTALL_DIRS LIB_INSTALL_DIR)
+
+# Build tree export
+export(EXPORT LBANNTargets NAMESPACE LBANN:: FILE LBANNTargets.cmake)
+
+# Write the configure file for the install tree
+set(INCLUDE_INSTALL_DIRS include)
+set(LIB_INSTALL_DIR lib)
+set(CMAKE_INSTALL_DIR lib/cmake/lbann)
+set(EXTRA_CMAKE_MODULE_DIR)
+configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
+  "${CMAKE_BINARY_DIR}/LBANNConfig.cmake.install"
+  INSTALL_DESTINATION "${CMAKE_INSTALL_DIR}"
+  PATH_VARS INCLUDE_INSTALL_DIRS LIB_INSTALL_DIR)
+
 # Install library
 install(
   TARGETS lbann
   EXPORT LBANNTargets
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+  INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
   )
 
 # Install export
 install(EXPORT LBANNTargets
   NAMESPACE LBANN::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/lbann
-  )
+  DESTINATION "${CMAKE_INSTALL_DIR}")
+
+# Install the cmake stuff
+install(FILES
+  "${PROJECT_BINARY_DIR}/LBANNConfig.cmake.install"
+  DESTINATION "${CMAKE_INSTALL_DIR}"
+  RENAME "LBANNConfig.cmake")
+install(FILES "${PROJECT_BINARY_DIR}/LBANNConfigVersion.cmake"
+  DESTINATION ${CMAKE_INSTALL_DIR})
+install(DIRECTORY cmake/modules
+  DESTINATION "${CMAKE_INSTALL_DIR}"
+  FILES_MATCHING PATTERN "*.cmake")
 
 # Install header files
 install(
   DIRECTORY "${PROJECT_SOURCE_DIR}/include/lbann"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-  )
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+  FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
+install(
+  FILES "${PROJECT_BINARY_DIR}/lbann_config.hpp"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 # Install contributor list, license, readme
 install(
   FILES "${PROJECT_SOURCE_DIR}/CONTRIBUTORS"
         "${PROJECT_SOURCE_DIR}/LICENSE"
         "${PROJECT_SOURCE_DIR}/README.md"
-  DESTINATION ${CMAKE_INSTALL_DOCDIR}
-  )
-
-# Display all of the accumulated compiler definitions
-get_directory_property( DirDefs COMPILE_DEFINITIONS )
+  DESTINATION "${CMAKE_INSTALL_DOCDIR}")
 
 ################################################################
 # Configuration summary
 ################################################################
+
+# This creates a formatted string that contains a list of variables,
+# one per line, with their values interpreted as TRUE or FALSE. The
+# purpose is to provide uniform output, rather than an odd mixture of
+# "1", "0", "ON", "OFF", "TRUE" and "FALSE".
+macro(append_str_tf STRING_VAR)
+  lbann_get_max_str_length(_max_length ${ARGN})
+  math(EXPR _max_length "${_max_length} + 2")
+
+  foreach(var ${ARGN})
+    string(LENGTH "${var}" _var_length)
+    math(EXPR _num_spaces "${_max_length} - ${_var_length}")
+    lbann_get_space_string(_spaces ${_num_spaces})
+    if (${var})
+      string(APPEND ${STRING_VAR} "  ${var}:" "${_spaces}" "TRUE\n")
+    else ()
+      string(APPEND ${STRING_VAR} "  ${var}:" "${_spaces}" "FALSE\n")
+    endif ()
+  endforeach()
+endmacro ()
 
 # NOTE: message() outputs to stderr by default. We now use a string to
 # maintain this information and then have cmake echo it to stdout. The
 # only side effects are that if you use the CMake GUI, you won't see
 # this output anymore (they only report stderr) and that if you add
 # something to the list, you must remember your newline!
-set(_str "== Configuration Summary ==\n")
+set(_str "\n== LBANN Configuration Summary ==\n\n")
 string(APPEND _str "  PROJECT_SOURCE_DIR:   ${PROJECT_SOURCE_DIR}\n"
-  "  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}\n"
+  "  PROJECT_BINARY_DIR:   ${PROJECT_BINARY_DIR}\n\n"
   "  CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}\n"
-  "  CMAKE_BUILD_TYPE:     ${CMAKE_BUILD_TYPE}\n")
+  "  CMAKE_BUILD_TYPE:     ${CMAKE_BUILD_TYPE}\n\n")
 if (CMAKE_BUILD_TYPE MATCHES None)
   string(APPEND _str
     "  CXX FLAGS:            ${CMAKE_CXX_FLAGS}\n")
@@ -452,23 +575,28 @@ elseif (CMAKE_BUILD_TYPE MATCHES Debug)
   string(APPEND _str
     "  CXX FLAGS:            ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}\n")
 endif ()
+string(APPEND _str "\n")
+
+#Print the true/false guys
+append_str_tf(_str
+  LBANN_GNU_LINUX
+  LBANN_HAS_HYDROGEN
+  LBANN_HAS_OPENCV
+  LBANN_HAS_CUDA
+  LBANN_HAS_CUDNN
+  LBANN_HAS_NCCL2
+  LBANN_HAS_PROTOBUF
+  LBANN_HAS_CNPY
+  LBANN_HAS_TBINF
+  LBANN_HAS_VTUNE
+  LBANN_NVPROF
+  LBANN_HAS_DOXYGEN
+  LBANN_HAS_LBANN_PROTO
+  LBANN_HAS_ALUMINUM
+  LBANN_HAS_CONDUIT
+  LBANN_NO_OMP_FOR_DATA_READERS)
 string(APPEND _str
-  "  LBANN_GNU_LINUX:      ${LBANN_GNU_LINUX}\n"
-  "  LBANN_HAS_HYDROGEN:   ${LBANN_HAS_HYDROGEN}\n"
-  "  LBANN_HAS_OPENCV:     ${LBANN_HAS_OPENCV}\n"
-  "  LBANN_HAS_CUDA:       ${LBANN_HAS_CUDA}\n"
-  "  LBANN_HAS_CUDNN:      ${LBANN_HAS_CUDNN}\n"
-  "  LBANN_HAS_NCCL2:      ${LBANN_HAS_NCCL2}\n"
-  "  LBANN_HAS_PROTOBUF:   ${LBANN_HAS_PROTOBUF}\n"
-  "  LBANN_HAS_CNPY:       ${LBANN_HAS_CNPY}\n"
-  "  LBANN_HAS_TBINF:      ${LBANN_HAS_TBINF}\n"
-  "  LBANN_HAS_VTUNE:      ${LBANN_HAS_VTUNE}\n"
-  "  LBANN_NVPROF:         ${LBANN_NVPROF}\n"
-  "  LBANN_HAS_DOXYGEN:    ${LBANN_HAS_DOXYGEN}\n"
-  "  LBANN_HAS_LBANN_PROTO:${LBANN_HAS_LBANN_PROTO}\n"
-  "  LBANN_HAS_ALUMINUM:   ${LBANN_HAS_ALUMINUM}\n"
-  "  LBANN_HAS_CONDUIT:    ${LBANN_HAS_CONDUIT}\n"
-  "  LBANN_NO_OMP_FOR_DATA_READERS: ${LBANN_NO_OMP_FOR_DATA_READERS}\n")
+  "\n== End LBANN Configuration Summary ==\n")
 
 # Output to stdout
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${_str}")
