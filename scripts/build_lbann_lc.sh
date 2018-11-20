@@ -12,10 +12,8 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
-	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
-	# Version 6.1.0 does not work with CUDA 9.1, either.
 	COMPILER=gnu
-	module load gcc/7.3.0
+	module load gcc/4.9.3
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -516,11 +514,6 @@ if [ "${WITH_CUDA_2}" == "ON" ]; then
   fi
 fi
 
-if [ "${CLUSTER}" == "pascal" ]; then
-  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gnu-7.3.0-cuda-9.2/
-  export MV2_USE_CUDA=1
-fi
-
 if [ -z "${MPI_HOME}" ]; then
 	if [ ${USE_MODULES} -ne 0 ]; then
 		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
@@ -611,7 +604,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
 			;;
 		pascal)
       module use /opt/modules/modulefiles
-			CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 			;;
 	esac
 fi
