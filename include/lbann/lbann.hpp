@@ -113,6 +113,7 @@
 /// Miscellaneous Layers
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/channelwise_mean.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
