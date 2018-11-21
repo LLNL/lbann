@@ -38,11 +38,7 @@ case $TOSS in
 	  ;;
 esac
 if [ "${ARCH}" == "x86_64" ]; then
-    if [ "${CLUSTER}" == "quartz" ]; then
-        IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
-    else
-        IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
-    fi
+    IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
 fi
 
 
@@ -79,7 +75,6 @@ USE_NINJA=0
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
-#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo-1.5.2"
 #LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
@@ -510,7 +505,7 @@ if [ "${WITH_CUDA_2}" == "ON" ]; then
   if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
     MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
     export MV2_USE_CUDA=1
-  fi  
+  fi
 fi
 
 if [ -z "${MPI_HOME}" ]; then
@@ -680,9 +675,9 @@ fi
 if [ ${USE_NINJA} -ne 0 ]; then
     if ! which ninja ; then
         if [ "${ARCH}" == "x86_64" ]; then
-            export PATH=/usr/workspace/wsb/brain/utils/toss3/ninja/bin:$PATH        
+            export PATH=/usr/workspace/wsb/brain/utils/toss3/ninja/bin:$PATH
         elif [ "${ARCH}" == "ppc64le" ]; then
-            export PATH=/usr/workspace/wsb/brain/utils/coral/ninja/bin:$PATH        
+            export PATH=/usr/workspace/wsb/brain/utils/coral/ninja/bin:$PATH
         fi
     fi
     if ! which ninja ; then

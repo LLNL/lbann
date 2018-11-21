@@ -11,7 +11,7 @@ def skeleton_mnist_softmax_classifier(cluster, executables, dir_name, compiler_n
     error_file_name  = '%s/bamboo/unit_tests/error/mnist_softmax_classifier_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1, num_processes=1, dir_name=dir_name,
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST', data_reader_name='mnist',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST', data_reader_name='mnist',
         model_folder='tests', model_name='mnist_softmax_classifier', optimizer_name='adam',
         output_file_name=output_file_name, error_file_name=error_file_name)
     return_code = os.system(command)
