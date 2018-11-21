@@ -35,7 +35,7 @@ namespace {
 /** Select entries from a list based on names.
  *  Any entry in 'list' with a name found in 'names' (interpreted as a
  *  space-separated list) is added to the output list.
- */  
+ */
 template <typename T>
 std::vector<T*> select_from_list(std::string names,
                                         std::vector<T*> list) {
@@ -84,6 +84,12 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                           params.image_format(),
                                           params.image_prefix());
   }
+  if (proto_cb.has_confusion_matrix()) {
+    const auto& params = proto_cb.confusion_matrix();
+    return new lbann_callback_confusion_matrix(params.prediction(),
+                                               params.label(),
+                                               params.prefix());
+  }
 
   //////////////////////////////////////////////////////////////////
   // Inter-model communication
@@ -98,7 +104,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    proto_cb.ltfb().increasing_metric_mode(),
                                    weight_names,
                                    summarizer);
-  }  
+  }
   /// @todo
   if (proto_cb.has_imcomm()) {
     const auto& params = proto_cb.imcomm();
@@ -391,7 +397,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   if (proto_cb.has_gpu_memory_usage()) {
     return new lbann_callback_gpu_memory_usage();
   }
-  
+
   return nullptr;
 }
 
