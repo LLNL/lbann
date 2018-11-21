@@ -63,7 +63,7 @@ metric* construct_metric(lbann_comm* comm,
   }
   if (proto_metric.has_layer_metric()) {
     const auto& params = proto_metric.layer_metric();
-    return new layer_metric(comm, params.unit());
+    return new layer_metric(comm, params.name(), params.unit());
   }
 
   // Return null pointer if no metric is specified

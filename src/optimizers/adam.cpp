@@ -33,8 +33,7 @@ adam::adam(lbann_comm *comm,
            DataType learning_rate,
            DataType beta1,
            DataType beta2,
-           DataType eps,
-           cudnn::cudnn_manager *cudnn)
+           DataType eps)
   : optimizer(comm, learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),

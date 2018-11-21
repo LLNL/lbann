@@ -40,7 +40,9 @@ size_t compute_cnpy_array_offset(
   size_t offset = 0u;
 
   for (size_t i = indices.size(); ok && (i-- > 0u); ) {
-    ok = (indices[i] < na.shape[i]);
+    ok = (indices[i] < na.shape[i]) ||
+        // relax to allow representing the exclusive upper bound
+        ((i == 0u) && (indices[i] == na.shape[i]));
     offset += indices[i] * unit_stride;
     unit_stride *= na.shape[i];
   }

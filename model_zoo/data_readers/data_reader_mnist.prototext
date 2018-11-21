@@ -37,7 +37,6 @@ data_reader {
     data_filedir: "/p/lscratchf/brainusr/datasets/MNIST"
     data_filename: "t10k-images-idx3-ubyte"
     label_filename: "t10k-labels-idx1-ubyte"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     image_preprocessor {

@@ -43,7 +43,7 @@ def parsePrototext(fn) :
   a = open(fn).readlines()
   r = []
   for j in range(len(a)) :
-    if a[j].find('layer {') != -1 and a[j].find('#') == -1 :
+    if (a[j].find('layer {') != -1 or a[j].find('layer{') != -1) and a[j].find('#') == -1 :
       r.append(Layer(a[j:]))
   return r
 

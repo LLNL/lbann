@@ -27,151 +27,25 @@
 #ifndef LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 #define LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** Rectified linear unit activation function.
+/** Rectified linear unit activation function layer.
+ *  \f[ ReLU(x) = \text{max}(x, 0) \f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 template <data_layout T_layout, El::Device Dev>
-class relu_layer : public entrywise_activation_layer {
-
- private:
-
-#ifdef LBANN_HAS_CUDNN
-  /** Activation descriptor. */
-  cudnnActivationDescriptor_t m_activation_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
-
- public:
-  relu_layer(lbann_comm *comm,
-             cudnn::cudnn_manager *cudnn = nullptr)
-    : entrywise_activation_layer(comm) {
-  #ifdef LBANN_HAS_CUDNN
-    m_activation_cudnn_desc = nullptr;
-    this->m_cudnn = cudnn;
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  relu_layer(const relu_layer& other) :
-    entrywise_activation_layer(other) {
-  #ifdef LBANN_HAS_CUDNN
-    m_activation_cudnn_desc = nullptr;
-    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
-                                      m_activation_cudnn_desc);
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  relu_layer& operator=(const relu_layer& other) {
-    entrywise_activation_layer::operator=(other);
-  #ifdef LBANN_HAS_CUDNN
-    cudnn::copy_activation_cudnn_desc(other.m_activation_cudnn_desc,
-                                      m_activation_cudnn_desc);
-  #endif // LBANN_HAS_CUDNN
-    return *this;
-  }
-
-  ~relu_layer() override {
-  #ifdef LBANN_HAS_CUDNN
-    if (m_activation_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyActivationDescriptor(m_activation_cudnn_desc));
-    }
-  #endif // LBANN_HAS_CUDNN
-  }
-
+class relu_layer : public Layer {
+public:
+  relu_layer(lbann_comm *comm) : Layer(comm) {}
   relu_layer* copy() const override { return new relu_layer(*this); }
   std::string get_type() const override { return "ReLU"; }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} +
-     " relu" + " dataLayout: " + this->get_data_layout_string(get_data_layout());
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-
-  void setup_gpu() override {
-    entrywise_activation_layer::setup_gpu();
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("relu_layer: cuDNN not detected");
-  #else
-    CHECK_CUDNN(cudnnCreateActivationDescriptor(&m_activation_cudnn_desc));
-    CHECK_CUDNN(cudnnSetActivationDescriptor(m_activation_cudnn_desc,
-                                             CUDNN_ACTIVATION_RELU,
-                                             CUDNN_PROPAGATE_NAN,
-                                             0.0));
-  #endif // LBANN_HAS_CUDNN
-  }
-
- protected:
-
-  DataType activation(DataType x) const override {
-    return x > DataType(0) ? x : DataType(0);
-  }
-
-  DataType activation_derivative(DataType x) const override {
-    return x > DataType(0) ? DataType(1) : DataType(0);
-  }
-
+protected:
   void fp_compute() override;
   void bp_compute() override;
-
-  void fp_compute_gpu() override {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("relu_layer: cuDNN not detected");
-  #else
-
-    // Useful constants
-    const DataType one = 1;
-    const DataType zero = 0;
-
-    // Apply activation on the GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(0)));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(0),
-                               this->m_cudnn->get_stream(0)));
-    CHECK_CUDNN(cudnnActivationForward(this->m_cudnn->get_handle(0),
-                                       m_activation_cudnn_desc,
-                                       &one,
-                                       this->m_prev_activations_cudnn_desc,
-                                       this->m_prev_activations[0]->LockedBuffer(),
-                                       &zero,
-                                       this->m_activations_cudnn_desc,
-                                       this->m_activations[0]->Buffer()));
-
-  #endif // LBANN_HAS_CUDNN
-  }
-
-  void bp_compute_gpu() override {
-  #ifndef LBANN_HAS_CUDNN
-    throw lbann_exception("relu_layer: cuDNN not detected");
-  #else
-
-    // Useful constants
-    const DataType one = 1;
-
-    // Apply activation derivative on the GPU
-    CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu(0)));
-    CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(0),
-                               this->m_cudnn->get_stream(0)));
-    CHECK_CUDNN(cudnnActivationBackward(this->m_cudnn->get_handle(0),
-                                        m_activation_cudnn_desc,
-                                        &one,
-                                        this->m_prev_activations_cudnn_desc,
-                                        this->m_prev_activations[0]->LockedBuffer(),
-                                        this->m_prev_error_signals_cudnn_desc,
-                                        this->m_prev_error_signals[0]->LockedBuffer(),
-                                        this->m_activations_cudnn_desc,
-                                        this->m_activations[0]->LockedBuffer(),
-                                        &one,
-                                        this->m_error_signals_cudnn_desc,
-                                        this->m_error_signals[0]->Buffer()));
-
-  #endif // LBANN_HAS_CUDNN
-  }
-
 };
 
 } // namespace lbann

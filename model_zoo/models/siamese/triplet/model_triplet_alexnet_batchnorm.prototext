@@ -6,10 +6,9 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
-  num_epochs: 20
+  num_epochs: 1
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
@@ -52,8 +51,8 @@ model {
 #  callback {
 #    checkpoint {
 #      checkpoint_dir: "pretrain"
-#      checkpoint_epochs: 1
-##      checkpoint_steps: 5000
+##      checkpoint_epochs: 1
+#      checkpoint_steps: 5000
 #    }
 #  }
 
@@ -347,7 +346,7 @@ model {
 
   layer {
     name: "data"
-    children: "slice"
+    children: "slice target"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
@@ -721,7 +720,7 @@ model {
     children: "prob"
     data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 20
+      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc9_linearity fc9_bias"
@@ -736,14 +735,11 @@ model {
   }
 
   layer {
-    parents: "prob"
+    parents: "prob data"
     name: "target"
     children: ""
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    target {}
   }
 
 }

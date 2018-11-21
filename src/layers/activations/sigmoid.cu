@@ -22,137 +22,69 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// softmax_cuda.cu - GPU helper routines for softmax layer
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "math.h"
 #include "lbann/layers/activations/sigmoid.hpp"
-
-namespace {
-
-// Sigmoid function
-#if __CUDA_ARCH__ >= 530
-__device__ inline __half sigmoid(__half x) {
-  return __hdiv(__float2half(1.f),
-                __hadd(__float2half(1.f), hexp(__hneg(x))));
-}
-#endif // __CUDA_ARCH__ >= 530
-__device__ inline float sigmoid(float x) {
-  return 1 / (1.0f + expf(-x));
-}
-__device__ inline double sigmoid(double x) {
-  return 1 / (1.0 + exp(-x));
-}
-
-
-__global__ void fp_kernel(int height, int width,
-                          const lbann::DataType* __restrict__ input,
-                          int input_leading_dim,
-                          lbann::DataType* __restrict__ output,
-                          int output_leading_dim,
-                          lbann::DataType cutoff) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  while (tid < height * width) {
-
-    // Get input value
-    const int row = tid % height;
-    const int col = tid / height;
-    lbann::DataType x = input[row + col * input_leading_dim];
-
-    // Compute output value
-  #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (x < -cutoff) { x = -cutoff; }
-    if (x > cutoff) { x = cutoff; }
-  #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    output[row + col * output_leading_dim] = sigmoid(x);
-
-    // Move to next entry
-    tid += blockDim.x * gridDim.x;
-
-  }
-}
-
-__global__ void bp_kernel(int height, int width,
-                          const lbann::DataType* __restrict__ input,
-                          int input_leading_dim,
-                          const lbann::DataType* __restrict__ gradient_wrt_output,
-                          int gradient_wrt_output_leading_dim,
-                          lbann::DataType* __restrict__ gradient_wrt_input,
-                          int gradient_wrt_input_leading_dim,
-                          lbann::DataType cutoff) {
-  int tid = threadIdx.x + blockIdx.x * blockDim.x;
-  while (tid < height * width) {
-
-    // Get input value
-    const int row = tid % height;
-    const int col = tid / height;
-    const lbann::DataType x = input[row + col * input_leading_dim];
-    lbann::DataType dx = lbann::DataType(0);
-  #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (-cutoff <= x && x <= cutoff)
-  #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    {
-      const lbann::DataType dy
-        = gradient_wrt_output[row + col * gradient_wrt_output_leading_dim];
-      const lbann::DataType sigx = sigmoid(x);
-      dx = dy * sigx * (lbann::DataType(1) - sigx);
-    }
-    gradient_wrt_input[row + col * gradient_wrt_input_leading_dim] = dx;
-
-    // Move to next entry
-    tid += blockDim.x * gridDim.x;
-
-  }
-}
-
-}
+#include <limits>
 
 namespace lbann {
-namespace sigmoid_cuda {
+namespace {
+  
+/** Entry-wise operator. */
+struct op {
+  inline __device__ DataType operator()(DataType x) const {
+    constexpr DataType one = 1;
+    const DataType y = 1 / (one + cuda::exp(-x));
+#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
+    constexpr DataType eps = cuda::epsilon<DataType>();
+    if (y <= eps) { return eps; }
+    else if (y >= one - eps) { return one - eps; }
+#endif // LBANN_ENABLE_SIGMOID_CUTOFF
+    return y;
+  }
+};
+  
+/** Entry-wise operator for backprop.
+ *  If the forward propagation step computes \f$ y = f(x) \f$, the
+ *  backward propagation step computes
+ *  \f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$.
+ */
+struct op_backprop {
+  inline __device__  DataType operator()(DataType x, DataType dy) const {
+    const auto& y = op()(x);
+#ifdef LBANN_ENABLE_SIGMOID_CUTOFF
+    constexpr DataType eps = cuda::epsilon<DataType>();
+    if (y <= eps || y >= DataType(1) - eps) { return DataType(0); }
+#endif // LBANN_ENABLE_SIGMOID_CUTOFF
+    return dy * y * (DataType(1) - y);
+  }
+};
+  
+} // namespace
 
-void fp(cudnn::cudnn_manager& cudnn,
-        int height,
-        int width_per_gpu,
-        const lbann::DataType* input,
-        int input_leading_dim,
-        lbann::DataType* output,
-        int output_leading_dim,
-        lbann::DataType cutoff) {
-  const int size = height * width_per_gpu;
-  const int num_gpus = cudnn.get_num_gpus();
-  const int block_dim = 256;
-  const int grid_dim = size / block_dim + ((size % block_dim) ? 1 : 0);
-  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  fp_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
-    height, width_per_gpu,
-    input, input_leading_dim,
-    output, output_leading_dim,
-    cutoff);
+// Template instantiation
+template <>
+void sigmoid_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+  cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),
+                                           get_activations());
+}
+template <>
+void sigmoid_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+  cuda::apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
+                                                     get_prev_error_signals(),
+                                                     get_error_signals());
+}
+template <>
+void sigmoid_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+  cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),
+                                           get_activations());
+}
+template <>
+void sigmoid_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+  cuda::apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
+                                                     get_prev_error_signals(),
+                                                     get_error_signals());
 }
 
-void bp(cudnn::cudnn_manager& cudnn,
-        int height,
-        int width_per_gpu,
-        const lbann::DataType* input,
-        int input_leading_dim,
-        const lbann::DataType* gradient_wrt_output,
-        int gradient_wrt_output_leading_dim,
-        lbann::DataType* gradient_wrt_input,
-        int gradient_wrt_input_leading_dim,
-        lbann::DataType cutoff) {
-  const int size = height * width_per_gpu;
-  const int num_gpus = cudnn.get_num_gpus();
-  const int block_dim = 256;
-  const int grid_dim = size / block_dim + ((size % block_dim) ? 1 : 0);
-  CHECK_CUDA(cudaSetDevice(cudnn.get_gpu()));
-  bp_kernel<<<grid_dim, block_dim, 0, cudnn.get_stream()>>>(
-    height, width_per_gpu,
-    input, input_leading_dim,
-    gradient_wrt_output, gradient_wrt_output_leading_dim,
-    gradient_wrt_input, gradient_wrt_input_leading_dim,
-    cutoff);
-}
-
-} // namespace sigmoid_cuda
 } // namespace lbann

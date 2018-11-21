@@ -81,6 +81,8 @@ class lbann_summary {
   void reduce_scalar(const std::string tag, DataType s, int step);
   /** Do a model_reduce (sum) on a scalar, then report that sum. */
   void sum_reduce_scalar(const std::string tag, DataType s, int step);
+  /** Report a scalar from every rank. */
+  void reduce_scalar_all(const std::string tag, DataType s, int step);
   /** Report a histogram of the values in mat. */
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step);
   /** Report the (squared) 2-norm of mat. */
@@ -151,6 +153,8 @@ class lbann_summary {
   std::vector<pending_op> m_pending_scalars;
   /** Currently-pending sum_reduce_scalars. */
   std::vector<pending_op> m_pending_sum_scalars;
+  /** Currently-pending reduce_scalar_alls. */
+  std::vector<pending_op> m_pending_scalar_alls;
   /** Buckets for histograms. */
   std::vector<double> m_histogram_buckets;
   /** Currently-pending reduce_histograms. */
@@ -168,6 +172,8 @@ class lbann_summary {
   void flush_scalars();
   /** Execute all pending sum-scalar operations. */
   void flush_sum_scalars();
+  /** Execute all pending scalar-all operations. */
+  void flush_scalar_alls();
   /** Execute all pending histogram operations. */
   void flush_histograms();
 
@@ -203,6 +209,7 @@ class lbann_summary {
   void reduce_stdev(const std::string tag, const AbsDistMat& mat, int step) {}
   void reduce_scalar(const std::string tag, DataType s, int step) {}
   void sum_reduce_scalar(const std::string tag, DataType s, int step) {}
+  void reduce_scalar_all(const std::string tag, DataType s, int step) {}
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step) {}
   void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step) {}
   void flush() {}

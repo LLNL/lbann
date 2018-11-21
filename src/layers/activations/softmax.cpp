@@ -28,155 +28,141 @@
 
 namespace lbann {
 
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-  ::setup_matrices(const El::Grid& grid) {
-  activation_layer::setup_matrices(grid);
-  if (m_workspace != nullptr) { delete m_workspace; }
-  m_workspace = new StarMRMat<El::Device::CPU>(grid);
+namespace {
+
+// Minimum output value to avoid denormalized floats
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+const DataType min_output = std::sqrt(std::numeric_limits<DataType>::min());
+#else
+const DataType min_output = 0;
+#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+
+void fp(lbann_comm& comm,
+        const AbsDistMat& input,
+        AbsDistMat& output,
+        AbsDistMat& workspace) {
+
+  // Local matrices
+  const auto& local_input = input.LockedMatrix();
+  auto& local_output = output.Matrix();
+  auto& local_workspace = workspace.Matrix();
+  const auto& local_height = local_input.Height();
+  const auto& local_width = local_input.Width();
+
+  // Find column-wise maximum entries
+  El::Fill(workspace, std::numeric_limits<DataType>::lowest());
+#pragma omp parallel for
+  for (El::Int col = 0; col < local_width; ++col) {
+    auto& max_entry = local_workspace(0, col);
+    for (El::Int row = 0; row < local_height; ++row) {
+      max_entry = std::max(max_entry, local_input(row, col));
+    }
+  }
+  comm.allreduce(workspace, workspace.RedundantComm(), El::mpi::MAX);
+
+  // Exponentiate outputs and compute column sums
+  // Note: Subtracting by the column max prevents output from blowing
+  // up. Large negative values underflow to 0.
+#pragma omp parallel for
+  for (El::Int col = 0; col < local_width; ++col) {
+    const auto shift = local_workspace(0, col);
+    DataType sum = 0;
+    for (El::Int row = 0; row < local_height; ++row) {
+      const auto& x = local_input(row, col);
+      auto& y = local_output(row, col);
+      y = std::exp(x - shift);
+      sum += y;
+    }
+    local_workspace(0, col) = sum;
+  }
+  comm.allreduce(workspace, workspace.RedundantComm());
+
+  // Divide outputs by column sums
+  // Note: Small values can be rounded to minimum output value to
+  // avoid denormalized floats.
+#pragma omp parallel for
+  for (El::Int col = 0; col < local_width; ++col) {
+    const auto& scale = 1 / local_workspace(0, col);
+    for (El::Int row = 0; row < local_height; ++row) {
+      auto& y = local_output(row, col);
+      y = std::max(scale * y, min_output);
+    }
+  }
+
 }
 
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-  ::setup_matrices(const El::Grid& grid) {
-  activation_layer::setup_matrices(grid);
-  if (m_workspace != nullptr) { delete m_workspace; }
-  m_workspace = new StarVCMat<El::Device::CPU>(grid);
+void bp(lbann_comm& comm,
+        const AbsDistMat& output,
+        const AbsDistMat& gradient_wrt_output,
+        AbsDistMat& gradient_wrt_input,
+        AbsDistMat& workspace) {
+
+  // Local matrices
+  const auto& local_output = output.LockedMatrix();
+  const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
+  auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+  auto& local_workspace = workspace.Matrix();
+  const auto& local_height = local_output.Height();
+  const auto& local_width = local_output.Width();
+
+  // Compute dot products between output and gradient w.r.t. output
+  El::Zero(local_workspace);
+#pragma omp parallel for
+  for (El::Int col = 0; col < local_width; ++col) {
+    auto& y_dot_dy = local_workspace(0, col);
+    for (El::Int row = 0; row < local_height; ++row) {
+      const auto& y = local_output(row, col);
+      const auto& dy = local_gradient_wrt_output(row, col);
+      y_dot_dy += y * dy;
+    }
+  }
+  comm.allreduce(workspace, workspace.RedundantComm());
+
+  // Compute gradient w.r.t. input
+#pragma omp parallel for
+  for (El::Int col = 0; col < local_width; ++col) {
+    const auto& y_dot_dy = local_workspace(0, col);
+    for (El::Int row = 0; row < local_height; ++row) {
+      const auto& y = local_output(row, col);
+      const auto& dy = local_gradient_wrt_output(row, col);
+      auto& dx = local_gradient_wrt_input(row, col);
+      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
+    }
+  }
+
 }
 
-#ifdef LBANN_HAS_GPU
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-  ::setup_matrices(const El::Grid& grid) {
-  activation_layer::setup_matrices(grid);
-  if (m_workspace != nullptr) { delete m_workspace; }
-  m_workspace = new StarMRMat<El::Device::GPU>(grid);
-}
-
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-  ::setup_matrices(const El::Grid& grid) {
-  activation_layer::setup_matrices(grid);
-  if (m_workspace != nullptr) { delete m_workspace; }
-  m_workspace = new StarVCMat<El::Device::GPU>(grid);
-}
-#endif // LBANN_HAS_GPU
-
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp_compute_cpu();
-}
-
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp_compute_cpu();
-}
-
-#ifdef LBANN_HAS_GPU
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  throw new lbann_exception("Unimplemented method");
-}
-
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  throw new lbann_exception("Unimplemented method");
-}
-#endif // LBANN_HAS_GPU
+} // namespace
 
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp_compute_cpu();
+  fp(*get_comm(),
+     get_prev_activations(),
+     get_activations(),
+     *m_workspace);
 }
-
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp_compute_cpu();
+  bp(*get_comm(),
+     get_activations(),
+     get_prev_error_signals(),
+     get_error_signals(),
+     *m_workspace);
 }
-
-#ifdef LBANN_HAS_GPU
 template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("softmax_layer: cuDNN not detected");
-#else
-
-  // Useful constants
-  const DataType one = 1;
-  const DataType zero = 0;
-
-  // Matrices
-  const auto& prev_activations = get_prev_activations();
-  auto& activations = get_activations();
-
-  // Apply softmax on the GPU
-  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-  CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                             this->m_cudnn->get_stream()));
-  CHECK_CUDNN(cudnnSoftmaxForward(this->m_cudnn->get_handle(),
-                                  CUDNN_SOFTMAX_ACCURATE,
-                                  CUDNN_SOFTMAX_MODE_INSTANCE,
-                                  &one,
-                                  this->m_prev_activations_cudnn_desc,
-                                  prev_activations.LockedBuffer(),
-                                  &zero,
-                                  this->m_activations_cudnn_desc,
-                                  activations.Buffer()));
-
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-  // Round to minimum value to avoid denormalized floats
-  softmax_cuda::fp_cutoff(*this->m_cudnn,
-                          activations.Buffer(),
-                          get_num_neurons(),
-                          this->m_mini_batch_size_per_gpu,
-                          m_min_output);
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-
-#endif // LBANN_HAS_CUDNN
+void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
+  fp(*get_comm(),
+     get_prev_activations(),
+     get_activations(),
+     *m_workspace);
 }
-
 template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-#ifndef LBANN_HAS_CUDNN
-  throw lbann_exception("softmax_layer: cuDNN not detected");
-#else
-
-  // Useful constants
-  const DataType one = 1;
-
-  // Matrices
-  const auto& activations = get_activations();
-  const auto& prev_error_signals = get_prev_error_signals();
-  auto& error_signals = get_error_signals();
-
-  // Apply softmax on each GPU
-  CHECK_CUDA(cudaSetDevice(this->m_cudnn->get_gpu()));
-  CHECK_CUDNN(cudnnSetStream(this->m_cudnn->get_handle(),
-                             this->m_cudnn->get_stream()));
-  CHECK_CUDNN(cudnnSoftmaxBackward(this->m_cudnn->get_handle(),
-                                   CUDNN_SOFTMAX_ACCURATE,
-                                   CUDNN_SOFTMAX_MODE_INSTANCE,
-                                   &one,
-                                   this->m_activations_cudnn_desc,
-                                   activations.LockedBuffer(),
-                                   this->m_prev_error_signals_cudnn_desc,
-                                   prev_error_signals.LockedBuffer(),
-                                   &one,
-                                   this->m_error_signals_cudnn_desc,
-                                   error_signals.Buffer()));
-
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-  // Round to minimum value to avoid denormalized floats
-  softmax_cuda::bp_cutoff(*this->m_cudnn,
-                          activations.LockedBuffer(),
-                          error_signals.Buffer(),
-                          get_num_neurons(),
-                          this->m_mini_batch_size_per_gpu,
-                          this->m_min_output);
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-
-#endif // LBANN_HAS_CUDNN
+void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
+  bp(*get_comm(),
+     get_activations(),
+     get_prev_error_signals(),
+     get_error_signals(),
+     *m_workspace);
 }
-#endif // LBANN_HAS_GPU
 
 } // namespace lbann

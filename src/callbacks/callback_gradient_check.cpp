@@ -73,9 +73,6 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
   expected_error = std::pow(expected_error, 0.9);
 
   // Compute gradients
-  for (auto&& l : layers) {
-    l->clear_error_signals(m->get_current_mini_batch_size());
-  }
   m->get_objective_function()->differentiate();
   m->get_objective_function()->compute_weight_regularization();
   for (int l = layers.size() - 1; l > 0; --l) {

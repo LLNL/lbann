@@ -27,9 +27,9 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    M_local(nullptr) {}
+    M_local(num_child_layers, nullptr) {}
 
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
@@ -38,12 +38,18 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
 
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local->Height() != 0 && M_local->Width() != 0)) {
-    Zero(*M_local);
+  if (m_comm->get_rank_in_model() < num_parallel_readers && (M_local[0]->Height() != 0 && M_local[0]->Width() != 0)) {
+    for(auto& m : M_local) {
+      Zero(*m);
+    }
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    num_samples_fetched = (*fetch_data_fn)(*M_local, data_reader);
+    if(M_local.size() == 2) {
+      num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], data_reader);
+    }else {
+      num_samples_fetched = (*fetch_data_fn)(*M_local[0], data_reader);
+    }
     bool data_valid = (num_samples_fetched > 0);
     if(data_valid) {
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
@@ -52,7 +58,13 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return num_samples_fetched;
 }
 
-void lbann::partitioned_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
+
+  /// Nothing to do here, it is already done
+  return;
+}
+
+void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
 
   /// Nothing to do here, it is already done
   return;
@@ -72,22 +84,26 @@ bool lbann::partitioned_io_buffer::is_data_set_processed(generic_data_reader *da
 }
 
 int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
+  return partitioned_io_buffer::compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, m_comm);
+}
+
+int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm) {
   int num_parallel_readers = requested_num_parallel_readers;
 
-  if(m_comm->get_procs_per_model() != num_parallel_readers) {
-    if (m_comm->am_model_master()) {
+  if(comm->get_procs_per_model() != num_parallel_readers) {
+    if (comm->am_model_master()) {
       std::cout << "Warning the requested number of parallel readers "
                 << num_parallel_readers
                 << " does not match the grid size "
-                << m_comm->get_procs_per_model()
+                << comm->get_procs_per_model()
                 << " OVERRIDING requested number of parallel readers."
                 << std::endl;
     }
-    num_parallel_readers = m_comm->get_procs_per_model();
+    num_parallel_readers = comm->get_procs_per_model();
   }
 
   if(mini_batch_size < num_parallel_readers) {
-    if (m_comm->am_model_master()) {
+    if (comm->am_model_master()) {
       std::cout << "Warning the requested number of parallel readers "
                 << num_parallel_readers
                 << " is larger than the requested mini-batch size "
@@ -111,6 +127,8 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
     max_mini_batch_size = data_reader->get_num_data();
   }
 
+  bool apportioned = data_reader->is_partitioned();
+
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_model());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
@@ -126,6 +144,12 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   int batch_stride = m_comm->get_num_models() * max_mini_batch_size;
   int base_offset  = m_comm->get_rank_in_model();
   int model_offset = m_comm->get_model_rank() * max_mini_batch_size;
+
+  if (apportioned) {
+    batch_stride = max_mini_batch_size;
+    model_offset = 0;
+  }
+
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
@@ -137,6 +161,9 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   data_reader->set_initial_position();
 
   int min_stride_across_models = max_mini_batch_size * m_comm->get_num_models();  /// Given that each model has to have at least one reader, what is the minimum stride
+  if (apportioned) {
+    min_stride_across_models = max_mini_batch_size;
+  }
 
   data_reader->set_global_mini_batch_size(min_stride_across_models); /// The global mini-batch is a full mini-batch per model
 

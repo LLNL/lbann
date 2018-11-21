@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_debug.cpp
   callback_debug_io.cpp
   callback_dump_activations.cpp
+  callback_dump_error_signals.cpp
   callback_dump_gradients.cpp
   callback_dump_minibatch_sample_indices.cpp
   callback_dump_weights.cpp
@@ -22,11 +23,15 @@ set_full_path(THIS_DIR_SOURCES
   callback_save_images.cpp
   callback_save_model.cpp
   callback_summary.cpp
+  callback_sync_layers.cpp
+  callback_sync_selected.cpp
   callback_timeline.cpp
   callback_timer.cpp
   callback_variable_minibatch.cpp
   profiler.cpp
-  )
+  callback_replace_weights.cpp
+  callback_gpu_memory_usage.cpp
+)
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

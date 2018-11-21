@@ -1,19 +1,17 @@
 model {
-  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -33,8 +31,8 @@ model {
   }
   callback {
     save_images {
-      image_dir: "images_"
-      extension: "pgm"
+      layers: "image reconstruction"
+      image_format: "pgm"
     }
   }
 
@@ -47,16 +45,30 @@ model {
   #######
   layer {
     name: "data"
+    children: "image dummy"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
+  }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "dummy"
+    data_layout: "data_parallel"
+    dummy {}
   }
 
   #############
   # CONVOLUTION 1
   #############
   layer {
+    parents: "image"
     name: "conv1"
     data_layout: "data_parallel"
     convolution {
@@ -74,6 +86,7 @@ model {
   # RELU 1
   ######
   layer {
+    parents: "conv1"
     name: "relu1"
     data_layout: "data_parallel"
     relu {
@@ -84,6 +97,7 @@ model {
   # POOLING 1
   #########
   layer {
+    parents: "relu1"
     name: "pool1"
     data_layout: "data_parallel"
     pooling {
@@ -102,6 +116,7 @@ model {
   # UNPOOLING 1
   #########
   layer {
+    parents: "pool1"
     name: "unpool1"
     data_layout: "data_parallel"
     unpooling {
@@ -114,6 +129,7 @@ model {
   # DECONVOLUTION 1
   #############
   layer {
+    parents: "unpool1"
     name: "deconv1"
     data_layout: "data_parallel"
     deconvolution {
@@ -131,7 +147,8 @@ model {
   # SIGMOID sigmoid
   #######
   layer {
-    name: "sigmoid"
+    parents: "deconv1"
+    name: "reconstruction"
     data_layout: "data_parallel"
     sigmoid {
     }
@@ -142,11 +159,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "reconstruction"
+    parents: "reconstruction image"
+    name: "mean_squared_error"
     data_layout: "data_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    mean_squared_error {}
   }
 
   ###################################################

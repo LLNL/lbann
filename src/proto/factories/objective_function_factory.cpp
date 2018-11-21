@@ -86,12 +86,6 @@ objective_function* construct_objective_function(const lbann_data::ObjectiveFunc
     obj->add_term(new group_lasso_weight_regularization(params.scale_factor()));
   }
 
-  // Activation regularization terms
-  for (int i=0; i<proto_obj.kl_divergence_size(); ++i) {
-    const auto& params = proto_obj.kl_divergence(i);
-    obj->add_term(new kl_divergence(params.layer1(), params.layer2()));
-  }
-
   // Layer terms
   for (int i=0; i<proto_obj.layer_term_size(); ++i) {
     const auto& params = proto_obj.layer_term(i);

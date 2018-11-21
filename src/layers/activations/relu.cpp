@@ -25,59 +25,54 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/activations/relu.hpp"
+#include "lbann/utils/entrywise_operator.hpp"
 
 namespace lbann {
 
-/** CPU implementation of forward prop computation. */
+namespace {
+
+/** Entry-wise operator. */
+struct op {
+  inline DataType operator()(DataType x) const {
+    return x > DataType(0) ? x : DataType(0);
+  }
+};
+  
+/** Entry-wise operator for backprop.
+ *  If the forward propagation step computes \f$ y = f(x) \f$, the
+ *  backward propagation step computes
+ *  \f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$.
+ */
+struct op_backprop {
+  inline DataType operator()(DataType x, DataType dy) const {
+    return x > DataType(0) ? dy : DataType(0);
+  }
+};
+  
+} // namespace
+
+// Template instantiation
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
+  apply_entrywise_unary_operator<op>(get_prev_activations(),
+                                     get_activations());
 }
-
-/** CPU implementation of forward prop computation. */
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  entrywise_activation_layer::fp_compute_cpu();
-}
-
-#ifdef LBANN_HAS_GPU
-/** GPU implementation of forward prop computation. */
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_compute_gpu();
-}
-
-/** GPU implementation of forward prop computation. */
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_compute_gpu();
-}
-#endif // LBANN_HAS_GPU
-
-/** CPU implementation of backward prop computation. */
 template <>
 void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
+  apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
+                                               get_prev_error_signals(),
+                                               get_error_signals());
 }
-
-/** CPU implementation of backward prop computation. */
+template <>
+void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
+  apply_entrywise_unary_operator<op>(get_prev_activations(),
+                                     get_activations());
+}
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  entrywise_activation_layer::bp_compute_cpu();
+  apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
+                                               get_prev_error_signals(),
+                                               get_error_signals());
 }
-
-#ifdef LBANN_HAS_GPU
-/** GPU implementation of backward prop computation. */
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_compute_gpu();
-}
-
-/** GPU implementation of backward prop computation. */
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_compute_gpu();
-}
-#endif // LBANN_HAS_GPU
-
+  
 } // namespace lbann

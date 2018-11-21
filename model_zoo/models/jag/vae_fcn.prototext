@@ -1,28 +1,22 @@
-#Example taken from: https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/vae_fcn.py and 
+#Example taken from: https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/vae_fcn.py and
 #https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
 #Timestamp 02/26/2018 8:45AM
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  #mini_batch_size: 128 
-  mini_batch_size: 100 #more last minibatch images to save 
+  #mini_batch_size: 128
+  mini_batch_size: 100 #more last minibatch images to save
   block_size: 256
   num_epochs: 40
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    binary_cross_entropy {}
-    #mean_squared_error {}
-    layer_term {
-      scale_factor: 1.0
-      layer: "kl_divergence"
-    }
+    layer_term { layer: "binary_cross_entropy" }
+    layer_term { layer: "kl_divergence" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -32,7 +26,12 @@ model {
   # Metrics
   ###################################################
 
-  metric { mean_squared_error {} }
+  metric {
+    layer_metric {
+      name: "mean squared error"
+      layer: "mean_squared_error"
+    }
+  }
 
   ###################################################
   # Callbacks
@@ -51,8 +50,8 @@ model {
   }
   callback {
     save_images {
-      image_dir: "vae_fcn_images_"
-      extension: "jpg"
+      image_prefix: "vae_fcn_images_"
+      image_format: "jpg"
     }
   }
 
@@ -64,11 +63,25 @@ model {
   # Data
   ######################
   layer {
-    name: "data"
+    name: "input"
+    children: "data dummy"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
+      target_mode: "reconstruction"
     }
+  }
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "dummy"
+    data_layout: "model_parallel"
+    dummy {}
   }
 
   ######################
@@ -82,7 +95,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -108,7 +120,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -134,7 +145,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -162,8 +172,7 @@ model {
     name: "z_mean"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons:5 
-      weight_initialization: "glorot_normal"
+      num_neurons:5
       has_bias: true
     }
   }
@@ -172,8 +181,7 @@ model {
     name: "z_log_sigma"
     data_layout: "model_parallel"
     fully_connected {
-      num_neurons:5 
-      weight_initialization: "glorot_normal"
+      num_neurons:5
       has_bias: true
     }
   }
@@ -194,37 +202,29 @@ model {
     parents: "z_mean"
     name: "kl_z_mean2"
     data_layout: "model_parallel"
-    power {
-      exponent: 2.0
-    }    
+    square {}
   }
   layer {
     parents: "z_log_sigma"
     name: "kl_exp"
     data_layout: "model_parallel"
-    exponential {}
+    exp {}
   }
   layer {
     parents: "kl_one z_log_sigma kl_z_mean2 kl_exp"
     name: "kl_full"
     data_layout: "model_parallel"
-    sum {
+    weighted_sum {
       scaling_factors: "-0.5 -0.5 0.5 0.5"
     }
   }
   layer {
     parents: "kl_full"
-    name: "kl_sum"
+    name: "kl_divergence"
     data_layout: "data_parallel"
     reduction {
       mode: "sum"
     }
-  }
-  layer {
-    parents: "kl_sum"
-    name: "kl_divergence"
-    data_layout: "data_parallel"
-    evaluation {}
   }
 
   ######################
@@ -235,15 +235,15 @@ model {
     parents: "z_log_sigma"
     name: "sample_half"
     data_layout: "model_parallel"
-    sum {
+    weighted_sum {
       scaling_factors: "0.5"
-    }    
+    }
   }
   layer {
     parents: "sample_half"
     name: "sample_exp"
     data_layout: "model_parallel"
-    exponential {}
+    exp {}
   }
   layer {
     name: "sample_noise"
@@ -258,13 +258,13 @@ model {
     parents: "sample_exp sample_noise"
     name: "sample_exp_noise"
     data_layout: "model_parallel"
-    hadamard {}
+    multiply {}
   }
   layer {
     parents: "z_mean sample_exp_noise"
     name: "sample"
     data_layout: "model_parallel"
-    sum {}
+    add {}
   }
 
   ######################
@@ -278,7 +278,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -304,7 +303,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -330,7 +328,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -357,7 +354,6 @@ model {
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_normal"
       has_bias: true
     }
   }
@@ -376,9 +372,19 @@ model {
     parents: "sigmoid"
     name: "reconstruction"
     data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    split {}
+  }
+  layer {
+    parents: "reconstruction data"
+    name: "mean_squared_error"
+    data_layout: "model_parallel"
+    mean_squared_error {}
+  }
+  layer {
+    parents: "reconstruction data"
+    name: "binary_cross_entropy"
+    data_layout: "model_parallel"
+    binary_cross_entropy {}
   }
 
   ###################################################

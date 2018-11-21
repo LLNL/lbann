@@ -51,16 +51,14 @@ class lbann_callback_checknan : public lbann_callback {
   }
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l) override;
+  /** Check that error signals are good. */
+  void on_backward_prop_end(model *m, Layer *l) override;
   /** Check that gradients are good. */
   void on_backward_prop_end(model *m) override;
   /** Check that weights are good. */
   void on_batch_end(model *m) override;
   std::string name() const override { return "checknan"; }
- private:
-  /** Return true if there are no problems with m. */
-  bool is_good(const AbsDistMat& m);
-  /** Dump the (local) network matrices for debugging. */
-  void dump_network(model *m);
+
 };
 
 }  // namespace lbann

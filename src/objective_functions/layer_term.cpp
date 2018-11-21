@@ -31,60 +31,54 @@ namespace lbann {
 layer_term::layer_term(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
 
-void layer_term::set_evaluation_layer(Layer* l) {
-  this->m_layers.assign(1, l);
+void layer_term::set_layer(Layer& l) {
+  set_layer_pointers({&l});
 }
 
+Layer& layer_term::get_layer() {
+  // Idiom from Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers.
+  return *(const_cast<Layer*>(&static_cast<const layer_term&>(*this).get_layer()));
+}
+const Layer& layer_term::get_layer() const {
+  const auto& layer_pointers = get_layer_pointers();
+  if (layer_pointers.empty() || layer_pointers.front() == nullptr) {
+    LBANN_ERROR("attempted to get the layer corresponding to "
+                "an objective function layer term, "
+                "but no such layer has been set");
+  }
+  return *layer_pointers.front();
+}
+
+abstract_evaluation_layer& layer_term::get_evaluation_layer() {
+  auto& l = get_layer();
+  auto* eval = dynamic_cast<abstract_evaluation_layer*>(&l);
+  if (eval == nullptr) {
+    std::stringstream err;
+    err << "attempted to get the evaluation layer corresponding to "
+        << "an objective function layer term, "
+        << "but the layer term currently corresponds to "
+        << l.get_type() << " layer \"" << l.get_name() << "\"";
+    LBANN_ERROR(err.str());
+  }
+  return *eval;
+}
+  
 void layer_term::setup(model& m) {
   objective_function_term::setup(m);
-  std::stringstream err;
-
-  // Make sure layer term points to an evaluation layer
-  if (m_layers.size() != 1) {
-    err << "layer term in objective function points to an invalid number of layers "
-        << "(expected 1, found " << m_layers.size() << ")";
-    LBANN_ERROR(err.str());
-  }
-  if (m_layers[0] == nullptr) {
-    LBANN_ERROR("layer term in objective function points to a null pointer");
-  }
-  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
-  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_layers[0]);
-  if (eval_dp == nullptr && eval_mp == nullptr) {
-    err << "layer term in objective function must point to an evaluation layer, "
-        << "but " << m_layers[0]->get_name() << " is type " << m_layers[0]->get_type();
-    LBANN_ERROR(err.str());
-  }
-
-  // Set scaling factor
-  if (eval_dp != nullptr) { eval_dp->set_scale(m_scale_factor); }
-  if (eval_mp != nullptr) { eval_mp->set_scale(m_scale_factor); }
-
+  get_evaluation_layer().set_scale(m_scale_factor);
 }
 
 void layer_term::start_evaluation() {}
 
 EvalType layer_term::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  EvalType value = 0;
-  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
-  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_layers[0]);
-  if (eval_dp != nullptr) {
-    eval_dp->set_scale(m_scale_factor);
-    value = eval_dp->get_value();
-  }
-  if (eval_mp != nullptr) {
-    eval_mp->set_scale(m_scale_factor);
-    value = eval_mp->get_value();
-  }
-  return value;
+  auto& eval = get_evaluation_layer();
+  eval.set_scale(m_scale_factor);
+  return eval.get_value();
 }
 
 void layer_term::differentiate() {
-  auto&& eval_dp = dynamic_cast<evaluation_layer<data_layout::DATA_PARALLEL>*>(m_layers[0]);
-  auto&& eval_mp = dynamic_cast<evaluation_layer<data_layout::MODEL_PARALLEL>*>(m_layers[0]);
-  if (eval_dp != nullptr) { eval_dp->set_scale(m_scale_factor); }
-  if (eval_mp != nullptr) { eval_mp->set_scale(m_scale_factor); }
+  get_evaluation_layer().set_scale(m_scale_factor);
 }
 
 }  // namespace lbann

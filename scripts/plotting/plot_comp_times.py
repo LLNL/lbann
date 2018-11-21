@@ -1,6 +1,8 @@
 import sys
 from collections import OrderedDict
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn
 import load_events

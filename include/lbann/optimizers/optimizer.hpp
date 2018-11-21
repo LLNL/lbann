@@ -31,12 +31,19 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/weights/weights.hpp"
 #include <string>
 #include <unordered_set>
 
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/cuda.hpp"
+#endif // LBANN_HAS_GPU
+
 namespace lbann {
+
+// Forward declarations
+class weights;
+class persist;
 
 /** Abstract optimizer. */
 class optimizer {
@@ -72,35 +79,17 @@ class optimizer {
 
   /** Clear gradient matrix. */
   void clear_gradient();
-  /** Add to the gradient matrix.
-   *  If the optimizer has a cuDNN manager, the data is copied to GPUs
-   *  and added to the GPU gradient matrix.
-   */
+  /** Add to the gradient matrix. */
   void add_to_gradient(const AbsDistMat& gradient,
                        DataType scale = DataType(1));
-#ifdef LBANN_HAS_CUDNN
-  /** Add to the GPU gradient matrix. */
-  void add_to_gradient(const cudnn::matrix& gradient,
-                       DataType scale = DataType(1));
-#endif // LBANN_HAS_CUDNN
 
   /** Add to the gradient staging matrix.
    *  When the gradient is needed, an allreduce is applied over the
    *  redundant communicator of the staging matrix and the result is
-   *  added to the gradient. If the optimizer has a cuDNN manager, the
-   *  data is copied to GPUs and added to the GPU staging matrix.
+   *  added to the gradient.
    */
   void add_to_gradient_staging(const AbsDistMat& gradient,
                                DataType scale = DataType(1));
-#ifdef LBANN_HAS_CUDNN
-  /** Add to the GPU gradient staging matrix.
-   *  When the gradient is needed, an allreduce is applied over all
-   *  the GPUs in the redundant communicator of the staging matrix and
-   *  the result is added to the gradient.
-   */
-  void add_to_gradient_staging(const cudnn::matrix& gradient,
-                               DataType scale = DataType(1));
-#endif // LBANN_HAS_CUDNN
   /** Start allreduce on the gradient staging matrix.
    *  If an allreduce is not needed or if it has already started, this
    *  function does nothing. This may call a non-blocking allreduce.
@@ -137,14 +126,14 @@ class optimizer {
    */
   virtual void step_compute(AbsDistMat& values,
                             const AbsDistMat& gradient) = 0;
-#ifdef LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_GPU
   /** Perform the computation in an optimization step on GPU.
    *  The default implementation is to transfer data to CPU and call
    *  step_compute.
    */
   virtual void step_compute_gpu(AbsDistMat& values,
                                 const AbsDistMat& gradient);
-#endif // LBANN_HAS_CUDNN
+#endif // LBANN_HAS_GPU
 
   /** Get the time spent in step(). */
   double get_step_time() const { return m_step_time; }
@@ -157,9 +146,6 @@ class optimizer {
 
   /** LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** cuDNN manager. */
-  cudnn::cudnn_manager* m_cudnn;
 
   /** Weights being optimized. */
   weights* m_weights;

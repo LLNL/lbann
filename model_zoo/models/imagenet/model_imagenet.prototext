@@ -1,5 +1,4 @@
 model {
-  name: "sequential_model"
   num_epochs: 20
   data_layout: "data_parallel"
 
@@ -8,7 +7,7 @@ model {
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -18,21 +17,41 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy"
+      unit: "%"
     }
   }
 
+
   layer {
+    name: "1"
+    children: "1a 1b"
+    data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
-    name: "1"
+  }
+  layer {
+    name: "1a"
     parents: "1"
-    children: ""
     data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    name: "1b"
+    parents: "1"
+    data_layout: "data_parallel"
+    split {}
   }
   #############################################
   layer {
@@ -41,7 +60,7 @@ model {
       has_bias: true
     }
     name: "2"
-    parents: "1"
+    parents: "1a"
     children: ""
     data_layout: "model_parallel"
   }
@@ -76,20 +95,28 @@ model {
     name: "6"
     parents: "5"
     children: ""
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     softmax {
     }
   }
   #############################################
   layer {
-    name: "7"
-    parents: "6"
-    children: ""
+    name: "cross_entropy"
+    parents: "6 1b"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    cross_entropy {}
+  }
+  layer {
+    name: "top1_accuracy"
+    parents: "6 1b"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
+  }
+  layer {
+    name: "top5_accuracy"
+    parents: "6 1b"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 5 }
   }
   #############################################
   mini_batch_size: 256
@@ -116,7 +143,6 @@ model {
     }
   }
   block_size: 256
-  num_gpus: -1
   num_parallel_readers: 12
 }
 optimizer {

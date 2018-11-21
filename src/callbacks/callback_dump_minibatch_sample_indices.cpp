@@ -44,6 +44,14 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
         || indices->Width() == 0) {
       return;
     }
+
+    std::ostringstream s;
+    s << "mkdir -p " << m_basename;
+    const int dir= system(s.str().c_str());
+    if (dir< 0) {
+      LBANN_ERROR("callback_dump_minibatch_sample_indices is unable to create the target director");
+    }
+
     const std::string file
       = (m_basename
          + _to_string(m->get_execution_mode())

@@ -54,7 +54,7 @@ class sgd : public optimizer {
   sgd* copy() const override { return new sgd(*this); }
 
   /** Get the optimizer name. */
-  std::string get_type() const override { return "sgd"; }
+  std::string get_type() const override { return "SGD"; }
   /** Get a human-readable description of the optimizer. */
   std::string get_description() const override;
 

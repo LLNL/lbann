@@ -30,7 +30,6 @@
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/cublas_wrapper.hpp"
 
 namespace lbann {
 
@@ -43,19 +42,11 @@ class split_layer : public transform_layer {
 
  public:
 
-  split_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
+  split_layer(lbann_comm *comm)
     : transform_layer(comm) {
 
     // Split layer has no limit on children
     m_expected_num_child_layers = -1;
-
-  #ifdef LBANN_HAS_CUDNN
-    // Initialize GPU if available
-    if(cudnn) {
-      this->m_cudnn = cudnn;
-    }
-  #endif // LBANN_HAS_CUDNN
 
   }
 
@@ -77,22 +68,25 @@ class split_layer : public transform_layer {
 
   protected:
 
-  void fp_compute() override {
-    if(this->using_gpus()) {
-  #ifndef LBANN_HAS_CUDNN
-      throw lbann_exception("split_layer: cuDNN not detected");
-  #endif
-    }
+  void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = get_prev_activations();
-    for (auto& output : this->m_activations) {
-      El::LockedView(*output, input);
+    for (int i = 0; i < get_num_children(); ++i) {
+      El::LockedView(get_activations(i), input);
     }
   }
 
+  void fp_compute() override {}
+
   void bp_compute() override {
     auto& gradient_wrt_input = get_error_signals();
-    for (const auto& gradient_wrt_output : this->m_prev_error_signals) {
-      El::Axpy(DataType(1), *gradient_wrt_output, gradient_wrt_input);
+    if (get_num_children() > 0) {
+      El::Copy(get_prev_error_signals(0), gradient_wrt_input);
+    } else {
+      El::Zero(gradient_wrt_input);
+    }
+    for (int i = 1; i < get_num_children(); ++i) {
+      El::Axpy(DataType(1), get_prev_error_signals(i),
+               gradient_wrt_input);
     }
   }
 

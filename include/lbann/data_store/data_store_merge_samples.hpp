@@ -56,6 +56,7 @@ class data_store_merge_samples : public generic_data_store {
   //! dtor
   ~data_store_merge_samples() override;
 
+  using generic_data_store::get_data_buf;
   void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) override {}
 
   void setup() override;

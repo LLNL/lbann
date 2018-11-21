@@ -217,4 +217,25 @@ bool create_dir(const std::string dirname) {
   return true;
 }
 
+/// Load a file into a buffer
+bool load_file(const std::string filename, std::vector<char>& buf) {
+  std::ifstream file(filename, std::ios::binary);
+  if (!file.good()) {
+    return false;
+  }
+
+  file.unsetf(std::ios::skipws);
+
+  file.seekg(0, std::ios::end);
+  const std::streampos file_size = file.tellg();
+
+  file.seekg(0, std::ios::beg);
+
+  buf.resize(file_size);
+
+  file.read(buf.data(), file_size);
+
+  return true;
+}
+
 } // end of namespace lbann

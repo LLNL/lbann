@@ -22,109 +22,144 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_debug.hpp"
+#include "lbann/comm.hpp"
 
-void lbann::lbann_callback_debug::on_batch_begin(model *m) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "Phase: " << _to_string(m->get_execution_mode()) << " starting batch" << std::endl;
+namespace lbann {
+
+namespace {
+
+/** Get human-readable string describing process rank. */
+std::string rank_string(const lbann_comm& comm) {
+  std::stringstream msg;
+  msg << "rank " << comm.get_rank_in_world();
+  if (comm.get_num_models() > 1) {
+    msg << " (rank " << comm.get_rank_in_model()
+        << " of model " << comm.get_model_rank() << ")";
   }
+  return msg.str();
 }
 
-void lbann::lbann_callback_debug::on_forward_prop_begin(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->get_name() << " type: " << l->get_type() << std::endl;
-  }
+/** Get human-readable string describing layer. */
+std::string layer_string(const Layer& l) {
+  return l.get_type() + " layer \"" + l.get_name() + "\"";
 }
 
-void lbann::lbann_callback_debug::on_forward_prop_end(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << "   ending forward propagation for layer " << l->get_name() << " type: " << l->get_type() << std::endl;
-  }
+/** Get human-readable string describing weights and optimizer. */
+std::string weights_string(const weights& w) {
+  std::stringstream msg;
+  msg << "weights \"" << w.get_name() << "\" (";
+  const auto* opt = w.get_optimizer();
+  if (opt == nullptr) { msg << "no"; }
+  else { msg << opt->get_type(); }
+  msg << " optimizer)";
+  return msg.str();
 }
 
-void lbann::lbann_callback_debug::on_backward_prop_begin(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << " starting backward propagation for layer " << l->get_name() << " type: " << l->get_type() << std::endl;
+/** Get human-readable string describing current batch step. */
+std::string batch_step_string(const model& m) {
+  std::stringstream msg;
+  const auto& mode = m.get_execution_mode();
+  msg << _to_string(mode) << " batch";
+  switch (mode) {
+  case execution_mode::training:
+    msg << " " << m.get_cur_step(); break;
+  case execution_mode::validation:
+    msg << " " << m.get_cur_validation_step(); break;
+  case execution_mode::testing:
+    msg << " " << m.get_cur_testing_step(); break;
+  default: break;
   }
+  msg << " (epoch " << m.get_cur_epoch() << ")";
+  return msg.str();
 }
 
-void lbann::lbann_callback_debug::on_backward_prop_end(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << m->get_cur_epoch() << "." << m->get_cur_step() << " Phase: " << _to_string(m->get_execution_mode()) << "   ending backward propagation for layer " << l->get_name() << " type: " << l->get_type() << std::endl;
+} // namespace
+
+// Status updates for batch beginnings/endings
+void lbann_callback_debug::on_batch_begin(model *m) {
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+    std::stringstream msg;
+    msg << rank_string(*m->get_comm()) << ": "
+        << "starting " << batch_step_string(*m) << std::endl;
+    std::cerr << msg.str();
   }
+}
+void lbann_callback_debug::on_batch_end(model *m) {
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+    std::stringstream msg;
+    msg << rank_string(*m->get_comm()) << ": "
+        << "ending " << batch_step_string(*m) << std::endl;
+    std::cerr << msg.str();
+  }
+}
+void lbann_callback_debug::on_batch_evaluate_begin(model *m) {
+  on_batch_begin(m);
+}
+void lbann_callback_debug::on_batch_evaluate_end(model *m) {
+  on_batch_end(m);
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Evaluation phase debugging
-////////////////////////////////////////////////////////////////////////////////
-void lbann::lbann_callback_debug::on_batch_evaluate_begin(model *m) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << " starting batch" << std::endl;
+// Status updates for beginning/ending of layer forward/backward prop
+void lbann_callback_debug::on_forward_prop_begin(model *m, Layer *l) {
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+    std::stringstream msg;
+    msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
+        << " is starting forward prop for " << batch_step_string(*m)
+        << std::endl;
+    std::cerr << msg.str();
   }
+}
+void lbann_callback_debug::on_forward_prop_end(model *m, Layer *l) {
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+    std::stringstream msg;
+    msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
+        << " is   ending forward prop for " << batch_step_string(*m)
+        << std::endl;
+    std::cerr << msg.str();
+  }
+}
+void lbann_callback_debug::on_backward_prop_begin(model *m, Layer *l) {
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+    std::stringstream msg;
+    msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
+        << " is starting backward prop for " << batch_step_string(*m)
+        << std::endl;
+    std::cerr << msg.str();
+  }
+}
+void lbann_callback_debug::on_backward_prop_end(model *m, Layer *l) {
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) { 
+    std::stringstream msg;
+    msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
+        << " is   ending backward prop for " << batch_step_string(*m)
+        << std::endl;
+    std::cerr << msg.str();
+  }
+}
+void lbann_callback_debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+  on_forward_prop_begin(m, l);
+}
+void lbann_callback_debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
+  on_backward_prop_end(m, l);
 }
 
-void lbann::lbann_callback_debug::on_batch_evaluate_end(model *m) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << " ending batch" << std::endl;
-  }
+// Status updates for optimization step
+void lbann_callback_debug::on_optimize_begin(model *m, weights *w) {
+  std::stringstream msg;
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
+      << " is starting optimization step for " << batch_step_string(*m)
+      << std::endl;
+  std::cerr << msg.str();
+}
+void lbann_callback_debug::on_optimize_end(model *m, weights *w) {
+  std::stringstream msg;
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
+      << " is   ending optimization step for " << batch_step_string(*m)
+      << std::endl;
+  std::cerr << msg.str();
 }
 
-void lbann::lbann_callback_debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << " starting forward propagation for layer " << l->get_name() << " type: " << l->get_type() << std::endl;
-  }
-}
-
-void lbann::lbann_callback_debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
-    int64_t step;
-    switch(m->get_execution_mode()) {
-    case execution_mode::validation:
-      step = m->get_cur_validation_step();
-      break;
-    case execution_mode::testing:
-      step = m->get_cur_testing_step();
-      break;
-    default:
-      throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-    }
-    std::cout << "[" << m->get_comm()->get_model_rank() << "." << m->get_comm()->get_rank_in_model() << "] @" << 0 << "." << step << " Phase: " << _to_string(m->get_execution_mode()) << "   ending forward propagation for layer " << l->get_name() << " type: " << l->get_type() << std::endl;
-  }
-}
+} // namespace lbann

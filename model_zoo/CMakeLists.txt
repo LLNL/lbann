@@ -12,9 +12,13 @@ set_target_properties(lbann-bin2 PROPERTIES OUTPUT_NAME lbann2)
 add_executable( lbann-gan-bin lbann_gan.cpp )
 target_link_libraries(lbann-gan-bin lbann )
 set_target_properties(lbann-gan-bin PROPERTIES OUTPUT_NAME lbann_gan)
+
+add_executable( lbann-cycgan-bin lbann_cycgan.cpp )
+target_link_libraries(lbann-cycgan-bin lbann )
+set_target_properties(lbann-cycgan-bin PROPERTIES OUTPUT_NAME lbann_cycgan)
 # Install the binaries
 install(
-  TARGETS lbann-bin lbann-bin2 lbann-gan-bin
+  TARGETS lbann-bin lbann-bin2 lbann-gan-bin lbann-cycgan-bin
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
