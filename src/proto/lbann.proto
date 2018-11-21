@@ -933,6 +933,7 @@ message Layer {
    // Miscellaneous layers
    Covariance covariance = 600;
    Variance variance = 601;
+   ChannelwiseMean channelwise_mean = 602;
 
 }
 ///////////////////////
@@ -1316,3 +1317,4 @@ message Covariance {
 message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
+message ChannelwiseMean {}

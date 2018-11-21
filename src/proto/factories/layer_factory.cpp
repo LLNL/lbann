@@ -599,6 +599,11 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.variance();
     return new variance_layer<layout, Dev>(comm, params.biased());
   }
+  if (proto_layer.has_channelwise_mean()) {
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new channelwise_mean_layer<data_layout::DATA_PARALLEL, Dev>(comm);
+    }
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
