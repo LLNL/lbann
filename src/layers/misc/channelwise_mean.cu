@@ -119,6 +119,8 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   auto& local_output = get_local_activations();
 
   // Dimensions
+  // Note: channel_size is the number of input entries per channel and
+  // local_width is the number of local mini-batch samples.
   const auto& input_dims = get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
@@ -152,6 +154,8 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   auto& local_gradient_wrt_input = get_local_error_signals();
 
   // Dimensions
+  // Note: channel_size is the number of input entries per channel and
+  // local_width is the number of local mini-batch samples.
   const auto& input_dims = get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
