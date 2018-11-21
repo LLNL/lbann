@@ -16,7 +16,7 @@ if (${PROJECT_NAME}_USE_PROTOBUF_MODULE)
   endif ()
 
   # At this point, throw an error if Protobuf is not found.
-  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE QUIET)
+  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE)
   if(NOT Protobuf_FOUND)
     find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE REQUIRED)
   endif ()
@@ -32,12 +32,16 @@ else ()
   set(protobuf_MODULE_COMPATIBLE ON)
   set(protobuf_BUILD_SHARED_LIBS ON)
 
-  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG QUIET
+  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG
     HINTS
+    "${Protobuf_DIR}"
+    "${PROTOBUF_DIR}"
     "${Protobuf_DIR}/lib64/cmake/protobuf"
     "${PROTOBUF_DIR}/lib64/cmake/protobuf"
     "${Protobuf_DIR}/lib/cmake/protobuf"
     "${PROTOBUF_DIR}/lib/cmake/protobuf"
+    "$ENV{Protobuf_DIR}"
+    "$ENV{PROTOBUF_DIR}"
     "$ENV{Protobuf_DIR}/lib64/cmake/protobuf"
     "$ENV{PROTOBUF_DIR}/lib64/cmake/protobuf"
     "$ENV{Protobuf_DIR}/lib/cmake/protobuf"
