@@ -57,7 +57,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
     auto* dx1_buffer = dx1.Buffer();
     auto* dx2_buffer = dx2.Buffer();
     const size_t size = x1.Height() * x1.Width();
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       BinaryBackPropOperator op;
       op(x1_buffer[i], x2_buffer[i], dy_buffer[i],
@@ -66,7 +66,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   } else {
     auto const width = x1.Width();
     auto const height = x1.Height();
-#pragma omp parallel for collapse(2)
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int col = 0; col < width; ++col) {
       for (El::Int row = 0; row < height; ++row) {
         BinaryBackPropOperator op;

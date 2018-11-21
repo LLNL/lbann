@@ -133,7 +133,7 @@ bool data_reader_jag_conduit_hdf5::replicate_processor(const cv_process& pp) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  #pragma omp parallel for schedule(static, 1)
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int i = 0; i < nthreads; ++i) {
     std::unique_ptr<cv_process> ppu(new cv_process(pp));
     m_pps[i] = std::move(ppu);
@@ -200,7 +200,7 @@ void data_reader_jag_conduit_hdf5::load() {
 
   if (setup_jag_store) {
     m_jag_store = new jag_store;
-  
+
     m_jag_store->set_comm(m_comm);
     if (is_master()) std::cerr << "calling: m_jag_store->set_image_size\n";
     m_jag_store->set_image_size(m_image_height * m_image_width);

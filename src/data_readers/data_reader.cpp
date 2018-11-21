@@ -97,9 +97,9 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
-    #pragma omp parallel for schedule(static, 1)
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
     for (int t = 0; t < nthreads; t++) {
-      preprocess_data_source(omp_get_thread_num());
+      preprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
   }
 
@@ -130,7 +130,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
   else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_datum(X, index, s, LBANN_OMP_THREAD_NUM);
@@ -144,9 +145,9 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    #pragma omp parallel for schedule(static, 1)
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
     for (int t = 0; t < nthreads; t++) {
-      postprocess_data_source(omp_get_thread_num());
+      postprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
   }
 
@@ -202,7 +203,8 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
 
 //  else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_label(Y, index, s, LBANN_OMP_THREAD_NUM);
@@ -232,7 +234,8 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
 
   El::Zeros(Y, Y.Height(), Y.Width());
   std::string error_message;
-  LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+  for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_response(Y, index, s, LBANN_OMP_THREAD_NUM);

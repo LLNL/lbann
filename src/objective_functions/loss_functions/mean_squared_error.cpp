@@ -43,7 +43,7 @@ void mean_squared_error_loss::start_evaluate_compute(
 
   // Compute sum of squared errors
   EvalType sum = EvalType(0);
-  #pragma omp parallel for reduction(+:sum) collapse(2)
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
@@ -79,7 +79,7 @@ void mean_squared_error_loss::differentiate_compute(const AbsDistMat& prediction
 
   // Compute gradient
   const DataType scale = DataType(2) / height;
-  #pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

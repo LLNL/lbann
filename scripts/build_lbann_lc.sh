@@ -59,6 +59,7 @@ MAKE_NUM_PROCESSES=$(($(nproc) + 1))
 NINJA_NUM_PROCESSES=0 # Let ninja decide
 GEN_DOC=0
 INSTALL_LBANN=0
+BUILD_TOOL="make"
 BUILD_DIR=
 INSTALL_DIR=
 BUILD_SUFFIX=
@@ -198,6 +199,7 @@ while :; do
             ;;
         --ninja)
             USE_NINJA=1
+            BUILD_TOOL="ninja"
             ;;
         --ninja-processes)
             if [ -n "${2}" ]; then
@@ -510,7 +512,7 @@ if [ "${WITH_CUDA_2}" == "ON" ]; then
   if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
     MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
     export MV2_USE_CUDA=1
-  fi  
+  fi
 fi
 
 if [ -z "${MPI_HOME}" ]; then
@@ -601,6 +603,10 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
 			. /usr/share/[mM]odules/init/bash
 			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 			;;
+		pascal)
+      module use /opt/modules/modulefiles
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
+			;;
 	esac
 fi
 
@@ -664,7 +670,7 @@ echo $COMPILER_VERSION
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
       elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
           export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
-      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
+      elif [ "${CLUSTER}" = "catalyst" -o "${CLUSTER}" = "pascal" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-7.3.0
       else
           # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
@@ -680,9 +686,9 @@ fi
 if [ ${USE_NINJA} -ne 0 ]; then
     if ! which ninja ; then
         if [ "${ARCH}" == "x86_64" ]; then
-            export PATH=/usr/workspace/wsb/brain/utils/toss3/ninja/bin:$PATH        
+            export PATH=/usr/workspace/wsb/brain/utils/toss3/ninja/bin:$PATH
         elif [ "${ARCH}" == "ppc64le" ]; then
-            export PATH=/usr/workspace/wsb/brain/utils/coral/ninja/bin:$PATH        
+            export PATH=/usr/workspace/wsb/brain/utils/coral/ninja/bin:$PATH
         fi
     fi
     if ! which ninja ; then
@@ -729,6 +735,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     echo "----------------------"
     echo "Build parameters"
     echo "----------------------"
+    print_variable BUILD_TOOL
     print_variable BUILD_TYPE
     print_variable BUILD_SUFFIX
     print_variable BUILD_DIR
@@ -767,15 +774,15 @@ if [ ${CLEAN_BUILD} -ne 0 ]; then
     eval ${CLEAN_COMMAND}
 fi
 
-if [ -f ${BUILD_DIR}/lbann/build/Makefile ] && [ ${RECONFIGURE} != 1 ]; then
+if [[ ((${BUILD_TOOL} == "make" && -f ${BUILD_DIR}/lbann/build/Makefile) ||
+       (${BUILD_TOOL} == "ninja" && -f ${BUILD_DIR}/lbann/build/build.ninja))
+      && (${RECONFIGURE} != 1) ]]; then
     echo "Building previously configured LBANN"
     cd ${BUILD_DIR}/lbann/build/
-    make -j${MAKE_NUM_PROCESSES} all
-    make install -j${MAKE_NUM_PROCESSES} all
+    ${BUILD_TOOL} -j${MAKE_NUM_PROCESSES} all
+    ${BUILD_TOOL} install -j${MAKE_NUM_PROCESSES} all
     exit $?
 fi
-
-
 
 # ATM: goes after Elemental_DIR
 #-D OpenCV_DIR=${OpenCV_DIR} \
@@ -840,6 +847,15 @@ if [ $? -ne 0 ]; then
     echo "CONFIGURE FAILED"
     echo "--------------------"
     exit 1
+fi
+
+BUILD_OPTIONS="-j${MAKE_NUM_PROCESSES}"
+if [ ${VERBOSE} -ne 0 ]; then
+  if [ "${BUILD_TOOL}" == "ninja" ]; then
+      BUILD_OPTIONS+=" -v"
+  else
+      BUILD_OPTIONS+=" VERBOSE=${VERBOSE}"
+  fi
 fi
 
 # Build LBANN with make
