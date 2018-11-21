@@ -132,7 +132,7 @@ class mesh_reader : public generic_data_reader {
   /// Number of samples.
   int m_num_samples = 0;
   /// Buffers for loading data into.
-  std::vector<std::vector<float>> m_load_bufs;
+  std::vector<std::vector<DataType>> m_load_bufs;
   /// Whether to do random horizontal/vertical flips.
   bool m_random_flips = false;
   /**
