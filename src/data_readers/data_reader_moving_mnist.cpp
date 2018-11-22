@@ -69,51 +69,86 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, thread_po
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
 
-  // Image parameters
-  const El::Int xmax = m_image_height - m_raw_image_height + 1;
-  const El::Int ymax = m_image_width - m_raw_image_width + 1;
-  const DataType vmax = std::sqrt(xmax*xmax + ymax*ymax) / 5;
-
-  // Compute object positions
-  std::vector<std::vector<DataType>> xpos, ypos;
-  std::uniform_real_distribution<DataType> dist(zero, one);
+  // Choose raw images
+  /// @todo Implementation with uniform distribution
+  std::vector<El::Int> raw_image_indices(m_num_objects);
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
+    const El::Int hash = (std::hash<int>()(data_id)
+                          ^ std::hash<int>()(col)
+                          ^ std::hash<El::Int>()(obj));
+    raw_image_indices[obj] = hash % m_num_raw_images;
+  }
 
-    // Initialize initial position and velocity
-    DataType x = xmax * dist(get_generator());
-    DataType y = ymax * dist(get_generator());
-    const DataType v = vmax * dist(get_generator());
+  // Determine object boundaries
+  std::vector<std::array<El::Int, 4>> bounds(m_num_objects);
+  for (El::Int obj = 0; obj < m_num_objects; ++obj) {
+    auto& xmin = bounds[obj][0] = m_raw_image_width;
+    auto& xmax = bounds[obj][1] = 0;
+    auto& ymin = bounds[obj][2] = m_raw_image_height;
+    auto& ymax = bounds[obj][3] = 0;
+    const auto& raw_image_offset = (raw_image_indices[obj]
+                                    * m_raw_image_height
+                                    * m_raw_image_width);
+    const auto* raw_image = &m_raw_image_data[raw_image_offset];
+    for (El::Int j = 0; j < m_raw_image_height; ++j) {
+      for (El::Int i = 0; i < m_raw_image_width; ++i) {
+        if (raw_image[i + j * m_raw_image_width] != 0) {
+          xmin = std::min(xmin, i);
+          xmax = std::max(xmax, i+1);
+          ymin = std::min(ymin, j);
+          ymax = std::max(ymax, j+1);
+        }
+      }
+    }
+    xmin = std::min(xmin, xmax);
+    ymin = std::min(ymin, ymax);
+  }
+
+  // Initial positions and velocities
+  /// @todo Ensure objects don't overlap
+  std::vector<std::vector<std::array<DataType, 2>>> pos(m_num_objects);
+  std::vector<std::array<DataType, 2>> v(m_num_objects);
+  std::uniform_real_distribution<DataType> dist(zero, one);
+  const DataType vmax = std::hypot(m_image_width, m_image_height) / 5;
+  for (El::Int obj = 0; obj < m_num_objects; ++obj) {
+    const auto& object_width = bounds[obj][1] - bounds[obj][0];
+    const auto& object_height = bounds[obj][3] - bounds[obj][2];
+    pos[obj].resize(m_num_frames);
+    pos[obj][0][0] = (m_image_width - object_width + 1) * dist(get_generator());
+    pos[obj][0][1] = (m_image_height - object_height + 1) * dist(get_generator());
+    const DataType vnorm = vmax * dist(get_generator());
     const DataType theta = 2 * M_PI * dist(get_generator());
-    DataType vx = v * std::sin(theta);
-    DataType vy = v * std::cos(theta);
+    v[obj][0] = vnorm * std::sin(theta);
+    v[obj][1] = vnorm * std::cos(theta);
+  }
 
-    // Apply linear motion
-    // Note: Objects are reflected when they reach boundary
-    xpos.emplace_back(m_num_frames);
-    ypos.emplace_back(m_num_frames);
-    for (El::Int frame = 0; frame < m_num_frames; ++frame) {
-      xpos[obj][frame] = x;
-      ypos[obj][frame] = y;
-      x += vx;
-      y += vy;
-      if (x <= zero || x >= DataType(xmax)) {
-        x = std::min(std::max(x, zero), DataType(xmax));
+  // Determine object positions
+  /// @todo Ensure objects don't overlap
+  for (El::Int frame = 1; frame < m_num_frames; ++frame) {
+    for (El::Int obj = 0; obj < m_num_objects; ++obj) {
+
+      // Linear motion
+      auto& x = pos[obj][frame][0];
+      auto& y = pos[obj][frame][1];
+      auto& vx = v[obj][0];
+      auto& vy = v[obj][1];
+      x = pos[obj][frame-1][0] + vx;
+      y = pos[obj][frame-1][1] + vy;
+
+      // Reflections at boundaries
+      const auto& object_width = bounds[obj][1] - bounds[obj][0];
+      const auto& object_height = bounds[obj][3] - bounds[obj][2];
+      const DataType xmax = m_image_width - object_width + 1;
+      const DataType ymax = m_image_height - object_height + 1;
+      if (x <= zero || x >= xmax) {
+        x = std::min(std::max(x, zero), xmax);
         vx = -vx;
       }
-      if (y <= zero || y >= DataType(ymax)) {
-        y = std::min(std::max(y, zero), DataType(ymax));
+      if (y <= zero || y >= ymax) {
+        y = std::min(std::max(y, zero), ymax);
         vy = -vy;
       }
     }
-
-  }
-
-  // Choose raw images
-  /// @todo Implementation with uniform distribution
-  std::vector<El::Int> raw_image_indices;
-  for (El::Int i = 0; i < m_num_objects; ++i) {
-    const El::Int hash = std::hash<int>()(data_id) ^ std::hash<El::Int>()(i);
-    raw_image_indices.push_back(hash % m_num_raw_images);
   }
 
   // Populate frames
@@ -121,28 +156,37 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, thread_po
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
 
     // Get raw image
-    const auto& raw_image_offset = (raw_image_indices[obj]
-                                    * m_raw_image_height
-                                    * m_raw_image_width);
+    const auto& object_width = bounds[obj][1] - bounds[obj][0];
+    const auto& object_height = bounds[obj][3] - bounds[obj][2];
+    const auto& object_width_offset = bounds[obj][0];
+    const auto& object_height_offset = bounds[obj][2];
+    const auto& raw_image_offset = ((raw_image_indices[obj]
+                                     * m_raw_image_height
+                                     * m_raw_image_width)
+                                    + object_width_offset
+                                    + (object_height_offset
+                                       * m_raw_image_width));
     const auto* raw_image = &m_raw_image_data[raw_image_offset];
 
     // Copy raw image into each frame
+    const auto& xmax = m_image_width - object_width + 1;
+    const auto& ymax = m_image_height - object_height + 1;
     for (El::Int frame = 0; frame < m_num_frames; ++frame) {
 
       // Get image position in current frame
-      El::Int xoff = xpos[obj][frame];
-      El::Int yoff = ypos[obj][frame];
+      El::Int xoff = pos[obj][frame][0];
+      El::Int yoff = pos[obj][frame][1];
       xoff = std::min(std::max(xoff, El::Int(0)), xmax-1);
       yoff = std::min(std::max(yoff, El::Int(0)), ymax-1);
 
       // Copy raw image into position
       for (El::Int channel = 0; channel < 3; ++channel) {
-        for (El::Int j = 0; j < m_raw_image_height; ++j) {
-          for (El::Int i = 0; i < m_raw_image_width; ++i) {
+        for (El::Int j = 0; j < object_height; ++j) {
+          for (El::Int i = 0; i < object_width; ++i) {
             const auto& row = (frame * 3 * m_image_height * m_image_width
                                + channel * m_image_height * m_image_width
-                               + (xoff+j) * m_image_width
-                               + (yoff+i));
+                               + (yoff+j) * m_image_width
+                               + (xoff+i));
             auto& pixel = X(row, col);
             pixel += raw_image[i + j * m_raw_image_width] / 255.0;
             pixel = std::min(pixel, one);
@@ -164,7 +208,9 @@ bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col, thread_po
   /// @todo Implementation with uniform distribution
   std::vector<El::Int> raw_image_indices;
   for (El::Int i = 0; i < m_num_objects; ++i) {
-    const El::Int hash = std::hash<int>()(data_id) ^ std::hash<El::Int>()(i);
+    const El::Int hash = (std::hash<int>()(data_id)
+                          ^ std::hash<int>()(col)
+                          ^ std::hash<El::Int>()(i));
     raw_image_indices.push_back(hash % m_num_raw_images);
   }
 

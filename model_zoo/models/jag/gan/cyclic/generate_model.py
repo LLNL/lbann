@@ -159,6 +159,14 @@ def configure_model(model):
     l.children = 'image_data_dummy param_data_id'
     l.slice.slice_points = str_list(slice_points)
 
+    #Useful constants
+    zero = new_layer(model,'zero','','constant')
+    zero.constant.value = 0.0
+    zero.constant.num_neurons = '1'
+    one = new_layer(model,'one','','constant')
+    one.constant.value = 1.0
+    one.constant.num_neurons = '1'
+
     #ID Image (Y) data
     l = new_layer(model,'image_data_dummy','slice_data','identity')
 
@@ -197,14 +205,8 @@ def configure_model(model):
     D_fake = add_discriminator(model,'d1_stop_gradient','d1',False, False, '_fake')
 
     #Objective term (and metric) layers here
-    #@todo: replace all bce_with_logits with math equivalent; log, exp etc and use gpu
-    l = new_layer(model, 'disc1_real_bce', D_real, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
-    l.device_allocation= 'cpu'
-
-    l = new_layer(model, 'disc1_fake_bce', D_fake, 'bce_with_logits')
-    l.bce_with_logits.true_label = int(0)
-    l.device_allocation= 'cpu'
+    l = new_layer(model, 'disc1_real_bce', [D_real, one.name], 'sigmoid_binary_cross_entropy')
+    l = new_layer(model, 'disc1_fake_bce', [D_fake, zero.name], 'sigmoid_binary_cross_entropy')
     
     #Adversarial part
     #replicate discriminator (freeze it), weight will be copied through replace_layer callback, fake it as real
@@ -213,10 +215,8 @@ def configure_model(model):
     #def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, tag=''):
     D_adv = add_discriminator(model,'d2_dummy','d2',True, False)
     #objective function
-    #fake as real 
-    l = new_layer(model, 'g_adv1_bce', D_adv, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
-    l.device_allocation= 'cpu'
+    #fake as real
+    l = new_layer(model, 'g_adv1_bce', [D_adv, one.name], 'sigmoid_binary_cross_entropy')
 
     #Add L2 loss
     l = new_layer(model, 'gsample_minus_y', ' ', 'weighted_sum')
@@ -247,21 +247,14 @@ def configure_model(model):
     l = new_layer(model, 'd1_inv_stop_gradient','concat_gsample2_n_img', 'stop_gradient') 
     D_inv_fake = add_discriminator(model,'d1_inv_stop_gradient','d1_inv',False, False, '_fake')
     #Objective term (and metric) layers here
-    l = new_layer(model, 'disc1_inv_real_bce', D_inv_real, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
-    l.device_allocation= 'cpu'
-
-    l = new_layer(model, 'disc1_inv_fake_bce', D_inv_fake, 'bce_with_logits')
-    l.bce_with_logits.true_label = int(0)
-    l.device_allocation= 'cpu'
+    l = new_layer(model, 'disc1_inv_real_bce', [D_inv_real, one.name], 'sigmoid_binary_cross_entropy')
+    l = new_layer(model, 'disc1_inv_fake_bce', [D_inv_fake, zero.name], 'sigmoid_binary_cross_entropy')
     #Adversarial part
     l = new_layer(model, 'd2_inv_dummy','concat_gsample2_n_img', 'identity')
     D_inv_adv = add_discriminator(model,'d2_inv_dummy','d2_inv',True, False)
     #objective function
-    #fake as real 
-    l = new_layer(model, 'g_inv_adv1_bce', D_inv_adv, 'bce_with_logits')
-    l.bce_with_logits.true_label = 1
-    l.device_allocation= 'cpu'
+    #fake as real
+    l = new_layer(model, 'g_inv_adv1_bce', [D_inv_adv, one.name], 'sigmoid_binary_cross_entropy')
 
     #Add L2 loss
     l = new_layer(model, 'gsample2_minus_x', ' ', 'weighted_sum')

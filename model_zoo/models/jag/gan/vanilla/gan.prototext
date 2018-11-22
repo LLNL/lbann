@@ -1,5 +1,4 @@
 model {
-  name: "directed_acyclic_graph_model"
   random_init_models_differently: true
   objective_function {
     l2_weight_regularization {
@@ -60,7 +59,24 @@ model {
     name: "data1"
     data_layout: "data_parallel"
   }
-   
+
+  layer {
+    name: "zero"
+    data_layout: "data_parallel"
+    constant {
+      value: 0.0
+      num_neurons: "1"
+    }
+  }
+  layer {
+    name: "one"
+    data_layout: "data_parallel"
+    constant {
+      value: 1.0
+      num_neurons: "1"
+    }
+  }
+
   layer {
     name: "slice_data"
     data_layout: "data_parallel"
@@ -257,13 +273,11 @@ model {
     parents: "d1relu2_fake"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_real_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1fc3_real"
+    parents: "d1fc3_real one"
   }
   #layer {
   #  name: "disc1_real_eval"
@@ -273,13 +287,11 @@ model {
   #  }
   #}
   layer {
-    bce_with_logits {
-      true_label: 0
+    sigmoid_binary_cross_entropy {
     }
     name: "disc1_fake_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d1fc3_fake"
+    parents: "d1fc3_fake zero"
   }
   #layer {
   #  name: "disc1_fake_eval"
@@ -340,13 +352,11 @@ model {
     parents: "d2relu2"
   }
   layer {
-    bce_with_logits {
-      true_label: 1
+    sigmoid_binary_cross_entropy {
     }
     name: "g_adv1_bce"
     data_layout: "data_parallel"
-    device_allocation: "cpu"
-    parents: "d2fc3"
+    parents: "d2fc3 one"
   }
   #layer {
   #  name: "g_adv1_eval"

@@ -303,10 +303,10 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
       }
     }
   } else {
-    #pragma omp parallel
+    LBANN_OMP_PARALLEL
     {
       const int tid = omp_get_thread_num();
-      #pragma omp for schedule(static)
+      LBANN_OMP_PARALLEL_FOR_ARGS(schedule(static))
       for (El::Int col = 0; col < width; ++col) {
         for (El::Int row = 0; row < height; ++row) {
           const El::Unsigned pos = row + col * ldim;

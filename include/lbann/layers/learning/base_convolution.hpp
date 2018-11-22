@@ -57,6 +57,14 @@ class base_convolution_layer : public learning_layer {
   std::vector<int> m_pads;
   /** Convolution strides. */
   std::vector<int> m_strides;
+  /** Convolution dilations. */
+  std::vector<int> m_dilations;
+  /** Convolution groups.
+   *  The channels are split into this many independent groups when performing
+   *  convolution. The default convolution operation has one group, and a
+   *  depthwise convolution has as many groups as there are input channels.
+   */
+  int m_num_groups;
 
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
@@ -95,12 +103,16 @@ class base_convolution_layer : public learning_layer {
                          const std::vector<int> conv_dims,
                          const std::vector<int> pads,
                          const std::vector<int> strides,
+                         const std::vector<int> dilations,
+                         int groups,
                          bool has_bias)
     : learning_layer(comm),
       m_kernel_dims(conv_dims),
       m_kernel_size(0),
       m_pads(pads),
       m_strides(strides),
+      m_dilations(dilations),
+      m_num_groups(groups),
       m_bias_scaling_factor(has_bias ? DataType(1) : DataType(0)),
       m_kernel_gradient(this->m_comm->get_model_grid()),
       m_bias_gradient(this->m_comm->get_model_grid())
@@ -112,17 +124,40 @@ class base_convolution_layer : public learning_layer {
 #endif // LBANN_HAS_CUDNN
   {
 
+    bool nonunit_dilation = false;
+    for (const auto& d : m_dilations) {
+      if (d != 1) {
+        nonunit_dilation = true;
+        break;
+      }
+    }
+    if (Dev == El::Device::CPU && nonunit_dilation) {
+      std::stringstream err;
+      err << "layer \"" << get_name() << "\" "
+          << "has nonunit dilation which is only supported on GPUs";
+      LBANN_ERROR(err.str());
+    }
+    if (Dev == El::Device::CPU && m_num_groups > 1) {
+      std::stringstream err;
+      err << "layer \"" << get_name() << "\" "
+          << "has nonunit groups " << m_num_groups
+          << " which is only supported on GPUs";
+      LBANN_ERROR(err.str());
+    }
+
     // Check dimensions of convolution parameters
     if ((int) m_kernel_dims.size() != num_data_dims
         || (int) m_pads.size() != num_data_dims
-        || (int) m_strides.size() != num_data_dims) {
+        || (int) m_strides.size() != num_data_dims
+        || (int) m_dilations.size() != num_data_dims) {
       std::stringstream err;
       err << "layer \"" << get_name() << "\" "
           << "has an invalid number of convolution parameters "
           << "(expected " << num_data_dims << " parameters, "
           << "conv_dims has " << m_kernel_dims.size() << ", "
           << "pads has " << m_pads.size() << ", "
-          << "strides has " << m_strides.size() << ")";
+          << "strides has " << m_strides.size() << ", "
+          << "dilations has " << m_dilations.size() << ")";
       LBANN_ERROR(err.str());
     }
 
@@ -137,6 +172,8 @@ class base_convolution_layer : public learning_layer {
       m_kernel_size(other.m_kernel_size),
       m_pads(other.m_pads),
       m_strides(other.m_strides),
+      m_dilations(other.m_dilations),
+      m_num_groups(other.m_num_groups),
       m_bias_scaling_factor(other.m_bias_scaling_factor),
       m_kernel_gradient(other.m_kernel_gradient),
       m_bias_gradient(other.m_bias_gradient)
@@ -164,6 +201,8 @@ class base_convolution_layer : public learning_layer {
     m_kernel_size = other.m_kernel_size;
     m_pads = other.m_pads;
     m_strides = other.m_strides;
+    m_dilations = other.m_dilations;
+    m_num_groups = other.m_num_groups;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
     m_kernel_gradient = other.m_kernel_gradient;
     m_bias_gradient = other.m_bias_gradient;
@@ -186,13 +225,13 @@ class base_convolution_layer : public learning_layer {
   ~base_convolution_layer() {
 #ifdef LBANN_HAS_CUDNN
     if (m_kernel_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
     }
     if (m_convolution_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
     }
     if (m_bias_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -235,7 +274,7 @@ class base_convolution_layer : public learning_layer {
     }
     auto& kernel_weights = *this->m_weights[0];
     auto& bias_weights = *this->m_weights[1];
-    
+
     // Initialize variance scaling initialization
     auto* cast_initializer
       = dynamic_cast<variance_scaling_initializer*>(kernel_weights.get_initializer());
@@ -279,7 +318,7 @@ class base_convolution_layer : public learning_layer {
         LBANN_ERROR(err.str());
       }
     }
-    
+
   }
 
   /// Initialize GPU objects
@@ -300,16 +339,16 @@ class base_convolution_layer : public learning_layer {
                                            m_kernel_dims.data()));
 
     // Set convolution descriptor
-    // Note: upscales are not supported as of cuDNN v5.1
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
-    std::vector<int> upscales(output_dims.size() - 1, 1);
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
                                                 m_pads.size(),
                                                 m_pads.data(),
                                                 m_strides.data(),
-                                                upscales.data(),
+                                                m_dilations.data(),
                                                 CUDNN_CROSS_CORRELATION,
                                                 cudnn::get_data_type()));
+    CHECK_CUDNN(cudnnSetConvolutionGroupCount(m_convolution_cudnn_desc,
+                                              m_num_groups));
 
     // Set bias tensor descriptor
     std::vector<int> bias_dims(output_dims.size() + 1, 1);
@@ -956,22 +995,27 @@ class base_convolution_layer : public learning_layer {
                                                   nullptr,
                                                   &mode,
                                                   &data_type));
-      std::vector<int> pads(num_dims), strides(num_dims), upscales(num_dims);
+      std::vector<int> pads(num_dims), strides(num_dims), dilations(num_dims);
       CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
                                                   num_dims,
                                                   &num_dims,
                                                   pads.data(),
                                                   strides.data(),
-                                                  upscales.data(),
+                                                  dilations.data(),
                                                   &mode,
                                                   &data_type));
+      int num_groups;
+      CHECK_CUDNN(cudnnGetConvolutionGroupCount(src,
+                                                &num_groups));
       CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
                                                   num_dims,
                                                   pads.data(),
                                                   strides.data(),
-                                                  upscales.data(),
+                                                  dilations.data(),
                                                   mode,
                                                   data_type));
+      CHECK_CUDNN(cudnnSetConvolutionGroupCount(dst,
+                                                num_groups));
     }
 
   }

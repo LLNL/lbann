@@ -48,7 +48,7 @@ struct handle_wrapper {
   cudnnHandle_t handle;
   handle_wrapper() : handle(nullptr) {
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    if (handle == nullptr) { FORCE_CHECK_CUDNN(cudnnCreate(&handle)); }
+    if (handle == nullptr) { CHECK_CUDNN(cudnnCreate(&handle)); }
     if (handle == nullptr) { LBANN_ERROR("failed to create cuDNN handle"); }
     CHECK_CUDNN(cudnnSetStream(handle, El::GPUManager::Stream()));
   }

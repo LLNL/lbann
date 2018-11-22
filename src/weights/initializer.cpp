@@ -60,9 +60,11 @@ void value_initializer::fill(AbsDistMat& matrix) {
   } else {
     matrix_cpu.Resize(matrix.LocalHeight(), matrix.LocalWidth());
   }
+  auto const width = matrix.LocalWidth();
+  auto const height = matrix.LocalHeight();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-  for (El::Int local_col = 0; local_col < matrix.LocalWidth(); ++local_col) {
-    for (El::Int local_row = 0; local_row < matrix.LocalHeight(); ++local_row) {
+  for (El::Int local_col = 0; local_col < width; ++local_col) {
+    for (El::Int local_row = 0; local_row < height; ++local_row) {
       const auto& global_row = matrix.GlobalRow(local_row);
       const auto& global_col = matrix.GlobalCol(local_col);
       const auto& global_pos = global_row + matrix.Height() * global_col;

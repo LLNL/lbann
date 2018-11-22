@@ -64,9 +64,11 @@ void apply_binary_backprop_operator(const AbsMat& x1,
          dx1_buffer[i], dx2_buffer[i]);
     }
   } else {
+    auto const width = x1.Width();
+    auto const height = x1.Height();
     LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-    for (El::Int col = 0; col < x1.Width(); ++col) {
-      for (El::Int row = 0; row < x2.Height(); ++row) {
+    for (El::Int col = 0; col < width; ++col) {
+      for (El::Int row = 0; row < height; ++row) {
         BinaryBackPropOperator op;
         op(x1(row, col), x2(row, col), dy(row, col),
            dx1(row, col), dx2(row, col));
@@ -207,7 +209,7 @@ struct safe_divide_op {
     }
   }
 };
-  
+
 /** Maximum operator. */
 struct max_op {
   inline DataType operator()(const DataType& x1,
@@ -356,8 +358,8 @@ struct greater_equal_op {
 struct and_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
-    const bool b1 = x1 != zero && !std::isnan(x1);
-    const bool b2 = x2 != zero && !std::isnan(x2);
+    const auto& b1 = x1 != zero && !std::isnan(x1);
+    const auto& b2 = x2 != zero && !std::isnan(x2);
     return (b1 && b2) ? one : zero;
   }
   inline void operator()(const DataType& x1,
@@ -374,8 +376,8 @@ struct and_op {
 struct or_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
-    const bool b1 = x1 != zero && !std::isnan(x1);
-    const bool b2 = x2 != zero && !std::isnan(x2);
+    const auto& b1 = x1 != zero && !std::isnan(x1);
+    const auto& b2 = x2 != zero && !std::isnan(x2);
     return (b1 || b2) ? one : zero;
   }
   inline void operator()(const DataType& x1,
@@ -392,8 +394,8 @@ struct or_op {
 struct xor_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
-    const bool b1 = x1 != zero && !std::isnan(x1);
-    const bool b2 = x2 != zero && !std::isnan(x2);
+    const auto& b1 = x1 != zero && !std::isnan(x1);
+    const auto& b2 = x2 != zero && !std::isnan(x2);
     return (b1 || b2) && !(b1 && b2) ? one : zero;
   }
   inline void operator()(const DataType& x1,

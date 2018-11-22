@@ -4,7 +4,7 @@
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
 ARCH=$(uname -m)
-CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1)
+CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 
 ################################################################
 # Default options
@@ -12,10 +12,9 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1)
 
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
-	# The latest GCC version on Pascal is 7, which is not supported by nvcc.
-	# Version 6.1.0 does not work with CUDA 9.1, either.
-	COMPILER=gnu
-	module load gcc/7.3.0
+    # NVCC in CUDA 9.1 does not support GCC versions later than 6
+    COMPILER=gnu
+    module load gcc/4.9.3
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -66,6 +65,7 @@ INSTALL_DIR=
 BUILD_SUFFIX=
 DETERMINISTIC=OFF
 WITH_CUDA=
+WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
@@ -253,6 +253,7 @@ while :; do
             ;;
         --disable-cuda)
             WITH_CUDA=OFF
+            WITH_CUDA_2=OFF
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
@@ -323,7 +324,7 @@ else
     CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
 fi
 
-if [[ $CORAL ]]; then
+if [[ ${CORAL} -eq 1 ]]; then
 	# the latest version, 3.12.1, has several issues
     module load cmake/3.9.2
     CMAKE_PATH=$(dirname $(which cmake))
@@ -391,7 +392,7 @@ elif [ "${COMPILER}" == "intel" ]; then
 elif [ "${COMPILER}" == "clang" ]; then
     # clang
     # clang depends on gnu fortran library. so, find the dependency
-    if [[ $CORAL ]]; then
+    if [[ ${CORAL} -eq 1 ]]; then
         #gccdep=`ldd ${COMPILER_BASE}/lib/*.so 2> /dev/null | grep gcc | awk '(NF>2){print $3}' | sort | uniq | head -n 1`
         #GCC_VERSION=`ls -l $gccdep | awk '{print $NF}' | cut -d '-' -f 2 | cut -d '/' -f 1`
         # Forcing to gcc 4.9.3 because of the current way of ray's gcc and various clang installation
@@ -507,14 +508,11 @@ if [ "${MPI}" == "spectrum" ]; then
 fi
 
 # Use CUDA-aware MVAPICH2 on Surface and Pascal
-if [ "${CLUSTER}" == "surface" ]; then
-  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
-  export MV2_USE_CUDA=1
-fi
-
-if [ "${CLUSTER}" == "pascal" ]; then
-  MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gnu-7.3.0-cuda-9.2/
-  export MV2_USE_CUDA=1
+if [ "${WITH_CUDA_2}" == "ON" ]; then
+  if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+    MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
+    export MV2_USE_CUDA=1
+  fi
 fi
 
 if [ -z "${MPI_HOME}" ]; then
@@ -583,8 +581,7 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o \
-	 "${CLUSTER}" == "pascal" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
@@ -592,8 +589,8 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o \
     ELEMENTAL_USE_CUBLAS=OFF
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
-	if [[ $CORAL ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.4-1+cuda9.2_ppc64le
+	if [[ ${CORAL} -eq 1 ]]; then
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda9.2_ppc64le
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 	else
@@ -608,7 +605,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o \
 			;;
 		pascal)
       module use /opt/modules/modulefiles
-			CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
 			;;
 	esac
 fi
@@ -639,7 +636,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
 		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.2.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.4.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
 			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		fi
@@ -669,7 +666,7 @@ if [ "${WITH_CONDUIT}" = "ON" ] ; then
 echo $COMPILER_VERSION
   if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
       echo "CONDUIT_DIR not available."
-      if [ "${CLUSTER}" = "sierra" ]; then
+      if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
           export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
       elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
           export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1

@@ -87,7 +87,6 @@ lbann_comm::~lbann_comm() {
     }
   }
 #ifdef LBANN_HAS_ALUMINUM
-  m_al_comms.clear();
   ::Al::Finalize();
 #endif
 }
@@ -141,7 +140,7 @@ void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
 }
 
 void lbann_comm::allreduce(AbsMat& m,
-                           const El::mpi::Comm c,
+                           El::mpi::Comm c,
                            El::mpi::Op op) {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
     return;
@@ -166,25 +165,29 @@ void lbann_comm::allreduce(AbsMat& m,
     t = std::type_index(typeid(::Al::NCCLBackend));
     // If available, use the MPI-CUDA backend for small matrices.
 #ifdef AL_HAS_MPI_CUDA
-    // Based on runs on Pascal and Ray.
-    if ((El::mpi::Size(c) > 4 && local_size <= 8192) ||
-        (El::mpi::Size(c) >= 16 && local_size <= 32768)) {
+    // Tuned for Sierra.
+    if ((El::mpi::Size(c) >= 64 && local_size <= 4096) ||
+        (El::mpi::Size(c) >= 128 && local_size <= 8192) ||
+        (El::mpi::Size(c) >= 256 && local_size <= 32768) ||
+        (El::mpi::Size(c) >= 512 && local_size <= 65536) ||
+        (El::mpi::Size(c) >= 2048 && local_size <= 262144)) {
       t = std::type_index(typeid(::Al::MPICUDABackend));
     }
 #endif  // AL_HAS_MPI_CUDA
+#elif defined(AL_HAS_MPI_CUDA)
+    t = std::type_index(typeid(::Al::MPICUDABackend));
 #else
-    throw lbann_exception("Allreduce on GPU matrix requires NCCL support in"
-                          " Aluminum");
+    throw lbann_exception("Allreduce on GPU matrix requires NCCL or MPI-CUDA"
+                          " support in Aluminum");
 #endif  // AL_HAS_NCCL
   }
 #endif  // LBANN_HAS_GPU
-  auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(::Al::MPIBackend))) {
     ::Al::Allreduce<::Al::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *comm);
+      c.template GetComm<::Al::MPIBackend>());
   }
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
@@ -192,7 +195,7 @@ void lbann_comm::allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<::Al::NCCLBackend::comm_type*>(comm));
+      c.template GetComm<::Al::NCCLBackend>());
   }
 #endif // AL_HAS_NCCL
 #ifdef AL_HAS_MPI_CUDA
@@ -202,7 +205,7 @@ void lbann_comm::allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<::Al::MPICUDABackend::comm_type*>(comm),
+      c.template GetComm<::Al::MPICUDABackend>(),
       ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
   }
 #endif  // AL_HAS_MPI_CUDA
@@ -245,25 +248,29 @@ void lbann_comm::nb_allreduce(AbsMat& m,
     t = std::type_index(typeid(::Al::NCCLBackend));
     // If available, use the MPI-CUDA backend for small matrices.
 #ifdef AL_HAS_MPI_CUDA
-    // Based on runs on Pascal and Ray.
-    if ((El::mpi::Size(c) > 4 && local_size <= 8192) ||
-        (El::mpi::Size(c) >= 16 && local_size <= 32768)) {
+    // Tuned for Sierra.
+    if ((El::mpi::Size(c) >= 64 && local_size <= 4096) ||
+        (El::mpi::Size(c) >= 128 && local_size <= 8192) ||
+        (El::mpi::Size(c) >= 256 && local_size <= 32768) ||
+        (El::mpi::Size(c) >= 512 && local_size <= 65536) ||
+        (El::mpi::Size(c) >= 2048 && local_size <= 262144)) {
       t = std::type_index(typeid(::Al::MPICUDABackend));
     }
 #endif  // AL_HAS_MPI_CUDA
+#elif defined(AL_HAS_MPI_CUDA)
+    t = std::type_index(typeid(::Al::MPICUDABackend));
 #else
-    throw lbann_exception("Allreduce on GPU matrix requires NCCL support in"
-                          " Aluminum");
+    throw lbann_exception("Allreduce on GPU matrix requires NCCL or MPI-CUDA"
+                          " support in Aluminum");
 #endif  // AL_HAS_NCCL
   }
 #endif  // LBANN_HAS_GPU
-  auto&& comm = get_al_comm(c, t);
   if (t == std::type_index(typeid(::Al::MPIBackend))) {
     ::Al::NonblockingAllreduce<::Al::MPIBackend>(
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *comm,
+      c.template GetComm<::Al::MPIBackend>(),
       req.mpi_req);
   }
   /// @todo MPI-CUDA backend
@@ -273,7 +280,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<::Al::NCCLBackend::comm_type*>(comm),
+      c.template GetComm<::Al::NCCLBackend>(),
       req.nccl_req);
   }
 #endif // AL_HAS_NCCL
@@ -284,7 +291,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      *static_cast<::Al::MPICUDABackend::comm_type*>(comm),
+      c.template GetComm<::Al::MPICUDABackend>(),
       req.mpicuda_req,
       ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
   }
@@ -550,7 +557,7 @@ void lbann_comm::pe_ring_allreduce(
   std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
 
-  El::SyncInfo<D> syncInfo{mat};
+  auto syncInfo = El::SyncInfoFromMatrix(mat);
 
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -776,7 +783,7 @@ void lbann_comm::ring_allreduce(
   std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
   const lbann_comm::allreduce_options opts) {
 
-  El::SyncInfo<D> syncInfo{mat};
+  auto syncInfo = SyncInfoFromMatrix(mat);
 
   double ar_start = get_time();
   const int rank = El::mpi::Rank(comm);
@@ -964,7 +971,7 @@ void lbann_comm::rabenseifner_allreduce(
                           " a power-of-2 number of participating processes");
   }
 
-  El::SyncInfo<D> syncInfo{mat};
+  auto syncInfo = SyncInfoFromMatrix(mat);
 
   // Compute the slices on each processor.
   const El::Int cols_per_proc = mat.Width() / nprocs;
@@ -1210,38 +1217,6 @@ uint8_t *lbann_comm::get_collective_buffer(size_t size, size_t idx) {
 }
 
 #ifdef LBANN_HAS_ALUMINUM
-::Al::MPICommunicator* lbann_comm::get_al_comm(El::mpi::Comm c,
-                                               std::type_index t) {
-
-  // Construct Aluminum communicator if needed
-  const al_comms_key_type key(c.comm, t);
-  if (m_al_comms.count(key) == 0) {
-    if (t == std::type_index(typeid(::Al::MPIBackend))) {
-      m_al_comms[key] = al_comms_val_type(new ::Al::MPIBackend::comm_type(c.comm));
-    }
-    #ifdef AL_HAS_NCCL
-    if (t == std::type_index(typeid(::Al::NCCLBackend))) {
-      auto&& val = new ::Al::NCCLBackend::comm_type(c.comm, El::GPUManager::Stream());
-      m_al_comms[key] = al_comms_val_type(val);
-    }
-    #endif // AL_HAS_NCCL
-    #ifdef AL_HAS_MPI_CUDA
-    if (t == std::type_index(typeid(::Al::MPICUDABackend))) {
-      auto&& val = new ::Al::MPICUDABackend::comm_type(c.comm, El::GPUManager::Stream());
-      m_al_comms[key] = al_comms_val_type(val);
-    }
-    #endif  // AL_HAS_MPI_CUDA
-  }
-
-  // Return Aluminum communicator
-  auto&& comm = m_al_comms[key].get();
-  if (comm == nullptr) {
-    throw lbann_exception("Could not get Aluminum communicator");
-  }
-  return comm;
-
-}
-
 ::Al::ReductionOperator lbann_comm::mpi_op_to_al_op(El::mpi::Op op) {
   if (op == El::mpi::SUM) {
     return ::Al::ReductionOperator::sum;

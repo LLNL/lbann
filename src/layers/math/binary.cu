@@ -101,37 +101,6 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   }
 
 }
-
-// Wrappers for CUDA math API functions
-// Note: For example, the CUDA math API provides the 'sqrtf' function
-// for floats and 'sqrt' function for doubles. We wrap these with the
-// overloaded function 'sqrt_'.
-#define WRAP_CUDA_MATH_UNARY_FUNCTION(func)                             \
-  __device__ __forceinline__ float func##_(const float& x) {            \
-    static_cast<void>(static_cast<float (*)(const float&)>(func##_));   \
-    return func##f(x);                                                  \
-  }                                                                     \
-  __device__ __forceinline__ double func##_(const double& x) {          \
-    static_cast<void>(static_cast<double (*)(const double&)>(func##_)); \
-    return func(x);                                                     \
-  }
-#define WRAP_CUDA_MATH_BINARY_FUNCTION(func)                            \
-  __device__ __forceinline__ float func##_(const float& x1,             \
-                                           const float& x2) {           \
-    static_cast<void>(static_cast<float (*)(const float&, const float&)>(func##_)); \
-    return func##f(x1, x2);                                             \
-  }                                                                     \
-  __device__ __forceinline__ double func##_(const double& x1,           \
-                                            const double& x2) {         \
-    static_cast<void>(static_cast<double (*)(const double&, const double&)>(func##_)); \
-    return func(x1, x2);                                                \
-  }
-WRAP_CUDA_MATH_UNARY_FUNCTION(floor)
-WRAP_CUDA_MATH_UNARY_FUNCTION(log)
-WRAP_CUDA_MATH_BINARY_FUNCTION(fmod)
-WRAP_CUDA_MATH_BINARY_FUNCTION(pow)
-WRAP_CUDA_MATH_BINARY_FUNCTION(fmax)
-WRAP_CUDA_MATH_BINARY_FUNCTION(fmin)
   
 // =========================================================
 // Operator objects for entry-wise binary layers
@@ -209,7 +178,7 @@ struct divide_op {
 struct mod_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    return fmod_(x1, x2);
+    return cuda::mod(x1, x2);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -217,7 +186,7 @@ struct mod_op {
                                     DataType& dx1,
                                     DataType& dx2) const {
     dx1 = dy;
-    dx2 = -dy * floor_(x1 / x2);
+    dx2 = -dy * cuda::floor(x1 / x2);
   }
 };
 
@@ -225,7 +194,7 @@ struct mod_op {
 struct pow_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    return pow_(x1, x2);
+    return cuda::pow(x1, x2);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -233,8 +202,8 @@ struct pow_op {
                                     DataType& dx1,
                                     DataType& dx2) const {
 
-    dx1 = dy * x2 * pow_(x1, x2 - DataType(1));
-    dx2 = dy * log_(x1) * pow_(x1, x2);
+    dx1 = dy * x2 * cuda::pow(x1, x2 - DataType(1));
+    dx2 = dy * cuda::log(x1) * cuda::pow(x1, x2);
   }
 };
 
@@ -269,7 +238,7 @@ struct safe_divide_op {
 struct max_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    return fmax_(x1, x2);
+    return cuda::max(x1, x2);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -293,7 +262,7 @@ struct max_op {
 struct min_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    return fmin_(x1, x2);
+    return cuda::min(x1, x2);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
@@ -413,8 +382,8 @@ struct greater_equal_op {
 struct and_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const bool b1 = x1 != DataType(0) && !isnan(x1);
-    const bool b2 = x2 != DataType(0) && !isnan(x2);
+    const auto& b1 = x1 != DataType(0) && !isnan(x1);
+    const auto& b2 = x2 != DataType(0) && !isnan(x2);
     return (b1 && b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
@@ -431,8 +400,8 @@ struct and_op {
 struct or_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const bool b1 = x1 != DataType(0) && !isnan(x1);
-    const bool b2 = x2 != DataType(0) && !isnan(x2);
+    const auto& b1 = x1 != DataType(0) && !isnan(x1);
+    const auto& b2 = x2 != DataType(0) && !isnan(x2);
     return (b1 || b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,
@@ -449,8 +418,8 @@ struct or_op {
 struct xor_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    const bool b1 = x1 != DataType(0) && !isnan(x1);
-    const bool b2 = x2 != DataType(0) && !isnan(x2);
+    const auto& b1 = x1 != DataType(0) && !isnan(x1);
+    const auto& b2 = x2 != DataType(0) && !isnan(x2);
     return (b1 || b2) && !(b1 && b2) ? DataType(1) : DataType(0);
   }
   inline __device__ void operator()(const DataType& x1,

@@ -46,9 +46,11 @@ void local_fp_cpu(const AbsMat& local_input,
 void local_bp_cpu(const AbsMat& local_input,
                   const AbsMat& local_gradient_wrt_output,
                   AbsMat& local_gradient_wrt_input) {
+  auto const width = local_input.Width();
+  auto const height = local_input.Height();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-  for (El::Int col = 0; col < local_input.Width(); ++col) {
-    for (El::Int row = 0; row < local_input.Height(); ++row) {
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
       const auto& x = local_input(row, col);
       const auto& dy = local_gradient_wrt_output(0, col);
       auto& dx = local_gradient_wrt_input(row, col);
