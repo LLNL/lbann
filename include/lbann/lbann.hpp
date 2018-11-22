@@ -113,6 +113,7 @@
 /// Miscellaneous Layers
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/channelwise_mean.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
@@ -174,6 +175,7 @@
 #include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 #include "lbann/callbacks/callback_sync_layers.hpp"
 #include "lbann/callbacks/callback_sync_selected.hpp"
+#include "lbann/callbacks/callback_confusion_matrix.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

@@ -473,6 +473,7 @@ message Callback {
    CallbackGPUMemoryUsage gpu_memory_usage = 32;
    CallbackSyncLayers sync_layers = 33;
    CallbackSyncSelected sync_selected = 34;
+   CallbackConfusionMatrix confusion_matrix = 36;
 }
 
 message CallbackLTFB {
@@ -683,6 +684,12 @@ message CallbackSyncSelected {
   bool async_mpi = 2;
   repeated LayerToSync layer_to_sync = 3;
   CudaProfilerSetup cuda_profiler_setup = 4;
+}
+
+message CallbackConfusionMatrix {
+  string prediction = 1; // Prediction layer
+  string label = 2;      // Label layer
+  string prefix = 3;     // Prefix for output files
 }
 
 //========================================================================
@@ -926,6 +933,7 @@ message Layer {
    // Miscellaneous layers
    Covariance covariance = 600;
    Variance variance = 601;
+   ChannelwiseMean channelwise_mean = 602;
 
 }
 ///////////////////////
@@ -1309,3 +1317,4 @@ message Covariance {
 message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
+message ChannelwiseMean {}
