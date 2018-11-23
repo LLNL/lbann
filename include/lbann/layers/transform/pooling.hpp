@@ -609,13 +609,14 @@ private:
   }
 
   dc::Array4 get_activations_tensor_local_shape() const override {
-    const int filter_dims[2] = {m_pool_dims[1], m_pool_dims[0]};
-    const int strides[2] = {m_strides[1], m_strides[0]};
+    const std::vector<int> filter_dims = {m_pool_dims[1], m_pool_dims[0]};
+    const std::vector<int> strides = {m_strides[1], m_strides[0]};
+    const std::vector<int> dilations = {1, 1};
     bool use_padding = m_pads[0] != 0;
     dc::Array4 output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
             m_prev_activations_t,
-            filter_dims, strides, use_padding);
+            filter_dims, strides, use_padding, dilations);
     return output_spatial_local_shape;
   }
 

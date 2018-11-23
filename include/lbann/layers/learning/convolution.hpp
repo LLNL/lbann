@@ -396,19 +396,17 @@ protected:
     }
   }
 
-  // Deprecated
-  dc::Array4 get_strides() const override {
-    return dc::Array4({this->m_strides[1], this->m_strides[0], 1, 1});
-  }
-
   dc::Array4 get_activations_tensor_local_shape() const override {
-    const int filter_dims[4] = {this->m_kernel_dims[3], this->m_kernel_dims[2],
-                                this->m_kernel_dims[1], this->m_kernel_dims[0]};
-    const int strides[2] = {this->m_strides[1], this->m_strides[0]};
+    std::vector<int> filter_dims = this->m_kernel_dims;
+    std::reverse(filter_dims.begin(), filter_dims.end());
+    std::vector<int> strides = this->m_strides;
+    std::reverse(strides.begin(), strides.end());
+    std::vector<int> dilations = this->m_dilations;
+    std::reverse(dilations.begin(), dilations.end());
     const dc::Array4 output_spatial_local_shape =
         ::distconv::get_convolution_output_local_tensor_shape(
             this->m_prev_activations_t,
-            filter_dims, strides, true);
+            filter_dims, strides, true, dilations);
     return output_spatial_local_shape;
   }
 
@@ -430,8 +428,8 @@ protected:
     assert_eq(dists[0].get_split_shape()[-2], 1);
     dc::Dist shared_dist(dists[0].get_locale_shape(), 1, 0, 0);
 
-    Array4 kernel_shape = {this->m_kernel_dims[3], this->m_kernel_dims[2],
-                           this->m_kernel_dims[1], this->m_kernel_dims[0]};
+    std::vector<int> kernel_shape = this->m_kernel_dims;
+    std::reverse(kernel_shape.begin(), kernel_shape.end());
     const LocaleMPI loc(dc::get_mpi_comm(), false);
     m_kernel_t = TensorDev(kernel_shape, loc, shared_dist);
     assert0(tensor::View(
@@ -487,12 +485,18 @@ protected:
       m_bwd_filter_algo = dc::get_convolution_bwd_filter_algorithm();
     }
 
+    std::vector<int> pads = this->m_pads;
+    std::reverse(pads.begin(), pads.end());
+    std::vector<int> strides = this->m_strides;
+    std::reverse(strides.begin(), strides.end());
+    std::vector<int> dilations = this->m_dilations;
+    std::reverse(dilations.begin(), dilations.end());
+
     m_conv->setup(this->m_prev_activations_t,
                   m_kernel_t, this->m_activations_t,
                   this->m_error_signals_t, m_kernel_gradient_e,
                   this->m_prev_error_signals_t,
-                  this->m_pads[0], this->m_pads[1],
-                  this->m_strides[0], this->m_strides[1],
+                  pads, strides, dilations,
                   m_fwd_algo, m_bwd_data_algo,
                   m_bwd_filter_algo);
   }

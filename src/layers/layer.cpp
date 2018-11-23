@@ -1529,7 +1529,7 @@ void Layer::setup_tensor_distribution_block() {
 
 namespace {
 Dist get_hydrogen_matrix_distribution() {
-  using dc::tensor::index_t;
+  using ::distconv::index_t;
   // When rank stride is 1, the distribution is just sample
   // distribution. When it's greater than 1, multiple consecutive
   // ranks of length rank stride share a split in the first
