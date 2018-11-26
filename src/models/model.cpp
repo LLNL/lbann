@@ -331,8 +331,33 @@ void model::print_description(std::ostream& os,
   ss << "model \"" << get_name() << "\""
      << separator << "Type: " << get_type();
 
-  // Layers
-  ss << separator << "Layers:";
+  // Layer topology
+  ss << separator << "Layer topology:";
+  for (const auto* l : m_layers) {
+    ss << separator << "  ";
+    if (l == nullptr) {
+      ss << "unknown layer: {} -> {}";
+    } else {
+      ss << l->get_name() << " (" << l->get_type() << "): {";
+      const auto& parents = l->get_parent_layers();
+      const auto& children = l->get_child_layers();
+      for (size_t i = 0; i < parents.size(); ++i) {
+        ss << (i > 0 ? ", " : "")
+           << (parents[i] == nullptr ?
+               "unknown layer" : parents[i]->get_name());
+      }
+      ss << "} -> {";
+      for (size_t i = 0; i < children.size(); ++i) {
+        ss << (i > 0 ? ", " : "")
+           << (children[i] == nullptr ?
+               "unknown layer" : children[i]->get_name());
+      }
+      ss << "}";
+    }
+  }
+
+  // Layer details
+  ss << separator << "Layer details:";
   for (const auto* l : m_layers) {
     ss << separator << "  ";
     if (l == nullptr) {
