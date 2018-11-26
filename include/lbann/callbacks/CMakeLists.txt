@@ -4,7 +4,6 @@ set_full_path(THIS_DIR_HEADERS
   callback_check_dataset.hpp
   callback_check_init.hpp
   callback_check_metric.hpp
-  callback_check_reconstruction_error.hpp
   callback_checknan.hpp
   callback_checksmall.hpp
   callback_confusion_matrix.hpp
