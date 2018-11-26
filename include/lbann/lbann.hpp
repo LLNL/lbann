@@ -34,7 +34,6 @@
 /// Models
 #include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
-#include "lbann/models/greedy_layerwise_autoencoder.hpp"
 #include "lbann/models/siamese.hpp"
 
 /// Activation Layers
@@ -47,7 +46,7 @@
 #include "lbann/layers/activations/sigmoid.hpp"
 #include "lbann/layers/activations/smooth_relu.hpp"
 #include "lbann/layers/activations/softmax.hpp"
-#include "lbann/layers/activations/logsoftmax.hpp"
+#include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softplus.hpp"
 #include "lbann/layers/activations/swish.hpp"
 
@@ -60,6 +59,7 @@
 #include "lbann/layers/learning/deconvolution.hpp"
 
 /// Loss Layers
+#include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/entrywise.hpp"
 #include "lbann/layers/loss/l2_norm2.hpp"
@@ -112,6 +112,7 @@
 /// Miscellaneous Layers
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/channelwise_mean.hpp"
 
 /// Data Readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
@@ -173,6 +174,7 @@
 #include "lbann/callbacks/callback_gpu_memory_usage.hpp"
 #include "lbann/callbacks/callback_sync_layers.hpp"
 #include "lbann/callbacks/callback_sync_selected.hpp"
+#include "lbann/callbacks/callback_confusion_matrix.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

@@ -561,6 +561,7 @@ class generic_input_layer : public io_layer {
     it = m_data_readers.find(execution_mode::training);
     if ((it != m_data_readers.end()) && it->second) {
       linearized_data_size = (it->second)->get_linearized_data_size();
+      std::cerr << "XX >>>>>> linearized_data_size: " << linearized_data_size << "\n";
     }
 
     it = m_data_readers.find(execution_mode::validation);

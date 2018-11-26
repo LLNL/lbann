@@ -40,7 +40,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
   } else if (vals.Contiguous()) {
     const size_t size = vals.Height() * vals.Width();
     const auto& __restrict__ vals_buf = vals.LockedBuffer();
-#pragma omp parallel for reduction(+:sqsum)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum))
     for (size_t i = 0; i < size; ++i) {
       const auto& val = vals_buf[i];
       sqsum += val * val;
@@ -48,7 +48,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
   } else {
     const El::Int height = vals.Height();
     const El::Int width = vals.Width();
-#pragma omp parallel for reduction(+:sqsum) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sqsum) collapse(2))
     for (El::Int col = 0; col < width; ++col) {
       for (El::Int row = 0; row < height; ++row) {
         const EvalType val = vals(row, col);
@@ -57,7 +57,7 @@ void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CP
     }
   }
 }
-  
+
 l2_weight_regularization::l2_weight_regularization(EvalType scale_factor)
   : objective_function_term(scale_factor) {}
 
@@ -88,7 +88,7 @@ void l2_weight_regularization::setup(model& m) {
       m_contributions[device].Resize(1, 1);
     }
   }
-  
+
 }
 
 void l2_weight_regularization::start_evaluation() {
@@ -171,5 +171,5 @@ void l2_weight_regularization::compute_weight_regularization() {
   }
 
 }
-                                   
+
 } // namespace lbann

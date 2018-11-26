@@ -30,7 +30,9 @@
 namespace lbann {
 namespace proto {
 
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr, const std::string& var_category);
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
+                                                  const std::string& var_category,
+                                                  bool& is_supported);
 
 template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
@@ -46,7 +48,7 @@ Layer* construct_layer(lbann_comm* comm,
       return new name##_layer<layout, Dev>(comm);       \
     }                                                   \
   } while (false)
-  
+
   // Input layers
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
@@ -85,39 +87,45 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
     int num_neurons = 0;
-    if (params.get_input_dimension_from_reader() 
+    std::string num_neurons_method_name;
+
+    if (params.get_input_dimension_from_reader()
         || params.get_image_dimension_from_reader()
-        || params.get_scalar_dimension_from_reader())
-    {
+        || params.get_scalar_dimension_from_reader()
+        || params.get_image_and_scalar_dimension_from_reader()) {
+      num_neurons_method_name = "get_*_dimension_from_reader";
     #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
-      size_t input_dim = dr->get_linearized_input_size();
-      size_t scalar_dim = dr->get_linearized_scalar_size();
-      size_t image_dim = dr->get_linearized_image_size();
-      size_t num_images = dr->get_num_img_srcs();
+      if (dr != nullptr) {
+        size_t input_dim = dr->get_linearized_input_size();
+        size_t scalar_dim = dr->get_linearized_scalar_size();
+        size_t image_dim = dr->get_linearized_channel_size() * dr->get_num_channels();
+        size_t num_images = dr->get_num_img_srcs();
 
-      if (params.get_input_dimension_from_reader()) {
-        num_neurons += input_dim;
+        if (params.get_input_dimension_from_reader()) {
+          num_neurons += input_dim;
+        }
+        if (params.get_image_dimension_from_reader()) {
+          num_neurons += (num_images * image_dim);
+        }
+        if (params.get_scalar_dimension_from_reader()) {
+          num_neurons += scalar_dim;
+        }
+        if (params.get_image_and_scalar_dimension_from_reader()) {
+          num_neurons += (num_images * image_dim + scalar_dim);
+        }
       }
-      if (params.get_image_dimension_from_reader()) {
-        num_neurons += (num_images * image_dim);
-      }
-      if (params.get_scalar_dimension_from_reader()) {
-        num_neurons += scalar_dim;
-      }
-    #else
-      err << "get_*_dimension_from_reader() not supported";
-      LBANN_ERROR(err.str());
-      return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
     } else if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
+      num_neurons_method_name = "get_num_neurons_of_slice_from_reader";
     #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
       if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
         const std::string& var = params.get_slice_points_from_reader();
-        const auto slice_points = get_slice_points_from_reader(dr_generic, var);
+        bool is_supported = false; /// @todo Remove unneeded function parameter
+        const auto slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
         for (int i = 0; i < num_slice_indices; ++i) {
           const size_t idx = static_cast<size_t>(params.get_num_neurons_of_slice_from_reader(i));
           if ((idx == 0u) || (idx >= slice_points.size())) {
@@ -127,17 +135,10 @@ Layer* construct_layer(lbann_comm* comm,
           const int diff = static_cast<int>(slice_points[idx] - slice_points[idx-1]);
           num_neurons += diff;
         }
-      } else {
-        err << "get_num_neurons_of_slice_from_reader not supported";
-        LBANN_ERROR(err.str());
-        return nullptr;
       }
-    #else
-      err << "get_num_neurons_of_slice_from_reader not supported";
-      LBANN_ERROR(err.str());
-      return nullptr;
     #endif // defined(LBANN_HAS_CONDUIT)
     } else {
+      num_neurons_method_name = "num_neurons";
       num_neurons = params.num_neurons();
       if (proto_layer.num_neurons_from_data_reader()) {
         const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
@@ -159,14 +160,22 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.convolution();
     const auto& num_output_channels = params.num_output_channels();
     const auto& bias = params.has_bias();
+    int num_groups = params.num_groups();
+    if (num_groups == 0) {
+      num_groups = 1;
+    }
     if (params.has_vectors()) {
       const auto& dims = parse_list<int>(params.conv_dims());
       const auto& pads = parse_list<int>(params.conv_pads());
       const auto& strides = parse_list<int>(params.conv_strides());
+      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
+      if (dilations.empty()) {
+        dilations.resize(dims.size(), 1);
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new convolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, dims.size(), num_output_channels,
-                     dims, pads, strides, bias
+                     dims, pads, strides, dilations, num_groups, bias
                    );
       }
     } else {
@@ -174,10 +183,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& dim = params.conv_dims_i();
       const auto& pad = params.conv_pads_i();
       const auto& stride = params.conv_strides_i();
+      int dilation = params.conv_dilations_i();
+      if (dilation == 0) {
+        dilation = 1;
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new convolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, num_dims, num_output_channels,
-                     dim, pad, stride, bias
+                     dim, pad, stride, dilation, num_groups, bias
                    );
       }
     }
@@ -186,6 +199,10 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.deconvolution();
     const auto& bias = params.has_bias();
     int num_output_channels = params.num_output_channels();
+    int num_groups = params.num_groups();
+    if (num_groups == 0) {
+      num_groups = 1;
+    }
     if (proto_layer.num_neurons_from_data_reader()) {
       const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
       if (!dr) {
@@ -197,10 +214,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& dims = parse_list<int>(params.conv_dims());
       const auto& pads = parse_list<int>(params.conv_pads());
       const auto& strides = parse_list<int>(params.conv_strides());
+      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
+      if (dilations.empty()) {
+        dilations.resize(dims.size(), 1);
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new deconvolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, dims.size(), num_output_channels,
-                     dims, pads, strides, bias
+                     dims, pads, strides, dilations, num_groups, bias
                    );
       }
     } else {
@@ -208,10 +229,14 @@ Layer* construct_layer(lbann_comm* comm,
       const auto& dim = params.conv_dims_i();
       const auto& pad = params.conv_pads_i();
       const auto& stride = params.conv_strides_i();
+      int dilation = params.conv_dilations_i();
+      if (dilation == 0) {
+        dilation = 1;
+      }
       if (layout == data_layout::DATA_PARALLEL) {
         return new deconvolution_layer<data_layout::DATA_PARALLEL, Dev>(
                      comm, num_dims, num_output_channels,
-                     dim, pad, stride, bias
+                     dim, pad, stride, dilation, num_groups, bias
                    );
       }
     }
@@ -251,53 +276,51 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    if (params.get_slice_points_from_reader() != "") {
+    std::vector<El::Int> slice_points;
+    bool is_supported = false;
+    std::string slice_point_method_name;
+
+    if (params.get_slice_points_from_reader_bool()) {
+      slice_point_method_name = "'get_slice_points_from_reader_bool'";
     #if defined(LBANN_HAS_CONDUIT)
-      std::stringstream ss;
-      ss << params.get_slice_points_from_reader();
-      std::string s;
-      std::vector<El::Int> slice_points;
       size_t total = 0;
       slice_points.push_back(total);
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       if (dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic) != nullptr) {
-        const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
-        while (ss >> s) {
-          if (s != "") {  //probably not needed
-            if (s == "scalars") {
-              total += dr->get_linearized_scalar_size();
-              slice_points.push_back(total);
-            } else if (s == "images") {
-              total += dr->get_num_img_srcs() * dr->get_linearized_image_size();
-              slice_points.push_back(total);
-            } else if (s == "inputs") {
-              total += dr->get_linearized_input_size();
-              slice_points.push_back(total);
-            } else {
-              err << __FILE__ << " " << __LINE__ << " :: "
-                  << "unknown string in slice layer for get_slice_points_from_reader(): " << s << "; should be scalars, images, or inputs\n";
-              throw lbann_exception(err.str());
-            }
-          }
-        }
-      } else {
-        const std::string& var = params.get_slice_points_from_reader();
-        slice_points = get_slice_points_from_reader(dr_generic, var);
+        is_supported = true;
+        const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
+        lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
+        total += dr->get_num_img_srcs() * dr->get_linearized_channel_size() * dr->get_num_channels()
+              + dr->get_linearized_scalar_size();
+        slice_points.push_back(total);
+        total += dr->get_linearized_input_size();
+        slice_points.push_back(total);
       }
-      return new slice_layer<layout, Dev>(comm,
-                                          params.slice_axis(),
-                                          slice_points);
-    #else
-      err << "get_slice_points_from_reader() not supported";
-      LBANN_ERROR(err.str());
-      return nullptr;
+    #endif // defined(LBANN_HAS_CONDUIT)
+    } else if (params.get_slice_points_from_reader() != "") {
+      slice_point_method_name = "'get_slice_points_from_reader'";
+    #if defined(LBANN_HAS_CONDUIT)
+      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
+      const std::string& var = params.get_slice_points_from_reader();
+      slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
     #endif // defined(LBANN_HAS_CONDUIT)
     } else {
-      const auto& slice_points = parse_list<El::Int>(params.slice_points());
-      return new slice_layer<layout, Dev>(comm,
-                                          params.slice_axis(),
-                                          slice_points);
+      slice_point_method_name = "'slice_points'";
+      slice_points = parse_list<El::Int>(params.slice_points());
+      is_supported = true;
     }
+    if (slice_points.size() < 2u) {
+      if (is_supported) {
+        err << "Failed to get slice points via " << slice_point_method_name << '.';
+      } else {
+        err << slice_point_method_name << " is not supported by the reader.";
+      }
+      LBANN_ERROR(err.str());
+      return nullptr;
+    }
+    return  new slice_layer<layout, Dev>(comm,
+                                         params.slice_axis(),
+                                         slice_points);
   }
   if (proto_layer.has_hadamard()) {
     return new hadamard_layer<layout, Dev>(comm);
@@ -515,38 +538,18 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_and_()) { return new and_layer<layout, Dev>(comm); }
   if (proto_layer.has_or_())  { return new or_layer<layout, Dev>(comm); }
   if (proto_layer.has_xor_()) { return new xor_layer<layout, Dev>(comm); }
-  
+
   // Activation layers
-  if (proto_layer.has_softmax()) {
-    return new softmax_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_logsoftmax()) {
-    return new logsoftmax_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_relu()) {
-    return new relu_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_sigmoid()) {
-    return new sigmoid_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_identity()) {
-    return new identity_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_bent_identity()) {
-    return new bent_identity_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_softplus()) {
-    return new softplus_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_smooth_relu()) {
-    return new smooth_relu_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_leaky_relu()) {
-    return new leaky_relu_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_swish()) {
-    return new swish_layer<layout, Dev>(comm);
-  }
+  CONSTRUCT_LAYER(softmax);
+  CONSTRUCT_LAYER(log_softmax);
+  CONSTRUCT_LAYER(relu);
+  CONSTRUCT_LAYER(sigmoid);
+  CONSTRUCT_LAYER(identity);
+  CONSTRUCT_LAYER(bent_identity);
+  CONSTRUCT_LAYER(softplus);
+  CONSTRUCT_LAYER(smooth_relu);
+  CONSTRUCT_LAYER(leaky_relu);
+  CONSTRUCT_LAYER(swish);
   if (proto_layer.has_elu()) {
     const auto& params = proto_layer.elu();
     return new elu_layer<layout, Dev>(comm, params.alpha());
@@ -563,6 +566,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
 
   // Loss layers
+  CONSTRUCT_LAYER(categorical_accuracy);
   CONSTRUCT_LAYER(cross_entropy);
   CONSTRUCT_LAYER(mean_squared_error);
   if (proto_layer.has_top_k_categorical_accuracy()) {
@@ -585,7 +589,7 @@ Layer* construct_layer(lbann_comm* comm,
                                                                         params.width());
     }
   }
-  
+
   // Miscellaneous layers
   if (proto_layer.has_covariance()) {
     const auto& params = proto_layer.covariance();
@@ -595,7 +599,12 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& params = proto_layer.variance();
     return new variance_layer<layout, Dev>(comm, params.biased());
   }
-  
+  if (proto_layer.has_channelwise_mean()) {
+    if (layout == data_layout::DATA_PARALLEL) {
+      return new channelwise_mean_layer<data_layout::DATA_PARALLEL, Dev>(comm);
+    }
+  }
+
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
   LBANN_ERROR(err.str());
@@ -632,13 +641,17 @@ template Layer* construct_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(
 #endif // LBANN_HAS_GPU
 
 /// Obtain the slice points from the data reader
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic, const std::string& var_category) {
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
+                                                  const std::string& var_category,
+                                                  bool& is_supported) {
   std::vector<El::Int> slice_points;
+  is_supported = false;
 #if defined(LBANN_HAS_CONDUIT)
   // TODO: remove the dynamic cast when this feature gets merged into the base class
   const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
 
   if (dr != nullptr) {
+    is_supported = true;
     if (var_category == "independent") {
       slice_points = dr->get_slice_points_independent();
     } else if (var_category == "dependent") {

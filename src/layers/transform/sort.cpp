@@ -40,7 +40,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   const auto& local_width = local_input.Width();
 
   // Sort each matrix column
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     std::multimap<DataType, El::Int> sorted_list;
     for (El::Int row = 0; row < local_height; ++row) {
@@ -60,7 +60,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
       }
     }
   }
-  
+
 }
 
 template <>
@@ -75,7 +75,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   const auto& local_width = local_gradient_wrt_input.Width();
 
   // Scatter gradients based on sorted indices
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& dy = local_gradient_wrt_output(row, col);
@@ -83,7 +83,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
       dx = dy;
     }
   }
-  
+
 }
 
 } // namespace lbann

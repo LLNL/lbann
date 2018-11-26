@@ -81,8 +81,12 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
-  /// Return the linearized size of an image
+  // Return the number of channels in an image
+  unsigned int get_num_channels() const;
+  /// Return the linearized size of an image;
   size_t get_linearized_image_size() const;
+  /// Return the linearized size of one channel in the image
+  size_t get_linearized_channel_size() const;
   /// Return the linearized size of scalar outputs
   size_t get_linearized_scalar_size() const;
   /// Return the linearized size of inputs
@@ -107,19 +111,7 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   std::string get_description() const;
 
   /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i) const;
-
-  /**
-   * Return the images of the i-th sample as an 1-D vector of lbann::DataType
-   * There is one image per view, each of which is taken at closest to the bang time.
-   */
-  std::vector<ch_t> get_images(const size_t i) const;
-
-  /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i) const;
-
-  /// Return the simulation input parameters of the i-th sample
-  std::vector<input_t> get_inputs(const size_t i) const;
+  std::vector<cv::Mat> get_cv_images(const size_t i, int tid) const;
 
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
@@ -129,45 +121,36 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   /// A untiliy function to convert the pointer to image data into an opencv image
   static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img, const int height);
-  /// A utility function to convert a JAG variable type to name string
-  static std::string to_string(const variable_t t);
 
   void set_image_dims(const int width, const int height, const int ch=1);
 
-  void set_use_images(bool b) { m_use_images = b; }
-  void set_use_inputs(bool b) { m_use_inputs = b; }
-  void set_use_scalars(bool b) { m_use_scalars = b; }
+  void set_scalar_keys(const std::string &keys) { m_scalar_keys = keys; }
+  void set_input_keys(const std::string &keys) { m_input_keys = keys; }
+  void set_image_views(const std::string &views) { m_image_views = views; }
+  void set_image_channels(const std::string &channels) { m_image_channels = channels; }
+
+  void post_update() override;
 
  protected:
+
+  friend jag_store;
+
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp);
   virtual void copy_members(const data_reader_jag_conduit_hdf5& rhs);
 
-  static std::string to_string(const std::vector<variable_t>& vec);
-
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid); 
 
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
-             const variable_t vt, const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
   bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
-
-#ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Load a conduit-packed hdf5 data file
-  void load_conduit(const std::string conduit_file_path);
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;
 
   /// Choose the image closest to the bang time among those associated with the i-th sample
   std::vector<int> choose_image_near_bang_time(const size_t i) const;
-
-  /// Obtain the pointers to read-only image data
-  std::vector< std::pair<size_t, const ch_t*> > get_image_ptrs(const size_t i) const;
 
   jag_store * get_jag_store() const { return m_jag_store; }
 
@@ -179,11 +162,6 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   bool m_is_data_loaded;
 
   int m_num_labels; ///< number of labels
-
-  /// Keys to select a set of scalar simulation outputs to use. By default, use all.
-  std::vector<std::string> m_scalar_keys;
-  /// Keys to select a set of simulation input parameters to use. By default, use all.
-  std::vector<std::string> m_input_keys;
 
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
@@ -216,9 +194,12 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   std::set<std::string> m_emi_selectors;
 
-  bool m_use_scalars;
-  bool m_use_inputs;
-  bool m_use_images;
+  std::string m_scalar_keys;
+  std::string m_input_keys;
+  std::string m_image_views;
+  std::string m_image_channels;
+
+  data_reader_jag_conduit_hdf5* m_primary_reader;
 };
 
 

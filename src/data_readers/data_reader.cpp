@@ -29,9 +29,13 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/utils/omp_pragma.hpp"
+#include "lbann/models/model.hpp"
 #include <omp.h>
 
 namespace lbann {
+
+#undef DEBUG
+//#define DEBUG
 
 void generic_data_reader::shuffle_indices() {
   // Shuffle the data
@@ -68,6 +72,18 @@ void generic_data_reader::setup() {
 
 
 int lbann::generic_data_reader::fetch_data(CPUMat& X) {
+  #ifdef DEBUG
+  if (m_current_pos == 0) {
+    if (is_master()) {
+      std::cout << "role: " << get_role() << " model: " << m_model->get_model_id()
+                << " shuffled indices: ";
+      for (size_t j=0; j<15; j++) {
+        std::cout << m_shuffled_indices[j] << " ";
+      }
+      std::cout << "\n";
+    }
+  }
+  #endif
 
   int nthreads = omp_get_max_threads();
   if(!position_valid()) {
@@ -81,9 +97,9 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
-    #pragma omp parallel for schedule(static, 1)
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
     for (int t = 0; t < nthreads; t++) {
-      preprocess_data_source(omp_get_thread_num());
+      preprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
   }
 
@@ -114,7 +130,8 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
 
   else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_datum(X, index, s, LBANN_OMP_THREAD_NUM);
@@ -122,14 +139,15 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
         LBANN_DATA_FETCH_OMP_CRITICAL
         error_message = "invalid datum (index " + std::to_string(index) + ")";
       }
+      m_indices_fetched_per_mb.Set(s, 0, index);
     }
     if (!error_message.empty()) { LBANN_ERROR(error_message); }
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    #pragma omp parallel for schedule(static, 1)
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
     for (int t = 0; t < nthreads; t++) {
-      postprocess_data_source(omp_get_thread_num());
+      postprocess_data_source(LBANN_OMP_THREAD_NUM);
     }
   }
 
@@ -149,7 +167,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
 
   m_reset_mini_batch_index = 0;
   m_loaded_mini_batch_idx = 0;
-  m_current_mini_batch_idx = 0;  
+  m_current_mini_batch_idx = 0;
 
   m_stride_to_next_mini_batch = mb_size;
   m_stride_to_last_mini_batch = mb_size;
@@ -185,7 +203,8 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
 
 //  else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+    for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
       bool valid = fetch_label(Y, index, s, LBANN_OMP_THREAD_NUM);
@@ -215,7 +234,8 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
 
   El::Zeros(Y, Y.Height(), Y.Width());
   std::string error_message;
-  LBANN_DATA_FETCH_OMP_FOR (int s = 0; s < mb_size; s++) {
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
+  for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_response(Y, index, s, LBANN_OMP_THREAD_NUM);
@@ -246,11 +266,6 @@ bool generic_data_reader::update(bool is_active_reader) {
 
   if(is_active_reader) {
     m_current_pos = get_next_position();
-
-    /// Maintain the current height of the matrix
-    if (!m_save_minibatch_indices) {
-      El::Zeros(m_indices_fetched_per_mb, m_indices_fetched_per_mb.Height(), 1);
-    }
 
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
@@ -290,6 +305,9 @@ bool generic_data_reader::update(bool is_active_reader) {
       }
     }
   }
+
+  post_update();
+
   return reader_not_done;
 }
 
