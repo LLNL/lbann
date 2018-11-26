@@ -889,6 +889,15 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
+
+  bool finished;
+
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+  LBANN_OMP_PARALLEL
+  {
+    #pragma omp single
+    {
+#endif
   // Forward prop step
   clear_gradients();
   forward_prop(execution_mode::training);
@@ -911,7 +920,11 @@ bool model::train_mini_batch() {
 
   // Update step
   update_weights();
-  const bool finished = update_layers();
+  finished = update_layers();
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+    }
+  }
+#endif
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);

@@ -225,13 +225,13 @@ public:
   ~base_convolution_layer() {
 #ifdef LBANN_HAS_CUDNN
     if (m_kernel_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyFilterDescriptor(m_kernel_cudnn_desc));
     }
     if (m_convolution_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyConvolutionDescriptor(m_convolution_cudnn_desc));
     }
     if (m_bias_cudnn_desc != nullptr) {
-      CHECK_CUDNN(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
+      CHECK_CUDNN_DTOR(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
     }
 #endif // LBANN_HAS_CUDNN
   }
@@ -862,7 +862,7 @@ protected:
     const El::Int num_per_output_channel = get_output_size() / num_output_channels;
 
     // Apply bias to each output channel
-    #pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_output_channels; ++channel) {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
@@ -897,7 +897,7 @@ protected:
     // Note: Sum is computed with Kahan summation
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
-      #pragma omp parallel for
+      LBANN_OMP_PARALLEL_FOR
       for (int channel = 0; channel < num_output_channels; ++channel) {
         const El::Int row_start = channel * num_per_output_channel;
         const El::Int row_end = (channel+1) * num_per_output_channel;

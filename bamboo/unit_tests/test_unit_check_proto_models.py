@@ -13,9 +13,6 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
     defective_models = []
     working_models = []
     for subdir, dirs, files in os.walk(dir_name + '/model_zoo/models/'):
-        if 'greedy' in subdir:
-            print('Skipping greedy_layerwise_autoencoder_mnist, kills bamboo agent')
-            continue
         for file_name in files:
             if file_name.endswith('.prototext') and "model" in file_name:
                 model_path = subdir + '/' + file_name

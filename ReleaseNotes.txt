@@ -1,8 +1,21 @@
-============================== (Pending) Release Notes: v0.96 ==============================
+============================== (Pending) Release Notes: v0.97 ==============================
 Support for new training algorithms:
 
 Support for new network structures:
 
+Support for new layers:
+
+Performance optimizations:
+
+Model portability & usability:
+
+Internal features:
+
+I/O & data readers:
+
+Build system:
+
+============================== Release Notes: v0.96 ==============================
 Support for new layers:
  - Log softmax
  - Basic math functions
@@ -36,6 +49,7 @@ I/O & data readers:
    - Interface to select images of specific views and time indices
    - Interface to describe how to slice JAG data
    - Avoid redundant fetching and incoherent random number pulls in the group of local data readers
+ - Improved threading performance by preallocating scratch space for loading samples
 
 Build system:
  - Support cross-compilation configurations in superbuild and SetupProtobuf

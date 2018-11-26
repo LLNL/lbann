@@ -58,7 +58,7 @@ void fp_cpu(lbann_comm& comm,
   // Find largest prediction entries in local data
   std::vector<DataType> prediction_vals(local_width);
   std::vector<El::Int> prediction_inds(local_width);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     DataType max_val = -std::numeric_limits<DataType>::infinity();
     El::Int max_ind = height;
@@ -101,7 +101,7 @@ void fp_cpu(lbann_comm& comm,
   // Find largest label entries in local data
   std::vector<DataType> label_vals(local_width);
   std::vector<El::Int> label_inds(local_width);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     DataType max_val = -std::numeric_limits<DataType>::infinity();
     El::Int max_ind = height;
@@ -145,7 +145,7 @@ void fp_cpu(lbann_comm& comm,
   comm.wait(prediction_vals_req);
   comm.wait(prediction_inds_req);
   if (col_comm_size > 1 && col_comm_rank == col_comm_root) {
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       DataType max_val = -std::numeric_limits<DataType>::infinity();
       El::Int max_ind = height;
@@ -166,7 +166,7 @@ void fp_cpu(lbann_comm& comm,
   comm.wait(label_vals_req);
   comm.wait(label_inds_req);
   if (col_comm_size > 1 && col_comm_rank == col_comm_root) {
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       DataType max_val = -std::numeric_limits<DataType>::infinity();
       El::Int max_ind = height;
@@ -185,13 +185,13 @@ void fp_cpu(lbann_comm& comm,
 
   // Compute categorical accuracy
   if (col_comm_rank == col_comm_root) {
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       local_loss(0, col) = (prediction_inds[col] == label_inds[col] ?
                             DataType(1) : DataType(0));
     }
   }
-  
+
 }
 
 } // namespace

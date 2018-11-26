@@ -5,8 +5,16 @@ enable_language(ASM_NASM)
 # Match the jpeg-turbo default
 option(JPEG-TURBO_ENABLE_STATIC "Enable the jpeg-turbo static linkage." ON)
 
-set(JPEG-TURBO_URL https://github.com/libjpeg-turbo/libjpeg-turbo
-  CACHE STRING "The URL from which to clone LIBJPEG-TURBO")
+option(JPEG-TURBO_CLONE_VIA_SSH
+  "Clone JPEG-TURBO using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (JPEG-TURBO_CLONE_VIA_SSH)
+  set(JPEG-TURBO_URL git@github.com:libjpeg-turbo/libjpeg-turbo
+    CACHE STRING "The URL from which to clone JPEG-TURBO")
+else ()
+  set(JPEG-TURBO_URL https://github.com/libjpeg-turbo/libjpeg-turbo
+    CACHE STRING "The URL from which to clone LIBJPEG-TURBO")
+endif ()
 
 set(JPEG-TURBO_TAG "master"
   CACHE STRING "The git tag to checkout for LIBJPEG-TURBO")

@@ -263,7 +263,7 @@ protected:
 
     // Iterate through blocks in channels of each data sample
     const int max_block_size = 16;
-    #pragma omp parallel for collapse(2)
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (int sample = 0; sample < local_width; ++sample) {
       for (int block_start = 0;
           block_start < num_per_channel;
@@ -356,7 +356,7 @@ protected:
 
     // Iterate through blocks in channels of each data sample
     const int max_block_size = 16;
-    #pragma omp parallel for collapse(2)
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (int sample = 0; sample < local_width; ++sample) {
       for (int block_start = 0;
           block_start < num_per_channel;

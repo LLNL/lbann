@@ -1,7 +1,15 @@
 enable_language(CXX)
 
-set(Aluminum_URL https://github.com/llnl/Aluminum
-  CACHE STRING "The URL from which to clone Aluminum")
+option(Aluminum_CLONE_VIA_SSH
+  "Clone Aluminum using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (Aluminum_CLONE_VIA_SSH)
+  set(Aluminum_URL git@github.com:llnl/Aluminum.git
+    CACHE STRING "The URL from which to clone Aluminum")
+else ()
+  set(Aluminum_URL https://github.com/llnl/Aluminum
+    CACHE STRING "The URL from which to clone Aluminum")
+endif ()
 
 set(Aluminum_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
@@ -58,7 +66,7 @@ ExternalProject_Add(Aluminum
   -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
   -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
   -DCMAKE_CUDA_FLAGS=${CMAKE_CUDA_FLAGS}
-  -DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CUDA_HOST_COMPILER}
   ${ALUMINUM_CMAKE_ARGS}
   )
 

@@ -1,6 +1,8 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  covariance.hpp
   variance.hpp
+  channelwise_mean.hpp
   )
 
 # Propagate the files up the tree

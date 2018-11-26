@@ -56,7 +56,7 @@ void lbann_quantizer::onebit_quantize(
   const DataType *__restrict__ mat_buf = mat.LockedBuffer();
   DataType *__restrict__ qerror_buf = qerror.Buffer();
   qtype *__restrict__ qmat_buf = qmat.Buffer();
-  #pragma omp parallel for schedule(static)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(static))
   for (El::Int col = 0; col < width; ++col) {
     // First compute the positive and negative column averages.
     DataType pos_sum = 0.0f;
@@ -144,7 +144,7 @@ void lbann_quantizer::onebit_unquantize(const QuantizedMatrix& qmat, Mat& mat) {
   const El::Int qmat_ldim = qmat.LDim();
   const qtype *__restrict__ qmat_buf = qmat.LockedBuffer();
   DataType *__restrict__ mat_buf = mat.Buffer();
-  #pragma omp parallel for schedule(static)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(static))
   for (El::Int col = 0; col < width; ++col) {
     El::Int qrow = 2;
     // Extract the averages.
@@ -182,7 +182,7 @@ void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
   const El::Int qmat_ldim = qmat.LDim();
   const qtype *__restrict__ qmat_buf = qmat.LockedBuffer();
   DataType *__restrict__ mat_buf = mat.Buffer();
-  #pragma omp parallel for schedule(static)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(static))
   for (El::Int col = 0; col < width; ++col) {
     El::Int qrow = 2;
     // Extract the averages.
@@ -303,10 +303,10 @@ void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
       }
     }
   } else {
-    #pragma omp parallel
+    LBANN_OMP_PARALLEL
     {
       const int tid = omp_get_thread_num();
-      #pragma omp for schedule(static)
+      LBANN_OMP_PARALLEL_FOR_ARGS(schedule(static))
       for (El::Int col = 0; col < width; ++col) {
         for (El::Int row = 0; row < height; ++row) {
           const El::Unsigned pos = row + col * ldim;
@@ -354,7 +354,7 @@ void lbann_quantizer::threshold_unquantize(
       }
     }
   } else {
-    #pragma omp parallel for schedule(static)
+    LBANN_OMP_PARALLEL_FOR_ARGS(schedule(static))
     for (El::Unsigned i = 0; i < quant.size(); ++i) {
       const uqtype q = quant[i];
       const El::Unsigned pos = q >> 1;

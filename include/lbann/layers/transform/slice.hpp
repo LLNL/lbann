@@ -70,9 +70,9 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   /** Get slice points. */
-  std::vector<int>& get_slice_points() { return m_slice_points; }
+  std::vector<El::Int>& get_slice_points() { return m_slice_points; }
   /** Get slice points (const). */
-  std::vector<int> get_slice_points() const { return m_slice_points; }
+  std::vector<El::Int> get_slice_points() const { return m_slice_points; }
 
 protected:
 
