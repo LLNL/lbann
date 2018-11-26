@@ -51,7 +51,7 @@ public:
   static abstract_evaluation_layer* construct(lbann_comm *comm,
                                               data_layout layout,
                                               El::Device device);
-  
+
 protected:
   abstract_evaluation_layer(lbann_comm *comm);
   void setup_data() override;
@@ -72,7 +72,7 @@ private:
   /** CUDA event after a non-blocking GPU-CPU memory copy. */
   cuda::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
-  
+
 };
 
 /** Evaluation layer.

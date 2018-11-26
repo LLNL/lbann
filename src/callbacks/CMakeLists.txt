@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_checknan.cpp
   callback_checkpoint.cpp
   callback_checksmall.cpp
+  callback_confusion_matrix.cpp
   callback_debug.cpp
   callback_debug_io.cpp
   callback_dump_activations.cpp

@@ -2,7 +2,6 @@ model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
   ### This network description is anologous to AutoEncoder_Chem_ECFP
-  name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 128
   block_size: 256
@@ -15,7 +14,7 @@ model {
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -26,7 +25,10 @@ model {
   ###################################################
 
   metric {
-    categorical_accuracy {}
+    layer_metric {
+      name: "accuracy"
+      layer: "categorical_accuracy"
+    }
   }
 
 
@@ -42,18 +44,6 @@ model {
     timer {
     }
   }
- # callback {
- #   summary {
- #     dir: "."
- #     batch_interval: 1
- #     mat_interval: 25
- #   }
- # }
-#  callback {
-#    debug {
-#      phase: "train"
-#    }
-#  }
 
   ###################################################
   # start of layers
@@ -63,23 +53,35 @@ model {
   # INPUT
   #######
   layer {
-    name: "finetunedata"
-    children: "encode target"
+    name: "data"
+    children: "finetunedata label"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
     }
+  }
+  layer {
+    parents: "data"
+    name: "finetunedata"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "label"
+    data_layout: "model_parallel"
+    split {}
   }
 
   #################
   # FULLY_CONNECTED encode1
   #################
   layer {
+    parents: "finetunedata"
     name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 2000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -88,6 +90,7 @@ model {
   # RELU relu1
   ######
   layer {
+    parents: "encode1"
     name: "relu1"
     data_layout: "model_parallel"
     relu {
@@ -98,11 +101,11 @@ model {
   # FULLY_CONNECTED encode2
   #################
   layer {
+    parents: "relu1"
     name: "encode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -111,6 +114,7 @@ model {
   # RELU relu2
   #######
   layer {
+    parents: "encode2"
     name: "relu2"
     data_layout: "model_parallel"
     relu {
@@ -121,11 +125,11 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
+    parents: "relu2"
     name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -134,6 +138,7 @@ model {
   # RELU relu3
   #######
   layer {
+    parents: "encode3"
     name: "relu3"
     data_layout: "model_parallel"
     relu {
@@ -144,11 +149,11 @@ model {
   # FULLY_CONNECTED encode4
   #################
   layer {
+    parents: "relu3"
     name: "encode4"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -157,6 +162,7 @@ model {
   # RELU relu4
   #######
   layer {
+    parents: "encode4"
     name: "relu4"
     data_layout: "model_parallel"
     relu {
@@ -167,11 +173,11 @@ model {
   # FULLY_CONNECTED encode5
   #################
   layer {
+    parents: "relu4"
     name: "encode5"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -180,6 +186,7 @@ model {
   # RELU relu5
   #######
   layer {
+    parents: "encode5"
     name: "relu5"
     data_layout: "model_parallel"
     relu {
@@ -188,6 +195,7 @@ model {
 
 
   layer {
+    parents: "relu5"
     name: "ip2"
     data_layout: "model_parallel"
     fully_connected {
@@ -197,17 +205,26 @@ model {
   }
 
   layer {
+    parents: "ip2"
     name: "prob"
     data_layout: "model_parallel"
     softmax {}
   }
 
   layer {
-    name: "target"
-    parents: "prob finetunedata"
+    parents: "prob label"
+    name: "cross_entropy"
     data_layout: "model_parallel"
-    target {}
+    cross_entropy {}
   }
+
+  layer {
+    parents: "prob label"
+    name: "categorical_accuracy"
+    data_layout: "model_parallel"
+    categorical_accuracy {}
+  }
+  
   ###################################################
   # end of layers
   ###################################################

@@ -98,9 +98,9 @@ message Reader {
   int32 num_image_srcs = 114; // data_reader_multi_images
 
   //------------- start of only for partitioned data sets ------------------
-  bool is_partitioned = 300; 
+  bool is_partitioned = 300;
   double partition_overlap = 301;
-  int32 partition_mode = 302;  
+  int32 partition_mode = 302;
        // 1 - share a portion of your data with two neighbors;
        // 2 - there's a set of overlap indices that are common to all models
   //------------- end of only for partitioned data sets ------------------
@@ -225,7 +225,7 @@ message GenericPreprocessor {
 
 message Model {
   string model_id = 1000; //arbitrary identifier
-  string name = 1; //sequential_model, dag_model, greedy_layerwise_autoencoder, siamese_model
+  string name = 1; //deprecated
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
@@ -473,11 +473,12 @@ message Callback {
    CallbackGPUMemoryUsage gpu_memory_usage = 32;
    CallbackSyncLayers sync_layers = 33;
    CallbackSyncSelected sync_selected = 34;
+   CallbackConfusionMatrix confusion_matrix = 36;
 }
 
 message CallbackLTFB {
-  int64 round_size = 1; 
-  bool increasing_metric_mode = 2; //Expectation for a good tournament metric: increasing (true) is default 
+  int64 round_size = 1;
+  bool increasing_metric_mode = 2; //Expectation for a good tournament metric: increasing (true) is default
   string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
   string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
 }
@@ -683,6 +684,12 @@ message CallbackSyncSelected {
   bool async_mpi = 2;
   repeated LayerToSync layer_to_sync = 3;
   CudaProfilerSetup cuda_profiler_setup = 4;
+}
+
+message CallbackConfusionMatrix {
+  string prediction = 1; // Prediction layer
+  string label = 2;      // Label layer
+  string prefix = 3;     // Prefix for output files
 }
 
 //========================================================================
@@ -910,7 +917,7 @@ message Layer {
 
    // Activation Layers
    Softmax softmax = 200;
-   LogSoftmax logsoftmax = 203;
+   LogSoftmax log_softmax = 203;
    ELU elu = 30;
    Identity identity = 31;
    LeakyRelu leaky_relu = 32;
@@ -928,6 +935,7 @@ message Layer {
    // Miscellaneous layers
    Covariance covariance = 600;
    Variance variance = 601;
+   ChannelwiseMean channelwise_mean = 602;
 
 }
 ///////////////////////
@@ -1235,6 +1243,7 @@ message FullyConnected {
 message Convolution {
   int64 num_dims = 1;
   int64 num_output_channels = 4;
+  int64 num_groups = 3;
 
   bool has_vectors = 2;
 
@@ -1242,11 +1251,13 @@ message Convolution {
   string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
   string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+  string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
 
   // these are used if has_vector = false
   int64 conv_dims_i = 50;
   int64 conv_pads_i = 60;
   int64 conv_strides_i = 70;
+  int64 conv_dilations_i = 80;
 
   string weight_initialization = 9;     //DEPRECATED
   bool has_bias = 10;                   //default: true
@@ -1257,6 +1268,7 @@ message Convolution {
 message Deconvolution {
   int64 num_dims = 1;
   int64 num_output_channels = 4;
+  int64 num_groups = 3;
 
   bool has_vectors = 2;
 
@@ -1264,11 +1276,13 @@ message Deconvolution {
   string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
   string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
   string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+  string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
 
   // these are used if has_vector = false
   int64 conv_dims_i = 50;
   int64 conv_pads_i = 60;
   int64 conv_strides_i = 70;
+  int64 conv_dilations_i = 80;
 
   string weight_initialization = 9;     //DEPRECATED
   bool has_bias = 10;                   //default: true
@@ -1288,7 +1302,7 @@ message Target {
 
 message TargetReconstruction {
 }
-  
+
 //////////////////
 // Image Layers //
 //////////////////
@@ -1306,3 +1320,4 @@ message Covariance {
 message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
+message ChannelwiseMean {}

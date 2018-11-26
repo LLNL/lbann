@@ -57,16 +57,18 @@ void apply_binary_backprop_operator(const AbsMat& x1,
     auto* dx1_buffer = dx1.Buffer();
     auto* dx2_buffer = dx2.Buffer();
     const size_t size = x1.Height() * x1.Width();
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       BinaryBackPropOperator op;
       op(x1_buffer[i], x2_buffer[i], dy_buffer[i],
          dx1_buffer[i], dx2_buffer[i]);
     }
   } else {
-#pragma omp parallel for collapse(2)
-    for (El::Int col = 0; col < x1.Width(); ++col) {
-      for (El::Int row = 0; row < x2.Height(); ++row) {
+    auto const width = x1.Width();
+    auto const height = x1.Height();
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+    for (El::Int col = 0; col < width; ++col) {
+      for (El::Int row = 0; row < height; ++row) {
         BinaryBackPropOperator op;
         op(x1(row, col), x2(row, col), dy(row, col),
            dx1(row, col), dx2(row, col));
@@ -75,7 +77,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   }
 
 }
-  
+
 // =========================================================
 // Operator objects for entry-wise binary layers
 // =========================================================
@@ -115,7 +117,7 @@ struct subtract_op {
     dx2 = -dy;
   }
 };
-  
+
 /** Multiply operator. */
 struct multiply_op {
   inline DataType operator()(const DataType& x1,
@@ -147,7 +149,7 @@ struct divide_op {
     dx2 = -dy * x1 / (x2*x2);
   }
 };
-  
+
 /** Modulo operator. */
 struct mod_op {
   inline DataType operator()(const DataType& x1,
@@ -207,7 +209,7 @@ struct safe_divide_op {
     }
   }
 };
-  
+
 /** Maximum operator. */
 struct max_op {
   inline DataType operator()(const DataType& x1,
@@ -405,7 +407,7 @@ struct xor_op {
     dx2 = zero;
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -460,5 +462,5 @@ struct xor_op {
   INSTANTIATE(and_layer, and_op)
   INSTANTIATE(or_layer, or_op)
   INSTANTIATE(xor_layer, xor_op)
-  
+
 } // namespace lbann
