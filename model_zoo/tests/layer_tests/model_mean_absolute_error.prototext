@@ -50,7 +50,7 @@ model {
   weights {
     name: "x0_vals"
     value_initializer {
-      values: "1 -0.5 0.25 -0.125 0.0675"
+      values: "1 -0.5 0.25 -0.125 0.125"
     }
   }
   layer {
@@ -64,39 +64,27 @@ model {
   weights {
     name: "x1_vals"
     value_initializer {
-      values: "0.1 0.2 0.4 0.8 1.6"
+      values: "1.5 0 -0.25 -0.625 -0.375"
     }
   }
 
-  # Variations of covariance layer
+  # Variations of mean absolute error layer
   layer {
     parents: "x0 x1"
-    name: "unbiased_covariance_model_parallel"
-    covariance { biased: false }
+    name: "mean_absolute_error_model_parallel"
+    mean_absolute_error {}
     data_layout: "model_parallel"
   }
   layer {
     parents: "x0 x1"
-    name: "biased_covariance_model_parallel"
-    covariance { biased: true }
-    data_layout: "model_parallel"
-  }
-  layer {
-    parents: "x0 x1"
-    name: "unbiased_covariance_data_parallel"
-    covariance { biased: false }
-    data_layout: "data_parallel"
-  }
-  layer {
-    parents: "x0 x1"
-    name: "biased_covariance_data_parallel"
-    covariance { biased: true }
+    name: "mean_absolute_error_data_parallel"
+    mean_absolute_error {}
     data_layout: "data_parallel"
   }
 
   # Combine into objective function
   layer {
-    parents: "unbiased_covariance_model_parallel biased_covariance_model_parallel unbiased_covariance_data_parallel biased_covariance_data_parallel"
+    parents: "mean_absolute_error_model_parallel mean_absolute_error_data_parallel"
     name: "sum"
     sum {}
   }
