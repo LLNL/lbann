@@ -38,11 +38,7 @@ case $TOSS in
 	  ;;
 esac
 if [ "${ARCH}" == "x86_64" ]; then
-    if [ "${CLUSTER}" == "quartz" ]; then
-        IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
-    else
-        IPPROOT=/p/lscratchf/brainusr/ippicv_lnx
-    fi
+    IPPROOT=/p/lscratchh/brainusr/ippicv_lnx
 fi
 
 
@@ -80,7 +76,6 @@ USE_NINJA=0
 # by putting it at the beginning of the PATH or use the preinstalled library
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
-#LIBJPEG_TURBO_DIR="/p/lscratchf/brainusr/libjpeg-turbo-1.5.2"
 #LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
