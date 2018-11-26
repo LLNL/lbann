@@ -450,7 +450,7 @@ void model::setup() {
 
   int num_io_threads = 2;
   //  m_io_thread_pool.launch_threads(num_io_threads);
-  //  m_io_thread_pool.launch_pinned_threads(num_io_threads, 24);
+  m_io_thread_pool.launch_pinned_threads(num_io_threads, 24);
   std::vector<std::future<void>> io_thread_futures;
   io_thread_futures.reserve(num_io_threads);
 }
@@ -908,10 +908,6 @@ bool model::train_mini_batch() {
     }
   }
 #endif
-
-  // Update step
-  update_weights();
-  finished = update_layers();
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
