@@ -13,7 +13,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -28,7 +28,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -42,7 +42,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -64,7 +64,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
      command = tools.get_command(
          cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
          dir_name=dir_name,
-         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
          model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -79,7 +79,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
      command = tools.get_command(
          cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
          dir_name=dir_name,
-         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
          model_name='lenet_mnist_dist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -93,7 +93,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
      command = tools.get_command(
          cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
          dir_name=dir_name,
-         data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
          data_reader_name='mnist', model_folder='tests',
          model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)

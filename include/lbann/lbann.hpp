@@ -165,10 +165,8 @@
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/profiler.hpp"
-#include "lbann/callbacks/callback_check_reconstruction_error.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
-#include "lbann/callbacks/callback_gradient_check.hpp"
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
@@ -177,6 +175,8 @@
 #include "lbann/callbacks/callback_sync_layers.hpp"
 #include "lbann/callbacks/callback_sync_selected.hpp"
 #include "lbann/callbacks/callback_confusion_matrix.hpp"
+#include "lbann/callbacks/callback_check_gradients.hpp"
+#include "lbann/callbacks/callback_check_metric.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

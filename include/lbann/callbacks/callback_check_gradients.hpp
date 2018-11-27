@@ -22,34 +22,44 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_gradient_check .hpp .cpp - Callback hooks for gradient check
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_GRADIENT_CHECK_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_GRADIENT_CHECK_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
-/** Callback hooks for gradient check. */
-class lbann_callback_gradient_check : public lbann_callback {
- public:
-  
-  /** Constructor.
-   *  @param step_size  Step size for numerical differentiation.
-   *  @param verbose    Whether to print results for each parameter.
-   */
-  lbann_callback_gradient_check(DataType step_size = DataType(0),
-                                bool verbose = false,
-                                bool fail_on_error = false);
+/** Gradient checking callback.
+ *  Gradient checking is performed at the beginning of the test
+ *  phase. Using a fourth-order finite difference scheme, a numerical
+ *  partial derivative is computed for every weight parameter. If the
+ *  numerical derivative differs signifcantly from the analytical
+ *  derivative computed during backprop, the gradient check has
+ *  failed.
+ */
+class lbann_callback_check_gradients : public lbann_callback {
+public:
 
-  lbann_callback_gradient_check(const lbann_callback_gradient_check&) = default;
-  lbann_callback_gradient_check& operator=(const lbann_callback_gradient_check&) = default;
-  lbann_callback_gradient_check* copy() const override { return new lbann_callback_gradient_check(*this); }
+  /** Constructor.
+   *  @param step_size          Step size for numerical
+   *                            differentiation (with a step size of
+   *                            zero, the step size is chosen to
+   *                            minimize the numerical error).
+   *  @param verbose            Whether to print results for each
+   *                            parameter.
+   *  @param error_on_failure   Whether to throw an exception for
+   *                            large gradient errors.
+   */
+  lbann_callback_check_gradients(DataType step_size = DataType(0),
+                                 bool verbose = false,
+                                 bool error_on_failure = false);
+  lbann_callback_check_gradients* copy() const override {
+    return new lbann_callback_check_gradients(*this);
+  }
   void on_test_begin(model *m) override;
-  std::string name() const override { return "gradient check"; }
+  std::string name() const override { return "check gradients"; }
 
   /** Compute objective function value.
    *  It is assumed that input data has already been loaded into the
@@ -58,15 +68,16 @@ class lbann_callback_gradient_check : public lbann_callback {
   DataType compute_objective_function(model *m);
 
 private:
+
   /** Step size for numerical differentiation. */
   DataType m_step_size;
   /** Whether to print results for each parameter. */
   bool m_verbose;
   /** Whether to throw an exception for large gradient errors. */
-  bool m_fail_on_error;
+  bool m_error_on_failure;
 
 };
 
 }  // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_GRADIENT_CHECK_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED
