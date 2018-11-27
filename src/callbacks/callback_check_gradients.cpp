@@ -22,22 +22,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_gradient_check .hpp .cpp - Callback hooks for gradient check
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_gradient_check.hpp"
+#include "lbann/callbacks/callback_check_gradients.hpp"
 
 namespace lbann {
 
-lbann_callback_gradient_check::lbann_callback_gradient_check(DataType step_size,
-                                                             bool verbose,
-                                                             bool fail_on_error)
+lbann_callback_check_gradients
+  ::lbann_callback_check_gradients(DataType step_size,
+                                   bool verbose,
+                                   bool error_on_failure)
   : m_step_size(step_size),
     m_verbose(verbose),
-    m_fail_on_error(fail_on_error) {}
+    m_error_on_failure(error_on_failure) {}
 
-void lbann_callback_gradient_check::on_test_begin(model *m) {
+void lbann_callback_check_gradients::on_test_begin(model *m) {
 
   // Get model members
   lbann_comm *comm = m->get_comm();
@@ -141,7 +140,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
             relative_error = error / std::max(std::fabs(analytical_gradient),
                                               std::fabs(numerical_gradient));
           }
-        
+
           // Print warning if relative error is large
           if (error > expected_error || std::isnan(error) || std::isinf(error)) {
             std::cout << "  GRADIENT ERROR: " << w->get_name() << ", "
@@ -151,8 +150,8 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
                       << "    Numerical gradient  = " << numerical_gradient << std::endl
                       << "    Error               = " << error << std::endl
                       << "    Relative error      = " << relative_error << std::endl;
-            if (m_fail_on_error) {
-              throw lbann_exception("callback_gradient_check: found large error in gradient");
+            if (m_error_on_failure) {
+              throw lbann_exception("callback_check_gradients: found large error in gradient");
             }
           } else if (m_verbose) {
             std::cout << "  " << w->get_name() << ", "
@@ -176,7 +175,7 @@ void lbann_callback_gradient_check::on_test_begin(model *m) {
 
 }
 
-DataType lbann_callback_gradient_check::compute_objective_function(model *m) {
+DataType lbann_callback_check_gradients::compute_objective_function(model *m) {
   const std::vector<Layer*>& layers = m->get_layers();
   objective_function* obj_fn = m->get_objective_function();
   for (size_t l = 1; l < layers.size(); l++) {

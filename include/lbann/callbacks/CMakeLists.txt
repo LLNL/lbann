@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_HEADERS
   callback.hpp
   callback_check_dataset.hpp
+  callback_check_gradients.hpp
   callback_check_init.hpp
   callback_check_metric.hpp
   callback_checknan.hpp
@@ -15,7 +16,6 @@ set_full_path(THIS_DIR_HEADERS
   callback_dump_minibatch_sample_indices.hpp
   callback_dump_weights.hpp
   callback_early_stopping.hpp
-  callback_gradient_check.hpp
   callback_hang.hpp
   callback_imcomm.hpp
   callback_io.hpp
