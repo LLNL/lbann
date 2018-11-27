@@ -866,7 +866,7 @@ message Layer {
    BooleanFalsePositive boolean_false_positive = 71;
 
    // Math layers
-   Not not = 401;
+   LogicalNot logical_not = 401;
    Abs abs = 402;
    Negative negative = 403;
    Sign sign = 404;
@@ -909,9 +909,9 @@ message Layer {
    LessEqual less_equal = 462;
    Greater greater = 463;
    GreaterEqual greater_equal = 464;
-   And and = 465;
-   Or or = 466;
-   Xor xor = 467;
+   LogicalAnd logical_and = 465;
+   LogicalOr logical_or = 466;
+   LogicalXor logical_xor = 467;
 
    // Target Layers
    Target target = 18;
@@ -957,7 +957,7 @@ message MotifLayer {
 ///////////////////////
 // Math Layers       //
 ///////////////////////
-message Not {}
+message LogicalNot {}
 message Abs {}
 message Negative {}
 message Sign {}
@@ -1000,9 +1000,9 @@ message Less {}
 message LessEqual {}
 message Greater {}
 message GreaterEqual {}
-message And {}
-message Or {}
-message Xor {}
+message LogicalAnd {}
+message LogicalOr {}
+message LogicalXor {}
 
 ///////////////////////
 // Activation Layers //
