@@ -548,7 +548,15 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(bent_identity);
   CONSTRUCT_LAYER(softplus);
   CONSTRUCT_LAYER(smooth_relu);
-  CONSTRUCT_LAYER(leaky_relu);
+  if (proto_layer.has_leaky_relu()) {
+    const auto& params = proto_layer.leaky_relu();
+    const auto& negative_slope = params.negative_slope();
+    if (negative_slope != 0) {
+      return new leaky_relu_layer<layout, Dev>(comm, negative_slope);
+    } else {
+      return new leaky_relu_layer<layout, Dev>(comm);
+    }
+  }
   CONSTRUCT_LAYER(swish);
   if (proto_layer.has_elu()) {
     const auto& params = proto_layer.elu();

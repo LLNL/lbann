@@ -1015,7 +1015,7 @@ message Identity {
 }
 
 message LeakyRelu {
-  double leak = 2; //default: 0.01
+  double negative_slope = 1; //default: 0.01
 }
 
 message Relu {
