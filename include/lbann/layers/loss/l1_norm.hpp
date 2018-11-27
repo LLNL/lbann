@@ -24,36 +24,36 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
-#define LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LOSS_L1_NORM_HPP_INCLUDED
+#define LBANN_LAYERS_LOSS_L1_NORM_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** L2 norm squared layer.
+/** L1 norm layer.
  *  Given an input \f$x\f$, this layer outputs
- *    \f[ L2(x)^2 = \sum\limits_{i} x_i^2 \f]
+ *    \f[ L1(x) = \sum\limits_{i} | x_i | \f]
  */
 template <data_layout T_layout, El::Device Dev>
-class l2_norm2_layer : public Layer {
+class l1_norm_layer : public Layer {
 public:
 
-  l2_norm2_layer(lbann_comm *comm) : Layer(comm) {}
+  l1_norm_layer(lbann_comm *comm) : Layer(comm) {}
 
-  l2_norm2_layer(const l2_norm2_layer& other)
+  l1_norm_layer(const l1_norm_layer& other)
     : Layer(other),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr) {}
-  l2_norm2_layer& operator=(const l2_norm2_layer& other) {
+  l1_norm_layer& operator=(const l1_norm_layer& other) {
     Layer::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
     return *this;
   }
 
-  l2_norm2_layer* copy() const override { return new l2_norm2_layer(*this); }
-  std::string get_type() const override { return "L2 norm squared"; }
+  l1_norm_layer* copy() const override { return new l1_norm_layer(*this); }
+  std::string get_type() const override { return "L1 norm"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
@@ -130,4 +130,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
+#endif // LBANN_LAYERS_LOSS_L1_NORM_HPP_INCLUDED

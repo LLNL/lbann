@@ -855,13 +855,15 @@ message Layer {
    CategoricalAccuracy categorical_accuracy = 60;
    CrossEntropy cross_entropy = 61;
    MeanSquaredError mean_squared_error = 62;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 63;
-   L2Norm2 l2_norm2 = 64;
-   BinaryCrossEntropy binary_cross_entropy = 65;
-   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 66;
-   BooleanAccuracy boolean_accuracy = 67;
-   BooleanFalseNegative boolean_false_negative = 68;
-   BooleanFalsePositive boolean_false_positive = 69;
+   MeanAbsoluteError mean_absolute_error = 63;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
+   L2Norm2 l2_norm2 = 65;
+   L1Norm l1_norm = 66;
+   BinaryCrossEntropy binary_cross_entropy = 67;
+   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 68;
+   BooleanAccuracy boolean_accuracy = 69;
+   BooleanFalseNegative boolean_false_negative = 70;
+   BooleanFalsePositive boolean_false_positive = 71;
 
    // Math layers
    Not not = 401;
@@ -1049,6 +1051,7 @@ message LogSoftmax {
 // Loss Layers //
 ///////////////////////
 message L2Norm2 {}
+message L1Norm {}
 message SigmoidBinaryCrossEntropy {}
 message BooleanFalseNegative {}
 message BooleanFalsePositive {}

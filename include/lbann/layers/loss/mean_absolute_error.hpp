@@ -24,36 +24,36 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_LOSS_MEAN_SQUARED_ERROR_HPP_INCLUDED
-#define LBANN_LAYERS_LOSS_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LOSS_MEAN_ABSOLUTE_ERROR_HPP_INCLUDED
+#define LBANN_LAYERS_LOSS_MEAN_ABSOLUTE_ERROR_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** Mean squared error layer.
+/** Mean absolute error layer.
  *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
- *  mean squared error is
+ *  mean absolute error is
  *    \f[
- *    MSE(y,\hat{y}) = \frac{1}{n} \sum\limits_{i}^{n} (y_i - \hat{y}_i)^2
+ *    MAE(y,\hat{y}) = \frac{1}{n} \sum\limits_{i}^{n} | y_i - \hat{y}_i |
  *    \f]
  */
 template <data_layout T_layout, El::Device Dev>
-class mean_squared_error_layer : public Layer {
+class mean_absolute_error_layer : public Layer {
 public:
 
-  mean_squared_error_layer(lbann_comm *comm) : Layer(comm) {
+  mean_absolute_error_layer(lbann_comm *comm) : Layer(comm) {
     m_expected_num_parent_layers = 2;
   }
 
-  mean_squared_error_layer(const mean_squared_error_layer& other)
+  mean_absolute_error_layer(const mean_absolute_error_layer& other)
     : Layer(other) {
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() :
                       nullptr);
   }
 
-  mean_squared_error_layer& operator=(const mean_squared_error_layer& other) {
+  mean_absolute_error_layer& operator=(const mean_absolute_error_layer& other) {
     Layer::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() :
@@ -61,8 +61,8 @@ public:
     return *this;
   }
 
-  mean_squared_error_layer* copy() const override { return new mean_squared_error_layer(*this); }
-  std::string get_type() const override { return "mean squared error"; }
+  mean_absolute_error_layer* copy() const override { return new mean_absolute_error_layer(*this); }
+  std::string get_type() const override { return "mean absolute error"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
@@ -154,7 +154,7 @@ public:
 
 private:
 
-  /** Compute local contributions to mean squared error loss. */
+  /** Compute local contributions to mean absolute error loss. */
   static void local_fp_compute(El::Int height,
                                const AbsMat& local_prediction,
                                const AbsMat& local_ground_truth,
@@ -174,4 +174,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYERS_LOSS_MEAN_SQUARED_ERROR_HPP_INCLUDED
+#endif // LBANN_LAYERS_LOSS_MEAN_ABSOLUTE_ERROR_HPP_INCLUDED
