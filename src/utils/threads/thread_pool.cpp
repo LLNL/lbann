@@ -55,6 +55,7 @@ void thread_pool::launch_threads(size_type num_threads)
   void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset)
 {
   threads_.reserve(num_threads);
+  m_work_group.reserve(num_threads);
 
   // Find the current thread affinity
   cpu_set_t cpuset, ht_cpuset;
@@ -110,10 +111,11 @@ void thread_pool::do_thread_work_()
   while (not all_work_done_)
   {
     auto task = global_work_queue_.try_pop();
-    if (task)
+    if (task) {
       (*task)();
-    else
+    }else {
       std::this_thread::yield();
+    }
   }
 }
 

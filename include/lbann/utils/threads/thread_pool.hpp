@@ -8,6 +8,7 @@
 
 #include "thread_safe_queue.hpp"
 #include "type_erased_function.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -63,6 +64,34 @@ public:
     return future;
   }
 
+  /** \brief Submit a job to the pool's queue and place the future
+      into a work group */
+  template <typename FunctionT>
+  void submit_job_to_work_group(FunctionT func)
+  {
+    using return_type = typename std::result_of<FunctionT()>::type;
+
+    std::packaged_task<return_type()> task(std::move(func));
+    m_work_group.emplace_back(task.get_future());
+    global_work_queue_.push(std::move(task));
+
+    return;// future;
+  }
+
+  /** \brief Wait for all of the jobs in a work group to finish */
+  bool finish_work_group() {
+    std::string error_message;
+    for (auto& f : m_work_group) {
+      bool valid = f.get();
+      if (!valid) {
+        error_message = "invalid future in work group";
+      }
+    }
+    m_work_group.clear();
+    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    return true;
+  }
+
   /** Query the number of worker threads actually present */
   size_type get_num_threads() const noexcept { return threads_.size(); }
 
@@ -90,6 +119,9 @@ private:
 
   std::mutex m_thread_map_mutex;
   std::unordered_map<std::thread::id, int> m_thread_id_to_local_id_map;
+
+  /** \brief Work Group */
+  std::vector<std::future<bool>> m_work_group;
 
 };// class thread_pool
 
