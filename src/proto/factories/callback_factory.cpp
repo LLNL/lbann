@@ -389,11 +389,11 @@ lbann_callback* construct_callback(lbann_comm* comm,
     }
     return new lbann_callback_hang(rank_to_hang);
   }
-  if (proto_cb.has_gradient_check()) {
-    const auto& params = proto_cb.gradient_check();
-    return new lbann_callback_gradient_check(params.step_size(),
-                                             params.verbose(),
-                                             params.fail_on_error());
+  if (proto_cb.has_check_gradients()) {
+    const auto& params = proto_cb.check_gradients();
+    return new lbann_callback_check_gradients(params.step_size(),
+                                              params.verbose(),
+                                              params.error_on_failure());
   }
   if (proto_cb.has_check_metric()) {
     const auto& params = proto_cb.check_metric();

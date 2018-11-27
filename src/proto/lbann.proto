@@ -461,7 +461,7 @@ message Callback {
    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
    CallbackProfiler profiler = 21;
    CallbackStepMinibatch step_minibatch = 22;
-   CallbackGradientCheck gradient_check = 23;
+   CallbackCheckGradients check_gradients = 23;
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
@@ -622,10 +622,10 @@ message CallbackMinibatchSchedule {
   repeated MinibatchScheduleStep step = 2;
 }
 
-message CallbackGradientCheck {
+message CallbackCheckGradients {
   double step_size = 1;
   bool verbose = 2;
-  bool fail_on_error = 3; // Throw error if gradient check fails
+  bool error_on_failure = 3; // Throw error if gradient check fails
 }
 
 message CallbackCheckMetric {
