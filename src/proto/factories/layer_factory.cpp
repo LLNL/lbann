@@ -492,7 +492,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
 
   // Math layers
-  if (proto_layer.has_not_()) { return new not_layer<layout, Dev>(comm); }
+  CONSTRUCT_LAYER(logical_not);
   CONSTRUCT_LAYER(abs);
   CONSTRUCT_LAYER(negative);
   CONSTRUCT_LAYER(sign);
@@ -535,9 +535,9 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(less_equal);
   CONSTRUCT_LAYER(greater);
   CONSTRUCT_LAYER(greater_equal);
-  if (proto_layer.has_and_()) { return new and_layer<layout, Dev>(comm); }
-  if (proto_layer.has_or_())  { return new or_layer<layout, Dev>(comm); }
-  if (proto_layer.has_xor_()) { return new xor_layer<layout, Dev>(comm); }
+  CONSTRUCT_LAYER(logical_and);
+  CONSTRUCT_LAYER(logical_or);
+  CONSTRUCT_LAYER(logical_xor);
 
   // Activation layers
   CONSTRUCT_LAYER(softmax);
