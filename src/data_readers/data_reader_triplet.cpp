@@ -148,6 +148,8 @@ std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list()
 void data_reader_triplet::load() {
   const std::string data_filename = get_data_filename();
 
+  m_samples.set_num_patches(m_num_img_srcs);
+
   // To support m_first_n semantic, m_samples.load() takes m_first_n
   // as an argument and attempt to shrink the CNPY arrays loaded as needed
   if (!m_samples.load(data_filename, m_first_n)) {

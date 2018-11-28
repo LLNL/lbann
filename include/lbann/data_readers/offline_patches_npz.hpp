@@ -80,6 +80,10 @@ class offline_patches_npz {
   size_t get_num_patches() const {
     return m_num_patches;
   }
+  /// Set the number of patches per sample (the number of image data sources)
+  void set_num_patches(size_t n) {
+    m_num_patches = n;
+  }
   /// Reconsturct and return the meta-data (patch file names and the label) of idx-th sample
   sample_t get_sample(const size_t idx) const;
   /// Return the label of idx-th sample

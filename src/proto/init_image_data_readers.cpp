@@ -519,7 +519,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   if (master) std::cout << reader->get_type() << " is set" << std::endl;
 
   // configure the data reader
-  if (name == "multi_images") {
+  if ((name == "multi_images") ||
+      ((name == "triplet") && (pb_readme.num_image_srcs() > 0))) {
     const int n_img_srcs = pb_readme.num_image_srcs();
     data_reader_multi_images* multi_image_dr_ptr
       = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
