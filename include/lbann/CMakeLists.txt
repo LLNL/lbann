@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   Elemental_extensions.hpp
   base.hpp
   comm.hpp
+  lbann_library.hpp
   lbann.hpp
   )
 

@@ -31,6 +31,9 @@
 #ifndef LBANN_HPP_INCLUDED
 #define LBANN_HPP_INCLUDED
 
+/// Library interface
+#include "lbann/lbann_library.hpp"
+
 /// Models
 #include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
