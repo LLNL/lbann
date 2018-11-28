@@ -10,6 +10,7 @@ set_full_path(THIS_DIR_SOURCES
   data_store_merge_features.cpp
   data_store_pilot2_molecular.cpp
   data_store_triplet.cpp
+  data_store_quadruplet.cpp
   jag_io.cpp
   jag_store.cpp
 )

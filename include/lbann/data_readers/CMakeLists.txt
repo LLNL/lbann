@@ -31,6 +31,8 @@ set_full_path(THIS_DIR_HEADERS
   lbann_data_generator.hpp
   opencv.hpp
   opencv_extensions.hpp
+  data_reader_triplet.hpp
+  data_reader_quadruplet.hpp
   )
 
 # Add the subdirectories

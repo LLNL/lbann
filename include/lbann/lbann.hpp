@@ -122,6 +122,7 @@
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_mnist_siamese.hpp"
 #include "lbann/data_readers/data_reader_triplet.hpp"
+#include "lbann/data_readers/data_reader_quadruplet.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
