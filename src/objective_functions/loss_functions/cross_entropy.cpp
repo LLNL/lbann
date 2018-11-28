@@ -33,7 +33,7 @@ void cross_entropy::start_evaluate_compute(const AbsDistMat& predictions,
   // Local matrices
   const Mat& predictions_local = predictions.LockedMatrix();
   const Mat& ground_truth_local = ground_truth.LockedMatrix();
-  
+
   // Matrix parameters
   const int width = predictions.Width();
   const int local_height = predictions_local.Height();
@@ -41,7 +41,7 @@ void cross_entropy::start_evaluate_compute(const AbsDistMat& predictions,
 
   // Compute sum of cross entropy terms
   EvalType sum = EvalType(0);
-  #pragma omp parallel for reduction(+:sum) collapse(2)
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
   for (int col = 0; col < local_width; ++col) {
     for (int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);
@@ -75,7 +75,7 @@ void cross_entropy::differentiate_compute(const AbsDistMat& predictions,
   const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-  #pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);

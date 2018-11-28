@@ -3,6 +3,7 @@ enable_language(CXX)
 option(Hydrogen_ENABLE_CUDA "Enable CUDA support in Hydrogen" OFF)
 
 option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
+option(Hydrogen_ENABLE_OMP_TASKLOOP "Hydrogen use OpenMP taskloops for parallel regions." OFF)
 
 option(Hydrogen_USE_64BIT_INTS
   "Hydrogen use 64-bit internal indices" ON)

@@ -56,7 +56,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     auto& local_running_var = this->m_weights[3]->get_values().Matrix();
 
     // Compute sums and sums of squares
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_channels; ++channel) {
       DataType sum = zero;
       DataType sqsum = zero;
@@ -85,7 +85,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     if (num_per_sum <= 1) {
       El::Fill(local_var, one);
     } else {
-#pragma omp parallel for
+      LBANN_OMP_PARALLEL_FOR
       for (El::Int channel = 0; channel < num_channels; ++channel) {
         const auto& mean = local_mean(channel, 0) / num_per_sum;
         const auto& sqmean = local_var(channel, 0) / num_per_sum;
@@ -113,7 +113,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
                            this->m_weights[3]->get_values().LockedMatrix());
 
   // Iterate through channels
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int channel = 0; channel < num_channels; ++channel) {
 
     // Get channel parameters
@@ -136,7 +136,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     }
 
   }
-    
+
 }
 
 template <>
@@ -170,7 +170,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   const auto& channel_size = get_output_size() / num_channels;
 
   // Compute local gradients
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int channel = 0; channel < num_channels; ++channel) {
 
     // Initialize channel parameters and gradients
@@ -238,7 +238,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
   } else {
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
@@ -268,7 +268,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
     }
   }
-  
+
 }
-  
+
 } // namespace lbann

@@ -44,7 +44,7 @@ void fp(lbann_comm& comm,
 
   // Find column-wise maximum entries
   El::Fill(workspace, std::numeric_limits<DataType>::lowest());
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& max_entry = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
@@ -55,7 +55,7 @@ void fp(lbann_comm& comm,
 
   // Shift inputs and compute sum(exp(x)) for each column
   // Note: Shifting by the max prevents LogSumExp from blowing up.
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
     DataType sum = 0;
@@ -70,7 +70,7 @@ void fp(lbann_comm& comm,
   comm.allreduce(workspace, workspace.RedundantComm());
 
   // Compute output by subtracting LogSumExp
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const DataType log_sum_exp = std::log(local_workspace(0, col));
     for (El::Int row = 0; row < local_height; ++row) {
@@ -97,7 +97,7 @@ void bp(lbann_comm& comm,
 
   // Compute sum of entries in gradient w.r.t. output
   El::Zero(workspace);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& sum = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
@@ -108,7 +108,7 @@ void bp(lbann_comm& comm,
   comm.allreduce(workspace, workspace.RedundantComm());
 
   // Compute gradient w.r.t. input
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& sum = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {

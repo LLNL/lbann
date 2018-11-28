@@ -7,22 +7,38 @@ model {
   procs_per_model: 0
 
   ###################################################
-  # Objective function
+  # Objective function and metrics
   ###################################################
 
   objective_function {
     layer_term { layer: "l2" }
   }
+  metric {
+    layer_metric {
+      layer: "l2"
+      name: "L2 norm"
+    }
+  }
 
   ###################################################
   # Callbacks
   ###################################################
+
   callback { print {} }
   callback { timer {} }
   callback {
-    gradient_check {
+    check_metric {
+      metric: "L2 norm" # Expected value: 2.5
+      lower_bound: 2.499
+      upper_bound: 2.501
+      error_on_failure: true
+      execution_modes: "test"
+    }
+  }
+  callback {
+    check_gradients {
       verbose: false
-      fail_on_error: true
+      error_on_failure: true
     }
   }
 
@@ -41,7 +57,7 @@ model {
   layer {
     name: "x"
     weights_layer {
-      dims: "4"
+      dims: "5"
     }
     data_layout: "model_parallel"
     weights: "x_vals"
@@ -49,7 +65,7 @@ model {
   weights {
     name: "x_vals"
     value_initializer {
-      values: "1 2 3 4"
+      values: "0 1 -0.5 0.5 -1"
     }
   }
 

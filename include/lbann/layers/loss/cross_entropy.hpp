@@ -43,9 +43,6 @@ class cross_entropy_layer : public Layer {
 public:
 
   cross_entropy_layer(lbann_comm *comm) : Layer(comm) {
-    set_output_dims({1});
-
-    // Expects inputs for prediction and ground truth
     m_expected_num_parent_layers = 2;
   }
 
@@ -68,6 +65,30 @@ public:
   std::string get_type() const override { return "cross entropy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims({1});
+    if (get_input_size(0) != get_input_size(1)) {
+      const auto& parents = get_parent_layers();
+      const auto& dims0 = get_input_dims(0);
+      const auto& dims1 = get_input_dims(1);
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "expects inputs with identical dimensions, but "
+          << "layer \"" << parents[0]->get_name() << "\" outputs a ";
+      for (size_t i = 0; i < dims0.size(); ++i) {
+        err << (i > 0 ? "x" : "") << dims0[i];
+      }
+      err << " tensor and "
+          << "layer \"" << parents[1]->get_name() << "\" outputs a ";
+      for (size_t i = 0; i < dims1.size(); ++i) {
+        err << (i > 0 ? "x" : "") << dims1[i];
+      }
+      err << " tensor";
+      LBANN_ERROR(err.str());
+    }
+  }
 
   void setup_data() override {
     Layer::setup_data();

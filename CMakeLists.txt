@@ -13,6 +13,7 @@ endif ()
 
 # Add CMake modules
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
+include(LBANNCMakeUtilities)
 
 #FIXME
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -365,7 +366,6 @@ configure_file(
   @ONLY)
 
 # Add LBANN source files
-include(LBANNCMakeUtilities)
 add_subdirectory(include)
 add_subdirectory(src)
 

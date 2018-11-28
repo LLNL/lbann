@@ -492,7 +492,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
 
   // Math layers
-  if (proto_layer.has_not_()) { return new not_layer<layout, Dev>(comm); }
+  CONSTRUCT_LAYER(logical_not);
   CONSTRUCT_LAYER(abs);
   CONSTRUCT_LAYER(negative);
   CONSTRUCT_LAYER(sign);
@@ -535,9 +535,9 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(less_equal);
   CONSTRUCT_LAYER(greater);
   CONSTRUCT_LAYER(greater_equal);
-  if (proto_layer.has_and_()) { return new and_layer<layout, Dev>(comm); }
-  if (proto_layer.has_or_())  { return new or_layer<layout, Dev>(comm); }
-  if (proto_layer.has_xor_()) { return new xor_layer<layout, Dev>(comm); }
+  CONSTRUCT_LAYER(logical_and);
+  CONSTRUCT_LAYER(logical_or);
+  CONSTRUCT_LAYER(logical_xor);
 
   // Activation layers
   CONSTRUCT_LAYER(softmax);
@@ -548,7 +548,15 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(bent_identity);
   CONSTRUCT_LAYER(softplus);
   CONSTRUCT_LAYER(smooth_relu);
-  CONSTRUCT_LAYER(leaky_relu);
+  if (proto_layer.has_leaky_relu()) {
+    const auto& params = proto_layer.leaky_relu();
+    const auto& negative_slope = params.negative_slope();
+    if (negative_slope != 0) {
+      return new leaky_relu_layer<layout, Dev>(comm, negative_slope);
+    } else {
+      return new leaky_relu_layer<layout, Dev>(comm);
+    }
+  }
   CONSTRUCT_LAYER(swish);
   if (proto_layer.has_elu()) {
     const auto& params = proto_layer.elu();
@@ -569,11 +577,13 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(categorical_accuracy);
   CONSTRUCT_LAYER(cross_entropy);
   CONSTRUCT_LAYER(mean_squared_error);
+  CONSTRUCT_LAYER(mean_absolute_error);
   if (proto_layer.has_top_k_categorical_accuracy()) {
     const auto& params = proto_layer.top_k_categorical_accuracy();
     return new top_k_categorical_accuracy_layer<layout, Dev>(comm, params.k());
   }
   CONSTRUCT_LAYER(l2_norm2);
+  CONSTRUCT_LAYER(l1_norm);
   CONSTRUCT_LAYER(binary_cross_entropy);
   CONSTRUCT_LAYER(sigmoid_binary_cross_entropy);
   CONSTRUCT_LAYER(boolean_accuracy);

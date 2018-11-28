@@ -209,11 +209,11 @@ public:
     cudnnPoolingMode_t cudnn_pool_mode;
     switch(m_pool_mode) {
     case pool_mode::max:
-    #ifndef LBANN_DETERMINISTIC    
+    #ifndef LBANN_DETERMINISTIC
       cudnn_pool_mode = CUDNN_POOLING_MAX; break;
     #else
       cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC; break;
-    #endif  
+    #endif
     case pool_mode::average:
       cudnn_pool_mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; break;
     case pool_mode::average_no_pad:
@@ -355,7 +355,7 @@ public:
         // Apply max pooling
         DataType *output_buffer = local_output.Buffer(0, sample);
         int *indices_buffer = &m_max_pool_indices[sample * get_output_size()];
-        #pragma omp parallel for
+        LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
@@ -378,7 +378,7 @@ public:
       if(m_pool_mode == pool_mode::average) {
         // Apply average pooling
         DataType *output_buffer = local_output.Buffer(0, sample);
-        #pragma omp parallel for
+        LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
             const DataType *im2col_buffer
@@ -433,7 +433,7 @@ public:
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
           = &m_max_pool_indices[sample * get_output_size()];
-        #pragma omp parallel for
+        LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             const int input_index = j + channel * num_per_input_channel;
@@ -450,7 +450,7 @@ public:
       if(m_pool_mode == pool_mode::average) {
         const DataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
-        #pragma omp parallel for
+        LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);

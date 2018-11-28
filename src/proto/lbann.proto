@@ -461,7 +461,7 @@ message Callback {
    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
    CallbackProfiler profiler = 21;
    CallbackStepMinibatch step_minibatch = 22;
-   CallbackGradientCheck gradient_check = 23;
+   CallbackCheckGradients check_gradients = 23;
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
@@ -474,6 +474,7 @@ message Callback {
    CallbackSyncLayers sync_layers = 33;
    CallbackSyncSelected sync_selected = 34;
    CallbackConfusionMatrix confusion_matrix = 36;
+   CallbackCheckMetric check_metric = 37;
 }
 
 message CallbackLTFB {
@@ -621,12 +622,19 @@ message CallbackMinibatchSchedule {
   repeated MinibatchScheduleStep step = 2;
 }
 
-message CallbackGradientCheck {
+message CallbackCheckGradients {
   double step_size = 1;
   bool verbose = 2;
-  bool fail_on_error = 3;
+  bool error_on_failure = 3; // Throw error if gradient check fails
 }
 
+message CallbackCheckMetric {
+  string metric = 1;
+  double lower_bound = 2;
+  double upper_bound = 3;
+  bool error_on_failure = 4;  // Throw error if metric check fails
+  string execution_modes = 5; // E.g. "train validation test"
+}
 
 message CallbackCheckpoint {
   string checkpoint_dir = 1;
@@ -847,16 +855,18 @@ message Layer {
    CategoricalAccuracy categorical_accuracy = 60;
    CrossEntropy cross_entropy = 61;
    MeanSquaredError mean_squared_error = 62;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 63;
-   L2Norm2 l2_norm2 = 64;
-   BinaryCrossEntropy binary_cross_entropy = 65;
-   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 66;
-   BooleanAccuracy boolean_accuracy = 67;
-   BooleanFalseNegative boolean_false_negative = 68;
-   BooleanFalsePositive boolean_false_positive = 69;
+   MeanAbsoluteError mean_absolute_error = 63;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
+   L2Norm2 l2_norm2 = 65;
+   L1Norm l1_norm = 66;
+   BinaryCrossEntropy binary_cross_entropy = 67;
+   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 68;
+   BooleanAccuracy boolean_accuracy = 69;
+   BooleanFalseNegative boolean_false_negative = 70;
+   BooleanFalsePositive boolean_false_positive = 71;
 
    // Math layers
-   Not not = 401;
+   LogicalNot logical_not = 401;
    Abs abs = 402;
    Negative negative = 403;
    Sign sign = 404;
@@ -899,9 +909,9 @@ message Layer {
    LessEqual less_equal = 462;
    Greater greater = 463;
    GreaterEqual greater_equal = 464;
-   And and = 465;
-   Or or = 466;
-   Xor xor = 467;
+   LogicalAnd logical_and = 465;
+   LogicalOr logical_or = 466;
+   LogicalXor logical_xor = 467;
 
    // Target Layers
    Target target = 18;
@@ -947,7 +957,7 @@ message MotifLayer {
 ///////////////////////
 // Math Layers       //
 ///////////////////////
-message Not {}
+message LogicalNot {}
 message Abs {}
 message Negative {}
 message Sign {}
@@ -990,9 +1000,9 @@ message Less {}
 message LessEqual {}
 message Greater {}
 message GreaterEqual {}
-message And {}
-message Or {}
-message Xor {}
+message LogicalAnd {}
+message LogicalOr {}
+message LogicalXor {}
 
 ///////////////////////
 // Activation Layers //
@@ -1005,7 +1015,7 @@ message Identity {
 }
 
 message LeakyRelu {
-  double leak = 2; //default: 0.01
+  double negative_slope = 1; //default: 0.01
 }
 
 message Relu {
@@ -1041,6 +1051,7 @@ message LogSoftmax {
 // Loss Layers //
 ///////////////////////
 message L2Norm2 {}
+message L1Norm {}
 message SigmoidBinaryCrossEntropy {}
 message BooleanFalseNegative {}
 message BooleanFalsePositive {}
