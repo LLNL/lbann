@@ -43,17 +43,17 @@ imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shu
     throw lbann_exception(err.str());
   }
 
-  replicate_processor(*pp);
+  m_master_pps.reset(new cv_process(*pp));
 }
 
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
   : image_data_reader(rhs) {
-  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+  if (!rhs.m_master_pps) {
     std::stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
-  replicate_processor(*rhs.m_pps[0]);
+  m_master_pps.reset(new cv_process(*rhs.m_master_pps));
 }
 
 imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
@@ -64,12 +64,12 @@ imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
 
   image_data_reader::operator=(rhs);
 
-  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+  if (!rhs.m_master_pps) {
     std::stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
-  replicate_processor(*rhs.m_pps[0]);
+  m_master_pps.reset(new cv_process(*rhs.m_master_pps));
   return (*this);
 }
 
@@ -84,17 +84,19 @@ void imagenet_reader::set_defaults() {
   m_num_labels = 1000;
 }
 
-/// Replicate image processor for each OpenMP thread
-bool imagenet_reader::replicate_processor(const cv_process& pp) {
-  const int nthreads = omp_get_max_threads();
+void imagenet_reader::setup(int num_io_threads) {
+  image_data_reader::setup(num_io_threads);
+  replicate_processor(*m_master_pps, num_io_threads);
+}
+
+/// Replicate image processor for each I/O thread
+bool imagenet_reader::replicate_processor(const cv_process& pp, const int nthreads) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int i = 0; i < nthreads; ++i) {
     //auto ppu = std::make_unique<cv_process>(pp); // c++14
-    std::unique_ptr<cv_process> ppu(new cv_process(pp));
-    m_pps[i] = std::move(ppu);
+    m_pps[i].reset(new cv_process(pp));
   }
 
   bool ok = true;

@@ -73,7 +73,7 @@ data_reader_jag_conduit_hdf5::data_reader_jag_conduit_hdf5(const std::shared_ptr
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  replicate_processor(*pp);
+  m_master_pps.reset(new cv_process(*pp));
 }
 
 void data_reader_jag_conduit_hdf5::copy_members(const data_reader_jag_conduit_hdf5& rhs) {
@@ -87,11 +87,11 @@ void data_reader_jag_conduit_hdf5::copy_members(const data_reader_jag_conduit_hd
   m_input_keys = rhs.m_input_keys;
   m_success_map = rhs.m_success_map;
 
-  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+  if (!rhs.m_master_pps) {
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  replicate_processor(*rhs.m_pps[0]);
+  m_master_pps.reset(new cv_process(*rhs.m_master_pps));
   m_uniform_input_type = rhs.m_uniform_input_type;
 }
 
@@ -127,16 +127,18 @@ void data_reader_jag_conduit_hdf5::set_defaults() {
   m_num_labels = 0;
 }
 
-/// Replicate image processor for each OpenMP thread
-bool data_reader_jag_conduit_hdf5::replicate_processor(const cv_process& pp) {
-  const int nthreads = omp_get_max_threads();
+void data_reader_jag_conduit_hdf5::setup(int num_io_threads) {
+  generic_data_reader::setup(num_io_threads);
+  replicate_processor(*m_master_pps, num_io_threads);
+}
+
+/// Replicate image processor for each I/O thread
+  bool data_reader_jag_conduit_hdf5::replicate_processor(const cv_process& pp, const int nthreads) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int i = 0; i < nthreads; ++i) {
-    std::unique_ptr<cv_process> ppu(new cv_process(pp));
-    m_pps[i] = std::move(ppu);
+    m_pps[i].reset(new cv_process(pp));
   }
 
   bool ok = true;
@@ -165,7 +167,7 @@ void data_reader_jag_conduit_hdf5::set_image_dims(const int width, const int hei
 }
 
 bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  int tid = io_thread_pool::get_local_thread_id();
+  int tid = io_thread_pool.get_local_thread_id();
   m_jag_store->load_data(data_id, tid);
 
   std::vector<size_t> sizes = get_linearized_data_sizes();
@@ -376,7 +378,7 @@ bool data_reader_jag_conduit_hdf5::fetch_response(CPUMat& X, int data_id, int mb
 }
 
 bool data_reader_jag_conduit_hdf5::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  int tid = io_thread_pool::get_local_thread_id();
+  //  int tid = io_thread_pool.get_local_thread_id();
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);

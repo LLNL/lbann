@@ -136,13 +136,13 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
-void image_data_reader::setup() {
-  generic_data_reader::setup();
+void image_data_reader::setup(int num_io_threads) {
+  generic_data_reader::setup(num_io_threads);
 
   using InputBuf_T = lbann::cv_image_type<uint8_t>;
   auto cvMat = cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1));
-  m_thread_cv_buffer.resize(omp_get_max_threads());
-  for(int tid = 0; tid < omp_get_max_threads(); ++tid) {
+  m_thread_cv_buffer.resize(num_io_threads);
+  for(int tid = 0; tid < num_io_threads; ++tid) {
     m_thread_cv_buffer[tid] = cvMat.clone();
   }
 }

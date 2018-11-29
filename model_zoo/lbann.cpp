@@ -145,8 +145,8 @@ int main(int argc, char *argv[]) {
     auto omp_threads = omp_get_max_threads();
     auto processes_on_node = comm->get_procs_per_node();
 
-    auto io_threads_per_process = (max_threads / processes_on_node) - omp_threads;
-    auto io_threads_offset = omp_threads * processes_on_node;
+    auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads));
+    auto io_threads_offset = (omp_threads * processes_on_node) % max_threads;
 
     // Report useful information
     if (master) {
