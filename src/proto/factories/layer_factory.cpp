@@ -540,14 +540,16 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(logical_xor);
 
   // Activation layers
-  CONSTRUCT_LAYER(softmax);
-  CONSTRUCT_LAYER(log_softmax);
-  CONSTRUCT_LAYER(relu);
-  CONSTRUCT_LAYER(sigmoid);
+  if (proto_layer.has_elu()) {
+    const auto& params = proto_layer.elu();
+    const auto& alpha = params.alpha();
+    if (alpha != 0) {
+      return new elu_layer<layout, Dev>(comm, alpha);
+    } else {
+      return new elu_layer<layout, Dev>(comm);
+    }
+  }
   CONSTRUCT_LAYER(identity);
-  CONSTRUCT_LAYER(bent_identity);
-  CONSTRUCT_LAYER(softplus);
-  CONSTRUCT_LAYER(smooth_relu);
   if (proto_layer.has_leaky_relu()) {
     const auto& params = proto_layer.leaky_relu();
     const auto& negative_slope = params.negative_slope();
@@ -557,21 +559,14 @@ Layer* construct_layer(lbann_comm* comm,
       return new leaky_relu_layer<layout, Dev>(comm);
     }
   }
-  CONSTRUCT_LAYER(swish);
-  if (proto_layer.has_elu()) {
-    const auto& params = proto_layer.elu();
-    return new elu_layer<layout, Dev>(comm, params.alpha());
-  }
-  if (proto_layer.has_selu()) {
-    const auto& params = proto_layer.selu();
-    const auto& alpha = params.alpha();
-    const auto& scale = params.scale();
-    if (alpha != 0.0 && scale != 0.0) {
-      return new selu_layer<layout, Dev>(comm, alpha, scale);
-    } else {
-      return new selu_layer<layout, Dev>(comm);
-    }
-  }
+  CONSTRUCT_LAYER(log_sigmoid);
+  CONSTRUCT_LAYER(log_softmax);
+  CONSTRUCT_LAYER(relu);
+  CONSTRUCT_LAYER(selu);
+  CONSTRUCT_LAYER(sigmoid);
+  CONSTRUCT_LAYER(softmax);
+  CONSTRUCT_LAYER(softplus);
+  CONSTRUCT_LAYER(softsign);
 
   // Loss layers
   CONSTRUCT_LAYER(categorical_accuracy);

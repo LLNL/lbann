@@ -48,20 +48,20 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 protected:
   void setup_dims() override {
-    set_output_dims(get_input_dims());
     Layer::setup_dims();
+    set_output_dims(get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;
 };
 
 // Convenience macro to define an entry-wise unary layer class
-#define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)      \
-  struct layer_name##_name_struct {                             \
-    inline operator std::string() { return layer_string; }      \
-  };                                                            \
-  template <data_layout Layout, El::Device Device>              \
-  using layer_name                                              \
+#define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)          \
+  struct layer_name##_name_struct {                                     \
+    inline operator std::string() { return layer_string; }              \
+  };                                                                    \
+  template <data_layout Layout, El::Device Device>                      \
+  using layer_name                                                      \
   = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;
 
 // Logical operations

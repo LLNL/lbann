@@ -1,19 +1,19 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  activations.cpp
+  elu.cpp
   leaky_relu.cpp
   log_softmax.cpp
-  relu.cpp
-  sigmoid.cpp
   softmax.cpp
   )
 
 if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
+    activations.cu
+    elu.cu
     leaky_relu.cu
     log_softmax.cu
-    relu.cu
-    sigmoid.cu
     softmax.cu
     )
 endif ()

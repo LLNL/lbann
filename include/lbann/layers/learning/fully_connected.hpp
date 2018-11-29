@@ -28,7 +28,6 @@
 #define LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
 
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
@@ -241,7 +240,7 @@ class fully_connected_layer : public learning_layer {
         LBANN_ERROR(err.str());
       }
     }
-    
+
   }
 
   void fp_compute() override;

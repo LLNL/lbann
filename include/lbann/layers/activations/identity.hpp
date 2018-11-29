@@ -24,25 +24,23 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef IDENTITY_HPP_INCLUDED
-#define IDENTITY_HPP_INCLUDED
+#ifndef LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
+#define LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
 /** Identity layer. */
-template <data_layout T_layout, El::Device Dev>
-class identity_layer : public activation_layer {
+template <data_layout Layout, El::Device Device>
+class identity_layer : public Layer {
 public:
-  identity_layer(lbann_comm *comm) : activation_layer(comm) {}
+  identity_layer(lbann_comm *comm) : Layer(comm) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
   std::string get_type() const override { return "identity"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
-
+  data_layout get_data_layout() const override { return Layout; }
+  El::Device get_device_allocation() const override { return Device; }
 protected:
-
   void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }
@@ -51,9 +49,8 @@ protected:
   }
   void fp_compute() override {}
   void bp_compute() override {}
-
 };
 
 } // namespace lbann
 
-#endif // IDENTITY_HPP_INCLUDED
+#endif // LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED

@@ -37,18 +37,12 @@
 #include "lbann/models/siamese.hpp"
 
 /// Activation Layers
-#include "lbann/layers/activations/bent_identity.hpp"
+#include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
-#include "lbann/layers/activations/relu.hpp"
-#include "lbann/layers/activations/selu.hpp"
-#include "lbann/layers/activations/sigmoid.hpp"
-#include "lbann/layers/activations/smooth_relu.hpp"
-#include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
-#include "lbann/layers/activations/softplus.hpp"
-#include "lbann/layers/activations/swish.hpp"
+#include "lbann/layers/activations/softmax.hpp"
 
 /// Image Layers
 #include "lbann/layers/image/bilinear_resize.hpp"
