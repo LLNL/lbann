@@ -39,14 +39,16 @@ namespace lbann {
  *        \alpha x & x \leq 0
  *      \end{cases}
  *  \f]
- *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+ *  See:
+ *    Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *    nonlinearities improve neural network acoustic models." In
+ *    Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
 template <data_layout Layout, El::Device Device>
 class leaky_relu_layer : public Layer {
 public:
   leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
-    : Layer(comm),
-      m_negative_slope(negative_slope) {}
+    : Layer(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
   std::string get_type() const override { return "leaky ReLU"; }
   data_layout get_data_layout() const override { return Layout; }
@@ -61,6 +63,7 @@ protected:
   void bp_compute() override;
 
 private:
+  /** Function slope in negative region. */
   DataType m_negative_slope;
 
 };

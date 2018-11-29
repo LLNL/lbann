@@ -24,14 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/layers/activations/elu.hpp"
 
 namespace lbann {
 
 namespace {
 
 /** CUDA kernel for forward prop computation. */
-__global__ void fp_kernel(DataType negative_slope,
+__global__ void fp_kernel(DataType alpha,
                           El::Int height,
                           El::Int width,
                           const DataType* __restrict__ input,
@@ -46,12 +46,12 @@ __global__ void fp_kernel(DataType negative_slope,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    y = (x > DataType(0)) ? x : negative_slope * x;
+    y = (x > DataType(0)) ? x : alpha * cuda::expm1(x);
   }
 }
 
 /** CUDA kernel for backprop computation. */
-__global__ void bp_kernel(DataType negative_slope,
+__global__ void bp_kernel(DataType alpha,
                           El::Int height,
                           El::Int width,
                           const DataType* __restrict__ input,
@@ -69,12 +69,12 @@ __global__ void bp_kernel(DataType negative_slope,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > DataType(0)) ? dy : dy * negative_slope;
+    dx = (x > DataType(0)) ? dy : dy * alpha * cuda::exp(x);
   }
 }
 
 /** Local forward prop computation. */
-void local_fp(DataType negative_slope,
+void local_fp(DataType alpha,
               const AbsMat& input,
               AbsMat& output) {
 
@@ -93,7 +93,7 @@ void local_fp(DataType negative_slope,
   // Launch CUDA kernel
   if (grid_dim > 0) {
     fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      negative_slope, height, width,
+      alpha, height, width,
       input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
   }
@@ -101,7 +101,7 @@ void local_fp(DataType negative_slope,
 }
 
 /** Local backprop computation. */
-void local_bp(DataType negative_slope,
+void local_bp(DataType alpha,
               const AbsMat& input,
               const AbsMat& gradient_wrt_output,
               AbsMat& gradient_wrt_input) {
@@ -121,7 +121,7 @@ void local_bp(DataType negative_slope,
   // Launch CUDA kernel
   if (grid_dim > 0) {
     bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      negative_slope, height, width,
+      alpha, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
       gradient_wrt_input.Buffer(), gradient_wrt_input.LDim());
@@ -132,31 +132,31 @@ void local_bp(DataType negative_slope,
 } // namespace
 
 template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+void elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
        ::fp_compute() {
-  local_fp(m_negative_slope,
+  local_fp(m_alpha,
            get_local_prev_activations(),
            get_local_activations());
 }
 template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+void elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::bp_compute() {
-  local_bp(m_negative_slope,
+  local_bp(m_alpha,
            get_local_prev_activations(),
            get_local_prev_error_signals(),
            get_local_error_signals());
 }
 template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
        ::fp_compute() {
-  local_fp(m_negative_slope,
+  local_fp(m_alpha,
            get_local_prev_activations(),
            get_local_activations());
 }
 template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::bp_compute() {
-  local_bp(m_negative_slope,
+  local_bp(m_alpha,
            get_local_prev_activations(),
            get_local_prev_error_signals(),
            get_local_error_signals());
