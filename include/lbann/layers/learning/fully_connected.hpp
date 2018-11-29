@@ -137,18 +137,8 @@ class fully_connected_layer : public learning_layer {
   }
 
   std::string get_type() const override { return "fully connected"; }
-
   data_layout get_data_layout() const override { return T_layout; }
-
   El::Device get_device_allocation() const override { return Dev; }
-
-  /** Set dimensions of output tensor.
-   *  E.g. set the dimensions of an "activations tensor" or the
-   *  "neuron dimensions."
-   */
-  void set_output_dims(std::vector<int> dims) {
-    learning_layer::set_output_dims(dims);
-  }
 
  protected:
 

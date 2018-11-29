@@ -39,10 +39,7 @@ class dummy_layer : public transform_layer {
 
   dummy_layer(lbann_comm *comm)
     : transform_layer(comm) {
-
-    // Dummy layer has no children
-    m_expected_num_child_layers = 0;
-
+    this->m_expected_num_child_layers = 0; // No children
   }
 
   dummy_layer* copy() const override { return new dummy_layer(*this); }

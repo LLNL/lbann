@@ -39,8 +39,9 @@ namespace lbann {
 template <data_layout Layout, El::Device Device, typename Name>
 class entrywise_binary_layer : public Layer {
 public:
+
   entrywise_binary_layer(lbann_comm *comm) : Layer(comm) {
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
   entrywise_binary_layer* copy() const override {
     return new entrywise_binary_layer<Layout,Device,Name>(*this);

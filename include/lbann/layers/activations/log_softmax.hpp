@@ -80,6 +80,11 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     Layer::setup_matrices(grid);
     auto dist = get_prev_activations().DistData();

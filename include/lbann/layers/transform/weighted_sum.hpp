@@ -69,8 +69,13 @@ class weighted_sum_layer : public transform_layer {
 
   void setup_pointers() override {
     transform_layer::setup_pointers();
+    std::stringstream err;
+    if (get_num_parents() < 1) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has no parent layers";
+      LBANN_ERROR(err.str());
+    }
     if ((int) m_scaling_factors.size() != get_num_parents()) {
-      std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
           << "has an invalid number of scaling factors "
           << "(found " << m_scaling_factors.size() << ", "
@@ -81,6 +86,7 @@ class weighted_sum_layer : public transform_layer {
 
   void setup_dims() override {
     transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
     const auto& output_dims = get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
       const auto& input_dims = get_input_dims(i);

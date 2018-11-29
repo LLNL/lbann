@@ -41,6 +41,10 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 protected:
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
   void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }

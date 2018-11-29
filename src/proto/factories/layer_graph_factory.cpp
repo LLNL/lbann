@@ -32,10 +32,11 @@ namespace proto {
 namespace {
 
 /** Setup parent/child relationships between layers. */
-void setup_parents_and_children(lbann_comm* comm,
-                                std::vector<Layer*>& layers,
-                                std::unordered_map<std::string, Layer*>& names_to_layers,
-                                const lbann_data::Model& proto_model) {
+void setup_parents_and_children(
+       lbann_comm* comm,
+       std::vector<Layer*>& layers,
+       std::unordered_map<std::string, Layer*>& names_to_layers,
+       const lbann_data::Model& proto_model) {
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
@@ -43,19 +44,38 @@ void setup_parents_and_children(lbann_comm* comm,
     const auto& children = parse_list<std::string>(proto_layer.children());
     for (const auto& parent : parents) {
       if (names_to_layers.count(parent) == 0) {
-        err << "could not find parent layer " << parent << " "
-            << "for layer " << layers[i]->get_name();
+        err << "could not find parent layer \"" << parent << "\" "
+            << "for layer \"" << layers[i]->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
-      layers[i]->add_parent_layer(names_to_layers[parent]);
+      layers[i]->add_parent_layer(names_to_layers.at(parent));
     }
     for (const auto& child : children) {
       if (names_to_layers.count(child) == 0) {
-        err << "could not find child layer " << child << " "
-            << "for layer " << layers[i]->get_name();
+        err << "could not find child layer \"" << child << "\" "
+            << "for layer \"" << layers[i]->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
-      layers[i]->add_child_layer(names_to_layers[child]);
+      layers[i]->add_child_layer(names_to_layers.at(child));
+    }
+  }
+}
+
+void setup_hints(
+       std::vector<Layer*>& layers,
+       const std::unordered_map<std::string, Layer*>& names_to_layers,
+       const lbann_data::Model& proto_model) {
+  std::stringstream err;
+  for (int i=0; i<proto_model.layer_size(); ++i) {
+    const auto& proto_layer = proto_model.layer(i);
+    const auto& hint = proto_layer.hint_layer();
+    if (!hint.empty()) {
+      if (names_to_layers.count(hint) == 0) {
+        err << "could not find hint layer \"" << hint << "\" "
+            << "for layer \"" << layers[i]->get_name() << "\"";
+        LBANN_ERROR(err.str());
+      }
+      layers[i]->set_hint_layer(names_to_layers.at(hint));
     }
   }
 }
@@ -272,6 +292,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 
   // Setup pointers between layers
   setup_parents_and_children(comm, layers, names_to_layers, proto_model);
+  setup_hints(layers, names_to_layers, proto_model);
   setup_target_pointers(comm, layers, names_to_layers, proto_model);
   setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
 
