@@ -46,7 +46,7 @@
 #include "mpi.h"
 
 namespace lbann {
-  
+
 ////////////////////////////////////////////////////////////
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
@@ -67,8 +67,8 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) { 
-    
+    m_default_optimizer(default_optimizer) {
+
       static int num_models = 0;
       m_name = "Model" + std::to_string(num_models);
       num_models++;
@@ -538,7 +538,7 @@ void model::setup_weights() {
 
   // Setup weights
   for (auto* w : m_weights) { w->setup(); }
-  
+
 }
 
 void model::add_connected_layers() {
@@ -637,7 +637,7 @@ void model::add_evaluation_layers() {
   }
 
 }
-  
+
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
@@ -802,7 +802,7 @@ void model::train(int num_epochs, int num_batches) {
     } else {
       while (!train_mini_batch()) {}
     }
-    
+
     // Finalize epoch
     ++m_current_epoch;
     reconcile_weight_values();
@@ -811,7 +811,7 @@ void model::train(int num_epochs, int num_batches) {
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
-    
+
   }
   do_train_end_cbs();
 }
@@ -861,6 +861,15 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
+
+  bool finished;
+
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+  LBANN_OMP_PARALLEL
+  {
+    #pragma omp single
+    {
+#endif
   // Forward prop step
   clear_gradients();
   forward_prop(execution_mode::training);
@@ -883,7 +892,11 @@ bool model::train_mini_batch() {
 
   // Update step
   update_weights();
-  const bool finished = update_layers();
+  finished = update_layers();
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+    }
+  }
+#endif
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
@@ -961,7 +974,7 @@ void model::reconcile_weight_values() {
   }
   for (auto& req : reqs) { m_comm->wait(req); }
 }
-  
+
 ////////////////////////////////////////////////////////////
 // Callbacks
 ////////////////////////////////////////////////////////////

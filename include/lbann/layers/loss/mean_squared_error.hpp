@@ -32,7 +32,6 @@
 namespace lbann {
 
 /** Mean squared error layer.
-
  *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
  *  mean squared error is
  *    \f[

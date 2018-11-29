@@ -3,7 +3,7 @@
 # color names: http://www.graphviz.org/doc/info/colors.html
 #
 # I found this tutorial useful: http://tonyballantyne.com/graphs.html
- 
+
 # default shapes, colors, and arrows
 #
 shapes_and_colors  black
@@ -18,25 +18,22 @@ transform     rect           antiquewhite1   red
 
 layer_names_and_overrides
 learning     convolution             shape=tripleoctagon   color=chartreuse3
-learning     fully_connected 
+learning     fully_connected
 learning     deconvolution           shape=octogon
 io           input
 io           target
 io           reconstruction
-io           repeated_input
-activations  softmax
 activations  elu
 activations  identity
 activations  leaky_relu
+activations  log_sigmoid
+activations  log_softmax
 activations  relu
-activations  sigmoid
-activations  smooth_relu
-activations  softplus
 activations  selu
-activations  tanh
-activations  exponential
-activations  power
-activations  log
+activations  sigmoid
+activations  softmax
+activations  softplus
+activations  softsign
 regularizers batch_normalization
 regularizers local_response_normalization
 regularizers dropout

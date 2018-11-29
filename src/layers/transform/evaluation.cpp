@@ -44,7 +44,7 @@ void fp_cpu(lbann_comm& comm,
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
   value = 0;
-#pragma omp parallel for reduction(+:value) collapse(2)
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       value += local_input(row, col);

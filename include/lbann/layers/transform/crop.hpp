@@ -176,6 +176,7 @@ private:
     const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
 
     // Crop each local mini-batch sample
+    // BVE_FIXME LBANN_OMP_PARALLEL_FOR
     for (El::Int local_col = 0; local_col < local_width; ++local_col) {
       const auto& col = input.GlobalCol(local_col);
 
@@ -254,6 +255,7 @@ private:
     const auto& region_size = output_dims.back();
 
     // Populate error signal for each local mini-batch sample
+    // BVE_FIXME LBANN_OMP_PARALLEL_FOR
     for (El::Int local_col = 0; local_col < local_width; ++local_col) {
       const auto& col = gradient_wrt_input.GlobalCol(local_col);
 

@@ -503,10 +503,9 @@ class Layer {
   std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
   /** Hint layer.
-
-
    *  During setup, the output tensor dimensions are set to match the
-   *  first output tensor of the hint layer. Derived classes may
+   *  first output tensor of the hint layer. Derived classes may do
+   *  more elaborate setup based on the hint layer.
    */
   const Layer* m_hint_layer = nullptr;
 

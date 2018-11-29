@@ -7,9 +7,9 @@ LBANN_DIR=$(git rev-parse --show-toplevel)
 MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m3.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae_cyc.prototext}"
 ##small model for JAG100k data
 #MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m3.prototext} --num_epochs=10"
-## JAG10K 64x64x4 data 
+## JAG10K 64x64x4 data
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/jag10k_data.prototext"
-## JAG100K 50x50x1 data 
+## JAG100K 50x50x1 data
 #READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/jag_data.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext"
 IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
@@ -162,7 +162,7 @@ if [ -n "${IMAGENET_CLASSES}" ]; then
         catalyst|flash|quartz|surface|pascal)
             case ${IMAGENET_CLASSES} in
                 10|100|300|1000)
-                    IMAGENET_DIR=/p/lscratchf/brainusr/datasets/ILSVRC2012
+                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets/ILSVRC2012
                     DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
                     IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
                     if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then

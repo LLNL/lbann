@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
-#define LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
+#ifndef LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
+#define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
@@ -122,4 +122,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
+#endif // LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED

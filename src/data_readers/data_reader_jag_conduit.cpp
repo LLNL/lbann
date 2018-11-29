@@ -423,7 +423,7 @@ bool data_reader_jag_conduit::replicate_processor(const cv_process& pp) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  #pragma omp parallel for schedule(static, 1)
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int i = 0; i < nthreads; ++i) {
     //auto ppu = std::make_unique<cv_process>(pp); // c++14
     std::unique_ptr<cv_process> ppu(new cv_process(pp));
@@ -1057,15 +1057,23 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   std::cerr << "loading: " << conduit_file_path << std::endl;
 #endif
 
-  hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-
+  hid_t hdf5_file_hnd;
+  try {
+    hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+  } catch (std::exception e) {
+    std::string msg = get_type() + std::string(" :: skipping a file unable to read: ")
+                    + conduit_file_path;
+    std::cerr << __FILE__<< ' '  << __LINE__ << " :: " << msg << std::endl;
+    idx = m_valid_samples.size();
+    return;
+  }
+  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), std::string(" Invalid file handle for ") + conduit_file_path);
+  }
   if (!m_open_hdf5_files) {
     m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
   }
   m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
-  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), std::string("cannot add invalid file handle for ") + conduit_file_path);
-  }
 
   // set up mapping: need to do this since some of the data may be bad
   std::vector<std::string> sample_names;

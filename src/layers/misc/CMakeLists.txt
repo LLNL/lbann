@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   covariance.cpp
   variance.cpp
+  channelwise_mean.cpp
   )
 
 if (LBANN_HAS_CUDA)
@@ -9,6 +10,7 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     covariance.cu
     variance.cu
+    channelwise_mean.cu
     )
 endif ()
 

@@ -55,36 +55,23 @@ public:
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims({1});
-
-    // Check that input dimensions are valid
-    std::stringstream err;
-    const auto& parents = get_parent_layers();
-    const auto& dims0 = get_input_dims(0);
-    const auto& dims1 = get_input_dims(1);
-    if (dims0 != dims1) {
+    if (get_input_size(0) != get_input_size(1)) {
+      const auto& parents = get_parent_layers();
+      const auto& dims0 = get_input_dims(0);
+      const auto& dims1 = get_input_dims(1);
+      std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects input tensors with identical dimensions, "
-          << "but parent layer \"" << parents[0]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
+          << "expects inputs with identical dimensions, but "
+          << "layer \"" << parents[0]->get_name() << "\" outputs a ";
       for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims0[i];
+        err << (i > 0 ? "x" : "") << dims0[i];
       }
-      err << " and parent layer \"" << parents[1]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
+      err << " tensor and "
+          << "layer \"" << parents[1]->get_name() << "\" outputs a ";
       for (size_t i = 0; i < dims1.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims1[i];
+        err << (i > 0 ? "x" : "") << dims1[i];
       }
-      LBANN_ERROR(err.str());
-    }
-    if (get_input_size() <= 1) {
-      err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects input tensors with at least two entries, "
-          << "but parent layers \"" << parents[0]->get_name() << "\" "
-          << "and \"" << parents[1]->get_name() << "\" "
-          << "output tensors with dimensions ";
-      for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims0[i];
-      }
+      err << " tensor";
       LBANN_ERROR(err.str());
     }
   }

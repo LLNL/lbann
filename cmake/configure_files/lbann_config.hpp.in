@@ -7,6 +7,10 @@
 #define LBANN_HAS_GPU
 #endif // HYDROGEN_HAVE_CUDA
 
+#ifdef HYDROGEN_HAVE_OMP_TASKLOOP
+#define LBANN_HAVE_OMP_TASKLOOP
+#endif // HYDROGEN_HAVE_OMP_TASKLOOP
+
 /* Version string for LBANN */
 #define LBANN_VERSION @LBANN_VERSION@
 #cmakedefine LBANN_GIT_VERSION @LBANN_GIT_VERSION@
@@ -33,6 +37,7 @@
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 
+#cmakedefine LBANN_VTUNE
 #cmakedefine LBANN_NVPROF
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
