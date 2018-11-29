@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     model *model_3 = nullptr; //G2 solver
 
     //Support for autoencoder models
-    model *ae_model = nullptr;  
+    model *ae_model = nullptr;
     model *ae_cycgan_model = nullptr; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
                                            comm, false);
       model_3->set_name("inv_model");
     }
-     
+
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
                                            comm, false);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       model_3->copy_trained_weights_from(ae_weights);
       ae_cycgan_model->copy_trained_weights_from(ae_weights);
     }
-    
+
     //Train cycle GAN
     int super_step = 1;
     int max_super_step = pb_model.super_steps();
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
       if(master) std::cout << " Update G2 weights " << std::endl;
       auto model3_weights = model_3->get_weights();
       model_1->copy_trained_weights_from(model3_weights);
-      
+
       //Optionally evaluate on pretrained autoencoder
       if(ae_model != nullptr && ae_cycgan_model != nullptr){
         //if(master) std::cout << " Copy trained weights from autoencoder to autoencoder proxy" << std::endl;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
+
 }
 
 model * build_model_from_prototext(int argc, char **argv,
@@ -260,13 +260,25 @@ model * build_model_from_prototext(int argc, char **argv,
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
+    // Setup I/O threads
+    auto hw_cc = std::thread::hardware_concurrency();
+    auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+
+    auto omp_threads = omp_get_max_threads();
+    auto processes_on_node = comm->get_procs_per_node();
+
+    auto io_threads_per_process = (max_threads / processes_on_node) - omp_threads;
+    auto io_threads_offset = omp_threads * processes_on_node;
+
     // Report useful information
     if (master) {
 
       // Report hardware settings
       std::cout << "Hardware properties (for master process)" << std::endl
-                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+                << "  Processes on node                 : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads per process        : " << omp_get_max_threads() << std::endl
+                << "  I/O threads per process (+offset) : " << io_threads_per_process
+                << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
       std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
 #endif // HYDROGEN_HAVE_CUDA
@@ -373,7 +385,7 @@ model * build_model_from_prototext(int argc, char **argv,
                                    data_readers,
                                    pb.optimizer(),
                                    pb.model());
-    model->setup();
+    model->setup(io_threads_per_process, io_threads_offset);
 
     // restart model from checkpoint if we have one
     //@todo

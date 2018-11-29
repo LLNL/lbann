@@ -89,7 +89,7 @@ class model {
   void set_model_id(std::string s) { m_model_id = s; }
 
   /** Set up the model. */
-  virtual void setup();
+  virtual void setup(int num_io_threads, int io_threads_offset);
 
   /** Add layer to model. */
   virtual void add_layer(Layer *layer);

@@ -421,7 +421,7 @@ void model::freeze_layers_under_frozen_surface() {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void model::setup() {
+void model::setup(int num_io_threads, int io_threads_offset) {
 
   // Setup layers
   setup_layer_topology();
@@ -445,12 +445,7 @@ void model::setup() {
   }
 
   // Setup I/O threads
-  // auto hw_cc = std::thread::hardware_concurrency();
-  // auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
-
-  int num_io_threads = 2;
-  //  m_io_thread_pool.launch_threads(num_io_threads);
-  m_io_thread_pool.launch_pinned_threads(num_io_threads, 24);
+  m_io_thread_pool.launch_pinned_threads(num_io_threads, io_threads_offset);
   std::vector<std::future<void>> io_thread_futures;
   io_thread_futures.reserve(num_io_threads);
 }

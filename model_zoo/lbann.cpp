@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
                                "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
-    
+
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
@@ -138,15 +138,27 @@ int main(int argc, char *argv[]) {
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
+    // Setup I/O threads
+    auto hw_cc = std::thread::hardware_concurrency();
+    auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+
+    auto omp_threads = omp_get_max_threads();
+    auto processes_on_node = comm->get_procs_per_node();
+
+    auto io_threads_per_process = (max_threads / processes_on_node) - omp_threads;
+    auto io_threads_offset = omp_threads * processes_on_node;
+
     // Report useful information
     if (master) {
 
       // Report hardware settings
       std::cout << "Hardware properties (for master process)" << std::endl
-                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+                << "  Processes on node                 : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads per process        : " << omp_get_max_threads() << std::endl
+                << "  I/O threads per process (+offset) : " << io_threads_per_process
+                << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
-      std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
+      std::cout << "  GPUs on node                      : " << El::GPUManager::NumDevices() << std::endl;
 #endif // HYDROGEN_HAVE_CUDA
       std::cout << std::endl;
 
@@ -241,7 +253,7 @@ int main(int argc, char *argv[]) {
                                           data_readers,
                                           pb.optimizer(),
                                           pb.model());
-    model->setup();
+    model->setup(io_threads_per_process, io_threads_offset);
 
     //under development; experimental
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
@@ -342,5 +354,5 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
+
 }

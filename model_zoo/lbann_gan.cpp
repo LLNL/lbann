@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
+
 }
 
 model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &pb) {
@@ -190,13 +190,25 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
     // from the cmd line) and various other info
     //save_session(comm, argc, argv, pb);
 
+    // Setup I/O threads
+    auto hw_cc = std::thread::hardware_concurrency();
+    auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+
+    auto omp_threads = omp_get_max_threads();
+    auto processes_on_node = comm->get_procs_per_node();
+
+    auto io_threads_per_process = (max_threads / processes_on_node) - omp_threads;
+    auto io_threads_offset = omp_threads * processes_on_node;
+
     // Report useful information
     if (master) {
 
       // Report hardware settings
       std::cout << "Hardware properties (for master process)" << std::endl
-                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+                << "  Processes on node                 : " << comm->get_procs_per_node() << std::endl
+                << "  OpenMP threads per process        : " << omp_get_max_threads() << std::endl
+                << "  I/O threads per process (+offset) : " << io_threads_per_process
+                << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
       std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
 #endif // HYDROGEN_HAVE_CUDA
@@ -293,7 +305,7 @@ model * build_model_from_prototext(int argc, char **argv, lbann_data::LbannPB &p
                                    data_readers,
                                    pb.optimizer(),
                                    pb.model());
-    model->setup();
+    model->setup(io_threads_per_process, io_threads_offset);
 
     // restart model from checkpoint if we have one
     //@todo
