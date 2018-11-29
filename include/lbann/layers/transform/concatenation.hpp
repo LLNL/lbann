@@ -41,7 +41,7 @@ public:
 
   concatenation_layer(lbann_comm *comm, El::Int concat_dim)
     : transform_layer(comm), m_concat_dim(concat_dim) {
-    m_expected_num_parent_layers = -1; // No limit on parents
+    this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   concatenation_layer(const concatenation_layer& other)
@@ -185,7 +185,7 @@ protected:
                         1, std::multiplies<int>());
     const auto& output_block_stride = (output_num_unit_slices
                                        * unit_block_size);
-    
+
     // Populate slices of output tensor with input tensors
     for (int i = 0; i < num_inputs; ++i) {
       const auto& input_dims = get_input_dims(i);
@@ -212,7 +212,7 @@ protected:
         El::Copy(*m_input_v, *m_output_v);
       }
 
-    }    
+    }
 
   }
 
@@ -234,7 +234,7 @@ protected:
                         1, std::multiplies<int>());
     const auto& output_block_stride = (output_num_unit_slices
                                        * unit_block_size);
-    
+
     // Populate gradient w.r.t. input tensors
     const auto& gradient_wrt_output = get_prev_error_signals();
     for (int i = 0; i < num_inputs; ++i) {
@@ -274,7 +274,7 @@ protected:
         El::LockedView(gradient_wrt_input, *m_output_v);
       }
 
-    }    
+    }
 
   }
 

@@ -124,6 +124,11 @@ public:
 
 protected:
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     m_mask = std::unique_ptr<AbsDistMat>(get_activations().Copy());
@@ -211,7 +216,7 @@ protected:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    
+
     // Matrices
     const auto& input = get_prev_activations();
     const auto& local_input = input.LockedMatrix();

@@ -58,10 +58,10 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-    Layer::setup_data();
+    Layer::setup_dims();
     set_output_dims({1});
   }
-  
+
   void setup_data() override {
     Layer::setup_data();
 
@@ -74,7 +74,7 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-    
+
   }
 
   void fp_compute() override {
@@ -93,9 +93,9 @@ public:
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
-  
+
   void bp_compute() override {
 
     // Initialize workspace
@@ -125,7 +125,7 @@ private:
 
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMat> m_workspace;
-  
+
 };
 
 } // namespace lbann

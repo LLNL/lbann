@@ -24,43 +24,50 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LEAKY_RELU_HPP_INCLUDED
-#define LEAKY_RELU_HPP_INCLUDED
+#ifndef LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
+#define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** Leaky rectified linear unit activation function.
- *  This is a ReLU variant that avoids the dying ReLU problem where a
- *  ReLU neuron can stop updating. See:
- *  Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
- *  nonlinearities improve neural network acoustic models."
- *  Proc. ICML. Vol. 30. No. 1. 2013.
+/** Leaky rectified linear unit layer.
+ *  \f[
+ *    \text{LeakyReLU}(x) =
+ *      \begin{cases}
+ *        x        & x > 0
+ *        \alpha x & x \leq 0
+ *      \end{cases}
+ *  \f]
+ *  See:
+ *    Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *    nonlinearities improve neural network acoustic models." In
+ *    Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
-template <data_layout T_layout, El::Device Dev>
-class leaky_relu_layer : public entrywise_activation_layer {
- public:
-  /** Leak is the amount of signal to permit for negative values. */
-  leaky_relu_layer(lbann_comm *comm,
-                   DataType leak = DataType(0.01))
-    : entrywise_activation_layer(comm), m_leak(leak) {}
+template <data_layout Layout, El::Device Device>
+class leaky_relu_layer : public Layer {
+public:
+  leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
+    : Layer(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
-  std::string get_type() const override { return "leaky relu"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
+  std::string get_type() const override { return "leaky ReLU"; }
+  data_layout get_data_layout() const override { return Layout; }
+  El::Device get_device_allocation() const override { return Device; }
 
- protected:
-  DataType activation(DataType x) const override {
-    return std::max(m_leak * x, x);
+protected:
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
   }
-  DataType activation_derivative(DataType x) const override {
-    return (x > DataType(0)) ? DataType(1) : m_leak;
-  }
- private:
-  DataType m_leak;
+  void fp_compute() override;
+  void bp_compute() override;
+
+private:
+  /** Function slope in negative region. */
+  DataType m_negative_slope;
+
 };
 
 } // namespace lbann
 
-#endif // LEAKY_RELU_HPP_INCLUDED
+#endif // LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED

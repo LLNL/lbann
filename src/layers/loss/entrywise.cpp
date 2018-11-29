@@ -34,7 +34,7 @@ namespace {
 // Helpful constants
 constexpr DataType zero = 0;
 constexpr DataType one = 1;
-  
+
 /** Apply a binary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
  *  dimensions. Given a binary function \f$ y = f(x_1,x_2) \f$, the
@@ -57,16 +57,18 @@ void apply_binary_backprop_operator(const AbsMat& x1,
     auto* dx1_buffer = dx1.Buffer();
     auto* dx2_buffer = dx2.Buffer();
     const size_t size = x1.Height() * x1.Width();
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       BinaryBackPropOperator op;
       op(x1_buffer[i], x2_buffer[i], dy_buffer[i],
          dx1_buffer[i], dx2_buffer[i]);
     }
   } else {
-#pragma omp parallel for collapse(2)
-    for (El::Int col = 0; col < x1.Width(); ++col) {
-      for (El::Int row = 0; row < x2.Height(); ++row) {
+    auto const width = x1.Width();
+    auto const height = x1.Height();
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+    for (El::Int col = 0; col < width; ++col) {
+      for (El::Int row = 0; row < height; ++row) {
         BinaryBackPropOperator op;
         op(x1(row, col), x2(row, col), dy(row, col),
            dx1(row, col), dx2(row, col));
@@ -75,7 +77,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   }
 
 }
-  
+
 // =========================================================
 // Operator objects for entry-wise binary layers
 // =========================================================
@@ -143,7 +145,7 @@ struct sigmoid_binary_cross_entropy_op {
     dx2 = (x2 == z) ? -x1 * dy : zero;
   }
 };
-  
+
 /** Boolean accuracy operator. */
 struct boolean_accuracy_op {
   inline DataType operator()(const DataType& x1,
@@ -197,7 +199,7 @@ struct boolean_false_positive_op {
     dx2 = zero;
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -239,5 +241,5 @@ struct boolean_false_positive_op {
   INSTANTIATE(boolean_accuracy_layer, boolean_accuracy_op)
   INSTANTIATE(boolean_false_negative_layer, boolean_false_negative_op)
   INSTANTIATE(boolean_false_positive_layer, boolean_false_positive_op)
-  
+
 } // namespace lbann

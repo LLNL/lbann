@@ -50,7 +50,7 @@ EvalType r2_metric::evaluate_compute(const AbsDistMat& prediction,
   // and sum of squares ss_tot as sum(square(ground_truth - mean(ground_truth)))
   EvalType ss_res = 0;
   EvalType ss_tot = 0;
-  #pragma omp parallel for reduction(+:ss_res,ss_tot) collapse(2)
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:ss_res,ss_tot) collapse(2))
   for(El::Int col = 0; col < local_width; ++col) {
     for(El::Int row = 0; row < local_height; ++row) {
       const EvalType true_val = ground_truth_local(row, col);

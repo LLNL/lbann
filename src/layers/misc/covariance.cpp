@@ -46,7 +46,7 @@ void fp_cpu(const AbsDistMat& input0,
   const auto& local_input1 = static_cast<const CPUMat&>(input1.LockedMatrix());
   auto& local_means = static_cast<CPUMat&>(means.Matrix());
   auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input0.Height();
   const auto& width = input0.Width();
@@ -57,7 +57,7 @@ void fp_cpu(const AbsDistMat& input0,
   means.Empty(false);
   means.AlignWith(input0);
   means.Resize(2, width);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     DataType sum0 = 0, sum1 = 0;
     for (El::Int row = 0; row < local_height; ++row) {
@@ -73,7 +73,7 @@ void fp_cpu(const AbsDistMat& input0,
   workspace.Empty(false);
   workspace.AlignWith(input0);
   workspace.Resize(1, width);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& mean0 = local_means(0, col);
     const auto& mean1 = local_means(1, col);
@@ -87,7 +87,7 @@ void fp_cpu(const AbsDistMat& input0,
   }
   El::AllReduce(workspace, workspace.RedundantComm());
   El::Copy(workspace, output);
-  
+
 }
 
 /** CPU backprop implementation.
@@ -109,7 +109,7 @@ void bp_cpu(const AbsDistMat& input0,
   auto& local_gradient_wrt_input1 = static_cast<CPUMat&>(gradient_wrt_input1.Matrix());
   const auto& local_means = static_cast<const CPUMat&>(means.LockedMatrix());
   auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input0.Height();
   const auto& local_height = local_input0.Height();
@@ -120,7 +120,7 @@ void bp_cpu(const AbsDistMat& input0,
 
   // Compute gradients w.r.t. input
   const DataType scale = DataType(1) / (biased? height : height - 1);
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& dy = local_workspace(0, col);
@@ -138,7 +138,7 @@ void bp_cpu(const AbsDistMat& input0,
 }
 
 } // namespace
-  
+
 template <>
 void covariance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {

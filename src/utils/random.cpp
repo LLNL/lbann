@@ -136,7 +136,7 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
     rank_in_world = std::to_string(comm->get_rank_in_world());
   }
 
- #ifdef _OPENMP
+#ifdef _OPENMP
   #pragma omp parallel private(rng_name)
   {
     rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());

@@ -43,7 +43,7 @@ class mean_squared_error_layer : public Layer {
 public:
 
   mean_squared_error_layer(lbann_comm *comm) : Layer(comm) {
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
 
   mean_squared_error_layer(const mean_squared_error_layer& other)
@@ -69,27 +69,30 @@ public:
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims({1});
-    if (get_input_size(0) != get_input_size(1)) {
-      const auto& parents = get_parent_layers();
-      const auto& dims0 = get_input_dims(0);
-      const auto& dims1 = get_input_dims(1);
-      std::stringstream err;
+
+    // Check that input dimensions are valid
+    std::stringstream err;
+    const auto& parents = get_parent_layers();
+    const auto& dims0 = get_input_dims(0);
+    const auto& dims1 = get_input_dims(1);
+    if (dims0 != dims1) {
       err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects inputs with identical dimensions, but "
-          << "layer \"" << parents[0]->get_name() << "\" outputs a ";
+          << "expects input tensors with identical dimensions, "
+          << "but parent layer \"" << parents[0]->get_name() << "\" "
+          << "outputs a tensor with dimensions ";
       for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? "x" : "") << dims0[i];
+        err << (i > 0 ? " x " : "") << dims0[i];
       }
-      err << " tensor and "
-          << "layer \"" << parents[1]->get_name() << "\" outputs a ";
+      err << " and parent layer \"" << parents[1]->get_name() << "\" "
+          << "outputs a tensor with dimensions ";
       for (size_t i = 0; i < dims1.size(); ++i) {
-        err << (i > 0 ? "x" : "") << dims1[i];
+        err << (i > 0 ? " x " : "") << dims1[i];
       }
-      err << " tensor";
       LBANN_ERROR(err.str());
     }
+
   }
-  
+
   void setup_data() override {
     Layer::setup_data();
 
@@ -108,7 +111,7 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-    
+
   }
 
   void fp_compute() override {
@@ -129,9 +132,9 @@ public:
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
-  
+
   void bp_compute() override {
 
     // Initialize workspace
@@ -169,7 +172,7 @@ private:
 
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMat> m_workspace;
-  
+
 };
 
 } // namespace lbann

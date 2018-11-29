@@ -51,6 +51,8 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                       int conv_dim,
                       int pad,
                       int stride,
+                      int dilation,
+                      int groups,
                       bool has_bias = true)
     : deconvolution_layer(comm,
                           num_data_dims,
@@ -58,6 +60,8 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                           std::vector<int>(num_data_dims, conv_dim),
                           std::vector<int>(num_data_dims, pad),
                           std::vector<int>(num_data_dims, stride),
+                          std::vector<int>(num_data_dims, dilation),
+                          groups,
                           has_bias) {}
 
   deconvolution_layer(lbann_comm *comm,
@@ -66,14 +70,18 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                       std::vector<int> conv_dims,
                       std::vector<int> pads,
                       std::vector<int> strides,
+                      std::vector<int> dilations,
+                      int groups,
                       bool has_bias = true)
     : base_convolution_layer<Dev>(comm,
-                             num_data_dims,
-                             num_output_channels,
-                             conv_dims,
-                             pads,
-                             strides,
-                             has_bias) {
+                                  num_data_dims,
+                                  num_output_channels,
+                                  conv_dims,
+                                  pads,
+                                  strides,
+                                  dilations,
+                                  groups,
+                                  has_bias) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
 
@@ -94,6 +102,11 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
     for (size_t h=0; h<this->m_strides.size(); h++) {
       s << this->m_strides[h] << " ";
     }
+    s << " dilation: ";
+    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
+      s << this->m_dilations[h] << " ";
+    }
+    s << " groups: " << this->m_num_groups;
     s << " num_output_channels: " << this->get_output_dims()[0]
       << " has_bias: " << this->m_bias_scaling_factor
       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
@@ -111,40 +124,87 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
 
   void setup_dims() override {
     base_convolution_layer<Dev>::setup_dims();
+    std::stringstream err;
 
     // Get tensor dimensions
-    auto& kernel_dims = this->m_kernel_dims;
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
+    const auto input_channels = input_dims[0];
+    const auto output_channels = this->m_kernel_dims[0];
 
-    // Initialize deconvolution kernel dimensions
+    // Check for unsupported features
+    /// @todo Implement dilated and grouped deconvolution
+    if (std::any_of(this->m_dilations.begin(),
+                    this->m_dilations.end(),
+                    [] (int d) { return d != 1; })) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has non-unit dilations (";
+      for (size_t i = 0; i < this->m_dilations.size(); ++i) {
+        err << (i > 0 ? ", " : "") << this->m_dilations[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
+    if (this->m_num_groups != 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has non-unit groups "
+          << "(" << this->m_num_groups << ")";
+      LBANN_ERROR(err.str());
+    }
+
+    // Check that number of groups is valid
+    if (this->m_num_groups < 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has " << this->m_num_groups << " groups";
+      LBANN_ERROR(err.str());
+    } else if (input_channels % this->m_num_groups != 0
+               || output_channels % this->m_num_groups != 0) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" has "
+          << input_channels << " input channels, "
+          << output_channels << " output channels, and "
+          << this->m_num_groups << " groups "
+          << "(groups must evenly divide "
+          << "the input channels and output channels)";
+      LBANN_ERROR(err.str());
+    }
+
+    // Initialize convolution kernel dimensions
     // Note: Unlike the convolutional kernel, the previous layer's
     // number of channels is now the leading position -- keep in mind
     // that deconvolution is the transpose of a convolution.
-    kernel_dims.insert(kernel_dims.begin(), input_dims[0]);
-    this->m_kernel_size = std::accumulate(kernel_dims.begin(),
-                                          kernel_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Check if input tensor dimensions are valid
-    if (input_dims.size() != kernel_dims.size() - 1) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << "has an input tensor with "
-          << input_dims.size() << " dimensions "
-          << "and a convolution kernel with "
-          << kernel_dims.size() << " dimensions";
+    this->m_kernel_dims.insert(this->m_kernel_dims.begin(),
+                               input_channels / this->m_num_groups);
+    this->m_kernel_size = std::accumulate(this->m_kernel_dims.begin(),
+                                          this->m_kernel_dims.end(),
+                                          1, std::multiplies<int>());
+    if (this->m_kernel_dims.size() != input_dims.size() + 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" has a ";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
+      }
+      err << " input tensor and a ";
+      for (size_t i = 0; i < this->m_kernel_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << this->m_kernel_dims[i];
+      }
+      err << " convolution kernel";
       LBANN_ERROR(err.str());
     }
 
     // Initialize output tensor dimensions
-    output_dims[0] = kernel_dims[1];
+    /// @todo Dilated deconvolution
+    output_dims[0] = output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const auto& input_dim = input_dims[i+1];
+      const auto& kernel_dim = this->m_kernel_dims[i+2];
       const auto& stride = this->m_strides[i];
       const auto& pad = this->m_pads[i];
-      output_dims[i+1] = ((input_dims[i+1] - 1) * stride
-                          + kernel_dims[i+2] - 2 * pad);
+      // const auto& dilation = this->m_dilations[i];
+      output_dims[i+1] = (input_dim-1) * stride + kernel_dim - 2 * pad;
     }
     this->set_output_dims(output_dims);
 

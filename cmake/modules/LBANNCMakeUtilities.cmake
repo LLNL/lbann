@@ -1,34 +1,3 @@
-# Helper function that uses "dumb" logic to try to figure out if a
-# library file is a shared or static library. This won't work on
-# Windows; it will just return "unknown" for everything.
-#
-# FIXME: move to "LBANNCMakeUtilities.cmake" or the like
-function(lbann_determine_library_type lib_name output_var)
-
-  # Test if ends in ".a"
-  string(REGEX MATCH "\.a$" _static_match ${lib_name})
-  if (_static_match)
-    set(${output_var} STATIC PARENT_SCOPE)
-    return()
-  endif (_static_match)
-
-  # Test if ends in ".so(.version.id.whatever)"
-  string(REGEX MATCH "\.so($|\..*$)" _shared_match ${lib_name})
-  if (_shared_match)
-    set(${output_var} SHARED PARENT_SCOPE)
-    return()
-  endif (_shared_match)
-
-  # Test if ends in ".dylib(.version.id.whatever)"
-  string(REGEX MATCH "\.dylib($|\..*$)" _mac_shared_match ${lib_name})
-  if (_mac_shared_match)
-    set(${output_var} SHARED PARENT_SCOPE)
-    return()
-  endif (_mac_shared_match)
-
-  set(${output_var} "UNKNOWN" PARENT_SCOPE)
-endfunction(lbann_determine_library_type lib_name output)
-
 # A handy macro to add the current source directory to a local
 # filename. To be used for creating a list of sources.
 macro(set_full_path VAR)
@@ -38,3 +7,27 @@ macro(set_full_path VAR)
   endforeach()
   set(${VAR} "${__tmp_names}")
 endmacro()
+
+# A function to get a string of spaces. Useful for formatting output.
+function(lbann_get_space_string OUTPUT_VAR LENGTH)
+  set(_curr_length 0)
+  set(_out_str "")
+  while (${_curr_length} LESS ${LENGTH})
+    string(APPEND _out_str " ")
+    math(EXPR _curr_length "${_curr_length} + 1")
+  endwhile ()
+
+  set(${OUTPUT_VAR} "${_out_str}" PARENT_SCOPE)
+endfunction ()
+
+# This computes the maximum length of the things given in "ARGN"
+# interpreted as simple strings.
+macro(lbann_get_max_str_length OUTPUT_VAR)
+  set(${OUTPUT_VAR} 0)
+  foreach(var ${ARGN})
+    string(LENGTH "${var}" _var_length)
+    if (_var_length GREATER _max_length)
+      set(${OUTPUT_VAR} ${_var_length})
+    endif ()
+  endforeach ()
+endmacro ()

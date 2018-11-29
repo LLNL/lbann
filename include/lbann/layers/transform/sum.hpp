@@ -39,7 +39,7 @@ class sum_layer : public transform_layer {
  public:
   sum_layer(lbann_comm *comm)
     : transform_layer(comm) {
-    m_expected_num_parent_layers = -1; // No limit on parents
+    this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   sum_layer* copy() const override { return new sum_layer(*this); }
@@ -60,8 +60,19 @@ class sum_layer : public transform_layer {
 
  protected:
 
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    if (get_num_parents() < 1) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has no parent layers";
+      LBANN_ERROR(err.str());
+    }
+  }
+
   void setup_dims() override {
     transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
     const auto& output_dims = get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
       const auto& input_dims = get_input_dims(i);
@@ -85,13 +96,9 @@ class sum_layer : public transform_layer {
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (get_num_parents() < 1) {
-      El::Zero(output);
-    } else {
-      El::Copy(get_prev_activations(0), output);
-      for (int i = 1; i < get_num_parents(); ++i) {
-        El::Axpy(DataType(1), get_prev_activations(i), output);
-      }
+    El::Copy(get_prev_activations(0), output);
+    for (int i = 1; i < get_num_parents(); ++i) {
+      El::Axpy(DataType(1), get_prev_activations(i), output);
     }
   }
 

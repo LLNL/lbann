@@ -51,7 +51,7 @@ class uniform_layer : public transform_layer {
                 DataType max = DataType(1))
     : transform_layer(comm), m_min(min), m_max(max) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
   std::string get_type() const override { return "uniform"; }

@@ -25,21 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/math/unary.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
 namespace {
-  
+
 // =========================================================
 // Operator objects for entry-wise unary layers
 // =========================================================
 // Note: Unary operator corresponds to forward prop step
-// (\f$ y = f(x) \f$) and binary operator corresponds to 
+// (\f$ y = f(x) \f$) and binary operator corresponds to
 // back prop step
 // (\f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$).
 
 /** Logical not operator. */
-struct not_op {
+struct logical_not_op {
   inline __device__ DataType operator()(const DataType& x) const {
     const auto& b = x != DataType(0) && !isnan(x);
     return !b ? DataType(1) : DataType(0);
@@ -48,7 +49,7 @@ struct not_op {
     return DataType(0);
   }
 };
-  
+
 /** Absolute value operator. */
 struct abs_op {
   inline __device__ DataType operator()(const DataType& x) const {
@@ -124,7 +125,7 @@ struct reciprocal_op {
   inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
     if (dy == DataType(0)) { return DataType(0); }
     else                   { return - dy / (x*x); }
-    
+
   }
 };
 
@@ -176,7 +177,7 @@ struct safe_reciprocal_op {
     else             { return DataType(0); }
   }
 };
-  
+
 /** Exponential operator. */
 struct exp_op {
   inline __device__ DataType operator()(const DataType& x) const {
@@ -338,7 +339,7 @@ struct atanh_op {
     return dy / (DataType(1) - x*x);
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -369,7 +370,7 @@ struct atanh_op {
                                               get_prev_error_signals(), \
                                               get_error_signals());     \
   }
-  INSTANTIATE(not_layer, not_op)
+  INSTANTIATE(logical_not_layer, logical_not_op)
   INSTANTIATE(abs_layer, abs_op)
   INSTANTIATE(negative_layer, negative_op)
   INSTANTIATE(sign_layer, sign_op)
@@ -397,5 +398,5 @@ struct atanh_op {
   INSTANTIATE(acosh_layer, acosh_op)
   INSTANTIATE(asinh_layer, asinh_op)
   INSTANTIATE(atanh_layer, atanh_op)
-  
+
 } // namespace lbann

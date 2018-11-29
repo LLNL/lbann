@@ -146,7 +146,7 @@ void lbann_quantizer::adaptive_quantize(
   q.resize(header_len + total_quantized);
   const int num_copy_threads =
     get_adaptive_quantization_copy_threads(width);
-  #pragma omp parallel for schedule(dynamic, 1) num_threads(num_copy_threads)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(dynamic, 1) num_threads(num_copy_threads))
   for (unsigned tid = 0; tid < thread_qs.size(); ++tid) {
     std::copy(thread_qs[tid].begin(),
               thread_qs[tid].begin() + quantized_counts[tid],
@@ -188,7 +188,7 @@ void lbann_quantizer::adaptive_unquantize(
   const colT ldim = mat.LDim();
   const auto *q_col = (const colT *) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
-  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(dynamic, 1) firstprivate(header_len, buf) num_threads(num_threads))
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     const colT col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
@@ -241,7 +241,7 @@ void lbann_quantizer::adaptive_unquantize_add(
   const colT ldim = mat.LDim();
   const auto *q_col = (const colT *) q;
   const int num_threads = get_adaptive_quantization_threads(mat.Width());
-  #pragma omp parallel for schedule(dynamic, 1), firstprivate(header_len, buf) num_threads(num_threads)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(dynamic, 1) firstprivate(header_len, buf) num_threads(num_threads))
   for (colT header_loc = 0; header_loc < header_len; header_loc += HEADER_FACTOR) {
     const colT col_offset = (header_loc / HEADER_FACTOR) * ldim;
     // Extract averages.
@@ -302,7 +302,7 @@ void lbann_quantizer::adaptive_quantize_replace(
   const adaptive_thresholds threshes =
     proportion_threshold(mat, qerror, proportion);
   auto *q_col = (colT *) q.data();
-  #pragma omp parallel firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads)
+  LBANN_OMP_PARALLEL_ARGS(firstprivate(threshes, height, width, ldim, mat_buf, qerror_buf) num_threads(num_threads))
   {
     const int tid = omp_get_thread_num();
     colT num_quantized = 0;
@@ -379,7 +379,7 @@ void lbann_quantizer::adaptive_quantize_replace(
   q.resize(header_len + total_quantized);
   const int num_copy_threads =
     get_adaptive_quantization_copy_threads(width);
-  #pragma omp parallel for schedule(dynamic, 1) num_threads(num_copy_threads)
+  LBANN_OMP_PARALLEL_FOR_ARGS(schedule(dynamic, 1) num_threads(num_copy_threads))
   for (unsigned tid = 0; tid < thread_qs.size(); ++tid) {
     std::copy(thread_qs[tid].begin(),
               thread_qs[tid].begin() + quantized_counts[tid],
