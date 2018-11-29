@@ -44,7 +44,10 @@ public:
   thread_pool(size_type max_threads);
 
   /** \brief Destroy the threadpool */
-  ~thread_pool() { all_work_done_ = true; }
+  ~thread_pool() {
+    all_work_done_ = true;
+    global_work_queue_.wake_all(true);
+  }
 
   /** \brief Launch the threads */
   void launch_threads(size_type num_threads);
@@ -75,7 +78,7 @@ public:
     m_work_group.emplace_back(task.get_future());
     global_work_queue_.push(std::move(task));
 
-    return;// future;
+    return;
   }
 
   /** \brief Wait for all of the jobs in a work group to finish */

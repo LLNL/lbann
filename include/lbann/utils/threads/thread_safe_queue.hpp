@@ -35,7 +35,7 @@ private:
 public:
 
   /** \brief Default constructor; creates an empty queue */
-  thread_safe_queue() : head_(make_unique<_Node>()), tail_(head_.get()) {}
+  thread_safe_queue() : head_(make_unique<_Node>()), tail_(head_.get()), m_stop_threads(false) {}
 
   /** \brief Adds a value to back of the queue */
   void push(T value)
@@ -55,6 +55,15 @@ public:
     data_available_.notify_one();
   }
 
+  void wake_all(bool stop = false) {
+    {
+      std::lock_guard<std::mutex> lk(head_mtx_);
+      m_stop_threads = stop;
+    }
+    // Update the condition variable (for wait_and_pop)
+    data_available_.notify_all();
+  }
+
   /** \brief Try to remove the first value from the queue
    *
    *  \return nullptr if empty(); otherwise return a value
@@ -72,10 +81,18 @@ public:
   }
 
   /** \brief Wait for data and then return it */
-  std::unique_ptr<T> waitAndPop()
+  std::unique_ptr<T> wait_and_pop()
   {
     std::unique_lock<std::mutex> lk(head_mtx_);
-    data_available_.wait(lk,[&]{return head_.get() != do_get_tail_();});
+    data_available_.wait(lk,[&]{return ((head_.get() != do_get_tail_())
+                                        || ((head_.get() ==
+                                             do_get_tail_()) &&
+                                            m_stop_threads ));});
+
+    // There is no more work to do, bail
+    if(head_.get() == do_get_tail_() && m_stop_threads) {
+      return nullptr;
+    }
 
     // Remove the head
     auto popped_head = std::move(head_);
@@ -116,6 +133,8 @@ private:
 
   /** \brief Condition variable tripped when data added */
   std::condition_variable data_available_;
+
+  bool m_stop_threads;
 
 };// class thread_safe_queue
 

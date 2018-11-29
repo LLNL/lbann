@@ -110,11 +110,9 @@ void thread_pool::do_thread_work_()
 {
   while (not all_work_done_)
   {
-    auto task = global_work_queue_.try_pop();
+    auto task = global_work_queue_.wait_and_pop();
     if (task) {
       (*task)();
-    }else {
-      std::this_thread::yield();
     }
   }
 }
@@ -148,11 +146,10 @@ void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
   }
   while (not all_work_done_)
   {
-    auto task = global_work_queue_.try_pop();
-    if (task)
+    auto task = global_work_queue_.wait_and_pop();
+    if (task) {
       (*task)();
-    else
-      std::this_thread::yield();
+    }
   }
 }
 
