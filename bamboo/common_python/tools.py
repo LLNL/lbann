@@ -76,7 +76,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate a node if we don't have one already
         # Running the tests manually allows for already having a node allocated
-        if os.getenv('SLURM_NNODES') == None:
+        if os.getenv('SLURM_JOB_NUM_NODES') == None:
             command_allocate = 'salloc'
             option_num_nodes = ''
             option_partition = ''

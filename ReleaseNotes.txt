@@ -1,10 +1,23 @@
-============================== (Pending) Release Notes: v0.96 ==============================
+============================== (Pending) Release Notes: v0.97 ==============================
 Support for new training algorithms:
 
 Support for new network structures:
 
 Support for new layers:
- - LogSoftmax
+
+Performance optimizations:
+
+Model portability & usability:
+
+Internal features:
+
+I/O & data readers:
+
+Build system:
+
+============================== Release Notes: v0.96 ==============================
+Support for new layers:
+ - Log softmax
  - Basic math functions
  - Weights layer, which outputs a weights tensor
  - L2 norm squared
@@ -12,8 +25,10 @@ Support for new layers:
  - Boolean accuracy, Boolean false negative rate, Boolean false positive rate
  - Bilinear resize
  - Variance and covariance
+ - Dilated and grouped convolution (GPU only)
 
 Performance optimizations:
+ - Optimized GPU model-parallel softmax layer
 
 Model portability & usability:
  - Option for weight initialization with user-provided list of values
@@ -34,6 +49,10 @@ I/O & data readers:
    - Interface to select images of specific views and time indices
    - Interface to describe how to slice JAG data
    - Avoid redundant fetching and incoherent random number pulls in the group of local data readers
+ - Improved threading performance by preallocating scratch space for loading samples
+
+Build system:
+ - Support cross-compilation configurations in superbuild and SetupProtobuf
 
 ============================== Release Notes: v0.95 ==============================
 Support for new training algorithms:

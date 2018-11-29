@@ -99,7 +99,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
 
   /// Allow each thread to perform any preprocessing necessary on the
   /// data source prior to fetching data
-  #pragma omp parallel for schedule(static, 1)
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int t = 0; t < nthreads; t++) {
     preprocess_data_source(omp_get_thread_num());
   }
@@ -115,7 +115,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
   El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
 
   std::string error_message;
-#pragma omp parallel for
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
@@ -132,7 +132,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X) {
 
   /// Allow each thread to perform any postprocessing necessary on the
   /// data source prior to fetching data
-  #pragma omp parallel for schedule(static, 1)
+  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int t = 0; t < nthreads; t++) {
     postprocess_data_source(omp_get_thread_num());
   }
@@ -167,7 +167,7 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
 
 //  else {
     std::string error_message;
-#pragma omp parallel for
+    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);

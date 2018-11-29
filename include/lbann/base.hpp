@@ -36,6 +36,9 @@
 // Defines, among other things, lbann::DataType.
 #include "lbann_config.hpp"
 
+// Support for OpenMP macros
+#include "lbann/utils/omp_pragma.hpp"
+
 // Typedefs for Elemental matrices
 using EGrid      = El::Grid;
 using Grid       = El::Grid;

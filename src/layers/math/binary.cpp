@@ -57,7 +57,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
     auto* dx1_buffer = dx1.Buffer();
     auto* dx2_buffer = dx2.Buffer();
     const size_t size = x1.Height() * x1.Width();
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < size; ++i) {
       BinaryBackPropOperator op;
       op(x1_buffer[i], x2_buffer[i], dy_buffer[i],
@@ -66,7 +66,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   } else {
     auto const width = x1.Width();
     auto const height = x1.Height();
-#pragma omp parallel for collapse(2)
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int col = 0; col < width; ++col) {
       for (El::Int row = 0; row < height; ++row) {
         BinaryBackPropOperator op;
@@ -355,7 +355,7 @@ struct greater_equal_op {
 };
 
 /** Logical and operator. */
-struct and_op {
+struct logical_and_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
     const auto& b1 = x1 != zero && !std::isnan(x1);
@@ -373,7 +373,7 @@ struct and_op {
 };
 
 /** Logical or operator. */
-struct or_op {
+struct logical_or_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
     const auto& b1 = x1 != zero && !std::isnan(x1);
@@ -391,7 +391,7 @@ struct or_op {
 };
 
 /** Logical xor operator. */
-struct xor_op {
+struct logical_xor_op {
   inline DataType operator()(const DataType& x1,
                              const DataType& x2) const {
     const auto& b1 = x1 != zero && !std::isnan(x1);
@@ -459,8 +459,8 @@ struct xor_op {
   INSTANTIATE(less_equal_layer, less_equal_op)
   INSTANTIATE(greater_layer, greater_op)
   INSTANTIATE(greater_equal_layer, greater_equal_op)
-  INSTANTIATE(and_layer, and_op)
-  INSTANTIATE(or_layer, or_op)
-  INSTANTIATE(xor_layer, xor_op)
+  INSTANTIATE(logical_and_layer, logical_and_op)
+  INSTANTIATE(logical_or_layer, logical_or_op)
+  INSTANTIATE(logical_xor_layer, logical_xor_op)
 
 } // namespace lbann

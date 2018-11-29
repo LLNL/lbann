@@ -1,6 +1,5 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
-  greedy_layerwise_autoencoder.hpp
   model.hpp
   sequential.hpp
   siamese.hpp

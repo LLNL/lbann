@@ -68,7 +68,7 @@ EvalType l1_weight_regularization::finish_evaluation() {
 
     // Compute L1 regularization term
     EvalType sum = 0;
-    #pragma omp parallel for reduction(+:sum) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         const EvalType val = values_local(row, col);
@@ -95,7 +95,7 @@ void l1_weight_regularization::compute_weight_regularization() {
     // Compute gradient
     gradient = values.Copy();
     Mat& gradient_local = gradient->Matrix();
-    #pragma omp parallel for collapse(2)
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (int col = 0; col < local_width; ++col) {
       for (int row = 0; row < local_height; ++row) {
         const DataType val = values_local(row, col);

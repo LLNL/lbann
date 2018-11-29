@@ -183,7 +183,7 @@ EvalType polya_negloglike::finish_evaluate_compute(
   const int local_height = predictions_local.Height();
   const int local_width = predictions_local.Width();
 
-  #pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (int col = 0; col < local_width; ++col) {
     DataType count = DataType(0);
     DataType alpha_sum = DataType(0);
@@ -236,7 +236,7 @@ void polya_negloglike::differentiate_compute(const AbsDistMat& predictions,
   const El::Int local_width = gradient_local.Width();
 
   // Compute gradient
-  #pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       const DataType true_val = ground_truth_local(row, col);
