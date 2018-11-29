@@ -42,10 +42,7 @@ class hadamard_layer : public transform_layer {
 
   hadamard_layer(lbann_comm *comm)
     : transform_layer(comm) {
-
-    // Hadamard layer has no limit on parents
-    m_expected_num_parent_layers = -1;
-
+    this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   hadamard_layer* copy() const override { return new hadamard_layer(*this); }

@@ -1,11 +1,13 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   callback_check_dataset.cpp
+  callback_check_gradients.cpp
   callback_check_init.cpp
-  callback_check_reconstruction_error.cpp
+  callback_check_metric.cpp
   callback_checknan.cpp
   callback_checkpoint.cpp
   callback_checksmall.cpp
+  callback_confusion_matrix.cpp
   callback_debug.cpp
   callback_debug_io.cpp
   callback_dump_activations.cpp
@@ -14,7 +16,6 @@ set_full_path(THIS_DIR_SOURCES
   callback_dump_minibatch_sample_indices.cpp
   callback_dump_weights.cpp
   callback_early_stopping.cpp
-  callback_gradient_check.cpp
   callback_imcomm.cpp
   callback_io.cpp
   callback_learning_rate.cpp

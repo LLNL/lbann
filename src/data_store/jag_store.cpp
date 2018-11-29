@@ -3,7 +3,6 @@
 #ifdef LBANN_HAS_CONDUIT
 
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/timer.hpp"
 #include "lbann/utils/options.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
@@ -16,11 +15,12 @@
 
 namespace lbann {
 
-jag_store::jag_store() 
+jag_store::jag_store()
   : m_image_size(0),
+    m_comm(nullptr),
     m_master(false),
     m_max_samples(INT_MAX)
-  { 
+  {
   }
 
 void load_keys(std::vector<std::string> &v, const std::string &keys) {
@@ -68,36 +68,78 @@ void jag_store::load_image_channels_to_use(const std::string &keys) {
 
 void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   options *opts = options::get();
+  const std::string base_dir = opts->get_string("base_dir");
   const std::string output_fn = opts->get_string("build_conduit_index");
-  std::ofstream out(output_fn.c_str()); 
+  std::stringstream ss;
+  ss << output_fn << "." << m_rank_in_world;
+  std::ofstream out(ss.str().c_str());
   if (!out.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + output_fn + " for writing");
   }
   if (m_master) std::cerr << "writing index file: " << output_fn << "\n";
+  if (m_rank_in_world == 0) {
+    out << base_dir << "\n";
+  }
 
-  for (auto t : filenames) {
+  int global_num_samples = 0;
+  for (size_t j=m_rank_in_world; j<filenames.size(); j+=m_num_procs_in_world) {
     std::stringstream s2;
-    s2 << t;
-    std::string fn;
-    s2 >> fn;
-    out << fn << " ";
+    filenames[j];
+    std::string fn(base_dir);
+    fn += '/';
+    fn += filenames[j];
+    out << filenames[j] << " ";
     hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( fn );
     std::vector<std::string> cnames;
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
+    size_t is_good = 0;
+    size_t is_bad = 0;
+    std::stringstream s5;
     conduit::Node n_ok;
-    for (auto sample_name : cnames) {
-      const std::string key_1 = "/" + sample_name + "/performance/success";
+    for (size_t h=0; h<cnames.size(); h++) {
+      const std::string key_1 = "/" + cnames[h] + "/performance/success";
       conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
       int success = n_ok.to_int64();
       if (success == 1) {
-        out << sample_name << " ";
+        ++is_good;
+      } else {
+        s5 << h << " ";
+        ++is_bad;
       }
     }
-    out << "\n";
+    global_num_samples += is_good;
+    out << is_good << " " << is_bad << " " << s5.str() << "\n";
     conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
-
   out.close();
+  m_comm->global_barrier();
+
+  int num_samples;
+  MPI_Reduce(&global_num_samples, &num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  //m_comm->reduce<int>(&global_num_samples, 1, 0, m_comm->get_world_comm(), El::mpi::SUM);
+
+  std::stringstream s3;
+  s3 << "echo " << global_num_samples << " " << filenames.size() << " >  num_samples_tmp";
+  system(s3.str().c_str());
+  s3.clear();
+  s3.str("");
+  s3 << "cat num_samples_tmp ";
+  for (int k=0; k<m_num_procs_in_world; k++) {
+    s3 << output_fn << "." << k << " ";
+  }
+  s3 << "> " << output_fn;
+  system(s3.str().c_str());
+  s3.clear();
+  s3.str("");
+  s3 << "chmod 660 " << output_fn;
+  system(s3.str().c_str());
+  s3.clear();
+  s3.str("");
+  s3 << "rm -f num_samples_tmp ";
+  for (int k=0; k<m_num_procs_in_world; k++) {
+    s3 << output_fn << "." << k << " ";
+  }
+  system(s3.str().c_str());
 }
 
 void jag_store::setup_testing() {
@@ -143,7 +185,7 @@ void jag_store::setup(
   }
 
   // optionally build an index file, then exit. Each line of the file will
-  // contain a conduit filename, followed by the valid sample_ids in 
+  // contain a conduit filename, followed by the valid sample_ids in
   // the conduit file
   if (opts->has_string("build_conduit_index")) {
     if (! has_conduit_filenames) {
@@ -161,11 +203,12 @@ void jag_store::setup(
 
   if (!opts->has_int("mode")) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: you must pass --mode=<int> on cmd line, where <int> is 1 (to use conduit files) or 2 or 3 (for testing) (to use binary files)");
-  }  
+  }
   m_mode = opts->get_int("mode");
   if (! (m_mode == 1 || m_mode == 2 || m_mode == 3)) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: you must pass --mode=<int> on cmd line, where <int> is 1 (to use conduit files) or 2 (to use binary files); or 4 (for testing) you passed: " + std::to_string(m_mode));
   }
+  if (m_master) std::cerr << "Running in mode: " << m_mode << "\n";
 
   // optionally convert conduit files to our binary format, then exit
   if (opts->has_string("convert_conduit")) {
@@ -175,7 +218,7 @@ void jag_store::setup(
     setup_conduit();
     convert_conduit_to_binary(m_conduit_filenames);
     exit(0);
-  } 
+  }
 
   if (m_mode == 1) {
     setup_conduit();
@@ -190,7 +233,7 @@ void jag_store::setup(
   }
 
   if (m_mode == 3) {
-    test_converted_files(); 
+    test_converted_files();
     m_comm->global_barrier();
     exit(0);
   }
@@ -208,7 +251,7 @@ void jag_store::setup(
       compute_bandwidth();
     } else {
       compute_bandwidth_binary();
-    } 
+    }
     exit(0);
   }
 }
@@ -229,14 +272,14 @@ void jag_store::build_data_sizes() {
   }
   if (get_linearized_input_size() > 0.0) {
     m_data_sizes.push_back(get_linearized_input_size());
-  }  
+  }
 }
 
 void jag_store::report_linearized_sizes() {
   if (! m_master) {
     return;
   }
-  std::cerr 
+  std::cerr
     << "===================================================================\n"
     << "LINEARIZED SIZES REPORT:\n"
     << "get_linearized_data_size:  " << get_linearized_data_size() << "\n"
@@ -253,29 +296,33 @@ void jag_store::report_linearized_sizes() {
     total += t;
   }
   std::cerr << "\n";
-  std::cerr << "total, from m_data_sizes; should be same as above: " 
+  std::cerr << "total, from m_data_sizes; should be same as above: "
     << total << "\n"
     << "===================================================================\n";
 }
 
 void jag_store::load_data_binary(int data_id, int tid) {
   const int file_idx = m_sample_map[data_id].first;
-  std::string fn = m_binary_filenames[file_idx];
+//  std::string fn = m_binary_filenames[file_idx];
   const int sample_idx = m_sample_map[data_id].second;
 
-  std::ifstream in(fn.c_str(), std::ios::out | std::ios::binary);
+ // std::ifstream in(fn.c_str(), std::ios::out | std::ios::binary);
+  /*
   if (!in.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open: " + fn + " for reading; data_id: " + std::to_string(data_id) + " tid: " + std::to_string(tid));
   }
+  */
 
-  in.seekg(sample_idx*m_sample_len);
-  in.read((char*)m_scratch[tid].data(), m_sample_len);
-  in.close();
+//  in.seekg(sample_idx*m_sample_len);
+  m_streams[tid][file_idx]->seekg(sample_idx*m_sample_len);
+  m_streams[tid][file_idx]->read((char*)m_scratch[tid].data(), m_sample_len);
+  //in.read((char*)m_scratch[tid].data(), m_sample_len);
+//  in.close();
 
-  size_t offset = sample_idx * m_sample_len;
+//  size_t offset = sample_idx * m_sample_len;
 
-  in.seekg(offset);
-  in.read((char*)m_scratch[tid].data(), m_sample_len);
+//  in.seekg(offset);
+ // in.read((char*)m_scratch[tid].data(), m_sample_len);
 
   for (size_t j=0; j<m_inputs_to_use.size(); j++) {
     check_entry(m_inputs_to_use[j]);
@@ -299,7 +346,7 @@ void jag_store::load_data_binary(int data_id, int tid) {
     for (size_t k=0; k<m_image_channels_to_use.size(); k++) {
       int channel = m_image_channels_to_use[k];
 
-      memcpy((void*)m_data_images[tid][y].data(), 
+      memcpy((void*)m_data_images[tid][y].data(),
              (void*)(m_scratch[tid].data()+m_key_map[m_image_views_to_use[view]] + channel*get_linearized_channel_size()*sizeof(data_reader_jag_conduit_hdf5::ch_t)), get_linearized_channel_size());
       for (size_t x=0; x<m_data_images[tid][y].size(); x++) {
         m_data_images[tid][y][x] = m_data_images[tid][y][x]*m_normalize_views[channel].first - m_normalize_views[channel].second;
@@ -421,7 +468,7 @@ void jag_store::write_binary(const std::vector<std::string> &filenames, const st
           double tmp = node.to_float64();
           m_binary_output_file.write((char*)&tmp, sizeof(data_reader_jag_conduit_hdf5::input_t));
         }
-  
+
         for (auto scalar_name : m_scalars_to_use) {
           const std::string key = "/" + sample_name + "/outputs/scalars/" + scalar_name;
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
@@ -429,7 +476,7 @@ void jag_store::write_binary(const std::vector<std::string> &filenames, const st
           double tmp = node.to_float64();
           m_binary_output_file.write((char*)&tmp, sizeof(data_reader_jag_conduit_hdf5::scalar_t));
         }
-  
+
         for (auto image_name : m_image_views_to_use) {
           const std::string key = "/" + sample_name + "/outputs/images/" + image_name + "/0.0/emi";
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
@@ -456,11 +503,9 @@ void jag_store::write_binary(const std::vector<std::string> &filenames, const st
         }
       }
     }
-    if (m_master) std::cerr << "XX calling close hdf5\n";
     conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-    if (m_master) std::cerr << "XX DONE! calling close hdf5\n";
   }
-EARLY_EXIT : 
+EARLY_EXIT :
   m_binary_output_file.close();
   m_binary_output_file_names.close();
   if (m_master) std::cerr << "LEAVING jag_store::write_binary\n";
@@ -569,15 +614,15 @@ void jag_store::load_variable_names() {
   load_image_channels_to_use(m_reader->m_image_channels);
 
   if (m_master) {
-    std::cerr << "using these inputs:\n ";
+    std::cerr << "using these inputs:\n";
     for (auto t : m_inputs_to_use) {
       std::cerr << "    " << t << "\n";
     }
-    std::cerr << "\nusing these scalars:\n ";
+    std::cerr << "\nusing these scalars:\n";
     for (auto t : m_scalars_to_use) {
       std::cerr << "    " << t << "\n";
     }
-    std::cerr << "\nusing these views:\n ";
+    std::cerr << "\nusing these views:\n";
     for (auto t : m_image_views_to_use) {
       std::cerr << "    " << t << "\n";
     }
@@ -599,12 +644,12 @@ void jag_store::allocate_memory() {
     m_data_scalars[j].resize(m_scalars_to_use.size());
   }
 
-  m_data_images.resize(nthreads);  
+  m_data_images.resize(nthreads);
   for (size_t j=0; j<m_data_images.size(); j++) {
     m_data_images[j].resize(get_total_num_channels());
     for (size_t i=0; i<m_data_images[j].size(); i++) {
       m_data_images[j][i].resize(get_linearized_channel_size());
-    }  
+    }
   }
 }
 
@@ -694,7 +739,6 @@ void jag_store::setup_conduit() {
   std::string sample_id;
   int j = -1;
   std::vector<std::string> tmp;
-  if (m_master) std::cerr << "XX m_conduit_filenames.size(): " << m_conduit_filenames.size() << "\n";
   for (auto t : m_conduit_filenames) {
     if (m_data_id_to_sample_id.size() == m_max_samples) {
       break;
@@ -730,20 +774,39 @@ void jag_store::setup_binary() {
   }
   if (m_master) std::cerr << "opened " << fn << " for reading\n";
 
+  std::string filename;
+  size_t num_files = 0;
+  while (in >> filename) {
+    ++num_files;
+  }
+  in.close();
+
+  in.open(fn.c_str());
+  size_t nthreads = omp_get_max_threads();
+  m_streams.resize(nthreads);
+  for (size_t j=0; j<nthreads; j++) {
+    m_streams[j].resize(num_files);
+  }
+
   size_t global_idx = 0;
   int file_idx = -1;
-  std::string filename;
   while (in >> filename) {
     if (m_master) std::cerr << "next binary filename: " << filename << "\n";
     ++file_idx;
+
+    for (size_t tid=0; tid<nthreads; tid++) {
+      m_streams[tid][file_idx] = new std::ifstream(filename.c_str(), std::ios::out | std::ios::binary);
+    }
+
     if (global_idx == m_max_samples) {
       break;
     }
 
     m_binary_filenames.push_back(filename);
-    size_t j = filename.rfind(".bin"); 
+
+    size_t j = filename.rfind(".bin");
     if (j == std::string::npos) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: t.rfind('.bin') failed");
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: t.rfind('.bin') failed for filename: " + filename);
     }
 
     std::stringstream s;
@@ -757,7 +820,7 @@ void jag_store::setup_binary() {
     size_t local_idx = 0;
     std::string sample_id;
     while (in2 >> sample_id) {
-      //maps global index (shuffled index subscript) to <file_index, 
+      //maps global index (shuffled index subscript) to <file_index,
       //num sample within the file
       m_sample_map[global_idx] = std::make_pair(file_idx, local_idx++);
       m_sample_id_to_global_idx[sample_id] = global_idx;
@@ -783,7 +846,6 @@ void jag_store::setup_binary() {
   key_fn += "/metadata.txt";
   read_key_map(key_fn);
 
-  size_t nthreads = omp_get_max_threads();
   m_scratch.resize(nthreads);
   for (size_t j=0; j<nthreads; j++) {
     for (size_t i=0; i<m_scratch.size(); i++) {
@@ -798,16 +860,16 @@ void jag_store::compute_bandwidth_binary() {
   int me = get_rank_in_world();
   int np = m_comm->get_procs_in_world();
 
-  #pragma omp parallel
+  LBANN_OMP_PARALLEL
   {
     const auto threadId = omp_get_thread_num();
 
-    #pragma omp parallel for
-      for (size_t j = me; j<m_max_samples; j += np) {
+    LBANN_OMP_PARALLEL_FOR
+    for (size_t j = me; j<m_max_samples; j += np) {
       if (j % 1000 == 0 && m_master) std::cerr << "processed " << j/1000 << "K samples\n";
       load_data_binary(j, threadId);
-    }  
-  }  
+    }
+  }
   std::cerr << "P_" << me << " finished; time: " << get_time() - tm1 << "\n";
   m_comm->global_barrier();
   if (m_master) std::cerr << "time to load all data: " << get_time() - tm1 << "\n";
@@ -823,7 +885,7 @@ void jag_store::compute_bandwidth() {
     if (j % 1000 == 0 && m_master) std::cerr << "processed " << j/1000 << "K samples\n";
     load_data(j, 0);
     n += np;
-  }  
+  }
   std::cerr << "P_" << me << " finished; time: " << get_time() - tm1 << "\n";
   m_comm->global_barrier();
   if (m_master) std::cerr << "time to load all data: " << get_time() - tm1 << "\n";
@@ -922,7 +984,7 @@ void jag_store::load_normalization_values() {
   for (int j=0; j<4; j++) {
     std::string s = "C" + std::to_string(j);
     channels_to_use.push_back(s);
-  }  
+  }
   load_normalization_values_impl(m_normalize_views, channels_to_use);
 }
 

@@ -24,36 +24,37 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_MATH_BINARY_HPP_INCLUDED
-#define LBANN_LAYER_MATH_BINARY_HPP_INCLUDED
+#ifndef LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
+#define LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** Base class for binary math layers.
+/** Templated class for entry-wise binary layers.
  *  'Name' should be a type such that Name() returns a human-readable
  *  layer name, e.g. an empty struct that can be converted to a
  *  string.
  */
 template <data_layout Layout, El::Device Device, typename Name>
-class binary_math_layer : public Layer {
+class entrywise_binary_layer : public Layer {
 public:
-  binary_math_layer(lbann_comm *comm) : Layer(comm) {
-    m_expected_num_parent_layers = 2;
+
+  entrywise_binary_layer(lbann_comm *comm) : Layer(comm) {
+    this->m_expected_num_parent_layers = 2;
   }
-  binary_math_layer* copy() const override {
-    return new binary_math_layer<Layout,Device,Name>(*this);
+  entrywise_binary_layer* copy() const override {
+    return new entrywise_binary_layer<Layout,Device,Name>(*this);
   }
   std::string get_type() const override { return Name(); }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
-  
+
 protected:
-  
+
   void setup_dims() override {
-    set_output_dims(get_input_dims());
     Layer::setup_dims();
+    set_output_dims(get_input_dims());
 
     // Check that input dimensions match
     if (get_input_dims(0) != get_input_dims(1)) {
@@ -72,48 +73,48 @@ protected:
       err << ")";
       LBANN_ERROR(err.str());
     }
-    
+
   }
-  
+
   void fp_compute() override;
   void bp_compute() override;
-  
+
 };
 
-// Convenience macro to define a binary math layer class
-#define LBANN_DEFINE_BINARY_MATH_LAYER(layer_name, layer_string) \
-  struct layer_name##_name_struct {                             \
-    inline operator std::string() { return layer_string; }      \
-  };                                                            \
-  template <data_layout Layout, El::Device Device>              \
-  using layer_name                                              \
-  = binary_math_layer<Layout, Device, layer_name##_name_struct>;
+// Convenience macro to define an entry-wise binary layer class
+#define DEFINE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string)         \
+  struct layer_name##_name_struct {                                     \
+    inline operator std::string() { return layer_string; }              \
+  };                                                                    \
+  template <data_layout Layout, El::Device Device>                      \
+  using layer_name                                                      \
+  = entrywise_binary_layer<Layout, Device, layer_name##_name_struct>;
 
 // Arithmetic operations
-LBANN_DEFINE_BINARY_MATH_LAYER(add_layer,         "add");
-LBANN_DEFINE_BINARY_MATH_LAYER(subtract_layer,    "subtract");
-LBANN_DEFINE_BINARY_MATH_LAYER(multiply_layer,    "multiply");
-LBANN_DEFINE_BINARY_MATH_LAYER(divide_layer,      "divide");
-LBANN_DEFINE_BINARY_MATH_LAYER(mod_layer,         "modulo");
-LBANN_DEFINE_BINARY_MATH_LAYER(pow_layer,         "power");
-LBANN_DEFINE_BINARY_MATH_LAYER(safe_divide_layer, "safe divide");
+DEFINE_ENTRYWISE_BINARY_LAYER(add_layer,         "add");
+DEFINE_ENTRYWISE_BINARY_LAYER(subtract_layer,    "subtract");
+DEFINE_ENTRYWISE_BINARY_LAYER(multiply_layer,    "multiply");
+DEFINE_ENTRYWISE_BINARY_LAYER(divide_layer,      "divide");
+DEFINE_ENTRYWISE_BINARY_LAYER(mod_layer,         "modulo");
+DEFINE_ENTRYWISE_BINARY_LAYER(pow_layer,         "power");
+DEFINE_ENTRYWISE_BINARY_LAYER(safe_divide_layer, "safe divide");
 
 // Comparison operations
-LBANN_DEFINE_BINARY_MATH_LAYER(max_layer,           "maximum");
-LBANN_DEFINE_BINARY_MATH_LAYER(min_layer,           "minimum");
-LBANN_DEFINE_BINARY_MATH_LAYER(equal_layer,         "equal");
-LBANN_DEFINE_BINARY_MATH_LAYER(not_equal_layer,     "not equal");
-LBANN_DEFINE_BINARY_MATH_LAYER(less_layer,          "less than");
-LBANN_DEFINE_BINARY_MATH_LAYER(less_equal_layer,    "less than or equal");
-LBANN_DEFINE_BINARY_MATH_LAYER(greater_layer,       "greater than");
-LBANN_DEFINE_BINARY_MATH_LAYER(greater_equal_layer, "greater than or equal");
-  
+DEFINE_ENTRYWISE_BINARY_LAYER(max_layer,           "maximum");
+DEFINE_ENTRYWISE_BINARY_LAYER(min_layer,           "minimum");
+DEFINE_ENTRYWISE_BINARY_LAYER(equal_layer,         "equal");
+DEFINE_ENTRYWISE_BINARY_LAYER(not_equal_layer,     "not equal");
+DEFINE_ENTRYWISE_BINARY_LAYER(less_layer,          "less than");
+DEFINE_ENTRYWISE_BINARY_LAYER(less_equal_layer,    "less than or equal");
+DEFINE_ENTRYWISE_BINARY_LAYER(greater_layer,       "greater than");
+DEFINE_ENTRYWISE_BINARY_LAYER(greater_equal_layer, "greater than or equal");
+
 // Logical operations
-LBANN_DEFINE_BINARY_MATH_LAYER(and_layer, "logical and");
-LBANN_DEFINE_BINARY_MATH_LAYER(or_layer,  "logical or");
-LBANN_DEFINE_BINARY_MATH_LAYER(xor_layer, "logical xor");
+DEFINE_ENTRYWISE_BINARY_LAYER(logical_and_layer, "logical and");
+DEFINE_ENTRYWISE_BINARY_LAYER(logical_or_layer,  "logical or");
+DEFINE_ENTRYWISE_BINARY_LAYER(logical_xor_layer, "logical xor");
 
 } // namespace lbann
 
-#undef LBANN_DEFINE_BINARY_MATH_LAYER 
-#endif // LBANN_LAYER_MATH_BINARY_HPP_INCLUDED
+#undef DEFINE_ENTRYWISE_BINARY_LAYER
+#endif // LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
