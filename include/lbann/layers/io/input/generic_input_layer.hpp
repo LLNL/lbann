@@ -253,7 +253,6 @@ class generic_input_layer : public io_layer {
 
     generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
 
-#if 0
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->fetch_data_in_background) {
@@ -267,14 +266,16 @@ class generic_input_layer : public io_layer {
       io_buffer->data_fetch_future.get();
       io_buffer->fetch_data_in_background = false;
     }
- #endif
+
     int num_samples_in_batch;
     if(io_buffer->num_samples_ready(mode) > 0) {
       num_samples_in_batch = io_buffer->num_samples_ready(mode);
-      //      std::cout << "fp_compute already has data" << std::endl;
     }else {
-      num_samples_in_batch = io_buffer->fetch_to_local_matrix(get_data_reader(), mode, this->m_model->get_io_thread_pool());
-      //      std::cout << "fp_compute is fetching data" << std::endl;
+        std::stringstream err;
+        err << __FILE__ << " " << __LINE__ << " :: "
+            << "I/O buffer does not contain valid samples ("<< num_samples_in_batch
+            << ")";
+        throw lbann_exception(err.str());
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
@@ -328,18 +329,13 @@ class generic_input_layer : public io_layer {
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
 
-    if(0 &&!m_data_set_processed) {
+    if(!m_data_set_processed) {
       int next_active_buffer = m_active_buffer + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, "BACKGROUND"));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->data_fetch_future = std::move(background_fetch_done);
       next_io_buffer->fetch_data_in_background = true;
-
-    // if(next_io_buffer->fetch_data_in_background) {
-    //   next_io_buffer->data_fetch_future.get();
-    //   next_io_buffer->fetch_data_in_background = false;
-    // }
     }
   }
 

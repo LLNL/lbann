@@ -736,6 +736,8 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   lbann_comm *m_comm;
 
+  bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool);
+
   /**
    * Fetch a single sample into a matrix.
    * @param X The matrix to load data into.

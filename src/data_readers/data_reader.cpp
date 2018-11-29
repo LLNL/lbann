@@ -69,6 +69,21 @@ void generic_data_reader::setup() {
 }
 
 
+bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool) {
+  std::string error_message;
+  for (int s = thread_id; s < mb_size; s+=io_thread_pool.get_num_threads()) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_datum(X, index, s, io_thread_pool);
+    if (!valid) {
+      error_message = "invalid datum (index " + std::to_string(index) + ")";
+    }
+    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    indices_fetched.Set(s, 0, index);
+  }
+  return true;
+}
+
 int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool) {
   #ifdef DEBUG
   if (m_current_pos == 0) {
@@ -125,34 +140,24 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   }
 
   else {
-    std::string error_message;
-    //    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
-    std::vector<std::future<bool>> io_thread_futures;
-    io_thread_futures.reserve(mb_size);
+    int num_samples_per_thread = mb_size / io_thread_pool.get_num_threads();
 
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-
-      // io_thread_futures.emplace_back(
-      //   io_thread_pool.submit_job(
-      //     std::bind(&generic_data_reader::fetch_datum, this, std::ref(X), index, s, std::ref(io_thread_pool))));
-      bool valid = fetch_datum(X, index, s, io_thread_pool);
-      if (!valid) {
-        //        LBANN_DATA_FETCH_OMP_CRITICAL
-        error_message = "invalid datum (index " + std::to_string(index) + ")";
+    for (int t = 0; t < static_cast<int>(io_thread_pool.get_num_threads()); t++) {
+      // Queue up work into other threads and then finish off the
+      // mini-batch in the active thread
+      if(t == io_thread_pool.get_local_thread_id()) {
+        continue;
+      }else {
+        io_thread_pool.submit_job_to_work_group(
+          std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                    mb_size, std::ref(indices_fetched), std::ref(io_thread_pool)));
       }
-      indices_fetched.Set(s, 0, index);
     }
+    fetch_data_block(X, io_thread_pool.get_local_thread_id(), mb_size,
+                     indices_fetched, io_thread_pool);
+
     // Wait for all of the threads to finish
-    // for (auto& f : io_thread_futures) {
-    //   bool valid = f.get();
-    //   if (!valid) {
-    //     error_message = "invalid datum (index)";
-    //     //        error_message = "invalid datum (index " + std::to_string(index) + ")";
-    //   }
-    // }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    io_thread_pool.finish_work_group();
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
