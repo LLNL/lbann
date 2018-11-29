@@ -40,7 +40,7 @@ namespace lbann {
  *      \end{cases}
  *  \f]
  *  \f$\alpha\f$ should be non-negative. See:
- *    Clevert, Djork-Arne, Thomas Unterthiner, and Sepp
+ *    Djork-Arne Clevert, Thomas Unterthiner, and Sepp
  *    Hochreiter. "Fast and accurate deep network learning by
  *    exponential linear units (ELUs)." arXiv preprint
  *    arXiv:1511.07289 (2015).

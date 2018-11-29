@@ -62,7 +62,7 @@ DEFINE_ENTRYWISE_UNARY_LAYER(relu_layer, "ReLU")
  *  \f]
  *  \f$\alpha\f$ and \f$s\f$ are pre-chosen constants. Note that this
  *  is equivalent to \f$ s \, \text{ELU}(x) \f$. See:
- *    Klambauer, Gunter, Thomas Unterthiner, Andreas Mayr, and Sepp
+ *    Gunter Klambauer, Thomas Unterthiner, Andreas Mayr, and Sepp
  *    Hochreiter. "Self-normalizing neural networks." In Advances in
  *    Neural Information Processing Systems, pp. 971-980. 2017.
  */

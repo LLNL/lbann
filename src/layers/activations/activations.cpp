@@ -71,10 +71,14 @@ struct relu_op {
 /** SELU operator. */
 struct selu_op {
   inline DataType operator()(const DataType& x) const {
-    return (x > 0) ? scale * x : scale * alpha * std::expm1(x);
+    return (x > zero ?
+            scale * x :
+            scale * alpha * std::expm1(x));
   }
   inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return (x > 0) ? dy * scale : dy * scale * alpha * std::exp(x);
+    return (x > zero ?
+            dy * scale :
+            dy * scale * alpha * std::exp(x));
   }
 private:
   static constexpr DataType alpha = 1.6732632423543772848170429916717;

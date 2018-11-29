@@ -40,7 +40,7 @@ namespace lbann {
  *      \end{cases}
  *  \f]
  *  See:
- *    Maas, Andrew L., Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *    Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
  *    nonlinearities improve neural network acoustic models." In
  *    Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
