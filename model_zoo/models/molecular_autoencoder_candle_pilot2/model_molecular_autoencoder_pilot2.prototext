@@ -5,9 +5,9 @@ model {
   num_parallel_readers: 1
   procs_per_model: 0
 
-  ###################################################
+  ##############################################
   # Objective function
-  ###################################################
+  ##############################################
 
   objective_function {
     layer_term { layer: "mean_squared_error" }
@@ -16,27 +16,27 @@ model {
     }
   }
 
-  ###################################################
+  ##############################################
   # Callbacks
-  ###################################################
+  ##############################################
 
   callback { print {} }
   callback { timer {} }
 
-  ###################################################
-  # start of layers
-  ###################################################
+  ##############################################
+  # Layers
+  ##############################################
 
-  #######
-  # INPUT
-  #######
+  ######################
+  # Data
+  ######################
+
   layer {
     name: "input"
     children: "data label"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
-      target_mode: "reconstruction"
     }
   }
   layer {
@@ -49,79 +49,64 @@ model {
     parents: "input"
     name: "label"
     data_layout: "data_parallel"
-    split {}
+    dummy {}
   }
 
-  #############
-  # FULLY CONNECTED ENCODE 1
-  #############
+  ######################
+  # Encoder
+  ######################
+
   layer {
     parents: "data"
-    name: "encode1"
+    name: "encode1_fc"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 12
       has_bias: true
     }
   }
-
-  ######
-  # RELU encode1
-  ######
   layer {
-    parents: "encode1"
-    name: "encode_relu1"
+    parents: "encode1_fc"
+    name: "encode1"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
 
-  #################
-  # FULLY_CONNECTED decode1
-  #################
+  ######################
+  # Decoder
+  ######################
+
   weights {
-    name: "decode1_matrix"
+    name: "decode1_fc_matrix"
     glorot_uniform_initializer {}
   }
   layer {
-    parents: "encode_relu1"
-    name: "decode1"
-    weights: "decode1_matrix"
+    parents: "encode1"
+    name: "decode1_fc"
+    weights: "decode1_fc_matrix"
     hint_layer: "data"
     data_layout: "data_parallel"
     fully_connected {
       has_bias: true
     }
   }
-
-  #######
-  # RELU decode1
-  #######
   layer {
-    parents: "decode1"
-    name: "decode_relu10"
+    parents: "decode1_fc"
+    name: "decode1"
     data_layout: "data_parallel"
     relu {
     }
   }
 
-  #################
-  # RECONSTRUCTION
-  #################
+  ######################
+  # Reconstruction
+  ######################
+
   layer {
-    parents: "decode_relu10"
-    name: "reconstruction"
-    data_layout: "data_parallel"
-    split {}
-  }
-  layer {
-    parents: "reconstruction data"
+    parents: "decode1 data"
     name: "mean_squared_error"
     data_layout: "data_parallel"
     mean_squared_error {}
   }
 
-  ###################################################
-  # end of layers
-  ###################################################
 }
