@@ -342,15 +342,31 @@ void model::print_description(std::ostream& os,
       const auto& parents = l->get_parent_layers();
       const auto& children = l->get_child_layers();
       for (size_t i = 0; i < parents.size(); ++i) {
-        ss << (i > 0 ? ", " : "")
-           << (parents[i] == nullptr ?
-               "unknown layer" : parents[i]->get_name());
+        ss << (i > 0 ? ", " : "");
+        if (parents[i] == nullptr) {
+          ss << "unknown layer";
+        } else {
+          ss << parents[i]->get_name() << " (";
+          const auto& dims = l->get_input_dims(i);
+          for (size_t j = 0; j < dims.size(); ++j) {
+            ss << (j > 0 ? "x" : "") << dims[j];
+          }
+          ss << ")";
+        }
       }
       ss << "} -> {";
       for (size_t i = 0; i < children.size(); ++i) {
-        ss << (i > 0 ? ", " : "")
-           << (children[i] == nullptr ?
-               "unknown layer" : children[i]->get_name());
+        ss << (i > 0 ? ", " : "");
+        if (children[i] == nullptr) {
+          ss << "unknown layer";
+        } else {
+          ss << children[i]->get_name() << " (";
+          const auto& dims = l->get_output_dims(i);
+          for (size_t j = 0; j < dims.size(); ++j) {
+            ss << (j > 0 ? "x" : "") << dims[j];
+          }
+          ss << ")";
+        }
       }
       ss << "}";
     }
