@@ -32,7 +32,6 @@
 #define LBANN_HPP_INCLUDED
 
 /// Models
-#include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
 
 /// Activation Layers

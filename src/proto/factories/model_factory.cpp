@@ -48,9 +48,6 @@ model* instantiate_model(lbann_comm* comm,
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
   }
-  if (type == "sequential_model") {
-    return new sequential_model(comm, mini_batch_size, obj, opt);
-  }
 
   // Throw error if model type is not supported
   err << "unknown model type (" << type << ")";
@@ -103,7 +100,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
         << "in the prototext";
     LBANN_ERROR(err.str());
   }
-  
+
 }
 
 void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
@@ -138,7 +135,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
       m->set_layer(*l);
     }
   }
-  
+
 }
 
 /** Setup pointers from layers to weights. */
@@ -177,7 +174,7 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
       }
       layer_weights.push_back(w);
     }
-  }  
+  }
 
 }
 
