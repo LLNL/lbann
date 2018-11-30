@@ -92,6 +92,10 @@ int main(int argc, char *argv[]) {
     // after calling split_models()
     set_num_parallel_readers(comm, pb);
 
+    // Setup I/O threads
+    auto io_threads_per_process = set_num_io_threads(comm, pb);
+    auto io_threads_offset = free_core_offset(comm);
+
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
       std::stringstream err;
@@ -138,16 +142,6 @@ int main(int argc, char *argv[]) {
     // from the cmd line) and various other info
     save_session(comm, argc, argv, pb);
 
-    // Setup I/O threads
-    auto hw_cc = std::thread::hardware_concurrency();
-    auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
-
-    auto omp_threads = omp_get_max_threads();
-    auto processes_on_node = comm->get_procs_per_node();
-
-    auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads));
-    auto io_threads_offset = (omp_threads * processes_on_node) % max_threads;
-
     // Report useful information
     if (master) {
 
@@ -155,6 +149,7 @@ int main(int argc, char *argv[]) {
       std::cout << "Hardware properties (for master process)" << std::endl
                 << "  Processes on node                 : " << comm->get_procs_per_node() << std::endl
                 << "  OpenMP threads per process        : " << omp_get_max_threads() << std::endl
+        //                << "  Requested I/O threads per process (+offset) : " << requested_num_io_threads << std::endl
                 << "  I/O threads per process (+offset) : " << io_threads_per_process
                 << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA

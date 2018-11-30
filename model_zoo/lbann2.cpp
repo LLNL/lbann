@@ -150,6 +150,10 @@ model * build_model_from_prototext(int argc, char **argv,
     // after calling split_models()
     set_num_parallel_readers(comm, pb);
 
+    // Setup I/O threads
+    auto io_threads_per_process = set_num_io_threads(comm, pb);
+    auto io_threads_offset = free_core_offset(comm);
+
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
       err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
@@ -200,16 +204,6 @@ model * build_model_from_prototext(int argc, char **argv,
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
     //save_session(comm, argc, argv, pb);
-
-    // Setup I/O threads
-    auto hw_cc = std::thread::hardware_concurrency();
-    auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
-
-    auto omp_threads = omp_get_max_threads();
-    auto processes_on_node = comm->get_procs_per_node();
-
-    auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads));
-    auto io_threads_offset = (omp_threads * processes_on_node) % max_threads;
 
     // Report useful information
     if (master) {
