@@ -246,11 +246,11 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
     std::vector<int> dims = parse_list<int>(params.dims());
+    if (params.num_dims() != 0) {
+      LBANN_WARNING("found unused and deprecated prototext field (Reshape.num_dims)");
+    }
     if (proto_layer.num_neurons_from_data_reader()) {
       dims.clear();
-      if (params.reshape_to_flattened_conv_format()) {
-        dims.push_back(1);
-      }
       const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
       if (!dr) {
         LBANN_ERROR("Training data reader does not exist!");

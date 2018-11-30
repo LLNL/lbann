@@ -1,5 +1,4 @@
 model {
-  data_layout: "data_parallel"
   mini_batch_size: 512
   block_size: 256
   num_epochs: 4
@@ -20,15 +19,9 @@ model {
   ###################################################
   # Callbacks
   ###################################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-    }
-  }
+
+  callback { print {} }
+  callback { timer {} }
 
   ###################################################
   # start of layers
@@ -86,11 +79,16 @@ model {
   #################
   # FULLY_CONNECTED decode1
   #################
+  weights {
+    name: "decode1_matrix"
+    glorot_uniform_initializer {}
+  }
   layer {
     parents: "encode_relu1"
     name: "decode1"
+    weights: "decode1_matrix"
+    hint_layer: "data"
     data_layout: "data_parallel"
-    num_neurons_from_data_reader: true
     fully_connected {
       has_bias: true
     }
@@ -117,7 +115,7 @@ model {
     split {}
   }
   layer {
-    parents: "reconstruction label"
+    parents: "reconstruction data"
     name: "mean_squared_error"
     data_layout: "data_parallel"
     mean_squared_error {}
