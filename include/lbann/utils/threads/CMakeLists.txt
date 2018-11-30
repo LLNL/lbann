@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_HEADERS
   thread_safe_queues.hpp
   type_erased_function.hpp
   memory.hpp
+  thread_utils.hpp
   )
 
 # Propagate the files up the tree
