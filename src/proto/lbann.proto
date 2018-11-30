@@ -1075,9 +1075,8 @@ message RepeatedInput {
 // Transform layers //
 //////////////////////
 message Reshape {
-  int64 num_dims = 1;
+  int64 num_dims = 1; //DEPRECATED
   string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
-  bool reshape_to_flattened_conv_format = 3;
 }
 
 message Pooling {
