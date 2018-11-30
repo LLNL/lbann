@@ -17,6 +17,10 @@ Build system:
 
 Retired features:
 
+============================== Release Notes: v0.97.1 ==============================
+Bug Fixes:
+ - Removed deprecated header file include
+
 ============================== Release Notes: v0.97 ==============================
 Support for new layers:
  - Mean absolute error and L1 norm
