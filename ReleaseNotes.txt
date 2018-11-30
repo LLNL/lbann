@@ -4,16 +4,30 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
+ - Mean absolute error and L1 norm
+ - GPU implementation for activation layers
+ - Log sigmoid and softsign
+ - Channel-wise mean (temporary kludge)
 
 Performance optimizations:
 
 Model portability & usability:
+ - Hints for layer output dimensions
+ - Confusion matrix callback
+ - Metric checking callback
 
 Internal features:
+ - Removed target-layer-based features from model zoo
+ - Layer unit tests check for expected output values
 
 I/O & data readers:
 
 Build system:
+
+Retired features:
+ - Smooth ReLU, bent identity, and swish layers
+ - Target-layer-based metrics
+ - Target-layer-based models (sequential, greedy layer-wise autoencoder, Siamese)
 
 ============================== Release Notes: v0.96 ==============================
 Support for new layers:
