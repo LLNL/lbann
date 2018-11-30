@@ -73,7 +73,7 @@ model {
       conv_dims: "240"
       conv_pads: "0"
       conv_strides: "240"
-      has_bias: false
+      has_bias: true
       has_vectors: true
     }
   }
@@ -102,7 +102,7 @@ model {
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 12
-      has_bias: false
+      has_bias: true
     }
   }
   layer {
@@ -139,7 +139,7 @@ model {
     hint_layer: "encode1"
     data_layout: "data_parallel"
     fully_connected {
-      has_bias: false
+      has_bias: true
     }
   }
   layer {
@@ -171,7 +171,7 @@ model {
       conv_dims: "240"
       conv_pads: "0"
       conv_strides: "240"
-      has_bias: false
+      has_bias: true
       has_vectors: true
     }
   }
