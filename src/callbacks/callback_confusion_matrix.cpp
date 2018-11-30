@@ -161,7 +161,7 @@ void lbann_callback_confusion_matrix::update_counts(const model& m) {
   const auto& local_width = local_predictions.Width();
   for (El::Int local_col = 0; local_col < local_width; ++local_col) {
     El::Int prediction_index = -1, label_index = -1;
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int local_row = 0; local_row < local_height; ++local_row) {
       if (local_predictions(local_row, local_col) != zero) {
         prediction_index = m_predictions_v->GlobalRow(local_row);

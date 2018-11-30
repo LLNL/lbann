@@ -44,10 +44,7 @@ class split_layer : public transform_layer {
 
   split_layer(lbann_comm *comm)
     : transform_layer(comm) {
-
-    // Split layer has no limit on children
-    m_expected_num_child_layers = -1;
-
+    this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   split_layer* copy() const override { return new split_layer(*this); }
@@ -67,6 +64,13 @@ class split_layer : public transform_layer {
   }
 
   protected:
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    for (int i = 0; i < get_num_children(); ++i) {
+      set_output_dims(get_input_dims(), i);
+    }
+  }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = get_prev_activations();

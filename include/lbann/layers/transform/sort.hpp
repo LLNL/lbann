@@ -80,7 +80,7 @@ class sort_layer : public transform_layer {
     }
     return *this;
   }
-  
+
   sort_layer* copy() const override { return new sort_layer(*this); }
   std::string get_type() const override { return "sort"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -89,10 +89,10 @@ class sort_layer : public transform_layer {
  protected:
 
   void setup_dims() override {
-    set_output_dims(get_input_dims());
     transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
   }
-  
+
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
     const auto& dist = get_activations().DistData();
@@ -115,7 +115,7 @@ class sort_layer : public transform_layer {
     const auto& output = get_activations();
     m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }
-  
+
   void fp_compute() override;
   void bp_compute() override;
 
@@ -123,13 +123,13 @@ class sort_layer : public transform_layer {
 
   /** Whether values are sorted by descending order. */
   bool m_descending;
-  
+
   /** Input indices corresponding to output entries.
    *  @todo Switch to distributed integer matrix once it's supported
    *  in Hydrogen.
    */
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
-  
+
 };
 
 } // namespace lbann

@@ -159,6 +159,11 @@ class batch_normalization_layer : public regularizer_layer {
 
   El::Device get_device_allocation() const override { return Dev; }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_data() override {
     regularizer_layer::setup_data();
     const auto& output_dims = get_output_dims();

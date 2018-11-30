@@ -37,7 +37,7 @@ enum class reduction_mode {INVALID, SUM, AVERAGE};
 /** Reduction layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class reduction_layer : public transform_layer {
- private:
+private:
 
   /** Reduction mode. */
   const reduction_mode m_mode;
@@ -45,7 +45,7 @@ class reduction_layer : public transform_layer {
   /** Vector composed of ones. */
   DMat<Dev> m_ones;
 
- public:
+public:
 
   reduction_layer(lbann_comm *comm,
                   reduction_mode mode)
@@ -56,7 +56,6 @@ class reduction_layer : public transform_layer {
     if (mode == reduction_mode::INVALID) {
       LBANN_ERROR("invalid reduction mode");
     }
-    set_output_dims({1});
   }
 
   reduction_layer* copy() const override { return new reduction_layer(*this); }
@@ -64,7 +63,12 @@ class reduction_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
- protected:
+protected:
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims({1});
+  }
 
   void fp_compute() override {
 

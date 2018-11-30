@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/loss/entrywise.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
@@ -58,7 +59,7 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
        dx2[row + col * dx2_ldim]);
   }
 }
-  
+
 /** Apply a binary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
  *  dimensions. Given a binary function \f$ y = f(x_1,x_2) \f$, the
@@ -100,7 +101,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   }
 
 }
-  
+
 // =========================================================
 // Operator objects for entry-wise binary layers
 // =========================================================
@@ -176,11 +177,11 @@ struct sigmoid_binary_cross_entropy_op {
     dx2 = (x2 == z) ? -x1 * dy : zero;
   }
 };
-  
+
 /** Boolean accuracy operator. */
 struct boolean_accuracy_op {
   inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {    
+                                        const DataType& x2) const {
     const auto& b1 = x1 >= DataType(0.5);
     const auto& b2 = x2 >= DataType(0.5);
     return b1 == b2 ? DataType(1) : DataType(0);
@@ -198,7 +199,7 @@ struct boolean_accuracy_op {
 /** Boolean false negative operator. */
 struct boolean_false_negative_op {
   inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {    
+                                        const DataType& x2) const {
     const auto& b1 = x1 >= DataType(0.5);
     const auto& b2 = x2 >= DataType(0.5);
     return (!b1 && b2) ? DataType(1) : DataType(0);
@@ -216,7 +217,7 @@ struct boolean_false_negative_op {
 /** Boolean false positive operator. */
 struct boolean_false_positive_op {
   inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {    
+                                        const DataType& x2) const {
     const auto& b1 = x1 >= DataType(0.5);
     const auto& b2 = x2 >= DataType(0.5);
     return (b1 && !b2) ? DataType(1) : DataType(0);
@@ -230,7 +231,7 @@ struct boolean_false_positive_op {
     dx2 = DataType(0);
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -272,5 +273,5 @@ struct boolean_false_positive_op {
   INSTANTIATE(boolean_accuracy_layer, boolean_accuracy_op)
   INSTANTIATE(boolean_false_negative_layer, boolean_false_negative_op)
   INSTANTIATE(boolean_false_positive_layer, boolean_false_positive_op)
-  
+
 } // namespace lbann

@@ -258,26 +258,17 @@ class Layer {
   // Tensor dimension access functions
   // ===========================================================
 
-  /** Get dimensions of an input tensor.
-   *  E.g. get the dimensions of a "previous activations tensor" or
-   *  the "previous neuron dimensions."
-   */
+  /** Get input tensor dimensions. */
   std::vector<int> get_input_dims(int input_index = 0) const;
-  /** Get size of an input tensor.
-   *  E.g. get the size of a "previous activations tensor" or
-   *  the number of "previous neurons."
-   */
+  /** Get input tensor size. */
   int get_input_size(int input_index = 0) const;
-  /** Get dimensions of an output tensor.
-   *  E.g. get the dimensions of an "activations tensor" or the
-   *  "neuron dimensions."
-   */
+  /** Get output tensor dimensions. */
   std::vector<int> get_output_dims(int output_index = 0) const;
-  /** Get size of an output tensor.
-   *  E.g. get the size of an "activations tensor" or the number of
-   *  "neurons."
-   */
+  /** Get output tensor size. */
   int get_output_size(int output_index = 0) const;
+
+  /** Set output tensor dimensions. */
+  void set_output_dims(std::vector<int> dims, int output_index = 0);
 
   // ===========================================================
   // Tensor access functions
@@ -312,6 +303,20 @@ class Layer {
   lbann_comm* get_comm() const { return m_comm; }
 
   // ===========================================================
+  // Hint layer access functions
+  // ===========================================================
+
+  /** Set hint layer.
+   *  Properties of the hint layer are used during the setup
+   *  phase. For instance, the output tensor dimensions are set to
+   *  match the hint layer's first output tensor.
+   */
+  void set_hint_layer(const Layer* l) { m_hint_layer = l; }
+
+  /** Get hint layer. */
+  const Layer* set_hint_layer() const { return m_hint_layer; }
+
+  // ===========================================================
   // Freeze management functions
   // ===========================================================
 
@@ -320,12 +325,6 @@ class Layer {
   bool is_frozen() const;
 
  protected:
-
-  /** Set dimensions of an output tensor.
-   *  E.g. set the dimensions of an "activations tensor" or the
-   *  "neuron dimensions."
-   */
-  void set_output_dims(std::vector<int> dims, int output_index = 0);
 
   // ===========================================================
   // Setup helper functions
@@ -502,6 +501,13 @@ class Layer {
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
+
+  /** Hint layer.
+   *  During setup, the output tensor dimensions are set to match the
+   *  first output tensor of the hint layer. Derived classes may do
+   *  more elaborate setup based on the hint layer.
+   */
+  const Layer* m_hint_layer = nullptr;
 
 };
 

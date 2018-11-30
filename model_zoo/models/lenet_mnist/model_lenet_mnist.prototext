@@ -83,12 +83,6 @@ model {
   #     layers: "data"
   #   }
   # }
-  # callback {
-  #   gradient_check {
-  #     verbose: false
-  #     fail_on_error: false
-  #   }
-  # }
 
   ###################################################
   # Layers

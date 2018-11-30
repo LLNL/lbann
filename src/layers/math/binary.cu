@@ -59,7 +59,7 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
   }
 }
 
-  
+
 /** Apply a binary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
  *  dimensions. Given a binary function \f$ y = f(x_1,x_2) \f$, the
@@ -101,7 +101,7 @@ void apply_binary_backprop_operator(const AbsMat& x1,
   }
 
 }
-  
+
 // =========================================================
 // Operator objects for entry-wise binary layers
 // =========================================================
@@ -141,7 +141,7 @@ struct subtract_op {
     dx2 = -dy;
   }
 };
-  
+
 /** Multiply operator. */
 struct multiply_op {
   inline __device__ DataType operator()(const DataType& x1,
@@ -173,7 +173,7 @@ struct divide_op {
     dx2 = -dy * x1 / (x2*x2);
   }
 };
-  
+
 /** Modulo operator. */
 struct mod_op {
   inline __device__ DataType operator()(const DataType& x1,
@@ -233,7 +233,7 @@ struct safe_divide_op {
     }
   }
 };
-  
+
 /** Maximum operator. */
 struct max_op {
   inline __device__ DataType operator()(const DataType& x1,
@@ -379,7 +379,7 @@ struct greater_equal_op {
 };
 
 /** Logical and operator. */
-struct and_op {
+struct logical_and_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
     const auto& b1 = x1 != DataType(0) && !isnan(x1);
@@ -397,7 +397,7 @@ struct and_op {
 };
 
 /** Logical or operator. */
-struct or_op {
+struct logical_or_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
     const auto& b1 = x1 != DataType(0) && !isnan(x1);
@@ -415,7 +415,7 @@ struct or_op {
 };
 
 /** Logical xor operator. */
-struct xor_op {
+struct logical_xor_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
     const auto& b1 = x1 != DataType(0) && !isnan(x1);
@@ -431,7 +431,7 @@ struct xor_op {
     dx2 = DataType(0);
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -483,8 +483,8 @@ struct xor_op {
   INSTANTIATE(less_equal_layer, less_equal_op)
   INSTANTIATE(greater_layer, greater_op)
   INSTANTIATE(greater_equal_layer, greater_equal_op)
-  INSTANTIATE(and_layer, and_op)
-  INSTANTIATE(or_layer, or_op)
-  INSTANTIATE(xor_layer, xor_op)
-  
+  INSTANTIATE(logical_and_layer, logical_and_op)
+  INSTANTIATE(logical_or_layer, logical_or_op)
+  INSTANTIATE(logical_xor_layer, logical_xor_op)
+
 } // namespace lbann

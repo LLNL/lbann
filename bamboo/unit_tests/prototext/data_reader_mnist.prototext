@@ -3,7 +3,7 @@ data_reader {
     name: "mnist"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/MNIST"
+    data_filedir: "/p/lscratchh/brainusr/datasets/MNIST"
     data_filename: "train-images-idx3-ubyte"
     label_filename: "train-labels-idx1-ubyte"
     validation_percent: 0.1
@@ -34,7 +34,7 @@ data_reader {
     name: "mnist"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratchf/brainusr/datasets/MNIST"
+    data_filedir: "/p/lscratchh/brainusr/datasets/MNIST"
     data_filename: "t10k-images-idx3-ubyte"
     label_filename: "t10k-labels-idx1-ubyte"
     validation_percent: 1.0
