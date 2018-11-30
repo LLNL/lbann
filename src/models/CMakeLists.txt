@@ -3,7 +3,6 @@ set_full_path(THIS_DIR_SOURCES
   directed_acyclic_graph.cpp
   model.cpp
   sequential.cpp
-  siamese.cpp
   )
 
 # Propagate the files up the tree

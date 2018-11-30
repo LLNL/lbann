@@ -254,11 +254,6 @@ message Model {
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
 
-  // Siamese model parameters
-  message Siamese {
-    uint32 num_heads = 1;
-  }
-  Siamese siamese = 37;
 }
 
 //========================================================================

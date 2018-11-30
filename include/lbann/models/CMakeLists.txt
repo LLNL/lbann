@@ -2,7 +2,6 @@
 set_full_path(THIS_DIR_HEADERS
   model.hpp
   sequential.hpp
-  siamese.hpp
   )
 
 # Propagate the files up the tree
