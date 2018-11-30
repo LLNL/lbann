@@ -53,7 +53,8 @@ void external_reader::load() {
   request.mutable_init_request();
 
   m_connection->message_write(request);
-  Response response = m_connection->message_read();
+  Response response;
+  m_connection->message_read(response);
 
   InitResponse init_response = response.init_response();
 
@@ -88,7 +89,7 @@ void external_reader::load_data() {
 
 }
 
-int external_reader::fetch_data(Mat& X) {
+int external_reader::fetch_data(CPUMat& X) {
   // TODO split out index construction into its own thing
   // TODO do a similar thing for fetch_labels, fetch_responses
   if(!position_valid()) {
@@ -118,7 +119,8 @@ int external_reader::fetch_data(Mat& X) {
   }
 
   m_connection->message_write(request);
-  Response response = m_connection->message_read();
+  Response response;
+  m_connection->message_read(response);
   auto data = response.fetch_data_response().data().samples();
 
   for (El::Int s = 0; s < mb_size; s++) {
@@ -137,7 +139,7 @@ int external_reader::fetch_data(Mat& X) {
   return mb_size;
 }
 
-int external_reader::fetch_labels(Mat& Y) {
+int external_reader::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -165,7 +167,8 @@ int external_reader::fetch_labels(Mat& Y) {
   }
 
   m_connection->message_write(request);
-  Response response = m_connection->message_read();
+  Response response;
+  m_connection->message_read(response);
   auto labels = response.fetch_labels_response().labels().samples();
 
   for (El::Int s = 0; s < mb_size; s++) {
@@ -184,7 +187,7 @@ int external_reader::fetch_labels(Mat& Y) {
   return mb_size;
 }
 
-int external_reader::fetch_responses(Mat& Y) {
+int external_reader::fetch_responses(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -212,7 +215,8 @@ int external_reader::fetch_responses(Mat& Y) {
   }
 
   m_connection->message_write(request);
-  Response response = m_connection->message_read();
+  Response response;
+  m_connection->message_read(response);
   auto responses = response.fetch_responses_response().responses().samples();
 
   for (El::Int s = 0; s < mb_size; s++) {
