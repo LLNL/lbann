@@ -20,7 +20,7 @@ class connection {
     // TODO use ctor/dtor instead of connect/disconnect
     connection(const std::string&);
     ~connection();
-    Response message_read();
+    void message_read(Response&);
     void message_write(const Request&);
 
   private:

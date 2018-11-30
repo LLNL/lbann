@@ -77,7 +77,7 @@ void connection::send_from_buffer(size_t data_size) {
   }
 }
 
-Response connection::message_read() {
+void connection::message_read(Response& response) {
   recv_to_buffer(4);
 
   size_t response_message_size = 0;
@@ -88,9 +88,9 @@ Response connection::message_read() {
 
   recv_to_buffer(response_message_size);
 
-  Response response;
+  Response response_empty;
+  response = response_empty;
   response.ParseFromArray(m_read_buffer, response_message_size);
-  return response;
 }
 
 void connection::message_write(const Request &request) {
