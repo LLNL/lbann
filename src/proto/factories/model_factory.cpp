@@ -210,7 +210,10 @@ model* construct_model(lbann_comm* comm,
   // Construct metrics
   std::vector<metric*> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    metric_list.push_back(construct_metric(comm, proto_model.metric(i)));
+    const auto& params = proto_model.metric(i).layer_metric();
+    metric_list.push_back(new layer_metric(comm,
+                                           params.name(),
+                                           params.unit()));
   }
   assign_layers_to_metrics(layer_list, metric_list, proto_model);
 
