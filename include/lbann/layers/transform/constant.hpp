@@ -41,7 +41,7 @@ public:
                  std::vector<int> dims)
     : transform_layer(comm), m_value(value) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
 
   constant_layer* copy() const override { return new constant_layer(*this); }

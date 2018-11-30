@@ -41,7 +41,7 @@ public:
 
   concatenation_layer(lbann_comm *comm, El::Int concat_dim)
     : transform_layer(comm), m_concat_dim(concat_dim) {
-    m_expected_num_parent_layers = -1; // No limit on parents
+    this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   concatenation_layer(const concatenation_layer& other)

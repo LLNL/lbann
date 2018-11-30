@@ -71,7 +71,8 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_output_dims_list(other.m_output_dims_list) {
+  m_output_dims_list(other.m_output_dims_list),
+  m_hint_layer(other.m_hint_layer) {
 
   // Deep matrix copies
   m_inputs.reserve(other.m_inputs.size());
@@ -111,6 +112,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_update_time = other.m_update_time;
   m_name = other.m_name;
   m_output_dims_list = other.m_output_dims_list;
+  m_hint_layer = other.m_hint_layer;
 
   // Deep matrix copies
   m_inputs.clear();
@@ -712,7 +714,12 @@ void Layer::setup_pointers() {
 
 void Layer::setup_dims() {
   m_output_dims_list.resize(get_num_children());
-  if (get_num_parents() > 0) {
+  if (m_hint_layer != nullptr) {
+    const auto& hint_dims = m_hint_layer->get_output_dims();
+    for (auto& output_dims : m_output_dims_list) {
+      output_dims = hint_dims;
+    }
+  } else if (get_num_parents() > 0) {
     const auto& input_dims = get_input_dims();
     for (auto& output_dims : m_output_dims_list) {
       if (output_dims.empty()) {
@@ -1160,30 +1167,34 @@ void Layer::add_child_layer(const Layer* child) {
 
 std::vector<Layer*> Layer::get_layer_pointers() {
   std::vector<Layer*> layers;
-  for(const Layer* parent: m_parent_layers) {
+  for (const auto* parent: m_parent_layers) {
     layers.push_back(const_cast<Layer*>(parent));
   }
-  for(const Layer* child: m_child_layers) {
+  for (const auto* child: m_child_layers) {
     layers.push_back(const_cast<Layer*>(child));
   }
+  layers.push_back(const_cast<Layer*>(m_hint_layer));
   return layers;
 }
 
 void Layer::set_layer_pointers(std::vector<Layer*> layers) {
-  if(layers.size() != m_parent_layers.size() + m_child_layers.size()) {
+  const size_t expected_size = (m_parent_layers.size()
+                                + m_child_layers.size()
+                                + 1);
+  if (layers.size() != expected_size) {
     LBANN_ERROR("attempted to set layer pointers with an invalid number of pointers");
   }
   size_t pos = 0;
-  for(const Layer*& parent: m_parent_layers) {
-    parent = (const Layer*) layers[pos];
+  for (auto& parent: m_parent_layers) {
+    parent = static_cast<const Layer*>(layers[pos]);
     pos++;
   }
-  for(const Layer*& child: m_child_layers) {
-    child = (const Layer*) layers[pos];
+  for (auto& child: m_child_layers) {
+    child = static_cast<const Layer*>(layers[pos]);
     pos++;
   }
+  m_hint_layer = layers[pos];
+  pos++;
 }
-
-
 
 }  // namespace lbann

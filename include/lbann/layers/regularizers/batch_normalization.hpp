@@ -160,6 +160,11 @@ protected:
     m_bias_gradient.reset(new StarMat<Dev>(grid));
   }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_data() override {
     regularizer_layer::setup_data();
     const auto& output_dims = get_output_dims();

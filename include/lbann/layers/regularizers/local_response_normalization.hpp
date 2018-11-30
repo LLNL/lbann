@@ -37,24 +37,6 @@ namespace lbann {
 /** Local response normalization layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
-private:
-
-  /** Normalization window width. */
-  int m_window_width;
-  /** LRN alpha scaling parameter. */
-  DataType m_alpha;
-  /** LRN beta power parameter. */
-  DataType m_beta;
-  /** LRN k parameter. */
-  DataType m_k;
-
-#ifdef LBANN_HAS_CUDNN
-  /** LRN cuDNN descriptor. */
-  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
-  /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
-
 public:
 
   local_response_normalization_layer(lbann_comm *comm,
@@ -147,6 +129,11 @@ protected:
     return desc;
   }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   /// Initialize GPU objects
   void setup_gpu() override {
     regularizer_layer::setup_gpu();
@@ -178,7 +165,24 @@ protected:
     }
   }
 
- private:
+private:
+
+  /** Normalization window width. */
+  int m_window_width;
+  /** LRN alpha scaling parameter. */
+  DataType m_alpha;
+  /** LRN beta power parameter. */
+  DataType m_beta;
+  /** LRN k parameter. */
+  DataType m_k;
+
+#ifdef LBANN_HAS_CUDNN
+  /** LRN cuDNN descriptor. */
+  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
+
   /// GPU implementation of forward propagation
   void fp_compute_cudnn() {
 #ifndef LBANN_HAS_CUDNN

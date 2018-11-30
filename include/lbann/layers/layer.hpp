@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_HPP_INCLUDED
-#define LBANN_LAYER_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LAYER_HPP_INCLUDED
+#define LBANN_LAYERS_LAYER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -64,7 +64,8 @@ class Layer {
   friend class lbann_callback_sync_layers;
   friend class lbann_callback_sync_selected;
 
- public:
+public:
+
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
@@ -256,26 +257,17 @@ class Layer {
   // Tensor dimension access functions
   // ===========================================================
 
-  /** Get dimensions of an input tensor.
-   *  E.g. get the dimensions of a "previous activations tensor" or
-   *  the "previous neuron dimensions."
-   */
+  /** Get input tensor dimensions. */
   std::vector<int> get_input_dims(int input_index = 0) const;
-  /** Get size of an input tensor.
-   *  E.g. get the size of a "previous activations tensor" or
-   *  the number of "previous neurons."
-   */
+  /** Get input tensor size. */
   int get_input_size(int input_index = 0) const;
-  /** Get dimensions of an output tensor.
-   *  E.g. get the dimensions of an "activations tensor" or the
-   *  "neuron dimensions."
-   */
+  /** Get output tensor dimensions. */
   std::vector<int> get_output_dims(int output_index = 0) const;
-  /** Get size of an output tensor.
-   *  E.g. get the size of an "activations tensor" or the number of
-   *  "neurons."
-   */
+  /** Get output tensor size. */
   int get_output_size(int output_index = 0) const;
+
+  /** Set output tensor dimensions. */
+  void set_output_dims(std::vector<int> dims, int output_index = 0);
 
   // ===========================================================
   // Tensor access functions
@@ -310,6 +302,20 @@ class Layer {
   lbann_comm* get_comm() const { return m_comm; }
 
   // ===========================================================
+  // Hint layer access functions
+  // ===========================================================
+
+  /** Set hint layer.
+   *  Properties of the hint layer are used during the setup
+   *  phase. For instance, the output tensor dimensions are set to
+   *  match the hint layer's first output tensor.
+   */
+  void set_hint_layer(const Layer* l) { m_hint_layer = l; }
+
+  /** Get hint layer. */
+  const Layer* set_hint_layer() const { return m_hint_layer; }
+
+  // ===========================================================
   // Freeze management functions
   // ===========================================================
 
@@ -317,7 +323,7 @@ class Layer {
   void unfreeze();
   bool is_frozen() const;
 
- protected:
+protected:
 
   /** Get layer description.
    *  Returns a vector of human-readable description strings. When the
@@ -325,12 +331,6 @@ class Layer {
    *  strings are output with separators (e.g. newlines).
    */
   virtual std::vector<std::string> get_description() const;
-
-  /** Set dimensions of an output tensor.
-   *  E.g. set the dimensions of an "activations tensor" or the
-   *  "neuron dimensions."
-   */
-  void set_output_dims(std::vector<int> dims, int output_index = 0);
 
   // ===========================================================
   // Setup helper functions
@@ -473,7 +473,7 @@ class Layer {
    */
   std::string m_name;
 
- private:
+private:
 
   // ===========================================================
   // Private access functions
@@ -508,8 +508,15 @@ class Layer {
    */
   std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
 
+  /** Hint layer.
+   *  During setup, the output tensor dimensions are set to match the
+   *  first output tensor of the hint layer. Derived classes may do
+   *  more elaborate setup based on the hint layer.
+   */
+  const Layer* m_hint_layer = nullptr;
+
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_HPP_INCLUDED
+#endif // LBANN_LAYERS_LAYER_HPP_INCLUDED

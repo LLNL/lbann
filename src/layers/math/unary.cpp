@@ -34,17 +34,17 @@ namespace {
 // Helpful constants
 constexpr DataType zero = 0;
 constexpr DataType one = 1;
-  
+
 // =========================================================
 // Operator objects for entry-wise unary layers
 // =========================================================
 // Note: Unary operator corresponds to forward prop step
-// (\f$ y = f(x) \f$) and binary operator corresponds to 
+// (\f$ y = f(x) \f$) and binary operator corresponds to
 // back prop step
 // (\f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$).
 
 /** Logical not operator. */
-struct not_op {
+struct logical_not_op {
   inline DataType operator()(const DataType& x) const {
     const auto& b = x != zero && !std::isnan(x);
     return !b ? one : zero;
@@ -53,7 +53,7 @@ struct not_op {
     return zero;
   }
 };
-  
+
 /** Absolute value operator. */
 struct abs_op {
   inline DataType operator()(const DataType& x) const {
@@ -177,7 +177,7 @@ struct safe_reciprocal_op {
     else                  { return zero; }
   }
 };
-  
+
 /** Exponential operator. */
 struct exp_op {
   inline DataType operator()(const DataType& x) const {
@@ -339,7 +339,7 @@ struct atanh_op {
     return dy / (one - x*x);
   }
 };
-  
+
 } // namespace
 
 // Template instantiation
@@ -370,7 +370,7 @@ struct atanh_op {
                                         get_prev_error_signals(),       \
                                         get_error_signals());           \
   }
-  INSTANTIATE(not_layer, not_op)
+  INSTANTIATE(logical_not_layer, logical_not_op)
   INSTANTIATE(abs_layer, abs_op)
   INSTANTIATE(negative_layer, negative_op)
   INSTANTIATE(sign_layer, sign_op)
@@ -398,5 +398,5 @@ struct atanh_op {
   INSTANTIATE(acosh_layer, acosh_op)
   INSTANTIATE(asinh_layer, asinh_op)
   INSTANTIATE(atanh_layer, atanh_op)
-  
+
 } // namespace lbann

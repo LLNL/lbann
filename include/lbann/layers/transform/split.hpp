@@ -40,9 +40,8 @@ template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El
 class split_layer : public transform_layer {
 public:
 
-  split_layer(lbann_comm *comm)
-    : transform_layer(comm) {
-    m_expected_num_child_layers = -1; // No limits on children
+  split_layer(lbann_comm *comm) : transform_layer(comm) {
+    this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   split_layer* copy() const override { return new split_layer(*this); }
@@ -51,6 +50,13 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    for (int i = 0; i < get_num_children(); ++i) {
+      set_output_dims(get_input_dims(), i);
+    }
+  }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = get_prev_activations();

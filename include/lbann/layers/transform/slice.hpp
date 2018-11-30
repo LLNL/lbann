@@ -45,7 +45,7 @@ public:
     : transform_layer(comm),
       m_slice_dim(slice_dim),
       m_slice_points(slice_points) {
-    m_expected_num_child_layers = -1; // No limit on children
+    this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   slice_layer(const slice_layer& other)

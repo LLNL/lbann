@@ -57,6 +57,11 @@ class in_top_k_layer : public transform_layer {
 
  protected:
 
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void fp_compute() override;
 
  private:

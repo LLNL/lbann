@@ -123,6 +123,11 @@ protected:
     return desc;
   }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     m_mask = std::unique_ptr<AbsDistMat>(get_activations().Copy());
