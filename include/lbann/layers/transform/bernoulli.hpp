@@ -47,7 +47,7 @@ class bernoulli_layer : public transform_layer {
                   DataType prob = DataType(0.5))
     : transform_layer(comm), m_prob(prob) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
   std::string get_type() const override { return "Bernoulli"; }

@@ -95,7 +95,7 @@ void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
     throw lbann_exception("mesh_reader: failed to open " + filename);
   }
   // Load into a local buffer.
-  float* buf = m_load_bufs[omp_get_thread_num()].data();
+  DataType* buf = m_load_bufs[omp_get_thread_num()].data();
   if (!f.read((char*) buf, m_data_height * m_data_width * sizeof(float))) {
     throw lbann_exception("mesh_reader: failed to read " + filename);
   }

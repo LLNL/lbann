@@ -48,17 +48,6 @@ model* instantiate_model(lbann_comm* comm,
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
   }
-  if (type == "sequential_model") {
-    return new sequential_model(comm, mini_batch_size, obj, opt);
-  }
-  if (type == "siamese_model") {
-    const auto& params = proto_model.siamese();
-    return new siamese_model(comm,
-                             mini_batch_size,
-                             obj,
-                             opt,
-                             params.num_heads());
-  }
 
   // Throw error if model type is not supported
   err << "unknown model type (" << type << ")";
@@ -111,7 +100,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
         << "in the prototext";
     LBANN_ERROR(err.str());
   }
-  
+
 }
 
 void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
@@ -146,7 +135,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
       m->set_layer(*l);
     }
   }
-  
+
 }
 
 /** Setup pointers from layers to weights. */
@@ -185,7 +174,7 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
       }
       layer_weights.push_back(w);
     }
-  }  
+  }
 
 }
 
@@ -218,7 +207,10 @@ model* construct_model(lbann_comm* comm,
   // Construct metrics
   std::vector<metric*> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    metric_list.push_back(construct_metric(comm, proto_model.metric(i)));
+    const auto& params = proto_model.metric(i).layer_metric();
+    metric_list.push_back(new layer_metric(comm,
+                                           params.name(),
+                                           params.unit()));
   }
   assign_layers_to_metrics(layer_list, metric_list, proto_model);
 

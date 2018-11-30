@@ -37,7 +37,7 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
             cluster=cluster, executable=executable, num_nodes=1,
             partition=partition, time_limit=time_limit, num_processes=num_processes,
             dir_name=dir_name,
-            data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+            data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
             data_reader_name='mnist', model_folder=model_folder,
             model_name=model_name, num_epochs=5, optimizer_name='adagrad',
             output_file_name=output_file_name, error_file_name=error_file_name)
@@ -103,7 +103,7 @@ def extract_data(output_file_name, data_fields, should_log):
     for line in output_file:
         if should_log:
             print('%s: %s' % (output_file_name, line))
-            
+
         # Check if line is reporting model results
         is_model = re.search('^Model ([0-9]+)', line)
         if is_model:

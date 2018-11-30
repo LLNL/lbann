@@ -62,7 +62,7 @@ void value_initializer::fill(AbsDistMat& matrix) {
   }
   auto const width = matrix.LocalWidth();
   auto const height = matrix.LocalHeight();
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int local_col = 0; local_col < width; ++local_col) {
     for (El::Int local_row = 0; local_row < height; ++local_row) {
       const auto& global_row = matrix.GlobalRow(local_row);

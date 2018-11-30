@@ -15,7 +15,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         data_reader_name='mnist',
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         dir_name=dir_name,
         model_path=model_path,
         optimizer_name='sgd',
@@ -35,7 +35,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name,
@@ -51,7 +51,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist',
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext',
         num_epochs=2, optimizer_name='sgd', ckpt_dir='ckpt/',

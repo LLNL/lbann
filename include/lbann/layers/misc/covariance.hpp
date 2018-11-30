@@ -38,7 +38,7 @@ public:
 
   covariance_layer(lbann_comm *comm, bool biased)
     : Layer(comm), m_biased(biased) {
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
   covariance_layer(const covariance_layer& other)
     : Layer(other),
@@ -54,7 +54,7 @@ public:
                       other.m_workspace->Copy() : nullptr);
     return *this;
   }
-  
+
   covariance_layer* copy() const override { return new covariance_layer(*this); }
   std::string get_type() const override { return "covariance"; }
   data_layout get_data_layout() const override { return Layout; }
@@ -68,8 +68,8 @@ protected:
     dist_data.colDist = El::STAR;
     m_means.reset(AbsDistMat::Instantiate(dist_data));
     m_workspace.reset(AbsDistMat::Instantiate(dist_data));
-  }  
-  
+  }
+
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims({1});
@@ -106,7 +106,7 @@ protected:
       LBANN_ERROR(err.str());
     }
   }
-  
+
   void fp_compute() override;
   void bp_compute() override;
 
@@ -119,7 +119,7 @@ private:
   std::unique_ptr<AbsDistMat> m_means;
   /** Workspace. */
   std::unique_ptr<AbsDistMat> m_workspace;
-  
+
 };
 
 } // namespace lbann

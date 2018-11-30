@@ -3,6 +3,7 @@ enable_language(CXX)
 option(Hydrogen_ENABLE_CUDA "Enable CUDA support in Hydrogen" OFF)
 
 option(Hydrogen_ENABLE_OPENMP "Hydrogen use OpenMP threading." ON)
+option(Hydrogen_ENABLE_OMP_TASKLOOP "Hydrogen use OpenMP taskloops for parallel regions." OFF)
 
 option(Hydrogen_USE_64BIT_INTS
   "Hydrogen use 64-bit internal indices" ON)
@@ -71,8 +72,16 @@ create_cmake_arguments(
   VARIABLES ${HYDROGEN_VARIABLES})
 
 # Handle the clone mechanism. First URL
-set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
-  CACHE STRING "The URL from which to clone Hydrogen")
+option(Hydrogen_CLONE_VIA_SSH
+  "Clone Hydrogen using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (Hydrogen_CLONE_VIA_SSH)
+  set(Hydrogen_URL git@github.com:LLNL/Elemental.git
+    CACHE STRING "The URL from which to clone Hydrogen")
+else ()
+  set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
+    CACHE STRING "The URL from which to clone Hydrogen")
+endif ()
 
 # ... then the tag.
 set(Hydrogen_TAG "hydrogen"
@@ -100,7 +109,7 @@ ExternalProject_Add(HYDROGEN
   CMAKE_ARGS
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
-  -DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CUDA_HOST_COMPILER}
   ${HYDROGEN_CMAKE_ARGS}
   )
 

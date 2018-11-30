@@ -13,8 +13,16 @@ set(OPENBLAS_MAX_MAKE_JOBS "8"
 set(OPENBLAS_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of OpenBLAS.")
 
-set(OPENBLAS_URL "https://github.com/xianyi/OpenBLAS.git"
-  CACHE STRING "The URL from which to clone OpenBLAS")
+option(OPENBLAS_CLONE_VIA_SSH
+  "Clone OPENBLAS using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
+
+if (OPENBLAS_CLONE_VIA_SSH)
+  set(OPENBLAS_URL git@github.com:xianyi/OpenBLAS.git
+    CACHE STRING "The URL from which to clone OPENBLAS")
+else ()
+  set(OPENBLAS_URL "https://github.com/xianyi/OpenBLAS.git"
+    CACHE STRING "The URL from which to clone OpenBLAS")
+endif ()
 
 set(OPENBLAS_TAG "db72ad8"
   CACHE STRING "The git tag or hash to checkout for OpenBLAS")
