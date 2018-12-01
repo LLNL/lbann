@@ -100,7 +100,7 @@ class generic_input_layer : public io_layer {
       m_validation_dataset(other.m_validation_dataset),
       m_data_readers(other.m_data_readers) {
     for (auto& io_buffer : m_io_buffers) {
-      io_buffer = io_buffer->copy();;
+      io_buffer = io_buffer->copy();
     }
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
@@ -110,7 +110,7 @@ class generic_input_layer : public io_layer {
   generic_input_layer& operator=(const generic_input_layer& other) {
     io_layer::operator=(other);
     for (auto& io_buffer : m_io_buffers) {
-      io_buffer = io_buffer->copy();;
+      io_buffer = io_buffer->copy();
     }
     for (auto& dr : m_data_readers) {
       dr.second = dr.second->copy();
@@ -235,9 +235,6 @@ class generic_input_layer : public io_layer {
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dr_mutex);
     execution_mode mode = this->m_model->get_execution_mode();
-    // if (m_comm->am_model_master()) {
-    //   std::cout << foo << ": I am about to fetch some data in the background for execution mode " << _to_string(mode) << " and placing it in the buffer id " << future_active_buffer  << " and the buffer pointer is " << io_buffer << std::endl;
-    // }
     setup_next_io_buffer(io_buffer);
     io_buffer->fetch_to_local_matrix(get_data_reader(), mode, this->m_model->get_io_thread_pool());
     return;
@@ -280,10 +277,6 @@ class generic_input_layer : public io_layer {
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
-      // if(num_samples_in_batch != get_current_mini_batch_size()) {
-      //   LBANN_ERROR("Not enough samples: " + std::to_string(num_samples_in_batch)
-      //               + " and mini-batch size: " + std::to_string(get_current_mini_batch_size()));
-      // }
       // Use the predetermined size of the mini-batch to set the current
       // batch size for the neural network
       num_samples_in_batch = get_current_mini_batch_size();

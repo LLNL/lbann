@@ -131,7 +131,6 @@ void numpy_reader::load() {
 }
 
 bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  //  int tid = io_thread_pool.get_local_thread_id();
   int features_size = m_num_features;
   if (m_has_labels || m_has_responses) {
     features_size += 1;
@@ -151,7 +150,6 @@ bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx, thread_pool& io_
 }
 
 bool numpy_reader::fetch_label(Mat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  //  int tid = io_thread_pool.get_local_thread_id();
   if (!m_has_labels) {
     throw lbann_exception("numpy_reader: do not have labels");
   }

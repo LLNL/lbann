@@ -125,11 +125,6 @@ bool data_reader_triplet::fetch_label(Mat& Y, int data_id, int mb_idx, thread_po
 std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list_of_current_mb() const {
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
-
-  // for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-  //   El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-  //   ret.emplace_back(m_samples.get_sample(index));
-  // }
   return ret;
 }
 
