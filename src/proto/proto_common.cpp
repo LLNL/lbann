@@ -421,6 +421,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
       } else if (name == "moving_mnist") {
         reader_validation = new moving_mnist_reader(7, 40, 40, 2);
+        (*(moving_mnist_reader *)reader_validation) = (*(moving_mnist_reader *)reader);
       }
 
       reader_validation->set_role("validate");
