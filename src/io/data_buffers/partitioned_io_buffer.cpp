@@ -35,6 +35,39 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
   M_local[1] = new CPUMat();
 }
 
+void lbann::partitioned_io_buffer::set_local_matrix_bypass(CPUMat *m, int idx) {
+  if(M_local[idx] != nullptr && M_local[idx] != m) {
+    delete M_local[idx];
+  }
+  M_local[idx] = m;
+}
+
+void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, int idx) {
+  /// @todo BVE FIXME - need to improve how this would work with odd
+  /// mini-batch sizes
+  El::Int local_mini_batch_size = cur_mini_batch_size / m_comm->get_procs_per_model();
+  El::Int partial_mini_batch_size = cur_mini_batch_size % m_comm->get_procs_per_model();
+  if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
+    local_mini_batch_size++;
+  }
+  M_local[idx]->Resize(M_local[idx]->Height(), local_mini_batch_size);
+}
+
+void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) {
+  /// @todo BVE FIXME - need to improve how this would work with odd
+  /// mini-batch sizes
+  El::Int local_mini_batch_size = max_minibatch_size / m_comm->get_procs_per_model();
+  El::Int partial_mini_batch_size = max_minibatch_size % m_comm->get_procs_per_model();
+  if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
+    local_mini_batch_size++;
+  }
+  M_local[0]->Resize(num_neurons, local_mini_batch_size);
+  M_local[1]->Resize(num_targets, local_mini_batch_size);
+  /// The amount of space needed will vary based on input layer type,
+  /// but the batch size is the maximum space necessary
+  El::Zeros_seq(m_indices_fetched_per_mb, local_mini_batch_size, 1);
+}
+
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
