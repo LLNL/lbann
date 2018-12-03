@@ -25,6 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_CONDUIT
+
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
@@ -34,7 +38,6 @@
 #include <vector>
 #include <string>
 #include <sstream>
-#include "lbann/utils/options.hpp"
 #include "lbann/lbann.hpp"
 
 using namespace lbann;
@@ -63,12 +66,14 @@ int main(int argc, char *argv[]) {
     if (argc == 1) {
       if (master) {
         std::cout << "usage: " << argv[0] << " --base_dir=<string> --filelist=<string> --output_fn=<string>\n"
-          << "where: filelist contains a list of conduit filenames;\n"
-          << "       base_dir / <name from filelist> should fully specify\n"
-          << "       a conduit filepath\n"
-          << "function: constructs an index that lists number of samples\n"
-          << "          in each file, indices of invalid samples, etc\n";
+          "where: filelist contains a list of conduit filenames;\n"
+          "       base_dir / <name from filelist> should fully specify\n"
+          "       a conduit filepath\n"
+          "function: constructs an index that lists number of samples\n"
+          "          in each file, indices of invalid samples, etc\n";
       }
+      finalize(comm);
+      return EXIT_SUCCESS;
     }
 
     if (! (opts->has_string("filelist") && opts->has_string("output_fn") && opts->has_string("base_dir"))) {
@@ -108,6 +113,7 @@ int main(int argc, char *argv[]) {
     int np = comm->get_procs_in_world();
     size_t c = 0;
     size_t total_good = 0;
+    hid_t hdf5_file_hnd;
     for (size_t j=rank; j<filenames.size(); j+=np) {
       ++c;
       if (c % 10 == 0) {
@@ -116,16 +122,30 @@ int main(int argc, char *argv[]) {
       out << filenames[j] << " ";
       std::stringstream s2;
       s2 << base_dir << "/" << filenames[j];
-      hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( s2.str().c_str() );
+      try {
+      hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( s2.str().c_str() );
+      } catch (exception e) {
+        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << e.what() << "\n";
+        continue;
+      }
       std::vector<std::string> cnames;
-      conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
+      try {
+        conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
+      } catch  (exception e) {
+        std::cerr << rank << " :: exception hdf5_group_list_child_names: " << e.what() << "\n";
+        continue;
+      }
       size_t is_good = 0;
       size_t is_bad = 0;
       std::stringstream s5;
       conduit::Node n_ok;
       for (size_t h=0; h<cnames.size(); h++) {
         const std::string key_1 = "/" + cnames[h] + "/performance/success";
-        conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
+        try {
+          conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
+        } catch (exception e) {
+          std::cerr << rank << " :: exception hdf5_read: " << e.what() << "\n";
+        }
         int success = n_ok.to_int64();
         if (success == 1) {
           ++is_good;
@@ -137,7 +157,12 @@ int main(int argc, char *argv[]) {
       }
       global_num_samples += is_good;
       out << is_good << " " << is_bad << " " << s5.str() << "\n";
-      conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
+      try {
+        conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
+      } catch (exception e) {
+        std::cerr << rank << " :: exception hdf5_close_file: " << e.what() << "\n";
+        continue;
+      }
     }
     out.close();
     comm->global_barrier();
@@ -193,3 +218,5 @@ int main(int argc, char *argv[]) {
   finalize(comm);
   return EXIT_SUCCESS;
 }
+
+#endif //#ifdef LBANN_HAS_CONDUIT
