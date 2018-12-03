@@ -152,15 +152,15 @@ class generic_input_layer : public io_layer {
     /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
     if(m_data_readers[execution_mode::training] != nullptr) {
-      m_data_readers[execution_mode::training]->setup(num_io_threads);
+      m_data_readers[execution_mode::training]->setup(num_io_threads, &this->m_model->get_io_thread_pool());
       m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_model());
     }
     if(m_data_readers[execution_mode::validation] != nullptr) {
-      m_data_readers[execution_mode::validation]->setup(num_io_threads);
+      m_data_readers[execution_mode::validation]->setup(num_io_threads, &this->m_model->get_io_thread_pool());
       m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_model());
     }
     if(m_data_readers[execution_mode::testing] != nullptr) {
-      m_data_readers[execution_mode::testing]->setup(num_io_threads);
+      m_data_readers[execution_mode::testing]->setup(num_io_threads, &this->m_model->get_io_thread_pool());
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
 
@@ -236,7 +236,7 @@ class generic_input_layer : public io_layer {
     std::lock_guard<std::mutex> guard(dr_mutex);
     execution_mode mode = this->m_model->get_execution_mode();
     setup_next_io_buffer(io_buffer);
-    io_buffer->fetch_to_local_matrix(get_data_reader(), mode, this->m_model->get_io_thread_pool());
+    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
     return;
   }
 

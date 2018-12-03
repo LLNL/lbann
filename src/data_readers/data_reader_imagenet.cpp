@@ -84,8 +84,8 @@ void imagenet_reader::set_defaults() {
   m_num_labels = 1000;
 }
 
-void imagenet_reader::setup(int num_io_threads) {
-  image_data_reader::setup(num_io_threads);
+void imagenet_reader::setup(int num_io_threads, thread_pool *io_thread_pool) {
+  image_data_reader::setup(num_io_threads, io_thread_pool);
   replicate_processor(*m_master_pps, num_io_threads);
 }
 
@@ -125,8 +125,8 @@ CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
   return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 }
 
-bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  int tid = io_thread_pool.get_local_thread_id();
+bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;

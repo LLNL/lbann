@@ -98,9 +98,8 @@ std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const 
   return X_v;
 }
 
-bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-
-  int tid = io_thread_pool.get_local_thread_id();
+bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   const img_src_t& img_src = m_image_list[data_id].first;
@@ -131,7 +130,7 @@ bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, t
   return true;
 }
 
-bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;

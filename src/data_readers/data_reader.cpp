@@ -46,7 +46,7 @@ void generic_data_reader::shuffle_indices() {
   }
 }
 
-void generic_data_reader::setup(int num_io_threads) {
+void generic_data_reader::setup(int num_io_threads, thread_pool* io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
   m_stride_to_next_mini_batch = 0;
@@ -65,15 +65,16 @@ void generic_data_reader::setup(int num_io_threads) {
   for(int tid = 0; tid < num_io_threads; ++tid) {
     m_thread_buffer[tid].resize(get_linearized_data_size());
   }
+  m_io_thread_pool = io_thread_pool;
 }
 
 
-bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool) {
+bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
   std::string error_message;
-  for (int s = thread_id; s < mb_size; s+=io_thread_pool.get_num_threads()) {
+  for (int s = thread_id; s < mb_size; s+=m_io_thread_pool->get_num_threads()) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
-    bool valid = fetch_datum(X, index, s, io_thread_pool);
+    bool valid = fetch_datum(X, index, s);
     if (!valid) {
       error_message = "invalid datum (index " + std::to_string(index) + ")";
     }
@@ -83,7 +84,7 @@ bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, 
   return true;
 }
 
-int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool) {
+int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
@@ -108,7 +109,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
-    for (int t = 0; t < static_cast<int>(io_thread_pool.get_num_threads()); t++) {
+    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
       preprocess_data_source(t);
     }
   }
@@ -137,26 +138,25 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   }
 
   else {
-    for (int t = 0; t < static_cast<int>(io_thread_pool.get_num_threads()); t++) {
+    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
       // Queue up work into other threads and then finish off the
       // mini-batch in the active thread
-      if(t == io_thread_pool.get_local_thread_id()) {
+      if(t == m_io_thread_pool->get_local_thread_id()) {
         continue;
       }else {
-        io_thread_pool.submit_job_to_work_group(
+        m_io_thread_pool->submit_job_to_work_group(
           std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
-                    mb_size, std::ref(indices_fetched), std::ref(io_thread_pool)));
+                    mb_size, std::ref(indices_fetched)));
       }
     }
-    fetch_data_block(X, io_thread_pool.get_local_thread_id(), mb_size,
-                     indices_fetched, io_thread_pool);
+    fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
 
     // Wait for all of the threads to finish
-    io_thread_pool.finish_work_group();
+    m_io_thread_pool->finish_work_group();
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    for (int t = 0; t < static_cast<int>(io_thread_pool.get_num_threads()); t++) {
+    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
       postprocess_data_source(t);
     }
   }
@@ -190,7 +190,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
   m_world_master_mini_batch_adjustment = 0;
 }
 
-int lbann::generic_data_reader::fetch_labels(CPUMat& Y, thread_pool& io_thread_pool) {
+int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -215,7 +215,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y, thread_pool& io_thread_p
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
-      bool valid = fetch_label(Y, index, s, io_thread_pool);
+      bool valid = fetch_label(Y, index, s);
       if (!valid) {
         error_message = "invalid label (index " + std::to_string(index) + ")";
       }
@@ -225,7 +225,7 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y, thread_pool& io_thread_p
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch_responses(CPUMat& Y, thread_pool& io_thread_pool) {
+int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -244,7 +244,7 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y, thread_pool& io_threa
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
-    bool valid = fetch_response(Y, index, s, io_thread_pool);
+    bool valid = fetch_response(Y, index, s);
     if (!valid) {
       error_message = "invalid response (index " + std::to_string(index) + ")";
     }

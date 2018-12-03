@@ -192,11 +192,11 @@ class data_reader_jag_conduit : public generic_data_reader {
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool) override;
+  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
   /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_responses(CPUMat& Y, thread_pool& io_thread_pool) override;
+  int fetch_responses(CPUMat& Y) override;
   /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_labels(CPUMat& Y, thread_pool& io_thread_pool) override;
+  int fetch_labels(CPUMat& Y) override;
 
   /// Return the number of valid samples locally available
   size_t get_num_valid_local_samples() const;
@@ -325,9 +325,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
-  bool fetch_label(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Shuffle sample indices

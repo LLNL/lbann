@@ -141,14 +141,14 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit_hdf5& rhs);
 
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool);
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx);
 
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch_label(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
-  bool fetch_response(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_response(CPUMat& X, int data_id, int mb_idx) override;
 
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;

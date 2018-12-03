@@ -62,9 +62,7 @@ int moving_mnist_reader::get_linearized_label_size() const {
   return get_num_labels();
 }
 
-bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, thread_pool& io_thread_pool) {
-
-  //  int tid = io_thread_pool.get_local_thread_id();
+bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
   // Useful constants
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
@@ -201,9 +199,7 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, thread_po
   return true;
 }
 
-bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col, thread_pool& io_thread_pool) {
-
-  //  int tid = io_thread_pool.get_local_thread_id();
+bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col) {
   // Choose raw images
   /// @todo Implementation with uniform distribution
   std::vector<El::Int> raw_image_indices;

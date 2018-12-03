@@ -166,7 +166,7 @@ void data_reader_jag_conduit_hdf5::set_image_dims(const int width, const int hei
   m_image_num_channels = ch;
 }
 
-bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int tid = io_thread_pool.get_local_thread_id();
   m_jag_store->load_data(data_id, tid);
 
@@ -362,7 +362,7 @@ data_reader_jag_conduit_hdf5::create_datum_views(CPUMat& X, const std::vector<si
   return X_v;
 }
 
-bool data_reader_jag_conduit_hdf5::fetch_response(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+bool data_reader_jag_conduit_hdf5::fetch_response(CPUMat& X, int data_id, int mb_idx) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   return true;
 #if 0
@@ -377,8 +377,7 @@ bool data_reader_jag_conduit_hdf5::fetch_response(CPUMat& X, int data_id, int mb
 #endif
 }
 
-bool data_reader_jag_conduit_hdf5::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  //  int tid = io_thread_pool.get_local_thread_id();
+bool data_reader_jag_conduit_hdf5::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);

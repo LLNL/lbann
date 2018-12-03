@@ -40,12 +40,12 @@ class fetch_data_functor {
  public:
   fetch_data_functor (data_reader_target_mode target_mode) :
     _target_mode(target_mode) {}
-  int operator() (CPUMat& samples, CPUMat& responses, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader, thread_pool& io_thread_pool) const {
-    int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched, io_thread_pool);
+  int operator() (CPUMat& samples, CPUMat& responses, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
+    int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched);
     int num_responses_fetched;
     switch(_target_mode) {
     case data_reader_target_mode::REGRESSION:
-      num_responses_fetched = data_reader->fetch_responses(responses, io_thread_pool);
+      num_responses_fetched = data_reader->fetch_responses(responses);
       break;
     case data_reader_target_mode::RECONSTRUCTION:
       El::Copy(samples, responses);
@@ -55,15 +55,15 @@ class fetch_data_functor {
        throw lbann_exception("Invalid data reader target mode");
     case data_reader_target_mode::CLASSIFICATION:
     default:
-      num_responses_fetched = data_reader->fetch_labels(responses, io_thread_pool);
+      num_responses_fetched = data_reader->fetch_labels(responses);
     }
     if(num_samples_fetched != num_responses_fetched) {
       throw lbann_exception("Number of samples does not match the number of responses");
     }
     return num_samples_fetched;
   }
-  int operator() (CPUMat& samples, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader, thread_pool& io_thread_pool) const {
-    int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched, io_thread_pool);
+  int operator() (CPUMat& samples, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
+    int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched);
     switch(_target_mode) {
     case data_reader_target_mode::NA:
       break;
@@ -110,7 +110,7 @@ public:
   virtual void fp_setup_data(El::Int cur_mini_batch_size, int idx) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) = 0;
 
-  virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode, thread_pool& io_thread_pool) = 0;
+  virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {}
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {}
   virtual bool update_data_set(generic_data_reader *data_reader, execution_mode mode) = 0;

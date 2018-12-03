@@ -137,7 +137,7 @@ class pilot2_molecular_reader : public generic_data_reader {
 
  protected:
   /// Fetch a molecule and its neighbors.
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   /// Fetch molecule data_id into X at molecule offset idx.
   void fetch_molecule(CPUMat& X, int data_id, int idx, int mb_idx);
 

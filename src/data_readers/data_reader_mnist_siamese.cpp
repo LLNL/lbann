@@ -87,8 +87,8 @@ void data_reader_mnist_siamese::set_input_params(
  * Fill the input minibatch matrix with the samples of image pairs by using
  * the overloaded fetch_datum()
  */
-int data_reader_mnist_siamese::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool) {
-  int nthreads = io_thread_pool.get_num_threads();
+int data_reader_mnist_siamese::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
+  int nthreads = m_io_thread_pool->get_num_threads();
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -117,7 +117,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X, El::Matrix<El::Int>& indice
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
-    bool valid = fetch_datum(X, index, s, io_thread_pool);
+    bool valid = fetch_datum(X, index, s);
     if (valid) {
       El::Int index_coded = m_shuffled_indices[n] + m_shuffled_indices2[n]*(std::numeric_limits<label_t>::max()+1);
       indices_fetched.Set(s, 0, index_coded);
@@ -140,7 +140,7 @@ int data_reader_mnist_siamese::fetch_data(CPUMat& X, El::Matrix<El::Int>& indice
 /**
  * Fill the ground truth table by using the overloaded fetch_label()
  */
-int data_reader_mnist_siamese::fetch_labels(CPUMat& Y, thread_pool& io_thread_pool) {
+int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
   if(!position_valid()) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -166,7 +166,7 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y, thread_pool& io_thread_po
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
-      bool valid = fetch_label(Y, index, s, io_thread_pool);
+      bool valid = fetch_label(Y, index, s);
       if (!valid) {
         error_message = "invalid label";
       }
@@ -177,9 +177,8 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y, thread_pool& io_thread_po
 }
 
 
-bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, std::pair<int, int> data_id, int mb_idx, thread_pool& io_thread_pool) {
-
-  int tid = io_thread_pool.get_local_thread_id();
+bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, std::pair<int, int> data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   using raw_data_t = std::vector<unsigned char>;
@@ -217,8 +216,7 @@ bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, std::pair<int, int> data_
 }
 
 
-bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, std::pair<int, int> data_id, int mb_idx, thread_pool& io_thread_pool) {
-  //  int tid = io_thread_pool.get_local_thread_id();
+bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, std::pair<int, int> data_id, int mb_idx) {
   const label_t label_1 = m_image_data[data_id.first][0];
   const label_t label_2 = m_image_data[data_id.second][0];
   const label_t label = static_cast<label_t>(label_1 == label_2);
@@ -227,14 +225,14 @@ bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, std::pair<int, int> data_
 }
 
 
-bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;
 }
 
 
-bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+bool data_reader_mnist_siamese::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
                         + get_type() + ": unused interface is called");
   return false;

@@ -91,23 +91,23 @@ void data_reader_merge_features::load() {
   select_subset_of_data();
 }
 
-bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int start = 0;
   for (auto&& reader : m_data_readers) {
     auto X_view = X(El::IR(start, start + reader->get_linearized_data_size()),
                     El::ALL);
-    reader->fetch_datum(X_view, data_id, mb_idx, io_thread_pool);
+    reader->fetch_datum(X_view, data_id, mb_idx);
     start += reader->get_linearized_data_size();
   }
   return true;
 }
 
-bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  return m_label_reader->fetch_label(Y, data_id, mb_idx, io_thread_pool);
+bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
+  return m_label_reader->fetch_label(Y, data_id, mb_idx);
 }
 
-bool data_reader_merge_features::fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
-  return m_label_reader->fetch_response(Y, data_id, mb_idx, io_thread_pool);
+bool data_reader_merge_features::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
+  return m_label_reader->fetch_response(Y, data_id, mb_idx);
 }
 
 void data_reader_merge_features::setup_data_store(model *m) {

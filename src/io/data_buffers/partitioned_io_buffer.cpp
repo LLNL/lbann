@@ -35,7 +35,7 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
   M_local[1] = new CPUMat();
 }
 
-int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode, thread_pool& io_thread_pool) {
+int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   m_num_samples_fetched = 0;
@@ -50,9 +50,9 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     if(M_local.size() == 2) {
-      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], m_indices_fetched_per_mb, data_reader, io_thread_pool);
+      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], *M_local[1], m_indices_fetched_per_mb, data_reader);
     }else {
-      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], m_indices_fetched_per_mb, data_reader, io_thread_pool);
+      m_num_samples_fetched = (*fetch_data_fn)(*M_local[0], m_indices_fetched_per_mb, data_reader);
     }
     bool data_valid = (m_num_samples_fetched > 0);
     if(data_valid) {

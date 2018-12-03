@@ -76,9 +76,9 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
  private:
   /** Number of samples in the dataset. */

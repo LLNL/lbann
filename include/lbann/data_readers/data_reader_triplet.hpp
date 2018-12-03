@@ -83,8 +83,8 @@ class data_reader_triplet : public data_reader_multi_images {
 
  protected:
   void set_defaults() override;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
  protected:
   offline_patches_npz m_samples;

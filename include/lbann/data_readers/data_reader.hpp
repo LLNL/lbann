@@ -98,6 +98,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_partition_overlap(0),
     m_partition_mode(0),
     m_procs_per_partition(1),
+    m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
     m_model(nullptr)
   {}
@@ -269,17 +270,17 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  virtual void setup(int num_io_threads);
+  virtual void setup(int num_io_threads, thread_pool *io_thread_pool);
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool);
+  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's labels into Y.
-  virtual int fetch_labels(CPUMat& Y, thread_pool& io_thread_pool);
+  virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
-  virtual int fetch_responses(CPUMat& Y, thread_pool& io_thread_pool);
+  virtual int fetch_responses(CPUMat& Y);
 
   /**
    * Save pixels to an image. The implementing data reader is responsible for
@@ -736,7 +737,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   lbann_comm *m_comm;
 
-  bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched, thread_pool& io_thread_pool);
+  bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.
@@ -744,7 +745,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -755,7 +756,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -766,7 +767,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, thread_pool& io_thread_pool) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
@@ -879,6 +880,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
+
+  thread_pool* m_io_thread_pool;
 
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data

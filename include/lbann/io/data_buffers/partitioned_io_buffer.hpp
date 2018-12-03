@@ -83,7 +83,7 @@ class partitioned_io_buffer : public generic_io_buffer {
     El::Zeros_seq(m_indices_fetched_per_mb, local_mini_batch_size, 1);
   }
 
-  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode, thread_pool& io_thread_pool) override;
+  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;
