@@ -146,6 +146,11 @@ class local_response_normalization_layer : public regularizer_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   /// Initialize GPU objects
   void setup_gpu() override {
     regularizer_layer::setup_gpu();

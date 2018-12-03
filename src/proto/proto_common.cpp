@@ -259,8 +259,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
              err << __FILE__ << " " << __LINE__ << " :: unknown format for merged features label: "
                 << readme.format();
              throw lbann_exception(err.str());
-           } 
-         } 
+           }
+         }
         //data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
         data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_reader, shuffle);
         reader = merged_features;
@@ -316,7 +316,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         reader->set_absolute_sample_count( 0. );
         reader->set_use_percent( 1.0 );
         reader->set_first_n( 0 );
-      }  
+      }
     } else {
       reader->set_absolute_sample_count( readme.absolute_sample_count() );
       reader->set_use_percent( readme.percent_of_data_to_use() );
@@ -346,7 +346,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         reader->set_validation_percent( 0. );
       } else {
         reader->set_validation_percent( readme.validation_percent() );
-      }  
+      }
     }
 
     reader->set_master(master);
@@ -421,6 +421,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
       } else if (name == "moving_mnist") {
         reader_validation = new moving_mnist_reader(7, 40, 40, 2);
+        (*(moving_mnist_reader *)reader_validation) = (*(moving_mnist_reader *)reader);
       }
 
       reader_validation->set_role("validate");

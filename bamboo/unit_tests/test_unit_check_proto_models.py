@@ -13,9 +13,6 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
     defective_models = []
     working_models = []
     for subdir, dirs, files in os.walk(dir_name + '/model_zoo/models/'):
-        if 'greedy' in subdir:
-            print('Skipping greedy_layerwise_autoencoder_mnist, kills bamboo agent')
-            continue
         for file_name in files:
             if file_name.endswith('.prototext') and "model" in file_name:
                 model_path = subdir + '/' + file_name
@@ -30,14 +27,14 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     print('Skipping %s because motifs are deprecated' % model_path)
                     continue
                 elif 'mnist' in file_name:
-                    data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
+                    data_filedir_default = '/p/lscratchh/brainusr/datasets/MNIST'
                     data_reader_name = 'mnist'
                 elif 'adversarial' in file_name:
-                    data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
+                    data_filedir_default = '/p/lscratchh/brainusr/datasets/MNIST'
                     data_reader_path = '%s/model_zoo/models/gan/mnist/adversarial_data.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'discriminator' in file_name:
-                    data_filedir_default = '/p/lscratchf/brainusr/datasets/MNIST'
+                    data_filedir_default = '/p/lscratchh/brainusr/datasets/MNIST'
                     data_reader_path = '%s/model_zoo/models/gan/mnist/discriminator_data.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'triplet' in file_name:
@@ -66,8 +63,8 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     if 'resnet50' in file_name:
                         node_count = 8
                 elif 'cifar' in file_name:
-                    data_filename_train_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/data_all.bin'
-                    data_filename_test_default = '/p/lscratchf/brainusr/datasets/cifar10-bin/test_batch.bin'
+                    data_filename_train_default = '/p/lscratchh/brainusr/datasets/cifar10-bin/data_all.bin'
+                    data_filename_test_default = '/p/lscratchh/brainusr/datasets/cifar10-bin/test_batch.bin'
                     data_reader_name = 'cifar10'
                 elif 'char' in file_name:
                     data_filedir_default = '/p/lscratchh/brainusr/datasets/tinyshakespeare/'

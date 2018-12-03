@@ -48,7 +48,7 @@ public:
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "crop layer only supports DATA_PARALLEL");
     set_output_dims(dims);
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
 
   crop_layer(const crop_layer& other)

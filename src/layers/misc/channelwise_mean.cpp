@@ -47,7 +47,7 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   const auto& local_width = local_input.Width();
 
   // Compute channel-wise mean
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
       DataType sum = 0;
@@ -79,7 +79,7 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   const auto& local_width = local_gradient_wrt_input.Width();
 
   // Compute gradients
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
       const auto& dy = local_gradient_wrt_output(channel, col);

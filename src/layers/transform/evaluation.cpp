@@ -149,7 +149,7 @@ EvalType abstract_evaluation_layer::get_value(bool scaled) {
 
 abstract_evaluation_layer::abstract_evaluation_layer(lbann_comm *comm)
   : transform_layer(comm) {
-  m_expected_num_child_layers = 0;
+  this->m_expected_num_child_layers = 0;
 }
 
 void abstract_evaluation_layer::setup_data() {

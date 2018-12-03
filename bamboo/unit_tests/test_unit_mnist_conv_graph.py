@@ -11,7 +11,7 @@ def skeleton_mnist_conv_graph(cluster, executables, dir_name, compiler_name):
     error_file_name  = '%s/bamboo/unit_tests/error/mnist_conv_graph_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1, num_processes=1,
-        dir_name=dir_name, data_filedir_default='/p/lscratchf/brainusr/datasets/MNIST',
+        dir_name=dir_name, data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests', model_name='mnist_conv_graph',
         optimizer_name='adam',
         output_file_name=output_file_name,
