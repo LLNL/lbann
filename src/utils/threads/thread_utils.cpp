@@ -37,7 +37,12 @@ int num_free_cores_per_process(const lbann_comm *comm) {
   auto omp_threads = omp_get_max_threads();
   auto processes_on_node = comm->get_procs_per_node();
 
-  auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads));
+  auto aluminum_threads = 0;
+#ifdef LBANN_HAS_ALUMINUM
+  aluminum_threads = 1;
+#endif // LBANN_HAS_ALUMINUM
+
+  auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads - aluminum_threads));
 
   return io_threads_per_process;
 }
@@ -49,7 +54,12 @@ int free_core_offset(const lbann_comm *comm) {
   auto omp_threads = omp_get_max_threads();
   auto processes_on_node = comm->get_procs_per_node();
 
-  auto io_threads_offset = (omp_threads * processes_on_node) % max_threads;
+  auto aluminum_threads = 0;
+#ifdef LBANN_HAS_ALUMINUM
+  aluminum_threads = 1;
+#endif // LBANN_HAS_ALUMINUM
+
+  auto io_threads_offset = ((omp_threads+aluminum_threads) * processes_on_node) % max_threads;
 
   return io_threads_offset;
 }
