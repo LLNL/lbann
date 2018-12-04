@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann_library.hpp"
+#include "lbann/callbacks/callback_checkpoint.hpp"
 #include <dirent.h>
 #include <cstdlib>
 
@@ -193,26 +194,26 @@ bool __attribute__((used)) load_model_weights(std::string ckpt_dir, model * m){
   std::vector<std::string> weight_list = std::vector<std::string>();
   int epochLast = -1;
   int stepLast = -1;
-  // define filename
-  char latest[1024];
-  sprintf(latest, "%s/last.shared.checkpoint", ckpt_dir.c_str());
+  std::string latest;
+  latest = get_last_shared_checkpoint_filename(m, ckpt_dir);
   // get last epoch and step saved.
-  int fd = openread(latest);
+  int fd = openread(latest.c_str());
   lbann_comm *temp_comm = m->get_comm();
   if (fd != -1) {
     char field[256];
-    read_string(fd, "shared.last", field, sizeof(field));
+    read_string(fd, latest.c_str(), field, sizeof(field));
     int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
     if(ret != 2) { return false; }
-    closeread(fd, latest);
-    if(temp_comm->am_model_master())
-      sprintf(latest, "%s/shared.model.%d.epoch.%d.step.%d/", ckpt_dir.c_str(), temp_comm->get_model_rank(), epochLast, stepLast);
+    closeread(fd, latest.c_str());
+    if(temp_comm->am_model_master()) {
+      latest = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+    }
     temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
   }
 
   DIR *weight_dir;
   struct dirent *weight_file;
-  if((weight_dir = opendir(latest)) == NULL)
+  if((weight_dir = opendir(latest.c_str())) == NULL)
   {
     std::cout << "error opening " << latest << "\n";
     return false;
