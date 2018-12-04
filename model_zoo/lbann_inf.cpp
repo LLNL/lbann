@@ -52,20 +52,28 @@ int main(int argc, char *argv[]) {
 
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
-
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, true);
+    std::vector<model*> models;
+    for(auto pb_model : pbs) {
+      models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
+                                                     comm, true));
+    }
 
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      load_model_weights(opts->get_string("ckpt_dir"), model_1);
+      for(auto m : models) {
+        load_model_weights(opts->get_string("ckpt_dir"), m);
+      }
     }else {
       LBANN_ERROR("Unable to reload model");
     }
 
-    model_1->evaluate(execution_mode::testing);
+    for(auto m : models) {
+      m->evaluate(execution_mode::testing);
+    }
 
-    delete model_1;
+    for(auto m : models) {
+      delete m;
+    }
 
     for (auto t : pbs) {
       delete t;
