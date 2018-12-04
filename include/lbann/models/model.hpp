@@ -52,7 +52,7 @@ class lbann_callback;
 
 /** Base class for LBANN models. */
 class model {
- public:
+public:
 
   /** Constructor. */
   model(lbann_comm *comm,
@@ -74,9 +74,7 @@ class model {
 
   void set_name(std::string name);
 
-  std::string get_name() const {
-    return m_name;
-  }
+  std::string get_name() const { return m_name; }
 
   /** Return the model's id; this is an arbitrary string
    *  that may be useful in multi-model scenarios, e.g,
@@ -242,7 +240,7 @@ class model {
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
- protected:
+protected:
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
@@ -301,9 +299,6 @@ class model {
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
 
-  /** Construct a layer graph. */
-  virtual void construct_layer_graph(std::set<int>& nodes,
-                                     std::map<int,std::set<int>>& edges) const;
   /** Reorder layers. */
   virtual void permute_layers(const std::vector<int>& permutation);
 
@@ -416,7 +411,8 @@ class model {
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
- private:
+private:
+
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
   /** Insert evaluation layers where needed.
