@@ -322,27 +322,74 @@ void model::permute_layers(const std::vector<int>& permutation) {
   }
 }
 
-std::string model::print_layer_description(const Layer* layer) const {
-  if (layer == nullptr) return std::string();
-  std::stringstream os;
-  /// @todo Clean up
-  //std::string description = layer->get_description();
-  os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
-     << layer->get_type()
-     << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
-     <<  "] Set up a layer with input " << std::setw(7)
-     << (layer->get_num_parents() > 0 ? layer->get_input_size() : 0)
-     << " and " << std::setw(7)
-     << (layer->get_num_children() > 0 ? layer->get_output_size() : 0)
-     << " neurons.";
-  std::string s = layer->get_topo_description();
-  if(s != "") {
-    os << " (" << s << ")";
+void model::print_description(std::ostream& os,
+                              std::string separator,
+                              bool trailing_newline) const {
+
+  // Model properties
+  std::stringstream ss;
+  ss << "model \"" << get_name() << "\""
+     << separator << "Type: " << get_type();
+
+  // Layer topology
+  ss << separator << "Layer topology:";
+  for (const auto* l : m_layers) {
+    ss << separator << "  ";
+    if (l == nullptr) {
+      ss << "unknown layer: {} -> {}";
+    } else {
+      ss << l->get_name() << " (" << l->get_type() << "): {";
+      const auto& parents = l->get_parent_layers();
+      const auto& children = l->get_child_layers();
+      for (size_t i = 0; i < parents.size(); ++i) {
+        ss << (i > 0 ? ", " : "");
+        if (parents[i] == nullptr) {
+          ss << "unknown layer";
+        } else {
+          ss << parents[i]->get_name() << " (";
+          const auto& dims = l->get_input_dims(i);
+          for (size_t j = 0; j < dims.size(); ++j) {
+            ss << (j > 0 ? "x" : "") << dims[j];
+          }
+          ss << ")";
+        }
+      }
+      ss << "} -> {";
+      for (size_t i = 0; i < children.size(); ++i) {
+        ss << (i > 0 ? ", " : "");
+        if (children[i] == nullptr) {
+          ss << "unknown layer";
+        } else {
+          ss << children[i]->get_name() << " (";
+          const auto& dims = l->get_output_dims(i);
+          for (size_t j = 0; j < dims.size(); ++j) {
+            ss << (j > 0 ? "x" : "") << dims[j];
+          }
+          ss << ")";
+        }
+      }
+      ss << "}";
+    }
   }
-  if (layer->is_frozen()) {
-    os << " frozen";
+
+  // Layer details
+  ss << separator << "Layer details:";
+  for (const auto* l : m_layers) {
+    ss << separator << "  ";
+    if (l == nullptr) {
+      ss << "unknown layer";
+    } else {
+      l->print_description(ss, separator + "    ", false);
+    }
   }
-  return os.str();
+
+  /// @todo Descriptions for objective function, weights, metrics,
+  /// callbacks
+
+  // Output result to stream
+  os << ss.str();
+  if (trailing_newline) { os << std::endl; }
+
 }
 
 void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
@@ -496,9 +543,6 @@ void model::setup_layers() {
     layer->set_model(this);
     layer->setup();
     layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
   }
 }
 

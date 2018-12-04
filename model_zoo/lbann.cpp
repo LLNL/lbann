@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
                                "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
-    
+
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
@@ -264,14 +264,10 @@ int main(int argc, char *argv[]) {
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
+      model->print_description(std::cout);
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
-      }
-      std::cout << std::endl;
-      const std::vector<Layer *>& layers = model->get_layers();
-      for (size_t h=0; h<layers.size(); h++) {
-        std::cout << h << " " << layers[h]->get_description() << std::endl;
       }
     }
 
@@ -342,5 +338,5 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
+
 }
