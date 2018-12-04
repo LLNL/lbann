@@ -37,25 +37,30 @@ namespace lbann {
 class partitioned_io_buffer : public generic_io_buffer {
  public:
   partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
-  partitioned_io_buffer(
-    const partitioned_io_buffer&) = default;
-  partitioned_io_buffer& operator=(
-    const partitioned_io_buffer&) = default;
-  ~partitioned_io_buffer() override {
-    for (auto& m : M_local) {
-      if(m != nullptr) {
-        delete m;
-      }
+  partitioned_io_buffer(const partitioned_io_buffer& other)
+    : generic_io_buffer(other) {
+    m_input_buffers.clear();
+    m_input_buffers.reserve(other.m_input_buffers.size());
+    for (const auto& ptr : other.m_input_buffers) {
+      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
     }
   }
+  partitioned_io_buffer& operator=(const partitioned_io_buffer& other) {
+    generic_io_buffer::operator=(other);
+    m_input_buffers.clear();
+    m_input_buffers.reserve(other.m_input_buffers.size());
+    for (const auto& ptr : other.m_input_buffers) {
+      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+    }
+    return *this;
+  };
+  ~partitioned_io_buffer() = default;
   partitioned_io_buffer* copy() const override { return new partitioned_io_buffer(*this); }
 
   std::string get_type() const override { return "partitioned"; }
 
-  /** Setup a bypass from to the activations matrices */
-  void set_local_matrix_bypass(CPUMat *m, int idx) override;
   void fp_setup_data(El::Int cur_mini_batch_size, int idx) override;
-  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) override;
+  void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) override;
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
@@ -68,7 +73,12 @@ class partitioned_io_buffer : public generic_io_buffer {
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
-  std::vector<CPUMat*> M_local;
+  /** Input buffers
+   *  Each matrix column corresponds to a flattened mini-batch sample
+   *  or label or responase.
+   */
+  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
+  //  std::vector<CPUMat*> M_local;
   int m_num_samples_fetched;
 };
 }

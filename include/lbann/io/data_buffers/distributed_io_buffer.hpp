@@ -104,8 +104,6 @@ class distributed_io_buffer : public generic_io_buffer {
 
   std::string get_type() const override { return "distributed"; }
 
-  void set_local_matrix_bypass(CPUMat *M_local, int idx) override {}
-
   void fp_setup_data(El::Int cur_mini_batch_size, int idx) override {
     for (auto& buf : m_data_buffers) {
       buf.second->M_local[idx]->Resize(buf.second->M_local[idx]->Height(), cur_mini_batch_size);

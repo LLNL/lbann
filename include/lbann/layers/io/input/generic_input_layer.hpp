@@ -217,12 +217,6 @@ class generic_input_layer : public io_layer {
     // Initialize matrices
     io_layer::fp_setup_outputs(mini_batch_size);
 
-    // Local matrix bypass is only allowed it there is only a single io_buffer
-    if(m_io_buffers.size() == 1) {
-      for (int i = 0; i < get_num_children(); ++i) {
-        m_io_buffers[0]->set_local_matrix_bypass(static_cast<CPUMat*>(&get_local_activations(i)), i);
-      }
-    }
     for (auto& io_buffer : m_io_buffers) {
       for (int i = 0; i < get_num_children(); ++i) {
         io_buffer->fp_setup_data(mini_batch_size, i);
