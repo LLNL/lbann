@@ -63,7 +63,6 @@ class partitioned_io_buffer : public generic_io_buffer {
    *  or label or responase.
    */
   std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
-  //  std::vector<CPUMat*> M_local;
   int m_num_samples_fetched;
 };
 }

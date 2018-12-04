@@ -62,28 +62,16 @@ lbann::partitioned_io_buffer& lbann::partitioned_io_buffer::operator=(const lban
 
 void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, int idx) {
   m_input_buffers[idx]->Resize(m_input_buffers[idx]->Height(), cur_mini_batch_size);
-  /// @todo BVE FIXME - need to improve how this would work with odd
-  /// mini-batch sizes
-  // El::Int local_mini_batch_size = cur_mini_batch_size / m_comm->get_procs_per_model();
-  // El::Int partial_mini_batch_size = cur_mini_batch_size % m_comm->get_procs_per_model();
-  // if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
-  //   local_mini_batch_size++;
-  // }
-  // M_local[idx]->Resize(M_local[idx]->Height(), local_mini_batch_size);
 }
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
   m_input_buffers[0]->Resize(num_neurons, max_mini_batch_size);
   m_input_buffers[1]->Resize(num_targets, max_mini_batch_size);
-  /// @todo BVE FIXME - need to improve how this would work with odd
-  /// mini-batch sizes
   El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_model();
   El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_model();
   if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
-  // M_local[0]->Resize(num_neurons, local_mini_batch_size);
-  // M_local[1]->Resize(num_targets, local_mini_batch_size);
   /// The amount of space needed will vary based on input layer type,
   /// but the batch size is the maximum space necessary
   El::Zeros_seq(m_indices_fetched_per_mb, local_mini_batch_size, 1);
@@ -120,12 +108,6 @@ void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_rea
   /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
   Copy(*m_input_buffers[0], sample);
   Copy(*m_input_buffers[1], response);
-  // if(m_input_buffers[0] != &(sample.Matrix())) {
-  //   Copy(*M_local[0], sample.Matrix());
-  // }
-  // if(M_local[1] != &(response.Matrix())) {
-  //   Copy(*M_local[1], response.Matrix());
-  // }
   m_num_samples_fetched = 0;
   return;
 }
@@ -133,9 +115,6 @@ void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_rea
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
   /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
   Copy(*m_input_buffers[0], sample);
-  // if(M_local[0] != &(sample.Matrix())) {
-  //   Copy(*M_local[0], sample.Matrix());
-  // }
   m_num_samples_fetched = 0;
   return;
 }
