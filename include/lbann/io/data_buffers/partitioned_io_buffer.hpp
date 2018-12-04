@@ -37,23 +37,8 @@ namespace lbann {
 class partitioned_io_buffer : public generic_io_buffer {
  public:
   partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
-  partitioned_io_buffer(const partitioned_io_buffer& other)
-    : generic_io_buffer(other) {
-    m_input_buffers.clear();
-    m_input_buffers.reserve(other.m_input_buffers.size());
-    for (const auto& ptr : other.m_input_buffers) {
-      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
-    }
-  }
-  partitioned_io_buffer& operator=(const partitioned_io_buffer& other) {
-    generic_io_buffer::operator=(other);
-    m_input_buffers.clear();
-    m_input_buffers.reserve(other.m_input_buffers.size());
-    for (const auto& ptr : other.m_input_buffers) {
-      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
-    }
-    return *this;
-  };
+  partitioned_io_buffer(const partitioned_io_buffer& other);
+  partitioned_io_buffer& operator=(const partitioned_io_buffer& other);
   ~partitioned_io_buffer() = default;
   partitioned_io_buffer* copy() const override { return new partitioned_io_buffer(*this); }
 
