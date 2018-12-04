@@ -816,6 +816,8 @@ void print_help(lbann::lbann_comm *comm)
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
        "\n"
+       "  To reload from a previous checkpoint you specify --ckpt_dir=<string>\n"
+       "\n"
        "Some prototext values can be over-riden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
        "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
