@@ -33,14 +33,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
-model * build_model_from_prototext(int argc, char **argv,
-                                   lbann_data::LbannPB &pb,
-                                   lbann_comm *comm,
-                                   bool first_model);
-
-
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
@@ -73,7 +65,7 @@ int main(int argc, char *argv[]) {
     model *model_3 = nullptr; //G2 solver
 
     //Support for autoencoder models
-    model *ae_model = nullptr;  
+    model *ae_model = nullptr;
     model *ae_cycgan_model = nullptr; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
@@ -87,7 +79,7 @@ int main(int argc, char *argv[]) {
                                            comm, false);
       model_3->set_name("inv_model");
     }
-     
+
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
                                            comm, false);
@@ -116,7 +108,7 @@ int main(int argc, char *argv[]) {
       model_3->copy_trained_weights_from(ae_weights);
       ae_cycgan_model->copy_trained_weights_from(ae_weights);
     }
-    
+
     //Train cycle GAN
     int super_step = 1;
     int max_super_step = pb_model.super_steps();
@@ -145,7 +137,7 @@ int main(int argc, char *argv[]) {
       if(master) std::cout << " Update G2 weights " << std::endl;
       auto model3_weights = model_3->get_weights();
       model_1->copy_trained_weights_from(model3_weights);
-      
+
       //Optionally evaluate on pretrained autoencoder
       if(ae_model != nullptr && ae_cycgan_model != nullptr){
         //if(master) std::cout << " Copy trained weights from autoencoder to autoencoder proxy" << std::endl;
@@ -187,228 +179,5 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
-}
 
-model * build_model_from_prototext(int argc, char **argv,
-                                   lbann_data::LbannPB &pb,
-                                   lbann_comm *comm,
-                                   bool first_model) {
-  int random_seed = lbann_default_random_seed;
-  bool master = comm->am_world_master();
-  if (master) std::cerr << "starting build_model_from_prototext\n";
-  model *model = nullptr; //d hysom bad namimg! should fix
-  try {
-    std::stringstream err;
-    options *opts = options::get();
-
-    // Optionally over-ride some values in prototext
-    get_cmdline_overrides(comm, pb);
-
-    lbann_data::Model *pb_model = pb.mutable_model();
-
-    // Adjust the number of parallel readers; this may be adjusted
-    // after calling split_models()
-    set_num_parallel_readers(comm, pb);
-
-    // Set algorithmic blocksize
-    if (pb_model->block_size() == 0 and master) {
-      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
-      LBANN_ERROR(err.str());
-    }
-    El::SetBlocksize(pb_model->block_size());
-
-    // Change random seed if needed.
-    if (pb_model->random_seed() > 0) {
-      random_seed = pb_model->random_seed();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
-    }
-    // Initialize models differently if needed.
-#ifndef LBANN_DETERMINISTIC
-    if (pb_model->random_init_models_differently()) {
-      random_seed = random_seed + comm->get_model_rank();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
-    }
-#else
-    if (pb_model->random_init_models_differently()) {
-      if (master) {
-        std::cout << "WARNING: Ignoring random_init_models_differently " <<
-          "due to sequential consistency" << std::endl;
-      }
-    }
-#endif
-
-    // Set up the communicator and get the grid.
-    int procs_per_model = pb_model->procs_per_model();
-    if (procs_per_model == 0) {
-      procs_per_model = comm->get_procs_in_world();
-    }
-    if (first_model) {
-      comm->split_models(procs_per_model);
-      if (pb_model->num_parallel_readers() > procs_per_model) {
-        pb_model->set_num_parallel_readers(procs_per_model);
-      }
-    } else if (procs_per_model != comm->get_procs_per_model()) {
-      LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
-    }
-
-    // Save info to file; this includes the complete prototext (with any over-rides
-    // from the cmd line) and various other info
-    save_session(comm, argc, argv, pb);
-
-    // Report useful information
-    if (master) {
-
-      // Report hardware settings
-      std::cout << "Hardware properties (for master process)" << std::endl
-                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
-#ifdef HYDROGEN_HAVE_CUDA
-      std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
-#endif // HYDROGEN_HAVE_CUDA
-      std::cout << std::endl;
-
-      // Report build settings
-      std::cout << "Build settings" << std::endl;
-      std::cout << "  Type     : ";
-#ifdef LBANN_DEBUG
-      std::cout << "Debug" << std::endl;
-#else
-      std::cout << "Release" << std::endl;
-      std::cout << "  Aluminum : ";
-#ifdef LBANN_HAS_ALUMINUM
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_ALUMINUM
-#endif // LBANN_DEBUG
-      std::cout << "  CUDA     : ";
-#ifdef LBANN_HAS_GPU
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN    : ";
-#ifdef LBANN_HAS_CUDNN
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB      : ";
-#ifdef HYDROGEN_HAVE_CUB
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // HYDROGEN_HAVE_CUB
-      std::cout << std::endl;
-
-      // Report device settings
-      std::cout << "GPU settings" << std::endl;
-      bool disable_cuda = pb_model->disable_cuda();
-#ifndef LBANN_HAS_GPU
-      disable_cuda = true;
-#endif // LBANN_HAS_GPU
-      std::cout << "  CUDA         : "
-                << (disable_cuda ? "disabled" : "enabled") << std::endl;
-      std::cout << "  cuDNN        : ";
-#ifdef LBANN_HAS_CUDNN
-      std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
-#endif // LBANN_HAS_CUDNN
-      const auto* env = std::getenv("MV2_USE_CUDA");
-      std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
-      std::cout << std::endl;
-
-#ifdef LBANN_HAS_ALUMINUM
-      std::cout << "Aluminum Features:" << std::endl;
-      std::cout << "  NCCL : ";
-#ifdef AL_HAS_NCCL
-      std::cout << "enabled" << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
-#endif // AL_HAS_NCCL
-      std::cout << std::endl;
-#endif // LBANN_HAS_ALUMINUM
-
-      // Report model settings
-      const auto& grid = comm->get_model_grid();
-      std::cout << "Model settings" << std::endl
-                << "  Models              : " << comm->get_num_models() << std::endl
-                << "  Processes per model : " << procs_per_model << std::endl
-                << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
-      std::cout << std::endl;
-
-    }
-
-    // Display how the OpenMP threads are provisioned
-    if (opts->has_string("print_affinity")) {
-      display_omp_setup();
-    }
-
-    // Initialize data readers
-    //@todo: code not in place for correctly handling image preprocessing
-    std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(comm, pb, data_readers);
-
-    // hack to prevent all data readers from loading identical data; instead,
-    // share a single copy. See data_reader_jag_conduit_hdf5 for example
-    if (first_model) {
-      if (opts->has_string("share_data_reader_data")) {
-        for (auto t : data_readers) {
-          opts->set_ptr((void*)t.second);
-        }
-      }
-    }
-
-    // User feedback
-    print_parameters(comm, pb);
-
-    // Initalize model
-    model = proto::construct_model(comm,
-                                   data_readers,
-                                   pb.optimizer(),
-                                   pb.model());
-    model->setup();
-
-    // restart model from checkpoint if we have one
-    //@todo
-    //model->restartShared();
-
-    if (comm->am_world_master()) {
-      std::cout << std::endl;
-      std::cout << "Callbacks:" << std::endl;
-      for (lbann_callback *cb : model->get_callbacks()) {
-        std::cout << cb->name() << std::endl;
-      }
-      std::cout << std::endl;
-      const std::vector<Layer *>& layers = model->get_layers();
-      for (size_t h=0; h<layers.size(); h++) {
-        std::cout << h << " " << layers[h]->get_description() << std::endl;
-      }
-    }
-
-#ifndef LBANN_DETERMINISTIC
-      // Under normal conditions, reinitialize the random number generator so
-      // that regularization techniques (e.g. dropout) generate unique patterns
-      // on different ranks.
-      init_random(random_seed + comm->get_rank_in_world());
-#else
-      if(comm->am_world_master()) {
-        std::cout <<
-          "--------------------------------------------------------------------------------\n"
-          "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-          "--------------------------------------------------------------------------------\n";
-      }
-#endif
-
-  } catch (std::exception& e) {
-    El::ReportException(e);
-  }
-
-  return model;
 }

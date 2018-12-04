@@ -30,8 +30,6 @@
 
 namespace lbann {
 
-const int lbann_default_random_seed = 42;
-
 model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
                                                          lbann_data::LbannPB &pb,
                                                          lbann_comm *comm,
