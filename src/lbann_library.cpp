@@ -104,87 +104,7 @@ model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
 
     // Report useful information
     if (master) {
-
-      // Report hardware settings
-      std::cout << "Hardware properties (for master process)" << std::endl
-                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
-#ifdef HYDROGEN_HAVE_CUDA
-      std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
-#endif // HYDROGEN_HAVE_CUDA
-      std::cout << std::endl;
-
-      // Report build settings
-      std::cout << "Build settings" << std::endl;
-      std::cout << "  Type     : ";
-#ifdef LBANN_DEBUG
-      std::cout << "Debug" << std::endl;
-#else
-      std::cout << "Release" << std::endl;
-#endif // LBANN_DEBUG
-      std::cout << "  Aluminum : ";
-#ifdef LBANN_HAS_ALUMINUM
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_ALUMINUM
-      std::cout << "  CUDA     : ";
-#ifdef LBANN_HAS_GPU
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN    : ";
-#ifdef LBANN_HAS_CUDNN
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB      : ";
-#ifdef HYDROGEN_HAVE_CUB
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // HYDROGEN_HAVE_CUB
-      std::cout << std::endl;
-
-      // Report device settings
-      std::cout << "GPU settings" << std::endl;
-      bool disable_cuda = pb_model->disable_cuda();
-#ifndef LBANN_HAS_GPU
-      disable_cuda = true;
-#endif // LBANN_HAS_GPU
-      std::cout << "  CUDA         : "
-                << (disable_cuda ? "disabled" : "enabled") << std::endl;
-      std::cout << "  cuDNN        : ";
-#ifdef LBANN_HAS_CUDNN
-      std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
-#endif // LBANN_HAS_CUDNN
-      const auto* env = std::getenv("MV2_USE_CUDA");
-      std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
-      std::cout << std::endl;
-
-#ifdef LBANN_HAS_ALUMINUM
-      std::cout << "Aluminum Features:" << std::endl;
-      std::cout << "  NCCL : ";
-#ifdef AL_HAS_NCCL
-      std::cout << "enabled" << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
-#endif // AL_HAS_NCCL
-      std::cout << std::endl;
-#endif // LBANN_HAS_ALUMINUM
-
-      // Report model settings
-      const auto& grid = comm->get_model_grid();
-      std::cout << "Model settings" << std::endl
-                << "  Models              : " << comm->get_num_models() << std::endl
-                << "  Processes per model : " << procs_per_model << std::endl
-                << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
-      std::cout << std::endl;
-
+      print_lbann_configuration(pb_model, comm);
     }
 
     // Display how the OpenMP threads are provisioned
@@ -312,6 +232,89 @@ bool __attribute__((used)) load_model_weights(std::string ckpt_dir, model * m){
     w->load_from_save(latest,weight_list);
   }
   return true;
+}
+
+void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm) {
+  // Report hardware settings
+  std::cout << "Hardware properties (for master process)" << std::endl
+            << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
+            << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+#ifdef HYDROGEN_HAVE_CUDA
+  std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
+#endif // HYDROGEN_HAVE_CUDA
+  std::cout << std::endl;
+
+  // Report build settings
+  std::cout << "Build settings" << std::endl;
+  std::cout << "  Type     : ";
+#ifdef LBANN_DEBUG
+  std::cout << "Debug" << std::endl;
+#else
+  std::cout << "Release" << std::endl;
+#endif // LBANN_DEBUG
+  std::cout << "  Aluminum : ";
+#ifdef LBANN_HAS_ALUMINUM
+  std::cout << "detected" << std::endl;
+#else
+  std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_ALUMINUM
+  std::cout << "  CUDA     : ";
+#ifdef LBANN_HAS_GPU
+  std::cout << "detected" << std::endl;
+#else
+  std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_GPU
+  std::cout << "  cuDNN    : ";
+#ifdef LBANN_HAS_CUDNN
+  std::cout << "detected" << std::endl;
+#else
+  std::cout << "NOT detected" << std::endl;
+#endif // LBANN_HAS_CUDNN
+  std::cout << "  CUB      : ";
+#ifdef HYDROGEN_HAVE_CUB
+  std::cout << "detected" << std::endl;
+#else
+  std::cout << "NOT detected" << std::endl;
+#endif // HYDROGEN_HAVE_CUB
+  std::cout << std::endl;
+
+  // Report device settings
+  std::cout << "GPU settings" << std::endl;
+  bool disable_cuda = pb_model->disable_cuda();
+#ifndef LBANN_HAS_GPU
+  disable_cuda = true;
+#endif // LBANN_HAS_GPU
+  std::cout << "  CUDA         : "
+            << (disable_cuda ? "disabled" : "enabled") << std::endl;
+  std::cout << "  cuDNN        : ";
+#ifdef LBANN_HAS_CUDNN
+  std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
+#else
+  std::cout << "disabled" << std::endl;
+#endif // LBANN_HAS_CUDNN
+  const auto* env = std::getenv("MV2_USE_CUDA");
+  std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
+  std::cout << std::endl;
+
+#ifdef LBANN_HAS_ALUMINUM
+  std::cout << "Aluminum Features:" << std::endl;
+  std::cout << "  NCCL : ";
+#ifdef AL_HAS_NCCL
+  std::cout << "enabled" << std::endl;
+#else
+  std::cout << "disabled" << std::endl;
+#endif // AL_HAS_NCCL
+  std::cout << std::endl;
+#endif // LBANN_HAS_ALUMINUM
+
+  // Report model settings
+  const auto& grid = comm->get_model_grid();
+  int procs_per_model = pb_model->procs_per_model();
+  std::cout << "Model settings" << std::endl
+            << "  Models              : " << comm->get_num_models() << std::endl
+            << "  Processes per model : " << procs_per_model << std::endl
+            << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
+  std::cout << std::endl;
 }
 
 } // namespace lbann

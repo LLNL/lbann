@@ -46,6 +46,8 @@ model *build_model_from_prototext(int argc, char **argv,
 
 bool load_model_weights(std::string ckpt_dir, model *m);
 
+void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm);
+
 } // namespace lbann
 
 #endif // LBANN_LIBRARY_HPP
