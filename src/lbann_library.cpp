@@ -164,6 +164,7 @@ model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
       }
+    }
 
 #ifndef LBANN_DETERMINISTIC
       // Under normal conditions, reinitialize the random number generator so
