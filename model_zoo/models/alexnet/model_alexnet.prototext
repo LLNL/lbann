@@ -56,6 +56,12 @@ model {
       amt: 0.1
     }
   }
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckpt_dir"
+      checkpoint_epochs: 1
+    }
+  }
 
   ###################################################
   # start of layers
