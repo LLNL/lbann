@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_HPP_INCLUDED
-#define LBANN_LAYER_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LAYER_HPP_INCLUDED
+#define LBANN_LAYERS_LAYER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -64,7 +64,8 @@ class Layer {
   friend class lbann_callback_sync_layers;
   friend class lbann_callback_sync_selected;
 
- public:
+public:
+
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
@@ -93,16 +94,14 @@ class Layer {
    */
   inline void set_name(const std::string name) { m_name = name; }
 
-  /** Get a human-readable description of the layer parameters. */
-  virtual std::string get_description() const;
-  /** Get a human-readable description of the activation tensors.
-   *  Activation tensors are stored in distributed matrices where each
-   *  column corresponds to a mini-batch sample. Within each column,
-   *  the data is packed w.r.t. the last tensor dimension, then
-   *  w.r.t. the penultimate dimension, and so on. 3D tensors are
-   *  assumed to be 2D images in NCHW format.
+  /** Print human-readable layer description.
+   *  Description strings (see the get_description function) are
+   *  output with separators. By default, this means each description
+   *  string is on its own line.
    */
-  virtual std::string get_topo_description() const;
+  void print_description(std::ostream& os,
+                         std::string separator = "\n  ",
+                         bool trailing_newline = true) const;
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
@@ -324,7 +323,14 @@ class Layer {
   void unfreeze();
   bool is_frozen() const;
 
- protected:
+protected:
+
+  /** Get layer description.
+   *  Returns a vector of human-readable description strings. When the
+   *  description is printed (see the print_description function), the
+   *  strings are output with separators (e.g. newlines).
+   */
+  virtual std::vector<std::string> get_description() const;
 
   // ===========================================================
   // Setup helper functions
@@ -467,7 +473,7 @@ class Layer {
    */
   std::string m_name;
 
- private:
+private:
 
   // ===========================================================
   // Private access functions
@@ -513,4 +519,4 @@ class Layer {
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_HPP_INCLUDED
+#endif // LBANN_LAYERS_LAYER_HPP_INCLUDED

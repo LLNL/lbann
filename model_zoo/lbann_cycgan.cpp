@@ -179,5 +179,4 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-
 }
