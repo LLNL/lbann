@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   Elemental_extensions.cpp
   base.cpp
   comm.cpp
+  lbann_library.cpp
   )
 
 # Add the subdirectories

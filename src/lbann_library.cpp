@@ -102,7 +102,7 @@ model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
 
     // Save info to file; this includes the complete prototext (with any over-rides
     // from the cmd line) and various other info
-    //save_session(comm, argc, argv, pb);
+    save_session(comm, argc, argv, pb);
 
     // Report useful information
     if (master) {
@@ -199,6 +199,16 @@ model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
     std::map<execution_mode, generic_data_reader *> data_readers;
     init_data_readers(comm, pb, data_readers);
 
+    // hack to prevent all data readers from loading identical data; instead,
+    // share a single copy. See data_reader_jag_conduit_hdf5 for example
+    if (first_model) {
+      if (opts->has_string("share_data_reader_data")) {
+        for (auto t : data_readers) {
+          opts->set_ptr((void*)t.second);
+        }
+      }
+    }
+
     // User feedback
     print_parameters(comm, pb);
 
@@ -208,6 +218,22 @@ model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
                                    pb.optimizer(),
                                    pb.model());
     model->setup();
+
+    //under development; experimental
+    if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+      if (master) {
+        std::cerr << "\nUSING DATA STORE!\n\n";
+      }
+      for (auto r : data_readers) {
+        if (!r.second) continue;
+        r.second->setup_data_store(model);
+      }
+    }
+
+    if (opts->has_string("create_tarball")) {
+      finalize(comm);
+      return 0;
+    }
 
     // restart model from checkpoint if we have one
     //@todo
