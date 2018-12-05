@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
+model *build_model_from_prototext(int argc, char **argv,
                                                          lbann_data::LbannPB &pb,
                                                          lbann_comm *comm,
                                                          bool first_model) {
@@ -190,7 +190,7 @@ model * __attribute__((used)) build_model_from_prototext(int argc, char **argv,
   return model;
 }
 
-bool __attribute__((used)) load_model_weights(std::string ckpt_dir, model * m){
+bool load_model_weights(std::string ckpt_dir, model * m){
   std::vector<std::string> weight_list = std::vector<std::string>();
   int epochLast = -1;
   int stepLast = -1;
@@ -207,6 +207,7 @@ bool __attribute__((used)) load_model_weights(std::string ckpt_dir, model * m){
     closeread(fd, latest.c_str());
     if(temp_comm->am_model_master()) {
       latest = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+      std::cout << "Loading model weights from " << latest << std::endl;
     }
     temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
   }

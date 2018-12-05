@@ -52,9 +52,9 @@ std::string get_dims_string(const std::vector<int>& matrix_height_dims,
   ss << ")";
   return ss.str();
 }
-  
+
 } // namespace
-  
+
 weights::weights(lbann_comm* comm)
   : m_comm(comm),
     m_frozen(false) {
@@ -202,7 +202,7 @@ const optimizer* weights::get_optimizer() const {
 void weights::set_optimizer(std::unique_ptr<optimizer>& opt) {
   m_optimizer = std::move(opt);
 }
-  
+
 // -----------------------------------------------
 // Matrix distribution accessors
 // -----------------------------------------------
@@ -213,7 +213,7 @@ El::DistData weights::get_matrix_distribution() const {
 void weights::set_matrix_distribution(El::DistData dist) {
   m_matrix_dist = dist;
 }
-  
+
 // -----------------------------------------------
 // Setup
 // -----------------------------------------------
@@ -375,7 +375,7 @@ void weights::reconcile_values(Al::request& req) {
     m_comm->nb_allreduce(values, values.RedundantComm(), req);
   }
 }
-  
+
 // -----------------------------------------------
 // Checkpointing
 // -----------------------------------------------
@@ -447,7 +447,7 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
 bool weights::load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list){
   // create weight file name to match to weight list entry
   char l_name[1024];
-  sprintf(l_name, "model_weights_%s_%lldx%lld.bin", m_name.c_str(), m_values->Height(), m_values->Width());
+  snprintf(l_name, sizeof(l_name), "model_weights_%s_%lldx%lld.bin", m_name.c_str(), m_values->Height(), m_values->Width());
   std::vector<std::string>::iterator it;
   it = find(weight_list.begin(),weight_list.end(),l_name);
   auto pos = std::distance(weight_list.begin(),it);

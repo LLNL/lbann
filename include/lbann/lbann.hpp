@@ -31,9 +31,6 @@
 #ifndef LBANN_HPP_INCLUDED
 #define LBANN_HPP_INCLUDED
 
-/// Library interface
-#include "lbann/lbann_library.hpp"
-
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"
 
@@ -204,7 +201,8 @@
 /// Metrics
 #include "lbann/metrics/layer_metric.hpp"
 
-/// Utilities, exceptions, etc.
+/// Utilities, exceptions, library interface, etc.
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/options.hpp"
