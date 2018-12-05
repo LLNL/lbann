@@ -907,10 +907,6 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   const lbann_data::Model& model = p.model();
   std::string name = model.name() + ".prototext";
-  if (name == "0") {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE due to option: --saveme=0\n\n";
-    return;
-  }
 
   //check if "name" exists; if yes, append "_1"
   bool exists = false;
@@ -921,7 +917,6 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   }
   if (exists) {
     name += "_1";
-    //opts["saveme"] = name;
   }
 
   //open output file
@@ -954,7 +949,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
+      << " --loadme=" << name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
