@@ -760,7 +760,7 @@ void model::add_dummy_layers() {
 
   // Add dummy layers until all layers have enough children
   for (size_t i = 0; i < m_layers.size(); ++i) {
-    auto& layer = m_layers[i];
+    auto layer = m_layers[i];
     while (layer->get_num_children() < layer->get_expected_num_child_layers()) {
 
       // Create dummy layer
@@ -810,7 +810,7 @@ void model::add_dummy_layers() {
 
 void model::add_split_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
-    auto& layer = m_layers[i];
+    auto layer = m_layers[i];
 
     // Add split layer if layer expects one child but has multiple
     auto& children = layer->get_child_layers();
