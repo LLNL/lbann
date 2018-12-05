@@ -127,6 +127,9 @@ int main(int argc, char *argv[]) {
       } catch (exception e) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << e.what() << "\n";
         continue;
+      } catch (...) {
+         std::cerr << "exception hdf5_open_file_for_read\n";
+         continue;
       }
       std::vector<std::string> cnames;
       try {
@@ -134,6 +137,9 @@ int main(int argc, char *argv[]) {
       } catch  (exception e) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names: " << e.what() << "\n";
         continue;
+      } catch (...) {
+         std::cerr << "exception hdf5_group_list_child_names\n";
+         continue;
       }
       size_t is_good = 0;
       size_t is_bad = 0;
@@ -145,6 +151,9 @@ int main(int argc, char *argv[]) {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
         } catch (exception e) {
           std::cerr << rank << " :: exception hdf5_read: " << e.what() << "\n";
+        } catch (...) {
+           std::cerr << "exception hdf5_read file: " << s2.str() << "; key: " << key_1 << "\n";
+           continue;
         }
         int success = n_ok.to_int64();
         if (success == 1) {
@@ -162,6 +171,9 @@ int main(int argc, char *argv[]) {
       } catch (exception e) {
         std::cerr << rank << " :: exception hdf5_close_file: " << e.what() << "\n";
         continue;
+      } catch (...) {
+         std::cerr << "exception hdf5_close_file\n";
+         continue;
       }
     }
     out.close();
@@ -197,6 +209,7 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (exception& e) {
+    std::cerr << "caught exception, outer loop!!!!\n";
     if (options::get()->has_bool("stack_trace_to_file")) {
       std::stringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
@@ -211,6 +224,9 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e) {
     El::ReportException(e);
     finalize(comm);
+    return EXIT_FAILURE;
+  } catch (...) {
+    std::cerr << "unknown exception in main\n";
     return EXIT_FAILURE;
   }
 
