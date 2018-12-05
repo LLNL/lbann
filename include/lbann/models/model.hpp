@@ -72,20 +72,19 @@ class model {
   /** Return the model's type. */
   virtual std::string get_type() const = 0;
 
+  /** Set the model's id; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
   void set_name(std::string name);
-
-  std::string get_name() const {
-    return m_name;
-  }
 
   /** Return the model's id; this is an arbitrary string
    *  that may be useful in multi-model scenarios, e.g,
    *  LTFB, jag
    */
-  std::string get_model_id() { return m_model_id; }
-
-  /** Set the model's arbitrary identifying string */
-  void set_model_id(std::string s) { m_model_id = s; }
+  std::string get_name() const {
+    return m_name;
+  }
 
   /** Print human-readable model description. */
   virtual void print_description(std::ostream& os,
@@ -438,8 +437,6 @@ class model {
    *  the split layer's children will be the original children.
    */
   void add_split_layers();
-
-  std::string m_model_id;
 };
 
 }  // namespace lbann

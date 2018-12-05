@@ -905,13 +905,8 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
     return;
   }
 
-  //get output filename
-  std::string base = ".";
-  if (!opts->has_string("saveme")) {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
-    return;
-  }
-  std::string name = opts->get_string("saveme");
+  const lbann_data::Model& model = p.model();
+  std::string name = model.name() + ".prototext";
   if (name == "0") {
     std::cerr << "\nNOT WRITING SAVE_SESSION FILE due to option: --saveme=0\n\n";
     return;
