@@ -28,12 +28,7 @@
 #define LBANN_LIBRARY_HPP
 
 #include "lbann/models/model.hpp"
-#include "lbann/data_readers/data_reader.hpp"
 #include "lbann/proto/proto_common.hpp"
-#include "lbann/utils/protobuf_utils.hpp"
-#include "lbann/utils/stack_trace.hpp"
-#include "lbann/utils/stack_profiler.hpp"
-#include "lbann/data_store/generic_data_store.hpp"
 
 namespace lbann {
 
