@@ -225,10 +225,11 @@ message GenericPreprocessor {
 
 message Model {
   string model_id = 1000; //arbitrary identifier
-  string name = 1; //deprecated
+//  string name = 1; //deprecated
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
+  string type = 7;
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;

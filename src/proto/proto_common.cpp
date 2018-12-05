@@ -616,17 +616,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 
   if (opts->has_string("dag_model")) {
-    std::string sanity = model->name();
+    std::string sanity = model->type();
     if (sanity != "dnn") {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << " the current network model is: " << model->name()
+          << " the current network model is: " << model->type()
           << "; you can only change the model to 'dag_model' if the current model is 'dnn'";
       throw lbann_exception(err.str());
     }
     if (master) {
-      std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
+      std::cout << "\nchanging model from " << model->type() << " to: dag\n\n";
     }
-    model->set_name("dag_model");
+    model->set_type("dag_model");
   }
 
   if (opts->has_string("data_filedir")
@@ -653,7 +653,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       }
     }
   }
-
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }

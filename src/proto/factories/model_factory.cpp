@@ -43,7 +43,7 @@ model* instantiate_model(lbann_comm* comm,
   auto&& opt = construct_optimizer(comm, proto_opt);
 
   // Construct model
-  const auto& type = proto_model.name();
+  const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
