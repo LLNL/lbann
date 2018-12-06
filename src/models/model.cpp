@@ -1169,6 +1169,10 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
   }
 }
 
+/** @todo Consistent behavior between train, validation, and test
+ *  modes, e.g.
+ *    if (get_cur_validation_step() % cb->get_batch_interval() == 0) { ... }
+ */
 void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
@@ -1190,6 +1194,10 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
   }
 }
 
+/** @todo Consistent behavior between train, validation, and test
+ *  modes, e.g.
+ *    if (get_cur_validation_step() % cb->get_batch_interval() == 0) { ... }
+ */
 void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {

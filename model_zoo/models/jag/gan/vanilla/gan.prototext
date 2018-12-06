@@ -382,7 +382,7 @@ model {
     #device_allocation: "cpu"
     parents: "gsample_minus_y"
   }
-    
+
   #layer {
   #  name: "l_l2_y_eval"
   #  data_layout: "data_parallel"
@@ -452,21 +452,22 @@ model {
     }
   }
   #callback {
-  #  dump_activations {
-  #    basename: "/dir/to/save/imgs"
-  #    interval: 10
-  #    layer_names: "gen1fc4"
+  #  dump_outputs {
+  #    prefix: "/dir/to/save/imgs"
+  #    batch_interval: 10
+  #    layers: "gen1fc4"
+  #    execution_modes: "test"
   #  }
   #}
   callback {
     ltfb {
-      round_size: 100 
+      round_size: 100
       increasing_metric_mode: false
       eval_metrics: "l_l2_y_eval"
-      #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias" 
-      weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights" 
+      #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias"
+      weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights"
       }
- 
+
   }
   block_size: 256
   procs_per_model: 1

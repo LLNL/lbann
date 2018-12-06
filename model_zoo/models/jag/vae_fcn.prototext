@@ -43,9 +43,10 @@ model {
   }
   callback { timer {} }
   callback {
-      dump_activations{
-      basename: "dump_acts/"
-      layer_names: "data sigmoid"
+    dump_outputs {
+      prefix: "dump_acts/"
+      layers: "data sigmoid"
+      execution_modes: "test"
     }
   }
   callback {

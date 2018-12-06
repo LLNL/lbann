@@ -30,7 +30,7 @@ model {
     parents: "data"
     children: "image_data_id param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -298,7 +298,8 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_1"
@@ -435,7 +436,8 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -669,7 +671,8 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"
@@ -779,9 +782,10 @@ model {
   }
   callback { timer {} }
   #callback {
-  #  dump_activations {
-  #    basename: "/dir/to/dump_x_activations/"
-  #    layer_names: "param_data_id gen2fc4_1"
+  #  dump_outputs {
+  #    prefix: "/dir/to/dump_x_activations/"
+  #    layers: "param_data_id gen2fc4_1"
+  #    execution_modes: "test"
   #  }
   #}
   block_size: 256

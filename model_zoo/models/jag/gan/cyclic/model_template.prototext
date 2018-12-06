@@ -1,6 +1,6 @@
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 64 
+  mini_batch_size: 64
   block_size: 256
   num_epochs: 10
   num_parallel_readers: 0
@@ -73,34 +73,35 @@ model {
     }
   }
   callback { timer {} }
-  
+
   #Add callback for replace_weights
   callback {
     replace_weights{
-      source_layers: "d1fc1_real d1fc2_real d1fc3_real d1_invfc1_real d1_invfc2_real d1_invfc3_real" 
+      source_layers: "d1fc1_real d1fc2_real d1fc3_real d1_invfc1_real d1_invfc2_real d1_invfc3_real"
       destination_layers: "d2fc1 d2fc2 d2fc3 d2_invfc1 d2_invfc2 d2_invfc3"
     }
   }
-  
+
   #Optional callbacks
   callback {
-    dump_activations {
-      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jag_imgs/cyclic_gan/"
-      interval: 100
-      layer_names: "image_data_dummy gen1fc4 param_data_id gen2fc4"
+    dump_outputs {
+      prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jag_imgs/cyclic_gan/"
+      batch_interval: 100
+      layers: "image_data_dummy gen1fc4 param_data_id gen2fc4"
+      execution_modes: "test"
     }
   }
   callback {
     ltfb {
-      round_size: 100 
+      round_size: 100
       increasing_metric_mode: false
       eval_metrics: "l_l2_y_eval"
-      #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias" 
-      weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights" 
+      #weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias"
+      weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights"
       }
- 
+
   }
- 
+
 
   ###################################################
   # start of layers

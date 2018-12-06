@@ -85,7 +85,7 @@ model {
     parents: "data"
     children: "image_data_id param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -474,9 +474,9 @@ model {
     parents: "decode1_dropout"
     name: "decode0"
     data_layout: "model_parallel"
-    #num_neurons_from_data_reader: true
     fully_connected {
-      num_neurons: 16384
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
