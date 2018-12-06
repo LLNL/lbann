@@ -42,8 +42,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
