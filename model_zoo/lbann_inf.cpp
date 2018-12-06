@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     std::vector<model*> models;
     for(auto pb_model : pbs) {
       models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
-                                                     comm, true));
+                                                     comm, models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given
