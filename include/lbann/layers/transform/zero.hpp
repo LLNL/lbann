@@ -46,8 +46,7 @@ class zero_layer : public transform_layer {
  public:
  zero_layer(lbann_comm *comm,
               bool first_half=true,
-              bool second_half=true,
-              cudnn::cudnn_manager *cudnn = nullptr)
+              bool second_half=true)
     : transform_layer(comm),
       m_first_half(first_half),
       m_second_half(second_half) {
@@ -58,16 +57,14 @@ class zero_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of constructor params */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "zero_layer  first half: " << m_first_half << "second half: " << m_second_half
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-       << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
-     return s.str();
-  }
+protected:
 
- protected:
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.push_back("First half: " + std::to_string(m_first_half));
+    desc.push_back("Second half: " + std::to_string(m_second_half));
+    return desc;
+  }
 
   void fp_compute() override {
     const auto& input = get_prev_activations();
@@ -98,9 +95,9 @@ class zero_layer : public transform_layer {
         const DataType dy = local_gradient_wrt_output(row, col);
         DataType& dx = local_gradient_wrt_input(row, col);
         if(m_first_half)
-        dx += input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) < local_width/2 ?  DataType(0) : dy;
         if(m_second_half)
-        dx += input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
+        dx = input.GlobalCol(col) >= local_width/2 ?  DataType(0) : dy;
       }
     }
   }

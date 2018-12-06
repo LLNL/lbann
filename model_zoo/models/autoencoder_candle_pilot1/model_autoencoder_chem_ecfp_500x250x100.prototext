@@ -2,21 +2,19 @@ model {
   ### Model description and network architecture taken from:
   ### https://lc.llnl.gov/bitbucket/projects/BIOM/repos/molresp/browse/tf_model.py?at=TensorFlow_chemClass
   ### This network description is anologous to AutoEncoder_Chem_ECFP 
-  name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 1024
   block_size: 256
   num_epochs:20 
   num_parallel_readers: 1
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
   }
 
   ###################################################
@@ -24,7 +22,10 @@ model {
   ###################################################
 
   metric {
-    pearson_correlation {}
+    layer_metric {
+      name: "Pearson correlation"
+      layer: "pearson_r"
+    }
   }
 
   ###################################################
@@ -39,18 +40,6 @@ model {
     timer {
     }
   }
- # callback {
- #   summary {
- #     dir: "."
- #     batch_interval: 1
- #     mat_interval: 25
- #   }
- # }
-#  callback {
-#    debug {
-#      phase: "train"
-#    }
-#  }
 
   ###################################################
   # start of layers
@@ -60,22 +49,35 @@ model {
   # INPUT
   #######
   layer {
-    name: "data"
+    name: "input"
+    children: "data dummy"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
     }
+  }
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "dummy"
+    data_layout: "model_parallel"
+    dummy {}
   }
 
   #################
   # FULLY_CONNECTED encode1
   #################
   layer {
+    parents: "data"
     name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -84,6 +86,7 @@ model {
   # SELU selu1
   ######
   layer {
+    parents: "encode1"
     name: "selu1"
     data_layout: "model_parallel"
     selu {
@@ -94,11 +97,11 @@ model {
   # FULLY_CONNECTED encode2
   #################
   layer {
+    parents: "selu1"
     name: "encode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -107,6 +110,7 @@ model {
   # SELU selu2
   #######
   layer {
+    parents: "encode2"
     name: "selu2"
     data_layout: "model_parallel"
     selu {
@@ -117,11 +121,11 @@ model {
   # FULLY_CONNECTED encode3
   #################
   layer {
+    parents: "selu2"
     name: "encode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 100 
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -130,6 +134,7 @@ model {
   # SELU selu3
   #######
   layer {
+    parents: "encode3"
     name: "selu3"
     data_layout: "model_parallel"
     selu {
@@ -141,11 +146,11 @@ model {
   # FULLY_CONNECTED decode3
   #################
   layer {
+    parents: "selu3"
     name: "decode3"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -154,6 +159,7 @@ model {
   # SELU selu8
   #######
   layer {
+    parents: "decode3"
     name: "selu8"
     data_layout: "model_parallel"
     selu {
@@ -164,11 +170,11 @@ model {
   # FULLY_CONNECTED decode2
   #################
   layer {
+    parents: "selu8"
     name: "decode2"
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -177,6 +183,7 @@ model {
   # SELU selu9
   #######
   layer {
+    parents: "decode2"
     name: "selu9"
     data_layout: "model_parallel"
     selu {
@@ -187,11 +194,11 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "selu9"
     name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
     fully_connected {
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -200,6 +207,7 @@ model {
   # SELU selu10 
   #######
   layer {
+    parents: "decode1"
     name: "selu10"
     data_layout: "model_parallel"
     #selu {
@@ -212,11 +220,57 @@ model {
   # RECONSTRUCTION
   #################
   layer {
+    parents: "relu10"
     name: "reconstruction"
     data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    split {}
+  }
+  layer {
+    parents: "reconstruction data"
+    name: "mean_squared_error"
+    data_layout: "model_parallel"
+    mean_squared_error {}
+  }
+
+  #####################
+  # PEARSON CORRELATION
+  #####################
+  # rho(x,y) = covariance(x,y) / sqrt( variance(x) * variance(y) )
+  layer {
+    parents: "reconstruction data"
+    name: "pearson_r_cov"
+    data_layout: "model_parallel"
+    covariance {}
+  }
+  layer {
+    parents: "data"
+    name: "pearson_r_var1"
+    data_layout: "model_parallel"
+    variance {}
+  }
+  layer {
+    parents: "reconstruction"
+    name: "pearson_r_var2"
+    data_layout: "model_parallel"
+    variance {}
+  }
+  layer {
+    parents: "pearson_r_var1 pearson_r_var2"
+    name: "pearson_r_mult"
+    data_layout: "model_parallel"
+    multiply {}
+  }
+  layer {
+    parents: "pearson_r_mult"
+    name: "pearson_r_sqrt"
+    data_layout: "model_parallel"
+    sqrt {}
+  }
+  layer {
+    parents: "pearson_r_cov pearson_r_sqrt"
+    name: "pearson_r"
+    data_layout: "model_parallel"
+    divide {}
   }
 
   ###################################################

@@ -25,3 +25,5 @@ rm -f ${LBANN_DIR}/bamboo/unit_tests/*.prototext*
 rm -f ${LBANN_DIR}/bamboo/unit_tests/*.pyc
 rm -rf ${LBANN_DIR}/bamboo/unit_tests/__pycache__
 rm -f ${LBANN_DIR}/bamboo/unit_tests/*.tfevents.*
+rm -f ${LBANN_DIR}/bamboo/unit_tests/error/*.txt
+rm -f ${LBANN_DIR}/bamboo/unit_tests/output/*.txt

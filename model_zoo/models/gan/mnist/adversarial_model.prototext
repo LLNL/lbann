@@ -1,21 +1,19 @@
 #Adversarial Model
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "model_parallel"
-  mini_batch_size: 128 
+  mini_batch_size: 32
   block_size: 256
-  super_steps: 100
-  num_epochs: 16 
+  super_steps: 100000
+  num_epochs: 1
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "binary_cross_entropy" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -26,7 +24,11 @@ model {
   ###################################################
 
   metric {
-    categorical_accuracy {}
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "categorical_accuracy"
+      unit: "%"
+    }
   }
 
   ###################################################
@@ -39,6 +41,22 @@ model {
   }
   callback { timer {} }
 
+  callback {
+      dump_activations{
+      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_acts_32mb/"
+      layer_names: "fc4_tanh sum"
+      #layer_names: "fc4_tanh data sum"
+      #interval: 844
+    }
+  }
+  callback {
+    save_images {
+      image_prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_images_32mb/"
+      layers: "fc4_tanh sum"
+      image_format: "png"
+    }
+  }
+
   ###################################################
   # start of layers
   ###################################################
@@ -46,11 +64,24 @@ model {
 
   # INPUT real data
   layer {
-    name: "data"
+    name: "input"
+    children: "input label"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
+  }
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "data_parallel"
+    split {}    
+  }
+  layer {
+    parents: "input"
+    name: "label"
+    data_layout: "data_parallel"
+    split {}    
   }
 
   #ZERO
@@ -63,10 +94,10 @@ model {
       second_half: true
     }
   }
-  
+
 
   #Generator Path
-  
+
   #NOISE
   layer {
     name: "noise"
@@ -77,7 +108,7 @@ model {
       neuron_dims: "100"
     }
   }
-  
+
   weights {
      name: "gen_fc_weights"
      optimizer { }
@@ -92,8 +123,7 @@ model {
     data_layout: "data_parallel"
     #weights: "gen_fc_weights"
     fully_connected {
-      num_neurons: 256 
-      weight_initialization: "glorot_normal"
+      num_neurons: 256
       has_bias: true
     }
   }
@@ -125,8 +155,7 @@ model {
     data_layout: "data_parallel"
     #weights: "gen_fc_weights"
     fully_connected {
-      num_neurons: 512 
-      weight_initialization: "glorot_normal"
+      num_neurons: 512
       has_bias: true
     }
   }
@@ -158,8 +187,7 @@ model {
     data_layout: "data_parallel"
     #weights: "gen_fc_weights"
     fully_connected {
-      num_neurons: 1024 
-      weight_initialization: "glorot_normal"
+      num_neurons: 1024
       has_bias: true
     }
   }
@@ -191,8 +219,7 @@ model {
     data_layout: "data_parallel"
     #weights: "gen_fc_weights"
     fully_connected {
-      num_neurons: 784 
-      weight_initialization: "glorot_normal"
+      num_neurons: 784
       has_bias: true
     }
   }
@@ -200,12 +227,12 @@ model {
     parents: "fc4"
     name: "fc4_tanh"
     data_layout: "data_parallel"
-    tanh {
+    tanh{
     }
   }
 
   #######
-  # Reshape for discrimnator 
+  # Reshape for discrimnator
   ######
   layer {
     name: "reshape1"
@@ -225,10 +252,10 @@ model {
     data_layout: "data_parallel"
     zero {
       first_half:true
-      second_half:false 
+      second_half:false
     }
   }
-  
+
   #SUM
   layer {
     name: "sum"
@@ -237,10 +264,10 @@ model {
     sum {
     }
   }
-    
+
 
 #DISCRIMINATOR MODEL
-  
+
   weights {
      name: "dis_flatten_weights"
      optimizer { }
@@ -254,7 +281,6 @@ model {
     weights: "dis_flatten_weights"
     fully_connected {
       num_neurons: 784
-      #weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -270,8 +296,7 @@ model {
     data_layout: "data_parallel"
     weights: "dis_fc1_weights"
     fully_connected {
-      num_neurons: 512 
-      #weight_initialization: "glorot_normal"
+      num_neurons: 512
       has_bias: true
     }
   }
@@ -295,8 +320,7 @@ model {
     data_layout: "data_parallel"
     weights: "dis_fc2_weights"
     fully_connected {
-      num_neurons: 256 
-      #weight_initialization: "glorot_normal"
+      num_neurons: 256
       has_bias: true
     }
   }
@@ -322,7 +346,6 @@ model {
     weights: "dis_fc3_weights"
     fully_connected {
       num_neurons: 2
-      #weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -344,13 +367,16 @@ model {
   }
 
   layer {
-    parents: "prob"
-    name: "target"
+    parents: "prob label"
+    name: "binary_cross_entropy"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    binary_cross_entropy {}
   }
- 
+  layer {
+    parents: "prob label"
+    name: "categorical_accuracy"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
+  }
+
 }

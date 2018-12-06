@@ -69,8 +69,27 @@ class model {
   /** Copy model. */
   virtual model* copy() const = 0;
 
-  /** Return the model's name. */
-  virtual std::string name() const = 0;
+  /** Return the model's type. */
+  virtual std::string get_type() const = 0;
+
+  /** Set the model's name; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
+  void set_name(std::string name);
+
+  /** Return the model's name; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
+  std::string get_name() const {
+    return m_name;
+  }
+
+  /** Print human-readable model description. */
+  virtual void print_description(std::ostream& os,
+                                 std::string separator="\n  ",
+                                 bool trailing_newline = true) const;
 
   /** Set up the model. */
   virtual void setup();
@@ -115,6 +134,11 @@ class model {
 
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
+
+  /** Copy trained weights from input parameter w.
+ *  Only weight values are placed, pointers and layer structure are in place.
+ *  Weights to be copied are of the same name */
+  void copy_trained_weights_from(std::vector<weights *>& w);
 
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
@@ -197,7 +221,7 @@ class model {
   }
 
   /** Train model. */
-  virtual void train(int num_epochs);
+  virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
   virtual void evaluate(execution_mode mode);
 
@@ -217,14 +241,12 @@ class model {
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
-  /** To make sure copying between host and deivces is complete */
-  void synchronize() const;
-
  protected:
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
-
+  /** Give model a name. */
+  std::string m_name;
   /** The model's current execution mode. */
   execution_mode m_execution_mode;
   /** Flag telling the model to terminate training. */
@@ -277,8 +299,7 @@ class model {
 
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
-  /** Print out the description of a layer set up. */
-  virtual std::string print_layer_description(const Layer* layer) const;
+
   /** Construct a layer graph. */
   virtual void construct_layer_graph(std::set<int>& nodes,
                                      std::map<int,std::set<int>>& edges) const;
@@ -334,20 +355,20 @@ class model {
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each optimizer's gradient. 
+  /** Clear each optimizer's gradient.
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */
   virtual void clear_gradients();
-  /** Clear each layer's error signal tensor.
-   *  This must be called after the input layer's forward prop since
-   *  it determines the current mini-batch size.
-   */
-  virtual void clear_error_signals();
   /** Update weights step. */
   virtual void update_weights();
   /** Update layers step. */
   virtual bool update_layers();
+  /** Reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  virtual void reconcile_weight_values();
 
   ////////////////////////////////////////////////////////////
   // Callbacks
@@ -397,6 +418,14 @@ class model {
  private:
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
+  /** Insert evaluation layers where needed.
+   *  If an objective function layer term or a layer metric
+   *  corresponds to a layer that is not an evaluation layer, an
+   *  evaluation layer is added as a child of the original layer and
+   *  set as the corresponding layer to the layer term or layer
+   *  metric.
+   */
+  void add_evaluation_layers();
   /** Insert dummy layers after layers with too few children.
    *  If a layer expects more child layers than it has, add dummy
    *  layers until it has enough children.
@@ -408,7 +437,6 @@ class model {
    *  the split layer's children will be the original children.
    */
   void add_split_layers();
-
 };
 
 }  // namespace lbann

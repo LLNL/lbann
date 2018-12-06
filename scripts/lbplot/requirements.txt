@@ -1,0 +1,2 @@
+matplotlib>=2.0.2
+texttable==1.4.0

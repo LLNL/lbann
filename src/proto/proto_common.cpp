@@ -38,13 +38,33 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   }
 }
 
+int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+
 void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
 {
+#ifdef LBANN_HAS_CONDUIT
+  static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
+#endif
   bool master = comm->am_world_master();
   std::stringstream err;
 
+  options *opts = options::get();
+  bool create_tarball = opts->has_string("create_tarball") ? true : false;
+
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
+
+  // A separate explicit validation set is created only if a reader with role "validate"
+  // is found in the list of data readers. Otherwise, a validation set is created as a
+  // percentage of data from the train set.
+  bool separate_validation = false;
+  for (int j=0; j<size; j++) {
+    const lbann_data::Reader& readme = d_reader.reader(j);
+    if (readme.role() == "validate") {
+        separate_validation = true;
+        break;
+    }
+  }
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
@@ -58,21 +78,46 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
-    if ((name == "imagenet_org") || (name == "mnist") || (name == "cifar10")) {
+    if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_single") || (name == "imagenet_patches") ||
+    } else if ((name == "imagenet") || (name == "imagenet_patches") ||
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
-      const data_reader_jag::variable_t independent_type
-             = static_cast<data_reader_jag::variable_t>(readme.independent());
+
+      using var_t = data_reader_jag::variable_t;
+
+      // composite independent variable
+      std::vector< std::vector<var_t> > independent_type(readme.independent_size());
+
+      for (int i=0; i < readme.independent_size(); ++i) {
+        const lbann_data::Reader::JAGDataSlice& slice = readme.independent(i);
+        const int slice_size = slice.pieces_size();
+        for (int k=0; k < slice_size; ++k) {
+          const auto var_type = static_cast<var_t>(slice.pieces(k));
+          independent_type[i].push_back(var_type);
+        }
+      }
+
       reader_jag->set_independent_variable_type(independent_type);
-      const data_reader_jag::variable_t dependent_type
-             = static_cast<data_reader_jag::variable_t>(readme.dependent());
+
+      // composite dependent variable
+      std::vector< std::vector<var_t> > dependent_type(readme.dependent_size());
+
+      for (int i=0; i < readme.dependent_size(); ++i) {
+        const lbann_data::Reader::JAGDataSlice& slice = readme.dependent(i);
+        const int slice_size = slice.pieces_size();
+        for (int k=0; k < slice_size; ++k) {
+          const auto var_type = static_cast<var_t>(slice.pieces(k));
+          dependent_type[i].push_back(var_type);
+        }
+      }
+
       reader_jag->set_dependent_variable_type(dependent_type);
+
       const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
       reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
       reader_jag->set_normalization_mode(pb_preproc.early_normalization());
@@ -80,16 +125,34 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
-      auto* reader_jag = new data_reader_jag_conduit(shuffle);
-      const data_reader_jag_conduit::variable_t independent_type
-             = static_cast<data_reader_jag_conduit::variable_t>(readme.independent());
-      reader_jag->set_independent_variable_type(independent_type);
-      const data_reader_jag_conduit::variable_t dependent_type
-             = static_cast<data_reader_jag_conduit::variable_t>(readme.dependent());
-      reader_jag->set_dependent_variable_type(dependent_type);
-      const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
-      reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
-      reader = reader_jag;
+      init_image_data_reader(readme, master, reader);
+      auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
+      const lbann_data::Model& pb_model = p.model();
+      reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+
+      if (!peek_map(leading_reader_jag_conduit, readme.role())) {
+        leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
+      } else {
+        const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
+        *reader_jag_conduit = *leader;
+        reader_jag_conduit->set_leading_reader(leader);
+      }
+
+      for (int i=0; i < pb_model.layer_size(); ++i) {
+        const auto& proto_layer = pb_model.layer(i);
+        if (proto_layer.has_input()) {
+          const auto& params = proto_layer.input();
+          const auto& io_buffer = params.io_buffer();
+          reader_jag_conduit->set_io_buffer_type(io_buffer);
+          const auto num_readers = get_requested_num_parallel_readers(comm, p);
+          reader_jag_conduit->set_num_parallel_readers(num_readers);
+          reader_jag_conduit->set_local_id(readme.role());
+          break;
+        }
+      }
+      set_up_generic_preprocessor = false;
+    } else if (name == "jag_conduit_hdf5") {
+      init_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
@@ -115,7 +178,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
-    } else if (name == "merge_samples" || name == "merge_features") {
+    } else if (name == "merge_samples" || name == "merge_features" || name == "multi_conduit") {
       //TODO: verify how much of wildcard conflict with label file, label file should be loaded separately
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
@@ -131,12 +194,19 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+#ifdef LBANN_HAS_CONDUIT
+        } else if (readme.format() == "jag_conduit") {
+          init_image_data_reader(readme, master, reader);
+          set_up_generic_preprocessor = false;
+          npy_readers.push_back(reader);
+#endif
         } else if (readme.format() == "pilot2_molecular_reader") {
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
           reader_pilot2_molecular->set_data_filename(path);
           npy_readers.push_back(reader_pilot2_molecular);
         } else if (readme.format() == "csv") {
           auto* reader_csv = new csv_reader(shuffle);
+          if(master) { std::cout << "Set data filename: " << path << std::endl; }
           reader_csv->set_data_filename(path);
           reader_csv->set_label_col(readme.label_col());
           reader_csv->set_response_col(readme.response_col());
@@ -159,26 +229,63 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       if(name == "merge_samples") {
         data_reader_merge_samples* merged_samples = new data_reader_merge_samples(npy_readers, shuffle);
         reader = merged_samples;
-      }else {
+      } else if (name == "multi_conduit") {
+        //note: this is not a mistake! We may have a separate multi_conduit
+        //      reader in the future, but for now merge_samples does what we need.
+        data_reader_merge_samples* multi_conduit = new data_reader_merge_samples(npy_readers, shuffle);
+        reader = multi_conduit;
+      } else {
         //create label file
-        auto* label_csv = new csv_reader(shuffle);
-        label_csv->set_data_filename(readme.label_filename());
-        label_csv->disable_labels(readme.disable_labels());
-        label_csv->enable_responses(readme.disable_responses());
-        label_csv->set_has_header(readme.has_header()); //use same as parent file
-        label_csv->set_comm(comm);
-        label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
-        label_csv->set_response_col(0);
-        data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
+        //we can use merge_features without label
+        generic_data_reader* label_reader = nullptr;
+        if(readme.label_filename() != "") {
+          if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
+          if (readme.format() == "numpy") {
+             auto* label_numpy  = new numpy_reader(false);
+             label_numpy->set_label_filename(readme.label_filename());
+             label_numpy->set_data_filename(readme.label_filename());
+             label_reader = label_numpy;
+           } else if (readme.format() == "csv") { //if format is csv and label_filename is not empty
+             auto* label_csv = new csv_reader(shuffle);
+             if(master) { std::cout << "Set label filename: " << readme.label_filename() << std::endl; }
+             label_csv->set_label_filename(readme.label_filename());
+             label_csv->set_data_filename(readme.label_filename());
+             label_csv->disable_labels(readme.disable_labels());
+             label_csv->enable_responses(readme.disable_responses());
+             label_csv->set_has_header(readme.has_header()); //use same as parent file
+             label_csv->set_comm(comm);
+             label_csv->set_label_col(0); //assume there is only one label file and the column and is label column
+             label_csv->set_response_col(0);
+             label_reader = label_csv;
+           } else {
+             err << __FILE__ << " " << __LINE__ << " :: unknown format for merged features label: "
+                << readme.format();
+             throw lbann_exception(err.str());
+           }
+         }
+        //data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_csv, shuffle);
+        data_reader_merge_features* merged_features = new data_reader_merge_features(npy_readers,label_reader, shuffle);
         reader = merged_features;
       }
 
     } else if (name == "synthetic") {
-      reader = new data_reader_synthetic(readme.num_samples(), readme.num_features(), shuffle);
-    } else if (name == "ascii") {
-      reader = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
+      if (readme.num_labels() != 0) {
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          proto::parse_list<int>(readme.synth_dimensions()),
+          readme.num_labels(),
+          shuffle);
+      } else {
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          proto::parse_list<int>(readme.synth_dimensions()),
+          proto::parse_list<int>(readme.synth_response_dimensions()),
+          shuffle);
+      }
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
+    } else if (name == "moving_mnist") {
+      reader = new moving_mnist_reader(7, 40, 40, 2);
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -186,6 +293,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         throw lbann_exception(err.str());
       }
     }
+    reader->set_comm(comm);
 
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );
@@ -196,54 +304,74 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
     if (readme.data_filedir() != "") {
       reader->set_file_dir( readme.data_filedir() );
     }
+    reader->set_max_files_to_load( readme.max_files_to_load() );
     if (readme.data_local_filedir() != "") {
       reader->set_local_file_dir( readme.data_local_filedir() );
     }
 
-    reader->set_absolute_sample_count( readme.absolute_sample_count() );
-    reader->set_use_percent( readme.percent_of_data_to_use() );
-    reader->set_first_n( readme.first_n() );
+    if (create_tarball) {
+      if (opts->has_int("test_tarball")) {
+        reader->set_absolute_sample_count( opts->get_int("test_tarball"));
+        reader->set_use_percent( 0. );
+        reader->set_first_n(0);
+      } else {
+        reader->set_absolute_sample_count( 0. );
+        reader->set_use_percent( 1.0 );
+        reader->set_first_n( 0 );
+      }
+    } else {
+      reader->set_absolute_sample_count( readme.absolute_sample_count() );
+      reader->set_use_percent( readme.percent_of_data_to_use() );
+      reader->set_first_n( readme.first_n() );
 
-    reader->set_gan_labelling(readme.gan_labelling());
-    reader->set_gan_label_value(readme.gan_label_value());
+      reader->set_gan_labelling(readme.gan_labelling());
+      reader->set_gan_label_value(readme.gan_label_value());
 
-    if (set_up_generic_preprocessor) {
-      init_generic_preprocessor(readme, master, reader);
+      reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
+
+      if (set_up_generic_preprocessor) {
+        init_generic_preprocessor(readme, master, reader);
+      }
     }
 
     if (readme.role() == "train") {
       reader->set_role("train");
     } else if (readme.role() == "test") {
       reader->set_role("test");
+    } else if (readme.role() == "validate") {
+      reader->set_role("validate");
     } else {
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      reader->set_validation_percent( readme.validation_percent() );
+      if (create_tarball || separate_validation) {
+        reader->set_validation_percent( 0. );
+      } else {
+        reader->set_validation_percent( readme.validation_percent() );
+      }
     }
 
     reader->set_master(master);
 
-    reader->set_comm(comm);
     reader->load();
 
     if (readme.role() == "train") {
       data_readers[execution_mode::training] = reader;
     } else if (readme.role() == "test") {
+      // While the default validation_percent is 0.0, this line is added to be consistent with the case of "train"
+      reader->set_validation_percent( 0. );
       data_readers[execution_mode::testing] = reader;
+    } else if (readme.role() == "validate") {
+      reader->set_validation_percent( 0. );
+      data_readers[execution_mode::validation] = reader;
     }
 
-    if (readme.role() == "train" && readme.validation_percent() > 0.) {
+    if (readme.role() == "train" && readme.validation_percent() > 0. && !create_tarball && !separate_validation) {
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
-      } else if (name == "imagenet_org") {
-        reader_validation = new imagenet_reader_org(shuffle);
-        (*(imagenet_reader_org *)reader_validation) = (*(imagenet_reader_org *)reader);
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "imagenet_single") {
-        reader_validation = new imagenet_reader_single(*dynamic_cast<const imagenet_reader_single*>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "triplet") {
@@ -255,6 +383,22 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
+#ifdef LBANN_HAS_CONDUIT
+      } else if (name == "jag_conduit") {
+        const std::string role = "validate";
+        if (!peek_map(leading_reader_jag_conduit, role)) {
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+          reader_jag_conduit->set_role(role);
+          leading_reader_jag_conduit[role] = reader_jag_conduit;
+        } else {
+          const auto leader = peek_map(leading_reader_jag_conduit, role);
+          reader_validation = new data_reader_jag_conduit(*leader);
+          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+          reader_jag_conduit->set_leading_reader(leader);
+        }
+#endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -274,16 +418,15 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       } else if (name == "cifar10") {
         reader_validation = new cifar10_reader(shuffle);
         (*(cifar10_reader *)reader_validation) = (*(cifar10_reader *)reader);
-        /*
-        } else if (name == "synthetic") {
-        reader_validation = new data_reader_synthetic(shuffle);
-        */
-      } else if (name == "ascii") {
-        reader_validation = new ascii_reader(p.model().recurrent().unroll_depth(), shuffle);
-        (*(ascii_reader *)reader_validation) = (*(ascii_reader *)reader);
+      } else if (name == "synthetic") {
+        reader_validation = new data_reader_synthetic(*(data_reader_synthetic *)reader);
+        (*(data_reader_synthetic *) reader_validation) = (*(data_reader_synthetic *)reader);
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
+      } else if (name == "moving_mnist") {
+        reader_validation = new moving_mnist_reader(7, 40, 40, 2);
+        (*(moving_mnist_reader *)reader_validation) = (*(moving_mnist_reader *)reader);
       }
 
       reader_validation->set_role("validate");
@@ -299,6 +442,28 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
 
       data_readers[execution_mode::validation] = reader_validation;
+    }
+  }
+
+  if (master) {
+    if (separate_validation) {
+      const generic_data_reader* r_train = peek_map(data_readers, execution_mode::training);
+      const generic_data_reader* r_validate = peek_map(data_readers, execution_mode::validation);
+      const size_t num_train = (r_train == nullptr)? 0u : r_train->get_num_data();
+      const size_t num_validate = (r_validate == nullptr)? 0u : r_validate->get_num_data();
+      std::cout << "Training using " << num_train << " samples." << std::endl
+                << "Validating using " << num_validate << " samples." << std::endl;
+    }
+    const generic_data_reader* r_test = peek_map(data_readers, execution_mode::testing);
+    const size_t num_test = (r_test == nullptr)? 0u : r_test->get_num_data();
+    std::cout << "Testing using " << num_test << " samples." << std::endl;
+  }
+  // remove null data_reader pointers if there is any
+  for (auto it = data_readers.cbegin(); it != data_readers.cend() ; ) {
+    if (!it->second) {
+      it = data_readers.erase(it);
+    } else {
+      ++it;
     }
   }
 }
@@ -342,25 +507,44 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-void set_num_parallel_readers(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lbann_data::Model& model)
 {
-  bool master = comm->am_world_master();
+  const bool master = comm->am_world_master();
+  const int parallel_io = model.num_parallel_readers();
 
-  lbann_data::Model *model = p.mutable_model();
-
-  int parallel_io = model->num_parallel_readers();
   if (parallel_io == 0) {
     if (master) {
       std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
         " (Limited to # Processes)" << std::endl;
     }
-    parallel_io = comm->get_procs_per_model();
-    model->set_num_parallel_readers(parallel_io); //adjust the prototext
-  } else {
-    if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
-    }
+    return false;
   }
+  if (master) {
+    std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
+  }
+  return true;
+}
+
+void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+{
+  lbann_data::Model *model = p.mutable_model();
+  const bool is_set = check_if_num_parallel_readers_set(comm, *model);
+
+  if (!is_set) {
+    const int parallel_io = comm->get_procs_per_model();
+    model->set_num_parallel_readers(parallel_io); //adjust the prototext
+  }
+}
+
+int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p)
+{
+  const lbann_data::Model& model = p.model();
+  const bool is_set = check_if_num_parallel_readers_set(comm, model);
+
+  if (!is_set) {
+    return comm->get_procs_per_model();
+  }
+  return model.num_parallel_readers();
 }
 
 void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
@@ -437,17 +621,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 
   if (opts->has_string("dag_model")) {
-    std::string sanity = model->name();
+    std::string sanity = model->type();
     if (sanity != "dnn") {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << " the current network model is: " << model->name()
+          << " the current network model is: " << model->type()
           << "; you can only change the model to 'dag_model' if the current model is 'dnn'";
       throw lbann_exception(err.str());
     }
     if (master) {
-      std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
+      std::cout << "\nchanging model from " << model->type() << " to: dag\n\n";
     }
-    model->set_name("dag_model");
+    model->set_type("dag_model");
   }
 
   if (opts->has_string("data_filedir")
@@ -465,17 +649,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
   }
-
-  if (opts->has_string("image_dir")) {
-    int sz = model->callback_size();
-    for (int j=0; j<sz; j++) {
-      lbann_data::Callback *c = model->mutable_callback(j);
-      if (c->has_save_images()) {
-        lbann_data::CallbackSaveImages *i = c->mutable_save_images();
-        i->set_image_dir(opts->get_string("image_dir"));
-      }
-    }
-  }
   if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
@@ -485,7 +658,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       }
     }
   }
-
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }
@@ -497,9 +669,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
   if (opts->has_int("procs_per_model")) {
     model->set_procs_per_model(opts->get_int("procs_per_model"));
-  }
-  if (opts->has_int("num_gpus")) {
-    model->set_num_gpus(opts->get_int("num_gpus"));
   }
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
@@ -588,7 +757,6 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  num_epochs:           " << m.num_epochs()  << std::endl
             << "  block_size:           " << m.block_size()  << std::endl
             << "  procs_per_model:      " << m.procs_per_model()  << std::endl
-            << "  num_gpus:             " << m.num_gpus()  << std::endl
             << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
             << "  disable_cuda:         " << m.disable_cuda()  << std::endl
             << "  random_seed:          " << m.random_seed() << std::endl
@@ -651,6 +819,8 @@ void print_help(lbann::lbann_comm *comm)
        "  is 'data.prototext'  You can specify an alternative name via the option:\n"
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
+       "\n"
+       "  To reload from a previous checkpoint you specify --ckpt_dir=<string>\n"
        "\n"
        "Some prototext values can be over-riden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
@@ -740,17 +910,8 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
     return;
   }
 
-  //get output filename
-  std::string base = ".";
-  if (!opts->has_string("saveme")) {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
-    return;
-  }
-  std::string name = opts->get_string("saveme");
-  if (name == "0") {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE due to option: --saveme=0\n\n";
-    return;
-  }
+  const lbann_data::Model& model = p.model();
+  std::string name = model.name() + ".prototext";
 
   //check if "name" exists; if yes, append "_1"
   bool exists = false;
@@ -761,7 +922,6 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   }
   if (exists) {
     name += "_1";
-    //opts["saveme"] = name;
   }
 
   //open output file
@@ -794,7 +954,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
+      << " --loadme=" << name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};

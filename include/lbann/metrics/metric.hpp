@@ -142,9 +142,9 @@ class metric {
   const generic_target_layer& get_target_layer() const;
 
   /** Get list of pointers to layers. */
-  std::vector<Layer*> get_layer_pointers() const;
+  virtual std::vector<Layer*> get_layer_pointers() const;
   /** Set list of pointers to layers. */
-  void set_layer_pointers(std::vector<Layer*> layers);
+  virtual void set_layer_pointers(std::vector<Layer*> layers);
 
   /** Get the time spent in evaluation for this metric (const). */
   EvalType get_evaluate_time() const { return m_evaluate_time; }

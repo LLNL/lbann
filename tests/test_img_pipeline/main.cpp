@@ -25,6 +25,18 @@ struct cropper_params {
       m_roi_sz(std::make_pair(0,0)) {}
 };
 
+struct resizer_params {
+  bool m_is_set;
+  unsigned int m_width;
+  unsigned int m_height;
+  bool m_adaptive_interpolation;
+  resizer_params(void)
+    : m_is_set(false),
+      m_width(0u),
+      m_height(0u),
+      m_adaptive_interpolation(false) {}
+};
+
 struct augmenter_params {
   bool m_is_set;
   bool m_hflip;
@@ -48,6 +60,7 @@ struct main_params {
   enum normalizer_type {_NONE_,_CHANNEL_WISE_,_PIXEL_WISE_};
   unsigned int m_num_bytes;
   bool m_enable_cropper;
+  bool m_enable_resizer;
   bool m_enable_augmenter;
   bool m_enable_colorizer;
   bool m_enable_decolorizer;
@@ -64,6 +77,7 @@ struct main_params {
   main_params(void)
     : m_num_bytes(0u),
       m_enable_cropper(true),
+      m_enable_resizer(false),
       m_enable_augmenter(false),
       m_enable_colorizer(false),
       m_enable_decolorizer(false),
@@ -73,7 +87,7 @@ struct main_params {
       m_num_iter(1u) {}
 };
 
-bool test_image_io(const std::string filename, const main_params& op, const cropper_params& rp, const augmenter_params& ap);
+bool test_image_io(const std::string filename, const main_params& op, const cropper_params& rp, const resizer_params& sp, const augmenter_params& ap);
 
 void show_help(std::string name);
 
@@ -89,6 +103,8 @@ int main(int argc, char *argv[]) {
 
   main_params mp;
   mp.m_enable_cropper = true;
+  // to test resizer manually swap m_enalbe_cropper/resizer
+  mp.m_enable_resizer = false;
   mp.m_enable_augmenter = static_cast<bool>(atoi(argv[8]));
   mp.m_enable_colorizer = true;
   mp.m_enable_decolorizer = false;
@@ -109,6 +125,14 @@ int main(int argc, char *argv[]) {
     //rp.m_adaptive_interpolation = true;
   }
 
+  resizer_params sp;
+  if (mp.m_enable_resizer) {
+    sp.m_is_set = true;
+    sp.m_width = static_cast<unsigned int>(atoi(argv[2]));
+    sp.m_height = static_cast<unsigned int>(atoi(argv[3]));
+    //sp.m_adaptive_interpolation = true;
+  }
+
   augmenter_params ap;
   if (mp.m_enable_augmenter) {
     ap.m_is_set = true;
@@ -118,7 +142,7 @@ int main(int argc, char *argv[]) {
   }
 
   // read write test with converting to/from a serialized buffer
-  bool ok = test_image_io(filename, mp, rp, ap);
+  bool ok = test_image_io(filename, mp, rp, sp, ap);
   if (!ok) {
     std::cout << "Test failed" << std::endl;
     return 0;
@@ -174,6 +198,7 @@ void write_file(const std::string filename, const std::vector<unsigned char>& bu
 bool test_image_io(const std::string filename,
   const main_params& mp,
   const cropper_params& rp,
+  const resizer_params& sp,
   const augmenter_params& ap)
 {
 
@@ -189,6 +214,15 @@ bool test_image_io(const std::string filename,
       cropper->set(rp.m_crop_sz.first, rp.m_crop_sz.second, rp.m_rand_center, rp.m_roi_sz, rp.m_adaptive_interpolation);
       pp.add_transform(std::move(cropper));
       num_bytes = rp.m_crop_sz.first * rp.m_crop_sz.second * 3;
+      transform_idx ++;
+    }
+
+    if (sp.m_is_set) { // If resizer parameters are given
+      // Setup a cropper
+      std::unique_ptr<lbann::cv_resizer> resizer(new(lbann::cv_resizer));
+      resizer->set(sp.m_width, sp.m_height, rp.m_adaptive_interpolation);
+      pp.add_transform(std::move(resizer));
+      num_bytes = sp.m_width * sp.m_height * 3;
       transform_idx ++;
     }
 
@@ -229,12 +263,19 @@ bool test_image_io(const std::string filename,
         pp.add_normalizer(std::move(normalizer));
       } else {
         std::unique_ptr<lbann::cv_subtractor> normalizer(new(lbann::cv_subtractor));
+#if 0
         cv::Mat img_to_sub = cv::imread(mp.m_mean_image_name);
         if (img_to_sub.empty()) {
           std::cout << mp.m_mean_image_name << " does not exist" << std::endl;
           return false;
         }
-        normalizer->set(img_to_sub);
+        normalizer->set_mean(img_to_sub);
+#else
+        std::vector<lbann::DataType> mean = {0.40625, 0.45703, 0.48047};
+        normalizer->set_mean(mean);
+        std::vector<lbann::DataType> stddev = {0.3, 0.5, 0.3};
+        normalizer->set_stddev(stddev);
+#endif
         pp.add_normalizer(std::move(normalizer));
       }
       transform_idx ++;
@@ -269,9 +310,9 @@ bool test_image_io(const std::string filename,
     if (num_bytes == 0) {
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Images);
       num_bytes = Images.Height();
-      El::View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, El::IR(0, num_bytes), El::IR(0, 1));
     } else {
-      El::View(Image_v, Images, 0, 0, num_bytes, 1);
+      El::View(Image_v, Images, El::IR(0, num_bytes), El::IR(0, 1));
       //ok = lbann::image_utils::import_image(buf, width, height, type, pp, Image_v);
       ok = lbann::image_utils::import_image(inbuf, width, height, type, pp, Image_v);
     }

@@ -17,7 +17,6 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchf/allen99/anlftp/ftp.mcs.anl.gov/pub/candle/public/benchmarks/P1B3/"
     data_filename: "chem.P1B3_test_drugs.txt.val.X.1"
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     separator: '\t'

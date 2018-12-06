@@ -38,58 +38,35 @@ namespace lbann {
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class uniform_layer : public transform_layer {
- private:
+private:
   /** Uniform distribution mean. */
   DataType m_min;
   /** Uniform distribution standard deviation. */
   DataType m_max;
 
- public:
+public:
+
   uniform_layer(lbann_comm *comm,
-                 const std::vector<int>& neuron_dims,
-                 DataType min = DataType(0),
-                 DataType max = DataType(1),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                std::vector<int> dims,
+                DataType min = DataType(0),
+                DataType max = DataType(1))
     : transform_layer(comm), m_min(min), m_max(max) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Uniform layer has no parents
-    m_expected_num_parent_layers = 0;
-
+    set_output_dims(dims);
+    this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
   std::string get_type() const override { return "uniform"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
+protected:
+
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
     std::stringstream ss;
-    ss << "uniform_layer" << "  "
-       << "min: " << m_min << " "
-       << "max: " << m_max << " "
-       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return ss.str();
-  }
-
- protected:
-
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+    ss << "Range: [" << m_min << "," << m_max << ")";
+    desc.push_back(ss.str());
+    return desc;
   }
 
   void fp_compute() override {
@@ -102,8 +79,6 @@ class uniform_layer : public transform_layer {
       El::Fill(output, mean);
     }
   }
-
-  void bp_compute() override {}
 
 };
 

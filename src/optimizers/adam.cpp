@@ -33,8 +33,7 @@ adam::adam(lbann_comm *comm,
            DataType learning_rate,
            DataType beta1,
            DataType beta2,
-           DataType eps,
-           cudnn::cudnn_manager *cudnn)
+           DataType eps)
   : optimizer(comm, learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
@@ -144,7 +143,7 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
       || moment1_ldim != local_height
       || moment2_ldim != local_height) {
     // Update with non-contiguous data
-    #pragma omp parallel for collapse(2)
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (int j=0; j<local_width; ++j) {
       for (int i=0; i<local_height; ++i) {
         DataType& x = values_buffer[i+j*values_ldim];
@@ -159,7 +158,7 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
     }
   } else {
     // Update with contiguous data
-    #pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (int i=0; i<local_height*local_width; ++i) {
       DataType& x = values_buffer[i];
       // We add eps here because sometimes the gradient is small enough that

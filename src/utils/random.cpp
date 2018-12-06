@@ -136,7 +136,7 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
     rank_in_world = std::to_string(comm->get_rank_in_world());
   }
 
- #ifdef _OPENMP
+#ifdef _OPENMP
   #pragma omp parallel private(rng_name)
   {
     rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
@@ -222,28 +222,28 @@ void init_data_seq_random(int seed) {
 
 void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
                    DataType stddev) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+#ifndef LBANN_DETERMINISTIC
   El::Gaussian(mat, m, n, mean, stddev);
 #else
   gaussian_fill_procdet(mat, m, n, mean, stddev);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+#endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
 void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+#ifndef LBANN_DETERMINISTIC
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+#endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
 void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
                   DataType radius) {
-#ifdef LBANN_PARALLEL_RANDOM_MATRICES
+#ifndef LBANN_DETERMINISTIC
   El::Uniform(mat, m, n, center, radius);
 #else
   uniform_fill_procdet(mat, m, n, center, radius);
-#endif  // LBANN_PARALLEL_RANDOM_MATRICES
+#endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
 void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,

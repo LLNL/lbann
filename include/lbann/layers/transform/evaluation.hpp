@@ -31,90 +31,62 @@
 
 namespace lbann {
 
-/** Evaluation layer.
+/** Abstract evaluation layer.
  *  Computes the average value across a mini-batch. If the input
  *  tensor has multiple neurons, their values are added together.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class evaluation_layer : public transform_layer {
-
- public:
-
-  evaluation_layer(lbann_comm *comm,
-              cudnn::cudnn_manager *cudnn = nullptr)
-    : transform_layer(comm), m_scale(0), m_value(0) {
-
-    // Evaluation layer has no children
-    m_expected_num_child_layers = 0;
-
-  }
-
-  evaluation_layer* copy() const override { return new evaluation_layer(*this); }
-  std::string get_type() const override { return "evaluation"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
-
-  /** Returns description. */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "evaluation_layer  dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
-  }
+class abstract_evaluation_layer : public transform_layer {
+public:
 
   /** Get scaling factor. */
   EvalType get_scale() const { return m_scale; }
   /** Set scaling factor. */
   void set_scale(EvalType scale) { m_scale = scale; }
-
   /** Get evaluated value. */
-  EvalType get_value(bool unscaled = false) {
-    this->m_comm->wait(m_allreduce_req);
-    if (unscaled) {
-      return m_value;
-    } else {
-      return m_scale * m_value;
-    }
-  }
+  EvalType get_value(bool scaled = true);
 
- protected:
+  /** Construct an evaluation layer.
+   *  The caller is responsible for deallocating the layer.
+   */
+  static abstract_evaluation_layer* construct(lbann_comm *comm,
+                                              data_layout layout,
+                                              El::Device device);
 
-  virtual void fp_compute() override {
-    const auto& input = get_prev_activations();
-    const auto& local_input = input.LockedMatrix();
-    const El::Int local_height = local_input.Height();
-    const El::Int local_width = local_input.Width();
-    const auto& mini_batch_size = input.Width();
+protected:
+  abstract_evaluation_layer(lbann_comm *comm);
+  void setup_data() override;
+  void fp_compute() override;
+  void bp_compute() override;
 
-    // Compute average value
-    EvalType sum = EvalType(0);
-    #pragma omp parallel for reduction(+:sum) collapse(2)
-    for (El::Int col = 0; col < local_width; ++col) {
-      for (El::Int row = 0; row < local_height; ++row) {
-        sum += local_input(row, col);
-      }
-    }
-    m_value = sum / mini_batch_size;
-    this->m_comm->nb_allreduce(&m_value, 1, input.DistComm(), m_allreduce_req);
+private:
 
-  }
-
-  virtual void bp_compute() override {
-    auto& error_signal = get_error_signals();
-    if (m_scale == EvalType(0)) {
-      El::Zero(error_signal);
-    } else {
-      El::Fill(error_signal, DataType(m_scale));
-    }
-  }
-
- private:
   /** Scaling factor to apply to evaluated value. */
-  EvalType m_scale;
-  /** Evaluated value. */
-  EvalType m_value;
+  EvalType m_scale = 0;
+  /** Evaluated value.
+   *  The value may be stored in pinned memory.
+   */
+  CPUMat m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
+#ifdef LBANN_HAS_GPU
+  /** CUDA event after a non-blocking GPU-CPU memory copy. */
+  cuda::event_wrapper m_copy_event;
+#endif // LBANN_HAS_GPU
 
+};
+
+/** Evaluation layer.
+ *  Computes the average value across a mini-batch. If the input
+ *  tensor has multiple neurons, their values are added together.
+ */
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+class evaluation_layer : public abstract_evaluation_layer {
+public:
+  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer(comm) {}
+  evaluation_layer* copy() const override { return new evaluation_layer(*this); }
+  std::string get_type() const override { return "evaluation"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
 };
 
 } // namespace lbann

@@ -28,41 +28,38 @@
 #define LBANN_PROTO_FACTORIES_HPP
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 namespace proto {
 
 /** Construct a model specified with a prototext. */
 model* construct_model(lbann_comm* comm,
-                       cudnn::cudnn_manager* cudnn,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
                        const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
 std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          cudnn::cudnn_manager* cudnn,
+                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
                                           const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <data_layout layout, El::Device Dev>
 Layer* construct_layer(lbann_comm* comm,
-                       std::map<execution_mode, generic_data_reader*>& data_readers,
+                       const std::map<execution_mode, generic_data_reader*>& data_readers,
                        int num_parallel_readers,
-                       cudnn::cudnn_manager* cudnn,
                        const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
 weights* construct_weights(lbann_comm* comm,
-                           cudnn::cudnn_manager* cudnn,
                            const lbann_data::Optimizer& proto_opt,
                            const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
 lbann_callback* construct_callback(lbann_comm* comm,
                                    const lbann_data::Callback& proto_cb,
-                                   std::map<execution_mode, generic_data_reader*>& data_readers,
+                                   const std::map<execution_mode, generic_data_reader*>& data_readers,
                                    std::vector<Layer*> layer_list,
                                    std::vector<weights*> weights_list,
                                    lbann_summary* summarizer);
@@ -73,10 +70,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
  */
 lbann_summary* construct_summarizer(lbann_comm* comm,
                                     const lbann_data::Model& m);
-
-/** Construct a metric specified with prototext. */
-metric* construct_metric(lbann_comm* comm,
-                         const lbann_data::Metric& proto_metric);
 
 /** Construct an optimizer specified with prototext. */
 optimizer* construct_optimizer(lbann_comm* comm,

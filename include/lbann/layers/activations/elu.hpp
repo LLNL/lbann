@@ -24,50 +24,56 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef ELU_HPP_INCLUDED
-#define ELU_HPP_INCLUDED
+#ifndef LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
+#define LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
 
-#include "lbann/layers/activations/activation.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** Exponential linear unit.
-
- *  Tries to speed up learning by pushing the mean of activations more
- *  towards zero by allowing negative values. Helps avoid the need for
- *  batch normalization. See:
- *  Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter "Fast
- *  and Accurate Deep Network Learning by Exponential Linear Units
- *  (ELUs)" ICLR 2016.
+/** Exponential linear unit layer.
+ *  \f[
+ *    \text{ELU}(x) =
+ *      \begin{cases}
+ *        x                & x > 0
+ *        \alpha (e^x - 1) & x \leq 0
+ *      \end{cases}
+ *  \f]
+ *  \f$\alpha\f$ should be non-negative. See:
+ *    Djork-Arne Clevert, Thomas Unterthiner, and Sepp
+ *    Hochreiter. "Fast and accurate deep network learning by
+ *    exponential linear units (ELUs)." arXiv preprint
+ *    arXiv:1511.07289 (2015).
  */
-template <data_layout T_layout, El::Device Dev>
-class elu_layer : public entrywise_activation_layer {
- public:
-  /**
-   * alpha controls the value to which the ELU saturates for negative inputs.
-   * alpha must be >= 0.
-   * If alpha = 0, this turns into a ReLU.
-   * Paper uses alpha = 1.0 as a good starting point.
-   */
-  elu_layer(lbann_comm *comm,
-            DataType alpha = DataType(1.0))
-    : entrywise_activation_layer(comm), m_alpha(alpha) {}
+template <data_layout Layout, El::Device Device>
+class elu_layer : public Layer {
+public:
+  elu_layer(lbann_comm *comm, DataType alpha = 1)
+    : Layer(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
+  data_layout get_data_layout() const override { return Layout; }
+  El::Device get_device_allocation() const override { return Device; }
 
- protected:
-  DataType activation(DataType z) const override {
-    return (z > DataType(0)) ? z : (m_alpha * std::expm1(z));
+protected:
+  std::vector<std::string> get_description() const override {
+    auto&& desc = Layer::get_description();
+    desc.push_back("Alpha: " + std::to_string(m_alpha));
+    return desc;
   }
-  DataType activation_derivative(DataType z) const override {
-    return (z > DataType(0)) ? DataType(1) : (m_alpha * std::expm1(z) + m_alpha);
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
   }
- private:
+  void fp_compute() override;
+  void bp_compute() override;
+
+private:
+  /** Scale parameter for negative region. */
   DataType m_alpha;
+
 };
 
 } // namespace lbann
 
-#endif // ELU_HPP_INCLUDED
+#endif // LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED

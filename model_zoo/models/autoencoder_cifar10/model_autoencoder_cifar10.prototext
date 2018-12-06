@@ -1,19 +1,17 @@
 model {
-  name: "sequential_model"
   data_layout: "model_parallel"
   mini_batch_size: 32
   block_size: 256
   num_epochs: 100
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
   }
 
   ###################################################
@@ -21,7 +19,10 @@ model {
   ###################################################
 
   metric {
-    mean_squared_error {}
+    layer_metric {
+      name: "mean squared error"
+      layer: "mean_squared_error"
+    }
   }
 
   ###################################################
@@ -32,12 +33,6 @@ model {
       interval: 1
     }
   }
-  #callback {
-  #  save_images {
-  #    image_dir: "images_"
-  #    extension: "pgm"
-  #  }
-  #}
 
   ###################################################
   # start of layers
@@ -48,16 +43,30 @@ model {
   #######
   layer {
     name: "data"
+    children: "image dummy"
     data_layout: "model_parallel"
     input {
       io_buffer: "distributed"
     }
+  }
+  layer {
+    parents: "data"
+    name: "image"
+    data_layout: "model_parallel"
+    split {}
+  }
+  layer {
+    parents: "data"
+    name: "dummy"
+    data_layout: "model_parallel"
+    dummy {}
   }
 
   #################
   # FULLY_CONNECTED encode1
   #################
   layer {
+    parents: "image"
     name: "encode1"
     data_layout: "model_parallel"
     fully_connected {
@@ -70,6 +79,7 @@ model {
   # RELU
   ######
   layer {
+    parents: "encode1"
     name: "relu1"
     data_layout: "model_parallel"
     relu {
@@ -79,6 +89,7 @@ model {
   # DROPOUT
   #########
   layer {
+    parents: "relu1"
     name: "dropout1"
     data_layout: "model_parallel"
     dropout {
@@ -91,6 +102,7 @@ model {
   # FULLY_CONNECTED decode1
   #################
   layer {
+    parents: "dropout1"
     name: "decode1"
     data_layout: "model_parallel"
     num_neurons_from_data_reader: true
@@ -103,6 +115,7 @@ model {
   # SIGMOID
   #########
   layer {
+    parents: "decode1"
     name: "sigmoid1"
     data_layout: "model_parallel"
     sigmoid {
@@ -112,6 +125,7 @@ model {
   # DROPOUT
   #########
   layer {
+    parents: "sigmoid1"
     name: "dropout2"
     data_layout: "model_parallel"
     dropout {
@@ -123,11 +137,10 @@ model {
   # RECONSTRUCTION
   #################
   layer {
-    name: "reconstruction"
+    parents: "dropout2 image"
+    name: "mean_squared_error"
     data_layout: "model_parallel"
-    reconstruction {
-      original_layer: "data"
-    }
+    mean_squared_error {}
   }
 
   ###################################################

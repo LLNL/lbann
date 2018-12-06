@@ -61,7 +61,7 @@ void collect_times(const std::vector<double>& localTimes,
   std::vector<double> diffTimes(numTimes);
 
   int mc = MPI_SUCCESS;
-  mc = MPI_Allreduce(_ConstVoidP(&localTimes[0]), _VoidP(&avgTimes[0]),
+  mc = MPI_Allreduce(const_cast<void*>(_ConstVoidP(&localTimes[0])), _VoidP(&avgTimes[0]),
                      numTimes, MPI_DOUBLE, MPI_SUM, ms.get_comm());
   ms.check_mpi(mc);
 
@@ -71,15 +71,15 @@ void collect_times(const std::vector<double>& localTimes,
     diffTimes[i] = diff*diff;
   }
 
-  mc = MPI_Reduce(_ConstVoidP(&localTimes[0]), _VoidP(&minTimes[0]),
+  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&localTimes[0])), _VoidP(&minTimes[0]),
                   numTimes, MPI_DOUBLE, MPI_MIN, ms.m_root, ms.get_comm());
   ms.check_mpi(mc);
 
-  mc = MPI_Reduce(_ConstVoidP(&localTimes[0]), _VoidP(&maxTimes[0]),
+  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&localTimes[0])), _VoidP(&maxTimes[0]),
                   numTimes, MPI_DOUBLE, MPI_MAX, ms.m_root, ms.get_comm());
   ms.check_mpi(mc);
 
-  mc = MPI_Reduce(_ConstVoidP(&diffTimes[0]), _VoidP(&stdTimes[0]),
+  mc = MPI_Reduce(const_cast<void*>(_ConstVoidP(&diffTimes[0])), _VoidP(&stdTimes[0]),
                   numTimes, MPI_DOUBLE, MPI_SUM, ms.m_root, ms.get_comm());
   ms.check_mpi(mc);
 

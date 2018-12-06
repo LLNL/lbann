@@ -144,8 +144,6 @@ void mnist_reader::load() {
   m_image_data.clear();
 
   if(m_gan_labelling) m_num_labels=2;
-  std::cout << "MNIST load GAN m_gan_labelling : label_value "
-            << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
 
   const std::string FileDir = get_file_dir();
   const std::string ImageFile = get_data_filename();

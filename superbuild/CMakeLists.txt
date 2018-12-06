@@ -1,18 +1,39 @@
 cmake_minimum_required(VERSION 3.9)
 
 message("\nWelcome to the LBANN SuperBuild system.\n\n"
-  "This attempts to fill the shoes of a real package manager by building "
-  "LBANN's dependencies, as well as LBANN itself.\n\n"
-  "A few notes before we begin:\n"
-  "  1. Read the README.md file.\n"
-  "  2. Actually read the README.md file.\n"
-  "  3. See 1 and 2.\n"
-  "  4. You should probably use a real package manager instead (e.g., Spack)\n\n"
-  "Good luck!\n\n")
+  "Please report issues on https://github.com/llnl/lbann/issues\n\n"
+  "Good luck!\n")
 
-project(LBANN_SuperBuild NONE)
+# CXX is always required
+project(LBANN_SuperBuild CXX)
+
+if (PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(FATAL_ERROR
+    "You have attempted an in-source build of LBANN.\n"
+    "Please clean the CMake cache and switch to an out-of-source build.\n"
+    "Example:\n"
+    "rm -rf CMakeCache.txt CMakeFiles\n"
+    "mkdir build && cd build\n"
+    "cmake <lbann options> ..\n")
+endif ()
+
+get_filename_component(LBANN_SRC_DIR "${PROJECT_SOURCE_DIR}" PATH)
+if (LBANN_SRC_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(FATAL_ERROR
+    "You have attempted a superbuild in the LBANN source directory.\n"
+    "Please clean the CMake cache and switch to an out-of-source build.\n"
+    "Example:\n"
+    "rm -rf CMakeCache.txt CMakeFiles\n"
+    "mkdir build && cd build\n"
+    "cmake <superbuild options> ../superbuild\n")
+endif ()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
+
+option(LBANN_SB_CLONE_VIA_SSH
+  "Use SSH protocol instead of HTTPS for github." OFF)
+
+option(LBANN_SB_BUILD_ALUMINUM "Pull and build Aluminum from Github" OFF)
 
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)
 
@@ -35,6 +56,11 @@ option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
 # Add the TPL subdirectories
 #
 include(LBANNSuperBuildCreateCMakeArguments)
+
+if (LBANN_SB_BUILD_ALUMINUM)
+  add_subdirectory(aluminum)
+  list(APPEND _BUILD_PKGS Aluminum)
+endif ()
 
 if (LBANN_SB_BUILD_CNPY)
   add_subdirectory(cnpy)
@@ -69,11 +95,6 @@ if (LBANN_SB_BUILD_JPEG_TURBO)
   list(APPEND _BUILD_PKGS jpeg-turbo)
 endif ()
 
-if (LBANN_SB_BUILD_ALUMINUM)
-  add_subdirectory(aluminum)
-  list(APPEND _BUILD_PKGS aluminum)
-endif ()
-
 if (LBANN_SB_BUILD_OPENCV)
   add_subdirectory(opencv)
   list(APPEND _BUILD_PKGS OpenCV)
@@ -104,3 +125,41 @@ foreach (pkg ${_BUILD_PKGS})
   endif ()
 endforeach ()
 message("\n-----------------------------------------------------------------\n")
+
+# Add a custom target for bundling all things up
+if (UNIX)
+  find_program(__FIND_EXE find)
+  set(__WORKING_DIR "${CMAKE_BINARY_DIR}")
+  if (__FIND_EXE)
+    set(__cmd "${__FIND_EXE};.;\(;-ipath;*/stamp/*.log;-o;-ipath;*/CMakeFiles/CMake*.log;-o;-name;CMakeCache.txt;\);-exec;${CMAKE_COMMAND};-E;tar;czf;all_output_logs.tar.gz;--;{};+")
+    add_custom_target(gather-logs
+      COMMAND "${__cmd}"
+      BYPRODUCTS "${__WORKING_DIR}/all_output_logs.tar.gz"
+      WORKING_DIRECTORY "${__WORKING_DIR}"
+      COMMENT "Gathering all output logs."
+      VERBATIM
+      COMMAND_EXPAND_LISTS
+      USES_TERMINAL)
+
+    add_custom_target(gather-all)
+    add_dependencies(gather-all gather-logs)
+    if (CMAKE_GENERATOR STREQUAL "Ninja")
+      set(__cmd "${__FIND_EXE};.;-name;*.ninja;-exec;${CMAKE_COMMAND};-E;tar;czf;all_build_files.tar.gz;{};+")
+    elseif (CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+      set(__cmd "${__FIND_EXE};.;\(;-name;link.txt;-o;-name;build.make;-o;-name;flags.make;\);-exec;${CMAKE_COMMAND};-E;tar;czf;all_build_files.tar.gz;{};+")
+    else ()
+      set(__cmd)
+    endif ()
+    if (__cmd)
+      add_custom_target(gather-build
+        COMMAND "${__cmd}"
+        BYPRODUCTS "${__WORKING_DIR}/all_build_files.tar.gz"
+        WORKING_DIRECTORY "${__WORKING_DIR}"
+        COMMENT "Gathering all build files."
+        VERBATIM
+        COMMAND_EXPAND_LISTS
+        USES_TERMINAL)
+      add_dependencies(gather-all gather-build)
+    endif ()
+  endif (__FIND_EXE)
+endif (UNIX)

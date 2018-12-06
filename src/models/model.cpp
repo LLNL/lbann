@@ -32,6 +32,9 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
 #include <string>
 #include <unistd.h>
@@ -64,7 +67,13 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {}
+    m_default_optimizer(default_optimizer) {
+
+      static int num_models = 0;
+      m_name = "Model" + std::to_string(num_models);
+      num_models++;
+
+  }
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
@@ -203,6 +212,10 @@ void model::add_metric(metric *m) {
   m_metrics.push_back(m);
 }
 
+void model::set_name(std::string name) {
+  m_name = name;
+}
+
 void model::set_layers(std::vector<Layer*>& layers) {
 
   // Delete old layers
@@ -244,6 +257,24 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
     delete w;
   }
 
+}
+
+void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
+  if (new_weights.empty()) {
+    if(m_comm->am_world_master()) std::cout << "No trained weights to copy " << std::endl;
+    return;
+  }
+  for(size_t i = 0; i < new_weights.size(); ++i) {
+     for (size_t j = 0; j < m_weights.size(); ++j) {
+       //copy only trained weights (that is unfrozen layer)
+       if(m_weights[j]->get_name() == new_weights[i]->get_name() && !new_weights[i]->is_frozen()) {
+         #ifdef LBANN_DEBUG
+         if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
+         #endif
+         m_weights[j]->set_values(new_weights[i]->get_values());
+       }
+     }
+   }
 }
 
 optimizer* model::create_optimizer() const {
@@ -291,24 +322,74 @@ void model::permute_layers(const std::vector<int>& permutation) {
   }
 }
 
-std::string model::print_layer_description(const Layer* layer) const {
-  if (layer == nullptr) return std::string();
-  std::stringstream os;
-  //std::string description = layer->get_description();
-  os << std::setw(12) << layer->get_name() << ":[" << std::setw(18)
-     << layer->get_type()
-     << "(" << layer->get_device_allocation_string_short(layer->get_device_allocation()) << ")"
-     <<  "] Set up a layer with input " << std::setw(7)
-     << layer->get_num_prev_neurons() << " and " << std::setw(7)
-     << layer->get_num_neurons() << " neurons.";
-  std::string s = layer->get_topo_description();
-  if(s != "") {
-    os << " (" << s << ")";
+void model::print_description(std::ostream& os,
+                              std::string separator,
+                              bool trailing_newline) const {
+
+  // Model properties
+  std::stringstream ss;
+  ss << "model \"" << get_name() << "\""
+     << separator << "Type: " << get_type();
+
+  // Layer topology
+  ss << separator << "Layer topology:";
+  for (const auto* l : m_layers) {
+    ss << separator << "  ";
+    if (l == nullptr) {
+      ss << "unknown layer: {} -> {}";
+    } else {
+      ss << l->get_name() << " (" << l->get_type() << "): {";
+      const auto& parents = l->get_parent_layers();
+      const auto& children = l->get_child_layers();
+      for (size_t i = 0; i < parents.size(); ++i) {
+        ss << (i > 0 ? ", " : "");
+        if (parents[i] == nullptr) {
+          ss << "unknown layer";
+        } else {
+          ss << parents[i]->get_name() << " (";
+          const auto& dims = l->get_input_dims(i);
+          for (size_t j = 0; j < dims.size(); ++j) {
+            ss << (j > 0 ? "x" : "") << dims[j];
+          }
+          ss << ")";
+        }
+      }
+      ss << "} -> {";
+      for (size_t i = 0; i < children.size(); ++i) {
+        ss << (i > 0 ? ", " : "");
+        if (children[i] == nullptr) {
+          ss << "unknown layer";
+        } else {
+          ss << children[i]->get_name() << " (";
+          const auto& dims = l->get_output_dims(i);
+          for (size_t j = 0; j < dims.size(); ++j) {
+            ss << (j > 0 ? "x" : "") << dims[j];
+          }
+          ss << ")";
+        }
+      }
+      ss << "}";
+    }
   }
-  if (layer->is_frozen()) {
-    os << " frozen";
+
+  // Layer details
+  ss << separator << "Layer details:";
+  for (const auto* l : m_layers) {
+    ss << separator << "  ";
+    if (l == nullptr) {
+      ss << "unknown layer";
+    } else {
+      l->print_description(ss, separator + "    ", false);
+    }
   }
-  return os.str();
+
+  /// @todo Descriptions for objective function, weights, metrics,
+  /// callbacks
+
+  // Output result to stream
+  os << ss.str();
+  if (trailing_newline) { os << std::endl; }
+
 }
 
 void model::remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
@@ -426,6 +507,7 @@ void model::setup_layer_topology() {
   }
 
   // Add utility layers if needed
+  add_evaluation_layers();
   add_dummy_layers();
   add_split_layers();
 
@@ -461,9 +543,6 @@ void model::setup_layers() {
     layer->set_model(this);
     layer->setup();
     layer->check_setup();
-    if (m_comm->am_world_master()) {
-      std::cout << print_layer_description(layer) << std::endl;
-    }
   }
 }
 
@@ -476,8 +555,8 @@ void model::setup_weights() {
                                      m_weights.end());
 
   // Find weights used by layers
-  for (const auto& layer : m_layers) {
-    for (const auto& w : layer->get_weights()) {
+  for (const auto* l : m_layers) {
+    for (const auto& w : l->get_weights()) {
       if (weights_set.count(w) == 0) {
         m_weights.push_back(w);
         weights_set.insert(w);
@@ -496,10 +575,13 @@ void model::setup_weights() {
   }
 
   // Delete unused weights
-  for (const auto& w : unused_weights) {
+  for (auto&& w : unused_weights) {
     m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
                     m_weights.end());
   }
+
+  // Setup weights
+  for (auto* w : m_weights) { w->setup(); }
 
 }
 
@@ -540,6 +622,66 @@ void model::add_connected_layers() {
 
 }
 
+void model::add_evaluation_layers() {
+
+  // Add evaluation layers corresponding to objective function layer terms
+  for (auto* t : m_objective_function->get_terms()) {
+    auto* term = dynamic_cast<layer_term*>(t);
+    if (term != nullptr) {
+      auto* l = &term->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "an objective function layer term corresponds to "
+            << "layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        term->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+  // Add evaluation layers corresponding to layer metrics
+  for (auto* m : m_metrics) {
+    auto* met = dynamic_cast<layer_metric*>(m);
+    if (met != nullptr) {
+      auto* l = &met->get_layer();
+      const size_t pos = (std::find(m_layers.begin(), m_layers.end(), l)
+                          - m_layers.begin());
+      if (pos >= m_layers.size()) {
+        std::stringstream err;
+        err << "layer metric \"" << met->name() << "\" "
+            << "corresponds to layer \"" << l->get_name() << "\", "
+            << "which is not in current model";
+        LBANN_ERROR(err.str());
+      }
+      if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+        auto* eval = abstract_evaluation_layer::construct(
+                       l->get_comm(),
+                       l->get_data_layout(),
+                       l->get_device_allocation());
+        eval->set_name(l->get_name() + "_eval");
+        l->add_child_layer(eval);
+        eval->add_parent_layer(l);
+        met->set_layer(*eval);
+        m_layers.insert(m_layers.begin() + pos + 1, eval);
+      }
+    }
+  }
+
+}
+
 void model::add_dummy_layers() {
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
@@ -548,22 +690,27 @@ void model::add_dummy_layers() {
     std::vector<Layer*> dummy_layers;
     while (layer->get_num_children() < layer->get_expected_num_child_layers()) {
       Layer *dummy = nullptr;
-      auto&& cudnn = layer->get_cudnn_manager();
-      switch (layer->get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        dummy = new dummy_layer<data_layout::DATA_PARALLEL>(m_comm, cudnn);
-        break;
-      case data_layout::MODEL_PARALLEL:
-        dummy = new dummy_layer<data_layout::MODEL_PARALLEL>(m_comm, cudnn);
-        break;
-      default:
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-        throw lbann_exception(err.str());
+      using args_tuple = std::tuple<data_layout,El::Device>;
+      args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      }
+#ifdef LBANN_HAS_GPU
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
+        dummy = new dummy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
+        dummy = new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      }
+#endif // LBANN_HAS_GPU
+      if (dummy == nullptr) {
+        LBANN_ERROR("invalid arguments for layer template specialization");
       }
       dummy->set_name(layer->get_name()
-                      + "_dummy"
-                      + std::to_string(dummy_layers.size()));
+                      + "_dummy" + std::to_string(dummy_layers.size()));
       layer->add_child_layer(dummy);
       dummy->add_parent_layer(layer);
       dummy_layers.push_back(dummy);
@@ -588,46 +735,24 @@ void model::add_split_layers() {
 
       // Create split layer
       Layer *split = nullptr;
-      auto&& cudnn = layer->get_cudnn_manager();
-      switch (layer->get_data_layout()) {
-      case data_layout::DATA_PARALLEL:
-        switch(layer->get_device_allocation()) {
-        case El::Device::CPU:
-          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm, cudnn);
-          break;
+      using args_tuple = std::tuple<data_layout,El::Device>;
+      args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
+        split = new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
+        split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm);
+      }
 #ifdef LBANN_HAS_GPU
-        case El::Device::GPU:
-          split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm, cudnn);
-          break;
+      if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
+        split = new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm);
+      }
+      if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
+        split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm);
+      }
 #endif // LBANN_HAS_GPU
-        default:
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "invalid matrix data allocation";
-          throw lbann_exception(err.str());
-        }
-        break;
-      case data_layout::MODEL_PARALLEL:
-        switch(layer->get_device_allocation()) {
-        case El::Device::CPU:
-          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm, cudnn);
-          break;
-#ifdef LBANN_HAS_GPU
-        case El::Device::GPU:
-          split = new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm, cudnn);
-          break;
-#endif // LBANN_HAS_GPU
-        default:
-          std::stringstream err;
-          err << __FILE__ << " " << __LINE__ << " :: "
-              << "invalid matrix data allocation";
-          throw lbann_exception(err.str());
-        }
-        break;
-      default:
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: " << "invalid data layout";
-        throw lbann_exception(err.str());
+      if (split == nullptr) {
+        LBANN_ERROR("invalid arguments for layer template specialization");
       }
       split->set_name(layer->get_name() + "_split");
 
@@ -706,26 +831,31 @@ void model::collect_indices(execution_mode mode) {
 }
 
 
-void model::train(int num_epochs) {
+void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();
   for (int epoch = m_current_epoch; epoch < num_epochs; ++epoch) {
-
-    // Stop if training has been terminated
     if (get_terminate_training()) { break; }
 
-    // Setup epoch
+    // Initialize epoch
     reset_mode_and_model(execution_mode::training);
-
-    // Train on mini-batches
     do_epoch_begin_cbs();
-    while (!train_mini_batch()) {}
-    // Once the epoch is complete, Increase the count
+
+    // Training iterations
+    if (num_batches > 0) {
+      for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
+    } else {
+      while (!train_mini_batch()) {}
+    }
+
+    // Finalize epoch
     ++m_current_epoch;
+    reconcile_weight_values();
     do_epoch_end_cbs();
     reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
     evaluate(execution_mode::validation);
+
   }
   do_train_end_cbs();
 }
@@ -775,19 +905,23 @@ bool model::train_mini_batch() {
   reset_mode_and_model(execution_mode::training);
   do_batch_begin_cbs(execution_mode::training);
 
+
+  bool finished;
+
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+  LBANN_OMP_PARALLEL
+  {
+    #pragma omp single
+    {
+#endif
   // Forward prop step
   clear_gradients();
   forward_prop(execution_mode::training);
   // Result is not needed until the end of the mini-batch.
   m_objective_function->start_evaluation(execution_mode::training,
                                          get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(execution_mode::training,
-                get_current_mini_batch_size());
-  }
 
   // Backward prop step
-  clear_error_signals();
   m_objective_function->differentiate();
   backward_prop();
   m_objective_function->compute_weight_regularization();
@@ -795,10 +929,18 @@ bool model::train_mini_batch() {
   // Finish evaluation.
   m_objective_function->finish_evaluation(execution_mode::training,
                                           get_current_mini_batch_size());
+  for (const auto& m : m_metrics) {
+    m->evaluate(execution_mode::training,
+                get_current_mini_batch_size());
+  }
 
   // Update step
   update_weights();
-  const bool finished = update_layers();
+  finished = update_layers();
+#if defined(LBANN_HAVE_OMP_TASKLOOP)
+    }
+  }
+#endif
 
   ++m_current_step;
   do_batch_end_cbs(execution_mode::training);
@@ -809,12 +951,6 @@ void model::clear_gradients() {
   for (const auto& w : m_weights) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) { opt->clear_gradient(); }
-  }
-}
-
-void model::clear_error_signals() {
-  for (const auto& layer : m_layers) {
-    layer->clear_error_signals(m_current_mini_batch_size);
   }
 }
 
@@ -855,7 +991,8 @@ void model::backward_prop() {
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (const auto& w : m_weights) {
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    auto& w = m_weights[i];
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(w);
@@ -872,6 +1009,14 @@ bool model::update_layers() {
     finished = m_layers[l]->update() && finished;
   }
   return finished;
+}
+
+void model::reconcile_weight_values() {
+  std::vector<Al::request> reqs(m_weights.size());
+  for (int i = m_weights.size() - 1; i >= 0; --i) {
+    m_weights[i]->reconcile_values(reqs[i]);
+  }
+  for (auto& req : reqs) { m_comm->wait(req); }
 }
 
 ////////////////////////////////////////////////////////////
@@ -1280,7 +1425,9 @@ bool model::load_from_checkpoint_shared(persist& p) {
       m->load_from_checkpoint_shared(p);
     }
   }
-  synchronize();
+#ifdef LBANN_HAS_GPU
+  El::GPUManager::SynchronizeDevice();
+#endif // LBANN_HAS_GPU
   return true;
 }
 
@@ -1381,16 +1528,6 @@ void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
   if (m_comm->am_world_master())
     proto->set_mini_batch_size(m_max_mini_batch_size);
-}
-
-void model::synchronize() const {
-  for(const auto l : m_layers) {
-    if (l->using_gpus()) {
-      // find the layer using GPUs and synchronize via cudnn manager
-      l->synchronize();
-      break;
-    }
-  }
 }
 
 }  // namespace lbann

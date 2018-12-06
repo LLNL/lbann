@@ -1,19 +1,17 @@
 model {
-  name: "sequential_model"
   data_layout: "data_parallel"
   mini_batch_size: 64
   block_size: 256
   num_epochs: 50
   num_parallel_readers: 0
   procs_per_model: 0
-  num_gpus: -1
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy_new" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -23,10 +21,18 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy_new"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy_new"
+      unit: "%"
     }
   }
 
@@ -340,14 +346,28 @@ model {
   ###################################################
 
   layer {
-    name: "data_new"
+    name: "input_new"
+    children: "data_new label_new"
     data_layout: "data_parallel"
     input {
       io_buffer: "partitioned"
     }
   }
+  layer {
+    parents: "input_new"
+    name: "data_new"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "input_new"
+    name: "label_new"
+    data_layout: "data_parallel"
+    split {}
+  }
 
   layer {
+    parents: "data_new"
     name: "conv1_head0"
     data_layout: "data_parallel"
     convolution {
@@ -363,6 +383,7 @@ model {
   }
 
   layer {
+    parents: "conv1_head0"
     name: "bn_conv1_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -375,12 +396,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv1_new"
     name: "relu1_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu1_new"
     name: "pool1_new"
     data_layout: "data_parallel"
     pooling {
@@ -394,6 +417,7 @@ model {
   }
 
   layer {
+    parents: "pool1_new"
     name: "conv2_head0"
     data_layout: "data_parallel"
     convolution {
@@ -409,6 +433,7 @@ model {
   }
 
   layer {
+    parents: "conv2_head0"
     name: "bn_conv2_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -421,12 +446,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv2_new"
     name: "relu2_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu2_new"
     name: "pool2_new"
     data_layout: "data_parallel"
     pooling {
@@ -440,6 +467,7 @@ model {
   }
 
   layer {
+    parents: "pool2_new"
     name: "conv3_head0"
     data_layout: "data_parallel"
     convolution {
@@ -455,6 +483,7 @@ model {
   }
 
   layer {
+    parents: "conv3_head0"
     name: "bn_conv3_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -467,12 +496,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv3_new"
     name: "relu3_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu3_new"
     name: "conv4_head0"
     data_layout: "data_parallel"
     convolution {
@@ -488,6 +519,7 @@ model {
   }
 
   layer {
+    parents: "conv4_head0"
     name: "bn_conv4_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -500,12 +532,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv4_new"
     name: "relu4_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu4_new"
     name: "conv5_head0"
     data_layout: "data_parallel"
     convolution {
@@ -526,6 +560,7 @@ model {
   }
 
   layer {
+    parents: "conv5_head0"
     name: "bn_conv5_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -538,12 +573,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv5_new"
     name: "relu5_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu5_new"
     name: "pool5_new"
     data_layout: "data_parallel"
     pooling {
@@ -564,6 +601,7 @@ model {
   ######################################
 
   layer {
+    parents: "pool5_new"
     name: "conv6_new"
     data_layout: "data_parallel"
     convolution {
@@ -579,6 +617,7 @@ model {
   }
 
   layer {
+    parents: "conv6_new"
     name: "bn_conv6_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -591,12 +630,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv6_new"
     name: "relu6_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu6_new"
     name: "conv6b_new"
     data_layout: "data_parallel"
     convolution {
@@ -612,6 +653,7 @@ model {
   }
 
   layer {
+    parents: "conv6b_new"
     name: "bn_conv6b_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -624,12 +666,14 @@ model {
   }
 
   layer {
+    parents: "bn_conv6b_new"
     name: "relu6b_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu6b_new"
     name: "pool6_new"
     data_layout: "data_parallel"
     pooling {
@@ -647,6 +691,7 @@ model {
   ######################################
 
   layer {
+    parents: "pool6_new"
     name: "fc7_new"
     data_layout: "data_parallel"
     fully_connected {
@@ -657,6 +702,7 @@ model {
   }
 
   layer {
+    parents: "fc7_new"
     name: "bn_fc7_new"
     data_layout: "data_parallel"
     batch_normalization {
@@ -669,12 +715,14 @@ model {
   }
 
   layer {
+    parents: "bn_fc7_new"
     name: "relu7_new"
     data_layout: "data_parallel"
     relu {}
   }
 
   layer {
+    parents: "relu7_new"
     name: "drop7_new"
     data_layout: "data_parallel"
     dropout {
@@ -683,30 +731,42 @@ model {
   }
 
   layer {
+    parents: "drop7_new"
     name: "fc8_new"
     data_layout: "data_parallel"
     fully_connected {
       # The number of outputs specific to the dataset used.
       # E.g., 200 for CUB, and 431 for CompCars.
-      num_neurons: 200
+      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc8_new_linearity fc8_new_bias"
   }
 
   layer {
+    parents: "fc8_new"
     name: "prob_new"
     data_layout: "data_parallel"
     softmax {}
   }
 
   layer {
-    name: "target_new"
+    parents: "prob_new label_new"
+    name: "cross_entropy_new"
     data_layout: "data_parallel"
-    target {
-      io_buffer: "partitioned"
-      shared_data_reader: true
-    }
+    cross_entropy {}
+  }
+  layer {
+    parents: "prob_new label_new"
+    name: "top1_accuracy_new"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
+  }
+  layer {
+    parents: "prob_new label_new"
+    name: "top5_accuracy_new"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 5 }
   }
 
 }

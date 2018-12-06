@@ -48,7 +48,7 @@ class selu_dropout : public regularizer_layer {
     regularizer_layer(comm),
     m_keep_prob(keep_prob),
     m_mask(nullptr) {
-#ifdef LBANN_PROCDET_DROPOUT
+#ifdef LBANN_DETERMINISTIC
     throw lbann_exception("selu_dropout: deterministic dropout not supported");
 #endif
     // Compute alpha' and the affine transform.
@@ -93,6 +93,11 @@ class selu_dropout : public regularizer_layer {
 
   El::Device get_device_allocation() const override { return Dev; }
 
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }
@@ -108,13 +113,13 @@ class selu_dropout : public regularizer_layer {
       El::Copy(get_prev_activations(), get_activations());
     } else {
 
-      AbsDistMat *input_acts = &get_prev_activations();
+      const auto *input_acts = &get_prev_activations();
       const El::Int height = input_acts->Height();
       const El::Int width = input_acts->Width();
       const El::Int local_height = input_acts->LocalHeight();
       const El::Int local_width = input_acts->LocalWidth();
 
-      Mat& local_input_acts = input_acts->Matrix();
+      const auto& local_input_acts = input_acts->LockedMatrix();
       Mat& local_output_acts = get_local_activations();
       Mat& local_mask = m_mask->Matrix();
 
@@ -136,10 +141,10 @@ class selu_dropout : public regularizer_layer {
   void bp_compute() override {
     if (this->m_model->get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::LockedView(get_error_signals(), get_prev_error_signals());
+      El::Copy(get_prev_error_signals(), get_error_signals());
     } else {
 
-      Mat& local_prev_error_signal = get_local_prev_error_signals();
+      const auto& local_prev_error_signal = get_local_prev_error_signals();
       Mat& local_error_signal = get_local_error_signals();
       Mat& local_mask = m_mask->Matrix();
       const El::Int local_height = local_prev_error_signal.Height();

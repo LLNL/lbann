@@ -3,8 +3,8 @@ data_reader {
     name: "imagenet"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/train/"
-    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/"
+    data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
     label_filename: ""
     validation_percent: 0.01
     absolute_sample_count: 0
@@ -19,8 +19,8 @@ data_reader {
 
       cropper {
         disable: false
-        crop_width: 227
-        crop_height: 227
+        crop_width: 224
+        crop_height: 224
         crop_randomly: true
         resized_width: 256
         resized_height: 256
@@ -53,10 +53,9 @@ data_reader {
     name: "imagenet"
     role: "test"
     shuffle: true
-    data_filedir: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/val/"
-    data_filename: "/p/lscratche/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
+    data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/"
+    data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
     label_filename: ""
-    validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 1000
@@ -69,8 +68,8 @@ data_reader {
 
       cropper {
         disable: false
-        crop_width: 227
-        crop_height: 227
+        crop_width: 224
+        crop_height: 224
         crop_randomly: false
         resized_width: 256
         resized_height: 256

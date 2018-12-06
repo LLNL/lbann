@@ -11,6 +11,10 @@ set(LBANN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 set(LBANN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for LBANN.")
 
+if (LBANN_ENABLE_CUDA)
+  enable_language(CUDA)
+endif ()
+
 # Fixes an RPATH issue with LBANN in which all packages get installed
 # to the same prefix
 #
@@ -23,7 +27,7 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
     if (LBANN_SB_BUILD_${_pkg})
       if (_pkg STREQUAL "HYDROGEN")
         list(APPEND LBANN_CMAKE_INSTALL_RPATH
-          "${${Hydrogen}_CMAKE_INSTALL_PREFIX}/lib")
+          "${Hydrogen_CMAKE_INSTALL_PREFIX}/lib")
       else ()
         list(APPEND LBANN_CMAKE_INSTALL_RPATH
           "${${_pkg}_CMAKE_INSTALL_PREFIX}/lib")
@@ -36,6 +40,16 @@ if (LBANN_CMAKE_INSTALL_RPATH)
 endif ()
 
 # Build the dependency set
+if (TARGET Aluminum)
+  option(LBANN_WITH_ALUMINUM "Whether to use Aluminum in LBANN" ON)
+
+  if (LBANN_WITH_ALUMINUM)
+    set(LBANN_SB_FWD_LBANN_Aluminum_DIR "${ALUMINUM_DIR}/lib/cmake/Aluminum"
+      CACHE STRING "The path to Aluminum for LBANN.")
+
+    list(APPEND _LBANN_DEPENDS Aluminum)
+  endif (LBANN_WITH_ALUMINUM)
+endif (TARGET Aluminum)
 if (TARGET CNPY)
   list(APPEND _LBANN_DEPENDS CNPY)
   set(LBANN_SB_FWD_LBANN_CNPY_DIR "${CNPY_DIR}")
@@ -64,16 +78,23 @@ if (TARGET HYDROGEN)
 endif ()
 if (TARGET OPENCV)
   list(APPEND _LBANN_DEPENDS OPENCV)
-  set(LBANN_SB_FWD_LBANN_OpenCV_DIR "${OPENCV_DIR}")
+  set(LBANN_SB_FWD_LBANN_OpenCV_DIR "${OPENCV_DIR}/share/OpenCV")
 endif ()
 if (TARGET PROTOBUF)
   list(APPEND _LBANN_DEPENDS PROTOBUF)
   set(LBANN_SB_FWD_LBANN_PROTOBUF_DIR "${PROTOBUF_DIR}")
+  set(LBANN_SB_FWD_LBANN_protobuf_MODULE_COMPATIBLE ON)
+  set(LBANN_SB_FWD_LBANN_protobuf_BUILD_SHARED_LIBS ON)
+
+  if (TARGET HOST-PROTOBUF)
+    list(APPEND _LBANN_DEPENDS HOST-PROTOBUF)
+    set(LBANN_USE_PROTOBUF_MODULE ON)
+    set(LBANN_SB_FWD_LBANN_Protobuf_PROTOC_EXECUTABLE
+      "${HOST_PROTOBUF_protoc_EXE}")
+    # This will exist by the time LBANN configures.
+  endif ()
 endif ()
-if (TARGET ALUMINUM)
-  list(APPEND _LBANN_DEPENDS ALUMINUM)
-  set(LBANN_SB_FWD_LBANN_ALUMINUM_DIR "${ALUMINUM_DIR}")
-endif ()
+
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")
@@ -88,9 +109,16 @@ create_cmake_arguments(
 option(LBANN_SB_CLONE_CLEAN_LBANN "Will pull a clean LBANN repository." OFF)
 
 if (LBANN_SB_CLONE_CLEAN_LBANN)
+  option(LBANN_CLONE_VIA_SSH
+    "Clone LBANN using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
 
-  set(LBANN_URL "https://github.com/llnl/lbann"
-    CACHE STRING "The URL from which to clone LBANN")
+  if (LBANN_CLONE_VIA_SSH)
+    set(LBANN_URL git@github.com:LLNL/lbann.git
+      CACHE STRING "The URL from which to clone LBANN")
+  else ()
+    set(LBANN_URL "https://github.com/llnl/lbann"
+      CACHE STRING "The URL from which to clone LBANN")
+  endif ()
 
   set(LBANN_TAG "develop"
     CACHE STRING "The git tag or hash to checkout for LBANN")
@@ -123,10 +151,18 @@ ExternalProject_Add(LBANN
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${LBANN_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
+  LOG_DOWNLOAD 1
+  LOG_UPDATE 1
+  LOG_CONFIGURE 1
+  LOG_BUILD 1
+  LOG_INSTALL 1
+  LOG_TEST 1
   LIST_SEPARATOR |
   CMAKE_ARGS
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_CUDA_COMPILER=${CMAKE_CUDA_COMPILER}
+  -DCMAKE_CUDA_HOST_COMPILER=${CMAKE_CUDA_HOST_COMPILER}
   ${LBANN_CMAKE_ARGS}
   )
 

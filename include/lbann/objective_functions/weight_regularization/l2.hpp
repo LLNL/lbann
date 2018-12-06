@@ -35,15 +35,14 @@ namespace lbann {
  *  Given weights \f$w_1,\cdots,w_n\f$, the L2 weight regularization
  *  term is
  *    \f[
- *    L2(w) = \frac{1}{2} \sum\limits_{i} w_i
+ *    L2(w) = \frac{1}{2} \sum\limits_{i} w_i^2
  *    \f]
  *  Note the \f$1/2\f$ scaling factor.
  */
 class l2_weight_regularization : public objective_function_term {
  public:
 
-  l2_weight_regularization(EvalType scale_factor = EvalType(1))
-    : objective_function_term(scale_factor) {}
+  l2_weight_regularization(EvalType scale_factor = EvalType(1));
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
@@ -65,18 +64,23 @@ class l2_weight_regularization : public objective_function_term {
 
  private:
 
-  /** Holds intermediate terms for each weights. */
-  std::vector<EvalType> m_sqsums;
-  /** Holds an allreduce request for each weights. */
-  std::vector<Al::request> m_allreduce_reqs;
-  /** Whether an allreduce is needed for each weights. */
-  std::vector<bool> m_allreduce_started;
+  /** Contributions to evaluated value. */
+  std::map<El::Device, CPUMat> m_contributions;
+  /** Non-blocking allreduce request. */
+  Al::request m_allreduce_req;
+#ifdef LBANN_HAS_GPU
+  /** CUDA event after a non-blocking GPU-CPU memory copy. */
+  cuda::event_wrapper m_copy_event;
+#endif // LBANN_HAS_GPU
 
-#ifdef LBANN_HAS_CUDNN
-  /** Reference to cuDNN manager. */
-  cudnn::cudnn_manager* m_cudnn = nullptr;
-#endif // LBANN_HAS_CUDNN
-
+  /** Accumulate contribution to L2 regularization term.
+   *  The sum of squares of 'vals' is added to the value in
+   *  'contribution'.
+   */
+  template <El::Device Device>
+  static void accumulate_contribution(const DMat<Device>& vals,
+                                      DMat<Device>& contribution);
+  
 };
 
 } // namespace lbann

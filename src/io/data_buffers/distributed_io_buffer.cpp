@@ -27,12 +27,13 @@
 #include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 
-lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
+lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    m_requested_max_num_parallel_readers(num_parallel_readers) {
-  m_data_buffers[execution_mode::training] = new data_buffer(comm);
-  m_data_buffers[execution_mode::validation] = new data_buffer(comm);
-  m_data_buffers[execution_mode::testing] = new data_buffer(comm);
+    m_requested_max_num_parallel_readers(num_parallel_readers),
+    m_num_child_layers(num_child_layers) {
+  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
 }
 
 int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
@@ -43,11 +44,17 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   data_buffer *buf = get_data_buffer(mode);
   if (buf->m_root == 0) {
     if (m_comm->get_rank_in_model() < num_parallel_readers && !buf->m_local_reader_done) {
-      Zero(buf->M_local);
+      for(auto& m : buf->M_local) {
+        Zero(*m);
+      }
 
       /// Each data reader needs to either have independent / split
       /// data, or take an offset / stride
-      buf->m_num_samples_in_batch = (*fetch_data_fn)(buf->M_local, data_reader);
+      if(buf->M_local.size() == 2) {
+        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], *buf->M_local[1], data_reader);
+      }else {
+        buf->m_num_samples_in_batch = (*fetch_data_fn)(*buf->M_local[0], data_reader);
+      }
       bool data_valid = (buf->m_num_samples_in_batch > 0);
       if(data_valid) {
         buf->m_num_data_per_epoch+=buf->m_num_samples_in_batch;
@@ -58,10 +65,11 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   return buf->m_num_samples_in_batch;
 }
 
-void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, generic_data_reader *data_reader, execution_mode mode) {
+void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
   data_buffer *buf = get_data_buffer(mode);
-  buf->Ms.SetRoot(buf->m_root);
+  buf->Ms[0]->SetRoot(buf->m_root);
+  buf->Ms[1]->SetRoot(buf->m_root);
 
   m_comm->model_barrier();
 
@@ -72,18 +80,57 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(AbsDistMat& Ms, 
           << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
       lbann_exception(err.str());
     }
-    CopyFromRoot(buf->M_local(El::ALL, El::IR(0, Ms.Width())), buf->Ms);
+    for (size_t i = 0; i < buf->M_local.size(); i++) {
+      El::Int width = sample.Width();
+      if(i == 1) { width = response.Width(); }
+      CopyFromRoot((*buf->M_local[i])(El::ALL, El::IR(0, width)), *buf->Ms[i]);
+    }
     buf->m_local_data_valid = false;
     buf->m_num_samples_in_batch = 0;
   } else {
-    CopyFromNonRoot(buf->Ms);
+    for (size_t i = 0; i < buf->M_local.size(); i++) {
+      CopyFromNonRoot(*buf->Ms[i]);
+    }
   }
 
   m_comm->model_barrier();
 
   buf->m_root = (buf->m_root + 1) % num_parallel_readers;
 
-  Copy(buf->Ms, Ms);
+  Copy(*buf->Ms[0], sample);
+  Copy(*buf->Ms[1], response);
+
+  return;
+}
+
+void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
+  data_buffer *buf = get_data_buffer(mode);
+  buf->Ms[0]->SetRoot(buf->m_root);
+
+  m_comm->model_barrier();
+
+  if (m_comm->get_rank_in_model() == buf->m_root) {
+    if(!buf->m_local_data_valid) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__
+          << " :: lbann_distributed_io_buffer: No valid data for this step -- local data was invalid";
+      lbann_exception(err.str());
+    }
+    El::Int width = sample.Width();
+    CopyFromRoot((*buf->M_local[0])(El::ALL, El::IR(0, width)), *buf->Ms[0]);
+    buf->m_local_data_valid = false;
+    buf->m_num_samples_in_batch = 0;
+  } else {
+    CopyFromNonRoot(*buf->Ms[0]);
+  }
+
+  m_comm->model_barrier();
+
+  buf->m_root = (buf->m_root + 1) % num_parallel_readers;
+
+  Copy(*buf->Ms[0], sample);
+
   return;
 }
 
@@ -125,26 +172,30 @@ bool lbann::distributed_io_buffer::is_data_set_processed(generic_data_reader *da
  *  parallel readers requested.
  */
 int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
+  return distributed_io_buffer::compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, m_comm);
+}
+
+int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm) {
   int num_parallel_readers = requested_num_parallel_readers;
 
   /// Are there enough ranks in the model to support the requested
   /// number of parallel readers
-  if(m_comm->get_model_grid().Size() < num_parallel_readers) {
-    if(m_comm->am_model_master()) {
-        std::cout << "Warning the grid size " << m_comm->get_model_grid().Size()
+  if(comm->get_model_grid().Size() < num_parallel_readers) {
+    if(comm->am_model_master()) {
+        std::cout << "Warning the grid size " << comm->get_model_grid().Size()
                   << "is smaller than the number of requested parallel readers "
                   << num_parallel_readers << "." << std::endl;
     }
-    num_parallel_readers = m_comm->get_model_grid().Size();
+    num_parallel_readers = comm->get_model_grid().Size();
   }
 
   /// Check to make sure that there is enough data for all of the parallel readers
   if(data_set_size != 0) {
     int max_num_parallel_readers = num_parallel_readers;
-    while(ceil((float)data_set_size / (float)(mini_batch_size * m_comm->get_num_models())) < max_num_parallel_readers) {
+    while (!check_num_parallel_readers(data_set_size, mini_batch_size, max_num_parallel_readers, comm)) {
       max_num_parallel_readers--;
     }
-    if(m_comm->am_world_master() && max_num_parallel_readers != num_parallel_readers) {
+    if(comm->am_world_master() && max_num_parallel_readers != num_parallel_readers) {
       std::cout << "Warning the training data set size " << data_set_size
                 << " is too small for the number of requested parallel readers "
                 << num_parallel_readers << ", using " << max_num_parallel_readers << "."
@@ -156,6 +207,10 @@ int lbann::distributed_io_buffer::compute_max_num_parallel_readers(long data_set
   }
 }
 
+bool lbann::distributed_io_buffer::check_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers, const lbann_comm* comm) {
+  return !(ceil((float)data_set_size / (float)(mini_batch_size * comm->get_num_models())) < num_parallel_readers);
+}
+
 void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_models, int model_rank, int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
@@ -164,6 +219,8 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
   if(max_mini_batch_size > data_reader->get_num_data()) {
     max_mini_batch_size = data_reader->get_num_data();
   }
+
+  bool apportioned = data_reader->is_partitioned();
 
   /// Check to make sure that there is enough data for all of the parallel readers
   int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_requested_max_num_parallel_readers);
@@ -178,6 +235,13 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
   int batch_stride = num_models * num_parallel_readers_per_model * max_mini_batch_size;
   int base_offset = m_comm->get_rank_in_model() * num_models * max_mini_batch_size;
   int model_offset = model_rank * max_mini_batch_size;
+
+  if (apportioned) {
+    batch_stride = max_mini_batch_size * num_parallel_readers_per_model;
+    base_offset = m_comm->get_rank_in_model() * max_mini_batch_size;
+    model_offset = 0;
+  }
+
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
@@ -190,8 +254,11 @@ void lbann::distributed_io_buffer::calculate_num_iterations_per_epoch(int num_mo
   data_reader->set_initial_position();
 
   int min_stride_across_models = max_mini_batch_size * num_models;  /// Given that each model has to have at least one reader, what is the minimum stride
-
+  if (apportioned) {
+    min_stride_across_models = max_mini_batch_size;
+  }
   data_reader->set_global_mini_batch_size(min_stride_across_models); /// The global mini-batch is a full mini-batch per model
+
   data_reader->set_last_mini_batch_size(max_mini_batch_size); /// By default the last mini-batch is a full one
   data_reader->set_global_last_mini_batch_size(min_stride_across_models); /// By default the last mini-batch is a full one per model
 

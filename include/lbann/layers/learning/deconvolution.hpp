@@ -29,11 +29,7 @@
 
 #include <vector>
 #include "lbann/layers/learning/base_convolution.hpp"
-#include "lbann/layers/layer.hpp"
-#include "lbann/utils/cudnn_wrapper.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/random.hpp"
-#include "lbann/utils/timer.hpp"
 
 namespace lbann {
 
@@ -43,11 +39,11 @@ class lbann_callback_imcomm;
 /// Deconvolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Dev> {
- private:
+private:
 
   friend class lbann_callback_imcomm;
 
-  public:
+public:
 
   deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
@@ -55,16 +51,18 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                       int conv_dim,
                       int pad,
                       int stride,
-                      bool has_bias = true,
-                      cudnn::cudnn_manager *cudnn = nullptr)
+                      int dilation,
+                      int groups,
+                      bool has_bias = true)
     : deconvolution_layer(comm,
                           num_data_dims,
                           num_output_channels,
                           std::vector<int>(num_data_dims, conv_dim),
                           std::vector<int>(num_data_dims, pad),
                           std::vector<int>(num_data_dims, stride),
-                          has_bias,
-                          cudnn) {}
+                          std::vector<int>(num_data_dims, dilation),
+                          groups,
+                          has_bias) {}
 
   deconvolution_layer(lbann_comm *comm,
                       int num_data_dims,
@@ -72,41 +70,21 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
                       std::vector<int> conv_dims,
                       std::vector<int> pads,
                       std::vector<int> strides,
-                      bool has_bias = true,
-                      cudnn::cudnn_manager *cudnn = nullptr)
+                      std::vector<int> dilations,
+                      int groups,
+                      bool has_bias = true)
     : base_convolution_layer<Dev>(comm,
-                             num_data_dims,
-                             num_output_channels,
-                             conv_dims,
-                             pads,
-                             strides,
-                             has_bias,
-                             cudnn) {
+                                  num_data_dims,
+                                  num_output_channels,
+                                  conv_dims,
+                                  pads,
+                                  strides,
+                                  dilations,
+                                  groups,
+                                  has_bias) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "convolution only supports DATA_PARALLEL");
 
-  }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " deconvolution; conv_dims: ";
-    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-      s << this->m_kernel_dims[h] << " ";
-    }
-    s << " pads: ";
-    for (size_t h=0; h<this->m_pads.size(); h++) {
-      s << this->m_pads[h] << " ";
-    }
-    s << " strides: ";
-    for (size_t h=0; h<this->m_strides.size(); h++) {
-      s << this->m_strides[h] << " ";
-    }
-    s << " num_output_channels: " << this->m_neuron_dims[0]
-      << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
-    return s.str();
   }
 
   deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
@@ -118,53 +96,94 @@ class deconvolution_layer : public base_convolution_layer<Dev> {
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-
-    // Initialize previous neuron tensor dimensions
     base_convolution_layer<Dev>::setup_dims();
+    std::stringstream err;
 
-    // Initialize deconvolution kernel dimensions
-    // Note that unlike the convolutional kernel, the previous layer's
+    // Get tensor dimensions
+    const auto& input_dims = this->get_input_dims();
+    auto output_dims = input_dims;
+    const auto input_channels = input_dims[0];
+    const auto output_channels = this->m_kernel_dims[0];
+
+    // Check for unsupported features
+    /// @todo Implement dilated and grouped deconvolution
+    if (std::any_of(this->m_dilations.begin(),
+                    this->m_dilations.end(),
+                    [] (int d) { return d != 1; })) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has non-unit dilations (";
+      for (size_t i = 0; i < this->m_dilations.size(); ++i) {
+        err << (i > 0 ? ", " : "") << this->m_dilations[i];
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
+    if (this->m_num_groups != 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has non-unit groups "
+          << "(" << this->m_num_groups << ")";
+      LBANN_ERROR(err.str());
+    }
+
+    // Check that number of groups is valid
+    if (this->m_num_groups < 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has " << this->m_num_groups << " groups";
+      LBANN_ERROR(err.str());
+    } else if (input_channels % this->m_num_groups != 0
+               || output_channels % this->m_num_groups != 0) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" has "
+          << input_channels << " input channels, "
+          << output_channels << " output channels, and "
+          << this->m_num_groups << " groups "
+          << "(groups must evenly divide "
+          << "the input channels and output channels)";
+      LBANN_ERROR(err.str());
+    }
+
+    // Initialize convolution kernel dimensions
+    // Note: Unlike the convolutional kernel, the previous layer's
     // number of channels is now the leading position -- keep in mind
-    // that deconvolution is the transpose of a convolution
+    // that deconvolution is the transpose of a convolution.
     this->m_kernel_dims.insert(this->m_kernel_dims.begin(),
-                               this->m_prev_neuron_dims[0]);
-
-    // Check if previous neuron tensor dimensions are valid
-  #ifdef LBANN_DEBUG
-    if(this->m_num_neuron_dims != (int) this->m_kernel_dims.size() - 1) {
-      throw lbann_exception("deconvolution_layer: previous neuron tensor dimensions are unexpected");
-    }
-  #endif
-
-    // Initialize neuron tensor dimensions
-    this->m_neuron_dims[0] = this->m_kernel_dims[1];
-    for(int i=0; i<this->m_num_neuron_dims-1; ++i) {
-      this->m_neuron_dims[i+1]
-        = ((this->m_prev_neuron_dims[i+1]-1) * this->m_strides[i]
-           + this->m_kernel_dims[i+2] - 2*this->m_pads[i]);
-    }
-    this->m_num_neurons = std::accumulate(this->m_neuron_dims.begin(),
-                                          this->m_neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Get size of convolutional kernel
+                               input_channels / this->m_num_groups);
     this->m_kernel_size = std::accumulate(this->m_kernel_dims.begin(),
                                           this->m_kernel_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+                                          1, std::multiplies<int>());
+    if (this->m_kernel_dims.size() != input_dims.size() + 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" has a ";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
+      }
+      err << " input tensor and a ";
+      for (size_t i = 0; i < this->m_kernel_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << this->m_kernel_dims[i];
+      }
+      err << " convolution kernel";
+      LBANN_ERROR(err.str());
+    }
+
+    // Initialize output tensor dimensions
+    /// @todo Dilated deconvolution
+    output_dims[0] = output_channels;
+    for (size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const auto& input_dim = input_dims[i+1];
+      const auto& kernel_dim = this->m_kernel_dims[i+2];
+      const auto& stride = this->m_strides[i];
+      const auto& pad = this->m_pads[i];
+      // const auto& dilation = this->m_dilations[i];
+      output_dims[i+1] = (input_dim-1) * stride + kernel_dim - 2 * pad;
+    }
+    this->set_output_dims(output_dims);
 
   }
 
-  void setup_data() override {
-    base_convolution_layer<Dev>::setup_data();
-    this->m_weights[0]->setup(this->m_kernel_dims, Dev);
-    El::Zeros(this->m_kernel_gradient,
-              this->m_weights[0]->get_matrix_height(),
-              this->m_weights[0]->get_matrix_width());
-  }
-
- protected:
+protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {

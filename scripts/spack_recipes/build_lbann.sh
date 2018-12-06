@@ -27,6 +27,8 @@ DTYPE=float
 EL_VER=develop
 if [ "${CLUSTER}" == "ray" -o "${CLUSTER}" == "sierra" ]; then
   MPI=spectrum-mpi
+elif [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
+  MPI='mvapich2 +cuda'
 else
   MPI=mvapich2
 fi
@@ -109,11 +111,15 @@ if [ "${GPU}" == "1" -o "${CLUSTER}" == "surface" -o "${CLUSTER}" == "ray" -o "$
   elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "ray" ]; then
     PLATFORM="+gpu ^cuda@9.2.64 ^cudnn@7.0"
     FEATURE="_gpu_cuda-9.2.64_cudnn-7.0"
+  elif [ "${CLUSTER}" == "pascal" ]; then
+    PLATFORM="+gpu ^cuda@9.1.85 ^cudnn@7.1"
+    FEATURE="_gpu_cuda-9.1.85_cudnn-7.1"
   else
     PLATFORM="+gpu"
     FEATURE="_gpu"
   fi
   EL_VER="${EL_VER}+cuda"
+  MPI="${MPI}+cuda"
 else
   PLATFORM="~gpu"
 fi
@@ -195,7 +201,7 @@ if [ "${CLUSTER}" == "ray" ]; then
   MPI="spectrum-mpi@2018.04.27"
 fi
 
-SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ^hydrogen@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
+SPACK_OPTIONS="lbann@local %${COMPILER} build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} ^hydrogen@${EL_VER} build_type=${BUILD_TYPE} blas=${BLAS} ^${MPI}"
 # Disable the extra compiler flags until spack supports propagating flags properly
 #SPACK_OPTIONS="lbann@local build_type=${BUILD_TYPE} dtype=${DTYPE} ${PLATFORM} ${VARIANTS} %${COMPILER} ${SPACK_CFLAGS} ${SPACK_CXXFLAGS} ${SPACK_FFLAGS} ^elemental@${EL_VER} blas=${BLAS} ^${MPI}"
 
@@ -208,10 +214,17 @@ SPEC="spack spec ${SPACK_OPTIONS}"
 CMD="spack setup ${SPACK_SETUP_FLAGS} ${SPACK_OPTIONS}"
 
 # Create a directory for the build
-DIR="${CLUSTER}_${COMPILER}_${ARCH}${FEATURE}_${MPI}_${BLAS}_${DIST}"
-DIR=${DIR//@/-}
-DIR=${DIR// /-}
-
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+  DIR="${CLUSTER}_${COMPILER}_${DIST}"
+  DIR=${DIR//@/-}
+  DIR=${DIR// /-}
+  DIR=${DIR//+/-}
+else
+  DIR="${CLUSTER}_${COMPILER}_${ARCH}${FEATURE}_${MPI}_${BLAS}_${DIST}"
+  DIR=${DIR//@/-}
+  DIR=${DIR// /-}
+  DIR=${DIR//+/-}
+fi
 echo "Creating directory ${DIR}"
 mkdir -p ${DIR}/build
 cd ${DIR}
@@ -251,6 +264,11 @@ if [ ! -z ${PATH_TO_SRC} -a -d ${PATH_TO_SRC}/src ]; then
 fi
 
 # Deal with the fact that spack should not install a package when doing setup"
-FIX="spack uninstall -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
+FIX="spack uninstall --all -y lbann %${COMPILER} build_type=${BUILD_TYPE}"
 echo $FIX
-eval $FIX
+if [ ! -z "$bamboo_SPACK_ROOT" ]; then
+    eval $FIX &> /dev/null
+    exit 0
+else
+    eval $FIX
+fi

@@ -128,6 +128,12 @@ void lbann_summary::sum_reduce_scalar(const std::string tag,
   m_pending_sum_scalars.emplace_back(tag, step, s);
 }
 
+void lbann_summary::reduce_scalar_all(const std::string tag,
+                                      DataType s,
+                                      int step) {
+  m_pending_scalar_alls.emplace_back(tag, step, s);
+}
+
 void lbann_summary::reduce_histogram(const std::string tag,
                                      const AbsDistMat& mat,
                                      int step) {
@@ -186,6 +192,7 @@ void lbann_summary::flush() {
   flush_stdevs();
   flush_scalars();
   flush_sum_scalars();
+  flush_scalar_alls();
   flush_histograms();
   if (m_sw != nullptr) {
     m_sw->flush();
@@ -329,6 +336,36 @@ void lbann_summary::flush_sum_scalars() {
   m_pending_sum_scalars.clear();
 }
 
+void lbann_summary::flush_scalar_alls() {
+  if (m_pending_scalar_alls.empty()) {
+    return;
+  }
+  // Gather from every process to world master.
+  std::vector<DataType> local_scalars;
+  for (const auto& op : m_pending_scalar_alls) {
+    local_scalars.push_back(op.local);
+  }
+  if (m_comm->am_world_master()) {
+    std::vector<DataType> scalars(
+      m_comm->get_procs_in_world()*local_scalars.size());
+    m_comm->gather(local_scalars.data(), local_scalars.size(),
+                   scalars.data(), m_comm->get_world_comm());
+    for (size_t i = 0; i < scalars.size(); ++i) {
+      int rank = i / local_scalars.size();
+      int model = rank / m_comm->get_procs_per_model();
+      int pos = i % local_scalars.size();
+      m_sw->add_scalar(
+        prepend_model("rank" + std::to_string(rank) + "/" +
+                      m_pending_scalar_alls[pos].tag, model),
+        scalars[i], m_pending_scalar_alls[pos].step);
+    }
+  } else {
+    m_comm->gather(local_scalars.data(), local_scalars.size(),
+                   m_comm->get_world_master(), m_comm->get_world_comm());
+  }
+  m_pending_scalar_alls.clear();
+}
+
 void lbann_summary::flush_histograms() {
   if (m_pending_histograms.empty()) {
     return;
@@ -431,14 +468,16 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
   auto sum = DataType(0);
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(+:sum)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum))
     for (El::Int i = 0; i < size; ++i) {
+      const int tid = omp_get_thread_num();
       sum += mat_buf[i];
     }
   } else {
-#pragma omp parallel for reduction(+:sum) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
+        const int tid = omp_get_thread_num();
         sum += mat_buf[row + col * ldim];
       }
     }
@@ -457,17 +496,19 @@ void lbann_summary::local_sum_sqsum(
   sqsum = DataType(0);
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(+:sum,sqsum)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum,sqsum))
     for (El::Int i = 0; i < size; ++i) {
       const DataType val = mat_buf[i];
+      const int tid = omp_get_thread_num();
       sum += val;
       sqsum += val*val;
     }
   } else {
-#pragma omp parallel for reduction(+:sum,sqsum) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum,sqsum) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         const DataType val = mat_buf[row + col*ldim];
+        const int tid = omp_get_thread_num();
         sum += val;
         sqsum += val * val;
       }
@@ -483,12 +524,12 @@ DataType lbann_summary::local_min(const Mat& mat) const {
   auto min = std::numeric_limits<DataType>::max();
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(min:min)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(min:min))
     for (El::Int i = 0; i < size; ++i) {
       min = std::min(min, mat_buf[i]);
     }
   } else {
-#pragma omp parallel for reduction(min:min) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(min:min) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         min = std::min(min, mat_buf[row + col*ldim]);
@@ -506,12 +547,12 @@ DataType lbann_summary::local_max(const Mat& mat) const {
   auto max = std::numeric_limits<DataType>::min();
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(max:max)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(max:max))
     for (El::Int i = 0; i < size; ++i) {
       max = std::max(max, mat_buf[i]);
     }
   } else {
-#pragma omp parallel for reduction(max:max) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(max:max) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         max = std::max(max, mat_buf[row + col*ldim]);
@@ -530,12 +571,12 @@ DataType lbann_summary::local_2norm(const Mat& mat) const {
   auto norm = DataType(0);
   if (ldim == height) {
     const El::Int size = height*width;
-#pragma omp parallel for reduction(+:norm)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:norm))
     for (El::Int i = 0; i < size; ++i) {
       norm += mat_buf[i] * mat_buf[i];
     }
   } else {
-#pragma omp parallel for reduction(+:norm) collapse(2)
+    LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:norm) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         norm += mat_buf[row + col * ldim] * mat_buf[row + col * ldim];

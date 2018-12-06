@@ -31,8 +31,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 int mini_batch_size = 128;
 
 void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg = nullptr);
@@ -52,7 +50,7 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
-    //read data_reader prototext file 
+    //read data_reader prototext file
     if (not opts->has_string("fn")) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__ << " :: "
@@ -122,7 +120,8 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (lbann_exception& e) {
-    lbann_report_exception(e, comm);
+    e.print_report();
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
   }
 
   finalize(comm);
@@ -131,7 +130,7 @@ int main(int argc, char *argv[]) {
 
 void test_is_shuffled(generic_data_reader *reader, bool is_shuffled, const char *msg) {
   const std::vector<int> &indices = reader->get_shuffled_indices();
-  std::cerr << "\nstarting test_is_suffled; mini_batch_size: " << mini_batch_size 
+  std::cerr << "\nstarting test_is_suffled; mini_batch_size: " << mini_batch_size
             << " indices.size(): " << indices.size();
   if (msg) {
     std::cout << " :: " << msg;

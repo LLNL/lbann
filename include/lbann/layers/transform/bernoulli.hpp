@@ -37,54 +37,29 @@ namespace lbann {
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class bernoulli_layer : public transform_layer {
- private:
+private:
   /** Probability of outputting 1. */
   DataType m_prob;
 
- public:
+public:
   bernoulli_layer(lbann_comm *comm,
-                 const std::vector<int>& neuron_dims,
-                 DataType prob = DataType(0.5),
-                 cudnn::cudnn_manager *cudnn = nullptr)
+                  std::vector<int> dims,
+                  DataType prob = DataType(0.5))
     : transform_layer(comm), m_prob(prob) {
-
-    // Record neuron dimensions
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Bernoulli layer has no parents
-    m_expected_num_parent_layers = 0;
-
+    set_output_dims(dims);
+    this->m_expected_num_parent_layers = 0;
   }
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
   std::string get_type() const override { return "Bernoulli"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream ss;
-    ss << "bernoulli_layer" << "  "
-       << "prob: " << m_prob << " "
-       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return ss.str();
-  }
+protected:
 
- protected:
-
-  void setup_dims() override {
-    const auto neuron_dims = this->m_neuron_dims;
-    transform_layer::setup_dims();
-    this->m_neuron_dims = neuron_dims;
-    this->m_num_neuron_dims = neuron_dims.size();
-    this->m_num_neurons = std::accumulate(neuron_dims.begin(),
-                                          neuron_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.push_back("Probability: " + std::to_string(m_prob));
+    return desc;
   }
 
   void fp_compute() override {
@@ -95,8 +70,6 @@ class bernoulli_layer : public transform_layer {
       El::Zero(output);
     }
   }
-
-  void bp_compute() override {}
 
 };
 
