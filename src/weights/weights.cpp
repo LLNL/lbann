@@ -74,7 +74,7 @@ weights::weights(lbann_comm* comm)
   m_matrix_dist.colCut = 0;
   m_matrix_dist.rowCut = 0;
   m_matrix_dist.root = 0;
-  m_matrix_dist.grid = &comm->get_model_grid();
+  m_matrix_dist.grid = &(comm->get_model_grid());
   m_matrix_dist.device = El::Device::CPU;
 
 }
@@ -434,7 +434,8 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
 {
   // define filename containing saved weight values
   auto f_name = El::BuildString("weights_", m_name, "_",
-                                m_values->Height(), "x", m_values->Width(), ".bin");
+                                m_values->Height(), "x", m_values->Width(),
+                                ".bin");
   p.read_distmat(persist_type::model, f_name.c_str(), m_values.get());
   if (m_optimizer != nullptr) {
     m_optimizer->load_from_checkpoint_shared(p, m_name);
@@ -451,8 +452,9 @@ bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::strin
   // If match is found read in weight values.
   if(it != weight_list.end()) {
     std::string full_path = ckpt_dir + *it;
-    if(m_comm->am_world_master())
-      std::cout << "Loading " << m_name <<  "\n";
+    if(m_comm->am_world_master()) {
+      std::cout << "Loading " << m_name << " (" << full_path << ") " << "\n";
+    }
     El::Read(*m_values,full_path, El::BINARY, true);
   }
   return true;
@@ -464,8 +466,9 @@ bool weights::save_to_checkpoint_distributed(lbann::persist& p){
                                 "_", m_values->LocalHeight(),
                                 "x", m_values->LocalWidth(), ".bin");
   p.write_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
-  if (m_optimizer != nullptr)
+  if (m_optimizer != nullptr) {
     m_optimizer->save_to_checkpoint_distributed(p, m_name);
+  }
   return true;
 }
 
@@ -475,8 +478,9 @@ bool weights::load_from_checkpoint_distributed(lbann::persist& p){
                                 "_", m_values->LocalHeight(),
                                 "x", m_values->LocalWidth(), ".bin");
   p.read_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
-  if (m_optimizer != nullptr)
+  if (m_optimizer != nullptr) {
     m_optimizer->load_from_checkpoint_distributed(p, m_name);
+  }
   return true;
 }
 
