@@ -46,15 +46,15 @@ class lbann_callback_checkpoint : public lbann_callback {
  * @param checkpoint_secs interval to checkpoint
  * @param checkpoint_per_rank true to save/load a file per mpi rank
  */
-  lbann_callback_checkpoint(std::string checkpoint_dir, 
-                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) : 
+  lbann_callback_checkpoint(std::string checkpoint_dir,
+                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) :
     lbann_callback(),
     m_checkpoint_dir(checkpoint_dir),
-    m_checkpoint_epochs(checkpoint_epochs), 
-    m_checkpoint_steps(checkpoint_steps), 
-    m_checkpoint_secs(checkpoint_secs), 
+    m_checkpoint_epochs(checkpoint_epochs),
+    m_checkpoint_steps(checkpoint_steps),
+    m_checkpoint_secs(checkpoint_secs),
     m_per_rank_dir(per_rank_dir),
-    m_ckpt_dist_epochs(ckpt_dist_epochs), 
+    m_ckpt_dist_epochs(ckpt_dist_epochs),
     m_ckpt_dist_steps(ckpt_dist_steps) {}
   lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
@@ -79,14 +79,14 @@ class lbann_callback_checkpoint : public lbann_callback {
   inline void set_checkpoint_secs(EvalType secs){
     m_checkpoint_secs= secs;
   }
-  
+
   inline void set_per_rank_dir(std::string dir){
     m_per_rank_dir = dir;
   }
 
-  inline void set_ckpt_dist_epochs(int ckpt_dist_epochs){                                                                  
+  inline void set_ckpt_dist_epochs(int ckpt_dist_epochs){
     m_ckpt_dist_epochs = ckpt_dist_epochs;
-  }  
+  }
 
   inline void set_ckpt_dist_steps(int ckpt_dist_steps){
     m_ckpt_dist_steps = ckpt_dist_steps;
@@ -117,6 +117,45 @@ class lbann_callback_checkpoint : public lbann_callback {
     char dirname[_max_dir_len];
   };
 };
+
+inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/";
+  ss << m->get_name().c_str() << ".";
+  ss << comm->get_model_rank() << ".last.shared.checkpoint";
+  return ss.str();
+}
+
+inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/" << m->get_name().c_str();
+  ss << "." << comm->get_model_rank();
+  ss << ".shared.epoch." << epoch;
+  ss << ".step."<< step << "/";
+  return ss.str();
+}
+
+inline std::string get_last_distributed_checkpoint_filename(model *m, std::string dir) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/";
+  ss << m->get_name().c_str() << ".";
+  ss << comm->get_model_rank() << ".last.distributed.checkpoint";
+  return ss.str();
+}
+
+inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/" << m->get_name().c_str();
+  ss << "." << comm->get_model_rank();
+  ss << ".rank." << comm->get_rank_in_model();
+  ss << ".epoch." << epoch;
+  ss << ".step."<< step << "/";
+  return ss.str();
+}
 
 }  // namespace lbann
 

@@ -22,7 +22,7 @@ def runme(cmd, msg='') :
 #============================================================================
 def build_descriptor_pb2(p_path) :
   runme('cd  ' + p_path + '; python setup.py build')
-  
+
 #============================================================================
 def get_models_dir() :
   return runme('git rev-parse --show-toplevel') + '/model_zoo/models'
@@ -64,7 +64,7 @@ def compile_lbann_proto() :
   host = re.sub("\d+", "", host)
   protoc = lbann_dir + '/build/' + host + '.llnl.gov/bin/protoc'
   r = commands.getstatusoutput(protoc + ' -I=' + proto_dir + ' --python_out=. ' + proto_fn)
-  
+
 #============================================================================
 def write_output(p, fn) :
   out = open(fn, 'w')
@@ -92,7 +92,7 @@ def getMotifInputOrOutputLayerName(layer, motifs, which) :
       if m_layer.children == '' :
         name = base_name + '_' + m_layer.name
         retval.append(name)
-  
+
   assert(len(retval) == 1)
   return retval
 
@@ -114,7 +114,7 @@ def expandMotifLayer(motif_layer, motif) :
         name = t[0]
         if name == 'do_not_use' :
           skip_me[t[1]] = None
-        else :  
+        else :
           if not variables.has_key(name) :
             variables[name] = set()
           variables[t[0]].add(v)
@@ -125,7 +125,7 @@ def expandMotifLayer(motif_layer, motif) :
 
       for x in skip_me.keys() :
         assert(skip_me[x] != None)
-  
+
       #loop over the layers in the motif; turn each one into an actual layer
       #in the model
       for layer in motif.layer :
@@ -135,14 +135,14 @@ def expandMotifLayer(motif_layer, motif) :
           new_layer = lbann_pb2.Layer()
           new_layer.CopyFrom(layer)
           print 'constructing layer:', layer.name
-  
+
           #get the variables for this layer, if any
           fake_name = new_layer.name
           vv = None
           if variables.has_key(fake_name) :
             vv = variables[fake_name]
             print '  layer has these variables:', vv
-  
+
           #set a unique name for the layer
           org_name = new_layer.name
           name = base_name + '_' + org_name
@@ -152,7 +152,7 @@ def expandMotifLayer(motif_layer, motif) :
             new_layer.parents = motif_layer.parents
           if new_layer.children == "" :
             new_layer.children = motif_layer.children
-  
+
           #deal with layers that have variables
           if not vv :
             expanded_layers.append(new_layer)
@@ -175,7 +175,7 @@ def expandMotifLayer(motif_layer, motif) :
             tmp = lbann_pb2.Layer()
             txtf.Merge(string_layer, tmp)
             expanded_layers.append(tmp)
-      
+
       #fix parent and child names
       for layer in expanded_layers :
         t = layer.parents.split()
@@ -268,7 +268,7 @@ def main(argv) :
   compile_lbann_proto()
   p_path = set_python_search_path()
   build_descriptor_pb2(p_path)
-  
+
   pb = load_prototext(argv[1])
   model = pb.model
   if not has_motifs(model) :
@@ -276,32 +276,32 @@ def main(argv) :
     print '"' + argv[2] + '" will contain identical information as the input file: "' + argv[1] + '"'
     write_output(pb, argv[2])
     exit(0)
-  
+
   #build table: motif name -> motif
   motif_defs = pb.motif_definitions
   motifs = {}
   for m in motif_defs.motif :
     motifs[m.name] = m
-  
+
   #make copy of prototext, then delete the layers in the copy
   b = lbann_pb2.LbannPB()
   b.CopyFrom(pb)
   del b.model.layer[:]
 
   #error check
-  model_name = model.name
+  model_type = model.type
   known_models = set(['dag_model', 'sequential_model'])
-  print 'model_name:', model_name
-  if model_name not in known_models :
-    print 'nothing known about the model named:', model_name
+  print 'model_type:', model_type
+  if model_type not in known_models :
+    print 'nothing known about the model type:', model_type
     print 'please update this code, or fix the prototext file'
     print 'known models:',
-    for m in known_models : 
+    for m in known_models :
       print m
     exit(9)
 
   is_sequential = False
-  if model_name == 'sequential_model' :
+  if model_type == 'sequential_model' :
     is_sequential = True
 
   #fix the names for layers that are not motif_layers, but whose
@@ -324,6 +324,6 @@ def main(argv) :
   b.motif_definitions.Clear()
   print 'calling write_output'
   write_output(b, argv[2])
-  
+
 if __name__ == "__main__" :
   main(sys.argv)

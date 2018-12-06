@@ -537,9 +537,10 @@ model {
     }
   }
   #callback {
-  #  dump_activations {
-  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
-  #    layer_names: "image_data_dummy"
+  #  dump_outputs {
+  #    prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
+  #    layers: "image_data_dummy"
+  #    execution_modes: "test"
   #  }
   #}
   block_size: 256
