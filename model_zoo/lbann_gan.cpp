@@ -61,8 +61,7 @@ int main(int argc, char *argv[]) {
                                                                                     //model
     model *model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]), comm, true); // This should probably be false
-                                                                               // but is true to preserve default behavior
+      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]), comm, false);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

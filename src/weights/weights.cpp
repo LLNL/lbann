@@ -453,7 +453,7 @@ bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::strin
   if(it != weight_list.end()) {
     std::string full_path = ckpt_dir + *it;
     if(m_comm->am_world_master()) {
-      std::cout << "Loading " << m_name << " (" << full_path << ") " << "\n";
+      std::cout << "Loading " << m_name << " <- " << *it << "\n";
     }
     El::Read(*m_values,full_path, El::BINARY, true);
   }
