@@ -527,6 +527,7 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(mod);
   CONSTRUCT_LAYER(pow);
   CONSTRUCT_LAYER(safe_divide);
+  CONSTRUCT_LAYER(squared_difference);
   CONSTRUCT_LAYER(max);
   CONSTRUCT_LAYER(min);
   CONSTRUCT_LAYER(equal);
