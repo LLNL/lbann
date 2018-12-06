@@ -1,4 +1,5 @@
 model {
+  name: "fw_model"
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001

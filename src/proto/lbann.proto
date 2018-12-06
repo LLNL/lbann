@@ -224,8 +224,8 @@ message GenericPreprocessor {
 //========================================================================
 
 message Model {
-  string model_id = 1000; //arbitrary identifier
-  string name = 1; //deprecated
+  string type = 1;
+  string name = 3;
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
