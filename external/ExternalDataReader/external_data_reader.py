@@ -46,7 +46,7 @@ class ExternalDataReader(object):
             self.params["reader_type"] = "[EDR]"
 
     def handle_init_request(self, message):
-        assert (message.HasField('init_request'))
+        assert (message.HasField("init_request"))
         response = Response()
         response.init_response.num_samples = self.params["num_samples"]
         response.init_response.data_size = self.params["data_size"]
@@ -96,10 +96,6 @@ class ExternalDataReader(object):
         else:
             raise ValueError("expected data/label/response request")
         return response_message
-
-    def send_data_response(self, message):
-        data = message.SerializeToString()
-        self.connection.send_message(data)
 
     def run(self):
         # Init

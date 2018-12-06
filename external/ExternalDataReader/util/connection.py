@@ -61,7 +61,6 @@ class Server(object):
                     # s_fd won't be open in this process
                     break
 
-
 class Connection(object):
     'Connection handler for socket connections'
     def __init__(self, connection, address):
@@ -79,7 +78,7 @@ class Connection(object):
 
         self.epoll_default_eventmask = select.EPOLLPRI | select.EPOLLHUP
         self.epoll_in  = False
-        self.epoll_out = True
+        self.epoll_out = False
 
     def update_epoll(self):
         'Set the epoll event flags to their correct values'
