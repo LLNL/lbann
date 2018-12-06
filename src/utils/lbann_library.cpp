@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/lbann_library.hpp"
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 #include <dirent.h>
 #include <cstdlib>
