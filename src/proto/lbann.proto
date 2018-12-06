@@ -246,8 +246,6 @@ message Model {
 
   repeated Weights weights = 11;
 
-  // checknan, debug, dump_activations, etc;
-  // for complete list, see: lbann/include/lbann/callbacks
   repeated Callback callback = 20;
 
   int64 random_seed = 30;
@@ -400,7 +398,7 @@ message Callback {
    CallbackTimer timer = 2;
    CallbackSummary summary = 3;
    CallbackDumpWeights dump_weights = 4;
-   CallbackDumpActivations dump_activations = 5;
+   CallbackDumpOutputs dump_outputs = 5;
    CallbackDumpErrorSignals dump_error_signals = 35;
    CallbackDumpGradients dump_gradients = 6;
    CallbackDumpMBIndices dump_mb_indices = 7;
@@ -485,11 +483,11 @@ message CallbackDumpWeights {
   string basename = 1;
 }
 
-message CallbackDumpActivations {
-  string basename = 1;
-  int64 interval = 2;
-  string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
-
+message CallbackDumpOutputs {
+  string layers = 1;          // Default: all layers
+  string execution_modes = 2; // Default: all modes
+  int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
+  string prefix = 4;          // Prefix for output files
 }
 
 message CallbackDumpErrorSignals {
@@ -591,7 +589,7 @@ message CallbackCheckMetric {
   double lower_bound = 2;
   double upper_bound = 3;
   bool error_on_failure = 4;  // Throw error if metric check fails
-  string execution_modes = 5; // E.g. "train validation test"
+  string execution_modes = 5; // Default: all modes
 }
 
 message CallbackCheckpoint {
