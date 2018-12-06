@@ -35,6 +35,12 @@ void lbann_callback_checkpoint::setup(model *m) {
   p.set_cb_type(callback_type::invalid);
   restart(m);
 }
+// Checkpoint at the end of training
+void lbann_callback_checkpoint::on_train_end(model *m) {
+  p.set_cb_type(callback_type::epoch);
+  checkpoint(m);
+  p.set_cb_type(callback_type::invalid);
+}
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
 void lbann_callback_checkpoint::on_epoch_end(model *m) {
   p.set_cb_type(callback_type::epoch);

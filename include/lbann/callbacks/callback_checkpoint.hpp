@@ -60,6 +60,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint* copy() const override { return new lbann_callback_checkpoint(*this); }
   void setup(model *m) override;
+  void on_train_end(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
   void on_validation_end(model *m) override;
