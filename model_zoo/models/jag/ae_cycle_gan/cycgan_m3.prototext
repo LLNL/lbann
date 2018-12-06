@@ -29,7 +29,7 @@ model {
     parents: "data"
     children: "image_data_id param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -297,7 +297,8 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_1"
@@ -434,7 +435,8 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -668,7 +670,8 @@ model {
   }
   layer {
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"
