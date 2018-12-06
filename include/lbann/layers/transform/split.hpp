@@ -36,18 +36,12 @@ namespace lbann {
 /** Split layer.
  *  This layer can accommodate an arbitrary number of outputs.
  */
-  template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class split_layer : public transform_layer {
- private:
+public:
 
- public:
-
-  split_layer(lbann_comm *comm)
-    : transform_layer(comm) {
-
-    // Split layer has no limit on children
-    m_expected_num_child_layers = -1;
-
+  split_layer(lbann_comm *comm) : transform_layer(comm) {
+    this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   split_layer* copy() const override { return new split_layer(*this); }
@@ -55,18 +49,14 @@ class split_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " split; children: ";
-    for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
-    }
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    return s.str();
-  }
+protected:
 
-  protected:
+  void setup_dims() override {
+    Layer::setup_dims();
+    for (int i = 0; i < get_num_children(); ++i) {
+      set_output_dims(get_input_dims(), i);
+    }
+  }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = get_prev_activations();

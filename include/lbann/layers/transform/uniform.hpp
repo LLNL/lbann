@@ -38,37 +38,36 @@ namespace lbann {
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class uniform_layer : public transform_layer {
- private:
+private:
   /** Uniform distribution mean. */
   DataType m_min;
   /** Uniform distribution standard deviation. */
   DataType m_max;
 
- public:
+public:
+
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
                 DataType min = DataType(0),
                 DataType max = DataType(1))
     : transform_layer(comm), m_min(min), m_max(max) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
   std::string get_type() const override { return "uniform"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream ss;
-    ss << "uniform_layer" << "  "
-       << "min: " << m_min << " "
-       << "max: " << m_max << " "
-       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return ss.str();
-  }
+protected:
 
- protected:
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    std::stringstream ss;
+    ss << "Range: [" << m_min << "," << m_max << ")";
+    desc.push_back(ss.str());
+    return desc;
+  }
 
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / 2;

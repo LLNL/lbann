@@ -36,12 +36,12 @@ namespace lbann {
 /** Weighted sum layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class weighted_sum_layer : public transform_layer {
- private:
+private:
 
   /** Scaling factors for weighted sum. */
   std::vector<DataType> m_scaling_factors;
 
- public:
+public:
   weighted_sum_layer(lbann_comm *comm,
                      std::vector<DataType> scaling_factors)
     : transform_layer(comm),
@@ -54,23 +54,28 @@ class weighted_sum_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << " weighted_sum; parents: ";
-     for (size_t i=0; i<this->m_parent_layers.size(); i++) {
-       s << this->m_parent_layers[i]->get_name() << " " << this->m_parent_layers[i]->get_type() << " ";
-     }
-     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    std::stringstream ss;
+    ss << "Scaling factors: ";
+    for (size_t i = 0; i < m_scaling_factors.size(); ++i) {
+      ss << (i > 0 ? ", " : "") << m_scaling_factors[i];
+    }
+    desc.push_back(ss.str());
+    return desc;
   }
 
- protected:
+protected:
 
   void setup_pointers() override {
     transform_layer::setup_pointers();
+    std::stringstream err;
+    if (get_num_parents() < 1) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has no parent layers";
+      LBANN_ERROR(err.str());
+    }
     if ((int) m_scaling_factors.size() != get_num_parents()) {
-      std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
           << "has an invalid number of scaling factors "
           << "(found " << m_scaling_factors.size() << ", "
@@ -81,6 +86,7 @@ class weighted_sum_layer : public transform_layer {
 
   void setup_dims() override {
     transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
     const auto& output_dims = get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
       const auto& input_dims = get_input_dims(i);

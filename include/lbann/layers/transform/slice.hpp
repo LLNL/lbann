@@ -45,7 +45,7 @@ public:
     : transform_layer(comm),
       m_slice_dim(slice_dim),
       m_slice_points(slice_points) {
-    m_expected_num_child_layers = -1; // No limit on children
+    this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   slice_layer(const slice_layer& other)
@@ -69,29 +69,25 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " slice; slice_dim: "
-      << m_slice_dim << " children: ";
-    for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
-    }
-    s << " slice_points: ";
-    for (size_t h=0; h<this->m_slice_points.size(); h++) {
-      s << this->m_slice_points[h] << " ";
-    }
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    s << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
-    return s.str();
-  }
-
   /** Get slice points. */
   std::vector<El::Int>& get_slice_points() { return m_slice_points; }
   /** Get slice points (const). */
   std::vector<El::Int> get_slice_points() const { return m_slice_points; }
 
 protected:
+
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.push_back("Slice dimension: "
+                   + std::to_string(m_slice_dim));
+    std::stringstream ss;
+    ss << "Slice points: ";
+    for (size_t i = 0; i < m_slice_points.size(); ++i) {
+      ss << (i > 0 ? ", " : "") << m_slice_points[i];
+    }
+    desc.push_back(ss.str());
+    return desc;
+  }
 
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);

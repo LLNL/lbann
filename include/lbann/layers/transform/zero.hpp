@@ -57,16 +57,14 @@ class zero_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of constructor params */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "zero_layer  first half: " << m_first_half << "second half: " << m_second_half
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-       << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
-     return s.str();
-  }
+protected:
 
- protected:
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.push_back("First half: " + std::to_string(m_first_half));
+    desc.push_back("Second half: " + std::to_string(m_second_half));
+    return desc;
+  }
 
   void fp_compute() override {
     const auto& input = get_prev_activations();

@@ -172,7 +172,7 @@ model {
     weights: "gen1fc4linearity"
     parents: "gen1relu3_1"
   }
-  
+
   weights {
     name: "gen1fc1linearity"
     he_normal_initializer {
@@ -256,6 +256,32 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 256
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "encode3"
+    name: "encode3_tanh"
+    data_layout: "model_parallel"
+    tanh {}
+  }
+  layer {
+    parents: "encode3_tanh"
+    name: "encode3_dropout"
+    data_layout: "model_parallel"
+    dropout {
+      keep_prob: 0.95
+    }
+  }
+  ######################
+  # Latent space
+  ######################
+  layer {
+    parents: "encode3_dropout"
+    name: "z_mean"
+    data_layout: "model_parallel"
+    fully_connected {
+      num_neurons:20
       has_bias: true
     }
   }
@@ -468,7 +494,7 @@ model {
     parents: "sigmoid"
     name: "reconstruction"
     data_layout: "model_parallel"
-    split {}    
+    split {}
   }
   layer {
     parents: "reconstruction image_data_id"

@@ -254,11 +254,6 @@ message Model {
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
 
-  // Siamese model parameters
-  message Siamese {
-    uint32 num_heads = 1;
-  }
-  Siamese siamese = 37;
 }
 
 //========================================================================
@@ -340,44 +335,7 @@ message LayerTerm {
 //========================================================================
 
 message Metric {
-  // a Metric should contain exactly one of the following
-  CategoricalAccuracy categorical_accuracy = 1;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
-  MeanSquaredError mean_squared_error = 3;
-  MeanAbsoluteDeviation mean_absolute_deviation = 4;
-  MeanAbsoluteError mean_absolute_error = 6;
-  PearsonCorrelation pearson_correlation = 5;
-  R2 r2 = 7;
-  BooleanAccuracy boolean_accuracy = 8;
-  BooleanFalsePositives boolean_false_positives = 9;
-  BooleanFalseNegatives boolean_false_negatives = 10;
   LayerMetric layer_metric = 11;
-}
-
-message CategoricalAccuracy {
-}
-
-// Already defined as an objective function
-// message MeanSquaredError {}
-
-message TopKCategoricalAccuracy {
-  int64 k = 1;
-  int64 top_k = 2; //deprecated
-}
-
-message PearsonCorrelation {
-}
-
-message R2 {
-}
-
-message BooleanAccuracy {
-}
-
-message BooleanFalsePositives {
-}
-
-message BooleanFalseNegatives {
 }
 
 message LayerMetric {
@@ -796,6 +754,7 @@ message Layer {
    string weights = 54;
    bool num_neurons_from_data_reader = 53;
    bool freeze = 5;
+   string hint_layer = 56;
 
    repeated WeightsData weights_data = 153;
    string top = 154;
@@ -913,29 +872,28 @@ message Layer {
    LogicalOr logical_or = 466;
    LogicalXor logical_xor = 467;
 
-   // Target Layers
+   // Target layers
    Target target = 18;
    TargetReconstruction reconstruction = 22;
 
-   // Regularization Layers
+   // Regularization layers
    BatchNormalization batch_normalization = 19;
    LocalResponseNormalization local_response_normalization = 20;
    Dropout dropout = 21;
    SeluDropout selu_dropout = 229;
 
-   // Activation Layers
-   Softmax softmax = 200;
-   LogSoftmax log_softmax = 203;
-   ELU elu = 30;
-   Identity identity = 31;
-   LeakyRelu leaky_relu = 32;
-   Relu relu = 33;
-   Sigmoid sigmoid = 34;
-   SmoothRelu smooth_relu = 35;
-   Softplus softplus = 36;
-   Selu selu = 37;
-   BentIdentity bent_identity = 40;
-   Swish swish = 42;
+   // Activation layers
+   Elu elu = 200;
+   Identity identity = 201;
+   LeakyRelu leaky_relu = 202;
+   LogSigmoid log_sigmoid = 203;
+   LogSoftmax log_softmax = 204;
+   Relu relu = 205;
+   Selu selu = 206;
+   Sigmoid sigmoid = 207;
+   Softmax softmax = 208;
+   Softplus softplus = 209;
+   Softsign softsign = 210;
 
    // Image layers
    BilinearResize bilinear_resize = 500;
@@ -955,7 +913,7 @@ message MotifLayer {
 }
 
 ///////////////////////
-// Math Layers       //
+// Math layers       //
 ///////////////////////
 message LogicalNot {}
 message Abs {}
@@ -1005,59 +963,40 @@ message LogicalOr {}
 message LogicalXor {}
 
 ///////////////////////
-// Activation Layers //
+// Activation layers //
 ///////////////////////
-message ELU {
-  double alpha = 2; //default: 1.0; must be >= 0
+message Elu {
+  double alpha = 1; //default: 1.0; should be >= 0
 }
-
-message Identity {
-}
-
+message Identity {}
 message LeakyRelu {
   double negative_slope = 1; //default: 0.01
 }
-
-message Relu {
-}
-
-message Sigmoid {
-}
-
-message SmoothRelu {
-}
-
-message Softplus {
-}
-
-message BentIdentity {
-}
-
-message Swish {
-}
-
-message Selu {
-  double alpha = 2; //default: 1.6732632423543772848170429916717
-  double scale = 3; //default: 1.0507009873554804934193349852946
-}
-
-message Softmax {
-}
-
-message LogSoftmax {
-}
+message LogSigmoid {}
+message LogSoftmax {}
+message Relu {}
+message Selu {}
+message Sigmoid {}
+message Softmax {}
+message Softplus {}
+message Softsign {}
 
 ///////////////////////
-// Loss Layers //
+// Loss layers //
 ///////////////////////
 message L2Norm2 {}
 message L1Norm {}
 message SigmoidBinaryCrossEntropy {}
+message CategoricalAccuracy {}
+message TopKCategoricalAccuracy {
+  int64 k = 1;
+}
+message BooleanAccuracy {}
 message BooleanFalseNegative {}
 message BooleanFalsePositive {}
 
 ///////////////////////////
-// Regularization Layers //
+// Regularization layers //
 ///////////////////////////
 message BatchNormalization {
   double decay = 1;          //default: 0.9
@@ -1085,7 +1024,7 @@ message Dropout {
 }
 
 //////////////////
-// Input Layers //
+// Input layers //
 //////////////////
 message Input {
   bool data_set_per_model = 1;  //default: false
@@ -1101,12 +1040,11 @@ message RepeatedInput {
 }
 
 //////////////////////
-// transform Layers //
+// Transform layers //
 //////////////////////
 message Reshape {
-  int64 num_dims = 1;
+  int64 num_dims = 1; //DEPRECATED
   string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
-  bool reshape_to_flattened_conv_format = 3;
 }
 
 message Pooling {
@@ -1228,7 +1166,7 @@ message WeightsLayer {
 }
 
 /////////////////////
-// learning Layers //
+// Learning layers //
 /////////////////////
 message FullyConnected {
   int64 num_neurons = 1;
@@ -1299,7 +1237,7 @@ message Deconvolution {
 }
 
 ///////////////////
-// Target Layers //
+// Target layers //
 ///////////////////
 message Target {
   string paired_input_layer = 1;
@@ -1312,7 +1250,7 @@ message TargetReconstruction {
 }
 
 //////////////////
-// Image Layers //
+// Image layers //
 //////////////////
 message BilinearResize {
   int64 height = 1;
@@ -1320,7 +1258,7 @@ message BilinearResize {
 }
 
 //////////////////////////
-// Miscellaneous Layers //
+// Miscellaneous layers //
 //////////////////////////
 message Covariance {
   bool biased = 1; //Whether to use a biased covariance estimate

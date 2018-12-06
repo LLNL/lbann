@@ -61,14 +61,6 @@ class generic_target_layer : public Layer {
 
   ~generic_target_layer() override {};
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::string s = get_topo_description();
-    return std::string {} + " target_layer "
-           + " dataLayout: " + this->get_data_layout_string(get_data_layout())
-           + " (" + s + ")";
-  }
-
   void fp_compute() override {
     // Differentiating objective function loss functions requires that
     // target layer error signal matrices are zero

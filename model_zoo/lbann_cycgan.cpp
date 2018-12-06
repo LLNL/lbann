@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
     model *model_3 = nullptr; //G2 solver
 
     //Support for autoencoder models
-    model *ae_model = nullptr;  
+    model *ae_model = nullptr;
     model *ae_cycgan_model = nullptr; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
                                            comm, false);
       model_3->set_name("inv_model");
     }
-     
+
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
                                            comm, false);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       model_3->copy_trained_weights_from(ae_weights);
       ae_cycgan_model->copy_trained_weights_from(ae_weights);
     }
-    
+
     //Train cycle GAN
     int super_step = 1;
     int max_super_step = pb_model.super_steps();
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
       if(master) std::cout << " Update G2 weights " << std::endl;
       auto model3_weights = model_3->get_weights();
       model_1->copy_trained_weights_from(model3_weights);
-      
+
       //Optionally evaluate on pretrained autoencoder
       if(ae_model != nullptr && ae_cycgan_model != nullptr){
         //if(master) std::cout << " Copy trained weights from autoencoder to autoencoder proxy" << std::endl;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-  
+
 }
 
 model * build_model_from_prototext(int argc, char **argv,
@@ -381,14 +381,10 @@ model * build_model_from_prototext(int argc, char **argv,
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
+      model->print_description(std::cout);
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
-      }
-      std::cout << std::endl;
-      const std::vector<Layer *>& layers = model->get_layers();
-      for (size_t h=0; h<layers.size(); h++) {
-        std::cout << h << " " << layers[h]->get_description() << std::endl;
       }
     }
 
