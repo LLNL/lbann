@@ -18,6 +18,7 @@ set_full_path(THIS_DIR_SOURCES
   stack_trace.cpp
   statistics.cpp
   summary.cpp
+  lbann_library.cpp
 )
 
 if (LBANN_HAS_CUDA)

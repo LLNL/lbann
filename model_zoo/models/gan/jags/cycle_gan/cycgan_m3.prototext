@@ -579,9 +579,10 @@ model {
     }
   }
   callback {
-    dump_activations {
-      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m3/"
-      layer_names: "param_data_id gen2fc4_1 gen2fc4_2"
+    dump_outputs {
+      prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m3/"
+      layers: "param_data_id gen2fc4_1 gen2fc4_2"
+      execution_modes: "test"
     }
   }
   block_size: 256

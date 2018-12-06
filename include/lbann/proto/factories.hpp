@@ -28,6 +28,7 @@
 #define LBANN_PROTO_FACTORIES_HPP
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 namespace proto {
@@ -86,6 +87,18 @@ std::vector<T> parse_list(std::string str) {
     list.push_back(entry);
   }
   return list;
+}
+template <>
+std::vector<execution_mode> parse_list<execution_mode>(std::string str);
+
+/** Parse a space-separated set. */
+template <typename T = std::string>
+std::set<T> parse_set(std::string str) {
+  std::set<T> set;
+  for (const auto& entry : parse_list<T>(str)) {
+    set.insert(entry);
+  }
+  return set;
 }
 
 } // namespace proto

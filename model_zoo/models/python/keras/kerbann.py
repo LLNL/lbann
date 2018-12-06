@@ -11,12 +11,12 @@ complex_layers = ['LSTM']
 
 # This is the main driving function. Setups model parameters passed to it, and uses the keras model object to build the protobuf model
 def keras_to_lbann(model, num_classes,
-        name='directed_acyclic_graph_model', data_layout="data_parallel",
+        model_type='directed_acyclic_graph_model', data_layout="data_parallel",
         block_size=256, epochs=20,
         batch_size=64, num_parallel_readers=0,
         procs_per_model=0, callbacks=['timer','print'], target='target'):
     # set user passed parameters (currently set once for entire model
-    pb.model.name = name
+    pb.model.type = model_type
     pb.model.data_layout = data_layout
     pb.model.mini_batch_size = batch_size
     pb.model.block_size = block_size

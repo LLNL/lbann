@@ -523,10 +523,11 @@ model {
     }
   }
   #callback {
-  #  dump_activations {
-  #    basename: "/dir/to/dump_y_activations/"
-  #    interval: 100
-  #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
+  #  dump_outputs {
+  #    prefix: "/dir/to/dump_y_activations/"
+  #    batch_interval: 100
+  #    layers: "image_data_dummy gen1fc4_1 l_l2_y"
+  #    execution_modes: "test"
   #  }
   #}
   block_size: 256
