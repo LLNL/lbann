@@ -149,7 +149,7 @@
 #include "lbann/callbacks/callback_debug_io.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/callbacks/callback_dump_error_signals.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
