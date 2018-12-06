@@ -30,15 +30,12 @@
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
     m_num_samples_fetched(0) {
-  if (num_child_layers != 2) { /// @todo Generalize
-    LBANN_ERROR("currently only supported with two child layers");
-  }
   m_input_buffers.clear();
   m_input_buffers.resize(num_child_layers);
-  m_input_buffers[0].reset(AbsDistMat::Instantiate(comm->get_model_grid(), 0,
-                            El::STAR, El::VC, El::ELEMENT, El::Device::CPU));
-  m_input_buffers[1].reset(AbsDistMat::Instantiate(comm->get_model_grid(), 0,
-                            El::STAR, El::VC, El::ELEMENT, El::Device::CPU));
+  for(int i = 0; i < num_child_layers; i++) {
+    m_input_buffers[i].reset(AbsDistMat::Instantiate(comm->get_model_grid(), 0,
+                                                     El::STAR, El::VC, El::ELEMENT, El::Device::CPU));
+  }
 }
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(const lbann::partitioned_io_buffer& other)
