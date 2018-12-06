@@ -28,6 +28,7 @@
 #define LBANN_PROTO_FACTORIES_HPP
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 namespace proto {
