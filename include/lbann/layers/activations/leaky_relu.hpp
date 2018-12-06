@@ -55,6 +55,12 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
+  std::vector<std::string> get_description() const override {
+    auto&& desc = Layer::get_description();
+    desc.push_back("Negative slope: "
+                   + std::to_string(m_negative_slope));
+    return desc;
+  }
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims(get_input_dims());

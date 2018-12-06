@@ -2,6 +2,7 @@
 #https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
 #Timestamp 02/26/2018 8:45AM
 model {
+  name: "ae_model"
   data_layout: "model_parallel"
   #mini_batch_size: 128
   mini_batch_size: 100 #more last minibatch images to save
@@ -418,7 +419,7 @@ model {
     parents: "sigmoid"
     name: "reconstruction"
     data_layout: "model_parallel"
-    split {}    
+    split {}
   }
   layer {
     parents: "reconstruction image_data_dummy"

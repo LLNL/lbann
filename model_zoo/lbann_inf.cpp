@@ -38,10 +38,6 @@ int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
-#ifdef EL_USE_CUBLAS
-  El::GemmUseGPU(32,32,32);
-#endif
-
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();
@@ -56,55 +52,29 @@ int main(int argc, char *argv[]) {
 
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
-
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, true);
-    model *model_2 = nullptr;
-    if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm, false);
+    std::vector<model*> models;
+    for(auto pb_model : pbs) {
+      models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
+                                                     comm, models.size() == 0));
     }
+
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      load_model_weights(opts->get_string("ckpt_dir"), model_1);
-    }
-    // Train model
-    if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
-    const lbann_data::Model pb_model = pbs[0]->model();
-
-    // When using checkpoint states, skip training as those could be the result
-    // of checkpointing by steps.
-    if (!opts->has_string("no_model1_train")){
-      model_1->train( pb_model.num_epochs() );
-    }
-    // Evaluate model 1 unless it is set to skip
-    if (!opts->has_string("no_model1_eval")){
-      model_1->evaluate(execution_mode::testing);
+      for(auto m : models) {
+        load_model_weights(opts->get_string("ckpt_dir"), m);
+      }
+    }else {
+      LBANN_ERROR("Unable to reload model");
     }
 
-    if (model_2 != nullptr) {
-      const auto layers1 = model_1->get_layers();
-      const auto layers2 = model_2->get_layers();
-      for(size_t l2=0; l2 < layers2.size(); l2++) {
-        for(size_t l1=0; l1 < layers1.size(); l1++) {
-           if(layers2[l2]->get_name() == layers1[l1]->get_name()){
-             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name();
-             layers2[l2]->replace_weights(layers1[l1]);
-             if(master) std::cout << " copied to Model2 Layer " << std::endl;
-           }
-         }
-       }
-
-      if (master) std::cerr << "\n STARTING train - model 2\n\n";
-      const lbann_data::Model pb_model_2 = pbs[1]->model();
-      model_2->train( pb_model_2.num_epochs() );
-      model_2->evaluate(execution_mode::testing);
+    for(auto m : models) {
+      m->evaluate(execution_mode::testing);
     }
 
-    delete model_1;
-    if (model_2 != nullptr) {
-      delete model_2;
+    for(auto m : models) {
+      delete m;
     }
+
     for (auto t : pbs) {
       delete t;
     }
@@ -118,4 +88,5 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
+
 }

@@ -658,17 +658,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 
   if (opts->has_string("dag_model")) {
-    std::string sanity = model->name();
+    std::string sanity = model->type();
     if (sanity != "dnn") {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << " the current network model is: " << model->name()
+          << " the current network model is: " << model->type()
           << "; you can only change the model to 'dag_model' if the current model is 'dnn'";
       throw lbann_exception(err.str());
     }
     if (master) {
-      std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
+      std::cout << "\nchanging model from " << model->type() << " to: dag\n\n";
     }
-    model->set_name("dag_model");
+    model->set_type("dag_model");
   }
 
   if (opts->has_string("data_filedir")
@@ -695,7 +695,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       }
     }
   }
-
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }
@@ -862,6 +861,8 @@ void print_help(lbann::lbann_comm *comm)
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
        "\n"
+       "  To reload from a previous checkpoint you specify --ckpt_dir=<string>\n"
+       "\n"
        "Some prototext values can be over-riden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
        "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
@@ -952,17 +953,8 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
     return;
   }
 
-  //get output filename
-  std::string base = ".";
-  if (!opts->has_string("saveme")) {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
-    return;
-  }
-  std::string name = opts->get_string("saveme");
-  if (name == "0") {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE due to option: --saveme=0\n\n";
-    return;
-  }
+  const lbann_data::Model& model = p.model();
+  std::string name = model.name() + ".prototext";
 
   //check if "name" exists; if yes, append "_1"
   bool exists = false;
@@ -973,7 +965,6 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   }
   if (exists) {
     name += "_1";
-    //opts["saveme"] = name;
   }
 
   //open output file
@@ -1006,7 +997,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
+      << " --loadme=" << name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};

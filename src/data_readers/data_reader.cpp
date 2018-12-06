@@ -88,7 +88,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_model->get_model_id()
+      std::cout << "role: " << get_role() << " model: " << m_model->get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";

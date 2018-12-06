@@ -21,6 +21,7 @@ set_full_path(THIS_DIR_HEADERS
   statistics.hpp
   summary.hpp
   timer.hpp
+  lbann_library.hpp
   )
 
 # Add the subdirectories

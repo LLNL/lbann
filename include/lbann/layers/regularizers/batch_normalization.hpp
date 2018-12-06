@@ -47,7 +47,7 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {
 
- private:
+private:
 
   /** Decay rate for the running statistics. */
   DataType m_decay;
@@ -69,7 +69,7 @@ class batch_normalization_layer : public regularizer_layer {
   /** Gradient w.r.t. bias terms. */
   std::unique_ptr<AbsDistMat> m_bias_gradient;
 
- public:
+public:
   /**
    * Set up batch normalization.
    * @param decay Controls the momentum of the running mean/standard
@@ -131,19 +131,24 @@ class batch_normalization_layer : public regularizer_layer {
     return *this;
   }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream ss;
-    ss << " batch_normalization; "
-       << "decay: " << m_decay
-       << " epsilon : " << m_epsilon
-       << " data_layout: " << get_data_layout_string(get_data_layout());
-    return ss.str();
-  }
-
   batch_normalization_layer* copy() const override { return new batch_normalization_layer(*this); }
-
   std::string get_type() const override { return "batch normalization"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+
+protected:
+
+  std::vector<std::string> get_description() const override {
+    auto&& desc = regularizer_layer::get_description();
+    if (m_use_global_stats) {
+      desc.push_back("Statistics: local");
+    } else {
+      desc.push_back("Statistics: global");
+    }
+    desc.push_back("Decay: " + std::to_string(m_decay));
+    desc.push_back("Epsilon: " + std::to_string(m_epsilon));
+    return desc;
+  }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
@@ -154,10 +159,6 @@ class batch_normalization_layer : public regularizer_layer {
     m_scale_gradient.reset(new StarMat<Dev>(grid));
     m_bias_gradient.reset(new StarMat<Dev>(grid));
   }
-
-  data_layout get_data_layout() const override { return T_layout; }
-
-  El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
     regularizer_layer::setup_dims();

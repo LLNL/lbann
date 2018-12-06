@@ -22,30 +22,46 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
+//
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_DUMMY_HPP_INCLUDED
-#define LBANN_LAYER_DUMMY_HPP_INCLUDED
+#include "lbann_config.hpp"
 
-#include "lbann/layers/transform/transform.hpp"
+#ifdef LBANN_HAS_CONDUIT
 
-namespace lbann {
+#include "conduit/conduit.hpp"
+#include "conduit/conduit_relay.hpp"
+#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_mpi.hpp"
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include "lbann/lbann.hpp"
 
-/** Dummy layer with no output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class dummy_layer : public transform_layer {
-public:
-  dummy_layer(lbann_comm *comm) : transform_layer(comm) {
-    this->m_expected_num_child_layers = 0;
+using namespace lbann;
+
+int main(int argc, char *argv[]) {
+  int random_seed = lbann_default_random_seed;
+  lbann_comm *comm = initialize(argc, argv, random_seed);
+  bool master = comm->am_world_master();
+  int np = comm->get_procs_in_world();
+  if (np != 1 || argc == 1) {
+    if (master) {
+      std::cerr << "\nPlease run this program with a single processor\n\n"
+                << "usage: " << argv[0] << " conduit_bundle_filename\n"
+                << "function: dumps the conduit file to cout\n";
+    }
+    finalize(comm);
   }
-  dummy_layer* copy() const override { return new dummy_layer(*this); }
-  std::string get_type() const override { return "dummy"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
-protected:
-  void fp_compute() override {}
-};
 
-} // namespace lbann
+  conduit::Node node;
+  conduit::relay::io::load(argv[1], "hdf5", node);
+  node.print();
 
-#endif // LBANN_LAYER_DUMMY_HPP_INCLUDED
+  finalize(comm);
+  return EXIT_SUCCESS;
+}
+
+#endif //#ifdef LBANN_HAS_CONDUIT

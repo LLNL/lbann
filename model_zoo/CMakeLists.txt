@@ -16,6 +16,11 @@ set_target_properties(lbann-gan-bin PROPERTIES OUTPUT_NAME lbann_gan)
 add_executable( lbann-cycgan-bin lbann_cycgan.cpp )
 target_link_libraries(lbann-cycgan-bin lbann )
 set_target_properties(lbann-cycgan-bin PROPERTIES OUTPUT_NAME lbann_cycgan)
+
+add_executable( lbann-inf-bin lbann_inf.cpp )
+target_link_libraries(lbann-inf-bin lbann )
+set_target_properties(lbann-inf-bin PROPERTIES OUTPUT_NAME lbann_inf)
+
 # Install the binaries
 install(
   TARGETS lbann-bin lbann-bin2 lbann-gan-bin lbann-cycgan-bin

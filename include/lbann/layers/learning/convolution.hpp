@@ -36,68 +36,11 @@ namespace lbann {
 /// Convolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class convolution_layer : public base_convolution_layer<Dev> {
- private:
+private:
 
   friend class lbann_callback_imcomm;
 
-  public:
-
-  /// kernel tensor is output channels, input channels, conv dimension (w x h)
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " convolution; conv_dims: ";
-    // for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-    //   if (h == 0) { s << " channels (out x in) "; }
-    //   if (h == 2) { s << " filters (w x h) "; }
-    //   s << this->m_kernel_dims[h] << " ";
-    // }
-    s << get_topo_description();
-    s << " pads: ";
-    for (size_t h=0; h<this->m_pads.size(); h++) {
-      s << this->m_pads[h] << " ";
-    }
-    s << " strides: ";
-    for (size_t h=0; h<this->m_strides.size(); h++) {
-      s << this->m_strides[h] << " ";
-    }
-    s << " dilation: ";
-    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
-      s << this->m_dilations[h] << " ";
-    }
-    s << " groups: " << this->m_num_groups;
-    s << " num_output_channels: " << this->get_output_dims()[0]
-      << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
-    return s.str();
-  }
-
-  std::string get_topo_description() const override {
-    std::stringstream s;
-    // Get the topo description from any parent class
-    std::string str = base_convolution_layer<Dev>::get_topo_description();
-    s << str << " - ";
-
-    // Display the topology of the kernel
-    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-      if (h == 0) { s << "C="; }
-      s << this->m_kernel_dims[h] ;
-      if (h == 0) { s << "o,"; }
-      if (h == 1) { s << "i F="; }
-      if (this->m_kernel_dims.size() == 3) {
-        if (h == 2) { s << "w "; }
-      }else if (this->m_kernel_dims.size() == 4) {
-        if (h == 2) { s << "w x "; }
-        if (h == 3) { s << "h"; }
-      }else {
-        if (h > 1) {
-          s << " ";
-        }
-      }
-    }
-    return s.str();
-  }
+public:
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
@@ -215,7 +158,7 @@ class convolution_layer : public base_convolution_layer<Dev> {
 
   }
 
- protected:
+protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {

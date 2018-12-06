@@ -42,9 +42,6 @@ void options::init(int argc, char **argv)
   m_argc = argc;
   m_argv = argv;
 
-  //the_default fileBaseName for saving
-  m_opts["saveme"] = "data.prototext";
-
   //save cmd line
   std::string key;
   std::string value;
@@ -108,7 +105,7 @@ bool options::get_bool(std::string option, bool the_default)
   return result;
 }
 
-bool options::get_bool(std::string option) 
+bool options::get_bool(std::string option)
 {
   int result;
   if (!m_test_int(option, result)) {
@@ -175,7 +172,7 @@ std::string options::get_string(std::string option, std::string the_default)
   std::string result;
   if (!m_test_string(option, result)) {
     return the_default;
-  }  
+  }
   return the_default;
 }
 
@@ -292,7 +289,7 @@ void options::set_option(std::string name, double value) {
 
 //====================================================================
 
-void options::m_parse_file(std::string fn) 
+void options::m_parse_file(std::string fn)
 {
   std::ifstream in(fn.c_str());
   if (!in.is_open()) {
@@ -345,4 +342,3 @@ void options::print(std::ostream &out) {
   }
   out << std::endl;
 }
-

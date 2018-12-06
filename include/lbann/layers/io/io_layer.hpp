@@ -93,8 +93,6 @@ class io_layer : public Layer {
    */
   virtual const std::vector<int> get_data_dims(int child_index = 0) const = 0;
 
-  std::string get_topo_description() const override = 0;
-
   /**
    * Get the linearized size of the underlying data.
    */
