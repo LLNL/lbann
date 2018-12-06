@@ -37,7 +37,7 @@ lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> l
     m_modes(std::move(modes)),
     m_file_prefix(std::move(file_prefix)) {}
 
-void lbann_callback_dump_outputs::dump_outputs(const model& m) {
+void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
 
   // Get mini-batch step information
   const auto& mode = m.get_execution_mode();
@@ -53,35 +53,32 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m) {
   default: LBANN_ERROR("invalid execution mode");
   }
 
-  // Quit if current mini-batch step doesn't need output dump
+  // Quit if output dump isn't needed
   if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }
-  if (m_batch_interval != 0 && step % m_batch_interval != 0) { return; }
+  if (!m_layer_names.empty()
+      && m_layer_names.count(l.get_name()) == 0) { return; }
 
   // Save layer outputs
   // Note: Each line corresponds to a mini-batch sample. This is the
   // transpose of our internal column-major matrix representation.
-  for (const auto& l : m.get_layers()) {
-    if (!m_layer_names.empty()
-        && m_layer_names.count(l->get_name()) == 0) { continue; }
-    for (int i = 0; i < l->get_num_children(); ++i) {
-      const CircMat<El::Device::CPU> circ_data(l->get_activations(i));
-      if (circ_data.CrossRank() == circ_data.Root()) {
-        const auto& data = circ_data.LockedMatrix();
-        const std::string filename = (m_file_prefix
-                                      + m.get_name()
-                                      + "-" + _to_string(mode)
-                                      + "-epoch" + std::to_string(epoch)
-                                      + "-step" + std::to_string(step)
-                                      + "-" + l->get_name()
-                                      + "-output" + std::to_string(i)
-                                      + ".csv");
-        std::ofstream fs(filename.c_str());
-        for (El::Int col = 0; col < data.Width(); ++col) {
-          for (El::Int row = 0; row < data.Height(); ++row) {
-            fs << (row > 0 ? m_delimiter : "") << data(row, col);
-          }
-          fs << "\n";
+  for (int i = 0; i < l.get_num_children(); ++i) {
+    const CircMat<El::Device::CPU> circ_data(l.get_activations(i));
+    if (circ_data.CrossRank() == circ_data.Root()) {
+      const auto& data = circ_data.LockedMatrix();
+      const std::string filename = (m_file_prefix
+                                    + m.get_name()
+                                    + "-" + _to_string(mode)
+                                    + "-epoch" + std::to_string(epoch)
+                                    + "-step" + std::to_string(step)
+                                    + "-" + l.get_name()
+                                    + "-output" + std::to_string(i)
+                                    + ".csv");
+      std::ofstream fs(filename.c_str());
+      for (El::Int col = 0; col < data.Width(); ++col) {
+        for (El::Int row = 0; row < data.Height(); ++row) {
+          fs << (row > 0 ? m_delimiter : "") << data(row, col);
         }
+        fs << "\n";
       }
     }
   }

@@ -64,8 +64,8 @@ public:
   }
   std::string name() const override { return "dump outputs"; }
 
-  void on_batch_end(model *m) override          { dump_outputs(*m); }
-  void on_batch_evaluate_end(model *m) override { dump_outputs(*m); }
+  void on_forward_prop_end(model* m, Layer* l) override          { dump_outputs(*m, *l); }
+  void on_evaluate_forward_prop_end(model* m, Layer* l) override { dump_outputs(*m, *l); }
 
 private:
 
@@ -88,10 +88,9 @@ private:
   std::string m_delimiter = ",";
 
   /** Dump outputs to file.
-   *  Returns immediately if an output dump is not needed for the
-   *  current mini-batch step.
+   *  Returns immediately if an output dump is not needed.
    */
-  void dump_outputs(const model& m);
+  void dump_outputs(const model& m, const Layer& l);
 
 };
 
