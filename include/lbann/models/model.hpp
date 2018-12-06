@@ -72,13 +72,13 @@ class model {
   /** Return the model's type. */
   virtual std::string get_type() const = 0;
 
-  /** Set the model's id; this is an arbitrary string
+  /** Set the model's name; this is an arbitrary string
    *  that may be useful in multi-model scenarios, e.g,
    *  LTFB, jag
    */
   void set_name(std::string name);
 
-  /** Return the model's id; this is an arbitrary string
+  /** Return the model's name; this is an arbitrary string
    *  that may be useful in multi-model scenarios, e.g,
    *  LTFB, jag
    */
