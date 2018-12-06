@@ -443,7 +443,7 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-bool weights::load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list){
+bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list){
   // create weight file name to match to weight list entry
   auto l_name = El::BuildString("model_weights_", m_name, "_",
                                 m_values->Height(), "x", m_values->Width(), ".bin");
