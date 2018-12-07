@@ -210,6 +210,23 @@ struct safe_divide_op {
   }
 };
 
+/** Squared difference operator. */
+struct squared_difference_op {
+  inline DataType operator()(const DataType& x1,
+                             const DataType& x2) const {
+    const auto& diff = x1 - x2;
+    return diff * diff;
+  }
+  inline void operator()(const DataType& x1,
+                         const DataType& x2,
+                         const DataType& dy,
+                         DataType& dx1,
+                         DataType& dx2) const {
+    dx1 = dy * 2*(x1-x2);
+    dx2 = dy * 2*(x2-x1);
+  }
+};
+
 /** Maximum operator. */
 struct max_op {
   inline DataType operator()(const DataType& x1,
@@ -451,6 +468,7 @@ struct logical_xor_op {
   INSTANTIATE(mod_layer, mod_op)
   INSTANTIATE(pow_layer, pow_op)
   INSTANTIATE(safe_divide_layer, safe_divide_op)
+  INSTANTIATE(squared_difference_layer, squared_difference_op)
   INSTANTIATE(max_layer, max_op)
   INSTANTIATE(min_layer, min_op)
   INSTANTIATE(equal_layer, equal_op)
