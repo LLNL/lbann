@@ -1033,7 +1033,9 @@ void data_reader_jag_conduit::load() {
   }
   if (is_master()) {
     std::cerr << "time to load conduit files: " << get_time() - tm1
-              << "  number of valid local samples at the master rank: " << m_valid_samples.size() << std::endl;
+              << "  number of valid local samples at the master rank: " << m_valid_samples.size()
+              << " leading reader=" << m_leading_reader << std::endl;
+
   }
 
   check_image_data();
