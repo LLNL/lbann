@@ -111,7 +111,6 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n,
     cnpy::NpyArray d_item_class_list = dataset["item_class_list"];
     m_checked_ok = (d_item_class_list.shape.size() == 1u);
 
-std::cout << "d_item_class_list.shape.size()= " << d_item_class_list.shape.size() << " m_checked_ok 1= " << m_checked_ok << "\n";
     if (m_checked_ok) {
       // In case of shrinking to first_n, make sure the size is consistent
       const size_t num_samples = m_item_root_list.shape[0];
@@ -135,7 +134,6 @@ std::cout << "d_item_class_list.shape.size()= " << d_item_class_list.shape.size(
     m_checked_ok = m_checked_ok &&
                    ( (d_file_root_list.shape.size() == 1u) ||
                     ((d_file_root_list.shape.size() == 2u) && m_lbann_format));
-std::cout << "m_checked_ok 2= " << m_checked_ok << "\n";
     if (m_checked_ok) {
       const size_t num_roots = d_file_root_list.shape[0];
       m_file_root_list.resize(num_roots);
@@ -155,14 +153,12 @@ std::cout << "m_checked_ok 2= " << m_checked_ok << "\n";
       dataset.erase(it); // to keep memory footprint as low as possible
     }
   }
-  //for (const auto& fl: m_file_root_list) std::cout << fl << std::endl;
 
   { // load the array of dictionary substrings of variant type
     cnpy::NpyArray d_file_variant_list = dataset["file_variant_list"];
     m_checked_ok = m_checked_ok &&
                    ( (d_file_variant_list.shape.size() == 1u) ||
                     ((d_file_variant_list.shape.size() == 2u) && m_lbann_format));
-std::cout << "m_checked_ok 3= " << m_checked_ok << "\n";
     if (m_checked_ok) {
       const size_t num_variants = d_file_variant_list.shape[0];
       m_file_variant_list.resize(num_variants);
@@ -182,14 +178,10 @@ std::cout << "m_checked_ok 3= " << m_checked_ok << "\n";
       dataset.erase(it); // to keep memory footprint as low as possible
     }
   }
-  //for (const auto& fl: m_file_variant_list) std::cout << fl << std::endl;
 
   m_checked_ok = m_checked_ok && check_data();
-std::cout << "m_checked_ok 4= " << m_checked_ok << "\n";
-std::cout << "check_data()= "   << check_data() << "\n";
 
   if (!m_checked_ok) {
-    //std::cout << get_description();
     m_item_class_list.clear();
     m_file_root_list.clear();
     m_file_variant_list.clear();
@@ -212,19 +204,6 @@ bool offline_patches_npz::check_data() const {
             (m_item_variant_list.shape[2] > 0u) &&
             (m_item_root_list.word_size == sizeof(size_t)) &&
             (m_item_variant_list.word_size == sizeof(size_t));
-
-std::cout << "m_num_patches= " << m_num_patches << "\n";
-std::cout << "m_item_root_list.shape.size()= " << m_item_root_list.shape.size() <<" should be 2u\n";
-std::cout << "m_item_variant_list.shape.size() = " << m_item_variant_list.shape.size() <<" should be 3u\n";   
-std::cout << "m_file_root_list.size() = " << m_file_root_list.size() <<   " s/b >0u \n";
-std::cout << "m_file_variant_list.size() = " << m_file_variant_list.size() <<  " s/b >0u \n";
-std::cout << "m_item_root_list.shape[0] = " << m_item_root_list.shape[0] <<  " s/b " << m_item_class_list.size() << "\n"; 
-std::cout << "m_item_variant_list.shape[0] = " << m_item_variant_list.shape[0] <<  " s/b " <<  m_item_class_list.size() << "\n";
-std::cout << "m_item_root_list.shape[1] = " << m_item_root_list.shape[1] <<  " s/b "  << m_num_patches << "\n";
-std::cout << "m_item_variant_list.shape[1] = " << m_item_variant_list.shape[1] << " s/b " << m_num_patches << "\n"; 
-std::cout << "m_item_variant_list.shape[2] = " << m_item_variant_list.shape[2] <<  " s/b >0u \n"; 
-std::cout << "m_item_root_list.word_size = " << m_item_root_list.word_size<<  " s/b " << sizeof(size_t) << "\n";
-std::cout << "m_item_variant_list.word_size = " << m_item_variant_list.word_size <<   " s/b " << sizeof(size_t) <<" \n";
 
   return ok;
 }
@@ -253,11 +232,8 @@ offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) 
 
   std::vector<std::string> file_names;
 
-std::cout << "-- Process for " << m_num_patches << " patches\n";
   for (size_t p = 0u; p < m_num_patches; ++p) {
     const size_t root = cnpy_utils::data<size_t>(m_item_root_list, {idx, p});
-
-std::cout << "\troot == " << root << "\n";
 
     if (root >= m_file_root_list.size()) {
       using std::to_string;
@@ -265,25 +241,16 @@ std::cout << "\troot == " << root << "\n";
                           + to_string(root) + " >= " + to_string(m_file_root_list.size()));
     }
     std::string file_name = m_file_root_list.at(root);
-std::cout << "\troot file_name : " << file_name << "\n";
 
     const size_t* variant = &(cnpy_utils::data<size_t>(m_item_variant_list, {idx, p, 0u}));
     const int ve = m_item_variant_list.shape.back()-1;
-std::cout << "\t\tm_item_variant_list.shape.back()= " << m_item_variant_list.shape.back() << "\n";
-std::cout << "\tve == " << ve << "\n";
     for (int i = 0; i < ve; ++i) {
-      std::cout << "}}} "<< file_name << " += " << m_file_variant_list.at(variant[i]) <<" + " << m_variant_divider << "\n";
       file_name += m_file_variant_list.at(variant[i]) + m_variant_divider;
     }
 
-std::cout << "\t]] "<< file_name << " += " << m_file_variant_list.at(variant[ve])  << "\n";
     file_name += m_file_variant_list.at(variant[ve]);
     file_names.push_back(file_name);
   }
-std::cout << "== A Sample\n";
-for(size_t i=0; i<file_names.size(); i++)
-  std::cout << file_names[i] << "|";
-std::cout << (int) m_item_class_list[idx] << "\n";
 
   return std::make_pair(file_names, m_item_class_list[idx]);
 }

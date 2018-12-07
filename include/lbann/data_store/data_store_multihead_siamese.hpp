@@ -23,12 +23,10 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// Depreciated and replaced by data_store_multihead_siamese .hpp .cpp.
-// Kept here just for reference.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_TRIPLET_HPP__
-#define __DATA_STORE_TRIPLET_HPP__
+#ifndef __DATA_STORE_MULTIHEAD_SIAMESE_HPP__
+#define __DATA_STORE_MULTIHEAD_SIAMESE_HPP__
 
 #include "lbann/data_store/data_store_multi_images.hpp"
 
@@ -38,25 +36,25 @@ namespace lbann {
  * todo
  */
 
-class data_store_triplet : public data_store_multi_images {
+class data_store_multihead_siamese : public data_store_multi_images {
  public:
 
   //! ctor
-  data_store_triplet(generic_data_reader *reader, model *m) :
+  data_store_multihead_siamese(generic_data_reader *reader, model *m) :
     data_store_multi_images(reader, m) {
-    set_name("data_store_triplet");
+    set_name("data_store_multihead_siamese");
   }
 
   //! copy ctor
-  data_store_triplet(const data_store_triplet&) = default;
+  data_store_multihead_siamese(const data_store_multihead_siamese&) = default;
 
   //! operator=
-  data_store_triplet& operator=(const data_store_triplet&) = default;
+  data_store_multihead_siamese& operator=(const data_store_multihead_siamese&) = default;
 
-  data_store_triplet * copy() const override { return new data_store_triplet(*this); }
+  data_store_multihead_siamese * copy() const override { return new data_store_multihead_siamese(*this); }
 
   //! dtor
-  ~data_store_triplet() override {};
+  ~data_store_multihead_siamese() override {};
 
   void setup() override;
 
@@ -67,4 +65,4 @@ class data_store_triplet : public data_store_multi_images {
 
 }  // namespace lbann
 
-#endif  // __DATA_STORE_TRIPLET_HPP__
+#endif  // __DATA_STORE_MULTIHEAD_SIAMESE_HPP__

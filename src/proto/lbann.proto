@@ -30,9 +30,6 @@ message Reader {
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
 
-  // for multihead Siamese model
-  int32 num_heads = 211;
-
   //for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;

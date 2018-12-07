@@ -319,7 +319,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
   if ((name == "imagenet") || (name == "jag_conduit") || (name == "jag_conduit_hdf5") || 
-      (name == "quadruplet") || (name == "triplet") || (name == "mnist_siamese") || 
+      (name == "multihead_siamese") || (name == "mnist_siamese") || 
       (name == "multi_images") || (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
@@ -345,18 +345,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader = new imagenet_reader_patches(ppp, shuffle);
   } else if (name == "imagenet") {
     reader = new imagenet_reader(pp, shuffle);
-  } else if (name == "triplet") {
-    reader = new data_reader_triplet(pp, shuffle);
-  } else if (name == "quadruplet") {
-    //int n_img_srcs = pb_readme.num_image_srcs();
-    const lbann_data::DataReader& d_reader = pb_readme.data_reader();
-    const lbann_data::Reader& rme = d_reader.reader();
-
-    int n_img_srcs = rme.num_heads();
-    //int n_img_srcs = pb_readme.num_heads();
-    std::cout << ">>> n_img_srcs= " << n_img_srcs << "\n";
-    reader = new data_reader_quadruplet(pp, n_img_srcs, shuffle);
-    //reader = new data_reader_quadruplet(pp, 4u, shuffle);
+  } else if (name == "multihead_siamese") {
+    reader = new data_reader_multihead_siamese(pp, pb_readme.num_image_srcs(), shuffle);
   } else if (name == "mnist_siamese") {
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
@@ -538,6 +528,11 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       err << __FILE__ << " " << __LINE__ << " no data_reader_multi_images";
       throw lbann_exception(err.str());
     }
+    multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
+  } else if(name == "multihead_siamese") {
+    const int n_img_srcs = pb_readme.num_image_srcs();
+    data_reader_multi_images* multi_image_dr_ptr
+      = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
     multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
   } else {
     image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
