@@ -23,44 +23,70 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
+// lbann_proto.cpp - prototext application
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann_config.hpp"
-
-#ifdef LBANN_HAS_CONDUIT
-
-#include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "lbann/lbann.hpp"
-
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/protobuf_utils.hpp"
+#include <dirent.h>
+#include <cstdlib>
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
-  int np = comm->get_procs_in_world();
-  if (np != 1 || argc == 1) {
-    if (master) {
-      std::cerr << "\nPlease run this program with a single processor\n\n"
-                << "usage: " << argv[0] << " conduit_bundle_filename\n"
-                << "function: dumps the conduit file to cout\n";
+
+  try {
+    // Initialize options db (this parses the command line)
+    options *opts = options::get();
+    opts->init(argc, argv);
+    if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
+      print_help(comm);
+      finalize(comm);
+      return 0;
     }
+
+    std::stringstream err;
+
+    std::vector<lbann_data::LbannPB *> pbs;
+    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    std::vector<model*> models;
+    for(auto pb_model : pbs) {
+      models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
+                                                     comm, models.size() == 0));
+    }
+
+    // Load layer weights from checkpoint if checkpoint directory given
+    if(opts->has_string("ckpt_dir")){
+      for(auto m : models) {
+        load_model_weights(opts->get_string("ckpt_dir"), m);
+      }
+    }else {
+      LBANN_ERROR("Unable to reload model");
+    }
+
+    for(auto m : models) {
+      m->evaluate(execution_mode::testing);
+    }
+
+    for(auto m : models) {
+      delete m;
+    }
+
+    for (auto t : pbs) {
+      delete t;
+    }
+
+  } catch (std::exception& e) {
+    El::ReportException(e);
     finalize(comm);
+    return EXIT_FAILURE;
   }
 
-  conduit::Node node;
-  conduit::relay::io::load(argv[1], "hdf5", node);
-  node.print();
-
+  // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-}
 
-#endif //#ifdef LBANN_HAS_CONDUIT
+}

@@ -42,8 +42,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 #define NUM_OUTPUT_DIRS 100
 #define NUM_SAMPLES_PER_FILE 1000
 
@@ -110,9 +108,9 @@ int main(int argc, char *argv[]) {
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (exception const &e) { 
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + e.what()); 
-        }  
+        } catch (exception const &e) {
+          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + e.what());
+        }
         int success = n_ok.to_int64();
 
         if (success == 1) {
@@ -124,7 +122,7 @@ int main(int argc, char *argv[]) {
             std::cerr << rank << " :: exception :hdf5_group_list_child_names for images: " << files[j] << "\n";
             continue;
           }
-        } 
+        }
       }
     }
   } catch (exception const &e) {

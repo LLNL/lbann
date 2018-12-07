@@ -149,7 +149,7 @@
 #include "lbann/callbacks/callback_debug_io.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/callbacks/callback_dump_error_signals.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
@@ -201,7 +201,8 @@
 /// Metrics
 #include "lbann/metrics/layer_metric.hpp"
 
-/// Utilities, exceptions, etc.
+/// Utilities, exceptions, library interface, etc.
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/options.hpp"
@@ -211,5 +212,7 @@
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/peek_map.hpp"
+#include "lbann/utils/stack_trace.hpp"
+#include "lbann/utils/stack_profiler.hpp"
 
 #endif // LBANN_HPP_INCLUDED

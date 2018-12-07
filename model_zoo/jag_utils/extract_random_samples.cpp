@@ -42,47 +42,45 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 #define NUM_OUTPUT_DIRS 100
 #define NUM_SAMPLES_PER_FILE 1000
 
 //==========================================================================
 void check_invocation(bool master);
 
-std::string usage(); 
+std::string usage();
 
-int construct_output_directories(int np); 
+int construct_output_directories(int np);
 
 // Compute set of random (global) sample indices;
 void get_random_sample_indices(
-  const std::unordered_set<int> &exclude, 
-  std::set<int> &indices, 
+  const std::unordered_set<int> &exclude,
+  std::set<int> &indices,
   int global_num_samples);
 
 // Construct set of sample_IDs that should not appear in the output;
 // the intent is that, if random sample(s) were previously extracted,
 // we don't want any overlap
-void build_exclusion_set(std::unordered_set<int> &exclude); 
+void build_exclusion_set(std::unordered_set<int> &exclude);
 
 void get_global_num_samples(int &num_samples, int&num_files);
 
 void build_sample_mapping(
   std::vector<std::string> &filenames,
   const std::set<int> &indices,
-  std::vector<std::set<int> > &samples); 
+  std::vector<std::set<int> > &samples);
 
 void extract_samples(
   lbann_comm *comm,
-  const int rank, 
+  const int rank,
   const int np,
-  const std::vector<std::string> &filenames, 
+  const std::vector<std::string> &filenames,
   const std::vector<std::set<int> > &samples);
 
 // debug function
 void print_sample_ids(
   const std::vector<std::string> &filenames,
-  const std::vector<std::set<int> > &samples); 
+  const std::vector<std::set<int> > &samples);
 //==========================================================================
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -97,7 +95,7 @@ int main(int argc, char *argv[]) {
     if (argc == 1) {
       if (master) {
         std::cout << usage();
-      }  
+      }
       finalize(comm);
       return EXIT_SUCCESS;
     }
@@ -112,9 +110,9 @@ int main(int argc, char *argv[]) {
     if (master) {
       check_invocation(master);
       num_output_dirs = construct_output_directories(np);
-    }  
+    }
     comm->world_broadcast<int>(0, &num_output_dirs, 1);
-    opts->set_option("num_output_dirs", num_output_dirs); 
+    opts->set_option("num_output_dirs", num_output_dirs);
 
     // get the set of global indices for the samples in our extracted set
     std::set<int> indices;
@@ -138,7 +136,7 @@ int main(int argc, char *argv[]) {
       std::ofstream out(fn.c_str());
       if (!out) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + base_dir + "/random_indices.txt for writing");
-      }  
+      }
       for (auto t : indices) {
         out << t << "\n";
         indices_v.push_back(t);
@@ -182,7 +180,7 @@ void get_random_sample_indices(const std::unordered_set<int> &exclude, std::set<
 }
 
 std::string usage() {
-    std::string u = 
+    std::string u =
       "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n"
       "usage: extract_random_samples --index_fn=<string> --num_samples=<int> --output_base_dir=<string> --rand_seed=<int> [ --exclude=<string> ] [ --num_samples_per_output_file=<int> ]\n"
       "where: --index_fn is the output file from the build_index executable\n"
@@ -271,7 +269,7 @@ void build_sample_mapping(
             found = true;
           }
           samples.back().insert(j-start);
-        }  
+        }
       }
     }
     start += num_valid_samples;
@@ -283,7 +281,7 @@ void check_invocation(bool master) {
   if (! (opts->has_string("index_fn") && opts->has_int("num_samples") && opts->has_string("output_base_dir") && opts->has_int("rand_seed"))) {
     if (master) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; see usage message below\n\n " + usage() + "\n\n");
-    }  
+    }
   }
 }
 
@@ -299,9 +297,9 @@ void get_global_num_samples(int &num_samples, int &num_files) {
 
 void extract_samples(
   lbann_comm *comm,
-  const int rank, 
-  const int np, 
-  const std::vector<std::string> &filenames, 
+  const int rank,
+  const int np,
+  const std::vector<std::string> &filenames,
   const std::vector<std::set<int> > &samples) {
 
 std::cerr << rank << "  XX np: " << np << "\n";
@@ -357,8 +355,8 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
       try {
         conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
       } catch (std::exception e) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + filenames[j] +  "; " +  e.what()); 
-      }  
+        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + filenames[j] +  "; " +  e.what());
+      }
       int success = n_ok.to_int64();
 
       // if valid, perform the extraction
@@ -403,7 +401,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
             if (dir_id == num_output_dirs) {
               dir_id = 0;
             }
-            std::stringstream fn; 
+            std::stringstream fn;
             fn << base_dir << "/" << dir_id++ << "/samples_" << rank
                << "_" << file_id++ << ".bundle";
             std::cerr << rank << " :: writing " << fn << " file with " << n_samples << " samples\n";
@@ -437,14 +435,14 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
   // write final file
   if (n_samples) {
       std::cerr << "writing FINAL conduit file with " << n_samples << " samples\n";
-    std::stringstream fn; 
+    std::stringstream fn;
     fn << base_dir << "/" << dir_id++ << "/samples_" << rank
               << "_" << file_id++ << ".bundle";
     try {
       conduit::relay::io::save(save_me, fn.str(), "hdf5");
     } catch (exception e) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save(); what: " + e.what());
-    }  
+    }
   }
 
   out_ids.close();
@@ -479,9 +477,9 @@ void print_sample_ids(
     std::cout << filenames[i] << "\n";
     for (auto t : samples[i]) {
       std::cout << t << " ";
-    }  
+    }
     std::cout << "\n";
   }
   std::cerr << "\n==========================================\n";
-}  
+}
 #endif //#ifdef LBANN_HAS_CONDUIT

@@ -2,11 +2,11 @@
 #https://lc.llnl.gov/bitbucket/users/jjayaram/repos/deep-latent-spaces/browse/codes/dev/VAE-FCN/run_vae.py
 #Timestamp 02/26/2018 8:45AM
 model {
+  name: "ae_model"
   data_layout: "model_parallel"
-  #mini_batch_size: 128
-  mini_batch_size: 100 #more last minibatch images to save
+  mini_batch_size: 256 
   block_size: 256
-  num_epochs: 40
+  num_epochs: 10
   num_parallel_readers: 0
   procs_per_model: 0
 
@@ -42,19 +42,6 @@ model {
     }
   }
   callback { timer {} }
-  #callback {
-  #    dump_activations{
-  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/dump_acts_ae/"
-  #    interval: 100
-  #    layer_names: "image_data_dummy sigmoid"
-  #  }
-  #}
-  #callback {
-  #  save_images {
-  #    image_prefix: "vae_fcn_images_"
-  #    image_format: "jpg"
-  #  }
-  #}
 
   ###################################################
   # start of layers
@@ -100,7 +87,7 @@ model {
     parents: "data"
     children: "image_data_dummy param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -397,9 +384,9 @@ model {
     parents: "decode1_dropout"
     name: "decode0"
     data_layout: "model_parallel"
-    #num_neurons_from_data_reader: true
     fully_connected {
-      num_neurons: 16384
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -418,7 +405,7 @@ model {
     parents: "sigmoid"
     name: "reconstruction"
     data_layout: "model_parallel"
-    split {}    
+    split {}
   }
   layer {
     parents: "reconstruction image_data_dummy"
@@ -432,7 +419,21 @@ model {
     data_layout: "model_parallel"
     mean_squared_error {}
   }
+  ####For metric, loss per individual sample
+  #layer {
+  #  parents: "reconstruction image_data_dummy"
+  #  name: "squared_error"
+  #  data_layout: "model_parallel"
+  #  squared_difference {}
+  #}
 
+  #callback {
+  #  dump_outputs {
+  #    prefix:"/p/lscratchh/brainusr/jacobs32/EuroViz/ae_loss"
+  #    layers: "squared_error"
+  #    execution_modes: "test"
+  #  }
+  #}
   ###################################################
   # end of layers
   ###################################################

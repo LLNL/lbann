@@ -22,45 +22,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann_config.hpp"
+#ifndef LBANN_LIBRARY_HPP
+#define LBANN_LIBRARY_HPP
 
-#ifdef LBANN_HAS_CONDUIT
+#include "lbann/models/model.hpp"
+#include "lbann/proto/proto_common.hpp"
 
-#include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include "lbann/lbann.hpp"
+namespace lbann {
 
-using namespace lbann;
+const int lbann_default_random_seed = 42;
 
-int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
-  int np = comm->get_procs_in_world();
-  if (np != 1 || argc == 1) {
-    if (master) {
-      std::cerr << "\nPlease run this program with a single processor\n\n"
-                << "usage: " << argv[0] << " conduit_bundle_filename\n"
-                << "function: dumps the conduit file to cout\n";
-    }
-    finalize(comm);
-  }
+model *build_model_from_prototext(int argc, char **argv,
+                                 lbann_data::LbannPB &pb,
+                                 lbann_comm *comm,
+                                 bool first_model);
 
-  conduit::Node node;
-  conduit::relay::io::load(argv[1], "hdf5", node);
-  node.print();
+bool load_model_weights(std::string ckpt_dir, model *m);
 
-  finalize(comm);
-  return EXIT_SUCCESS;
-}
+void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm);
 
-#endif //#ifdef LBANN_HAS_CONDUIT
+} // namespace lbann
+
+#endif // LBANN_LIBRARY_HPP

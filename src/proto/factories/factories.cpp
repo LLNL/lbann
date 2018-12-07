@@ -22,45 +22,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann_config.hpp"
+#include "lbann/proto/factories.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
+namespace lbann {
+namespace proto {
 
-#include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include "lbann/lbann.hpp"
-
-using namespace lbann;
-
-int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
-  int np = comm->get_procs_in_world();
-  if (np != 1 || argc == 1) {
-    if (master) {
-      std::cerr << "\nPlease run this program with a single processor\n\n"
-                << "usage: " << argv[0] << " conduit_bundle_filename\n"
-                << "function: dumps the conduit file to cout\n";
+/** Parse a space-separated list of execution modes. */
+template <>
+std::vector<execution_mode> parse_list<execution_mode>(std::string str) {
+  std::vector<execution_mode> list;
+  for (const auto& mode : parse_list<std::string>(str)) {
+    if (mode == "train" || mode == "training") {
+      list.push_back(execution_mode::training);
+    } else if (mode == "validate" || mode == "validation") {
+      list.push_back(execution_mode::validation);
+    } else if (mode == "test" || mode == "testing") {
+      list.push_back(execution_mode::testing);
+    } else {
+      LBANN_ERROR("invalid execution mode (\"" + mode + "\")");
     }
-    finalize(comm);
   }
-
-  conduit::Node node;
-  conduit::relay::io::load(argv[1], "hdf5", node);
-  node.print();
-
-  finalize(comm);
-  return EXIT_SUCCESS;
+  return list;
 }
 
-#endif //#ifdef LBANN_HAS_CONDUIT
+} // namespace proto
+} // namespace lbann

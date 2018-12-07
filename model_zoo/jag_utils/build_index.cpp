@@ -41,8 +41,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
@@ -86,7 +84,7 @@ int main(int argc, char *argv[]) {
     int rank = comm->get_rank_in_world();
     std::stringstream ss;
     ss << output_fn << "." << rank;
-    std::ofstream out(ss.str().c_str()); 
+    std::ofstream out(ss.str().c_str());
     if (!out.good()) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + output_fn + " for writing");
     }

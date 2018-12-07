@@ -42,8 +42,6 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
 #define NUM_OUTPUT_DIRS 100
 #define NUM_SAMPLES_PER_FILE 1000
 
@@ -123,7 +121,7 @@ int main(int argc, char *argv[]) {
 
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
       } catch (std::exception e) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
+        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
       }
 
@@ -144,11 +142,12 @@ int main(int argc, char *argv[]) {
         } catch (std::exception e) {
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
-        }  
+        }
 
         int success = n_ok.to_int64();
         if (success == 1) {
             try {
+ 
               for (auto t : input_names) {
                 key = cnames[i] + "/inputs/" + t;
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
@@ -184,9 +183,7 @@ int main(int argc, char *argv[]) {
               continue;
             }
   
-            try {
-              key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+           
             } catch (std::exception e) {
               std::cerr << rank << " :: " << "exception reading image: (90.0, 78.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;

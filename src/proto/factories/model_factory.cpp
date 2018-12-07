@@ -43,7 +43,7 @@ model* instantiate_model(lbann_comm* comm,
   auto&& opt = construct_optimizer(comm, proto_opt);
 
   // Construct model
-  const auto& type = proto_model.name();
+  const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
@@ -232,7 +232,10 @@ model* construct_model(lbann_comm* comm,
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
   for (auto&& cb  : callback_list) { m->add_callback(cb); }
-  m->set_model_id(proto_model.model_id());
+  const auto& name = proto_model.name();
+  if (!name.empty()) {
+    m->set_name(name);
+  }
   for (auto t : data_readers) {
     t.second->set_model(m);
   }
