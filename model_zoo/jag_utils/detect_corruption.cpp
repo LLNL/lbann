@@ -184,6 +184,9 @@ int main(int argc, char *argv[]) {
             }
   
            
+            try { 
+              key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             } catch (std::exception e) {
               std::cerr << rank << " :: " << "exception reading image: (90.0, 78.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
