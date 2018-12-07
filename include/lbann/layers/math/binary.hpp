@@ -39,8 +39,9 @@ namespace lbann {
 template <data_layout Layout, El::Device Device, typename Name>
 class entrywise_binary_layer : public Layer {
 public:
+
   entrywise_binary_layer(lbann_comm *comm) : Layer(comm) {
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
   entrywise_binary_layer* copy() const override {
     return new entrywise_binary_layer<Layout,Device,Name>(*this);
@@ -90,13 +91,14 @@ protected:
   = entrywise_binary_layer<Layout, Device, layer_name##_name_struct>;
 
 // Arithmetic operations
-DEFINE_ENTRYWISE_BINARY_LAYER(add_layer,         "add");
-DEFINE_ENTRYWISE_BINARY_LAYER(subtract_layer,    "subtract");
-DEFINE_ENTRYWISE_BINARY_LAYER(multiply_layer,    "multiply");
-DEFINE_ENTRYWISE_BINARY_LAYER(divide_layer,      "divide");
-DEFINE_ENTRYWISE_BINARY_LAYER(mod_layer,         "modulo");
-DEFINE_ENTRYWISE_BINARY_LAYER(pow_layer,         "power");
-DEFINE_ENTRYWISE_BINARY_LAYER(safe_divide_layer, "safe divide");
+DEFINE_ENTRYWISE_BINARY_LAYER(add_layer,                "add");
+DEFINE_ENTRYWISE_BINARY_LAYER(subtract_layer,           "subtract");
+DEFINE_ENTRYWISE_BINARY_LAYER(multiply_layer,           "multiply");
+DEFINE_ENTRYWISE_BINARY_LAYER(divide_layer,             "divide");
+DEFINE_ENTRYWISE_BINARY_LAYER(mod_layer,                "modulo");
+DEFINE_ENTRYWISE_BINARY_LAYER(pow_layer,                "power");
+DEFINE_ENTRYWISE_BINARY_LAYER(safe_divide_layer,        "safe divide");
+DEFINE_ENTRYWISE_BINARY_LAYER(squared_difference_layer, "squared difference");
 
 // Comparison operations
 DEFINE_ENTRYWISE_BINARY_LAYER(max_layer,           "maximum");

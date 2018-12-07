@@ -28,6 +28,7 @@
 #define LBANN_PROTO_FACTORIES_HPP
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 namespace proto {
@@ -70,10 +71,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
 lbann_summary* construct_summarizer(lbann_comm* comm,
                                     const lbann_data::Model& m);
 
-/** Construct a metric specified with prototext. */
-metric* construct_metric(lbann_comm* comm,
-                         const lbann_data::Metric& proto_metric);
-
 /** Construct an optimizer specified with prototext. */
 optimizer* construct_optimizer(lbann_comm* comm,
                                const lbann_data::Optimizer& proto_opt);
@@ -90,6 +87,18 @@ std::vector<T> parse_list(std::string str) {
     list.push_back(entry);
   }
   return list;
+}
+template <>
+std::vector<execution_mode> parse_list<execution_mode>(std::string str);
+
+/** Parse a space-separated set. */
+template <typename T = std::string>
+std::set<T> parse_set(std::string str) {
+  std::set<T> set;
+  for (const auto& entry : parse_list<T>(str)) {
+    set.insert(entry);
+  }
+  return set;
 }
 
 } // namespace proto

@@ -69,7 +69,7 @@ __global__ void bp_kernel(DataType negative_slope,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > DataType(0)) ? dy : negative_slope * dy;
+    dx = (x > DataType(0)) ? dy : dy * negative_slope;
   }
 }
 

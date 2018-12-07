@@ -38,37 +38,34 @@ namespace lbann {
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer {
- private:
+private:
   /** Gaussian distribution mean. */
   DataType m_mean;
   /** Gaussian distribution standard deviation. */
   DataType m_stdev;
 
- public:
+public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
                  DataType mean = DataType(0),
                  DataType stdev = DataType(1))
     : transform_layer(comm), m_mean(mean), m_stdev(stdev) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
   gaussian_layer* copy() const override { return new gaussian_layer(*this); }
   std::string get_type() const override { return "Gaussian"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream ss;
-    ss << "gaussian_layer" << "  "
-       << "mean: " << m_mean << " "
-       << "stdev: " << m_stdev << " "
-       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return ss.str();
-  }
+protected:
 
- protected:
+  std::vector<std::string> get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.push_back("Mean: " + std::to_string(m_mean));
+    desc.push_back("Standard deviation: " + std::to_string(m_stdev));
+    return desc;
+  }
 
   void fp_compute() override {
     auto& output = get_activations();

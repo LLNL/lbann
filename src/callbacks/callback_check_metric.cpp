@@ -54,7 +54,7 @@ void lbann_callback_check_metric::check_metric(const model& m) const {
 
   // Return immediately if execution mode is invalid
   const auto& mode = m.get_execution_mode();
-  if (m_modes.count(mode) == 0) { return; }
+  if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }
 
   // Get metric
   const metric* met = nullptr;

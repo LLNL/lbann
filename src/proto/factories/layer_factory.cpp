@@ -246,11 +246,11 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
     std::vector<int> dims = parse_list<int>(params.dims());
+    if (params.num_dims() != 0) {
+      LBANN_WARNING("found unused and deprecated prototext field (Reshape.num_dims)");
+    }
     if (proto_layer.num_neurons_from_data_reader()) {
       dims.clear();
-      if (params.reshape_to_flattened_conv_format()) {
-        dims.push_back(1);
-      }
       const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
       if (!dr) {
         LBANN_ERROR("Training data reader does not exist!");
@@ -527,6 +527,7 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(mod);
   CONSTRUCT_LAYER(pow);
   CONSTRUCT_LAYER(safe_divide);
+  CONSTRUCT_LAYER(squared_difference);
   CONSTRUCT_LAYER(max);
   CONSTRUCT_LAYER(min);
   CONSTRUCT_LAYER(equal);
@@ -540,14 +541,16 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(logical_xor);
 
   // Activation layers
-  CONSTRUCT_LAYER(softmax);
-  CONSTRUCT_LAYER(log_softmax);
-  CONSTRUCT_LAYER(relu);
-  CONSTRUCT_LAYER(sigmoid);
+  if (proto_layer.has_elu()) {
+    const auto& params = proto_layer.elu();
+    const auto& alpha = params.alpha();
+    if (alpha != 0) {
+      return new elu_layer<layout, Dev>(comm, alpha);
+    } else {
+      return new elu_layer<layout, Dev>(comm);
+    }
+  }
   CONSTRUCT_LAYER(identity);
-  CONSTRUCT_LAYER(bent_identity);
-  CONSTRUCT_LAYER(softplus);
-  CONSTRUCT_LAYER(smooth_relu);
   if (proto_layer.has_leaky_relu()) {
     const auto& params = proto_layer.leaky_relu();
     const auto& negative_slope = params.negative_slope();
@@ -557,21 +560,14 @@ Layer* construct_layer(lbann_comm* comm,
       return new leaky_relu_layer<layout, Dev>(comm);
     }
   }
-  CONSTRUCT_LAYER(swish);
-  if (proto_layer.has_elu()) {
-    const auto& params = proto_layer.elu();
-    return new elu_layer<layout, Dev>(comm, params.alpha());
-  }
-  if (proto_layer.has_selu()) {
-    const auto& params = proto_layer.selu();
-    const auto& alpha = params.alpha();
-    const auto& scale = params.scale();
-    if (alpha != 0.0 && scale != 0.0) {
-      return new selu_layer<layout, Dev>(comm, alpha, scale);
-    } else {
-      return new selu_layer<layout, Dev>(comm);
-    }
-  }
+  CONSTRUCT_LAYER(log_sigmoid);
+  CONSTRUCT_LAYER(log_softmax);
+  CONSTRUCT_LAYER(relu);
+  CONSTRUCT_LAYER(selu);
+  CONSTRUCT_LAYER(sigmoid);
+  CONSTRUCT_LAYER(softmax);
+  CONSTRUCT_LAYER(softplus);
+  CONSTRUCT_LAYER(softsign);
 
   // Loss layers
   CONSTRUCT_LAYER(categorical_accuracy);

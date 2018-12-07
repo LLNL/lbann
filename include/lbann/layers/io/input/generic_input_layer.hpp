@@ -114,12 +114,10 @@ class generic_input_layer : public io_layer {
 
   std::string get_type() const override { return "generic_input"; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::string s = get_topo_description();
-    return std::string {} + " input_layer " + io_buffer->get_type()
-           + " dataLayout: " + this->get_data_layout_string(get_data_layout())
-           + " (" + s + ")";
+  std::vector<std::string> get_description() const override {
+    auto&& desc = io_layer::get_description();
+    desc.push_back("Buffer: " + io_buffer->get_type());
+    return desc;
   }
 
   void setup_dims() override {
@@ -528,26 +526,6 @@ class generic_input_layer : public io_layer {
       }
     }
     return std::vector<int>(1, 0);
-  }
-
-  std::string get_topo_description() const override {
-    std::stringstream ss;
-    const size_t num_children = get_num_children();
-    for (size_t i = 0; i < num_children; ++i) {
-      const auto& dims = get_output_dims(i);
-      if (i > 0) { ss << ", "; }
-      ss << "activations";
-      if (num_children > 1) { ss << "[" << i << "]"; }
-      ss << " = [";
-      for (size_t j = 0; j < dims.size(); j++) {
-        ss << dims[j];
-        if ( j != dims.size()-1) {
-          ss << " x ";
-        }
-      }
-      ss << ", " << get_activations(i).Width() << "s]";
-    }
-    return ss.str();;
   }
 
   /**

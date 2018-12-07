@@ -32,23 +32,15 @@
 #define LBANN_HPP_INCLUDED
 
 /// Models
-#include "lbann/models/sequential.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
-#include "lbann/models/siamese.hpp"
 
 /// Activation Layers
-#include "lbann/layers/activations/bent_identity.hpp"
+#include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
-#include "lbann/layers/activations/relu.hpp"
-#include "lbann/layers/activations/selu.hpp"
-#include "lbann/layers/activations/sigmoid.hpp"
-#include "lbann/layers/activations/smooth_relu.hpp"
-#include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
-#include "lbann/layers/activations/softplus.hpp"
-#include "lbann/layers/activations/swish.hpp"
+#include "lbann/layers/activations/softmax.hpp"
 
 /// Image Layers
 #include "lbann/layers/image/bilinear_resize.hpp"
@@ -157,7 +149,7 @@
 #include "lbann/callbacks/callback_debug_io.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/callbacks/callback_dump_error_signals.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
@@ -208,17 +200,9 @@
 
 /// Metrics
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/metrics/categorical_accuracy.hpp"
-#include "lbann/metrics/top_k_categorical_accuracy.hpp"
-#include "lbann/metrics/mean_squared_error.hpp"
-#include "lbann/metrics/mean_absolute_deviation.hpp"
-#include "lbann/metrics/pearson_correlation.hpp"
-#include "lbann/metrics/r2.hpp"
-#include "lbann/metrics/boolean_accuracy.hpp"
-#include "lbann/metrics/boolean_false_positives.hpp"
-#include "lbann/metrics/boolean_false_negatives.hpp"
 
-/// Utilities, exceptions, etc.
+/// Utilities, exceptions, library interface, etc.
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/options.hpp"

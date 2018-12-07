@@ -36,68 +36,11 @@ namespace lbann {
 /// Convolution layer
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class convolution_layer : public base_convolution_layer<Dev> {
- private:
+private:
 
   friend class lbann_callback_imcomm;
 
-  public:
-
-  /// kernel tensor is output channels, input channels, conv dimension (w x h)
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " convolution; conv_dims: ";
-    // for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-    //   if (h == 0) { s << " channels (out x in) "; }
-    //   if (h == 2) { s << " filters (w x h) "; }
-    //   s << this->m_kernel_dims[h] << " ";
-    // }
-    s << get_topo_description();
-    s << " pads: ";
-    for (size_t h=0; h<this->m_pads.size(); h++) {
-      s << this->m_pads[h] << " ";
-    }
-    s << " strides: ";
-    for (size_t h=0; h<this->m_strides.size(); h++) {
-      s << this->m_strides[h] << " ";
-    }
-    s << " dilation: ";
-    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
-      s << this->m_dilations[h] << " ";
-    }
-    s << " groups: " << this->m_num_groups;
-    s << " num_output_channels: " << this->get_output_dims()[0]
-      << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
-    return s.str();
-  }
-
-  std::string get_topo_description() const override {
-    std::stringstream s;
-    // Get the topo description from any parent class
-    std::string str = base_convolution_layer<Dev>::get_topo_description();
-    s << str << " - ";
-
-    // Display the topology of the kernel
-    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-      if (h == 0) { s << "C="; }
-      s << this->m_kernel_dims[h] ;
-      if (h == 0) { s << "o,"; }
-      if (h == 1) { s << "i F="; }
-      if (this->m_kernel_dims.size() == 3) {
-        if (h == 2) { s << "w "; }
-      }else if (this->m_kernel_dims.size() == 4) {
-        if (h == 2) { s << "w x "; }
-        if (h == 3) { s << "h"; }
-      }else {
-        if (h > 1) {
-          s << " ";
-        }
-      }
-    }
-    return s.str();
-  }
+public:
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
@@ -151,62 +94,71 @@ class convolution_layer : public base_convolution_layer<Dev> {
 
   void setup_dims() override {
     base_convolution_layer<Dev>::setup_dims();
+    std::stringstream err;
 
     // Get tensor dimensions
-    auto& kernel_dims = this->m_kernel_dims;
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
+    const auto input_channels = input_dims[0];
+    const auto output_channels = this->m_kernel_dims[0];
 
-    // Initialize convolution kernel dimensions
-    if (input_dims[0] % this->m_num_groups != 0) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << " has input tensor with channels " << input_dims[0]
-          << " but groups " << this->m_num_groups
-          << "; groups must evenly divide input channels";
+    // Check that number of groups is valid
+    if (this->m_num_groups < 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has " << this->m_num_groups << " groups";
+      LBANN_ERROR(err.str());
+    } else if (input_channels % this->m_num_groups != 0
+               || output_channels % this->m_num_groups != 0) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" has "
+          << input_channels << " input channels, "
+          << output_channels << " output channels, and "
+          << this->m_num_groups << " groups "
+          << "(groups must evenly divide "
+          << "the input channels and output channels)";
       LBANN_ERROR(err.str());
     }
-    kernel_dims.insert(kernel_dims.begin() + 1, input_dims[0] / this->m_num_groups);
-    this->m_kernel_size = std::accumulate(kernel_dims.begin(),
-                                          kernel_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
 
-    // Check if input tensor dimensions are valid
-    if (input_dims.size() != kernel_dims.size() - 1) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << "has an input tensor with "
-          << input_dims.size() << " dimensions "
-          << "and a convolution kernel with "
-          << kernel_dims.size() << " dimensions";
+    // Initialize convolution kernel dimensions
+    this->m_kernel_dims.insert(this->m_kernel_dims.begin() + 1,
+                               input_channels / this->m_num_groups);
+    this->m_kernel_size = std::accumulate(this->m_kernel_dims.begin(),
+                                          this->m_kernel_dims.end(),
+                                          1, std::multiplies<int>());
+    if (this->m_kernel_dims.size() != input_dims.size() + 1) {
+      err << this->get_type() << " layer "
+          << "\"" << this->get_name() << "\" "
+          << "has a ";
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << input_dims[i];
+      }
+      err << " input tensor and a ";
+      for (size_t i = 0; i < this->m_kernel_dims.size(); ++i) {
+        err << (i > 0 ? " x " : "") << this->m_kernel_dims[i];
+      }
+      err << " convolution kernel";
       LBANN_ERROR(err.str());
     }
 
     // Initialize output tensor dimensions
-    output_dims[0] = kernel_dims[0];
+    output_dims[0] = output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const auto& input_dim = input_dims[i+1];
+      const auto& kernel_dim = this->m_kernel_dims[i+2];
       const auto& stride = this->m_strides[i];
       const auto& pad = this->m_pads[i];
       const auto& dilation = this->m_dilations[i];
-      const auto& effective_dim = (input_dims[i+1]
+      const auto& effective_dim = (input_dim
                                    + 2 * pad
-                                   - dilation*(kernel_dims[i+2] - 1));
+                                   - dilation * (kernel_dim-1));
       output_dims[i+1] = (effective_dim + stride - 1) / stride;
     }
     this->set_output_dims(output_dims);
-    if (output_dims[0] % this->m_num_groups != 0) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << " has output tensor with filters " << output_dims[0]
-          << " but groups " << this->m_num_groups
-          << "; groups must evenly divide output filters";
-      LBANN_ERROR(err.str());
-    }
 
   }
 
- protected:
+protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {

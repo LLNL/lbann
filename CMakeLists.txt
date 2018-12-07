@@ -49,8 +49,9 @@ endif ()
 
 set(LBANN_VERSION_MAJOR 0)
 set(LBANN_VERSION_MINOR 97)
+set(LBANN_VERSION_PATCH 1)
 
-set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}")
+set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
 
 # Check to see if we are in a git repo
 find_program(__GIT_EXECUTABLE git)
@@ -447,6 +448,7 @@ endif ()
 # Add the rest of the things
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
+add_subdirectory(model_zoo/jag_utils)
 add_subdirectory(tests)
 
 ################################################################

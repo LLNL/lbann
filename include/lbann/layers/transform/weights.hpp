@@ -43,7 +43,7 @@ class weights_layer : public transform_layer {
     std::vector<int> dims_;
     for (const auto& d : dims) { dims_.push_back(d); }
     set_output_dims(dims_);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
 
   weights_layer(const weights_layer& other)
@@ -104,9 +104,9 @@ class weights_layer : public transform_layer {
 #endif // LBANN_HAS_GPU
     default: LBANN_ERROR("unknown device type");
     }
-    
+
   }
-  
+
   void setup_data() override {
     transform_layer::setup_data();
 
@@ -149,11 +149,11 @@ class weights_layer : public transform_layer {
           << "weights \"" << w->get_name() << "\"";
       LBANN_ERROR(err.str());
     }
-    
+
   }
-  
+
   void fp_compute() override {
-    
+
     // Matrices
     const auto& local_weights = m_weights[0]->get_values().LockedMatrix();
     auto& local_output = get_local_activations();
@@ -167,7 +167,7 @@ class weights_layer : public transform_layer {
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
 
   void bp_compute() override {
@@ -191,9 +191,9 @@ class weights_layer : public transform_layer {
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
-  
+
  private:
 
   /** Weights gradient. */
