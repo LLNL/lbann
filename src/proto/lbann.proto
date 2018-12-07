@@ -859,17 +859,18 @@ message Layer {
    Mod mod = 454;
    Pow pow = 455;
    SafeDivide safe_divide = 456;
-   Max max = 457;
-   Min min = 458;
-   Equal equal = 459;
-   NotEqual not_equal = 460;
-   Less less = 461;
-   LessEqual less_equal = 462;
-   Greater greater = 463;
-   GreaterEqual greater_equal = 464;
-   LogicalAnd logical_and = 465;
-   LogicalOr logical_or = 466;
-   LogicalXor logical_xor = 467;
+   SquaredDifference squared_difference = 457;
+   Max max = 458;
+   Min min = 459;
+   Equal equal = 460;
+   NotEqual not_equal = 461;
+   Less less = 462;
+   LessEqual less_equal = 463;
+   Greater greater = 464;
+   GreaterEqual greater_equal = 465;
+   LogicalAnd logical_and = 466;
+   LogicalOr logical_or = 467;
+   LogicalXor logical_xor = 468;
 
    // Target layers
    Target target = 18;
@@ -949,6 +950,7 @@ message Divide {}
 message Mod {}
 message Pow {}
 message SafeDivide {}
+message SquaredDifference {}
 message Max {}
 message Min {}
 message Equal {}

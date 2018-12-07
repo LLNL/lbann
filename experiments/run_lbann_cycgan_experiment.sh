@@ -8,7 +8,9 @@ MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m1.p
 ##small model for JAG100k data
 #MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m3.prototext} --num_epochs=10"
 ## JAG10K 64x64x4 data
-READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/jag10k_data.prototext"
+#READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/jag10k_data.prototext"
+###JAG1M/10M/100M
+READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/data_reader_jag_conduit_lustre.prototext"
 ## JAG100K 50x50x1 data
 #READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/jag_data.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext"
@@ -372,7 +374,7 @@ echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
-        echo "export MV2_USE_CUDA=1"                    >> ${BATCH_SCRIPT}
+        echo "export MV2_USE_CUDA=0"                    >> ${BATCH_SCRIPT}
         ;;
 esac
 case ${CLUSTER} in
