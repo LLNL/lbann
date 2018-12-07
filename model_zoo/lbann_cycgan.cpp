@@ -38,6 +38,15 @@ int main(int argc, char *argv[]) {
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
+  if (master) {
+    std::cout << "\n\n==============================================================\n"
+              << "STARTING lbann with this command line:\n";
+    for (int j=0; j<argc; j++) {
+      std::cout << argv[j] << " ";
+    }
+    std::cout << std::endl << std::endl;
+  }
+
 #ifdef EL_USE_CUBLAS
   El::GemmUseGPU(32,32,32);
 #endif
@@ -51,6 +60,16 @@ int main(int argc, char *argv[]) {
       finalize(comm);
       return 0;
     }
+
+    //this must be called after call to opts->init();
+    if (!opts->has_bool("disable_signal_handler")) {
+      std::string file_base = (opts->has_bool("stack_trace_to_file") ?
+                               "stack_trace" : "");
+      stack_trace::register_signal_handler(file_base);
+    }
+
+    //to activate, must specify --st_on on cmd line
+    stack_profiler::get()->activate(comm->get_rank_in_world());
 
     std::stringstream err;
 
@@ -146,7 +165,8 @@ int main(int argc, char *argv[]) {
       super_step++;
     }
 
-
+    //has no affect unless option: --st_on was given
+    stack_profiler::get()->print();
 
     delete model_1;
     if (model_2 != nullptr) {
