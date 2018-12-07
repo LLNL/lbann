@@ -746,7 +746,7 @@ model {
     he_normal_initializer {
     }
   }
-  mini_batch_size: 100
+  mini_batch_size: 256
   callback {
     print {
       interval: 1
