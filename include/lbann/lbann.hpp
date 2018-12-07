@@ -63,6 +63,7 @@
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/math/clamp.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
