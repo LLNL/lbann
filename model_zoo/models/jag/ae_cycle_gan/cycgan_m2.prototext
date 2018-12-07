@@ -1,5 +1,6 @@
 model {
   name: "fw_model"
+  shareable_data_reader: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -713,7 +714,7 @@ model {
     he_normal_initializer {
     }
   }
-  mini_batch_size: 256 
+  mini_batch_size: 256
   callback {
     print {
       interval: 1

@@ -1,5 +1,6 @@
 model {
   name: "inv_model"
+  shareable_data_reader: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
