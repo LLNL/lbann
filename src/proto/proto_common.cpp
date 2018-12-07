@@ -905,29 +905,27 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
     return;
   }
 
-  const lbann_data::Model& model = p.model();
-  std::string name = model.name() + ".prototext";
-
-  //check if "name" exists; if yes, append "_1"
-  bool exists = false;
-  std::ifstream in(name.c_str());
-  if (in) {
-    exists = true;
-    in.close();
-  }
-  if (exists) {
-    name += "_1";
+  //setup file name
+  // Note: If the file name is not unique, append numbers until it is.
+  std::string model_name = p.model().name();
+  if (model_name.empty()) { model_name = "model"; };
+  std::string file_name = model_name + ".prototext";
+  El::Int file_name_index = 1;
+  while (std::ifstream(file_name.c_str())) {
+    file_name_index++;
+    file_name = (model_name
+                 + "_" + std::to_string(file_name_index)
+                 + ".prototext");
   }
 
   //open output file
-  std::ofstream out(name.c_str());
+  std::ofstream out(file_name.c_str());
   if (!out.is_open()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: failed to open file for writing: " << name;
-    throw std::runtime_error(err.str());
+    err << "failed to open file (" << file_name << ") for writing";
+    LBANN_ERROR(err.str());
   }
-  std::cout << std::endl << "writing options and prototext to file: " << name << "\n\n";
+  std::cout << std::endl << "writing options and prototext to file: " << file_name << "\n\n";
 
   //output all data
   out << "# cmd line for original experiment:\n#  $ ";
@@ -949,7 +947,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << name << "\n#\n#\n";
+      << " --loadme=" << file_name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
