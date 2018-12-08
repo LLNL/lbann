@@ -33,6 +33,7 @@
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
+#include "lbann/models/model.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
