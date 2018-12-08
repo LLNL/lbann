@@ -385,20 +385,26 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
 #ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
-        const std::string role = "validate";
-        reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
-        auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-        reader_jag_conduit->set_role(role);
         if(is_shareable_reader) {
+          const std::string role = "validate";
           if (!peek_map(leading_reader_jag_conduit, role)) {
+            reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
             reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+            reader_jag_conduit->set_role(role);
             leading_reader_jag_conduit[role] = reader_jag_conduit;
           } else {
+            // Copy construct the leading validation reader into another validation reader.
+            // We do not copy the train reader as the subset of data may already have been
+            // assigned to validation reader when validation percent is set.
+            // Thus, we need to avoid taking a subset of a subset.
             const auto leader = peek_map(leading_reader_jag_conduit, role);
-            // reader_validation = new data_reader_jag_conduit(*leader);
-            // auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_validation = new data_reader_jag_conduit(*leader);
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
             reader_jag_conduit->set_leading_reader(leader);
           }
+        } else {
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
         }
 #endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
@@ -441,7 +447,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         if (name == "jag_conduit") {
           std::string train= "train";
           const auto leader = peek_map(leading_reader_jag_conduit, train);
-          std::cout << " jag conduit leading reader " << leader;
+          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader();
         }
         std::cout << std::endl;
       }

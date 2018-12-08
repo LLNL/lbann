@@ -120,7 +120,7 @@ model *build_model_from_prototext(int argc, char **argv,
     if (master) {
       std::cout << "******************************************************************************** is shared reader " << is_shared_reader << " " << pb_model->name() << std::endl;
     }
-    init_data_readers(comm, pb, data_readers, false/*is_shared_reader*/);
+    init_data_readers(comm, pb, data_readers, is_shared_reader);
 
     // hack to prevent all data readers from loading identical data; instead,
     // share a single copy. See data_reader_jag_conduit_hdf5 for example
