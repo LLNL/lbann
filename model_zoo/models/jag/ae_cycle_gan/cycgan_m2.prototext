@@ -713,7 +713,7 @@ model {
     he_normal_initializer {
     }
   }
-  mini_batch_size: 256 
+  mini_batch_size: 256
   callback {
     print {
       interval: 1
@@ -729,6 +729,7 @@ model {
   #    execution_modes: "test"
   #  }
   #}
+  callback { save_model { dir: "model" } }
   block_size: 256
   super_steps: 10000
   num_batches: 1

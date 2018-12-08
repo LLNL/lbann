@@ -753,6 +753,7 @@ model {
     }
   }
   callback { timer {} }
+  callback { save_model { dir: "model" } }
   block_size: 256
   super_steps: 10000
   num_batches: 1
