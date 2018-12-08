@@ -130,7 +130,10 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
 
-      if(is_shareable_reader) {
+      /// Only allow readers to be shared for training / validation
+      /// Force readers to be independent for testing - this solves
+      /// problems in the CycleGAN model
+      if(is_shareable_reader && readme.role() != "test") {
         if (!peek_map(leading_reader_jag_conduit, readme.role())) {
           leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
         } else {
