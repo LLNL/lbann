@@ -973,6 +973,9 @@ void data_reader_jag_conduit::load() {
     m_local_num_samples_to_use = m_leading_reader->get_num_valid_local_samples();
     m_global_num_samples_to_use = m_leading_reader->get_num_data();
     m_open_hdf5_files = m_leading_reader->get_open_hdf5_files();
+    if (is_master()) {
+      std::cout << std::endl << get_description() << std::endl << std::endl;
+    }
     return;
   }
 
@@ -986,7 +989,7 @@ void data_reader_jag_conduit::load() {
 
   // Shuffle the file names
   if (is_shuffled()) {
-  //  std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
+    std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
@@ -1322,6 +1325,8 @@ std::string data_reader_jag_conduit::to_string(const std::vector< std::vector<da
 }
 
 std::string data_reader_jag_conduit::get_description() const {
+  std::stringstream leading_reader;
+  leading_reader << m_leading_reader;
   std::string ret = std::string("data_reader_jag_conduit:\n")
     + " - independent: " + data_reader_jag_conduit::to_string(m_independent_groups) + "\n"
     + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent_groups) + "\n"
@@ -1332,7 +1337,9 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
     + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
     + " - linearized data size: "   + std::to_string(get_linearized_data_size()) + "\n"
-    + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
+    + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + "\n"
+    + " - leading DR: " + (m_leading_reader == this ? "true" : "false")
+    + " =" + leading_reader.str() + ")\n";
   if (!m_scalar_filter.empty()) {
     ret += " - scalar filter:";
     for (const auto& f: m_scalar_filter) {
