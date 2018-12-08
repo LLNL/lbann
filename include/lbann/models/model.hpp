@@ -238,6 +238,9 @@ class model {
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
 
+  /** Save the model's weight to file */
+  virtual bool save_weights(persist& p);
+
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 

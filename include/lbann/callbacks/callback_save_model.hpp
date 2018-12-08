@@ -38,16 +38,16 @@
 namespace lbann {
 
 /**
- * Save model to as protobuf file
+ * Save model to as protobuf file and set of weights
  */
 class lbann_callback_save_model : public lbann_callback {
  public:
   /**
-   * @param dir directory to save model 
+   * @param dir directory to save model
    * @param file extension e.g., model, state ......
    */
   lbann_callback_save_model(std::string dir,
-                             std::string extension="model") :
+                             std::string extension="prototext") :
     lbann_callback(), m_dir(std::move(dir)), m_extension(std::move(extension))
     {}
   lbann_callback_save_model(const lbann_callback_save_model&) = default;
@@ -56,12 +56,16 @@ class lbann_callback_save_model : public lbann_callback {
   lbann_callback_save_model* copy() const override {
     return new lbann_callback_save_model(*this);
   }
-  void on_epoch_end(model *m) override;
+  void on_train_end(model *m) override;
+  void on_test_end(model *m) override;
+  bool save_model(model *m);
+  bool save_model_weights(model *m);
   std::string name() const override { return "save model"; }
  private:
   std::string m_dir; //directory to save file
   std::string m_extension; //file extension
-  void write_proto_binary(const lbann_data::Model& proto, const std::string filename); 
+  persist p;
+  void write_proto_binary(const lbann_data::Model& proto, const std::string filename);
   void write_proto_text(const lbann_data::Model& proto, const std::string filename);
 };
 

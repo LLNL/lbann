@@ -1538,4 +1538,13 @@ void model::write_proto(lbann_data::Model* proto) {
     proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
+
+bool model::save_weights(persist& p) {
+  // write out fields we need to save a model's weights
+  for (weights *w : m_weights) {
+    w->save_to_checkpoint_shared(p);
+  }
+  return true;
+}
+
 }  // namespace lbann
