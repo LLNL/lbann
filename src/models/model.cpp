@@ -795,7 +795,7 @@ int model::get_num_iterations_per_epoch(execution_mode mode) const {
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 
-  void model::evaluate(execution_mode mode, int num_batches) {
+void model::evaluate(execution_mode mode, int num_batches) {
 
   // Return early if execution mode is invalid
   if (!is_execution_mode_valid(mode)) return;
@@ -812,7 +812,7 @@ int model::get_num_iterations_per_epoch(execution_mode mode) const {
   reset_mode_and_model(mode);
   do_evaluate_begin_cbs(mode);
   if (num_batches > 0) {
-    for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
+    for (int i = 0; i < num_batches; i++) { evaluate_mini_batch(mode); }
   } else {
     while (!evaluate_mini_batch(mode)) {}
   }
