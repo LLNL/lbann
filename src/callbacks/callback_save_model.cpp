@@ -64,9 +64,6 @@ void lbann_callback_save_model::write_proto_text(const lbann_data::Model& proto,
 
 bool lbann_callback_save_model::save_model(model *m) {
   lbann_data::Model model_param;
-  if(m->get_comm()->am_world_master()) {
-    std::cout << "Save Model callback: write proto " << std::endl;
-  }
 
   p.set_cb_type(callback_type::inference);
   save_model_weights(m);
@@ -103,11 +100,8 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
     printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_model_rank(), epoch, step);
     fflush(stdout);
   }
-  // comm->model_broadcast(0, epoch);
-  // comm->model_broadcast(0, step);
 
   // Shared checkpoint, logic identical to Distributed.i
-  //  strcpy(dir, m_dir.c_str());
   makedir(m_dir.c_str());
   std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), epoch, step);
   if (comm->am_model_master()) {
