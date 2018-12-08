@@ -445,9 +445,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
                   << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
         if (name == "jag_conduit") {
-          std::string train= "train";
-          const auto leader = peek_map(leading_reader_jag_conduit, train);
-          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader();
+          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
+                    << " of " << (is_shareable_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
         }
         std::cout << std::endl;
       }

@@ -986,7 +986,7 @@ void data_reader_jag_conduit::load() {
 
   // Shuffle the file names
   if (is_shuffled()) {
-    std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
+  //  std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
@@ -1034,8 +1034,8 @@ void data_reader_jag_conduit::load() {
   if (is_master()) {
     std::cerr << "time to load conduit files: " << get_time() - tm1
               << "  number of valid local samples at the master rank: " << m_valid_samples.size()
+              << " local reader id=" << get_local_id(get_role()) << " for " << get_role()
               << " leading reader=" << m_leading_reader << std::endl;
-
   }
 
   check_image_data();
