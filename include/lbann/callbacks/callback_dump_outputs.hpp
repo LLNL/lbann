@@ -32,14 +32,18 @@
 namespace lbann {
 
 /** Dump layer output tensors to files.
- *  This callback generates a text file for each output tensor of each
- *  selected layer, computed at each mini-batch step. Each line
- *  contains flattened tensor data corresponding to one mini-batch
- *  sample (note that this is the transpose of the column-major matrix
- *  representation we use internally). Output files are in the form
- *  "<prefix><model>-<mode>-epoch<#>-step<#>-<layer>-output<#>.csv". This
- *  is primarily intended as a debugging tool, although it can be used
- *  for inference when performance is not critical.
+ *  This callback saves a file for each output tensor of each selected
+ *  layer, computed at each mini-batch step. Output files have the
+ *  form
+ *  "<prefix><model>-<mode>-epoch<#>-step<#>-<layer>-output<#>.<format>".
+ *  This is primarily intended as a debugging tool, although it can be
+ *  used for inference when performance is not critical.
+ *
+ *  For NumPy file formats (npy and npz), tensor dimensions are
+ *  recorded. For text file formats (CSV and TSV), each line contains
+ *  flattened tensor data corresponding to one mini-batch sample
+ *  (which is the transpose of the column-major matrix representation
+ *  we use internally).
  */
 class lbann_callback_dump_outputs : public lbann_callback {
 public:
@@ -52,14 +56,14 @@ public:
    *  @param batch_interval Frequency of output dumps (default: dump
    *                        outputs at each mini-batch step).
    *  @param file_prefix    Prefix for output file names.
-   *  @param file_format    Output file format, e.g. csv, tsv, bin
-   *                        (default: csv).
+   *  @param file_format    Output file format. Options are csv, tsv,
+   *                        npy, npz (default: csv).
    */
   lbann_callback_dump_outputs(std::set<std::string> layer_names = {},
                               std::set<execution_mode> modes = {},
                               El::Int batch_interval = 0,
                               std::string file_prefix = "",
-                              std::string file_Format = "");
+                              std::string file_format = "");
   lbann_callback_dump_outputs* copy() const override {
     return new lbann_callback_dump_outputs(*this);
   }
@@ -85,11 +89,6 @@ private:
 
   /** Output file format. */
   std::string m_file_format;
-
-  /** Delimiter for output files.
-   *  Only used with text file formats, e.g. csv or tsv.
-   */
-  std::string m_delimiter;
 
   /** Dump outputs to file.
    *  Returns immediately if an output dump is not needed.
