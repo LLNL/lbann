@@ -14,7 +14,9 @@ void expand_motifs(lbann::lbann_comm *comm, lbann_data::LbannPB& pb);
 void init_data_readers(
   lbann::lbann_comm *comm,
   const lbann_data::LbannPB& p,
-  std::map<execution_mode, lbann::generic_data_reader *>& data_readers);
+  std::map<execution_mode, lbann::generic_data_reader *>& data_readers,
+  bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader,
+  bool is_shareable_validation_data_reader = false);
 
 /// adjusts the number of parallel data readers
 void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p);

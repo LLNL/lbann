@@ -227,7 +227,7 @@ class model {
   /** Train model. */
   virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
-  virtual void evaluate(execution_mode mode);
+  virtual void evaluate(execution_mode mode, int num_batches=0);
 
   /** Run one epoch using only the input layer; this supports
    *  data_store functionality
