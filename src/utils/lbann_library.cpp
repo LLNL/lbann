@@ -116,7 +116,12 @@ model *build_model_from_prototext(int argc, char **argv,
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(comm, pb, data_readers);
+    bool is_shared_training_data_reader = pb_model->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_model->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
 
     // hack to prevent all data readers from loading identical data; instead,
     // share a single copy. See data_reader_jag_conduit_hdf5 for example
