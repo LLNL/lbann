@@ -40,8 +40,6 @@ namespace lbann {
  *  "<prefix><model>-<mode>-epoch<#>-step<#>-<layer>-output<#>.csv". This
  *  is primarily intended as a debugging tool, although it can be used
  *  for inference when performance is not critical.
- *
- *  Currently, only CSV output files are supported.
  */
 class lbann_callback_dump_outputs : public lbann_callback {
 public:
@@ -54,11 +52,14 @@ public:
    *  @param batch_interval Frequency of output dumps (default: dump
    *                        outputs at each mini-batch step).
    *  @param file_prefix    Prefix for output file names.
+   *  @param file_format    Output file format, e.g. csv, tsv, bin
+   *                        (default: csv).
    */
   lbann_callback_dump_outputs(std::set<std::string> layer_names = {},
                               std::set<execution_mode> modes = {},
                               El::Int batch_interval = 0,
-                              std::string file_prefix = "");
+                              std::string file_prefix = "",
+                              std::string file_Format = "");
   lbann_callback_dump_outputs* copy() const override {
     return new lbann_callback_dump_outputs(*this);
   }
@@ -82,10 +83,13 @@ private:
   /** Prefix for output files. */
   std::string m_file_prefix;
 
+  /** Output file format. */
+  std::string m_file_format;
+
   /** Delimiter for output files.
-   *  Currently hard-coded to output CSV files.
+   *  Only used with text file formats, e.g. csv or tsv.
    */
-  std::string m_delimiter = ",";
+  std::string m_delimiter;
 
   /** Dump outputs to file.
    *  Returns immediately if an output dump is not needed.
