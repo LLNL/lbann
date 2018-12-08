@@ -212,5 +212,7 @@
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/peek_map.hpp"
+#include "lbann/utils/stack_trace.hpp"
+#include "lbann/utils/stack_profiler.hpp"
 
 #endif // LBANN_HPP_INCLUDED
