@@ -38,6 +38,10 @@ option(HDF5_BUILD_SHARED_LIBS
   "Whether HDF5 should build dynamically linked libraries."
   "${BUILD_SHARED_LIBS}")
 
+set(HDF5_CMAKE_COMMAND "${CMAKE_COMMAND}"
+  CACHE FILEPATH
+  "CMake executable to use with HDF5.")
+
 # HDF5-specific configuration options explicitly exposed
 option(HDF5_BUILD_EXAMPLES "Build HDF5 examples." OFF)
 
@@ -95,6 +99,7 @@ ExternalProject_Add(HDF5
   LOG_INSTALL 1
   LOG_TEST 1
   LIST_SEPARATOR |
+  CMAKE_COMMAND "${HDF5_CMAKE_COMMAND}"
   CMAKE_ARGS
   -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
   -DCMAKE_C_FLAGS=${CMAKE_C_FLAGS}
