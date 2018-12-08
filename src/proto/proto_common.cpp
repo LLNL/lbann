@@ -40,7 +40,8 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
 
 int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
 
-void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers, bool is_shareable_reader)
+void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
+                       bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader, bool is_shareable_validation_data_reader)
 {
 #ifdef LBANN_HAS_CONDUIT
   static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
@@ -130,10 +131,11 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
 
-      /// Only allow readers to be shared for training / validation
-      /// Force readers to be independent for testing - this solves
-      /// problems in the CycleGAN model
-      if(is_shareable_reader && readme.role() != "test") {
+      /// Allow the prototext to control if the data readers is
+      /// shareable for each phase training, validation, or testing
+      if((is_shareable_training_data_reader && readme.role() == "train")
+         || (is_shareable_testing_data_reader && readme.role() == "test")
+         || (is_shareable_validation_data_reader && readme.role() == "validation")) {
         if (!peek_map(leading_reader_jag_conduit, readme.role())) {
           leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
         } else {
@@ -388,7 +390,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
 #ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
-        if(is_shareable_reader) {
+        /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
+        /// is also shared
+        if(is_shareable_training_data_reader) {
           const std::string role = "validate";
           if (!peek_map(leading_reader_jag_conduit, role)) {
             reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
@@ -449,7 +453,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
                   << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
         if (name == "jag_conduit") {
           std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
-                    << " of " << (is_shareable_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
+                    << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
         }
         std::cout << std::endl;
       }
