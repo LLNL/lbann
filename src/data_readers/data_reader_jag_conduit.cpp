@@ -417,8 +417,8 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_normalization_params.clear();
 }
 
-void data_reader_jag_conduit::setup(int num_io_threads) {
-  generic_data_reader::setup(num_io_threads);
+void data_reader_jag_conduit::setup(int num_io_threads, thread_pool *io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
   replicate_processor(*m_master_pps, num_io_threads);
 }
 
@@ -1674,7 +1674,7 @@ int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
     return m_leading_reader->reuse_data(X);
   }
-  m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched, io_thread_pool);
+  m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched);
   El::Copy(X, m_data_cache);
 
   return m_cached_data_mb_size;
@@ -1684,7 +1684,7 @@ int data_reader_jag_conduit::fetch_responses(CPUMat& Y) {
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
     return m_leading_reader->reuse_responses(Y);
   }
-  m_cached_response_mb_size = generic_data_reader::fetch_responses(Y, io_thread_pool);
+  m_cached_response_mb_size = generic_data_reader::fetch_responses(Y);
   El::Copy(Y, m_response_cache);
 
   return m_cached_response_mb_size;
@@ -1694,7 +1694,7 @@ int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
     return m_leading_reader->reuse_labels(Y);
   }
-  m_cached_label_mb_size = generic_data_reader::fetch_labels(Y, io_thread_pool);
+  m_cached_label_mb_size = generic_data_reader::fetch_labels(Y);
   El::Copy(Y, m_label_cache);
 
   return m_cached_label_mb_size;
@@ -1702,7 +1702,7 @@ int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
 
 
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  int tid = io_thread_pool.get_local_thread_id();
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
@@ -1715,7 +1715,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
-  int tid = io_thread_pool.get_local_thread_id();
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;

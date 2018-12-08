@@ -127,8 +127,8 @@ void data_reader_jag_conduit_hdf5::set_defaults() {
   m_num_labels = 0;
 }
 
-void data_reader_jag_conduit_hdf5::setup(int num_io_threads) {
-  generic_data_reader::setup(num_io_threads);
+void data_reader_jag_conduit_hdf5::setup(int num_io_threads, thread_pool *io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
   replicate_processor(*m_master_pps, num_io_threads);
 }
 
@@ -167,7 +167,7 @@ void data_reader_jag_conduit_hdf5::set_image_dims(const int width, const int hei
 }
 
 bool data_reader_jag_conduit_hdf5::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  int tid = io_thread_pool.get_local_thread_id();
+  int tid = m_io_thread_pool->get_local_thread_id();
   m_jag_store->load_data(data_id, tid);
 
   std::vector<size_t> sizes = get_linearized_data_sizes();
@@ -366,7 +366,7 @@ bool data_reader_jag_conduit_hdf5::fetch_response(CPUMat& X, int data_id, int mb
   throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: not implemented");
   return true;
 #if 0
-  int tid = io_thread_pool::get_local_thread_id();
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;

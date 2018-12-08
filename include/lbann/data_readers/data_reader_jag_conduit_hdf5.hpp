@@ -76,7 +76,7 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   /// Load data and do data reader's chores.
   void load() override;
 
-  void setup(int num_io_threads) override;
+  void setup(int num_io_threads, thread_pool *io_thread_pool) override;
 
   /// Return the number of samples
   size_t get_num_samples() const;
