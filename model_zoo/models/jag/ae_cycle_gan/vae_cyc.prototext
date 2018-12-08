@@ -4,10 +4,9 @@
 model {
   name: "ae_cycgan_model"
   data_layout: "model_parallel"
-  #mini_batch_size: 128
-  mini_batch_size: 100 #more last minibatch images to save
+  mini_batch_size: 256
   block_size: 256
-  num_epochs: 40
+  num_epochs: 4
   num_parallel_readers: 0
   procs_per_model: 0
 
@@ -510,6 +509,21 @@ model {
     mean_squared_error {}
   }
 
+  ####For metric, loss per individual sample
+  #layer {
+  #  parents: "reconstruction image_data_id"
+  #  name: "squared_error"
+  #  data_layout: "model_parallel"
+  #  squared_difference {}
+  #}
+
+  #callback {
+  #  dump_outputs {
+  #    prefix:"/p/lscratchh/brainusr/jacobs32/EuroViz/"
+  #    layers: "squared_error"
+  #    execution_modes: "test"
+  #  }
+  #}
   ###################################################
   # end of layers
   ###################################################
