@@ -488,6 +488,7 @@ message CallbackDumpOutputs {
   string execution_modes = 2; // Default: all modes
   int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
   string prefix = 4;          // Prefix for output files
+  string format = 5;          // Options: csv, tsv, npy, npz (default: csv)
 }
 
 message CallbackDumpErrorSignals {
