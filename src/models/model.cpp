@@ -1547,4 +1547,12 @@ bool model::save_weights(persist& p) {
   return true;
 }
 
+bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
+  // load weights that appear in weight list.
+  for(weights *w : m_weights) {
+    w->load_from_save(latest,weight_list);
+  }
+  return true;
+}
+
 }  // namespace lbann

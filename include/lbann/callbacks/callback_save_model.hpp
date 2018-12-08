@@ -60,6 +60,8 @@ class lbann_callback_save_model : public lbann_callback {
   void on_test_end(model *m) override;
   bool save_model(model *m);
   bool save_model_weights(model *m);
+  static bool load_model_weights(std::string ckpt_dir, model * m);
+
   std::string name() const override { return "save model"; }
  private:
   std::string m_dir; //directory to save file

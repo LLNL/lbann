@@ -241,6 +241,10 @@ class model {
   /** Save the model's weight to file */
   virtual bool save_weights(persist& p);
 
+  /** Reload the model's weights from a file */
+  virtual bool reload_weights(const std::string latest,
+                              const std::vector<std::string>& weight_list);
+
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 

@@ -34,6 +34,8 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <fstream>
 #include <unistd.h>
+#include <dirent.h>
+#include <cstdlib>
 
 namespace lbann {
 
@@ -130,6 +132,44 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
     fflush(stdout);
   }
   p.reset_bytes();
+  return true;
+}
+
+bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m) {
+  std::vector<std::string> weight_list = std::vector<std::string>();
+  int epochLast = -1;
+  int stepLast = -1;
+  std::string latest;
+  latest = get_last_shared_checkpoint_filename(m, ckpt_dir);
+
+  // get last epoch and step saved.
+  int success = read_latest(latest, &epochLast, &stepLast);
+  if(!success) {
+    return false;
+  }
+  lbann_comm *comm = m->get_comm();
+  if(comm->am_model_master()) {
+    latest = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+    std::cout << "Loading model weights from " << latest << std::endl;
+  }
+  comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
+
+  DIR *weight_dir;
+  struct dirent *weight_file;
+  if((weight_dir = opendir(latest.c_str())) == NULL)
+  {
+    std::cout << "error opening " << latest << "\n";
+    return false;
+  }
+  // Populate weight list
+  while ((weight_file = readdir(weight_dir)) != NULL){
+    if(!strncmp(weight_file->d_name,"model_weights_",14))
+      weight_list.push_back(std::string(weight_file->d_name));
+  }
+  closedir(weight_dir);
+
+  // load weights that appear in weight list.
+  m->reload_weights(latest, weight_list);
   return true;
 }
 
