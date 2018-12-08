@@ -121,9 +121,6 @@ model *build_model_from_prototext(int argc, char **argv,
     if (opts->has_string("share_testing_data_readers")) {
       is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
     }
-    if (master) {
-      std::cout << "******************************************************************************** is shared reader " << is_shared_training_data_reader << " " << pb_model->name() << std::endl;
-    }
     init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
 
     // hack to prevent all data readers from loading identical data; instead,
