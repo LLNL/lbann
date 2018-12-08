@@ -41,6 +41,9 @@ option(HDF5_BUILD_SHARED_LIBS
 # HDF5-specific configuration options explicitly exposed
 option(HDF5_BUILD_EXAMPLES "Build HDF5 examples." OFF)
 
+option(HDF5_USE_18_API_DEFAULT "Use 1.8 API by default" ON)
+option(HDF5_USE_110_API_DEFAULT "Use 1.10 API by default" OFF)
+
 option(HDF5_BUILD_FORTRAN "Build HDF5 with fortran support" OFF)
 
 if (HDF5_BUILD_FORTRAN)
