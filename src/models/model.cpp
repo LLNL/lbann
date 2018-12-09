@@ -28,6 +28,7 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
@@ -1557,6 +1558,16 @@ bool model::reload_weights(const std::string latest, const std::vector<std::stri
     w->load_from_save(latest,weight_list);
   }
   return true;
+}
+
+bool model::save_model() {
+  for (auto* c : m_callbacks) {
+    auto *cb = dynamic_cast<lbann_callback_save_model*>(c);
+    if(cb != nullptr) {
+      return cb->save_model(this);
+    }
+  }
+  return false;
 }
 
 }  // namespace lbann

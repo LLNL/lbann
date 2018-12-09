@@ -45,10 +45,6 @@ void lbann_callback_save_model::on_train_end(model *m) {
   save_model(m);
 }
 
-void lbann_callback_save_model::on_test_end(model *m) {
-  save_model(m);
-}
-
 void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& proto,
                                                    const std::string filename) {
   std::fstream output(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);

@@ -245,6 +245,9 @@ class model {
   virtual bool reload_weights(const std::string latest,
                               const std::vector<std::string>& weight_list);
 
+  /** Saves the model explicitly if the save_model callback is present */
+  virtual bool save_model();
+
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 

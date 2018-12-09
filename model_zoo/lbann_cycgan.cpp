@@ -165,6 +165,8 @@ int main(int argc, char *argv[]) {
       super_step++;
     }
 
+    ae_cycgan_model->save_model();
+
     //has no affect unless option: --st_on was given
     stack_profiler::get()->print();
 
