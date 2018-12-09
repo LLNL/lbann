@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_dump_outputs.hpp"
+#include "lbann/io/file_io.hpp"
 #include <cnpy.h>
 
 namespace lbann {
@@ -119,6 +120,9 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
   if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }
   if (!m_layer_names.empty()
       && m_layer_names.count(l.get_name()) == 0) { return; }
+
+  // Create the directory
+  lbann::makedir(m_file_prefix.c_str());
 
   // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {

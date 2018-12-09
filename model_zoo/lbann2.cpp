@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     }
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      load_model_weights(opts->get_string("ckpt_dir"), model_1);
+      lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), model_1);
     }
     // Train model
     if (master)  std::cerr << "\nSTARTING train - model 1\n\n";

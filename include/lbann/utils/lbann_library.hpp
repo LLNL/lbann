@@ -39,8 +39,6 @@ model *build_model_from_prototext(int argc, char **argv,
                                  lbann_comm *comm,
                                  bool first_model);
 
-bool load_model_weights(std::string ckpt_dir, model *m);
-
 void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, int io_threads_per_process, int io_threads_offset);
 
 } // namespace lbann
