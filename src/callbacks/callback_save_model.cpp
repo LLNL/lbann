@@ -146,21 +146,21 @@ bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model *
   if(!success) {
     return false;
   }
-  lbann_comm *comm = m->get_comm();
   active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+  lbann_comm *comm = m->get_comm();
   if(comm->am_model_master()) {
     std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
   }
 
-  DIR *weight_dir = opendir(active_ckpt_dir.c_str());
-  if(weight_dir == nullptr)
+  DIR *weight_dir;
+  struct dirent *weight_file;
+  if((weight_dir = opendir(active_ckpt_dir.c_str())) == nullptr)
   {
     std::cout << "error opening " << active_ckpt_dir << "\n";
     return false;
   }
   // Populate weight list
-  struct dirent *weight_file = readdir(weight_dir);
-  while (weight_file != NULL){
+  while ((weight_file = readdir(weight_dir)) != nullptr){
     if(!strncmp(weight_file->d_name,"model_weights_",14))
       weight_list.push_back(std::string(weight_file->d_name));
   }
