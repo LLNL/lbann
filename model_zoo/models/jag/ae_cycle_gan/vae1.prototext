@@ -421,6 +421,23 @@ model {
     mean_squared_error {}
   }
   ####For metric, loss per individual sample
+  layer {
+    name: "ae_err"
+    data_layout: "model_parallel"
+    parents: "param_data_id mean_squared_error"
+    concatenation {
+    }
+  }
+  callback {
+    dump_outputs {
+      #prefix: "/p/lscratchh/brainusr/jacobs32/EuroViz/ae_loss"
+      #prefix: "/p/gpfs1/jacobs32/EuroViz2/ae_loss/"
+      prefix: "ae_loss/"
+      layers: "ae_err"
+      execution_modes: "test"
+    }
+  }
+  ####For metric, loss per individual sample
   #layer {
   #  parents: "reconstruction image_data_dummy"
   #  name: "squared_error"
@@ -435,6 +452,7 @@ model {
   #    execution_modes: "test"
   #  }
   #}
+  callback { save_model { dir: "model" } }
   ###################################################
   # end of layers
   ###################################################

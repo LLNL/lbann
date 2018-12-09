@@ -1340,7 +1340,7 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - linearized data size: "   + std::to_string(get_linearized_data_size()) + "\n"
     + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + "\n"
     + " - leading DR: " + (m_leading_reader == this ? "true" : "false")
-    + " ptr=" + leading_reader.str() + ")\n";
+    + " (ptr=" + leading_reader.str() + ")\n";
   if (!m_scalar_filter.empty()) {
     ret += " - scalar filter:";
     for (const auto& f: m_scalar_filter) {

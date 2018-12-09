@@ -79,7 +79,7 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
   const El::Int localWidth = M.LocalWidth();
   // If this is the case we will try to grab the matrix from model rank 0 on reload
   if(localHeight * localWidth == 0) { return true; }
-     
+
 
   int fd = lbann::openwrite(filename.c_str());
 
@@ -143,7 +143,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
   int fd = openread(filename.c_str());
   // file does not exist. we will try to grab matrix from rank 0
    if( fd == -1 ) {return false;}
- 
+
   struct layer_header header;
   ssize_t read_rc = read(fd, &header, sizeof(header));
   if (read_rc != sizeof(header)) {
@@ -230,22 +230,22 @@ void lbann::persist::open_checkpoint(const char *dir) {
   strcpy(m_checkpoint_dir, dir);
 
   // open the file for writing
-   sprintf(m_model_filename, "%s/model", dir);
+  sprintf(m_model_filename, "%s/model", dir);
 
   // define filename for train state
   sprintf(m_train_filename, "%s/train", dir);
-    
-  if(ckpt_type != callback_type::validation){
+
+  if(ckpt_type != callback_type::validation && ckpt_type != callback_type::inference){
     m_model_fd = lbann::openwrite(m_model_filename);
     if (m_model_fd < 0) {
       throw lbann_exception(std::string("Failed to open file: ") + m_model_filename);
-    } 
+    }
 
     m_train_fd = lbann::openwrite(m_train_filename);
     if (m_train_fd < 0) {
       throw lbann_exception(std::string("Failed to open file: ") + m_train_filename);
     }
-  } 
+  }
   if (ckpt_type == callback_type::validation || ckpt_type == callback_type::batch){
     sprintf(m_validate_filename, "%s/validate", dir);
     m_validate_fd = lbann::openwrite(m_validate_filename);
@@ -283,8 +283,8 @@ void lbann::persist::open_restart(const char *dir) {
   // define filename for train state
   sprintf(m_train_filename, "%s/train", dir);
   // define filename for validate phase state
-  sprintf(m_validate_filename, "%s/validate", dir);  
-  
+  sprintf(m_validate_filename, "%s/validate", dir);
+
   m_model_fd = lbann::openread(m_model_filename);
   if (m_model_fd < 0) {
     // restart failed, throw exception
@@ -300,7 +300,7 @@ void lbann::persist::open_restart(const char *dir) {
   if (m_validate_fd < 0) {
     // restart failed, throw exception
       std::cout << "Failed to read " << m_validate_filename << " Not an error if validation percent = 0" << std::endl;
-    //throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename); 
+    //throw lbann_exception(std::string("Failed to read file: ") + m_validate_filename);
   }
 }
 
@@ -388,7 +388,7 @@ bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, 
   }
   else {
     return false;
-  } 
+  }
   return true;
 }
 

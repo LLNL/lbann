@@ -869,6 +869,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "  --data_reader_percent=<float>\n"
+       "  --share_testing_data_readers=<bool:[0|1]>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"

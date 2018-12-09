@@ -610,6 +610,7 @@ message CallbackCheckpoint {
 message CallbackSaveModel {
   string dir = 1;
   string extension = 2;
+  int64 steps = 3;
 }
 
 message CallbackReplaceWeights {

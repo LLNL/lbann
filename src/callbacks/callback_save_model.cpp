@@ -23,29 +23,47 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_model .hpp .cpp - Callbacks to save models, currently as binary proto 
+// lbann_callback_save_model .hpp .cpp - Callbacks to save a models description and weights
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <string>
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_checkpoint.hpp" // Reuse the checkpoint naming scheme
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <fstream>
 #include <unistd.h>
+#include <dirent.h>
+#include <cstdlib>
 
 namespace lbann {
 
 
-//@todo change to on training end
-void lbann_callback_save_model::on_epoch_end(model *m) {
-  lbann_data::Model model_param;
-  if(m->get_comm()->am_world_master()) std::cout << "Save Model callback: write proto " << std::endl; 
-  m->write_proto(&model_param);
-  std::string filename = m_dir + "." + m_extension;
-  //@todo flag to save as either binary or text
-  if(m_extension == "txt") write_proto_text(model_param,filename);
-  else write_proto_binary(model_param,filename);
+/// Save the model's prototext and weights
+void lbann_callback_save_model::on_train_end(model *m) {
+  if(need_save(m)){
+    save_model(m);
+  }
+}
+
+// Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
+bool lbann_callback_save_model::need_save(model *m) {
+  // If a save interval was not set, then we save at the end of training
+  if (m_save_interval_steps == 0) {
+    return true;
+  }
+
+  /// The following code is to allow complex models like the CycleGAN that don't use epochs normally to control
+  /// how often they are checkpointed
+  bool save_model_now = false;
+
+  // If we are at the end of a training and the training mb step lands on defined interval, trigger save
+  if (m_save_interval_steps > 0) {
+    save_model_now = (m->get_cur_step() > 0) && (m->get_cur_step() % m_save_interval_steps == 0);
+  }
+
+  return save_model_now;
 }
 
 void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& proto,
@@ -56,11 +74,118 @@ void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& prot
 
 void lbann_callback_save_model::write_proto_text(const lbann_data::Model& proto,
                                                  const std::string filename) {
-  int fd = open(filename.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+  int fd = openwrite(filename.c_str());
   auto output = new google::protobuf::io::FileOutputStream(fd);
   google::protobuf::TextFormat::Print(proto, output);
   delete output;
   close(fd);
+}
+
+bool lbann_callback_save_model::save_model(model *m) {
+  lbann_data::Model model_param;
+
+  p.set_cb_type(callback_type::inference);
+  save_model_weights(m);
+  p.set_cb_type(callback_type::invalid);
+
+#if 0 /// @todo BVE FIXME this method for writing out the prototext does not seem to work
+  m->write_proto(&model_param);
+  std::string filename = m->get_name() + "." + m_extension;
+  std::string fullpath = m_dir + "/" + filename;
+  //@todo flag to save as either binary or text
+  if(m_extension == "bin") write_proto_binary(model_param,fullpath);
+  else write_proto_text(model_param,fullpath);
+#endif
+
+  return true;
+}
+
+// Save model weights
+bool lbann_callback_save_model::save_model_weights(model *m) {
+  // if the checkpoint directory is not defined, bail
+  if (m_dir.length() == 0) {
+    return false;
+  }
+  // time how long this takes
+  // read current epoch and step counters from model
+  El::Timer timer;
+  lbann_comm *comm = m->get_comm();
+  comm->model_barrier();
+  // let user know we're saving the weights
+  int epoch = m->get_cur_epoch();
+  int step = m->get_cur_step();
+  if (comm->am_model_master()) {
+    timer.Start();
+    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_model_rank(), epoch, step);
+    fflush(stdout);
+  }
+
+  // Shared checkpoint, logic identical to Distributed.i
+  makedir(m_dir.c_str());
+  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), epoch, step);
+  if (comm->am_model_master()) {
+    p.open_checkpoint(epochdir.c_str());
+  }
+  // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
+  comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+  m->save_weights(p);
+  // close our checkpoint
+  p.close_checkpoint();
+  if (comm->am_model_master()) {
+    std::string latest_file = get_last_shared_checkpoint_filename(m, m_dir.c_str());
+    write_latest(latest_file, epoch, step);
+  }
+
+  uint64_t bytes_count = p.get_bytes();
+
+  if (comm->am_model_master()) {
+    EvalType secs = timer.Stop();
+    EvalType bw = 0;
+    if (secs > 0.0) {
+      bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
+    }
+    printf("[%s.%d] Saving model weights complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+           m->get_name().c_str(), comm->get_model_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
+    fflush(stdout);
+  }
+  p.reset_bytes();
+  return true;
+}
+
+bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m) {
+  std::vector<std::string> weight_list = std::vector<std::string>();
+  int epochLast = -1;
+  int stepLast = -1;
+  std::string active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
+
+  // get last epoch and step saved.
+  int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
+  if(!success) {
+    return false;
+  }
+  active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+  lbann_comm *comm = m->get_comm();
+  if(comm->am_model_master()) {
+    std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
+  }
+
+  DIR *weight_dir = opendir(active_ckpt_dir.c_str());
+  if(weight_dir == nullptr)
+  {
+    std::cout << "error opening " << active_ckpt_dir << "\n";
+    return false;
+  }
+  // Populate weight list
+  struct dirent *weight_file;
+  while ((weight_file = readdir(weight_dir)) != nullptr){
+    if(!strncmp(weight_file->d_name,"model_weights_",14))
+      weight_list.push_back(std::string(weight_file->d_name));
+  }
+  closedir(weight_dir);
+
+  // load weights that appear in weight list.
+  m->reload_weights(active_ckpt_dir, weight_list);
+  return true;
 }
 
 }  // namespace lbann
