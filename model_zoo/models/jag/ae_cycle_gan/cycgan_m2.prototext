@@ -1,4 +1,6 @@
 model {
+  name: "fw_model"
+  shareable_training_data_reader: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -29,7 +31,7 @@ model {
     parents: "data"
     children: "image_data_id param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -449,7 +451,8 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -608,7 +611,8 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"
@@ -710,7 +714,7 @@ model {
     he_normal_initializer {
     }
   }
-  mini_batch_size: 100
+  mini_batch_size: 256
   callback {
     print {
       interval: 1
@@ -718,11 +722,12 @@ model {
   }
   callback { timer {} }
  #callback {
- #   dump_activations {
- #     basename: "/dir/to/dump_y_activations/"
-  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jags10K_multi/cycgan_m2/"
-  #    interval: 100
-  #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
+ #   dump_outputs {
+ #     prefix: "/dir/to/dump_y_activations/"
+  #    prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jags10K_multi/cycgan_m2/"
+  #    batch_interval: 100
+  #    layers: "image_data_dummy gen1fc4_1 l_l2_y"
+  #    execution_modes: "test"
   #  }
   #}
   block_size: 256

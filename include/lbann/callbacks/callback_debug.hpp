@@ -41,9 +41,9 @@ class lbann_callback_debug : public lbann_callback {
    *  If modes is empty, status updates will be printed for all
    *  execution modes.
    */
-  lbann_callback_debug(const std::set<execution_mode>& modes,
+  lbann_callback_debug(std::set<execution_mode> modes,
                        lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer), m_modes(modes) {}
+    lbann_callback(1, summarizer), m_modes(std::move(modes)) {}
   lbann_callback_debug(const lbann_callback_debug&) = default;
   lbann_callback_debug& operator=(const lbann_callback_debug&) = default;
   lbann_callback_debug* copy() const override { return new lbann_callback_debug(*this); }

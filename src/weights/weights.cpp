@@ -52,9 +52,9 @@ std::string get_dims_string(const std::vector<int>& matrix_height_dims,
   ss << ")";
   return ss.str();
 }
-  
+
 } // namespace
-  
+
 weights::weights(lbann_comm* comm)
   : m_comm(comm),
     m_frozen(false) {
@@ -74,7 +74,7 @@ weights::weights(lbann_comm* comm)
   m_matrix_dist.colCut = 0;
   m_matrix_dist.rowCut = 0;
   m_matrix_dist.root = 0;
-  m_matrix_dist.grid = &comm->get_model_grid();
+  m_matrix_dist.grid = &(comm->get_model_grid());
   m_matrix_dist.device = El::Device::CPU;
 
 }
@@ -202,7 +202,7 @@ const optimizer* weights::get_optimizer() const {
 void weights::set_optimizer(std::unique_ptr<optimizer>& opt) {
   m_optimizer = std::move(opt);
 }
-  
+
 // -----------------------------------------------
 // Matrix distribution accessors
 // -----------------------------------------------
@@ -213,7 +213,7 @@ El::DistData weights::get_matrix_distribution() const {
 void weights::set_matrix_distribution(El::DistData dist) {
   m_matrix_dist = dist;
 }
-  
+
 // -----------------------------------------------
 // Setup
 // -----------------------------------------------
@@ -375,7 +375,7 @@ void weights::reconcile_values(Al::request& req) {
     m_comm->nb_allreduce(values, values.RedundantComm(), req);
   }
 }
-  
+
 // -----------------------------------------------
 // Checkpointing
 // -----------------------------------------------
@@ -433,10 +433,10 @@ void weights::write_proto(lbann_data::WeightsData* proto) const {
 bool weights::load_from_checkpoint_shared(lbann::persist& p)
 {
   // define filename containing saved weight values
-  char l_name[512], f_name[512];
-  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->Height(), m_values->Width());
-  sprintf(f_name, "%s.bin", l_name);
-  p.read_distmat(persist_type::model, f_name, m_values.get());
+  auto f_name = El::BuildString("weights_", m_name, "_",
+                                m_values->Height(), "x", m_values->Width(),
+                                ".bin");
+  p.read_distmat(persist_type::model, f_name.c_str(), m_values.get());
   if (m_optimizer != nullptr) {
     m_optimizer->load_from_checkpoint_shared(p, m_name);
   }
@@ -444,41 +444,43 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-bool weights::load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list){
+bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list){
   // create weight file name to match to weight list entry
-  char l_name[1024];
-  sprintf(l_name, "model_weights_%s_%lldx%lld.bin", m_name.c_str(), m_values->Height(), m_values->Width());
-  std::vector<std::string>::iterator it;
-  it = find(weight_list.begin(),weight_list.end(),l_name);
-  auto pos = std::distance(weight_list.begin(),it);
+  auto l_name = El::BuildString("model_weights_", m_name, "_",
+                                m_values->Height(), "x", m_values->Width(), ".bin");
+  auto it = std::find(weight_list.begin(),weight_list.end(),l_name);
   // If match is found read in weight values.
-  if((unsigned) pos < weight_list.size()){
-    std::string full_path = ckpt_dir + weight_list[pos];
-    if(m_comm->am_world_master())
-      std::cout << "Loading " << m_name <<  "\n";
+  if(it != weight_list.end()) {
+    std::string full_path = ckpt_dir + *it;
+    if(m_comm->am_world_master()) {
+      std::cout << "Loading " << m_name << " <- " << *it << "\n";
+    }
     El::Read(*m_values,full_path, El::BINARY, true);
-
   }
   return true;
 }
 
 bool weights::save_to_checkpoint_distributed(lbann::persist& p){
   // Functions identically to shared checkpoint except weights and parameters are saved on a per rank basis
-  char l_name[512];
-  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->LocalHeight(), m_values->LocalWidth());
-  p.write_rank_distmat(persist_type::model, l_name, *m_values);
-  if (m_optimizer != nullptr)
+  auto l_name = El::BuildString("weights_", m_name,
+                                "_", m_values->LocalHeight(),
+                                "x", m_values->LocalWidth(), ".bin");
+  p.write_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
+  if (m_optimizer != nullptr) {
     m_optimizer->save_to_checkpoint_distributed(p, m_name);
+  }
   return true;
 }
 
 bool weights::load_from_checkpoint_distributed(lbann::persist& p){
   // Functions identically to shared checkpoint except weights and parameters are loaded on a per rank basis
-  char l_name[512];
-  sprintf(l_name, "weights_%s_%lldx%lld", m_name.c_str(), m_values->LocalHeight(), m_values->LocalWidth());
-  p.read_rank_distmat(persist_type::model, l_name, *m_values);
-  if (m_optimizer != nullptr)
+  auto l_name = El::BuildString("weights_", m_name,
+                                "_", m_values->LocalHeight(),
+                                "x", m_values->LocalWidth(), ".bin");
+  p.read_rank_distmat(persist_type::model, l_name.c_str(), *m_values);
+  if (m_optimizer != nullptr) {
     m_optimizer->load_from_checkpoint_distributed(p, m_name);
+  }
   return true;
 }
 

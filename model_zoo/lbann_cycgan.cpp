@@ -33,18 +33,19 @@
 
 using namespace lbann;
 
-const int lbann_default_random_seed = 42;
-
-model * build_model_from_prototext(int argc, char **argv,
-                                   lbann_data::LbannPB &pb,
-                                   lbann_comm *comm,
-                                   bool first_model);
-
-
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   lbann_comm *comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
+
+  if (master) {
+    std::cout << "\n\n==============================================================\n"
+              << "STARTING lbann with this command line:\n";
+    for (int j=0; j<argc; j++) {
+      std::cout << argv[j] << " ";
+    }
+    std::cout << std::endl << std::endl;
+  }
 
 #ifdef EL_USE_CUBLAS
   El::GemmUseGPU(32,32,32);
@@ -60,6 +61,16 @@ int main(int argc, char *argv[]) {
       return 0;
     }
 
+    //this must be called after call to opts->init();
+    if (!opts->has_bool("disable_signal_handler")) {
+      std::string file_base = (opts->has_bool("stack_trace_to_file") ?
+                               "stack_trace" : "");
+      stack_trace::register_signal_handler(file_base);
+    }
+
+    //to activate, must specify --st_on on cmd line
+    stack_profiler::get()->activate(comm->get_rank_in_world());
+
     std::stringstream err;
 
     std::vector<lbann_data::LbannPB *> pbs;
@@ -68,7 +79,6 @@ int main(int argc, char *argv[]) {
     model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
                                                 comm, true); //D1 solver
     //hack, overide model name to make reporting easy, what can break?"
-    model_1->set_name("dis_model");
     model *model_2 = nullptr; //G1 solver
     model *model_3 = nullptr; //G2 solver
 
@@ -79,25 +89,21 @@ int main(int argc, char *argv[]) {
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
                                            comm, false);
-      model_2->set_name("fw_model");
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
                                            comm, false);
-      model_3->set_name("inv_model");
     }
 
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
                                            comm, false);
-      ae_model->set_name("ae_model");
     }
 
     if (pbs.size() > 4) {
       ae_cycgan_model = build_model_from_prototext(argc, argv, *(pbs[4]),
                                            comm, false);
-      ae_cycgan_model->set_name("ae_cycgan_model");
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -122,7 +128,7 @@ int main(int argc, char *argv[]) {
     int max_super_step = pb_model.super_steps();
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator (D1 & D2) models at step " << super_step <<"\n\n";
-      model_1->train( super_step*pb_model.num_epochs(),pb_model_2.num_batches());
+      model_1->train( super_step*pb_model.num_epochs(),pb_model.num_batches());
 
       if(master) std::cout << " Copy all trained weights from discriminator to G1 and train/freeze as appropriate " << std::endl;
       auto model1_weights = model_1->get_weights();
@@ -130,14 +136,14 @@ int main(int argc, char *argv[]) {
       if (master) std::cerr << "\n STARTING train - G1 solver model at step " << super_step << " \n\n";
       model_2->train( super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
       // Evaluate model on test set
-      model_2->evaluate(execution_mode::testing);
+      model_2->evaluate(execution_mode::testing,pb_model_2.num_batches());
 
       if(master) std::cout << " Copy all trained weights from discriminator to G2 and train/freeze as appropriate " << std::endl;
       model_3->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G2 solver model at step " << super_step << " \n\n";
       model_3->train( super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
       // Evaluate model on test set
-      model_3->evaluate(execution_mode::testing);
+      model_3->evaluate(execution_mode::testing,pb_model_3.num_batches());
 
       if(master) std::cout << " Update G1 weights " << std::endl;
       auto model2_weights = model_2->get_weights();
@@ -154,12 +160,13 @@ int main(int argc, char *argv[]) {
         ae_cycgan_model->copy_trained_weights_from(model2_weights);
         if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
         ae_cycgan_model->evaluate(execution_mode::testing);
-       }
+      }
 
       super_step++;
     }
 
-
+    //has no affect unless option: --st_on was given
+    stack_profiler::get()->print();
 
     delete model_1;
     if (model_2 != nullptr) {
@@ -187,224 +194,4 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
-
-}
-
-model * build_model_from_prototext(int argc, char **argv,
-                                   lbann_data::LbannPB &pb,
-                                   lbann_comm *comm,
-                                   bool first_model) {
-  int random_seed = lbann_default_random_seed;
-  bool master = comm->am_world_master();
-  if (master) std::cerr << "starting build_model_from_prototext\n";
-  model *model = nullptr; //d hysom bad namimg! should fix
-  try {
-    std::stringstream err;
-    options *opts = options::get();
-
-    // Optionally over-ride some values in prototext
-    get_cmdline_overrides(comm, pb);
-
-    lbann_data::Model *pb_model = pb.mutable_model();
-
-    // Adjust the number of parallel readers; this may be adjusted
-    // after calling split_models()
-    set_num_parallel_readers(comm, pb);
-
-    // Set algorithmic blocksize
-    if (pb_model->block_size() == 0 and master) {
-      err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
-      LBANN_ERROR(err.str());
-    }
-    El::SetBlocksize(pb_model->block_size());
-
-    // Change random seed if needed.
-    if (pb_model->random_seed() > 0) {
-      random_seed = pb_model->random_seed();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
-    }
-    // Initialize models differently if needed.
-#ifndef LBANN_DETERMINISTIC
-    if (pb_model->random_init_models_differently()) {
-      random_seed = random_seed + comm->get_model_rank();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
-    }
-#else
-    if (pb_model->random_init_models_differently()) {
-      if (master) {
-        std::cout << "WARNING: Ignoring random_init_models_differently " <<
-          "due to sequential consistency" << std::endl;
-      }
-    }
-#endif
-
-    // Set up the communicator and get the grid.
-    int procs_per_model = pb_model->procs_per_model();
-    if (procs_per_model == 0) {
-      procs_per_model = comm->get_procs_in_world();
-    }
-    if (first_model) {
-      comm->split_models(procs_per_model);
-      if (pb_model->num_parallel_readers() > procs_per_model) {
-        pb_model->set_num_parallel_readers(procs_per_model);
-      }
-    } else if (procs_per_model != comm->get_procs_per_model()) {
-      LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
-    }
-
-    // Save info to file; this includes the complete prototext (with any over-rides
-    // from the cmd line) and various other info
-    save_session(comm, argc, argv, pb);
-
-    // Report useful information
-    if (master) {
-
-      // Report hardware settings
-      std::cout << "Hardware properties (for master process)" << std::endl
-                << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-                << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
-#ifdef HYDROGEN_HAVE_CUDA
-      std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
-#endif // HYDROGEN_HAVE_CUDA
-      std::cout << std::endl;
-
-      // Report build settings
-      std::cout << "Build settings" << std::endl;
-      std::cout << "  Type     : ";
-#ifdef LBANN_DEBUG
-      std::cout << "Debug" << std::endl;
-#else
-      std::cout << "Release" << std::endl;
-      std::cout << "  Aluminum : ";
-#ifdef LBANN_HAS_ALUMINUM
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_ALUMINUM
-#endif // LBANN_DEBUG
-      std::cout << "  CUDA     : ";
-#ifdef LBANN_HAS_GPU
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_GPU
-      std::cout << "  cuDNN    : ";
-#ifdef LBANN_HAS_CUDNN
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // LBANN_HAS_CUDNN
-      std::cout << "  CUB      : ";
-#ifdef HYDROGEN_HAVE_CUB
-      std::cout << "detected" << std::endl;
-#else
-      std::cout << "NOT detected" << std::endl;
-#endif // HYDROGEN_HAVE_CUB
-      std::cout << std::endl;
-
-      // Report device settings
-      std::cout << "GPU settings" << std::endl;
-      bool disable_cuda = pb_model->disable_cuda();
-#ifndef LBANN_HAS_GPU
-      disable_cuda = true;
-#endif // LBANN_HAS_GPU
-      std::cout << "  CUDA         : "
-                << (disable_cuda ? "disabled" : "enabled") << std::endl;
-      std::cout << "  cuDNN        : ";
-#ifdef LBANN_HAS_CUDNN
-      std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
-#endif // LBANN_HAS_CUDNN
-      const auto* env = std::getenv("MV2_USE_CUDA");
-      std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
-      std::cout << std::endl;
-
-#ifdef LBANN_HAS_ALUMINUM
-      std::cout << "Aluminum Features:" << std::endl;
-      std::cout << "  NCCL : ";
-#ifdef AL_HAS_NCCL
-      std::cout << "enabled" << std::endl;
-#else
-      std::cout << "disabled" << std::endl;
-#endif // AL_HAS_NCCL
-      std::cout << std::endl;
-#endif // LBANN_HAS_ALUMINUM
-
-      // Report model settings
-      const auto& grid = comm->get_model_grid();
-      std::cout << "Model settings" << std::endl
-                << "  Models              : " << comm->get_num_models() << std::endl
-                << "  Processes per model : " << procs_per_model << std::endl
-                << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
-      std::cout << std::endl;
-
-    }
-
-    // Display how the OpenMP threads are provisioned
-    if (opts->has_string("print_affinity")) {
-      display_omp_setup();
-    }
-
-    // Initialize data readers
-    //@todo: code not in place for correctly handling image preprocessing
-    std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(comm, pb, data_readers);
-
-    // hack to prevent all data readers from loading identical data; instead,
-    // share a single copy. See data_reader_jag_conduit_hdf5 for example
-    if (first_model) {
-      if (opts->has_string("share_data_reader_data")) {
-        for (auto t : data_readers) {
-          opts->set_ptr((void*)t.second);
-        }
-      }
-    }
-
-    // User feedback
-    print_parameters(comm, pb);
-
-    // Initalize model
-    model = proto::construct_model(comm,
-                                   data_readers,
-                                   pb.optimizer(),
-                                   pb.model());
-    model->setup();
-
-    // restart model from checkpoint if we have one
-    //@todo
-    //model->restartShared();
-
-    if (comm->am_world_master()) {
-      std::cout << std::endl;
-      model->print_description(std::cout);
-      std::cout << "Callbacks:" << std::endl;
-      for (lbann_callback *cb : model->get_callbacks()) {
-        std::cout << cb->name() << std::endl;
-      }
-    }
-
-#ifndef LBANN_DETERMINISTIC
-      // Under normal conditions, reinitialize the random number generator so
-      // that regularization techniques (e.g. dropout) generate unique patterns
-      // on different ranks.
-      init_random(random_seed + comm->get_rank_in_world());
-#else
-      if(comm->am_world_master()) {
-        std::cout <<
-          "--------------------------------------------------------------------------------\n"
-          "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-          "--------------------------------------------------------------------------------\n";
-      }
-#endif
-
-  } catch (std::exception& e) {
-    El::ReportException(e);
-  }
-
-  return model;
 }

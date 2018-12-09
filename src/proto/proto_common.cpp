@@ -40,7 +40,8 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
 
 int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
 
-void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
+void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
+                       bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader, bool is_shareable_validation_data_reader)
 {
 #ifdef LBANN_HAS_CONDUIT
   static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
@@ -130,12 +131,18 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
 
-      if (!peek_map(leading_reader_jag_conduit, readme.role())) {
-        leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
-      } else {
-        const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
-        *reader_jag_conduit = *leader;
-        reader_jag_conduit->set_leading_reader(leader);
+      /// Allow the prototext to control if the data readers is
+      /// shareable for each phase training, validation, or testing
+      if((is_shareable_training_data_reader && readme.role() == "train")
+         || (is_shareable_testing_data_reader && readme.role() == "test")
+         || (is_shareable_validation_data_reader && readme.role() == "validation")) {
+        if (!peek_map(leading_reader_jag_conduit, readme.role())) {
+          leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
+        } else {
+          const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
+          *reader_jag_conduit = *leader;
+          reader_jag_conduit->set_leading_reader(leader);
+        }
       }
 
       for (int i=0; i < pb_model.layer_size(); ++i) {
@@ -383,18 +390,28 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
 #ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
-        const std::string role = "validate";
-        if (!peek_map(leading_reader_jag_conduit, role)) {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
-          reader_jag_conduit->set_role(role);
-          leading_reader_jag_conduit[role] = reader_jag_conduit;
+        /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
+        /// is also shared
+        if(is_shareable_training_data_reader) {
+          const std::string role = "validate";
+          if (!peek_map(leading_reader_jag_conduit, role)) {
+            reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+            reader_jag_conduit->set_role(role);
+            leading_reader_jag_conduit[role] = reader_jag_conduit;
+          } else {
+            // Copy construct the leading validation reader into another validation reader.
+            // We do not copy the train reader as the subset of data may already have been
+            // assigned to validation reader when validation percent is set.
+            // Thus, we need to avoid taking a subset of a subset.
+            const auto leader = peek_map(leading_reader_jag_conduit, role);
+            reader_validation = new data_reader_jag_conduit(*leader);
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_jag_conduit->set_leading_reader(leader);
+          }
         } else {
-          const auto leader = peek_map(leading_reader_jag_conduit, role);
-          reader_validation = new data_reader_jag_conduit(*leader);
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-          reader_jag_conduit->set_leading_reader(leader);
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
         }
 #endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
@@ -433,7 +450,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
-                  << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples." << std::endl;
+                  << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
+        if (name == "jag_conduit") {
+          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
+                    << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
+        }
+        std::cout << std::endl;
       }
 
       data_readers[execution_mode::validation] = reader_validation;
@@ -616,17 +638,17 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 
   if (opts->has_string("dag_model")) {
-    std::string sanity = model->name();
+    std::string sanity = model->type();
     if (sanity != "dnn") {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << " the current network model is: " << model->name()
+          << " the current network model is: " << model->type()
           << "; you can only change the model to 'dag_model' if the current model is 'dnn'";
       throw lbann_exception(err.str());
     }
     if (master) {
-      std::cout << "\nchanging model from " << model->name() << " to: dag\n\n";
+      std::cout << "\nchanging model from " << model->type() << " to: dag\n\n";
     }
-    model->set_name("dag_model");
+    model->set_type("dag_model");
   }
 
   if (opts->has_string("data_filedir")
@@ -653,7 +675,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
       }
     }
   }
-
   if (opts->has_int("mini_batch_size")) {
     model->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }
@@ -816,6 +837,8 @@ void print_help(lbann::lbann_comm *comm)
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
        "\n"
+       "  To reload from a previous checkpoint you specify --ckpt_dir=<string>\n"
+       "\n"
        "Some prototext values can be over-riden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
        "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
@@ -904,39 +927,27 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
     return;
   }
 
-  //get output filename
-  std::string base = ".";
-  if (!opts->has_string("saveme")) {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE since option --saveme=<string> is absent\n\n";
-    return;
-  }
-  std::string name = opts->get_string("saveme");
-  if (name == "0") {
-    std::cerr << "\nNOT WRITING SAVE_SESSION FILE due to option: --saveme=0\n\n";
-    return;
-  }
-
-  //check if "name" exists; if yes, append "_1"
-  bool exists = false;
-  std::ifstream in(name.c_str());
-  if (in) {
-    exists = true;
-    in.close();
-  }
-  if (exists) {
-    name += "_1";
-    //opts["saveme"] = name;
+  //setup file name
+  // Note: If the file name is not unique, append numbers until it is.
+  std::string model_name = p.model().name();
+  if (model_name.empty()) { model_name = "model"; };
+  std::string file_name = model_name + ".prototext";
+  El::Int file_name_index = 1;
+  while (std::ifstream(file_name.c_str())) {
+    file_name_index++;
+    file_name = (model_name
+                 + "_" + std::to_string(file_name_index)
+                 + ".prototext");
   }
 
   //open output file
-  std::ofstream out(name.c_str());
+  std::ofstream out(file_name.c_str());
   if (!out.is_open()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: failed to open file for writing: " << name;
-    throw std::runtime_error(err.str());
+    err << "failed to open file (" << file_name << ") for writing";
+    LBANN_ERROR(err.str());
   }
-  std::cout << std::endl << "writing options and prototext to file: " << name << "\n\n";
+  std::cout << std::endl << "writing options and prototext to file: " << file_name << "\n\n";
 
   //output all data
   out << "# cmd line for original experiment:\n#  $ ";
@@ -958,7 +969,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << opts->get_string("saveme") << "\n#\n#\n";
+      << " --loadme=" << file_name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};

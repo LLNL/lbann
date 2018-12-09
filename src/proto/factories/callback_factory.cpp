@@ -314,18 +314,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
 
   if (proto_cb.has_debug()) {
     const auto& params = proto_cb.debug();
-    std::set<execution_mode> modes;
-    for (const auto& mode : parse_list<>(params.phase())) {
-      if (mode == "train" || mode == "training") {
-        modes.insert(execution_mode::training);
-      } else if (mode == "validate" || mode == "validation") {
-        modes.insert(execution_mode::validation);
-      } else if (mode == "test" || mode == "testing") {
-        modes.insert(execution_mode::testing);
-      } else {
-        LBANN_ERROR("invalid execution mode (" + mode + ")");
-      }
-    }
+    const auto& modes = parse_set<execution_mode>(params.phase());
     return new lbann_callback_debug(modes, summarizer);
   }
   if (proto_cb.has_debug_io()) {
@@ -346,12 +335,15 @@ lbann_callback* construct_callback(lbann_comm* comm,
     const auto& params = proto_cb.dump_weights();
     return new lbann_callback_dump_weights(params.basename());
   }
-  if (proto_cb.has_dump_activations()) {
-    const auto& params = proto_cb.dump_activations();
-    const auto& layer_names = parse_list<>(params.layer_names());
-    return new lbann_callback_dump_activations(params.basename(),
-                                               params.interval(),
-                                               layer_names);
+  if (proto_cb.has_dump_outputs()) {
+    const auto& params = proto_cb.dump_outputs();
+    const auto& layer_names = parse_set<>(params.layers());
+    const auto& modes = parse_set<execution_mode>(params.execution_modes());
+    return new lbann_callback_dump_outputs(layer_names,
+                                           modes,
+                                           params.batch_interval(),
+                                           params.prefix(),
+                                           params.format());
   }
   if (proto_cb.has_dump_error_signals()) {
     const auto& params = proto_cb.dump_error_signals();
@@ -397,16 +389,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_check_metric()) {
     const auto& params = proto_cb.check_metric();
-    std::set<execution_mode> modes;
-    for (const auto& str : parse_list<>(params.execution_modes())) {
-      if (str == "train" || str == "training") {
-        modes.insert(execution_mode::training);
-      } else if (str == "validation") {
-        modes.insert(execution_mode::validation);
-      } else if (str == "test" || str == "testing") {
-        modes.insert(execution_mode::testing);
-      }
-    }
+    const auto& modes = parse_set<execution_mode>(params.execution_modes());
     return new lbann_callback_check_metric(params.metric(),
                                            modes,
                                            params.lower_bound(),

@@ -41,9 +41,9 @@ model {
   }
   callback { timer {} }
   callback {
-    dump_activations {
-      basename: "dump_acts/"
-      layer_names: "relu1 sum"
+    dump_outputs {
+      layers: "relu1 sum"
+      execution_modes: "test"
     }
   }
   callback {
