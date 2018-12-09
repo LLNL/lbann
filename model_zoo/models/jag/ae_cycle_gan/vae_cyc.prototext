@@ -509,6 +509,23 @@ model {
     data_layout: "model_parallel"
     mean_squared_error {}
   }
+  ####For metric, loss per individual sample
+  layer {
+    name: "fw_out_loss"
+    data_layout: "model_parallel"
+    parents: "param_data_id mean_squared_error"
+    concatenation {
+    }
+  }
+  callback {
+    dump_outputs {
+      #prefix: "/p/lscratchh/jacobs32/EuroViz/fw_out_loss/"
+      #prefix: "/p/gpfs1/jacobs32/EuroViz2/fw_out_loss/"
+      prefix: "fw_out_loss/"
+      layers: "fw_out_loss"
+      execution_modes: "test"
+    }
+  }
 
   ####For metric, loss per individual sample
   #layer {

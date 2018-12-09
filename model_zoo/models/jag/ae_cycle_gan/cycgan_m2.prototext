@@ -659,6 +659,14 @@ model {
     data_layout: "model_parallel"
     parents: "gsample_minus_y"
   }
+  ####For metric, loss per individual sample
+  layer {
+    name: "fw_latent_loss"
+    data_layout: "model_parallel"
+    parents: "param_data_id l_l2_y"
+    concatenation {
+    }
+  }
   weights {
     name: "gen1fc1linearity"
     he_normal_initializer {
@@ -721,6 +729,15 @@ model {
     }
   }
   callback { timer {} }
+  callback {
+    dump_outputs {
+      #prefix: "/p/lscratchh/jacobs32/EuroViz/fw_latent_loss/"
+      #general prefix: "/p/gpfs1/jacobs32/EuroViz2/fw_latent_loss/"
+      prefix: "fw_latent_loss/"
+      layers: "fw_latent_loss"
+      execution_modes: "test"
+    }
+  }
  #callback {
  #   dump_outputs {
  #     prefix: "/dir/to/dump_y_activations/"
