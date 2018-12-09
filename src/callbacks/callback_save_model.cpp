@@ -139,37 +139,35 @@ bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model *
   std::vector<std::string> weight_list = std::vector<std::string>();
   int epochLast = -1;
   int stepLast = -1;
-  std::string latest;
-  latest = get_last_shared_checkpoint_filename(m, ckpt_dir);
+  std::string active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
 
   // get last epoch and step saved.
-  int success = read_latest(latest, &epochLast, &stepLast);
+  int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
   if(!success) {
     return false;
   }
   lbann_comm *comm = m->get_comm();
+  active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
   if(comm->am_model_master()) {
-    latest = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
-    std::cout << "Loading model weights from " << latest << std::endl;
+    std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
   }
-  comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
 
-  DIR *weight_dir;
-  struct dirent *weight_file;
-  if((weight_dir = opendir(latest.c_str())) == NULL)
+  DIR *weight_dir = opendir(active_ckpt_dir.c_str());
+  if(weight_dir == nullptr)
   {
-    std::cout << "error opening " << latest << "\n";
+    std::cout << "error opening " << active_ckpt_dir << "\n";
     return false;
   }
   // Populate weight list
-  while ((weight_file = readdir(weight_dir)) != NULL){
+  struct dirent *weight_file = readdir(weight_dir);
+  while (weight_file != NULL){
     if(!strncmp(weight_file->d_name,"model_weights_",14))
       weight_list.push_back(std::string(weight_file->d_name));
   }
   closedir(weight_dir);
 
   // load weights that appear in weight list.
-  m->reload_weights(latest, weight_list);
+  m->reload_weights(active_ckpt_dir, weight_list);
   return true;
 }
 

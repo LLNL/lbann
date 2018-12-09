@@ -29,6 +29,7 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/io/file_io.hpp"
 
 namespace lbann {
 
@@ -454,6 +455,12 @@ bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::strin
     std::string full_path = ckpt_dir + *it;
     if(m_comm->am_world_master()) {
       std::cout << "Loading " << m_name << " <- " << *it << "\n";
+    }
+    // check whether file exists
+    int exists = lbann::exists(full_path.c_str());
+    if (! exists) {
+      throw lbann_exception(std::string("Failed to read weight matrix: ") + full_path);
+      return false;
     }
     El::Read(*m_values,full_path, El::BINARY, true);
   }
