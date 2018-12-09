@@ -67,8 +67,13 @@ int main(int argc, char *argv[]) {
       LBANN_ERROR("Unable to reload model");
     }
 
-    for(auto m : models) {
-      m->evaluate(execution_mode::testing);
+    /// Interleave the inference between the models so that they can use a shared data reader
+    /// Enable shared testing data readers on the command line via --share_testing_data_readers=1
+    El::Int num_samples = models[0]->get_num_iterations_per_epoch(execution_mode::testing);
+    for(El::Int s = 0; s < num_samples; s++) {
+      for(auto m : models) {
+        m->evaluate(execution_mode::testing, 1);
+      }
     }
 
     for(auto m : models) {
