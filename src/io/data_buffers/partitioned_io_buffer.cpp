@@ -62,8 +62,17 @@ void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, in
 }
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
-  m_input_buffers[0]->Resize(num_neurons, max_mini_batch_size);
-  m_input_buffers[1]->Resize(num_targets, max_mini_batch_size);
+  int i = 0;
+  for (const auto& buf : m_input_buffers) {
+    if(i == 0) {
+      buf->Resize(num_neurons, max_mini_batch_size);
+    }else if(i == 1) {
+      buf->Resize(num_targets, max_mini_batch_size);
+    }else {
+      LBANN_ERROR("Unsupported number of input channels");
+    }
+    i++;
+  }
   El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_model();
   El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_model();
   if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {

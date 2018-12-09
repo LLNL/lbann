@@ -274,7 +274,11 @@ class generic_input_layer : public io_layer {
       num_samples_in_batch = get_current_mini_batch_size();
 
       update_num_samples_processed(num_samples_in_batch);
-      io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
+      if(m_expected_num_child_layers == 1) {
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0));
+      }else {
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
+      }
     }else if(dynamic_cast<distributed_io_buffer*>(io_buffer) != nullptr) {
       if(((distributed_io_buffer*) io_buffer)->is_current_root(mode)) {
         /// Only update the number of samples processed by this parallel reader, when it is the current root
