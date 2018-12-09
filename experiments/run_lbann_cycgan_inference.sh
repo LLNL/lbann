@@ -105,7 +105,7 @@ case ${USE_GPU} in
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nogpu
         ;;
 esac
-EXPERIMENT_COMMAND="${LBANN_EXE} --st_on --data_reader_percent=1.0 --share_testing_data_readers=1 ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROTO} ${CKPT_DIR}"
+EXPERIMENT_COMMAND="${LBANN_EXE} --mini_batch_size=2048 --data_reader_percent=1.0 --share_testing_data_readers=1 ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROTO} ${CKPT_DIR}"
 
 # Initialize profiler command
 case ${USE_VTUNE} in
