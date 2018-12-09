@@ -34,7 +34,7 @@ endif (NOT TARGET CONDUIT::CONDUIT)
 
 # Set the link libraries for the target
 set_property(TARGET CONDUIT::CONDUIT APPEND
-  PROPERTY INTERFACE_LINK_LIBRARIES conduit conduit_relay conduit_blueprint conduit_relay_mpi)
+  PROPERTY INTERFACE_LINK_LIBRARIES conduit conduit_relay conduit_blueprint)
 
 set_property(TARGET CONDUIT::CONDUIT APPEND
   PROPERTY INTERFACE_INCLUDE_DIRECTORIES "${CONDUIT_INCLUDE_DIRS}")
