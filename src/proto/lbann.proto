@@ -807,6 +807,7 @@ message Layer {
    InTopK in_top_k = 324;
    Sort sort = 325;
    WeightsLayer weights_layer = 326;
+   Tessellate tessellate = 327;
 
    // Learning layers
    FullyConnected fully_connected = 11;
@@ -1167,6 +1168,10 @@ message Sort {
 }
 
 message WeightsLayer {
+  string dims = 1;
+}
+
+message Tessellate {
   string dims = 1;
 }
 

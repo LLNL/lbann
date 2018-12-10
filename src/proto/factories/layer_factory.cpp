@@ -452,6 +452,11 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& dims = parse_list<El::Int>(params.dims());
     return new weights_layer<layout, Dev>(comm, dims);
   }
+  if (proto_layer.has_tessellate()) {
+    const auto& params = proto_layer.tessellate();
+    const auto& dims = parse_list<El::Int>(params.dims());
+    return new tessellate_layer<layout, Dev>(comm, dims);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
