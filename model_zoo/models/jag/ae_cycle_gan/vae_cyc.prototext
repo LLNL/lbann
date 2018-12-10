@@ -542,7 +542,12 @@ model {
   #    execution_modes: "test"
   #  }
   #}
-  callback { save_model { dir: "model" } }
+  callback {
+    save_model {
+      dir: "model"
+      disable_save_after_training: true
+    }
+  }
   ###################################################
   # end of layers
   ###################################################

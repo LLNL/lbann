@@ -42,28 +42,9 @@ namespace lbann {
 
 /// Save the model's prototext and weights
 void lbann_callback_save_model::on_train_end(model *m) {
-  if(need_save(m)){
+  if(!m_disable_save_after_training){
     save_model(m);
   }
-}
-
-// Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
-bool lbann_callback_save_model::need_save(model *m) {
-  // If a save interval was not set, then we save at the end of training
-  if (m_save_interval_steps == 0) {
-    return true;
-  }
-
-  /// The following code is to allow complex models like the CycleGAN that don't use epochs normally to control
-  /// how often they are checkpointed
-  bool save_model_now = false;
-
-  // If we are at the end of a training and the training mb step lands on defined interval, trigger save
-  if (m_save_interval_steps > 0) {
-    save_model_now = (m->get_cur_step() > 0) && (m->get_cur_step() % m_save_interval_steps == 0);
-  }
-
-  return save_model_now;
 }
 
 void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& proto,

@@ -792,7 +792,7 @@ model {
   callback {
     save_model {
       dir: "model"
-      steps: 10000
+      disable_save_after_training: true
     }
   }
   block_size: 256
