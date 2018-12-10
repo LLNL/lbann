@@ -223,7 +223,7 @@ class model {
   /** Train model. */
   virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
-  virtual void evaluate(execution_mode mode);
+  virtual void evaluate(execution_mode mode, int num_batches=0);
 
   /** Run one epoch using only the input layer; this supports
    *  data_store functionality
@@ -237,6 +237,16 @@ class model {
 
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
+
+  /** Save the model's weight to file */
+  virtual bool save_weights(persist& p);
+
+  /** Reload the model's weights from a file */
+  virtual bool reload_weights(const std::string latest,
+                              const std::vector<std::string>& weight_list);
+
+  /** Saves the model explicitly if the save_model callback is present */
+  virtual bool save_model();
 
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);

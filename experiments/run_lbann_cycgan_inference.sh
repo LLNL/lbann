@@ -1,20 +1,18 @@
 #!/bin/bash
 
+EXPERIMENT=$1
+
 # Experiment parameters
-EXPERIMENT_NAME=lbann_cycgan_jag
+EXPERIMENT_NAME=lbann_cycgan_jag_inference
 LBANN_DIR=$(git rev-parse --show-toplevel)
 ### Big model for JAG10K data with autoencoder
-MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m3.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae_cyc.prototext}"
-##small model for JAG100k data
-#MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m1.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/cycle_gan/cycgan_m3.prototext} --num_epochs=10"
-## JAG10K 64x64x4 data
-#READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/jag10k_data.prototext"
+MODEL_PROTO="--model={${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/cycgan_m2.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae1.prototext,${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/vae_cyc.prototext}"
 ###JAG1M/10M/100M
 READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/ae_cycle_gan/data_reader_jag_conduit_lustre.prototext"
 ## JAG100K 50x50x1 data
 #READER_PROTO="--reader=${LBANN_DIR}/model_zoo/models/jag/cycle_gan/jag_data.prototext"
 OPTIMIZER_PROTO="--optimizer=${LBANN_DIR}/model_zoo/optimizers/opt_adam.prototext"
-IMAGENET_CLASSES= # options: 10, 100, 300, 1000 (leave blank to use other dataset)
+CKPT_DIR="--ckpt_dir=${LBANN_DIR}/experiments/${EXPERIMENT}"
 BUILD=            # default: Release
 
 # Hardware configuration
@@ -33,9 +31,9 @@ USE_VTUNE=        # default: NO
 USE_NVPROF=       # default: NO
 USE_CUDAMEMCHECK= # default: NO
 EXPERIMENT_HOME_DIR=${EXPERIMENT_HOME_DIR:-${LBANN_DIR}/experiments}
-TRAIN_DATASET_DIR=
+TRAIN_DATASET_DIR=/p/lustre2/brainusr/datasets/10MJAG/10K_A_bve/
 TRAIN_DATASET_LABELS=
-TEST_DATASET_DIR=
+TEST_DATASET_DIR=/p/lustre2/brainusr/datasets/10MJAG/10K_B_bve/
 TEST_DATASET_LABELS=
 DATASET_TARBALLS=
 CACHE_DIR=
@@ -62,77 +60,8 @@ USE_VTUNE=${USE_VTUNE:-NO}
 USE_NVPROF=${USE_NVPROF:-NO}
 USE_CUDAMEMCHECK=${USE_CUDAMEMCHECK:-NO}
 
-# Set cluster-specific defaults
-CLUSTER=${CLUSTER:-$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')}
-case ${CLUSTER} in
-    "catalyst")
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-brain}
-        CACHE_DIR=${CACHE_DIR:-/l/ssd}
-        CORES_PER_NODE=24
-        HAS_GPU=NO
-        ;;
-    "flash")
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        CACHE_DIR=${CACHE_DIR:-/l/ssd}
-        CORES_PER_NODE=20
-        HAS_GPU=NO
-        ;;
-    "quartz")
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-brain}
-        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
-        CORES_PER_NODE=36
-        HAS_GPU=NO
-        ;;
-    "surface")
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-hpclearn}
-        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
-        CORES_PER_NODE=16
-        HAS_GPU=YES
-        case ${PARTITION} in
-            "pbatch")
-                GPUS_PER_NODE=2
-                ;;
-            "gpgpu")
-                GPUS_PER_NODE=4
-                ;;
-        esac
-        ;;
-    "ray")
-        SCHEDULER=lsf
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-guests}
-        CACHE_DIR=${CACHE_DIR:-/tmp}
-        CORES_PER_NODE=20
-        HAS_GPU=YES
-        GPUS_PER_NODE=4
-        ;;
-    "pascal")
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-hpcdl}
-        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
-        CORES_PER_NODE=36
-        HAS_GPU=YES
-        GPUS_PER_NODE=2
-        ;;
-    *)
-        SCHEDULER=slurm
-        PARTITION=${PARTITION:-pbatch}
-        ACCOUNT=${ACCOUNT:-brain}
-        CACHE_DIR=${CACHE_DIR:-/tmp/${USER}}
-        CORES_PER_NODE=1
-        HAS_GPU=NO
-        echo "Error: unrecognized system (${CLUSTER})"
-        exit 1
-        ;;
-esac
+source LC_cluster_specific_defaults.sh
+
 if [ -z "${PROCS_PER_NODE}" ]; then
     PROCS_PER_NODE=2
     case ${HAS_GPU} in
@@ -148,81 +77,6 @@ fi
 NUM_PROCS=$((${NUM_NODES}*${PROCS_PER_NODE}))
 CORES_PER_PROC=$((${CORES_PER_NODE}/${PROCS_PER_NODE}))
 
-# Initialize dataset
-if [ -n "${IMAGENET_CLASSES}" ]; then
-    READER_PROTO="--reader=${LBANN_DIR}/model_zoo/data_readers/data_reader_imagenet.prototext"
-    case ${IMAGENET_CLASSES} in
-        10|100|300|1000|21000)
-            ;;
-        *)
-            echo "Error: invalid number of ImageNet classes"
-            exit 1
-            ;;
-    esac
-    EXPERIMENT_NAME=${EXPERIMENT_NAME}_imagenet${IMAGENET_CLASSES}
-    case ${CLUSTER} in
-        catalyst|flash|quartz|surface|pascal)
-            case ${IMAGENET_CLASSES} in
-                10|100|300|1000)
-                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets/ILSVRC2012
-                    DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
-                    IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
-                    if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
-                        IMAGENET_SUFFIX=
-                    fi
-                    case ${CACHE_DATASET} in
-                        YES|yes|TRUE|true|ON|on|1)
-                            TRAIN_DATASET_DIR=${CACHE_DIR}/train/
-                            TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                            TEST_DATASET_DIR=${CACHE_DIR}/val/
-                            TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
-                            ;;
-                        *)
-                            TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
-                            TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                            TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
-                            TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
-                            ;;
-                    esac
-                    ;;
-                21000)
-                    CACHE_DATASET=NO
-                    CACHE_DIR=
-                    IMAGENET_DIR=/p/lscratchh/brainusr/datasets
-                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
-                    TRAIN_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
-                    TEST_DATASET_DIR=${IMAGENET_DIR}/ImageNetALL_extracted/
-                    TEST_DATASET_LABELS=${IMAGENET_DIR}/ImageNetAll_labelv6.txt
-                    ;;
-            esac
-            ;;
-        ray)
-            IMAGENET_DIR=/p/gscratchr/brainusr/datasets/ILSVRC2012
-            DATASET_TARBALLS="${IMAGENET_DIR}/resized_256x256/train.tar ${IMAGENET_DIR}/resized_256x256/val.tar ${IMAGENET_DIR}/labels.tar"
-            IMAGENET_SUFFIX=_c0-$((${IMAGENET_CLASSES}-1))
-            if [ "${IMAGENET_CLASSES}" -eq "1000" ]; then
-                IMAGENET_SUFFIX=
-            fi
-            case ${CACHE_DATASET} in
-                YES|yes|TRUE|true|ON|on|1)
-                    TRAIN_DATASET_DIR=${CACHE_DIR}/train/
-                    TRAIN_DATASET_LABELS=${CACHE_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                    TEST_DATASET_DIR=${CACHE_DIR}/val/
-                    TEST_DATASET_LABELS=${CACHE_DIR}/labels/val${IMAGENET_SUFFIX}.txt
-                    ;;
-                *)
-                    TRAIN_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/train/
-                    TRAIN_DATASET_LABELS=${IMAGENET_DIR}/labels/train${IMAGENET_SUFFIX}.txt
-                    TEST_DATASET_DIR=${IMAGENET_DIR}/resized_256x256/val/
-                    TEST_DATASET_LABELS=${IMAGENET_DIR}/labels/val${IMAGENET_SUFFIX}.txt
-                    ;;
-            esac
-            ;;
-    esac
-else
-    CACHE_DATASET=NO
-    CACHE_DIR=
-fi
 if [ -n "${TRAIN_DATASET_DIR}" ]; then
     READER_PROTO="${READER_PROTO} --data_filedir_train=${TRAIN_DATASET_DIR}"
 fi
@@ -237,7 +91,7 @@ if [ -n "${TEST_DATASET_LABELS}" ]; then
 fi
 
 # Initialize experiment command
-LBANN_EXE="${LBANN_DIR}/build/gnu.${BUILD}.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann_cycgan"
+LBANN_EXE="${LBANN_DIR}/build/gnu.${BUILD}.${CLUSTER}.llnl.gov/lbann/build/model_zoo/lbann_inf"
 case ${USE_GPU} in
     YES|yes|TRUE|true|ON|on|1)
         case ${HAS_GPU} in
@@ -251,7 +105,7 @@ case ${USE_GPU} in
         EXPERIMENT_NAME=${EXPERIMENT_NAME}_nogpu
         ;;
 esac
-EXPERIMENT_COMMAND="${LBANN_EXE} ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROTO}"
+EXPERIMENT_COMMAND="${LBANN_EXE} --mini_batch_size=2048 --data_reader_percent=1.0 --share_testing_data_readers=1 ${MODEL_PROTO} ${OPTIMIZER_PROTO} ${READER_PROTO} ${CKPT_DIR}"
 
 # Initialize profiler command
 case ${USE_VTUNE} in

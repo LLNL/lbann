@@ -1,0 +1,300 @@
+data_reader {
+  reader {
+    name: "jag_conduit"
+    role: "train"
+    shuffle: true
+    # change to a lustre path
+    #data_filedir: "/p/lscratchh/lucpeter/merlin/1BJAGS_10k_1/0/"
+    #Lassen below
+    #data_filedir: "/p/gpfs1/brainusr/1MJAG/1MJAG-A/0/"
+    #Sierra may be
+    #data_filedir: "/p/gpfs1/lucpeter/gscratch1/1MJAG/1MJAG-A/0/"
+    #data_filedir: "/p/lscratchh/brainusr/datasets/1MJAG/1MJAG-A/0/"
+    data_filedir: "/p/lscratchh/brainusr/datasets/1MJAG_A/"
+    #data_filename: "*/*/*.bundle"
+    data_filename: "*.bundle"
+
+    validation_percent: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 0.5
+    disable_responses: true
+    disable_labels: true
+    #is_partitioned: true   #Needed for LTFB (1PPM)
+
+    split_jag_image_channels: true
+
+    # JAG_Image, JAG_Scalar, JAG_Input
+    independent: [ { pieces: [JAG_Image, JAG_Scalar] }, { pieces: [JAG_Input] } ]
+    dependent: [ { pieces: [JAG_Input] } ]
+
+    jag_image_keys: ["(0.0, 0.0)/0.0", "(90.0, 0.0)/0.0", "(90.0, 78.0)/0.0"]
+
+    # An empty list indicates to use all
+    # The commented out variables are not on the Jim's original list but used in the numpy-based format
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+        "tMAXt",        # absent in Jim's list
+        "BWn",
+        "MAXpressure",
+        "BAte",
+        "MAXtion",
+        "tMAXpressure",
+        "BAt",          # absent in Jim's list
+        "Yn",
+        "Ye",
+        "Yx",
+        "tMAXte",       # absent in Jim's list
+        "BAtion",
+        "MAXte",
+        "tMAXtion",     # absent in Jim's list
+        "BTx",
+        "MAXt",         # absent in Jim's list
+        "BTn",
+        "BApressure",
+        "tMINradius",
+        "MINradius"     # absent in Jim's list
+      ]
+
+    # When using all the keys without explicit selection, key filters can be used
+    # to explicitly exclude the particular variables with keys that matches a filter.
+    # 'jag_scalar_filters' and 'jag_input_filters' rely on exact key string matching.
+    # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
+    # the pair of a prefix substring and the minimum key length.
+    # For example, with the example below, any key that has a length no shorter
+    # than 26 and starts with the substring "image_(" is excluded.
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
+    jag_scalar_filters: [ "iBT" ]
+
+    jag_input_keys: ["shape_model_initial_modes:(4,3)",
+                     "betti_prl15_trans_u",
+                     "betti_prl15_trans_v",
+                     "shape_model_initial_modes:(2,1)",
+                     "shape_model_initial_modes:(1,0)"];
+
+
+    num_labels: 5
+
+    jag_image_normalization_params: [
+      # TODO: temporarily reusing the parameters computed for the first view here. need to obtain the parameters for the other views
+      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
+      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
+      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 }
+    ]
+
+    jag_scalar_normalization_params: [
+	{ scale: 1.5420795e+01 	 bias: -8.313582e-01 }, 	 # BWx
+	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BT
+	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXt
+	{ scale: 4.4250137e+01 	 bias: -1.623055e+00 }, 	 # BWn
+	{ scale: 2.4432852e-06 	 bias: -7.724349e-01 }, 	 # MAXpressure
+	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAte
+	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXtion
+	{ scale: 1.4302059e+00 	 bias: -3.349900e+00 }, 	 # tMAXpressure
+	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAt
+	{ scale: 7.1544386e-18 	 bias: -1.869906e-02 }, 	 # Yn
+	{ scale: 3.1669860e-03 	 bias: -1.869906e-02 }, 	 # Ye
+	{ scale: 2.1041247e-02 	 bias: -3.084058e-01 }, 	 # Yx
+	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXte
+	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAtion
+	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXte
+	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXtion
+	{ scale: 1.3456596e+00 	 bias: -3.116023e+00 }, 	 # BTx
+	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXt
+	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BTn
+	{ scale: 3.0520000e-06 	 bias: -7.714907e-01 }, 	 # BApressure
+	{ scale: 1.3925443e+00 	 bias: -3.239921e+00 }, 	 # tMINradius
+	{ scale: 1.0023756e-01 	 bias: -2.815272e+00 }  	 # MINradius
+    ]
+
+    jag_input_normalization_params: [
+      { scale: 1.666721654e+01 	bias: 5.000145788e+00}, 	# shape_model_initial_modes:(4,3)
+      { scale: 1.000025133e+01 	bias: -1.603520955e-06}, 	# betti_prl15_trans_u
+      { scale: 1.000001645e+00 	bias: -1.406676728e-06}, 	# betti_prl15_trans_v
+      { scale: 1.666672975e+00 	bias: 4.999989818e-01}, 	# shape_model_initial_modes:(2,1)
+      { scale: 1.666668753e+00 	bias: 5.000004967e-01}  	# shape_model_initial_modes:(1,0)
+    ]
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+      raw_num_channels: 4
+
+      normalizer {
+        disable: true
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+  reader {
+    name: "jag_conduit"
+    role: "test"
+    shuffle: true
+    # change to a lustre path
+    #data_filedir: "/p/lscratchh/lucpeter/merlin/1BJAGS_10k_1/0/"
+    #Lassen below
+    #data_filedir: "/p/gpfs1/brainusr/1MJAG/1MJAG-A/0/"
+    #Sierra may be
+    #data_filedir:"/p/gpfs1/brainusr/datasets/1M_random/"
+    #data_filedir:"/p/gpfs1/lucpeter/gscratch1/1MJAG/1MJAG-A/0/"
+    #data_filedir:"/p/lscratchh/brainusr/datasets/1MJAG/1MJAG-A/0/"
+    #data_filename:"*/*/*.bundle"
+    #data_filename:"*/*.bundle"
+    data_filedir: "/p/lscratchh/brainusr/datasets/1MJAG_B/"
+    #data_filename: "*/*/*.bundle"
+    data_filename: "*.bundle"
+
+    validation_percent: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 0.1
+    disable_responses: true
+    disable_labels: true
+
+    split_jag_image_channels: true
+
+    # JAG_Image, JAG_Scalar, JAG_Input
+    independent: [ { pieces: [JAG_Image, JAG_Scalar] }, { pieces: [JAG_Input] } ]
+    dependent: [ { pieces: [JAG_Input] } ]
+
+    jag_image_keys: ["(0.0, 0.0)/0.0", "(90.0, 0.0)/0.0", "(90.0, 78.0)/0.0"]
+
+    # An empty list indicates to use all
+    # The commented out variables are not on the Jim's original list but used in the numpy-based format
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+        "tMAXt",        # absent in Jim's list
+        "BWn",
+        "MAXpressure",
+        "BAte",
+        "MAXtion",
+        "tMAXpressure",
+        "BAt",          # absent in Jim's list
+        "Yn",
+        "Ye",
+        "Yx",
+        "tMAXte",       # absent in Jim's list
+        "BAtion",
+        "MAXte",
+        "tMAXtion",     # absent in Jim's list
+        "BTx",
+        "MAXt",         # absent in Jim's list
+        "BTn",
+        "BApressure",
+        "tMINradius",
+        "MINradius"     # absent in Jim's list
+      ]
+
+    # When using all the keys without explicit selection, key filters can be used
+    # to explicitly exclude the particular variables with keys that matches a filter.
+    # 'jag_scalar_filters' and 'jag_input_filters' rely on exact key string matching.
+    # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
+    # the pair of a prefix substring and the minimum key length.
+    # For example, with the example below, any key that has a length no shorter
+    # than 26 and starts with the substring "image_(" is excluded.
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
+    jag_scalar_filters: [ "iBT" ]
+
+    jag_input_keys: ["shape_model_initial_modes:(4,3)",
+                     "betti_prl15_trans_u",
+                     "betti_prl15_trans_v",
+                     "shape_model_initial_modes:(2,1)",
+                     "shape_model_initial_modes:(1,0)"];
+
+
+    num_labels: 5
+
+    jag_image_normalization_params: [
+      # TODO: temporarily reusing the parameters computed for the first view here. need to obtain the parameters for the other views
+      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
+      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
+      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 }
+    ]
+
+    jag_scalar_normalization_params: [
+	{ scale: 1.5420795e+01 	 bias: -8.313582e-01 }, 	 # BWx
+	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BT
+	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXt
+	{ scale: 4.4250137e+01 	 bias: -1.623055e+00 }, 	 # BWn
+	{ scale: 2.4432852e-06 	 bias: -7.724349e-01 }, 	 # MAXpressure
+	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAte
+	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXtion
+	{ scale: 1.4302059e+00 	 bias: -3.349900e+00 }, 	 # tMAXpressure
+	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAt
+	{ scale: 7.1544386e-18 	 bias: -1.869906e-02 }, 	 # Yn
+	{ scale: 3.1669860e-03 	 bias: -1.869906e-02 }, 	 # Ye
+	{ scale: 2.1041247e-02 	 bias: -3.084058e-01 }, 	 # Yx
+	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXte
+	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAtion
+	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXte
+	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXtion
+	{ scale: 1.3456596e+00 	 bias: -3.116023e+00 }, 	 # BTx
+	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXt
+	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BTn
+	{ scale: 3.0520000e-06 	 bias: -7.714907e-01 }, 	 # BApressure
+	{ scale: 1.3925443e+00 	 bias: -3.239921e+00 }, 	 # tMINradius
+	{ scale: 1.0023756e-01 	 bias: -2.815272e+00 }  	 # MINradius
+    ]
+
+    jag_input_normalization_params: [
+      { scale: 1.666721654e+01 	bias: 5.000145788e+00}, 	# shape_model_initial_modes:(4,3)
+      { scale: 1.000025133e+01 	bias: -1.603520955e-06}, 	# betti_prl15_trans_u
+      { scale: 1.000001645e+00 	bias: -1.406676728e-06}, 	# betti_prl15_trans_v
+      { scale: 1.666672975e+00 	bias: 4.999989818e-01}, 	# shape_model_initial_modes:(2,1)
+      { scale: 1.666668753e+00 	bias: 5.000004967e-01}  	# shape_model_initial_modes:(1,0)
+    ]
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+      raw_num_channels: 4
+
+      normalizer {
+        disable: true
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+}

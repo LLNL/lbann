@@ -3,9 +3,9 @@
 #Timestamp 02/26/2018 8:45AM
 model {
   name: "ae_model"
+  shareable_training_data_reader: false
   data_layout: "model_parallel"
-  #mini_batch_size: 128
-  mini_batch_size: 100 #more last minibatch images to save
+  mini_batch_size: 256
   block_size: 256
   num_epochs: 10
   num_parallel_readers: 0
@@ -420,7 +420,39 @@ model {
     data_layout: "model_parallel"
     mean_squared_error {}
   }
+  ####For metric, loss per individual sample
+  layer {
+    name: "ae_err"
+    data_layout: "model_parallel"
+    parents: "param_data_id mean_squared_error"
+    concatenation {
+    }
+  }
+  callback {
+    dump_outputs {
+      #prefix: "/p/lscratchh/brainusr/jacobs32/EuroViz/ae_loss"
+      #prefix: "/p/gpfs1/jacobs32/EuroViz2/ae_loss/"
+      prefix: "ae_loss/"
+      layers: "ae_err"
+      execution_modes: "test"
+    }
+  }
+  ####For metric, loss per individual sample
+  #layer {
+  #  parents: "reconstruction image_data_dummy"
+  #  name: "squared_error"
+  #  data_layout: "model_parallel"
+  #  squared_difference {}
+  #}
 
+  #callback {
+  #  dump_outputs {
+  #    prefix:"/p/lscratchh/brainusr/jacobs32/EuroViz/ae_loss"
+  #    layers: "squared_error"
+  #    execution_modes: "test"
+  #  }
+  #}
+  callback { save_model { dir: "model" } }
   ###################################################
   # end of layers
   ###################################################
