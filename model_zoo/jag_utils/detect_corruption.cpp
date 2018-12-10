@@ -144,7 +144,6 @@ int main(int argc, char *argv[]) {
         int success = n_ok.to_int64();
         if (success == 1) {
             try {
- 
               for (auto t : input_names) {
                 key = cnames[i] + "/inputs/" + t;
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);

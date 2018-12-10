@@ -38,15 +38,10 @@
 #include <string>
 #include <sstream>
 #include "lbann/lbann.hpp"
-#include "lbann/utils/jag_utils.hpp"
 #include <time.h>
+#include <cfloat>
 
 using namespace lbann;
-
-
-void get_scalar_names(std::vector<std::string> &s); 
-
-void get_input_names(std::vector<std::string> &s); 
 
 //==========================================================================
 int main(int argc, char *argv[]) {
@@ -78,12 +73,9 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<std::string> files;
-    const std::string fn = opts->get_string("filelist"); 
-    read_filelist(comm, fn, files);
-#if 0
-    const int rank = comm->get_rank_in_world();
+    std::string f;
     int size;
-    if (!rank) {
+    if (master) {
       std::stringstream s;
       std::ifstream in(opts->get_string("filelist").c_str());
       if (!in) {
@@ -112,41 +104,20 @@ int main(int argc, char *argv[]) {
       }
     }
     if (rank==1) std::cerr << "num files: " << files.size() << "\n";
-#endif
+
     //=======================================================================
-
-    std::vector<std::string> scalar_names;
-    std::vector<std::string> input_names;
-    get_scalar_names(scalar_names);
-    get_input_names(input_names);
-
-    std::stringstream index;
-    if (master) {
-      index << "num_scalars: " << scalar_names.size() << "\n"
-            << "num_inputs: " << input_names.size() << "\n"
-            << "scalars: \n";
-      for (auto t : scalar_names) {
-        index << "        " << t << "\n";
-      }
-      index << "inputs:\n";
-      for (auto t : input_names) {
-        index << "        " << t << "\n";
-      }
-    }
 
     hid_t hdf5_file_hnd;
     std::string key;
     conduit::Node n_ok;
     conduit::Node tmp;
 
+    if (master) std::cout << np << hdf5_file_hnd << "\n";
+
     int num_samples = 0;
 
-    char b[1024];
-    sprintf(b, "%s/tmp.%d", dir.c_str(), rank);
-    std::ofstream out(b, std::ios::out | std::ios::binary);
-    if (!out) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
-    }
+    std::vector<float> v_max(12, FLT_MIN);
+    std::vector<float> v_min(12, FLT_MAX);
 
     size_t h = 0;
     for (size_t j=rank; j<files.size(); j+= np) {
@@ -156,9 +127,6 @@ int main(int argc, char *argv[]) {
       try {
 std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (std::exception e) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
-        continue;
       } catch (...) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
         continue;
@@ -167,23 +135,16 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
-        std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
-        continue;
       } catch (...) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         continue;
       }
-std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
       for (size_t i=0; i<cnames.size(); i++) {
 
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (std::exception e) {
-          std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
-          continue;
         } catch (...) {  
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
@@ -191,51 +152,78 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
         int success = n_ok.to_int64();
         if (success == 1) {
-          for (auto t : scalar_names) {
-            key = cnames[i] + "/outputs/scalars/" + t;
-            conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-            double d = tmp.value();
-            out.write((char*)&d, sizeof(double));
-          }  
+            
 
-          for (auto t : input_names) {
-            key = cnames[i] + "/inputs/" + t;
-            conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-            double d = tmp.value();
-            out.write((char*)&d, sizeof(double));
-          }
+            try {  
+              key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              conduit::float32_array emi = tmp.value();
+              const size_t image_size = emi.number_of_elements();
+              //out.write((char*)&emi[0], sizeof(float)*image_size);
+              for (int channel = 0; channel<4; channel++) {
+                for (size_t hh=channel; hh<image_size; hh += 4) {
+                  float val = emi[hh];
+                  if (val < v_min[channel]) v_min[channel] = val;
+                  if (val > v_max[channel]) v_max[channel] = val;
+                }
+              }
+            } catch (...) {
+              std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+
+            try { 
+              key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              conduit::float32_array emi = tmp.value();
+              const size_t image_size = emi.number_of_elements();
+              //out.write((char*)&emi[0], sizeof(float)*image_size);
+              for (int channel = 0; channel<4; channel++) {
+                for (size_t hh=channel; hh<image_size; hh += 4) {
+                  float val = emi[hh];
+                  if (val < v_min[channel+4]) v_min[channel+4] = val;
+                  if (val > v_max[channel+4]) v_max[channel+4] = val;
+                }
+              }
+            } catch (...) {
+              std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+  
+            try { 
+              key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              conduit::float32_array emi = tmp.value();
+              const size_t image_size = emi.number_of_elements();
+              //out.write((char*)&emi[0], sizeof(float)*image_size);
+              for (int channel = 0; channel<4; channel++) {
+                for (size_t hh=channel; hh<image_size; hh += 4) {
+                  float val = emi[hh];
+                  if (val < v_min[channel+8]) v_min[channel+8] = val;
+                  if (val > v_max[channel+8]) v_max[channel+8] = val;
+                }
+              }
+            } catch (...) {
+              std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+
           ++num_samples;
         }
       }
     }
-    out.close();
 
-    comm->global_barrier();
 
-    if (master) {
-      std::stringstream s3;
-      s3 << "cat " << dir << "/tmp* > " << dir << "/data.bin; rm -f " << dir << "/tmp*";
-      int r = system(s3.str().c_str());
-      if (r != 0) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s3.str());
-      }
-    }
-
-    int global_num_samples;
-    //int global_num_samples = comm->reduce<int>(num_samples, comm->get_world_comm());
-    MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); 
+    std::vector<float> global_v_min(12);
+    std::vector<float> global_v_max(12);
+    MPI_Reduce(v_min.data(), global_v_min.data(), 12, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD); 
+    MPI_Reduce(v_max.data(), global_v_max.data(), 12, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD); 
 
     if (master) {
-      std::ofstream out2(dir + "/index.txt");
-      if (!out2) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + dir  + "/index.txt for writing");
+      for (int j=0; j<12; j++) {
+        std::cout << global_v_min[j] << " " << global_v_max[j] << "\n";
       }
-      out2 << "num_samples: " << global_num_samples << "\n"
-          << index.str();
-      out2.close();
-
     }
-
 
   } catch (exception const &e) {
     El::ReportException(e);
@@ -252,39 +240,6 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
   return EXIT_SUCCESS;
 }
 
-
-void get_input_names(std::vector<std::string> &s) {
-  s.push_back("shape_model_initial_modes:(4,3)"); 
-  s.push_back("betti_prl15_trans_u"); 
-  s.push_back("betti_prl15_trans_v"); 
-  s.push_back("shape_model_initial_modes:(2,1)"); 
-  s.push_back("shape_model_initial_modes:(1,0)"); 
-}
-
-void get_scalar_names(std::vector<std::string> &s) {
-  s.push_back("BWx");
-  s.push_back("BT");
-  s.push_back("tMAXt");
-  s.push_back("BWn");
-  s.push_back("MAXpressure");
-  s.push_back("BAte");
-  s.push_back("MAXtion");
-  s.push_back("tMAXpressure");
-  s.push_back("BAt");
-  s.push_back("Yn");
-  s.push_back("Ye");
-  s.push_back("Yx");
-  s.push_back("tMAXte");
-  s.push_back("BAtion");
-  s.push_back("MAXte");
-  s.push_back("tMAXtion");
-  s.push_back("BTx");
-  s.push_back("MAXt");
-  s.push_back("BTn");
-  s.push_back("BApressure");
-  s.push_back("tMINradius");
-  s.push_back("MINradius");
-}
 
 
 #endif //#ifdef LBANN_HAS_CONDUIT
