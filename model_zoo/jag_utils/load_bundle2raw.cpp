@@ -38,6 +38,7 @@
 #include <string>
 #include <sstream>
 #include "lbann/lbann.hpp"
+#include "lbann/utils/jag_utils.hpp"
 #include <time.h>
 
 using namespace lbann;
@@ -77,9 +78,12 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<std::string> files;
-    std::string f;
+    const std::string fn = opts->get_string("filelist"); 
+    read_filelist(comm, fn, files);
+#if 0
+    const int rank = comm->get_rank_in_world();
     int size;
-    if (master) {
+    if (!rank) {
       std::stringstream s;
       std::ifstream in(opts->get_string("filelist").c_str());
       if (!in) {
@@ -108,7 +112,7 @@ int main(int argc, char *argv[]) {
       }
     }
     if (rank==1) std::cerr << "num files: " << files.size() << "\n";
-
+#endif
     //=======================================================================
 
     std::vector<std::string> scalar_names;
