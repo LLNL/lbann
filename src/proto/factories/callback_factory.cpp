@@ -236,11 +236,11 @@ lbann_callback* construct_callback(lbann_comm* comm,
     const auto& params = proto_cb.save_model();
     if(params.extension().size() != 0) {
       return new lbann_callback_save_model(params.dir(),
-                                           params.steps(),
+                                           params.disable_save_after_training(),
                                            params.extension());
     }else {
       return new lbann_callback_save_model(params.dir(),
-                                           params.steps());
+                                           params.disable_save_after_training());
     }
   }
 

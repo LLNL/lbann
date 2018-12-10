@@ -1567,6 +1567,9 @@ bool model::save_model() {
       return cb->save_model(this);
     }
   }
+  if(m_comm->am_model_master()) {
+    LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
+  }
   return false;
 }
 
