@@ -139,8 +139,6 @@ int main(int argc, char *argv[]) {
     conduit::Node n_ok;
     conduit::Node tmp;
 
-    if (master) std::cout << np << hdf5_file_hnd << "\n";
-
     int num_samples = 0;
 
     char b[1024];
