@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
     for (size_t j=rank; j<files.size(); ++j) {
       std::cerr << "processing: " << j << " of " << files.size() << " files\n";
 
+      // open the next conduit file
       try {
-
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
       } catch (...) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: hdf5_open_file_for_read failed: " + files[j]);
@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: hdf5_group_list_child_names failed; " + files[j]);
       }
 
+      // loop over the samples in the current file
       for (size_t i=0; i<cnames.size(); i++) {
 
         // test that the sample was successful; should always be!
