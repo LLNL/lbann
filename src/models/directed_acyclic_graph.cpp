@@ -43,7 +43,7 @@ void directed_acyclic_graph_model::setup_layer_execution_order() {
   std::map<int,std::set<int>> edges;
   const int num_layers = m_layers.size();
   std::unordered_map<const Layer *,int> layer_indices;
-  for (int node; node < num_layers; ++node) {
+  for (int node = 0; node < num_layers; ++node) {
     nodes.insert(node);
     layer_indices[m_layers[node]] = node;
   }
