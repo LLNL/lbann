@@ -162,7 +162,7 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
     std::shuffle(m_valid_samples.begin(), m_valid_samples.end(),
-                 get_data_seq_generator());
+                 gen);
   }
 }
 
