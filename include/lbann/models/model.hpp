@@ -145,7 +145,7 @@ class model {
   const std::vector<weights *>& get_weights() const { return m_weights; }
 
   /** Return the I/O thread pool */
-  thread_pool& get_io_thread_pool() { return m_io_thread_pool; }
+  std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
@@ -312,7 +312,7 @@ class model {
   std::vector<weights *> m_weights;
 
   /** Threads available for I/O */
-  thread_pool m_io_thread_pool;
+  std::shared_ptr<thread_pool> m_io_thread_pool;
 
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;

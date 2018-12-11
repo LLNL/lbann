@@ -104,7 +104,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
 
-  void setup(int num_io_threads, thread_pool *io_thread_pool) override;
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
 
   std::string get_type() const override {
     return "data_reader_jag_conduit";

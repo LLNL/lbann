@@ -127,7 +127,7 @@ void data_reader_jag_conduit_hdf5::set_defaults() {
   m_num_labels = 0;
 }
 
-void data_reader_jag_conduit_hdf5::setup(int num_io_threads, thread_pool *io_thread_pool) {
+  void data_reader_jag_conduit_hdf5::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
   replicate_processor(*m_master_pps, num_io_threads);
 }

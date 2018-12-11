@@ -146,19 +146,19 @@ class generic_input_layer : public io_layer {
       output.Resize(output.Height(), max_mb_size);
     }
 
-    auto num_io_threads = this->m_model->get_io_thread_pool().get_num_threads();
+    auto num_io_threads = this->m_model->get_io_thread_pool()->get_num_threads();
     /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
     if(m_data_readers[execution_mode::training] != nullptr) {
-      m_data_readers[execution_mode::training]->setup(num_io_threads, &this->m_model->get_io_thread_pool());
+      m_data_readers[execution_mode::training]->setup(num_io_threads, this->m_model->get_io_thread_pool());
       m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_model());
     }
     if(m_data_readers[execution_mode::validation] != nullptr) {
-      m_data_readers[execution_mode::validation]->setup(num_io_threads, &this->m_model->get_io_thread_pool());
+      m_data_readers[execution_mode::validation]->setup(num_io_threads, this->m_model->get_io_thread_pool());
       m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_model());
     }
     if(m_data_readers[execution_mode::testing] != nullptr) {
-      m_data_readers[execution_mode::testing]->setup(num_io_threads, &this->m_model->get_io_thread_pool());
+      m_data_readers[execution_mode::testing]->setup(num_io_threads, this->m_model->get_io_thread_pool());
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
     }
 
@@ -246,7 +246,7 @@ class generic_input_layer : public io_layer {
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->fetch_data_in_background) {
-      io_buffer->data_fetch_future = this->m_model->get_io_thread_pool().submit_job(
+      io_buffer->data_fetch_future = this->m_model->get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, m_active_buffer.load(), "PRIMARY"));
       io_buffer->fetch_data_in_background = true;
     }
@@ -321,7 +321,7 @@ class generic_input_layer : public io_layer {
 
     if(!m_data_set_processed) {
       int next_active_buffer = m_active_buffer + 1;
-      std::future<void> background_fetch_done = this->m_model->get_io_thread_pool().submit_job(
+      std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, "BACKGROUND"));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->data_fetch_future = std::move(background_fetch_done);

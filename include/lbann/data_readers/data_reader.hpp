@@ -270,7 +270,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  virtual void setup(int num_io_threads, thread_pool *io_thread_pool);
+  virtual void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
@@ -881,7 +881,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   std::vector<std::vector<char>> m_thread_buffer;
 
-  thread_pool* m_io_thread_pool;
+  std::shared_ptr<thread_pool> m_io_thread_pool;
 
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data

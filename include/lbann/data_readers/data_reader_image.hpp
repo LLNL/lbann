@@ -54,7 +54,7 @@ class image_data_reader : public generic_data_reader {
   // dataset specific functions
   void load() override;
 
-  void setup(int num_io_threads, thread_pool *io_thread_pool) override;
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
 
   int get_num_labels() const override {
     return m_num_labels;
