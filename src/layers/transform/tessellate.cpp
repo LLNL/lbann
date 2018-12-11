@@ -67,7 +67,7 @@ void bp_cpu_3d(const std::vector<int>& input_dims,
                const AbsDistMat& gradient_wrt_output,
                AbsMat& gradient_wrt_input) {
 
-  // Local matrix
+  // Local data
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   const auto& local_height = local_gradient_wrt_output.Height();
   const auto& local_width = local_gradient_wrt_output.Width();
@@ -85,7 +85,7 @@ void bp_cpu_3d(const std::vector<int>& input_dims,
       const auto& output_pos0 = output_index / (output_dims[1] * output_dims[2]);
       const auto& dy = local_gradient_wrt_output(local_row, local_col);
 
-      // Get corresponding gradient w.r.t. input entry
+      // Update corresponding gradient w.r.t. input entry
       const auto& input_pos0 = output_pos0 % input_dims[0];
       const auto& input_pos1 = output_pos1 % input_dims[1];
       const auto& input_pos2 = output_pos2 % input_dims[2];

@@ -454,7 +454,7 @@ Layer* construct_layer(lbann_comm* comm,
   }
   if (proto_layer.has_tessellate()) {
     const auto& params = proto_layer.tessellate();
-    const auto& dims = parse_list<El::Int>(params.dims());
+    const auto& dims = parse_list<int>(params.dims());
     return new tessellate_layer<layout, Dev>(comm, dims);
   }
 

@@ -31,17 +31,22 @@
 
 namespace lbann {
 
-/** Tessellate layer. */
+/** Tessellate layer.
+ *  This layer tessellates an input tensor to obtain an output
+ *  tensor. The number of output dimensions must match the number of
+ *  input dimensions, but there are no other restrictions on the
+ *  output dimensions. This may be used for tensor broadcasting and it
+ *  is a generalization of the "tile" operation in Keras, Caffe,
+ *  TensorFlow, and PyTorch.
+ */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class tessellate_layer : public Layer {
 public:
 
   tessellate_layer(lbann_comm *comm,
-                   std::vector<El::Int> dims = {})
+                   std::vector<int> dims = {})
     : Layer(comm) {
-    std::vector<int> dims_;
-    for (const auto& d : dims) { dims_.push_back(d); }
-    set_output_dims(dims_);
+    set_output_dims(dims);
   }
 
   tessellate_layer(const tessellate_layer& other)
@@ -169,17 +174,18 @@ private:
   /** View into input tensor. */
   std::unique_ptr<AbsDistMat> m_input_v;
 
-  /** Apply tessellate layer forward prop.
-   *  Data in 'input' should be stored redundantly over the layer's
-   *  column communicator.
+  /** Apply tessellation.
+   *  Columns of 'input' should be intact mini-batch samples. If the
+   *  data layout is not purely data-parallel, this means input data
+   *  is duplicated over the input matrix's column communicator.
    */
   static void fp_compute_3d(const std::vector<int>& input_dims,
                             const std::vector<int>& output_dims,
                             const AbsMat& input,
                             AbsDistMat& output);
-  /** Apply tessellate layer back prop with local data.
+  /** Compute local contribution to tessellation back prop
    *  The global gradient w.r.t. input can be obtained by performing
-   *  an allreduce over the column communicator.
+   *  an allreduce over the input matrix's column communicator.
    */
   static void bp_compute_3d(const std::vector<int>& input_dims,
                             const std::vector<int>& output_dims,
