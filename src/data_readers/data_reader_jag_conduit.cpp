@@ -155,18 +155,25 @@ int data_reader_jag_conduit::get_num_data() const {
 }
 
 void data_reader_jag_conduit::shuffle_indices() {
+  shuffle_indices(get_data_seq_generator());
+}
+
+void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
     std::shuffle(m_valid_samples.begin(), m_valid_samples.end(),
                  get_data_seq_generator());
   }
-  m_valid_samples.resize(m_local_num_samples_to_use);
 }
 
 void data_reader_jag_conduit::select_subset_of_data() {
 
   m_local_num_samples_to_use = get_num_valid_local_samples();
-  shuffle_indices();
+  // Use the normal (non-data sequence) generator for shuffling and
+  // finding a subset of samples.  Otherwise the different ranks will
+  // get out of step due to initial imbalance of available samples.
+  shuffle_indices(get_generator());
+  m_valid_samples.resize(m_local_num_samples_to_use);
 
   const size_t count = get_absolute_sample_count();
   const double use_percent = get_use_percent();
