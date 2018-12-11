@@ -70,24 +70,21 @@ public:
     Layer::setup_dims();
     set_output_dims({1});
 
-    // Check that input dimensions are valid
-    std::stringstream err;
-    const auto& parents = get_parent_layers();
-    const auto& dims0 = get_input_dims(0);
-    const auto& dims1 = get_input_dims(1);
-    if (dims0 != dims1) {
+    // Check that input dimensions match
+    if (get_input_size(0) != get_input_size(1)) {
+      const auto& parents = get_parent_layers();
+      std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects input tensors with identical dimensions, "
-          << "but parent layer \"" << parents[0]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
-      for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims0[i];
+          << "has input tensors with incompatible dimensions (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& dims = get_input_dims(i);
+        err << (i > 0 ? ", " : "")
+            << "layer \"" << parents[i]->get_name() << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
       }
-      err << " and parent layer \"" << parents[1]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
-      for (size_t i = 0; i < dims1.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims1[i];
-      }
+      err << ")";
       LBANN_ERROR(err.str());
     }
 
