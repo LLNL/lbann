@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
+#include "lbann/data_readers/sample_list.hpp"
 
 namespace lbann {
 
@@ -239,6 +240,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   void unset_split_image_channels();
   bool check_split_image_channels() const;
 
+  void set_use_sample_list();
+  void unset_use_sample_list();
+  bool check_use_sample_list() const;
+
   /// Show the description
   std::string get_description() const;
 
@@ -358,10 +363,22 @@ class data_reader_jag_conduit : public generic_data_reader {
    * access local data using local indices.
    */
   void populate_shuffled_indices(const size_t num_samples);
+  /// Rely on pre-determined list of samples.
+  void load_list_of_samples();
+  /**
+   * Locally determines the set of unique files per reader, and
+   * relies on load_conduit() to indentify valid samples in them.
+   */
+  void load_set_of_unique_files();
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
+
+  /// Open a conduit file and register the open file descriptor
+  hid_t open_conduit_file(const std::string& conduit_file_path);
+  /// Popilate valid sample list from a given list
+  void get_valid_samples_from_list(const sample_list<std::string>& slist);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Obtain the linearized size of images of a sample from the meta info
@@ -410,6 +427,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   unsigned int m_num_img_srcs; ///< number of views result in images
   bool m_split_channels; ///< Whether to export a separate image per channel
 
+  /// Whether to use sample list or not
+  bool m_use_sample_list;
   /// Whether data have been loaded
   bool m_is_data_loaded;
 
@@ -499,6 +518,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<linear_transform_t> m_image_normalization_params;
   std::vector<linear_transform_t> m_scalar_normalization_params;
   std::vector<linear_transform_t> m_input_normalization_params;
+
+  sample_list<std::string> m_sample_list;
+
   /** temporary image normalization
    * The inputs are the image to normalize, the image source id and the channel id.
    */

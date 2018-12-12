@@ -29,11 +29,10 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/io/data_buffers/distributed_io_buffer.hpp"
-//#include "lbann/data_store/data_store_jag_conduit.hpp"
+#include "lbann/models/model.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
-#include "lbann/models/model.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -328,6 +327,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_num_img_srcs = rhs.m_num_img_srcs;
   m_split_channels = rhs.m_split_channels;
   set_linearized_image_size();
+  m_use_sample_list = rhs.m_use_sample_list;
   m_is_data_loaded = rhs.m_is_data_loaded;
   m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
@@ -399,6 +399,7 @@ void data_reader_jag_conduit::set_defaults() {
   set_linearized_image_size();
   m_num_img_srcs = 1u;
   m_split_channels = false;
+  m_use_sample_list = false;
   m_is_data_loaded = false;
   m_num_labels = 0;
   m_emi_image_keys.clear();
@@ -966,6 +967,110 @@ void data_reader_jag_conduit::populate_shuffled_indices(const size_t num_samples
 }
 
 void data_reader_jag_conduit::load() {
+  if (m_use_sample_list) {
+    load_list_of_samples();
+  } else {
+    load_set_of_unique_files();
+  }
+}
+
+
+hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) {
+  if (!check_if_file_exists(conduit_file_path)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
+  }
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
+#else
+  std::cerr << "loading: " << conduit_file_path << std::endl;
+#endif
+
+  hid_t hdf5_file_hnd;
+  try {
+    hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+  } catch (std::exception e) {
+    std::string msg = get_type() + std::string(" :: skipping a file unable to read: ")
+                    + conduit_file_path;
+    std::cerr << __FILE__<< ' '  << __LINE__ << " :: " << msg << std::endl;
+    return static_cast<hid_t>(0);
+  }
+  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), std::string(" Invalid file handle for ") + conduit_file_path);
+  }
+  if (!m_open_hdf5_files) {
+    m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
+  }
+  m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
+
+  return hdf5_file_hnd;
+}
+
+
+void data_reader_jag_conduit::get_valid_samples_from_list(const sample_list<std::string>& slist) {
+  using sample_files_t = sample_list<std::string>::sample_files_t;
+  const sample_files_t& samples_per_file = slist.get_list();
+  const size_t num_files = samples_per_file.size();
+  sample_files_t::const_iterator it_samplefiles = samples_per_file.cbegin();
+
+  for (size_t i = 0u; i < num_files; ++i, ++it_samplefiles) {
+    const std::string data_dir = add_delimiter(get_file_dir());
+    const std::string conduit_file_path = data_dir + it_samplefiles->first;
+    hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
+    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+      continue;
+    }
+
+    const auto& samples_of_current_file = it_samplefiles->second;
+    for (const auto& sample_name : samples_of_current_file) {
+      m_valid_samples.push_back(sample_locator_t(sample_name, hdf5_file_hnd));
+    }
+  }
+
+  if (!m_is_data_loaded) {
+    m_is_data_loaded = true;
+
+    if (m_scalar_keys.size() == 0u) {
+      set_all_scalar_choices(); // use all by default if none is specified
+    }
+    check_scalar_keys();
+
+    if (m_input_keys.size() == 0u) {
+      set_all_input_choices(); // use all by default if none is specified
+    }
+    check_input_keys();
+  }
+}
+
+void data_reader_jag_conduit::load_list_of_samples() {
+  const std::string data_dir = add_delimiter(get_file_dir());
+  const std::string sample_list_file = data_dir + get_data_filename();
+
+  // Obtain a serialized list of samples assigned to this rank
+  // from a pre-determined list of samples to use.
+  std::string my_samples;
+
+  double tm1 = get_time();
+  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
+  m_sample_list.set_num_partitions(num_readers);
+
+  // load the sample list
+  m_sample_list.load(sample_list_file);
+  double tm2 = get_time();
+
+  // partition, serialize (pack) and distribute the sample list
+  distribute_sample_list(m_sample_list, my_samples, *m_comm);
+
+  sample_list<std::string> my_sample_list;
+  my_sample_list.load_from_string(my_samples);
+  get_valid_samples_from_list(my_sample_list);
+
+  double tm3 = get_time();
+
+  std::cout << "Time to load sample list: " << tm3 - tm1 << " (" << tm2 - tm1 << " + " << tm3 - tm2 << ")" << std::endl;
+}
+
+void data_reader_jag_conduit::load_set_of_unique_files() {
   if(m_gan_labelling) {
     m_num_labels=2;
   }
@@ -1060,33 +1165,10 @@ void data_reader_jag_conduit::load() {
 
 
 void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, size_t& idx) {
-  if (!check_if_file_exists(conduit_file_path)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
-  }
-#ifndef _JAG_OFFLINE_TOOL_MODE_
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
-#else
-  std::cerr << "loading: " << conduit_file_path << std::endl;
-#endif
-
-  hid_t hdf5_file_hnd;
-  try {
-    hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-  } catch (std::exception e) {
-    std::string msg = get_type() + std::string(" :: skipping a file unable to read: ")
-                    + conduit_file_path;
-    std::cerr << __FILE__<< ' '  << __LINE__ << " :: " << msg << std::endl;
-    idx = m_valid_samples.size();
-    return;
-  }
+  hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
   if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), std::string(" Invalid file handle for ") + conduit_file_path);
+    return; // skipping the file
   }
-  if (!m_open_hdf5_files) {
-    m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
-  }
-  m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
 
   // set up mapping: need to do this since some of the data may be bad
   std::vector<std::string> sample_names;
@@ -1301,6 +1383,19 @@ void data_reader_jag_conduit::unset_split_image_channels() {
 
 bool data_reader_jag_conduit::check_split_image_channels() const {
   return m_split_channels;
+}
+
+
+void data_reader_jag_conduit::set_use_sample_list() {
+  m_use_sample_list = true;
+}
+
+void data_reader_jag_conduit::unset_use_sample_list() {
+  m_use_sample_list = false;
+}
+
+bool data_reader_jag_conduit::check_use_sample_list() const {
+  return m_use_sample_list;
 }
 
 
