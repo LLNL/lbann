@@ -736,6 +736,7 @@ model {
       prefix: "fw_latent_loss/"
       layers: "fw_latent_loss"
       execution_modes: "test"
+      format: "npy"
     }
   }
  #callback {
@@ -754,6 +755,6 @@ model {
     }
   }
   block_size: 256
-  super_steps: 10000
+  super_steps: 20000
   num_batches: 1
 }

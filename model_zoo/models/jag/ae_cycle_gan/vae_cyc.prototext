@@ -524,6 +524,7 @@ model {
       prefix: "fw_out_loss/"
       layers: "fw_out_loss"
       execution_modes: "test"
+      format: "npy"
     }
   }
 
