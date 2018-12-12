@@ -136,14 +136,14 @@ int main(int argc, char *argv[]) {
       if (master) std::cerr << "\n STARTING train - G1 solver model at step " << super_step << " \n\n";
       model_2->train( super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
       // Evaluate model on test set
-      model_2->evaluate(execution_mode::testing,pb_model_2.num_batches());
+      //      model_2->evaluate(execution_mode::testing,pb_model_2.num_batches());
 
       if(master) std::cout << " Copy all trained weights from discriminator to G2 and train/freeze as appropriate " << std::endl;
       model_3->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G2 solver model at step " << super_step << " \n\n";
       model_3->train( super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
       // Evaluate model on test set
-      model_3->evaluate(execution_mode::testing,pb_model_3.num_batches());
+      //      model_3->evaluate(execution_mode::testing,pb_model_3.num_batches());
 
       if(master) std::cout << " Update G1 weights " << std::endl;
       auto model2_weights = model_2->get_weights();
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
         if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
         ae_cycgan_model->copy_trained_weights_from(model2_weights);
         if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
-        ae_cycgan_model->evaluate(execution_mode::testing);
+        //ae_cycgan_model->evaluate(execution_mode::testing);
       }
 
       super_step++;
@@ -169,6 +169,8 @@ int main(int argc, char *argv[]) {
     model_2->save_model();
     model_3->save_model();
     ae_cycgan_model->save_model();
+    if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
+    ae_cycgan_model->evaluate(execution_mode::testing);
 
     //has no affect unless option: --st_on was given
     stack_profiler::get()->print();
