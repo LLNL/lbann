@@ -29,8 +29,8 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
-#include <dirent.h>
 #include <cstdlib>
+
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
@@ -58,52 +58,51 @@ int main(int argc, char *argv[]) {
     protobuf_utils::load_prototext(master, argc, argv, pbs);
 
     model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, true);
-    model *model_2 = nullptr;
+                                                comm, true); //ae
+    model *model_2 = nullptr; //cycgan
+    model *model_3 = nullptr; //ae+cycgan
+
+
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
                                            comm, false);
     }
-    // Load layer weights from checkpoint if checkpoint directory given
-    if(opts->has_string("ckpt_dir")){
-      lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), model_1);
-    }
-    // Train model
-    if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
-    const lbann_data::Model pb_model = pbs[0]->model();
 
-    // When using checkpoint states, skip training as those could be the result
-    // of checkpointing by steps.
-    if (!opts->has_string("no_model1_train")){
-      model_1->train( pb_model.num_epochs() );
-    }
-    // Evaluate model 1 unless it is set to skip
-    if (!opts->has_string("no_model1_eval")){
-      model_1->evaluate(execution_mode::testing);
+    if (pbs.size() > 2) {
+      model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
+                                           comm, false);
     }
 
-    if (model_2 != nullptr) {
-      const auto layers1 = model_1->get_layers();
-      const auto layers2 = model_2->get_layers();
-      for(size_t l2=0; l2 < layers2.size(); l2++) {
-        for(size_t l1=0; l1 < layers1.size(); l1++) {
-           if(layers2[l2]->get_name() == layers1[l1]->get_name()){
-             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name();
-             layers2[l2]->replace_weights(layers1[l1]);
-             if(master) std::cout << " copied to Model2 Layer " << std::endl;
-           }
-         }
-       }
 
-      if (master) std::cerr << "\n STARTING train - model 2\n\n";
-      const lbann_data::Model pb_model_2 = pbs[1]->model();
-      model_2->train( pb_model_2.num_epochs() );
-      model_2->evaluate(execution_mode::testing);
-    }
+    const lbann_data::Model pb_model_1 = pbs[0]->model();
+    const lbann_data::Model pb_model_2 = pbs[1]->model();
+    const lbann_data::Model pb_model_3 = pbs[2]->model();
+
+    if(master) std::cout << " Pre-train autoencoder " << std::endl;
+    model_1->train(pb_model_1.num_epochs());
+    model_1->evaluate(execution_mode::testing);
+    auto ae_weights = model_1->get_weights();
+    model_2->copy_trained_weights_from(ae_weights);
+    model_3->copy_trained_weights_from(ae_weights);
+
+    //Train cycle GAN
+    if (master)  std::cerr << "\nSTARTING train - cycle GAN \n\n";
+    model_2->train(pb_model_2.num_epochs());
+    model_2->evaluate(execution_mode::testing);
+    auto model2_weights = model_2->get_weights();
+      
+    //Evaluate on pretrained autoencoder
+    if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
+    model_3->copy_trained_weights_from(model2_weights);
+    if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
+    model_3->evaluate(execution_mode::testing);
 
     delete model_1;
     if (model_2 != nullptr) {
       delete model_2;
+    }
+    if (model_3 != nullptr) {
+      delete model_3;
     }
     for (auto t : pbs) {
       delete t;

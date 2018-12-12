@@ -26,8 +26,6 @@
 
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
-#include <dirent.h>
-#include <cstdlib>
 
 namespace lbann {
 
@@ -116,7 +114,12 @@ model *build_model_from_prototext(int argc, char **argv,
     // Initialize data readers
     //@todo: code not in place for correctly handling image preprocessing
     std::map<execution_mode, generic_data_reader *> data_readers;
-    init_data_readers(comm, pb, data_readers);
+    bool is_shared_training_data_reader = pb_model->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_model->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
 
     // hack to prevent all data readers from loading identical data; instead,
     // share a single copy. See data_reader_jag_conduit_hdf5 for example
@@ -188,48 +191,6 @@ model *build_model_from_prototext(int argc, char **argv,
   }
 
   return model;
-}
-
-bool load_model_weights(std::string ckpt_dir, model * m){
-  std::vector<std::string> weight_list = std::vector<std::string>();
-  int epochLast = -1;
-  int stepLast = -1;
-  std::string latest;
-  latest = get_last_shared_checkpoint_filename(m, ckpt_dir);
-  // get last epoch and step saved.
-  int fd = openread(latest.c_str());
-  lbann_comm *temp_comm = m->get_comm();
-  if (fd != -1) {
-    char field[256];
-    read_string(fd, latest.c_str(), field, sizeof(field));
-    int ret = sscanf(field, "epoch=%d step=%d\n", &epochLast, &stepLast);
-    if(ret != 2) { return false; }
-    closeread(fd, latest.c_str());
-    if(temp_comm->am_model_master()) {
-      latest = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
-      std::cout << "Loading model weights from " << latest << std::endl;
-    }
-    temp_comm->model_broadcast(0, &(latest[0]), sizeof(latest), El::SyncInfo<El::Device::CPU>{});
-  }
-
-  DIR *weight_dir;
-  struct dirent *weight_file;
-  if((weight_dir = opendir(latest.c_str())) == NULL)
-  {
-    std::cout << "error opening " << latest << "\n";
-    return false;
-  }
-  // Populate weight list
-  while ((weight_file = readdir(weight_dir)) != NULL){
-    if(!strncmp(weight_file->d_name,"model_weights_",14))
-      weight_list.push_back(std::string(weight_file->d_name));
-  }
-  closedir(weight_dir);
-  // load weights that appear in weight list.
-  for(weights *w : m->get_weights()) {
-    w->load_from_save(latest,weight_list);
-  }
-  return true;
 }
 
 void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm) {

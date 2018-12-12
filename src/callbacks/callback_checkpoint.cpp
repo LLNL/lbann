@@ -43,7 +43,7 @@ void lbann_callback_checkpoint::on_epoch_end(model *m) {
   }
   p.set_cb_type(callback_type::invalid);
 }
- // Interval defined with checkpoint_epochs or ckpt_dist_epochs
+// Interval defined with checkpoint_epochs or ckpt_dist_epochs
 void lbann_callback_checkpoint::on_validation_end(model *m) {
   p.set_cb_type(callback_type::validation);
   if(need_checkpoint(m)){
@@ -113,37 +113,6 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   return (m_checkpoint_shared || m_checkpoint_dist);
 }
 
-// Print last checkpoint to file, used to determine which checkpoint to load from.
-static bool write_latest(std::string filename, int epoch, int train) {
-  // open the file for writing
-  int fd = openwrite(filename.c_str());
-  if (fd != -1) {
-    char field[256];
-    sprintf(field, "epoch=%d step=%d\n", epoch, train);
-    write_string(fd, filename.c_str(), field, strlen(field));
-    // close our file
-    closewrite(fd, filename.c_str());
-  }
-  return true;
-}
-/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
-static bool read_latest(std::string filename, int *epochLast, int *trainLast) {
-  // assume we don't have a file, we'll return -1 in that case
-  *epochLast = -1;
-  *trainLast = -1;
-  // open the file for reading
-  int fd = openread(filename.c_str());
-  if (fd != -1) {
-    // read epoch from file
-    char field[256];
-    read_string(fd, filename.c_str(), field, sizeof(field));
-    int ret = sscanf(field, "epoch=%d step=%d\n", epochLast, trainLast);
-    // close our file
-    closeread(fd, filename.c_str());
-    if(ret != 2) { return false; }
-  }
-  return true;
-}
 // Checkpoint Shared/Distributed
 bool lbann_callback_checkpoint::checkpoint(model *m) {
   // if the checkpoint directory is not defined, bail

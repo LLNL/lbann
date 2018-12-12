@@ -33,6 +33,7 @@
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
+#include "lbann/models/model.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -154,18 +155,25 @@ int data_reader_jag_conduit::get_num_data() const {
 }
 
 void data_reader_jag_conduit::shuffle_indices() {
+  shuffle_indices(get_data_seq_generator());
+}
+
+void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
     std::shuffle(m_valid_samples.begin(), m_valid_samples.end(),
-                 get_data_seq_generator());
+                 gen);
   }
-  m_valid_samples.resize(m_local_num_samples_to_use);
 }
 
 void data_reader_jag_conduit::select_subset_of_data() {
 
   m_local_num_samples_to_use = get_num_valid_local_samples();
-  shuffle_indices();
+  // Use the normal (non-data sequence) generator for shuffling and
+  // finding a subset of samples.  Otherwise the different ranks will
+  // get out of step due to initial imbalance of available samples.
+  shuffle_indices(get_generator());
+  m_valid_samples.resize(m_local_num_samples_to_use);
 
   const size_t count = get_absolute_sample_count();
   const double use_percent = get_use_percent();
@@ -973,6 +981,9 @@ void data_reader_jag_conduit::load() {
     m_local_num_samples_to_use = m_leading_reader->get_num_valid_local_samples();
     m_global_num_samples_to_use = m_leading_reader->get_num_data();
     m_open_hdf5_files = m_leading_reader->get_open_hdf5_files();
+    if (is_master()) {
+      std::cout << std::endl << get_description() << std::endl << std::endl;
+    }
     return;
   }
 
@@ -1033,7 +1044,9 @@ void data_reader_jag_conduit::load() {
   }
   if (is_master()) {
     std::cerr << "time to load conduit files: " << get_time() - tm1
-              << "  number of valid local samples at the master rank: " << m_valid_samples.size() << std::endl;
+              << "  number of valid local samples at the master rank: " << m_valid_samples.size()
+              << " local reader id=" << get_local_id(get_role()) << " for " << get_role()
+              << " leading reader=" << m_leading_reader << std::endl;
   }
 
   check_image_data();
@@ -1320,6 +1333,8 @@ std::string data_reader_jag_conduit::to_string(const std::vector< std::vector<da
 }
 
 std::string data_reader_jag_conduit::get_description() const {
+  std::stringstream leading_reader;
+  leading_reader << m_leading_reader;
   std::string ret = std::string("data_reader_jag_conduit:\n")
     + " - independent: " + data_reader_jag_conduit::to_string(m_independent_groups) + "\n"
     + " - dependent: " + data_reader_jag_conduit::to_string(m_dependent_groups) + "\n"
@@ -1330,7 +1345,9 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - scalars: "  + std::to_string(get_linearized_scalar_size()) + "\n"
     + " - inputs: "   + std::to_string(get_linearized_input_size()) + "\n"
     + " - linearized data size: "   + std::to_string(get_linearized_data_size()) + "\n"
-    + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + '\n';
+    + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + "\n"
+    + " - leading DR: " + (m_leading_reader == this ? "true" : "false")
+    + " (ptr=" + leading_reader.str() + ")\n";
   if (!m_scalar_filter.empty()) {
     ret += " - scalar filter:";
     for (const auto& f: m_scalar_filter) {

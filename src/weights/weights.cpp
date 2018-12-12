@@ -29,6 +29,7 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/io/file_io.hpp"
 
 namespace lbann {
 
@@ -388,7 +389,7 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   // write weights using persist call -- uses Elemental's write function.
   p.write_distmat(persist_type::model, l_name, m_values.get());
   // if saving training state, also write out state of optimizer
-  if (m_optimizer != nullptr) {
+  if (m_optimizer != nullptr && (p.get_cb_type() == callback_type::batch || p.get_cb_type() == callback_type::epoch)) {
     m_optimizer->save_to_checkpoint_shared(p, m_name);
   }
 
@@ -454,6 +455,12 @@ bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::strin
     std::string full_path = ckpt_dir + *it;
     if(m_comm->am_world_master()) {
       std::cout << "Loading " << m_name << " <- " << *it << "\n";
+    }
+    // check whether file exists
+    int exists = lbann::exists(full_path.c_str());
+    if (! exists) {
+      throw lbann_exception(std::string("Failed to read weight matrix: ") + full_path);
+      return false;
     }
     El::Read(*m_values,full_path, El::BINARY, true);
   }

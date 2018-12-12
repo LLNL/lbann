@@ -24,23 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LIBRARY_HPP
-#define LBANN_LIBRARY_HPP
+#ifndef JAG_UTILS_HPP
+#define JAG_UTILS_HPP
 
-#include "lbann/models/model.hpp"
-#include "lbann/proto/proto_common.hpp"
+#include "lbann/comm.hpp"
+#include <string>
+#include <vector>
 
 namespace lbann {
 
-const int lbann_default_random_seed = 42;
-
-model *build_model_from_prototext(int argc, char **argv,
-                                 lbann_data::LbannPB &pb,
-                                 lbann_comm *comm,
-                                 bool first_model);
-
-void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm);
+// P_0 reads a filelist and bcasts to all other procs
+void read_filelist(lbann_comm *comm, const std::string &fn, std::vector<std::string> &filelist_out);
 
 } // namespace lbann
 
-#endif // LBANN_LIBRARY_HPP
+#endif // JAG_UTILS_HPP

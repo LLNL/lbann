@@ -40,7 +40,8 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
 
 int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
 
-void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers)
+void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
+                       bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader, bool is_shareable_validation_data_reader)
 {
 #ifdef LBANN_HAS_CONDUIT
   static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
@@ -130,12 +131,18 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
 
-      if (!peek_map(leading_reader_jag_conduit, readme.role())) {
-        leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
-      } else {
-        const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
-        *reader_jag_conduit = *leader;
-        reader_jag_conduit->set_leading_reader(leader);
+      /// Allow the prototext to control if the data readers is
+      /// shareable for each phase training, validation, or testing
+      if((is_shareable_training_data_reader && readme.role() == "train")
+         || (is_shareable_testing_data_reader && readme.role() == "test")
+         || (is_shareable_validation_data_reader && readme.role() == "validation")) {
+        if (!peek_map(leading_reader_jag_conduit, readme.role())) {
+          leading_reader_jag_conduit[readme.role()] = reader_jag_conduit;
+        } else {
+          const auto leader = peek_map(leading_reader_jag_conduit, readme.role());
+          *reader_jag_conduit = *leader;
+          reader_jag_conduit->set_leading_reader(leader);
+        }
       }
 
       for (int i=0; i < pb_model.layer_size(); ++i) {
@@ -383,18 +390,28 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
 #ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
-        const std::string role = "validate";
-        if (!peek_map(leading_reader_jag_conduit, role)) {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
-          reader_jag_conduit->set_role(role);
-          leading_reader_jag_conduit[role] = reader_jag_conduit;
+        /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
+        /// is also shared
+        if(is_shareable_training_data_reader) {
+          const std::string role = "validate";
+          if (!peek_map(leading_reader_jag_conduit, role)) {
+            reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+            reader_jag_conduit->set_role(role);
+            leading_reader_jag_conduit[role] = reader_jag_conduit;
+          } else {
+            // Copy construct the leading validation reader into another validation reader.
+            // We do not copy the train reader as the subset of data may already have been
+            // assigned to validation reader when validation percent is set.
+            // Thus, we need to avoid taking a subset of a subset.
+            const auto leader = peek_map(leading_reader_jag_conduit, role);
+            reader_validation = new data_reader_jag_conduit(*leader);
+            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_jag_conduit->set_leading_reader(leader);
+          }
         } else {
-          const auto leader = peek_map(leading_reader_jag_conduit, role);
-          reader_validation = new data_reader_jag_conduit(*leader);
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
-          reader_jag_conduit->set_leading_reader(leader);
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
         }
 #endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
@@ -433,7 +450,14 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         double validate_percent = ((double) num_validate / (double) (num_train+num_validate))*100.0;
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
-                  << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples." << std::endl;
+                  << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
+#ifdef LBANN_HAS_CONDUIT
+        if (name == "jag_conduit") {
+          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
+                    << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
+        }
+#endif // LBANN_HAS_CONDUIT
+        std::cout << std::endl;
       }
 
       data_readers[execution_mode::validation] = reader_validation;
@@ -847,6 +871,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "  --data_reader_percent=<float>\n"
+       "  --share_testing_data_readers=<bool:[0|1]>\n"
        "\n"
        "Callbacks:\n"
        "  --image_dir=<string>\n"
