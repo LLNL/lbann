@@ -500,6 +500,12 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
       reader_jag->add_input_normalization_param(np);
     }
 
+    if (pb_readme.use_sample_list()) {
+      reader_jag->set_use_sample_list();
+    } else {
+      reader_jag->unset_use_sample_list();
+    }
+
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;

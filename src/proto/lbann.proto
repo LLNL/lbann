@@ -76,6 +76,8 @@ message Reader {
   string input_keys = 1005;
   string image_views = 1006;
   string image_channels = 1007;
+
+  bool use_sample_list = 1008;
   //------------------  end of only for jag_conduit  -----------------------
 
   int32 num_labels = 99; //for imagenet and synthetic
