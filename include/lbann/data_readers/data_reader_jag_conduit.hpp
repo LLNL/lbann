@@ -332,6 +332,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Shuffle sample indices
   void shuffle_indices() override;
+  /// Shuffle sammple indices using a different RNG
+  void shuffle_indices(rng_gen& gen) override;
+
   /**
    * Compute the number of parallel readers based on the type of io_buffer,
    * the mini batch size, the requested number of parallel readers.

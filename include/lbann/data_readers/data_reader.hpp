@@ -781,8 +781,10 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual void postprocess_data_source(int tid) {};
 
-  /// Shuffle indices
+  /// Shuffle indices (uses the data_seq_generator)
   virtual void shuffle_indices();
+  /// Shuffle indices and profide a random number generator
+  virtual void shuffle_indices(rng_gen& gen);
 
   int m_mini_batch_size;
   int m_current_pos;

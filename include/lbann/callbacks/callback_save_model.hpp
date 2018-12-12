@@ -47,9 +47,9 @@ class lbann_callback_save_model : public lbann_callback {
    * @param file extension e.g., model, state ......
    */
   lbann_callback_save_model(std::string dir,
-                            El::Int steps,
+                            bool disable_save_after_training,
                             std::string extension="prototext") :
-    lbann_callback(), m_dir(std::move(dir)), m_save_interval_steps(steps), m_extension(std::move(extension))
+    lbann_callback(), m_dir(std::move(dir)), m_disable_save_after_training(disable_save_after_training), m_extension(std::move(extension))
     {}
   lbann_callback_save_model(const lbann_callback_save_model&) = default;
   lbann_callback_save_model& operator=(
@@ -65,12 +65,11 @@ class lbann_callback_save_model : public lbann_callback {
   std::string name() const override { return "save model"; }
  private:
   std::string m_dir; //directory to save file
-  El::Int m_save_interval_steps;
+  bool m_disable_save_after_training; /// Disables the normal behavior of saving when training is complete
   std::string m_extension; //file extension
   persist p;
   void write_proto_binary(const lbann_data::Model& proto, const std::string filename);
   void write_proto_text(const lbann_data::Model& proto, const std::string filename);
-  bool need_save(model *m);
 };
 
 }  // namespace lbann

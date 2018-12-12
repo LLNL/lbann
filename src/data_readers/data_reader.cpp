@@ -39,10 +39,14 @@ namespace lbann {
 //#define DEBUG
 
 void generic_data_reader::shuffle_indices() {
+  shuffle_indices(get_data_seq_generator());
+}
+
+void generic_data_reader::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
-                 get_data_seq_generator());
+                 gen);
   }
 }
 

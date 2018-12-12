@@ -451,10 +451,12 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
                   << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
+#ifdef LBANN_HAS_CONDUIT
         if (name == "jag_conduit") {
           std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
                     << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
         }
+#endif // LBANN_HAS_CONDUIT
         std::cout << std::endl;
       }
 

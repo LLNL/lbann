@@ -22,6 +22,7 @@ set_full_path(THIS_DIR_HEADERS
   summary.hpp
   timer.hpp
   lbann_library.hpp
+  jag_utils.hpp
   )
 
 # Add the subdirectories
