@@ -93,7 +93,7 @@ class model {
                                  bool trailing_newline = true) const;
 
   /** Set up the model. */
-  virtual void setup(int num_io_threads, int io_threads_offset);
+  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Add layer to model. */
   virtual void add_layer(Layer *layer);

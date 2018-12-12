@@ -564,48 +564,6 @@ int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lban
   return model.num_parallel_readers();
 }
 
-bool check_if_num_io_threads_set(const lbann::lbann_comm *comm, const lbann_data::Model& model)
-{
-  const bool master = comm->am_world_master();
-  const int num_io_threads = model.num_io_threads();
-
-  if (num_io_threads == 0) {
-    if (master) {
-      auto default_num_io_threads = std::max(1, num_free_cores_per_process(comm));
-      std::cout << "\tNum. I/O Threads: " << default_num_io_threads <<
-        " (Limited to # Unused Compute Cores or 1)" << std::endl;
-    }
-    return false;
-  }
-  if (master) {
-    std::cout << "\tNum. I/O Threads: " << num_io_threads << std::endl;
-  }
-  return true;
-}
-
-int set_num_io_threads(const lbann::lbann_comm *comm, lbann_data::LbannPB& p)
-{
-  lbann_data::Model *model = p.mutable_model();
-  const bool is_set = check_if_num_io_threads_set(comm, *model);
-
-  if (!is_set) {
-    const int num_io_threads = num_free_cores_per_process(comm);
-    model->set_num_io_threads(num_io_threads); //adjust the prototext
-  }
-  return model->num_io_threads();
-}
-
-int get_requested_num_io_threads(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p)
-{
-  const lbann_data::Model& model = p.model();
-  const bool is_set = check_if_num_io_threads_set(comm, model);
-
-  if (!is_set) {
-    return num_free_cores_per_process(comm);
-  }
-  return model.num_io_threads();
-}
-
 void set_data_readers_filenames(std::string which, lbann_data::LbannPB& p)
 {
   options *opts = options::get();
@@ -732,9 +690,6 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
-  if (opts->has_int("num_io_threads")) {
-    model->set_num_io_threads(opts->get_int("num_io_threads"));
-  }
   if (opts->has_bool("disable_cuda")) {
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
@@ -814,16 +769,16 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   std::cout << std::endl
             << "Running with these parameters:\n"
             << " General:\n"
-            << "  datatype size:        " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:      " << m.mini_batch_size() << std::endl
-            << "  num_epochs:           " << m.num_epochs()  << std::endl
-            << "  block_size:           " << m.block_size()  << std::endl
-            << "  procs_per_model:      " << m.procs_per_model()  << std::endl
-            << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
-            << "  num_io_threads:       " << m.num_io_threads()  << std::endl
-            << "  disable_cuda:         " << m.disable_cuda()  << std::endl
-            << "  random_seed:          " << m.random_seed() << std::endl
-            << "  data_layout:          " << m.data_layout()  << std::endl
+            << "  datatype size:           " << sizeof(DataType) << std::endl
+            << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
+            << "  num_epochs:              " << m.num_epochs()  << std::endl
+            << "  block_size:              " << m.block_size()  << std::endl
+            << "  procs_per_model:         " << m.procs_per_model()  << std::endl
+            << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
+            << "  serialize_background_io: " << m.serialize_background_io()  << std::endl
+            << "  disable_cuda:            " << m.disable_cuda()  << std::endl
+            << "  random_seed:             " << m.random_seed() << std::endl
+            << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n"
             << "\n"
             << " Optimizer:  ";

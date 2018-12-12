@@ -21,12 +21,6 @@ void init_data_readers(
 /// adjusts the number of parallel data readers
 void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 
-/// adjusts the number of I/O threads
-int set_num_io_threads(const lbann::lbann_comm *comm, lbann_data::LbannPB& p);
-
-/// report the requested number of I/O threads
-int get_requested_num_io_threads(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
-
 /// adjusts the values in p by querying the options db
 void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 

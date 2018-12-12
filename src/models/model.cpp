@@ -469,11 +469,10 @@ void model::freeze_layers_under_frozen_surface() {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void model::setup(int num_io_threads, int io_threads_offset) {
+void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
-  m_io_thread_pool = std::make_shared<thread_pool>();
-  m_io_thread_pool->launch_pinned_threads(num_io_threads, io_threads_offset);
+  m_io_thread_pool = io_thread_pool;
 
   // Setup layers
   setup_layer_topology();

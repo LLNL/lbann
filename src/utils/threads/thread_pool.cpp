@@ -7,7 +7,8 @@ namespace lbann {
 
 thread_pool::thread_pool()
   : thread_joiner_{threads_},
-    all_work_done_{false}
+    all_work_done_{false},
+    m_threads_offset{0}
 {
 }
 
@@ -57,6 +58,8 @@ void thread_pool::launch_threads(size_type num_threads)
   threads_.reserve(num_threads);
   m_work_group.reserve(num_threads);
 
+  m_threads_offset = cpu_offset;
+
   // Find the current thread affinity
   cpu_set_t cpuset, ht_cpuset;
   CPU_ZERO(&cpuset);
@@ -105,6 +108,22 @@ void thread_pool::launch_threads(size_type num_threads)
   }
 }
 
+void thread_pool::reap_threads() {
+  std::cout << "About to reap the I/O threasd" << std::endl;
+  all_work_done_ = true;
+  while(!global_work_queue_.empty()) { global_work_queue_.wake_all(true); }
+
+  m_work_group.clear();
+  m_thread_id_to_local_id_map.clear();
+  threads_.clear();
+  return;
+}
+
+void thread_pool::relaunch_pinned_threads(size_type num_threads) {
+  reap_threads();
+  launch_pinned_threads(num_threads, m_threads_offset);
+  return;
+}
 
 void thread_pool::do_thread_work_()
 {

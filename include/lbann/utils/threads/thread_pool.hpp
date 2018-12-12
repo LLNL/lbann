@@ -53,6 +53,10 @@ public:
   void launch_threads(size_type num_threads);
   /** \brief Launch the threads and pin them to the Hyperthreaded cores */
   void launch_pinned_threads(size_type num_threads, int cpu_offset);
+  /** Wake and terminate all threads in the pool */
+  void reap_threads();
+  /** Reap all threads in the pool and relaunch pinned threads */
+  void relaunch_pinned_threads(size_type num_threads);
 
   /** \brief Submit a job to the pool's queue */
   template <typename FunctionT>
@@ -101,6 +105,9 @@ public:
   /** Convert the C++ thread id into a local thread pool id */
   int get_local_thread_id();
 
+    /** Convert the C++ thread id into a local thread pool id */
+  int get_threads_offset() { return m_threads_offset; }
+
 private:
   /** \brief The task executed by each thread */
   void do_thread_work_();
@@ -125,6 +132,8 @@ private:
 
   /** \brief Work Group */
   std::vector<std::future<bool>> m_work_group;
+
+  int m_threads_offset;
 
 };// class thread_pool
 

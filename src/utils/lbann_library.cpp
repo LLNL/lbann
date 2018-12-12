@@ -29,9 +29,35 @@
 
 namespace lbann {
 
+/// Setup I/O thread pool that is shared across all models
+std::shared_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
+  int num_io_threads = num_free_cores_per_process(comm);
+
+  options *opts = options::get();
+  if(opts->has_int("num_io_threads")) {
+    int requested_io_threads = opts->get_int("num_io_threads");
+    if(requested_io_threads > 0 && requested_io_threads < num_io_threads) {
+      num_io_threads = requested_io_threads;
+    }
+  }
+
+  auto io_threads_offset = free_core_offset(comm);
+
+  if(comm->am_world_master()) {
+    std::cout << "\tNum. I/O Threads: " << num_io_threads <<
+      " (Limited to # Unused Compute Cores or 1)" << std::endl;
+  }
+
+  std::shared_ptr<thread_pool> io_thread_pool = std::make_shared<thread_pool>();
+  io_thread_pool->launch_pinned_threads(num_io_threads, io_threads_offset);
+
+  return io_thread_pool;
+}
+
 model *build_model_from_prototext(int argc, char **argv,
                                   lbann_data::LbannPB &pb,
                                   lbann_comm *comm,
+                                  std::shared_ptr<thread_pool> io_thread_pool,
                                   bool first_model) {
   int random_seed = lbann_default_random_seed;
   bool master = comm->am_world_master();
@@ -50,9 +76,14 @@ model *build_model_from_prototext(int argc, char **argv,
     // after calling split_models()
     set_num_parallel_readers(comm, pb);
 
+    // Check to see if the model wants to reduce the I/O parallelism
+    if(pb_model->serialize_background_io() && io_thread_pool->get_num_threads() != 1) {
+      io_thread_pool->relaunch_pinned_threads(1);
+    }
+
     // Setup I/O threads
-    auto io_threads_per_process = set_num_io_threads(comm, pb);
-    auto io_threads_offset = free_core_offset(comm);
+    auto io_threads_per_process = io_thread_pool->get_num_threads();
+    auto io_threads_offset = io_thread_pool->get_threads_offset();
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
@@ -143,7 +174,7 @@ model *build_model_from_prototext(int argc, char **argv,
                                    data_readers,
                                    pb.optimizer(),
                                    pb.model());
-    model->setup(io_threads_per_process, io_threads_offset);
+    model->setup(io_thread_pool);
 
     //under development; experimental
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
