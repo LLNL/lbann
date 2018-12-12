@@ -31,19 +31,20 @@
 
 namespace lbann {
 
-/** Tessellate layer.
- *  This layer tessellates an input tensor to obtain an output
- *  tensor. The output dimensions are chosen by the user, with the
- *  requirement that the number of input and output dimensions
- *  match. If an input tensor has a dimension of size 1, then this
- *  will perform tensor broadcasting. This is a generalization of the
- *  "tile" operation in Keras, Caffe, and TensorFlow and the "repeat"
- *  operation in PyTorch.
+/** Tessellate a tensor to specified dimensions.
+ *  Equivalently, "tile" or "repeat" the tensor to achieve the
+ *  specified dimensions. If the input tensor has a dimension of size
+ *  1, then this will perform tensor broadcasting.
+ *
+ *  This is somewhat distinct from the "tile" operation in Keras,
+ *  Caffe, and TensorFlow and the "repeat" operation in PyTorch
+ *  because this does not require that the input tensor be tiled
+ *  an integer number of times.
  *
  *  Formally, suppose we tessellate an input tensor \f$ X \f$ with
  *  dimensions \f$d_1 \times\cdots\times d_n\f$ to obtain an output
  *  tensor \f$ Y \f$ with dimensions \f$e_1 \times\cdots\times
- *  e_n\f$. Then, denoting the modulus operator with $f\%\f$,
+ *  e_n\f$. Then, denoting the modulo operator with $f\%\f$,
  *  \f[ Y_{i_1,\cdots,i_n} = X_{i_1\%d_1,\cdots,i_n\%d_n} \f]
  */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
