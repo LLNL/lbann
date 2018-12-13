@@ -1,7 +1,6 @@
 enable_language(C)
 enable_language(CXX)
 
-
 # One weird variable
 option(BUILD_HDF5_TESTING "Build HDF5 tests." OFF)
 
@@ -14,9 +13,6 @@ if (HDF5_CLONE_VIA_SSH)
   message(FATAL_ERROR
     "SSH cloning of HDF5 currently disabled. "
     "I don't know the SSH URL at this time.")
-  
-  message(WARNING "Requested HDF5 clone via SSH. This will happen.\n"
-    "However, HDF5 has a git submodule that will still clone via HTTPS.")
   
   set(HDF5_URL I_DONT_KNOW
     CACHE STRING "The URL from which to clone HDF5")
@@ -45,8 +41,10 @@ set(HDF5_CMAKE_COMMAND "${CMAKE_COMMAND}"
 # HDF5-specific configuration options explicitly exposed
 option(HDF5_BUILD_EXAMPLES "Build HDF5 examples." OFF)
 
+option(HDF5_USE_16_API_DEFAULT "Use 1.6 API by default" OFF)
 option(HDF5_USE_18_API_DEFAULT "Use 1.8 API by default" ON)
 option(HDF5_USE_110_API_DEFAULT "Use 1.10 API by default" OFF)
+option(HDF5_USE_112_API_DEFAULT "Use 1.12 API by default" OFF)
 
 option(HDF5_BUILD_FORTRAN "Build HDF5 with fortran support" OFF)
 
