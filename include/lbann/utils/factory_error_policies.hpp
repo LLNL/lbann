@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include <include/lbann/utils/exception.hpp>
+#include <lbann/utils/exception.hpp>
 
 namespace lbann
 {
