@@ -37,6 +37,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -68,7 +69,8 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {
+    m_default_optimizer(default_optimizer),
+    m_io_thread_pool() {
 
       static int num_models = 0;
       m_name = "Model" + std::to_string(num_models);
@@ -467,7 +469,10 @@ void model::freeze_layers_under_frozen_surface() {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void model::setup() {
+void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
+  // Setup I/O threads - set up before setting up the layers (input
+  // layer depends on having a properly initialized thread pool)
+  m_io_thread_pool = io_thread_pool;
 
   // Setup layers
   setup_layer_topology();
@@ -489,7 +494,6 @@ void model::setup() {
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
   }
-
 }
 
 void model::setup_layer_topology() {

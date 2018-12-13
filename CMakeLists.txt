@@ -450,6 +450,7 @@ add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
 add_subdirectory(tests)
+add_subdirectory(scripts)
 
 ################################################################
 # Install LBANN
@@ -595,8 +596,7 @@ append_str_tf(_str
   LBANN_HAS_DOXYGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_ALUMINUM
-  LBANN_HAS_CONDUIT
-  LBANN_NO_OMP_FOR_DATA_READERS)
+  LBANN_HAS_CONDUIT)
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 

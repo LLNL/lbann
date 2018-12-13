@@ -76,6 +76,8 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   /// Load data and do data reader's chores.
   void load() override;
 
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+
   /// Return the number of samples
   size_t get_num_samples() const;
 
@@ -136,15 +138,17 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
   friend jag_store;
 
   virtual void set_defaults();
-  virtual bool replicate_processor(const cv_process& pp);
+  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit_hdf5& rhs);
 
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid); 
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx);
 
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
+
+  bool fetch_response(CPUMat& X, int data_id, int mb_idx) override;
 
   /// Check if the given sample id is valid
   bool check_sample_id(const size_t i) const;
@@ -165,6 +169,7 @@ class data_reader_jag_conduit_hdf5 : public generic_data_reader {
 
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
+  std::unique_ptr<cv_process> m_master_pps;
 
   /// jag_store; replaces m_data
   jag_store *m_jag_store;
