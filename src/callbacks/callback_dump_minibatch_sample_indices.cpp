@@ -31,6 +31,7 @@
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include <iomanip>
+#include <cstdlib>
 
 namespace lbann {
 

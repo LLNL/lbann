@@ -143,11 +143,11 @@ class data_reader_jag : public generic_data_reader {
   virtual std::vector<CPUMat>
     create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const;
 
-  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
+  bool fetch(CPUMat& X, int data_id, int mb_idx,
              const data_reader_jag::variable_t vt, const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
   /**
    * Load the data in the numpy format file.

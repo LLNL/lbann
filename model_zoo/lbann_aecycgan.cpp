@@ -54,23 +54,26 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
+    // Initalize a global I/O thread pool
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
 
     model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, true); //ae
+                                                comm, io_thread_pool, true); //ae
     model *model_2 = nullptr; //cycgan
     model *model_3 = nullptr; //ae+cycgan
 
 
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm, false);
+                                           comm, io_thread_pool, false);
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
-                                           comm, false);
+                                           comm, io_thread_pool, false);
     }
 
 
@@ -90,7 +93,7 @@ int main(int argc, char *argv[]) {
     model_2->train(pb_model_2.num_epochs());
     model_2->evaluate(execution_mode::testing);
     auto model2_weights = model_2->get_weights();
-      
+
     //Evaluate on pretrained autoencoder
     if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
     model_3->copy_trained_weights_from(model2_weights);

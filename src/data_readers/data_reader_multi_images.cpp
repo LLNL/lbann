@@ -98,8 +98,8 @@ std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const 
   return X_v;
 }
 
-bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-
+bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   const img_src_t& img_src = m_image_list[data_id].first;
@@ -130,7 +130,7 @@ bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, i
   return true;
 }
 
-bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
@@ -140,10 +140,10 @@ std::vector<data_reader_multi_images::sample_t> data_reader_multi_images::get_im
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-    ret.push_back(m_image_list[index]);
-  }
+  // for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+  //   El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  //   ret.push_back(m_image_list[index]);
+  // }
   return ret;
 }
 

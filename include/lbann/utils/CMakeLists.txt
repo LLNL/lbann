@@ -26,6 +26,7 @@ set_full_path(THIS_DIR_HEADERS
   )
 
 # Add the subdirectories
+add_subdirectory(threads)
 add_subdirectory(impl)
 
 # Propagate the files up the tree

@@ -29,10 +29,36 @@
 
 namespace lbann {
 
+/// Setup I/O thread pool that is shared across all models
+std::shared_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
+  int num_io_threads = num_free_cores_per_process(comm);
+
+  options *opts = options::get();
+  if(opts->has_int("num_io_threads")) {
+    int requested_io_threads = opts->get_int("num_io_threads");
+    if(requested_io_threads > 0 && requested_io_threads < num_io_threads) {
+      num_io_threads = requested_io_threads;
+    }
+  }
+
+  auto io_threads_offset = free_core_offset(comm);
+
+  if(comm->am_world_master()) {
+    std::cout << "\tNum. I/O Threads: " << num_io_threads <<
+      " (Limited to # Unused Compute Cores or 1)" << std::endl;
+  }
+
+  std::shared_ptr<thread_pool> io_thread_pool = std::make_shared<thread_pool>();
+  io_thread_pool->launch_pinned_threads(num_io_threads, io_threads_offset);
+
+  return io_thread_pool;
+}
+
 model *build_model_from_prototext(int argc, char **argv,
-                                                         lbann_data::LbannPB &pb,
-                                                         lbann_comm *comm,
-                                                         bool first_model) {
+                                  lbann_data::LbannPB &pb,
+                                  lbann_comm *comm,
+                                  std::shared_ptr<thread_pool> io_thread_pool,
+                                  bool first_model) {
   int random_seed = lbann_default_random_seed;
   bool master = comm->am_world_master();
   if (master) std::cerr << "starting build_model_from_prototext\n";
@@ -49,6 +75,18 @@ model *build_model_from_prototext(int argc, char **argv,
     // Adjust the number of parallel readers; this may be adjusted
     // after calling split_models()
     set_num_parallel_readers(comm, pb);
+
+    // Check to see if the model wants to reduce the I/O parallelism
+    if(pb_model->serialize_background_io() && io_thread_pool->get_num_threads() != 1) {
+      if(master) {
+        std::cout << "Model " << pb_model->name() << " serialized the background I/O threads" << std::endl;
+      }
+      io_thread_pool->relaunch_pinned_threads(1);
+    }
+
+    // Setup I/O threads
+    auto io_threads_per_process = io_thread_pool->get_num_threads();
+    auto io_threads_offset = io_thread_pool->get_threads_offset();
 
     // Set algorithmic blocksize
     if (pb_model->block_size() == 0 and master) {
@@ -103,7 +141,7 @@ model *build_model_from_prototext(int argc, char **argv,
 
     // Report useful information
     if (master) {
-      print_lbann_configuration(pb_model, comm);
+      print_lbann_configuration(pb_model, comm, io_threads_per_process, io_threads_offset);
     }
 
     // Display how the OpenMP threads are provisioned
@@ -139,7 +177,7 @@ model *build_model_from_prototext(int argc, char **argv,
                                    data_readers,
                                    pb.optimizer(),
                                    pb.model());
-    model->setup();
+    model->setup(io_thread_pool);
 
     //under development; experimental
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
@@ -193,11 +231,13 @@ model *build_model_from_prototext(int argc, char **argv,
   return model;
 }
 
-void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm) {
+void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
             << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
-            << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl;
+            << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
+            << "  I/O threads per process (+offset) : " << io_threads_per_process
+            << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
   std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
 #endif // HYDROGEN_HAVE_CUDA

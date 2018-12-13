@@ -24,38 +24,44 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/io/data_buffers/generic_io_buffer.hpp"
-#include "lbann/utils/exception.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+#include <thread>
+#include <omp.h>
 
 namespace lbann {
-generic_io_buffer::generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers)
-  : m_comm(comm), fetch_data_fn(nullptr),  update_data_reader_fn(nullptr), fetch_data_in_background(false) {}
 
-generic_io_buffer::generic_io_buffer(const generic_io_buffer& rhs)
-: m_comm(rhs.m_comm)
-{
-  if (rhs.fetch_data_fn)
-    fetch_data_fn = new fetch_data_functor(*(rhs.fetch_data_fn));
-  if (rhs.update_data_reader_fn)
-    update_data_reader_fn = new update_data_reader_functor(*(rhs.update_data_reader_fn));
+int num_free_cores_per_process(const lbann_comm *comm) {
+  auto hw_cc = std::thread::hardware_concurrency();
+  auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
+
+  auto omp_threads = omp_get_max_threads();
+  auto processes_on_node = comm->get_procs_per_node();
+
+  auto aluminum_threads = 0;
+#ifdef LBANN_HAS_ALUMINUM
+  aluminum_threads = 1;
+#endif // LBANN_HAS_ALUMINUM
+
+  auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads - aluminum_threads));
+
+  return io_threads_per_process;
 }
 
-generic_io_buffer& generic_io_buffer::operator=(const generic_io_buffer& rhs) {
-  m_comm = rhs.m_comm;
-  if (fetch_data_fn) {
-    delete fetch_data_fn;
-    fetch_data_fn = nullptr;
-  }
-  if (update_data_reader_fn) {
-    delete update_data_reader_fn;
-    update_data_reader_fn = nullptr;
-  }
-  if (rhs.fetch_data_fn)
-    fetch_data_fn = new fetch_data_functor(*(rhs.fetch_data_fn));
-  if (rhs.update_data_reader_fn)
-    update_data_reader_fn = new update_data_reader_functor(*(rhs.update_data_reader_fn));
+int free_core_offset(const lbann_comm *comm) {
+  auto hw_cc = std::thread::hardware_concurrency();
+  auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
 
-  return (*this);
+  auto omp_threads = omp_get_max_threads();
+  auto processes_on_node = comm->get_procs_per_node();
+
+  auto aluminum_threads = 0;
+#ifdef LBANN_HAS_ALUMINUM
+  aluminum_threads = 1;
+#endif // LBANN_HAS_ALUMINUM
+
+  auto io_threads_offset = ((omp_threads+aluminum_threads) * processes_on_node) % max_threads;
+
+  return io_threads_offset;
 }
 
 } // namespace lbann

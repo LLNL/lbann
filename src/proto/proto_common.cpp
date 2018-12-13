@@ -771,15 +771,16 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   std::cout << std::endl
             << "Running with these parameters:\n"
             << " General:\n"
-            << "  datatype size:        " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:      " << m.mini_batch_size() << std::endl
-            << "  num_epochs:           " << m.num_epochs()  << std::endl
-            << "  block_size:           " << m.block_size()  << std::endl
-            << "  procs_per_model:      " << m.procs_per_model()  << std::endl
-            << "  num_parallel_readers: " << m.num_parallel_readers()  << std::endl
-            << "  disable_cuda:         " << m.disable_cuda()  << std::endl
-            << "  random_seed:          " << m.random_seed() << std::endl
-            << "  data_layout:          " << m.data_layout()  << std::endl
+            << "  datatype size:           " << sizeof(DataType) << std::endl
+            << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
+            << "  num_epochs:              " << m.num_epochs()  << std::endl
+            << "  block_size:              " << m.block_size()  << std::endl
+            << "  procs_per_model:         " << m.procs_per_model()  << std::endl
+            << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
+            << "  serialize_background_io: " << m.serialize_background_io()  << std::endl
+            << "  disable_cuda:            " << m.disable_cuda()  << std::endl
+            << "  random_seed:             " << m.random_seed() << std::endl
+            << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n"
             << "\n"
             << " Optimizer:  ";
@@ -852,6 +853,8 @@ void print_help(lbann::lbann_comm *comm)
        "  --block_size=<int>\n"
        "  --procs_per_model=<int>\n"
        "  --num_gpus=<int>\n"
+       "  --num_parallel_readers=<int>\n"
+       "  --num_io_threads=<int>\n"
        "  --disable_cuda=<bool>\n"
        "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"
