@@ -1,7 +1,8 @@
 model {
   name: "cycgan_model"
-  shareable_training_data_reader:false 
-  procs_per_model:0 
+  shareable_training_data_reader:false
+  serialize_background_io: true
+  procs_per_model:0
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -39,7 +40,7 @@ model {
       layer: "l_l2_x"
     }
   }
-  num_epochs: 4 
+  num_epochs: 4
   super_steps: 10
   metric {
     layer_metric {

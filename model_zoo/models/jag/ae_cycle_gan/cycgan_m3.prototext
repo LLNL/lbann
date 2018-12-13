@@ -1,6 +1,7 @@
 model {
   name: "inv_model"
   shareable_training_data_reader: true
+  serialize_background_io: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001

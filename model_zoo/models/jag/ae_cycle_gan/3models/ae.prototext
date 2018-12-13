@@ -3,11 +3,12 @@
 #Timestamp 02/26/2018 8:45AM
 model {
   name: "ae_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
+  serialize_background_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 256 
+  mini_batch_size: 256
   block_size: 256
-  num_epochs:4 
+  num_epochs:4
   num_parallel_readers: 0
   procs_per_model: 0
 

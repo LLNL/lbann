@@ -12,6 +12,8 @@ Model portability & usability:
 Internal features:
 
 I/O & data readers:
+ - Overhauled the I/O system to use an independent background thread
+   pool for fetching data
 
 Build system:
 
