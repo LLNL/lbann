@@ -33,8 +33,7 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
   m_input_buffers.clear();
   m_input_buffers.resize(num_child_layers);
   for(int i = 0; i < num_child_layers; i++) {
-    m_input_buffers[i].reset(AbsDistMat::Instantiate(comm->get_model_grid(), 0,
-                                                     El::STAR, El::VC, El::ELEMENT, El::Device::CPU));
+    m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_model_grid()));
   }
 }
 
