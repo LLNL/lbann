@@ -43,7 +43,7 @@ imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shu
     throw lbann_exception(err.str());
   }
 
-  m_master_pps.reset(new cv_process(*pp));
+  m_master_pps = lbann::make_unique<cv_process>(*pp);
 }
 
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
@@ -53,7 +53,7 @@ imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
-  m_master_pps.reset(new cv_process(*rhs.m_master_pps));
+  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 }
 
 imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
@@ -69,7 +69,7 @@ imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
-  m_master_pps.reset(new cv_process(*rhs.m_master_pps));
+  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
   return (*this);
 }
 
@@ -95,8 +95,7 @@ bool imagenet_reader::replicate_processor(const cv_process& pp, const int nthrea
 
   // Construct thread private preprocessing objects out of a shared pointer
   for (int i = 0; i < nthreads; ++i) {
-    //auto ppu = std::make_unique<cv_process>(pp); // c++14
-    m_pps[i].reset(new cv_process(pp));
+    m_pps[i] = lbann::make_unique<cv_process>(pp);
   }
 
   bool ok = true;

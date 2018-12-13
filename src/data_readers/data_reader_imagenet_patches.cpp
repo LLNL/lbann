@@ -44,7 +44,7 @@ imagenet_reader_patches::imagenet_reader_patches(const std::shared_ptr<cv_proces
     throw lbann_exception(err.str());
   }
 
-  m_master_pps.reset(new cv_process_patches(*pp));
+  m_master_pps = lbann::make_unique<cv_process_patches>(*pp);
 }
 
 imagenet_reader_patches::imagenet_reader_patches(const imagenet_reader_patches& rhs)
@@ -56,7 +56,7 @@ imagenet_reader_patches::imagenet_reader_patches(const imagenet_reader_patches& 
     throw lbann_exception(err.str());
   }
   m_num_patches = rhs.m_num_patches;
-  m_master_pps.reset(new cv_process_patches(*rhs.m_master_pps));
+  m_master_pps = lbann::make_unique<cv_process_patches>(*rhs.m_master_pps);
 }
 
 imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reader_patches& rhs) {
@@ -73,7 +73,7 @@ imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reade
     throw lbann_exception(err.str());
   }
   m_num_patches = rhs.m_num_patches;
-  m_master_pps.reset(new cv_process_patches(*rhs.m_master_pps));
+  m_master_pps = lbann::make_unique<cv_process_patches>(*rhs.m_master_pps);
   return (*this);
 }
 
@@ -101,8 +101,7 @@ bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp, 
 
   // Construct thread private preprocessing objects out of a shared pointer
   for (int i = 0; i < nthreads; ++i) {
-    //auto ppu = std::make_unique<cv_process_patches>(pp); // c++14
-    m_pps[i].reset(new cv_process_patches(pp));
+    m_pps[i] = lbann::make_unique<cv_process_patches>(pp);
   }
 
   bool ok = true;

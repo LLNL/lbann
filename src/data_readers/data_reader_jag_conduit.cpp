@@ -314,7 +314,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  m_master_pps.reset(new cv_process(*pp));
+  m_master_pps = lbann::make_unique<cv_process>(*pp);
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
@@ -337,7 +337,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  m_master_pps.reset(new cv_process(*m_master_pps));
+  m_master_pps = lbann::make_unique<cv_process>(*m_master_pps);
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -436,8 +436,7 @@ bool data_reader_jag_conduit::replicate_processor(const cv_process& pp, const in
 
   // Construct thread private preprocessing objects out of a shared pointer
   for (int i = 0; i < nthreads; ++i) {
-    //auto ppu = std::make_unique<cv_process>(pp); // c++14
-    m_pps[i].reset(new cv_process(pp));
+    m_pps[i] = lbann::make_unique<cv_process>(pp);
   }
 
   bool ok = true;
