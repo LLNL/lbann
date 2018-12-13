@@ -28,22 +28,6 @@ void thread_pool::launch_threads(size_type num_threads)
   {
     for (size_type cnt = 0; cnt < num_threads; ++cnt) {
       threads_.emplace_back(&thread_pool::do_thread_work_,this);
-      // pthread_t my_thread_native = threads_[cnt].native_handle();
-      // cpu_set_t io_cpu_mask;
-      // // CPU_ZERO(&cpu_mask);
-      // // sched_getaffinity(0, sizeof(cpu_mask), &cpu_mask);
-      // //    if ( (rc = sched_getaffinity(0, sizeof(cpu_mask), &cpu_mask)) < 0 ) {
-      // //      perror("sched_getaffinity");
-      // //      return rc;
-      // //    }
-      // CPU_ZERO(&io_cpu_mask);
-      // CPU_SET(44, &io_cpu_mask);
-      // //    int rc = sched_setaffinity(0, sizeof(cpu_set_t), &io_cpu_mask);
-      // int rc = pthread_setaffinity_np(my_thread_native, sizeof(cpu_set_t), &io_cpu_mask);
-      // if(rc < 0) {
-      //   perror("sched_set_affinity");
-      // }
-
     }
   }
   catch(...)
@@ -83,22 +67,6 @@ void thread_pool::launch_threads(size_type num_threads)
       }
 
       threads_.emplace_back(&thread_pool::do_thread_work_pinned_thread_,this, cnt, ht_cpuset);
-      // pthread_t my_thread_native = threads_[cnt].native_handle();
-      // cpu_set_t io_cpu_mask;
-      // // CPU_ZERO(&cpu_mask);
-      // // sched_getaffinity(0, sizeof(cpu_mask), &cpu_mask);
-      // //    if ( (rc = sched_getaffinity(0, sizeof(cpu_mask), &cpu_mask)) < 0 ) {
-      // //      perror("sched_getaffinity");
-      // //      return rc;
-      // //    }
-      // CPU_ZERO(&io_cpu_mask);
-      // CPU_SET(44, &io_cpu_mask);
-      // //    int rc = sched_setaffinity(0, sizeof(cpu_set_t), &io_cpu_mask);
-      // int rc = pthread_setaffinity_np(my_thread_native, sizeof(cpu_set_t), &io_cpu_mask);
-      // if(rc < 0) {
-      //   perror("sched_set_affinity");
-      // }
-
     }
   }
   catch(...)
@@ -144,24 +112,11 @@ void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
     std::cerr << "error in pthread_setaffinity_np, error=" << error << std::endl;
   }
 
-  // std::cout  << "I have pined thread " << tid << " to {";
-
-  // for (int j = 0; j < CPU_SETSIZE; j++) {
-  //   if (CPU_ISSET(j, &cpu_set)) {
-  //     std::cout << " " << j;
-  //   }
-  // }
-  // std::cout << " }" << std::endl;
   {
     std::lock_guard<std::mutex> guard(m_thread_map_mutex);
     // Establish a local thread id
     std::thread::id this_id = std::this_thread::get_id();
     m_thread_id_to_local_id_map[this_id] = tid;
-
-    // Iterate and print keys and values of unordered_map
-    // for( const auto& n : m_thread_id_to_local_id_map ) {
-    // std::cout << "Key:[" << n.first << "] Value:[" << n.second << "]\n";
-    // }
   }
   while (not all_work_done_)
   {
