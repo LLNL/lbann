@@ -64,6 +64,9 @@ public:
     data_available_.notify_all();
   }
 
+  /// Allow the thread pool to set / reset the flags
+  void set_stop_threads(bool flag) { m_stop_threads = flag; }
+
   /** \brief Try to remove the first value from the queue
    *
    *  \return nullptr if empty(); otherwise return a value

@@ -911,12 +911,8 @@ class generic_input_layer : public io_layer {
   std::mutex dr_mutex;
 };
 
-template<> inline void generic_input_layer::initialize_io_buffer<partitioned_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  m_io_buffers.push_back(new partitioned_io_buffer(comm, num_parallel_readers, data_readers, m_expected_num_child_layers));
-}
-
-template<> inline void generic_input_layer::initialize_io_buffer<distributed_io_buffer>(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  m_io_buffers.push_back(new distributed_io_buffer(comm, num_parallel_readers, data_readers, m_expected_num_child_layers));
+template<typename T> inline void generic_input_layer::initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+  m_io_buffers.push_back(new T(comm, num_parallel_readers, data_readers, m_expected_num_child_layers));
 }
 
 }  // namespace lbann

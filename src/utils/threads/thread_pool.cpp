@@ -37,10 +37,10 @@ void thread_pool::launch_threads(size_type num_threads)
   }
 }
 
-  void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset)
-{
+void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset) {
   threads_.reserve(num_threads);
   m_work_group.reserve(num_threads);
+  m_thread_id_to_local_id_map.reserve(num_threads);
 
   m_threads_offset = cpu_offset;
 
@@ -77,13 +77,19 @@ void thread_pool::launch_threads(size_type num_threads)
 }
 
 void thread_pool::reap_threads() {
-  std::cout << "About to reap the I/O threasd" << std::endl;
   all_work_done_ = true;
-  while(!global_work_queue_.empty()) { global_work_queue_.wake_all(true); }
+  do {
+    global_work_queue_.wake_all(true);
+  }while(!global_work_queue_.empty());
+
+  for (auto& t : threads_) if (t.joinable()) t.join();
 
   m_work_group.clear();
   m_thread_id_to_local_id_map.clear();
   threads_.clear();
+  /// Reset the flag so that new threads can be started
+  all_work_done_ = false;
+  global_work_queue_.set_stop_threads(false);
   return;
 }
 
