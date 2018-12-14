@@ -31,11 +31,14 @@
 
 namespace lbann {
 
-/** Categorical accuracy layer.
- *  The two inputs are interpreted as predictions and ground-truth
- *  labels, respectively. An output is set to one if the top entries
- *  in both inputs are in the same position and is otherwise
- *  zero. Ties are broken in favor of entries with smaller indices.
+/**
+ * @brief 0-1 loss function.
+ *
+ * Requires two inputs, which are respectively interpreted as
+ * prediction scores and as a one-hot label vector. The output is one
+ * if the top entries in both inputs are in the same position and is
+ * otherwise zero. Ties are broken in favor of entries with smaller
+ * indices.
  */
 template <data_layout T_layout, El::Device Dev>
 class categorical_accuracy_layer : public Layer {

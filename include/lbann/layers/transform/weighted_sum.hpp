@@ -33,7 +33,9 @@
 
 namespace lbann {
 
-/** Weighted sum layer. */
+/**
+ * @brief Add tensors with specified scaling factors.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class weighted_sum_layer : public transform_layer {
 private:

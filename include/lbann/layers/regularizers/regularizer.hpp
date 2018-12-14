@@ -30,8 +30,9 @@
 
 namespace lbann {
 
-/** Abstract base class for regularizer layers.
- *  Regularizer layers are designed to reduce generalization error.
+/**
+ * @todo Remove. Layers should inherit directly from the base layer
+ * class.
  */
 class regularizer_layer : public Layer {
  public:

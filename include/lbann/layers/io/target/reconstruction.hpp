@@ -34,6 +34,11 @@
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
+
+/**
+ * @brief Deprecated.
+ * @todo Remove.
+ */
 template <data_layout T_layout, El::Device Dev>
 class reconstruction_layer : public generic_target_layer {
  private:

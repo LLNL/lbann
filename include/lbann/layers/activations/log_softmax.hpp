@@ -32,11 +32,10 @@
 
 namespace lbann {
 
-/** Log softmax layer.
- *  The softmax function is defined:
- *    \f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} \f]
- *  This layer computes:
- *    \f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} \f]
+/**
+ * @brief Logarithm of softmax function.
+ *
+ * \f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} \f]
  */
 template <data_layout Layout, El::Device Device>
 class log_softmax_layer : public Layer {

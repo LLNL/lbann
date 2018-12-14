@@ -31,18 +31,20 @@
 
 namespace lbann {
 
-/** Leaky rectified linear unit layer.
- *  \f[
- *    \text{LeakyReLU}(x) =
- *      \begin{cases}
- *        x        & x > 0
- *        \alpha x & x \leq 0
- *      \end{cases}
- *  \f]
- *  See:
- *    Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
- *    nonlinearities improve neural network acoustic models." In
- *    Proc. ICML, vol. 30, no. 1, p. 3. 2013.
+/**
+ * @brief
+ *
+ * \f[
+ *   \text{LeakyReLU}(x; \alpha) =
+ *     \begin{cases}
+ *       x        & x > 0 \\
+ *       \alpha x & x \leq 0
+ *     \end{cases}
+ * \f]
+ * See:
+ *   Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *   nonlinearities improve neural network acoustic models." In
+ *   Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
 template <data_layout Layout, El::Device Device>
 class leaky_relu_layer : public Layer {

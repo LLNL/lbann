@@ -33,8 +33,8 @@
 
 namespace lbann {
 
-/** Hadamard layer.
- *  This layer computes the entrywise product of the input tensors.
+/**
+ * @brief Entry-wise tensor product.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class hadamard_layer : public transform_layer {

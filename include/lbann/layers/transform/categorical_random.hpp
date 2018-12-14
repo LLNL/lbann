@@ -32,10 +32,14 @@
 
 namespace lbann {
 
-/** Generate random categorical output.
- *  Inputs are probability distributions and outputs are one-hot
- *  vectors. An input entry is the probability that the corresponding
- *  output entry is one.
+/**
+ * @brief Random categorical outputs.
+ *
+ * Inputs are probability distributions and outputs are one-hot
+ * vectors. An input entry is the probability that the corresponding
+ * output entry is one.
+ *
+ * @todo Remove.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class categorical_random_layer : public transform_layer {

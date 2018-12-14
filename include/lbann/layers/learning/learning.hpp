@@ -31,8 +31,9 @@
 
 namespace lbann {
 
-/** Abstract base class for learning layers.
- *  Learning layers have learnable parameters.
+/**
+ * @todo Remove. Layers should inherit directly from the base layer
+ * class.
  */
 class learning_layer : public Layer {
  public:

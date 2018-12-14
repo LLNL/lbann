@@ -32,17 +32,18 @@
 
 namespace lbann {
 
-/** Batch normalization layer.
- *  Each input channel is normalized across the mini-batch to have
- *  zero mean and unit standard deviation. Learned scaling factors and
- *  biases are then applied. See:
- *    Sergey Ioffe and Christian Szegedy. "Batch Normalization:
- *    Accelerating Deep Network Training by Reducing Internal
- *    Covariate Shift." ICML 2015.
- *  This uses the standard approach of maintaining the running mean
- *  and standard deviation (with exponential decay) for use at test
- *  time. See:
- *    https://cthorey.github.io/backpropagation/
+/**
+ * @brief
+ *
+ * Each input channel is normalized across the mini-batch to have zero
+ * mean and unit standard deviation. Learned scaling factors and
+ * biases are then applied. This uses the standard approach of
+ * maintaining the running mean and standard deviation (with
+ * exponential decay) for use at test time. See:
+ *   Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+ *   Accelerating Deep Network Training by Reducing Internal Covariate
+ *   Shift." In International Conference on Machine Learning,
+ *   pp. 448-456. 2015.
  */
 template <data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {

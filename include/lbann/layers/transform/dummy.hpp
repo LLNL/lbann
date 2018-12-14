@@ -31,7 +31,12 @@
 
 namespace lbann {
 
-/** Dummy layer with no output. */
+/**
+ * @brief Placeholder layer.
+ *
+ * Does no computation and is primarily intended as a placeholder for
+ * unused layer outputs.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class dummy_layer : public transform_layer {
 public:

@@ -40,37 +40,48 @@ namespace lbann {
   using layer_name                                                      \
   = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;
 
-/** Log sigmoid layer.
- *  \f[ \log(\sigma(x)) = -\log(1 + e^{-x}) \f]
- *  See https://en.wikipedia.org/wiki/Sigmoid_function
+/**
+ * @class lbann::log_sigmoid_layer
+ * @brief Logarithm of sigmoid function.
+ *
+ * \f[ \log(\sigma(x)) = -\log(1 + e^{-x}) \f]
+ * See https://en.wikipedia.org/wiki/Sigmoid_function.
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(log_sigmoid_layer, "log sigmoid")
 
-/** Rectified linear unit layer.
- *  \f[ \text{ReLU}(x) = \text{max}(x, 0) \f]
- *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+/**
+ * @class lbann::relu_layer
+ * @brief Rectified linear unit.
+ *
+ * \f[ \text{ReLU}(x) = \text{max}(x, 0) \f]
+ * See https://en.wikipedia.org/wiki/Rectifier_(neural_networks).
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(relu_layer, "ReLU")
 
-/** Scaled exponential rectified linear unit layer.
- *  \f[
- *    \text{SELU}(x) =
- *      \begin{cases}
- *        s x                & x > 0
- *        s \alpha (e^x - 1) & x \leq 0
- *      \end{cases}
- *  \f]
- *  \f$\alpha\f$ and \f$s\f$ are pre-chosen constants. Note that this
- *  is equivalent to \f$ s \, \text{ELU}(x) \f$. See:
- *    Gunter Klambauer, Thomas Unterthiner, Andreas Mayr, and Sepp
- *    Hochreiter. "Self-normalizing neural networks." In Advances in
- *    Neural Information Processing Systems, pp. 971-980. 2017.
+/**
+ * @class lbann::selu_layer
+ * @brief Scaled exponential rectified linear unit.
+ *
+ * \f[
+ *   \text{SELU}(x; \alpha, s) =
+ *     \begin{cases}
+ *       s x                & x > 0 \\
+ *       s \alpha (e^x - 1) & x \leq 0
+ *     \end{cases}
+ * \f]
+ * Note that SELU is equivalent to \f$ s \, \text{ELU}(x) \f$. See:
+ *   Gunter Klambauer, Thomas Unterthiner, Andreas Mayr, and Sepp
+ *   Hochreiter. "Self-normalizing neural networks." In Advances in
+ *   Neural Information Processing Systems, pp. 971-980. 2017.
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(selu_layer, "SELU")
 
-/** Sigmoid layer.
- *  \f[ \sigma(x) = \frac{1}{1 + e^{-x}} \f]
- *  See https://en.wikipedia.org/wiki/Sigmoid_function
+/**
+ * @class lbann::sigmoid_layer
+ * @brief Special case of logistic function.
+ *
+ * \f[ \sigma(x) = \frac{1}{1 + e^{-x}} \f]
+ * See https://en.wikipedia.org/wiki/Sigmoid_function.
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(sigmoid_layer, "sigmoid")
 // Sigmoid function output is strictly in (0,1)
@@ -79,14 +90,20 @@ DEFINE_ENTRYWISE_UNARY_LAYER(sigmoid_layer, "sigmoid")
 // numerical issues.
 #define LBANN_ENABLE_SIGMOID_CUTOFF
 
-/** Softplus layer.
- *  \f[ \text{softplus}(x) = \log (e^x + 1) \f]
- *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
+/**
+ * @class lbann::softplus_layer
+ * @brief Smooth approximation to ReLU function.
+ *
+ * \f[ \text{softplus}(x) = \log (e^x + 1) \f]
+ * See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(softplus_layer, "softplus")
 
-/** Softsign layer.
- *  \f[ \text{softsign}(x) = \frac{x}[1 + |x|} \f]
+/**
+ * @class lbann::softsign_layer
+ * @brief Smooth approximation to sign function.
+ *
+ * \f[ \text{softsign}(x) = \frac{x}{1 + |x|} \f]
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(softsign_layer, "softsign")
 

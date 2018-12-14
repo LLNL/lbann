@@ -32,9 +32,11 @@
 
 namespace lbann {
 
-/** Activations are drawn from Gaussian distribution.
- *  During validation and testing, the layer outputs the distribution
- *  mean.
+/**
+ * @brief Random values with Gaussian distribution.
+ *
+ * During validation and testing, outputs are all equal to the
+ * distribution mean.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer {

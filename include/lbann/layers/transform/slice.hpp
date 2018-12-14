@@ -32,8 +32,8 @@
 
 namespace lbann {
 
-/** Slice layer.
- *  This layer slices an input tensor along a specified dimension.
+/**
+ * @brief Slice tensor along a specified dimension.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer {

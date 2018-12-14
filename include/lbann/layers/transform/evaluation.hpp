@@ -31,9 +31,8 @@
 
 namespace lbann {
 
-/** Abstract evaluation layer.
- *  Computes the average value across a mini-batch. If the input
- *  tensor has multiple neurons, their values are added together.
+/**
+ * @brief Interface with objective function and metrics.
  */
 class abstract_evaluation_layer : public transform_layer {
 public:

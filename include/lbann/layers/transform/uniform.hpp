@@ -32,9 +32,11 @@
 
 namespace lbann {
 
-/** Activations are drawn from uniform distribution.
- *  During validation and testing, the layer outputs the distribution
- *  mean.
+/**
+ * @brief Random values with uniform distribution.
+ *
+ * During validation and testing, outputs are all equal to the
+ * distribution mean.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class uniform_layer : public transform_layer {

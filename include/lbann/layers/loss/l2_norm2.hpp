@@ -31,9 +31,10 @@
 
 namespace lbann {
 
-/** L2 norm squared layer.
- *  Given an input \f$x\f$, this layer outputs
- *    \f[ L2(x)^2 = \sum\limits_{i} x_i^2 \f]
+/**
+ * @brief Square of L2 vector norm.
+ *
+ * \f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 \f]
  */
 template <data_layout T_layout, El::Device Dev>
 class l2_norm2_layer : public Layer {

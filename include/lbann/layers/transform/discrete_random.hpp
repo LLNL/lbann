@@ -32,10 +32,13 @@
 
 namespace lbann {
 
-/** Generate random output from discrete distribution.
- *  Inputs are interpreted as the probability of choosing each
- *  distribution value.
- *  @todo Get distribution values from a parent layer.
+/**
+ * @brief Random output from discrete distribution.
+ *
+ * Inputs are interpreted as the probability of choosing each
+ * distribution value.
+ *
+ * @todo Remove.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class discrete_random_layer : public transform_layer {

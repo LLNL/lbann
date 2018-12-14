@@ -31,8 +31,8 @@
 
 namespace lbann {
 
-/** Weights layer.
- *  This layer outputs the values from a weights tensor.
+/**
+ * @brief Output values from a weights tensor.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class weights_layer : public transform_layer {
