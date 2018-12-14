@@ -42,9 +42,7 @@
 
 namespace lbann {
 
-/**
- * @todo Move functionality to input_layer.
- */
+/** @todo Move functionality to input_layer. */
 class io_layer : public Layer {
  protected:
   bool m_data_set_spans_models;

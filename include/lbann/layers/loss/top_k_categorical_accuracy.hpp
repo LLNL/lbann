@@ -32,16 +32,15 @@
 namespace lbann {
 
 
-/**
- * @brief
+/** @brief
  *
- * Requires two inputs, which are respectively interpreted as
- * prediction scores and as a one-hot label vector. The output is one
- * if the corresponding label matches one of the top-k prediction
- * scores and is otherwise zero. Ties in the top-k prediction scores
- * are broken in favor of entries with smaller indices.
+ *  Requires two inputs, which are respectively interpreted as
+ *  prediction scores and as a one-hot label vector. The output is one
+ *  if the corresponding label matches one of the top-k prediction
+ *  scores and is otherwise zero. Ties in the top-k prediction scores
+ *  are broken in favor of entries with smaller indices.
  *
- * @todo Gracefully handle case where label is not a one-hot vector.
+ *  @todo Gracefully handle case where label is not a one-hot vector.
  */
 template <data_layout T_layout, El::Device Dev>
 class top_k_categorical_accuracy_layer : public Layer {

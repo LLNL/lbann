@@ -31,17 +31,16 @@
 
 namespace lbann {
 
-/**
- * @brief Estimate variance.
+/** @brief Estimate variance.
  *
- * Given an input \f$x\f$ with empirical mean \f$\bar{x}\f$, an
- * unbiased estimator for the variance is given by
- * \f[
- *   \sigma_{x}^2
- *     \approx \frac{1}{n-1} \sum\limits_{i=1}^{n} (x - \bar{x})^2
- * \f]
- * Scaling by \f$ 1/n \f$ instead of \f$ 1/(n-1) \f$ is a biased
- * estimator.
+ *  Given an input @f$x@f$ with empirical mean @f$\bar{x}@f$, an
+ *  unbiased estimator for the variance is given by
+ *  @f[
+ *    \sigma_{x}^2
+ *      \approx \frac{1}{n-1} \sum\limits_{i=1}^{n} (x - \bar{x})^2
+ *  @f]
+ *  Scaling by @f$ 1/n @f$ instead of @f$ 1/(n-1) @f$ is a biased
+ *  estimator.
  */
 template <data_layout Layout, El::Device Device>
 class variance_layer : public Layer {

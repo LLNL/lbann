@@ -31,9 +31,7 @@
 
 namespace lbann {
 
-/**
- * @brief Interface with objective function and metrics.
- */
+/** @brief Interface with objective function and metrics. */
 class abstract_evaluation_layer : public transform_layer {
 public:
 

@@ -34,10 +34,9 @@ namespace lbann {
 
 enum class reduction_mode {INVALID, SUM, AVERAGE};
 
-/**
- * @brief Reduce tensor to scalar.
+/** @brief Reduce tensor to scalar.
  *
- * @todo Reduction over specified dimensions.
+ *  @todo Reduction over specified dimensions.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class reduction_layer : public transform_layer {

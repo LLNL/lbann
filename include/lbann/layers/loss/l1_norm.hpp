@@ -31,10 +31,9 @@
 
 namespace lbann {
 
-/**
- * @brief L1 vector norm.
+/** @brief L1 vector norm.
  *
- * \f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | \f]
+ *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
  */
 template <data_layout T_layout, El::Device Dev>
 class l1_norm_layer : public Layer {

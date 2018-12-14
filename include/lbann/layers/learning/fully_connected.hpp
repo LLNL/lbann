@@ -36,9 +36,7 @@
 
 namespace lbann {
 
-/**
- * @brief Perform an affine transformation.
- */
+/** @brief Perform an affine transformation. */
 template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
 public:

@@ -31,11 +31,10 @@
 
 namespace lbann {
 
-/**
- * @brief Resize image with bilinear interpolation.
+/** @brief Resize image with bilinear interpolation.
  *
- * Tensors are assumed to be image data in CHW format. Gradients are
- * not propagated during backprop.
+ *  Tensors are assumed to be image data in CHW format. Gradients are
+ *  not propagated during backprop.
  */
 template <data_layout Layout, El::Device Device>
 class bilinear_resize_layer : public Layer {

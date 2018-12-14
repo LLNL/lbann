@@ -31,10 +31,9 @@
 
 namespace lbann {
 
-/**
- * @brief Square of L2 vector norm.
+/** @brief Square of L2 vector norm.
  *
- * \f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 \f]
+ *  @f[ \lVert x\rVert_2^2 = \sum\limits_{i} x_i^2 @f]
  */
 template <data_layout T_layout, El::Device Dev>
 class l2_norm2_layer : public Layer {

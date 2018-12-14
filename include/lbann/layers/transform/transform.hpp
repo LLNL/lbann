@@ -31,9 +31,8 @@
 
 namespace lbann {
 
-/**
- * @todo Remove. Layers should inherit directly from the base layer
- * class.
+/** @todo Remove. Layers should inherit directly from the base layer
+ *  class.
  */
 class transform_layer : public Layer {
  public:

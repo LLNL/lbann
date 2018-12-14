@@ -39,10 +39,9 @@
 
 namespace lbann {
 
-/**
- * @brief
+/** @brief
  *
- * \f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} \f]
+ *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
 template <data_layout Layout, El::Device Device>
 class softmax_layer : public Layer {

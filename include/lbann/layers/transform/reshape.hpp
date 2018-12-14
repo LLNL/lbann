@@ -31,11 +31,10 @@
 
 namespace lbann {
 
-/**
- * @brief Reshape tensor.
+/** @brief Reshape tensor.
  *
- * Forward and backward prop simply involve setting up tensor views,
- * and hence are very cheap.
+ *  Forward and backward prop simply involve setting up tensor views,
+ *  and hence are very cheap.
  */
 template <data_layout T_layout, El::Device Dev>
 class reshape_layer : public transform_layer {

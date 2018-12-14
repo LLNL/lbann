@@ -41,8 +41,7 @@
 
 namespace lbann {
 
-/**
- * @brief Computation kernels for convolution and deconvolution layers.
+/** @brief Computation kernels for convolution and deconvolution layers.
  */
 template <El::Device Dev>
 class base_convolution_layer : public learning_layer {

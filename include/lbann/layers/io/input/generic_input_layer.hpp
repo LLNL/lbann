@@ -37,9 +37,7 @@
 
 namespace lbann {
 
-/**
- * @todo Move functionality to input_layer.
- */
+/** @todo Move functionality to input_layer. */
 class generic_input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;

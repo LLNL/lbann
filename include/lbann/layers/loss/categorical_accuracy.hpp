@@ -31,14 +31,16 @@
 
 namespace lbann {
 
-/**
- * @brief 0-1 loss function.
+/** @brief 0-1 loss function.
  *
- * Requires two inputs, which are respectively interpreted as
- * prediction scores and as a one-hot label vector. The output is one
- * if the top entries in both inputs are in the same position and is
- * otherwise zero. Ties are broken in favor of entries with smaller
- * indices.
+ *  Requires two inputs, which are respectively interpreted as
+ *  prediction scores and as a one-hot label vector. The output is one
+ *  if the top entries in both inputs are in the same position and is
+ *  otherwise zero. Ties are broken in favor of entries with smaller
+ *  indices.
+ *
+ *  This is primarily intended for use as a metric since it is not
+ *  differentiable.
  */
 template <data_layout T_layout, El::Device Dev>
 class categorical_accuracy_layer : public Layer {

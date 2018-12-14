@@ -32,12 +32,11 @@
 
 namespace lbann {
 
-/**
- * @brief Indicate top-k entries.
+/** @brief Indicate top-k entries.
  *
- * Output entries corresponding to the top-k input entries are set to
- * one and the rest to zero. Ties are broken in favor of entries with
- * smaller indices.
+ *  Output entries corresponding to the top-k input entries are set to
+ *  one and the rest to zero. Ties are broken in favor of entries with
+ *  smaller indices.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class in_top_k_layer : public transform_layer {

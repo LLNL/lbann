@@ -33,9 +33,7 @@
 
 namespace lbann {
 
-/**
- * @brief Entry-wise tensor product.
- */
+/** @brief Entry-wise tensor product. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class hadamard_layer : public transform_layer {
 public:

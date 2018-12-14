@@ -34,10 +34,8 @@
 
 namespace lbann {
 
-/**
- * @brief Transpose of pooling layer.
- *
- * @todo GPU support.
+/** @brief Transpose of pooling layer.
+ *  @todo GPU support.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class unpooling_layer : public transform_layer {

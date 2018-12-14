@@ -31,18 +31,17 @@
 
 namespace lbann {
 
-/**
- * @brief Estimate covariance.
+/** @brief Estimate covariance.
  *
- * Given inputs \f$x\f$ and \f$y\f$ with empirical means \f$\bar{x}\f$
- * and \f$\bar{y}\f$, an unbiased estimator for the covariance is
- * given by
- * \f[
- *   \sigma_{xy}^2
- *     \approx \frac{1}{n-1} \sum\limits_{i=1}^{n} (x - \bar{x}) (y - \bar{y})
- * \f]
- * Scaling by \f$ 1/n \f$ instead of \f$ 1/(n-1) \f$ is a biased
- * estimator.
+ *  Given inputs @f$x@f$ and @f$y@f$ with empirical means
+ *  @f$\bar{x}@f$ and @f$\bar{y}@f$, an unbiased estimator for the
+ *  covariance is given by
+ *  @f[
+ *    \sigma_{xy}^2
+ *      \approx \frac{1}{n-1} \sum\limits_{i=1}^{n} (x - \bar{x}) (y - \bar{y})
+ *  @f]
+ *  Scaling by @f$ 1/n @f$ instead of @f$ 1/(n-1) @f$ is a biased
+ *  estimator.
  */
 template <data_layout Layout, El::Device Device>
 class covariance_layer : public Layer {

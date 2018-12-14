@@ -32,11 +32,10 @@
 
 namespace lbann {
 
-/**
- * @brief Random values with uniform distribution.
+/** @brief Random values with uniform distribution.
  *
- * During validation and testing, outputs are all equal to the
- * distribution mean.
+ *  During validation and testing, outputs are all equal to the
+ *  distribution mean.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class uniform_layer : public transform_layer {

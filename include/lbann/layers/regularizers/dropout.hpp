@@ -32,16 +32,16 @@
 
 namespace lbann {
 
-/**
- * @brief Probabilistically drop layer outputs
+/** @brief Probabilistically drop layer outputs
  *
- * The weights are multiplied by 1/(keep probability) at training
- * time. Keep probabilities of 0.5 for fully-connected layers and 0.8
- * for input layers are good starting points. See:
- *   Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya
- *   Sutskever, and Ruslan Salakhutdinov. "Dropout: a simple way to
- *   prevent neural networks from overfitting." The Journal of Machine
- *   Learning Research 15, no. 1 (2014): 1929-1958.
+ *  The weights are multiplied by 1/(keep probability) at training
+ *  time. Keep probabilities of 0.5 for fully-connected layers and 0.8
+ *  for input layers are good starting points. See:
+ *
+ *  Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya
+ *  Sutskever, and Ruslan Salakhutdinov. "Dropout: a simple way to
+ *  prevent neural networks from overfitting." The Journal of Machine
+ *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
 template <data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer {

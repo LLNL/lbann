@@ -32,11 +32,10 @@
 
 namespace lbann {
 
-/**
- * @brief Random values with Gaussian distribution.
+/** @brief Random values with Gaussian distribution.
  *
- * During validation and testing, outputs are all equal to the
- * distribution mean.
+ *  During validation and testing, outputs are all equal to the
+ *  distribution mean.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer {

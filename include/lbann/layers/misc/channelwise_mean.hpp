@@ -31,9 +31,7 @@
 
 namespace lbann {
 
-/**
- * @todo Replace with more general reduction layer.
- */
+/** @todo Replace with more general reduction layer. */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class channelwise_mean_layer : public Layer {
 public:

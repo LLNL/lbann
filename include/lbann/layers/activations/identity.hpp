@@ -31,11 +31,10 @@
 
 namespace lbann {
 
-/**
- * @brief Output a tensor view.
+/** @brief Output a tensor view.
  *
- * Forward and backward prop simply involve setting up tensor views,
- * and hence are very cheap.
+ *  Forward and backward prop simply involve setting up tensor views,
+ *  and hence are very cheap.
  */
 template <data_layout Layout, El::Device Device>
 class identity_layer : public Layer {

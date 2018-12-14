@@ -33,11 +33,11 @@
 
 namespace lbann {
 
-/**
- * @brief Standard deep learning convolution.
+/** @brief Standard deep learning convolution.
  *
- * Applies convolution (more precisely, cross-correlation) to input
- * tensors. This is primarily optimized for image data in NCHW format.
+ *  Applies convolution (more precisely, cross-correlation) to input
+ *  tensors. This is primarily optimized for image data in NCHW
+ *  format.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class convolution_layer : public base_convolution_layer<Dev> {

@@ -31,16 +31,15 @@
 
 namespace lbann {
 
-/**
- * @brief
+/** @brief
  *
- * Layer outputs (transform previous activations to) zeros.
- * use case: transforms part or all samples in a minibatch to zero
+ *  Layer outputs (transform previous activations to) zeros.
+ *  use case: transforms part or all samples in a minibatch to zero
  *
- * @param first_half output zeros for the first half of minibatch samples if true
- * @param second_half output zeros for second half of minibatch samples if true
- * @todo Change the name. "zero_layer" is extremely misleading.
- * @todo Replace with more general functionality.
+ *  @param first_half output zeros for the first half of minibatch samples if true
+ *  @param second_half output zeros for second half of minibatch samples if true
+ *  @todo Change the name. "zero_layer" is extremely misleading.
+ *  @todo Replace with more general functionality.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class zero_layer : public transform_layer {
