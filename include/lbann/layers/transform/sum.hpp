@@ -64,9 +64,9 @@ protected:
     set_output_dims(get_input_dims());
 
     // Check that input dimensions match
-    const auto& output_size = get_output_size();
+    const auto& output_dims = get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
-      if (get_input_size(i) != output_size) {
+      if (get_input_dims(i) != output_dims) {
         const auto& parents = get_parent_layers();
         std::stringstream err;
         err << get_type() << " layer \"" << get_name() << "\" "

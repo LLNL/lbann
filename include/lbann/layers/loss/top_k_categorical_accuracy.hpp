@@ -63,11 +63,11 @@ protected:
     set_output_dims({1});
 
     // Check that input dimensions match
-    if (get_input_size(0) != get_input_size(1)) {
+    if (get_input_dims(0) != get_input_dims(1)) {
       const auto& parents = get_parent_layers();
       std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
-          << "has input tensors with incompatible dimensions (";
+          << "has input tensors with different dimensions (";
       for (int i = 0; i < get_num_parents(); ++i) {
         const auto& dims = get_input_dims(i);
         err << (i > 0 ? ", " : "")
