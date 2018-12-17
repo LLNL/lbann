@@ -31,15 +31,16 @@
 
 namespace lbann {
 
-/** Clamp layer.
- *  \f[
+/** @brief Constrain values to a range.
+ *
+ *  @f[
  *    \text{clamp}(x; \text{min}, \text{max}) =
  *      \begin{cases}
  *        \text{min} & x \leq \text{min}           \\
  *        x          & \text{min} < x < \text{max} \\
  *        \text{max} & x \geq \text[max}
  *      \end{cases}
- *  \f]
+ *  @f]
  */
 template <data_layout Layout, El::Device Device>
 class clamp_layer : public Layer {
