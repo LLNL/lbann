@@ -1,4 +1,35 @@
 # LBANN: Livermore Big Artificial Neural Network Toolkit
+
+The Livermore Big Artificial Neural Network toolkit (LBANN) is an
+open-source, HPC-centric, deep learning training software stack that
+is optimized to compose multiple levels of parallelism.  LBANN is
+built upon a distributed linear algebra library
+(https://github.com/LLNL/Elemental) and provides model parallel
+acceleration through domain decomposition to optimize for strong
+scaling of network training.  LBANN is also able to compose model
+parallelism with both data parallelism and ensemble training methods
+for training large neural networks with massive amounts of data.
+LBANN is a C++ code that composes MPI+OpenMP with CUDA (plus cuDNN and
+cuBLAS), taking advantage of tightly coupled accelerators, low-latency
+high bandwidth networking, node-local NVRAM storage, and high
+bandwidth parallel file systems.  We have also developed an open
+source asynchronous all-reduce library called Aluminum
+(https://github.com/LLNL/Aluminum), that provides efficient MPI
+implementations of communication algorithms that are optimized for
+deep learning training patterns, provide GPU-accelerated reduction
+kernels, and compose with OpenMP threaded code bases.  Aluminum also
+includes support for using NVIDIA’s NCCL library and has been
+integrated into both LBANN and Hydrogen (our distributed dense linear
+algebra library).
+
+LBANN supports state of the art training algorithms such as
+unsupervised, self-supervised, and generative (GAN) training methods
+in addition to traditional supervised learning.  It also supports
+recurrent neural networks via back propagation through time (BPTT)
+training, transfer learning, and multi-model training methods such as
+the Livermore Tournament Fast Batch (LTFB) ensemble algorithm.
+
+
 ## Building LBANN
 
 ### LC Systems

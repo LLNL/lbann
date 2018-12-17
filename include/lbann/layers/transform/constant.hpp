@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** Layer with constant output. */
+/** @brief Constant output. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class constant_layer : public transform_layer {
 public:

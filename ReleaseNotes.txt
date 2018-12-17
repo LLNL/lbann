@@ -4,14 +4,18 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
+- Squared difference
 
 Performance optimizations:
 
 Model portability & usability:
+- Output dumping callback exports in CSV, TSV, .npy, or .npz formats
 
 Internal features:
 
 I/O & data readers:
+ - Overhauled the I/O system to use an independent background thread
+   pool for fetching data
 
 Build system:
 

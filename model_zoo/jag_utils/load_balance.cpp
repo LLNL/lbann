@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
       std::stringstream s;
       for (int j=0; j<num_dirs; j++) {
         s << "mkdir -p " << base << "/" << j;
+        std::cerr << "\nrunning system call: " << s.str() << "\n\n";
         int r = system(s.str().c_str());
         if (r != 0) {
           throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: call to system failed: " + s.str());

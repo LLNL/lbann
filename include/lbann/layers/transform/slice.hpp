@@ -32,8 +32,17 @@
 
 namespace lbann {
 
-/** Slice layer.
- *  This layer slices an input tensor along a specified dimension.
+/** @brief Slice tensor along a specified dimension.
+ *
+ *  Suppose we slice a @f$ D_1 \times\cdots\times D_n @f$ input tensor
+ *  along the dimension @f$ k @f$. We specify slice points
+ *  @f$ s_1,\cdots,s_\ell @f$, which are strictly increasing and have
+ *  @f$ s_1 = 0 @f$ and @f$ s_\ell=D_k @f$. The @f$ i @f$th output
+ *  tensor is then a
+ *  @f$ D_1 \times\cdots
+ *    \times D_{i-1}\times (s_i - s_{i-1}) \times D_{i+1} \times
+ *    \cdots\times D_n @f$
+ *  tensor.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer {

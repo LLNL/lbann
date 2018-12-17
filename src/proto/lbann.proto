@@ -242,6 +242,7 @@ message Model {
   int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
+  bool  serialize_background_io = 101;
 
   bool disable_cuda = 8;
 

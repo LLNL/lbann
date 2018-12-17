@@ -24,8 +24,16 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(load_bundle2raw-bin lbann )
   set_target_properties(load_bundle2raw-bin PROPERTIES OUTPUT_NAME load_bundle2raw)
 
+  add_executable( compute_min_max_images-bin compute_min_max_images.cpp )
+  target_link_libraries(compute_min_max_images-bin lbann )
+  set_target_properties(compute_min_max_images-bin PROPERTIES OUTPUT_NAME compute_min_max_images)
+
   add_executable( load_balance-bin load_balance.cpp )
   target_link_libraries(load_balance-bin lbann )
   set_target_properties(load_balance-bin PROPERTIES OUTPUT_NAME load_balance)
+
+  add_executable( check_for_duplicate_samples-bin check_for_duplicate_samples.cpp )
+  target_link_libraries(check_for_duplicate_samples-bin lbann )
+  set_target_properties(check_for_duplicate_samples-bin PROPERTIES OUTPUT_NAME check_for_duplicate_samples)
 
 endif ()

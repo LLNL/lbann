@@ -54,14 +54,17 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
+    // Initalize a global I/O thread pool
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
 
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]), comm, true); //discriminator
+    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]), comm, io_thread_pool, true); //discriminator
                                                                                     //model
     model *model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]), comm, false);
+      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]), comm, io_thread_pool, false);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

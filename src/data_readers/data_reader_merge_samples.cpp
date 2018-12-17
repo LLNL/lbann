@@ -150,13 +150,12 @@ void data_reader_merge_samples::load() {
   setup_indices(global_num_samples);
 }
 
-bool data_reader_merge_samples::fetch_datum(CPUMat& X, int data_id, int mb_idx,
-                                            int tid) {
+bool data_reader_merge_samples::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   // Find the right data reader to delegate to.
   for (size_t i = 0; i < m_data_readers.size(); ++i) {
     if (data_id < m_num_samples_psum[i + 1]) {
       data_id -= m_num_samples_psum[i];
-      return m_data_readers[i]->fetch_datum(X, data_id, mb_idx, tid);
+      return m_data_readers[i]->fetch_datum(X, data_id, mb_idx);
     }
   }
   throw lbann_exception(
@@ -164,13 +163,12 @@ bool data_reader_merge_samples::fetch_datum(CPUMat& X, int data_id, int mb_idx,
     std::to_string(data_id));
 }
 
-bool data_reader_merge_samples::fetch_label(CPUMat& Y, int data_id, int mb_idx,
-                                            int tid) {
+bool data_reader_merge_samples::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   // Find the right data reader to delegate to.
   for (size_t i = 0; i < m_data_readers.size(); ++i) {
     if (data_id < m_num_samples_psum[i + 1]) {
       data_id -= m_num_samples_psum[i];
-      return m_data_readers[i]->fetch_label(Y, data_id, mb_idx, tid);
+      return m_data_readers[i]->fetch_label(Y, data_id, mb_idx);
     }
   }
   throw lbann_exception(
@@ -178,13 +176,12 @@ bool data_reader_merge_samples::fetch_label(CPUMat& Y, int data_id, int mb_idx,
     std::to_string(data_id));
 }
 
-bool data_reader_merge_samples::fetch_response(CPUMat& Y, int data_id, int mb_idx,
-                                               int tid) {
+bool data_reader_merge_samples::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
   // Find the right data reader to delegate to.
   for (size_t i = 0; i < m_data_readers.size(); ++i) {
     if (data_id < m_num_samples_psum[i + 1]) {
       data_id -= m_num_samples_psum[i];
-      return m_data_readers[i]->fetch_response(Y, data_id, mb_idx, tid);
+      return m_data_readers[i]->fetch_response(Y, data_id, mb_idx);
     }
   }
   throw lbann_exception(
