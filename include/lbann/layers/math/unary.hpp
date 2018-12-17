@@ -31,10 +31,10 @@
 
 namespace lbann {
 
-/** Templated class for entry-wise unary layers.
- *  'Name' should be a type such that Name() returns a human-readable
- *  layer name, e.g. an empty struct that can be converted to a
- *  string.
+/** @brief Templated class for entry-wise unary layers.
+ *  @param Layout   Parallelism scheme.
+ *  @param Device   Device allocation.
+ *  @param Name     Type that can be converted into a string.
  */
 template <data_layout Layout, El::Device Device, typename Name>
 class entrywise_unary_layer : public Layer {
