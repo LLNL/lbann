@@ -31,21 +31,31 @@
 
 namespace lbann {
 
-/** Tessellate a tensor to specified dimensions.
- *  Equivalently, "tile" or "repeat" the tensor to achieve the
- *  specified dimensions. If the input tensor has a dimension of size
- *  1, then this will perform tensor broadcasting.
+/** @brief Repeat a tensor until it matches specified dimensions.
  *
- *  This is somewhat distinct from the "tile" operation in Keras,
- *  Caffe, and TensorFlow and the "repeat" operation in PyTorch
- *  because this does not require that the input tensor be tiled
- *  an integer number of times.
+ *  The output dimensions do not need to be integer multiples of the
+ *  input dimensions.
  *
- *  Formally, suppose we tessellate an input tensor \f$ X \f$ with
- *  dimensions \f$d_1 \times\cdots\times d_n\f$ to obtain an output
- *  tensor \f$ Y \f$ with dimensions \f$e_1 \times\cdots\times
- *  e_n\f$. Then, denoting the modulo operator with $f\%\f$,
- *  \f[ Y_{i_1,\cdots,i_n} = X_{i_1\%d_1,\cdots,i_n\%d_n} \f]
+ *  As an example, tessellating a @f$ 2 \times 2 @f$ matrix into a
+ *  @f$ 3 \times 4 @f$ matrix looks like the following:
+ *  @f[
+ *    \begin{bmatrix}
+ *      1 & 2 \\
+ *      3 & 4
+ *    \end{bmatrix}
+ *    \rightarrow
+ *    \begin{bmatrix}
+ *      1 & 2 & 1 & 2 \\
+ *      3 & 4 & 3 & 4 \\
+ *      1 & 2 & 1 & 2
+ *    \end{bmatrix}
+ *  @f]
+ *
+ *  Formally, suppose we tessellate an input tensor @f$ X @f$ with
+ *  dimensions @f$d_1 \times\cdots\times d_n@f$ to obtain an output
+ *  tensor @f$ Y @f$ with dimensions @f$e_1 \times\cdots\times
+ *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
+ *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class tessellate_layer : public Layer {

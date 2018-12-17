@@ -5,6 +5,7 @@ Support for new network structures:
 
 Support for new layers:
 - Squared difference
+- Tessellate
 
 Performance optimizations:
 
