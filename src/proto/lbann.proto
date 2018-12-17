@@ -877,6 +877,7 @@ message Layer {
    LogicalAnd logical_and = 466;
    LogicalOr logical_or = 467;
    LogicalXor logical_xor = 468;
+   Clamp clamp = 469;
 
    // Target layers
    Target target = 18;
@@ -968,6 +969,10 @@ message GreaterEqual {}
 message LogicalAnd {}
 message LogicalOr {}
 message LogicalXor {}
+message Clamp {
+  double min = 1;
+  double max = 2;
+}
 
 ///////////////////////
 // Activation layers //
