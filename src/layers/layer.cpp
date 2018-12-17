@@ -1144,23 +1144,23 @@ std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
 }
 
 void Layer::add_parent_layer(const Layer* parent) {
-  auto parent_pos = std::find(m_parent_layers.begin(),
-                              m_parent_layers.end(),
-                              parent);
-  if(parent != nullptr
-     && parent != this
-     && parent_pos == m_parent_layers.end()) {
+  const auto parent_pos = std::find(m_parent_layers.begin(),
+                                    m_parent_layers.end(),
+                                    parent);
+  if (parent != nullptr
+      && parent != this
+      && parent_pos == m_parent_layers.end()) {
     m_parent_layers.push_back(parent);
   }
 }
 
 void Layer::add_child_layer(const Layer* child) {
-  auto child_pos = std::find(m_child_layers.begin(),
-                             m_child_layers.end(),
-                             child);
-  if(child != nullptr
-     && child != this
-     && child_pos == m_child_layers.end()) {
+  const auto child_pos = std::find(m_child_layers.begin(),
+                                   m_child_layers.end(),
+                                   child);
+  if (child != nullptr
+      && child != this
+      && child_pos == m_child_layers.end()) {
     m_child_layers.push_back(child);
   }
 }
