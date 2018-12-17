@@ -152,6 +152,22 @@ abstract_evaluation_layer::abstract_evaluation_layer(lbann_comm *comm)
   this->m_expected_num_child_layers = 0;
 }
 
+void abstract_evaluation_layer::setup_dims() {
+  transform_layer::setup_dims();
+  if (get_input_size() != 1) {
+    std::stringstream err;
+    const auto& dims = get_input_dims();
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "expects a scalar input, but "
+        << "parent layer \"" << m_parent_layers[0]->get_name() << "\" "
+        << "has dimensions of ";
+    for (size_t i = 0; i < dims.size(); ++i) {
+      err << (i > 0 ? " x " : "") << dims[i];
+    }
+    LBANN_ERROR(err.str());
+  }
+}
+
 void abstract_evaluation_layer::setup_data() {
   transform_layer::setup_data();
 #ifdef LBANN_HAS_GPU

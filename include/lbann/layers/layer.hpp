@@ -315,7 +315,7 @@ public:
   void set_hint_layer(const Layer* l) { m_hint_layer = l; }
 
   /** Get hint layer. */
-  const Layer* set_hint_layer() const { return m_hint_layer; }
+  const Layer* get_hint_layer() const { return m_hint_layer; }
 
   // ===========================================================
   // Freeze management functions

@@ -51,6 +51,7 @@ public:
 
 protected:
   abstract_evaluation_layer(lbann_comm *comm);
+  void setup_dims() override;
   void setup_data() override;
   void fp_compute() override;
   void bp_compute() override;
