@@ -858,10 +858,10 @@ model {
   }
   #callback {
   #  ltfb {
-  #    round_size: 100
-  #    eval_metrics: "l_l2_y_eval"
-  #    increasing_metric_mode: false
-  #    weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights gen2fc1_linearity_weights gen2fc1_bias_weights gen2fc2_linearity_weights gen2fc2_bias_weights gen2fc3_linearity_weights gen2fc3_bias_weights gen2fc4_linearity_weights gen2fc4_bias_weights"
+  #    batch_interval: 100
+  #    metric: "l_l2_y_eval"
+  #    low_score_wins: true
+  #    weights: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights gen2fc1_linearity_weights gen2fc1_bias_weights gen2fc2_linearity_weights gen2fc2_bias_weights gen2fc3_linearity_weights gen2fc3_bias_weights gen2fc4_linearity_weights gen2fc4_bias_weights"
 
    # }
  # }

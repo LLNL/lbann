@@ -234,6 +234,22 @@ void model::set_layers(std::vector<Layer*>& layers) {
 
 }
 
+std::vector<weights*> model::get_weights() {
+  std::vector<weights*> weights_list;
+  for (const auto& w : m_weights) {
+    weights_list.push_back(w);
+  }
+  return weights_list;
+}
+
+const std::vector<weights*> model::get_weights() const {
+  std::vector<weights*> weights_list;
+  for (const auto& w : m_weights) {
+    weights_list.push_back(w);
+  }
+  return weights_list;
+}
+
 void model::replace_weights(std::vector<weights*>& new_weights) {
 
   // Check that number of weights is valid
