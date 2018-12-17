@@ -40,6 +40,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <lbann.pb.h>
 #include <vector>
 #include <string>
@@ -92,7 +93,7 @@ class model {
                                  bool trailing_newline = true) const;
 
   /** Set up the model. */
-  virtual void setup();
+  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Add layer to model. */
   virtual void add_layer(Layer *layer);
@@ -142,6 +143,9 @@ class model {
 
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
+
+  /** Return the I/O thread pool */
+  std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
@@ -223,7 +227,7 @@ class model {
   /** Train model. */
   virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
-  virtual void evaluate(execution_mode mode);
+  virtual void evaluate(execution_mode mode, int num_batches=0);
 
   /** Run one epoch using only the input layer; this supports
    *  data_store functionality
@@ -237,6 +241,16 @@ class model {
 
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
+
+  /** Save the model's weight to file */
+  virtual bool save_weights(persist& p);
+
+  /** Reload the model's weights from a file */
+  virtual bool reload_weights(const std::string latest,
+                              const std::vector<std::string>& weight_list);
+
+  /** Saves the model explicitly if the save_model callback is present */
+  virtual bool save_model();
 
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
@@ -296,6 +310,9 @@ class model {
   std::vector<Layer *> m_layers;
   /** List of weights in model. */
   std::vector<weights *> m_weights;
+
+  /** Threads available for I/O */
+  std::shared_ptr<thread_pool> m_io_thread_pool;
 
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;

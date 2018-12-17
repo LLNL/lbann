@@ -19,6 +19,7 @@ set_full_path(THIS_DIR_SOURCES
   statistics.cpp
   summary.cpp
   lbann_library.cpp
+  jag_common.cpp
 )
 
 if (LBANN_HAS_CUDA)
@@ -27,6 +28,8 @@ if (LBANN_HAS_CUDA)
     cuda.cu
     )
 endif ()
+
+add_subdirectory(threads)
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

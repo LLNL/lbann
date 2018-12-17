@@ -28,6 +28,7 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
@@ -36,6 +37,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -67,7 +69,8 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {
+    m_default_optimizer(default_optimizer),
+    m_io_thread_pool() {
 
       static int num_models = 0;
       m_name = "Model" + std::to_string(num_models);
@@ -466,7 +469,10 @@ void model::freeze_layers_under_frozen_surface() {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void model::setup() {
+void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
+  // Setup I/O threads - set up before setting up the layers (input
+  // layer depends on having a properly initialized thread pool)
+  m_io_thread_pool = io_thread_pool;
 
   // Setup layers
   setup_layer_topology();
@@ -488,7 +494,6 @@ void model::setup() {
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
   }
-
 }
 
 void model::setup_layer_topology() {
@@ -795,7 +800,7 @@ int model::get_num_iterations_per_epoch(execution_mode mode) const {
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 
-void model::evaluate(execution_mode mode) {
+void model::evaluate(execution_mode mode, int num_batches) {
 
   // Return early if execution mode is invalid
   if (!is_execution_mode_valid(mode)) return;
@@ -811,7 +816,11 @@ void model::evaluate(execution_mode mode) {
   reset_epoch_statistics(mode);
   reset_mode_and_model(mode);
   do_evaluate_begin_cbs(mode);
-  while (!evaluate_mini_batch(mode)) {}
+  if (num_batches > 0) {
+    for (int i = 0; i < num_batches; i++) { evaluate_mini_batch(mode); }
+  } else {
+    while (!evaluate_mini_batch(mode)) {}
+  }
   do_evaluate_end_cbs(mode);
 }
 
@@ -1536,6 +1545,36 @@ void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
   if (m_comm->am_world_master())
     proto->set_mini_batch_size(m_max_mini_batch_size);
+}
+
+
+bool model::save_weights(persist& p) {
+  // write out fields we need to save a model's weights
+  for (weights *w : m_weights) {
+    w->save_to_checkpoint_shared(p);
+  }
+  return true;
+}
+
+bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
+  // load weights that appear in weight list.
+  for(weights *w : m_weights) {
+    w->load_from_save(latest,weight_list);
+  }
+  return true;
+}
+
+bool model::save_model() {
+  for (auto* c : m_callbacks) {
+    auto *cb = dynamic_cast<lbann_callback_save_model*>(c);
+    if(cb != nullptr) {
+      return cb->save_model(this);
+    }
+  }
+  if(m_comm->am_model_master()) {
+    LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
+  }
+  return false;
 }
 
 }  // namespace lbann

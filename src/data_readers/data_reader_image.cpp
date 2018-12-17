@@ -98,7 +98,7 @@ void image_data_reader::set_input_params(const int width, const int height, cons
   }
 }
 
-bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
@@ -136,13 +136,13 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
-void image_data_reader::setup() {
-  generic_data_reader::setup();
+void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
 
   using InputBuf_T = lbann::cv_image_type<uint8_t>;
   auto cvMat = cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1));
-  m_thread_cv_buffer.resize(omp_get_max_threads());
-  for(int tid = 0; tid < omp_get_max_threads(); ++tid) {
+  m_thread_cv_buffer.resize(num_io_threads);
+  for(int tid = 0; tid < num_io_threads; ++tid) {
     m_thread_cv_buffer[tid] = cvMat.clone();
   }
 }
@@ -150,11 +150,6 @@ void image_data_reader::setup() {
 std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
-
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-    ret.push_back(m_image_list[index]);
-  }
   return ret;
 }
 

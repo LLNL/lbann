@@ -31,8 +31,8 @@
 
 namespace lbann {
 
-/** Abstract base class for transform layers.
- *  Transform layers manipulate data without learnable parameters.
+/** @todo Remove. Layers should inherit directly from the base layer
+ *  class.
  */
 class transform_layer : public Layer {
  public:

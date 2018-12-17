@@ -31,8 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
-#include "conduit/conduit_relay_mpi.hpp"
+#include "conduit/conduit_relay_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -43,9 +42,8 @@
 
 using namespace lbann;
 
-#define NUM_OUTPUT_DIRS 100
-#define NUM_SAMPLES_PER_FILE 1000
-
+void get_input_names(std::unordered_set<std::string> &s);
+void get_scalar_names(std::unordered_set<std::string> &s);
 //==========================================================================
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
@@ -58,12 +56,14 @@ int main(int argc, char *argv[]) {
     options *opts = options::get();
     opts->init(argc, argv);
 
+    // sanity check invocation
     if (!opts->has_string("filelist")) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
     }
 
+    // master reads the filelist and bcasts to others
     std::vector<std::string> files;
     std::string f;
     int size;
@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
     f.resize(size);
     comm->world_broadcast<char>(0, &f[0], size);
 
+    // unpack the filenames into a vector
     std::stringstream s2(f);
     std::string filename;
     while (s2 >> filename) {
@@ -96,16 +97,22 @@ int main(int argc, char *argv[]) {
         files.push_back(filename);
       }
     }
+    if (rank == 1) std::cerr << "num files: " << files.size() << "\n";
 
+    std::unordered_set<std::string> input_names;
+    std::unordered_set<std::string> scalar_names;
+    get_input_names(input_names);
+    get_scalar_names(scalar_names);
+
+    // detect corruption!
     hid_t hdf5_file_hnd;
     std::string key;
     conduit::Node n_ok;
     conduit::Node tmp;
-
     size_t h = 0;
     for (size_t j=rank; j<files.size(); j+= np) {
       h += 1;
-      if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
+      //if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
 
       try {
 
@@ -122,6 +129,7 @@ int main(int argc, char *argv[]) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         continue;
       }
+      std::cerr << rank << " :: " << files[j] << " contains " << cnames.size() << " samples\n";
 
       for (size_t i=0; i<cnames.size(); i++) {
 
@@ -136,34 +144,52 @@ int main(int argc, char *argv[]) {
         int success = n_ok.to_int64();
         if (success == 1) {
             try {
-              key = cnames[i] + "/inputs";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-
-              key = cnames[i] + "/outputs/scalars";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-
-              key = cnames[i] + "/outputs/images";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-
-#if 0
-              key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-
-              key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-
-              key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
-              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-#endif
-
+              for (auto t : input_names) {
+                key = cnames[i] + "/inputs/" + t;
+                conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              }  
             } catch (std::exception e) {
-              std::cerr << rank << " :: " << "exception caught during extraction: " << cnames[i] << " " << files[j] << "\n";
+              std::cerr << rank << " :: " << "exception reading an input for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
+  
+            try {
+              for (auto t : scalar_names) {
+                key = cnames[i] + "/outputs/scalars/" + t;
+                conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              }  
+            } catch (std::exception e) {
+              std::cerr << rank << " :: " << "exception reading an scalar for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+
+            try {  
+              key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+            } catch (std::exception e) {
+              std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+
+            try { 
+              key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+            } catch (std::exception e) {
+              std::cerr << rank << " :: " << "exception reading image: (90.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+  
+           
+            try { 
+              key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+            } catch (std::exception e) {
+              std::cerr << rank << " :: " << "exception reading image: (90.0, 78.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              continue;
+            }
+          }
         }
       }
-    }
-
   } catch (exception const &e) {
     El::ReportException(e);
     finalize(comm);
@@ -177,5 +203,38 @@ int main(int argc, char *argv[]) {
   // Clean up
   finalize(comm);
   return EXIT_SUCCESS;
+}
+
+void get_input_names(std::unordered_set<std::string> &s) {
+  s.insert("shape_model_initial_modes:(4,3)"); 
+  s.insert("betti_prl15_trans_u"); 
+  s.insert("betti_prl15_trans_v"); 
+  s.insert("shape_model_initial_modes:(2,1)"); 
+  s.insert("shape_model_initial_modes:(1,0)"); 
+}
+
+void get_scalar_names(std::unordered_set<std::string> &s) {
+  s.insert("BWx");
+  s.insert("BT");
+  s.insert("tMAXt");
+  s.insert("BWn");
+  s.insert("MAXpressure");
+  s.insert("BAte");
+  s.insert("MAXtion");
+  s.insert("tMAXpressure");
+  s.insert("BAt");
+  s.insert("Yn");
+  s.insert("Ye");
+  s.insert("Yx");
+  s.insert("tMAXte");
+  s.insert("BAtion");
+  s.insert("MAXte");
+  s.insert("tMAXtion");
+  s.insert("BTx");
+  s.insert("MAXt");
+  s.insert("BTn");
+  s.insert("BApressure");
+  s.insert("tMINradius");
+  s.insert("MINradius");
 }
 #endif //#ifdef LBANN_HAS_CONDUIT

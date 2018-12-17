@@ -29,8 +29,6 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
-#include "lbann/utils/stack_trace.hpp"
-#include "lbann/utils/stack_profiler.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
 #include <cstdlib>
 
@@ -75,6 +73,9 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
+    // Initalize a global I/O thread pool
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
     lbann_data::LbannPB pb = *(pbs[0]);
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
     lbann_data::Model *pb_model = pb.mutable_model();
 
     model *model = build_model_from_prototext(argc, argv, pb,
-                                              comm, true);
+                                              comm, io_thread_pool, true);
 
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 

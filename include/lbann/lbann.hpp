@@ -90,6 +90,7 @@
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
+#include "lbann/layers/transform/tessellate.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -157,6 +158,7 @@
 #include "lbann/callbacks/callback_early_stopping.hpp"
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
@@ -213,5 +215,9 @@
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/peek_map.hpp"
+#include "lbann/utils/stack_trace.hpp"
+#include "lbann/utils/stack_profiler.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
 
 #endif // LBANN_HPP_INCLUDED

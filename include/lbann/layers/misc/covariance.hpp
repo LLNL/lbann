@@ -31,7 +31,18 @@
 
 namespace lbann {
 
-/** Covariance layer. */
+/** @brief Estimate covariance.
+ *
+ *  Given inputs @f$x@f$ and @f$y@f$ with empirical means
+ *  @f$\bar{x}@f$ and @f$\bar{y}@f$, an unbiased estimator for the
+ *  covariance is given by
+ *  @f[
+ *    \sigma_{xy}^2
+ *      \approx \frac{1}{n-1} \sum\limits_{i=1}^{n} (x - \bar{x}) (y - \bar{y})
+ *  @f]
+ *  Scaling by @f$ 1/n @f$ instead of @f$ 1/(n-1) @f$ is a biased
+ *  estimator.
+ */
 template <data_layout Layout, El::Device Device>
 class covariance_layer : public Layer {
 public:
@@ -73,36 +84,20 @@ protected:
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims({1});
-
-    // Check that input dimensions are valid
-    std::stringstream err;
-    const auto& parents = get_parent_layers();
-    const auto& dims0 = get_input_dims(0);
-    const auto& dims1 = get_input_dims(1);
-    if (dims0 != dims1) {
+    if (get_input_dims(0) != get_input_dims(1)) {
+      const auto& parents = get_parent_layers();
+      std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects input tensors with identical dimensions, "
-          << "but parent layer \"" << parents[0]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
-      for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims0[i];
+          << "has input tensors with different dimensions (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& dims = get_input_dims(i);
+        err << (i > 0 ? ", " : "")
+            << "layer \"" << parents[i]->get_name() << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
       }
-      err << " and parent layer \"" << parents[1]->get_name() << "\" "
-          << "outputs a tensor with dimensions ";
-      for (size_t i = 0; i < dims1.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims1[i];
-      }
-      LBANN_ERROR(err.str());
-    }
-    if (get_input_size() <= 1) {
-      err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects input tensors with at least two entries, "
-          << "but parent layers \"" << parents[0]->get_name() << "\" "
-          << "and \"" << parents[1]->get_name() << "\" "
-          << "output tensors with dimensions ";
-      for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? " x " : "") << dims0[i];
-      }
+      err << ")";
       LBANN_ERROR(err.str());
     }
   }

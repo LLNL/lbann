@@ -470,14 +470,12 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
     const El::Int size = height*width;
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum))
     for (El::Int i = 0; i < size; ++i) {
-      const int tid = omp_get_thread_num();
       sum += mat_buf[i];
     }
   } else {
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        const int tid = omp_get_thread_num();
         sum += mat_buf[row + col * ldim];
       }
     }
@@ -499,7 +497,6 @@ void lbann_summary::local_sum_sqsum(
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum,sqsum))
     for (El::Int i = 0; i < size; ++i) {
       const DataType val = mat_buf[i];
-      const int tid = omp_get_thread_num();
       sum += val;
       sqsum += val*val;
     }
@@ -508,7 +505,6 @@ void lbann_summary::local_sum_sqsum(
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         const DataType val = mat_buf[row + col*ldim];
-        const int tid = omp_get_thread_num();
         sum += val;
         sqsum += val * val;
       }

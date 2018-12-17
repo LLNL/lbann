@@ -3,11 +3,12 @@
 #Timestamp 02/26/2018 8:45AM
 model {
   name: "ae_cycgan_model"
+  shareable_training_data_reader: true
+  serialize_background_io: true
   data_layout: "model_parallel"
-  #mini_batch_size: 128
-  mini_batch_size: 100 #more last minibatch images to save
+  mini_batch_size: 256
   block_size: 256
-  num_epochs: 40
+  num_epochs: 4
   num_parallel_readers: 0
   procs_per_model: 0
 
@@ -509,7 +510,46 @@ model {
     data_layout: "model_parallel"
     mean_squared_error {}
   }
+  ####For metric, loss per individual sample
+  layer {
+    name: "fw_out_loss"
+    data_layout: "model_parallel"
+    parents: "param_data_id mean_squared_error"
+    concatenation {
+    }
+  }
+  callback {
+    dump_outputs {
+      #prefix: "/p/lscratchh/jacobs32/EuroViz/fw_out_loss/"
+      #prefix: "/p/gpfs1/jacobs32/EuroViz2/fw_out_loss/"
+      prefix: "fw_out_loss/"
+      layers: "fw_out_loss"
+      execution_modes: "test"
+      format: "npy"
+    }
+  }
 
+  ####For metric, loss per individual sample
+  #layer {
+  #  parents: "reconstruction image_data_id"
+  #  name: "squared_error"
+  #  data_layout: "model_parallel"
+  #  squared_difference {}
+  #}
+
+  #callback {
+  #  dump_outputs {
+  #    prefix:"/p/lscratchh/brainusr/jacobs32/EuroViz/"
+  #    layers: "squared_error"
+  #    execution_modes: "test"
+  #  }
+  #}
+  callback {
+    save_model {
+      dir: "model"
+      disable_save_after_training: true
+    }
+  }
   ###################################################
   # end of layers
   ###################################################

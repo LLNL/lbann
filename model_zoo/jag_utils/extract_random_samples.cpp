@@ -32,7 +32,6 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
-#include "conduit/conduit_relay_mpi.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -405,7 +404,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
             std::stringstream fn;
             fn << base_dir << "/" << dir_id++ << "/samples_" << rank
                << "_" << file_id++ << ".bundle";
-            std::cerr << rank << " :: writing " << fn << " file with " << n_samples << " samples\n";
+            std::cerr << rank << " :: writing " << fn.str() << " file with " << n_samples << " samples\n";
             try {
               conduit::relay::io::save(save_me, fn.str(), "hdf5");
             } catch (exception e) {

@@ -32,11 +32,13 @@
 
 namespace lbann {
 
-/** Crop layer.
- *  This layer extracts a crop from an input tensor, namely the
- *  activations tensor from the first parent layer. The position of
- *  the crop is controlled by the second parent layer, which should
- *  output one value in [0,1) for each tensor dimension.
+/** @brief Crop tensor.
+ *
+ *  Extract a crop from an @f$ N @f$-D tensor. The second input tensor
+ *  is interpreted as a normalized crop position in @f$ [0,1)^N
+ *  @f$. For images in CHW format, a position of (0,0,0) corresponds
+ *  to the red-top-left corner and (1,1,1) to the blue-bottom-right
+ *  corner. The crop size is determined at setup.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class crop_layer : public transform_layer {
