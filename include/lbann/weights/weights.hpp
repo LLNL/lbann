@@ -81,7 +81,7 @@ public:
    */
   weights* copy() const { return new weights(*this); }
 
-  /** Get human-readable description. */
+  /** Human-readable description. */
   description get_description(std::string indent = "  ") const;
 
   // -----------------------------------------------

@@ -144,7 +144,7 @@ description weights::get_description(std::string indent) const {
 
   // Optimizer
   if (m_optimizer != nullptr) {
-    desc.add("Optimizer", m_optimizer->get_description());
+    desc.add(m_optimizer->get_description());
   }
 
   // Freeze state

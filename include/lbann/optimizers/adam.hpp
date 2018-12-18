@@ -57,8 +57,8 @@ class adam : public optimizer {
 
   /** Returns the optimizer name. */
   std::string get_type() const override { return "Adam"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;

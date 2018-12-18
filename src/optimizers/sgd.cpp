@@ -69,12 +69,11 @@ sgd::~sgd() {
   if (m_velocity != nullptr) { delete m_velocity; }
 }
 
-std::string sgd::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "momentum=" << m_momentum << ", "
-     << "nesterov=" << m_nesterov;
-  return ss.str();
+description sgd::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("Momentum", m_momentum);
+  desc.add("Nesterov acceleration", m_nesterov);
+  return desc;
 }
 
 void sgd::setup(weights& w) {
