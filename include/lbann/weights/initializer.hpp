@@ -28,14 +28,21 @@
 #define LBANN_WEIGHTS_INITIALIZER_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/utils/description.hpp"
 
 namespace lbann {
 
-/** Abstract weights initializer. */
+/** @brief Scheme for initializing weight values. */
 class weights_initializer {
 public:
   weights_initializer() = default;
   virtual ~weights_initializer() = default;
+
+  /** Human-readable string describing concrete class. */
+  virtual std::string get_type() const = 0;
+
+  /** Human-readable description of class instance. */
+  virtual description get_description(std::string indent = "  ") const;
 
   /** Create a copy. */
   virtual weights_initializer* copy() const = 0;
@@ -45,9 +52,7 @@ public:
 
 };
 
-/** Constant weights initializer.
- *  All weight values are set equal to a user-provided value.
- */
+/** @brief Fill weights with a constant value. */
 class constant_initializer : public weights_initializer {
 public:
   constant_initializer(DataType value)
@@ -55,17 +60,21 @@ public:
   constant_initializer* copy() const override {
     return new constant_initializer(*this);
   }
+  std::string get_type() const { return "constant"; }
+  description get_description(std::string indent) const;
   void fill(AbsDistMat& matrix) override;
 
 private:
-  /** Constant value. */
+
+  /** Weights value. */
   DataType m_value;
 
 };
 
-/** Weights initializer by value.
- *  Weight values are set equal to a user-provided list of values. The
- *  number of weight entries must match the number of provided values.
+/** @brief Fill weights with values from a list.
+ *
+ *  The number of weight entries must exactly match the number of
+ *  provided values.
  */
 class value_initializer : public weights_initializer {
 public:
@@ -74,17 +83,17 @@ public:
   value_initializer* copy() const override {
     return new value_initializer(*this);
   }
+  std::string get_type() const { return "value"; }
   void fill(AbsDistMat& matrix) override;
 
 private:
-  /** Initializer values. */
+
+  /** List of weights values. */
   std::vector<DataType> m_values;
 
-};  
+};
 
-/** Uniform random weights initializer.
- *  Weight values are drawn i.i.d. from a uniform distribution.
- */
+/** @brief Draw weights values from a uniform random distribution. */
 class uniform_initializer : public weights_initializer {
  public:
   uniform_initializer(DataType min = DataType(0),
@@ -93,9 +102,12 @@ class uniform_initializer : public weights_initializer {
   uniform_initializer* copy() const override {
     return new uniform_initializer(*this);
   }
+  std::string get_type() const { return "uniform"; }
+  description get_description(std::string indent) const;
   void fill(AbsDistMat& matrix) override;
 
 private:
+
   /** Uniform distribution minimum. */
   DataType m_min;
   /** Uniform distribution maximum. */
@@ -103,9 +115,7 @@ private:
 
 };
 
-/** Normal random weights initializer.
- *  Weight values are drawn i.i.d. from a normal distribution.
- */
+/** @brief Draw weights values from a normal random distribution. */
 class normal_initializer : public weights_initializer {
 public:
   normal_initializer(DataType mean = DataType(0),
@@ -116,12 +126,15 @@ public:
   normal_initializer* copy() const override {
     return new normal_initializer(*this);
   }
+  std::string get_type() const { return "normal"; }
+  description get_description(std::string indent) const;
   void fill(AbsDistMat& matrix) override;
 
 private:
-  /** Mean. */
+
+  /** Normal distribution mean. */
   DataType m_mean;
-  /** Standard deviation. */
+  /** Normal distribution standard deviation. */
   DataType m_standard_deviation;
 
 };

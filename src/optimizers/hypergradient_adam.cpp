@@ -109,8 +109,8 @@ hypergradient_adam::~hypergradient_adam() {
   if(m_old_gradient != nullptr) { delete m_old_gradient; }
 }
 
-description hypergradient_adam::get_description() const {
-  auto&& desc = optimizer::get_description();
+description hypergradient_adam::get_description(std::string indent) const {
+  auto&& desc = optimizer::get_description(std::move(indent));
   desc.add("Hypergradient learning rate", m_hyper_learning_rate);
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);

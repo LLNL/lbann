@@ -137,14 +137,14 @@ description weights::get_description(std::string indent) const {
   }
   desc.add("Dimensions", ss.str());
 
-  // Initializer
-  if (m_initializer != nullptr) {
-    desc.add("Initializer detected"); /// @todo Initializer description
-  }
-
   // Optimizer
   if (m_optimizer != nullptr) {
-    desc.add(m_optimizer->get_description());
+    desc.add(m_optimizer->get_description(indent));
+  }
+
+  // Initializer
+  if (m_initializer != nullptr) {
+    desc.add(m_initializer->get_description(indent));
   }
 
   // Freeze state

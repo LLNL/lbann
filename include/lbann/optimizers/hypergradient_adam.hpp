@@ -64,7 +64,7 @@ class hypergradient_adam : public optimizer {
   /** Returns the optimizer name. */
   std::string get_type() const override { return "hypergradient Adam"; }
   /** Human-readable description. */
-  description get_description() const override;
+  description get_description(std::string indent) const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;

@@ -59,7 +59,7 @@ class optimizer {
   /** Get the optimizer name. */
   virtual std::string get_type() const = 0;
   /** Human-readable description. */
-  virtual description get_description() const;
+  virtual description get_description(std::string indent = "  ") const;
 
   /** Whether the optimizer has been set up. */
   inline bool is_initialized() const { return m_weights != nullptr; }

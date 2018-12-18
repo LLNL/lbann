@@ -44,6 +44,23 @@ variance_scaling_initializer::variance_scaling_initializer(probability_distribut
   }
 }
 
+description variance_scaling_initializer::get_description(std::string indent) const {
+  auto&& desc = weights_initializer::get_description(std::move(indent));
+  std::string dist_str;
+  switch (m_prob_dist) {
+  case probability_distribution::gaussian:
+    dist_str = "normal";  break;
+  case probability_distribution::uniform:
+    dist_str = "uniform"; break;
+  default:
+    dist_str = "invalid";
+  }
+  desc.add("Distribution", dist_str);
+  desc.add("Fan-in", m_fan_in);
+  desc.add("Fan-out", m_fan_out);
+  return desc;
+}
+
 void variance_scaling_initializer::fill(AbsDistMat& matrix) {
 
   // Check if fan-in and fan-out parameters are valid
@@ -75,7 +92,7 @@ void variance_scaling_initializer::fill(AbsDistMat& matrix) {
         << "(dist=" << El::Int(m_prob_dist) << ")";
     LBANN_ERROR(err.str());
   }
-  
+
 }
 
 DataType glorot_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
