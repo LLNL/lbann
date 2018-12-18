@@ -31,9 +31,9 @@ lbann::distributed_io_buffer::distributed_io_buffer(lbann_comm *comm, int num_pa
   : generic_io_buffer(comm, num_parallel_readers, data_readers),
     m_requested_max_num_parallel_readers(num_parallel_readers),
     m_num_child_layers(num_child_layers) {
-  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_child_layers);
-  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_child_layers);
-  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::training] = new dist_data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::validation] = new dist_data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::testing] = new dist_data_buffer(comm, num_child_layers);
 }
 
 int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
@@ -41,11 +41,11 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
 
   /// Check to see if this rank has valid data -- if not read in the next batch
   /// Coordinate all available readers so that the perform I/O in the same step
-  data_buffer *buf = get_data_buffer(mode);
+  dist_data_buffer *buf = get_dist_data_buffer(mode);
   if (buf->m_root == 0) {
     if (m_comm->get_rank_in_model() < num_parallel_readers && !buf->m_local_reader_done) {
       for(auto& m : buf->M_local) {
-        Zero(*m);
+        El::Zero(*m);
       }
 
       /// Each data reader needs to either have independent / split
@@ -67,7 +67,7 @@ int lbann::distributed_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
 
 void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
-  data_buffer *buf = get_data_buffer(mode);
+  dist_data_buffer *buf = get_dist_data_buffer(mode);
   buf->Ms[0]->SetRoot(buf->m_root);
   buf->Ms[1]->SetRoot(buf->m_root);
 
@@ -106,7 +106,7 @@ void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_rea
 
 void lbann::distributed_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
-  data_buffer *buf = get_data_buffer(mode);
+  dist_data_buffer *buf = get_dist_data_buffer(mode);
   buf->Ms[0]->SetRoot(buf->m_root);
 
   m_comm->model_barrier();
@@ -142,7 +142,7 @@ bool lbann::distributed_io_buffer::update_data_set(generic_data_reader *data_rea
   int num_parallel_readers = data_reader->get_num_parallel_readers();
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
-  data_buffer *buf = get_data_buffer(mode);
+  dist_data_buffer *buf = get_dist_data_buffer(mode);
 
   bool is_active_reader = (m_comm->get_rank_in_model() < num_parallel_readers)
     && ((m_comm->get_rank_in_model()+1)%num_parallel_readers == buf->m_root);
@@ -171,7 +171,7 @@ bool lbann::distributed_io_buffer::update_data_set(generic_data_reader *data_rea
 }
 
 int lbann::distributed_io_buffer::num_samples_ready(execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  dist_data_buffer *buf = get_dist_data_buffer(mode);
   return buf->m_num_samples_in_batch;
 }
 

@@ -134,7 +134,7 @@ class distributed_io_buffer : public generic_io_buffer {
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
   static bool check_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers, const lbann_comm* comm);
 
-  dist_data_buffer *get_data_buffer(const execution_mode mode) const {
+  dist_data_buffer *get_dist_data_buffer(const execution_mode mode) const {
     dist_data_buffer *data_buffer = nullptr;
     data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
     if (it != m_data_buffers.end()) data_buffer = it->second;
@@ -156,19 +156,19 @@ class distributed_io_buffer : public generic_io_buffer {
 
   /// Return the rank of the current root node for the Elemental Distribution
   virtual int current_root_rank(execution_mode mode) const {
-    dist_data_buffer *buf = get_data_buffer(mode);
+    dist_data_buffer *buf = get_dist_data_buffer(mode);
     return buf->m_root;
   }
 
   /// Is this rank the current root node for the Elemental Distribution
   bool is_current_root(execution_mode mode) const {
-    dist_data_buffer *buf = get_data_buffer(mode);
+    dist_data_buffer *buf = get_dist_data_buffer(mode);
     return (m_comm->get_rank_in_model() == buf->m_root);
   }
 
   /// Is the local reader done
   virtual bool is_local_reader_done(execution_mode mode) const {
-    dist_data_buffer *buf = get_data_buffer(mode);
+    dist_data_buffer *buf = get_dist_data_buffer(mode);
     return buf->m_local_reader_done;
   }
 

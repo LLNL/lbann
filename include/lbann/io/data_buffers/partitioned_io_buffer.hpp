@@ -33,10 +33,14 @@ namespace lbann {
 
 class data_buffer {
  public:
+  /** Number of samples in the current mini-batch */
+  int m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
   std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
 
-  data_buffer(lbann_comm *comm, int num_child_layers) {
+  data_buffer(lbann_comm *comm, int num_child_layers) :
+    m_num_samples_fetched(0)
+  {
     m_input_buffers.clear();
     m_input_buffers.resize(num_child_layers);
     for(int i = 0; i < num_child_layers; i++) {
@@ -44,7 +48,9 @@ class data_buffer {
     }
   }
 
-  data_buffer(const data_buffer& other) {
+  data_buffer(const data_buffer& other) :
+    m_num_samples_fetched(other.m_num_samples_fetched)
+  {
     m_input_buffers.clear();
     m_input_buffers.reserve(other.m_input_buffers.size());
     for (const auto& ptr : other.m_input_buffers) {
@@ -52,6 +58,7 @@ class data_buffer {
     }
   }
   data_buffer& operator=(const data_buffer& other) {
+    m_num_samples_fetched = other.m_num_samples_fetched;
     m_input_buffers.clear();
     m_input_buffers.reserve(other.m_input_buffers.size());
     for (const auto& ptr : other.m_input_buffers) {
@@ -117,7 +124,6 @@ class partitioned_io_buffer : public generic_io_buffer {
    */
   //  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
   data_buffer_map_t m_data_buffers;
-  int m_num_samples_fetched;
 };
 }
 
