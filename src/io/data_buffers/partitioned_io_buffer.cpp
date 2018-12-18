@@ -32,20 +32,10 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
   m_data_buffers[execution_mode::training] = new data_buffer(comm, num_child_layers);
   m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_child_layers);
   m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
-  // m_input_buffers.clear();
-  // m_input_buffers.resize(num_child_layers);
-  // for(int i = 0; i < num_child_layers; i++) {
-  //   m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_model_grid()));
-  // }
 }
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(const lbann::partitioned_io_buffer& other)
   : generic_io_buffer(other) {
-  // m_input_buffers.clear();
-  // m_input_buffers.reserve(other.m_input_buffers.size());
-  // for (const auto& ptr : other.m_input_buffers) {
-  //   m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
-  // }
   for (auto& buf : m_data_buffers) {
     buf.second = buf.second->copy();
   }
@@ -53,14 +43,9 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(const lbann::partitioned_io_
 
 lbann::partitioned_io_buffer& lbann::partitioned_io_buffer::operator=(const lbann::partitioned_io_buffer& other) {
   generic_io_buffer::operator=(other);
-  // m_input_buffers.clear();
-  // m_input_buffers.reserve(other.m_input_buffers.size());
   for (auto& buf : m_data_buffers) {
     buf.second = buf.second->copy();
   }
-  // for (const auto& ptr : other.m_input_buffers) {
-  //   m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
-  // }
   return *this;
 }
 
@@ -68,7 +53,6 @@ void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, in
   for (auto& buf : m_data_buffers) {
     buf.second->m_input_buffers[idx]->Resize(buf.second->m_input_buffers[idx]->Height(), cur_mini_batch_size);
   }
-  //  m_input_buffers[idx]->Resize(m_input_buffers[idx]->Height(), cur_mini_batch_size);
 }
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
