@@ -522,7 +522,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<linear_transform_t> m_scalar_normalization_params;
   std::vector<linear_transform_t> m_input_normalization_params;
 
-  sample_list<std::string> m_sample_list;
+  typedef std::pair<std::string, std::string> conduit_sample;
+  //  typedef std::pair<hid_t, std::string> conduit_sample;
+  sample_list<conduit_sample> m_sample_list;
+  //sample_list<std::string> m_sample_list;
 
   /** temporary image normalization
    * The inputs are the image to normalize, the image source id and the channel id.

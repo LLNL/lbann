@@ -37,6 +37,7 @@
 #include <algorithm>
 #include "lbann/utils/exception.hpp"
 #include <mpi.h>
+#include "lbann/data_readers/conduit_hdf5_utils.hpp"
 
 namespace lbann {
 
@@ -69,8 +70,10 @@ template <typename SN>
 inline bool sample_list<SN>::load(const std::string& samplelist_file) {
   bool ok = true;
 #if 1
+  std::cout << "I am going to load " << samplelist_file << std::endl;
   std::ifstream istr(samplelist_file);
-  ok = get_samples_per_file(istr);
+  ok = get_samples_per_hdf5_file(istr);
+  //ok = get_samples_per_file(istr);
   istr.close();
 #else
   std::ifstream ifs(samplelist_file);
@@ -121,6 +124,7 @@ inline size_t sample_list<SN>::get_samples_per_file(std::istream& ifstr)
 
     sstr >> filename;
 
+    std::cout << "I am going to load the file " << filename << std::endl;
     m_samples_per_file.emplace_back();
     (m_samples_per_file.back()).first = filename;
     auto& samples_of_current_file = (m_samples_per_file.back()).second;
@@ -173,6 +177,84 @@ inline size_t sample_list<SN>::get_samples_per_file(const std::string& samplelis
   return total_num_samples;
 }
 
+template <typename SN>
+inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
+{
+  if (!ifstr.good()) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+                          + " :: unable to read from the data input stream");
+  }
+
+  std::string line;
+
+  size_t total_num_samples = 0u;
+  m_samples_per_file.clear();
+
+  if(!ifstr.good()) { LBANN_ERROR("Unable to read HDF5 sample index format"); }
+  getline(ifstr, line);
+  std::stringstream header1(line);
+  int sample_count, num_files;
+  header1 >> sample_count;
+  header1 >> num_files;
+
+  // If we know the number of data files, we can reserve the space here for vector
+  // but not for list.
+  m_samples_per_file.reserve(num_files);
+
+
+  if(!ifstr.good()) { LBANN_ERROR("Unable to read HDF5 sample index format"); }
+  getline(ifstr, line);
+  std::stringstream header2(line);
+  std::string file_dir;
+  header2 >> file_dir;
+
+  std::cout << "Reading " << sample_count << " samples from " << num_files << " files and dir " << file_dir << std::endl;
+  while (getline(ifstr, line)) {
+    std::stringstream sstr(line);
+    std::string filename;
+    int valid_samples;
+    int invalid_samples;
+    std::vector<int> invalid_sample_indices;
+
+    sstr >> filename >> valid_samples >> invalid_samples;
+    while(!sstr.eof()) {
+      int index;
+      sstr >> index;
+      invalid_sample_indices.emplace_back(index);
+    }
+
+    std::cout << "I am going to load the file " << filename << " which has " << valid_samples << " valid samples and " << invalid_samples << std::endl;
+    m_samples_per_file.emplace_back();
+    (m_samples_per_file.back()).first = file_dir + "/" + filename;
+    auto& samples_of_current_file = (m_samples_per_file.back()).second;
+    samples_of_current_file.reserve(valid_samples + invalid_samples);
+
+    std::string conduit_file_path = file_dir + "/" + filename;
+    hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
+    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+      std::cout << "Opening the file didn't work" << std::endl;
+      continue; // skipping the file
+    }
+    std::vector<std::string> sample_names;
+    conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", /*samples_of_current_file*/sample_names);
+    // std::cout << " I have found that there are " << samples_of_current_file.size() << " samples" << std::endl;
+    //    for(auto s : samples_of_current_file) {
+    for(auto s : sample_names) {
+      std::cout << " I have found a sample " << s << std::endl;
+      m_sample_list.emplace_back(std::make_pair(conduit_file_path, s));
+      //      m_sample_list.emplace_back(std::make_tuple(hdf5_file_hnd/*conduit_file_path*/, s));
+    }
+    for(auto s : m_sample_list) {
+      std::cout << "I have found a sample " << s.first << " and " << s.second << std::endl;
+      //      std::cout << "I have found a sample " << std::get<0>(s) << " and " << std::get<1>(s) << std::endl;
+    }
+
+    const size_t num_samples_of_current_file = samples_of_current_file.size();
+    total_num_samples += num_samples_of_current_file;
+  }
+
+  return total_num_samples;
+}
 
 /**
  * Reads through m_samples_per_file, and populate m_sample_range_per_file
@@ -278,9 +360,10 @@ inline bool sample_list<SN>::write(const std::string& out_filename) const {
 
   for (size_t i = 0u; i < num_files; ++i, ++it_samplefiles) {
     const auto& samples_of_current_file = it_samplefiles->second;
-    ofstr << it_samplefiles->first;
+    ofstr << it_samplefiles->first << std::endl;
     for (const auto& sample : samples_of_current_file) {
-      ofstr << ' ' << sample;
+      //      ofstr << ' ' << sample << std::endl;
+      ofstr << ' ' << sample.second << std::endl;
     }
     ofstr << std::endl;
   }

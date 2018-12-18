@@ -50,7 +50,7 @@
 #include "lbann/utils/glob.hpp"
 #include "lbann/utils/peek_map.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 
 
 // This macro may be moved to a global scope
@@ -968,11 +968,11 @@ void data_reader_jag_conduit::populate_shuffled_indices(const size_t num_samples
 }
 
 void data_reader_jag_conduit::load() {
-  if (m_use_sample_list) {
+  // if (m_use_sample_list) {
     load_list_of_samples();
-  } else {
-    load_set_of_unique_files();
-  }
+  // } else {
+  //   load_set_of_unique_files();
+  // }
 }
 
 
@@ -1059,8 +1059,10 @@ void data_reader_jag_conduit::load_list_of_samples() {
   m_sample_list.load(sample_list_file);
   double tm2 = get_time();
 
+  m_sample_list.write("foobar");
+
   // partition, serialize (pack) and distribute the sample list
-  distribute_sample_list(m_sample_list, my_samples, *m_comm);
+  //  distribute_sample_list(m_sample_list, my_samples, *m_comm);
 
   sample_list<std::string> my_sample_list;
   my_sample_list.load_from_string(my_samples);

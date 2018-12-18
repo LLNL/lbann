@@ -37,6 +37,7 @@ set_full_path(THIS_DIR_SOURCES
   offline_patches_npz.cpp
   image_preprocessor.cpp
   image_utils.cpp
+  conduit_hdf5_utils.cpp
   )
 
 # Add the subdirectories

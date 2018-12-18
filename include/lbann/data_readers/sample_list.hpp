@@ -48,9 +48,11 @@ class sample_list {
   /// The type for arbitrarily assigned index
   using sample_id_t = size_t;
   /// Type for list of sample names in a sample file
-  using samples_t = std::template list<sample_name_t>;
+  using samples_t = std::template vector<sample_name_t>;
+  //  using samples_t = std::template list<sample_name_t>;
   /// Type for list where an element is the list of samples in a sample file
-  using sample_files_t = std::template list< std::pair<std::string, samples_t> >;
+  using sample_files_t = std::template vector< std::pair<std::string, samples_t> >;
+  //  using sample_files_t = std::template list< std::pair<std::string, samples_t> >;
 
   sample_list() : m_num_partitions(1u) {}
 
@@ -80,6 +82,8 @@ class sample_list {
   /// Populate m_samples_per_file by reading from input stream
   size_t get_samples_per_file(std::istream& istr);
 
+  size_t get_samples_per_hdf5_file(std::istream& istr);
+
   /// Extract m_samples_per_file by parsing a serialized string
   size_t get_samples_per_file(const std::string& samplelist);
 
@@ -106,6 +110,9 @@ class sample_list {
    * that is followed by the names of the samples in the file.
    */
   sample_files_t m_samples_per_file;
+
+  /// Contains list of all sample
+  samples_t m_sample_list;
 
   /// Contains starting sample id of each file
   std::vector<sample_id_t> m_sample_range_per_file;
