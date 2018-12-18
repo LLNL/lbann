@@ -122,11 +122,10 @@ weights& weights::operator=(const weights& other) {
 }
 
 description weights::get_description(std::string indent) const {
+  std::stringstream ss;
 
   // Construct description object
-  std::stringstream ss;
-  ss << "weights \"" << get_name() << "\"";
-  description desc(ss.str(), indent);
+  description desc(get_name(), indent);
 
   // Dimensions
   const auto& dims = get_dims();
