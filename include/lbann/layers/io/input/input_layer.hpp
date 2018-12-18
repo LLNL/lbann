@@ -38,6 +38,8 @@
 namespace lbann {
 
 template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+
+/** @brief Interface with data reader. */
 class input_layer : public generic_input_layer {
  public:
 
@@ -47,9 +49,13 @@ class input_layer : public generic_input_layer {
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
     : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {
     validate_data_layout();
+    // Initialize two buffers
     initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
-    io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
-    io_buffer->update_data_reader_fn = new update_data_reader_functor();
+    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
+    for (auto io_buffer : m_io_buffers) {
+      io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
+      io_buffer->update_data_reader_fn = new update_data_reader_functor();
+    }
   }
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
@@ -60,7 +66,7 @@ class input_layer : public generic_input_layer {
   std::string get_type() const override {
     return std::string {}
       + "input:"
-      + io_buffer->get_type();
+      + m_io_buffers[0]->get_type();
   }
 
   inline void validate_data_layout();

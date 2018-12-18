@@ -40,7 +40,6 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-/** Pooling layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class pooling_layer : public transform_layer {
 private:

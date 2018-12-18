@@ -23,6 +23,7 @@ set_full_path(THIS_DIR_HEADERS
   callback_ltfb.hpp
   callback_print.hpp
   callback_save_images.hpp
+  callback_save_model.hpp
   callback_summary.hpp
   callback_timer.hpp
   callback_variable_minibatch.hpp

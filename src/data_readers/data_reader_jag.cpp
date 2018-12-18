@@ -603,7 +603,7 @@ data_reader_jag::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes,
   return X_v;
 }
 
-bool data_reader_jag::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
+bool data_reader_jag::fetch(CPUMat& X, int data_id, int mb_idx,
   const data_reader_jag::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
@@ -630,27 +630,27 @@ bool data_reader_jag::fetch(CPUMat& X, int data_id, int mb_idx, int tid,
   return true;
 }
 
-bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, 0, tid, m_independent[i], "datum");
+    ok = fetch(X_v[i], data_id, 0, m_independent[i], "datum");
   }
   return ok;
 }
 
-bool data_reader_jag::fetch_response(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_response(CPUMat& X, int data_id, int mb_idx) {
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, 0, tid, m_dependent[i], "response");
+    ok = fetch(X_v[i], data_id, 0, m_dependent[i], "response");
   }
   return ok;
 }
 
-bool data_reader_jag::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_jag::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);

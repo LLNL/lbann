@@ -118,7 +118,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   };
 };
 
-inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir) {
+static inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/";
@@ -127,7 +127,7 @@ inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir
   return ss.str();
 }
 
-inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+static inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
@@ -137,7 +137,7 @@ inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int 
   return ss.str();
 }
 
-inline std::string get_last_distributed_checkpoint_filename(model *m, std::string dir) {
+static inline std::string get_last_distributed_checkpoint_filename(model *m, std::string dir) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/";
@@ -146,7 +146,7 @@ inline std::string get_last_distributed_checkpoint_filename(model *m, std::strin
   return ss.str();
 }
 
-inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+static inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
@@ -155,6 +155,38 @@ inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir,
   ss << ".epoch." << epoch;
   ss << ".step."<< step << "/";
   return ss.str();
+}
+
+// Print last checkpoint to file, used to determine which checkpoint to load from.
+static inline bool write_latest(std::string filename, int epoch, int train) {
+  // open the file for writing
+  int fd = openwrite(filename.c_str());
+  if (fd != -1) {
+    char field[256];
+    sprintf(field, "epoch=%d step=%d\n", epoch, train);
+    write_string(fd, filename.c_str(), field, strlen(field));
+    // close our file
+    closewrite(fd, filename.c_str());
+  }
+  return true;
+}
+/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
+static inline bool read_latest(std::string filename, int *epochLast, int *trainLast) {
+  // assume we don't have a file, we'll return -1 in that case
+  *epochLast = -1;
+  *trainLast = -1;
+  // open the file for reading
+  int fd = openread(filename.c_str());
+  if (fd != -1) {
+    // read epoch from file
+    char field[256];
+    read_string(fd, filename.c_str(), field, sizeof(field));
+    int ret = sscanf(field, "epoch=%d step=%d\n", epochLast, trainLast);
+    // close our file
+    closeread(fd, filename.c_str());
+    if(ret != 2) { return false; }
+  }
+  return true;
 }
 
 }  // namespace lbann

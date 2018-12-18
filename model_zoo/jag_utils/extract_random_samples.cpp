@@ -402,6 +402,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
                << "_" << file_id++ << ".bundle";
             std::cerr << rank << " :: writing " << fn.str() << " file with " << n_samples << " samples\n";
             n_samples = 0;
+ 
             try {
               conduit::relay::io::save(save_me, fn.str(), "hdf5");
             } catch (...) {

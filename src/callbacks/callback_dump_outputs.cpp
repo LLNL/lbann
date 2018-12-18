@@ -25,17 +25,80 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_dump_outputs.hpp"
+#include "lbann/io/file_io.hpp"
+#include <cnpy.h>
 
 namespace lbann {
+
+namespace {
+
+/** Save text file.
+ *  Each line corresponds to a mini-batch sample. This is the
+ *  transpose of our internal column-major matrix representation.
+ */
+void save_text(const std::string& file_name,
+               std::string delimiter,
+               const CPUMat& data) {
+  std::ofstream fs(file_name.c_str());
+  if (!fs.is_open()) {
+    LBANN_ERROR("failed to open output file (" + file_name + ")");
+  }
+  for (El::Int col = 0; col < data.Width(); ++col) {
+    for (El::Int row = 0; row < data.Height(); ++row) {
+      fs << (row > 0 ? delimiter : "") << data(row, col);
+    }
+    fs << "\n";
+  }
+}
+
+/** Save NumPy binary file. */
+void save_npy(const std::string& file_name,
+              const std::vector<int>& dims,
+              const CPUMat& data) {
+  if (!data.Contiguous()) {
+    LBANN_ERROR("expected contiguous data matrix");
+  }
+  std::vector<size_t> shape;
+  shape.push_back(data.Width());
+  for (const auto& d : dims) { shape.push_back(d); }
+  cnpy::npy_save(file_name, data.LockedBuffer(), shape);
+}
+
+/** Save NumPy zip file. */
+void save_npz(const std::string& file_name,
+              const std::string& tensor_name,
+              const std::vector<int>& dims,
+              const CPUMat& data) {
+  if (!data.Contiguous()) {
+    LBANN_ERROR("expected contiguous data matrix");
+  }
+  std::vector<size_t> shape;
+  shape.push_back(data.Width());
+  for (const auto& d : dims) { shape.push_back(d); }
+  cnpy::npz_save(file_name, tensor_name, data.LockedBuffer(), shape);
+}
+
+} // namespace
 
 lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> layer_names,
                                                          std::set<execution_mode> modes,
                                                          El::Int batch_interval,
-                                                         std::string file_prefix)
+                                                         std::string file_prefix,
+                                                         std::string file_format)
   : lbann_callback(std::max(batch_interval, El::Int(1))),
     m_layer_names(std::move(layer_names)),
     m_modes(std::move(modes)),
-    m_file_prefix(std::move(file_prefix)) {}
+    m_file_prefix(std::move(file_prefix)),
+    m_file_format(std::move(file_format)) {
+
+  // Initialize file format
+  if (m_file_format.empty()) { m_file_format = "csv"; }
+  if (m_file_format != "csv" && m_file_format != "tsv"
+      && m_file_format != "npy" && m_file_format != "npz") {
+    LBANN_ERROR("invalid file format (" + m_file_format + ")");
+  }
+
+}
 
 void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
 
@@ -58,27 +121,33 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
   if (!m_layer_names.empty()
       && m_layer_names.count(l.get_name()) == 0) { return; }
 
-  // Save layer outputs
-  // Note: Each line corresponds to a mini-batch sample. This is the
-  // transpose of our internal column-major matrix representation.
+  // Create the directory
+  lbann::makedir(m_file_prefix.c_str());
+
+  // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {
     const CircMat<El::Device::CPU> circ_data(l.get_activations(i));
     if (circ_data.CrossRank() == circ_data.Root()) {
-      const auto& data = circ_data.LockedMatrix();
-      const std::string filename = (m_file_prefix
-                                    + m.get_name()
-                                    + "-" + _to_string(mode)
-                                    + "-epoch" + std::to_string(epoch)
-                                    + "-step" + std::to_string(step)
-                                    + "-" + l.get_name()
-                                    + "-output" + std::to_string(i)
-                                    + ".csv");
-      std::ofstream fs(filename.c_str());
-      for (El::Int col = 0; col < data.Width(); ++col) {
-        for (El::Int row = 0; row < data.Height(); ++row) {
-          fs << (row > 0 ? m_delimiter : "") << data(row, col);
-        }
-        fs << "\n";
+      const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
+      const std::string file_name = (m_file_prefix
+                                     + m.get_name()
+                                     + "-" + _to_string(mode)
+                                     + "-epoch" + std::to_string(epoch)
+                                     + "-step" + std::to_string(step)
+                                     + "-" + l.get_name()
+                                     + "-output" + std::to_string(i)
+                                     + "." + m_file_format);
+      if (m_file_format == "csv") {
+        save_text(file_name, ",", data);
+      } else if (m_file_format == "tsv") {
+        save_text(file_name, "\t", data);
+      } else if (m_file_format == "npy") {
+        save_npy(file_name, l.get_output_dims(i), data);
+      } else if (m_file_format == "npz") {
+        save_npz(file_name,
+                 l.get_name() + "_output" + std::to_string(i),
+                 l.get_output_dims(i),
+                 data);
       }
     }
   }
