@@ -187,7 +187,7 @@ std::string usage() {
       "       --num_samples is the number of random samples to be extracted\n"
       "       --output_base_dir will be created if it doesn't exist\n"
       "       --exclude is an optional filename containing IDs of samples that should not appear in the output\n"
-      "       --rand_seed is useful for repeatability and testing; default is time(NULL)\n"
+      "       --rand_seed is required to ensure all procs generate identical random sample indices.\n"
       "       --num_samples_per_file is number of samples per output file; default is 1000 (a maximum of one output file per processor may contain fewer)\n"
       "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n";
     return u;
@@ -214,7 +214,7 @@ int construct_output_directories(int np) {
   int num_samples_per_file = opts->get_int("num_samples_per_file");
   int num_samples = opts->get_int("num_samples");
   const std::string base_dir = options::get()->get_string("output_base_dir");
-  int num_output_dirs = (num_samples / num_samples_per_file + 1) / np;
+  int num_output_dirs = ((num_samples / num_samples_per_file + 1) / np) *2;
 
   for (int j=0; j<num_output_dirs; j++) {
     std::stringstream s1;
@@ -302,7 +302,6 @@ void extract_samples(
   const std::vector<std::string> &filenames,
   const std::vector<std::set<int> > &samples) {
 
-std::cerr << rank << "  XX np: " << np << "\n";
   const std::string base_dir = options::get()->get_string("output_base_dir");
   char b[1024];
   sprintf(b, "%s/_sample_ids_%d.txt", base_dir.c_str(), rank);
@@ -330,21 +329,19 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
     // open input conduit file
     try {
       hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( filenames[j].c_str() );
-    } catch (std::exception e) {
+    } catch (...) {
       std::cerr << rank << " :: exception hdf5_open_file_for_read; j: " << j <<  " filenames.size(): " << filenames.size() << " samples.size(): " << samples.size() << "\n";
       continue;
-    } catch (...) {
-      std::cerr << rank << " :::: exception: unknown 1\n";
-      continue;
     }
+    std::cerr << rank << " :: opened: " << filenames[j] << "\n";
 
     out_ids << filenames[j] << " ";
 
     std::vector<std::string> cnames;
     try {
       conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-    } catch (std::exception e) {
-      std::cerr << rank << " :: exception hdf5_group_list_child_names; " << filenames[j] << "; " << e.what() << ";\ncontinuing\n";
+    } catch (...) {
+      std::cerr << rank << " :: exception hdf5_group_list_child_names; " << filenames[j] << "\n";
       continue;
     }
 
@@ -354,8 +351,8 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
       key = "/" + cnames[i] + "/performance/success";
       try {
         conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-      } catch (std::exception e) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + filenames[j] +  "; " +  e.what());
+      } catch (std::exception const &e) {
+        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + filenames[j] +  "\n");
       }
       int success = n_ok.to_int64();
 
@@ -363,7 +360,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
       if (success == 1) {
         if (samples[j].find(local_idx) != samples[j].end()) {
           ++n_samples;
-          save_me[cnames[i]]["/performance/success"] = 1;
+          tmp2["/performance/success"] = 1;
           out_ids << cnames[i] << " ";
           try {
             key = cnames[i] + "/inputs";
@@ -389,14 +386,13 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
             //save_me[cnames[i]]["/outputs/images"] = tmp;
             tmp2["/outputs/images/(90.0, 78.0)//0.0/emi"] = tmp;
 
-          } catch (std::exception e) {
+          } catch (...) {
             std::cerr << rank << " :: " << "exception caught during extraction; ignoring and continuing\n";
             continue;
           }
           save_me[cnames[i]] = tmp2;
 
           if (n_samples >= num_samples_per_file) {
-            n_samples = 0;
             std::stringstream s;
             if (dir_id == num_output_dirs) {
               dir_id = 0;
@@ -404,11 +400,12 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
             std::stringstream fn;
             fn << base_dir << "/" << dir_id++ << "/samples_" << rank
                << "_" << file_id++ << ".bundle";
-            std::cerr << rank << " :: writing " << fn << " file with " << n_samples << " samples\n";
+            std::cerr << rank << " :: writing " << fn.str() << " file with " << n_samples << " samples\n";
+            n_samples = 0;
             try {
               conduit::relay::io::save(save_me, fn.str(), "hdf5");
-            } catch (exception e) {
-              throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save(); what: " + e.what());
+            } catch (...) {
+              throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save()\n");
             }
             save_me.reset();
           }
@@ -421,7 +418,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
 
     try {
       conduit::relay::io::hdf5_close_file( hdf5_file_hnd );
-    } catch (std::exception e) {
+    } catch (exception e) {
        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception hdf5_close_file; " + filenames[j] + "; " + e.what());
     }
 
