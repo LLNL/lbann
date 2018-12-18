@@ -38,7 +38,7 @@ namespace lbann {
  *      \begin{cases}
  *        \text{min} & x \leq \text{min}           \\
  *        x          & \text{min} < x < \text{max} \\
- *        \text{max} & x \geq \text[max}
+ *        \text{max} & x \geq \text{max}
  *      \end{cases}
  *  @f]
  */
