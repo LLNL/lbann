@@ -1,0 +1,108 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef LBANN_UTILS_DESCRIPTION_HPP
+#define LBANN_UTILS_DESCRIPTION_HPP
+
+#include <string>
+#include <vector>
+#include <ostream>
+#include <sstream>
+
+namespace lbann {
+
+/** @brief Generates nicely formatted description messages.
+ *
+ *  Messages have hanging indentation and can be output to an output
+ *  stream like @c std::cout. For example:
+ *
+ *  @code{.unparsed}
+ *  Title
+ *    Some numerical field: 12.3
+ *    A boolean parameter: true
+ *    Miscellaneous statement
+ *  @endcode
+ */
+class description {
+public:
+
+  /** @param title  First line in description message.
+   *  @param indent Indentation string.
+   */
+  description(std::string title, std::string indent = "  ");
+
+  /** Print description to stream. */
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const description& desc);
+
+  /** Add new line. */
+  void append_line(std::string line);
+
+  /** Add new line describing a field value.
+   *
+   *  The line is formatted:
+   *
+   *  @code{.unparsed}
+   *  <field>: <value>
+   *  @endcode
+   */
+  template <typename T>
+  void append_line(std::string field, T value) {
+    std::stringstream ss;
+    ss.setf(std::ios_base::boolalpha);
+    ss << field << ": " << value;
+    append_line(ss.str());
+  }
+
+  /** Insert a nested @c description.
+   *
+   *  The indentation in @c desc is combined with the current
+   *  indentation. For instance:
+   *
+   *  @code{.unparsed}
+   *  Outer description
+   *    Some numerical field: 12.3
+   *    Nested description
+   *      This: abc
+   *      That: 123
+   *  @endcode
+   */
+  void append(const description& desc);
+
+private:
+
+  /** First line of message. */
+  std::string m_title;
+  /** Lines in message (excluding first line). */
+  std::vector<std::string> m_lines;
+  /** Indentation string. */
+  std::string m_indent;
+
+};
+
+} // namespace lbann
+
+#endif // LBANN_UTILS_DESCRIPTION_HPP

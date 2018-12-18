@@ -1,0 +1,61 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#include "lbann/utils/description.hpp"
+
+namespace lbann {
+
+description::description(std::string title, std::string indent)
+  : m_title(std::move(title)),
+    m_indent(std::move(indent)) {}
+
+std::ostream& operator<<(std::ostream& os, const description& desc) {
+  os << desc.m_title << "\n";
+  for (const auto& line : desc.m_lines) {
+    if (!line.empty()) {
+      os << desc.m_indent << line;
+    }
+    os << "\n";
+  }
+  return os;
+}
+
+void description::append_line(std::string line) {
+  m_lines.push_back(std::move(line));
+}
+
+void description::append(const description& desc) {
+  append(desc.m_title);
+  for (const auto& line : desc.m_lines) {
+    if (line.empty()) {
+      append_line("");
+    } else {
+      append_line(desc.m_indent + line);
+    }
+  }
+}
+
+} // namespace lbann
