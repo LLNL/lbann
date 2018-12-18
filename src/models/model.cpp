@@ -430,8 +430,19 @@ description model::get_description(std::string indent) const {
   desc.add(std::string{});
   desc.add(layer_details_desc);
 
-  /// @todo Descriptions for objective function, weights, metrics,
-  /// callbacks
+  // Weights
+  description weights_desc("Weights", indent);
+  for (const auto* w : m_weights) {
+    if (w == nullptr) {
+      weights_desc.add("unknown weights");
+    } else {
+      weights_desc.add(w->get_description(indent));
+    }
+  }
+  desc.add(std::string{});
+  desc.add(weights_desc);
+
+  /// @todo Descriptions for objective function, metrics, callbacks
 
   // Result
   return desc;

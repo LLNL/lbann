@@ -149,7 +149,7 @@ description Layer::get_description(std::string indent) const {
   // Input dimensions
   const auto& parents = get_parent_layers();
   if (!parents.empty()) {
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < parents.size(); ++i) {
       ss << (i > 0 ? ", " : "");
@@ -172,7 +172,7 @@ description Layer::get_description(std::string indent) const {
   // Output dimensions
   const auto& children = get_child_layers();
   if (!children.empty()) {
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < children.size(); ++i) {
       ss << (i > 0 ? ", " : "");
@@ -195,7 +195,7 @@ description Layer::get_description(std::string indent) const {
   // Weights
   const auto& weights_list = get_weights();
   if (!weights_list.empty()) {
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < weights_list.size(); ++i) {
       ss << (i > 0 ? ", " : "");
@@ -214,7 +214,7 @@ description Layer::get_description(std::string indent) const {
   }
 
   // Data layout
-  ss.str(std::string());
+  ss.str(std::string{});
   ss.clear();
   switch (get_data_layout()) {
   case data_layout::DATA_PARALLEL:  ss << "data-parallel";  break;
@@ -226,7 +226,7 @@ description Layer::get_description(std::string indent) const {
   desc.add("Data layout", ss.str());
 
   // Device
-  ss.str(std::string());
+  ss.str(std::string{});
   ss.clear();
   switch (get_device_allocation()) {
   case El::Device::CPU: ss << "CPU";     break;
@@ -242,9 +242,7 @@ description Layer::get_description(std::string indent) const {
     desc.add("Frozen");
   }
 
-  // Result
   return desc;
-
 }
 
 void Layer::forward_prop() {

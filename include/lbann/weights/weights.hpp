@@ -36,6 +36,7 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/description.hpp"
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -79,6 +80,9 @@ public:
    *  deallocating the instance.
    */
   weights* copy() const { return new weights(*this); }
+
+  /** Get human-readable description. */
+  description get_description(std::string indent = "  ") const;
 
   // -----------------------------------------------
   // Dimension accessors
