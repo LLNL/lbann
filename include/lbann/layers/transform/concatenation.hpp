@@ -63,14 +63,13 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
-    auto&& desc = transform_layer::get_description();
-    desc.push_back("Concatenation dimension: "
-                   + std::to_string(m_concat_dim));
+  description get_description(std::string indent) const override {
+    auto&& desc = transform_layer::get_description(indent);
+    desc.add("Concatenation dimension", m_concat_dim);
     return desc;
   }
+
+protected:
 
   void setup_pointers() override {
     transform_layer::setup_pointers();

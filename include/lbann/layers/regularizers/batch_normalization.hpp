@@ -137,19 +137,15 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
-    if (m_use_global_stats) {
-      desc.push_back("Statistics: local");
-    } else {
-      desc.push_back("Statistics: global");
-    }
-    desc.push_back("Decay: " + std::to_string(m_decay));
-    desc.push_back("Epsilon: " + std::to_string(m_epsilon));
+  description get_description(std::string indent) const override {
+    auto&& desc = regularizer_layer::get_description(indent);
+    desc.add("Decay", m_decay);
+    desc.add("Epsilon", m_epsilon);
+    desc.add("Global statistics", m_use_global_stats);
     return desc;
   }
+
+protected:
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);

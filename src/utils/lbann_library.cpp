@@ -201,7 +201,7 @@ model *build_model_from_prototext(int argc, char **argv,
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      model->print_description(std::cout);
+      std::cout << model->get_description();
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;

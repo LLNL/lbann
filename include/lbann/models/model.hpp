@@ -87,10 +87,8 @@ public:
     return m_name;
   }
 
-  /** Print human-readable model description. */
-  virtual void print_description(std::ostream& os,
-                                 std::string separator="\n  ",
-                                 bool trailing_newline = true) const;
+  /** Get human-readable description. */
+  virtual description get_description(std::string indent = "  ") const;
 
   /** Set up the model. */
   virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);

@@ -56,12 +56,13 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-protected:
-  std::vector<std::string> get_description() const override {
-    auto&& desc = Layer::get_description();
-    desc.push_back("Alpha: " + std::to_string(m_alpha));
+  description get_description(std::string indent) const override {
+    auto&& desc = Layer::get_description(indent);
+    desc.add("alpha", m_alpha);
     return desc;
   }
+
+protected:
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims(get_input_dims());

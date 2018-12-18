@@ -116,13 +116,13 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
-    desc.push_back("Keep probability: " + std::to_string(m_keep_prob));
+  description get_description(std::string indent) const override {
+    auto&& desc = regularizer_layer::get_description(indent);
+    desc.add("Keep probability", m_keep_prob);
     return desc;
   }
+
+protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();

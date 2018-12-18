@@ -43,17 +43,17 @@ std::ostream& operator<<(std::ostream& os, const description& desc) {
   return os;
 }
 
-void description::append_line(std::string line) {
+void description::add(std::string line) {
   m_lines.push_back(std::move(line));
 }
 
-void description::append(const description& desc) {
-  append(desc.m_title);
+void description::add(const description& desc) {
+  add(desc.m_title);
   for (const auto& line : desc.m_lines) {
     if (line.empty()) {
-      append_line("");
+      add(std::string{});
     } else {
-      append_line(desc.m_indent + line);
+      add(desc.m_indent + line);
     }
   }
 }

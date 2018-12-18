@@ -71,6 +71,12 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
+  description get_description(std::string indent) const override {
+    auto&& desc = Layer::get_description(indent);
+    desc.add("Biased", m_biased);
+    return desc;
+  }
+
 protected:
 
   void setup_matrices(const El::Grid& grid) override {

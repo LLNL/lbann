@@ -59,7 +59,7 @@ public:
                                   const description& desc);
 
   /** Add new line. */
-  void append_line(std::string line);
+  void add(std::string line);
 
   /** Add new line describing a field value.
    *
@@ -70,11 +70,11 @@ public:
    *  @endcode
    */
   template <typename T>
-  void append_line(std::string field, T value) {
+  void add(std::string field, T value) {
     std::stringstream ss;
     ss.setf(std::ios_base::boolalpha);
     ss << field << ": " << value;
-    append_line(ss.str());
+    add(ss.str());
   }
 
   /** Insert a nested @c description.
@@ -90,14 +90,22 @@ public:
    *      That: 123
    *  @endcode
    */
-  void append(const description& desc);
+  void add(const description& desc);
 
 private:
 
-  /** First line of message. */
+  /** First line of message.
+   *
+   *  When printed, this line isn't indented.
+   */
   std::string m_title;
-  /** Lines in message (excluding first line). */
+
+  /** Lines in message (excluding first line).
+   *
+   *  When printed, each line is indented.
+   */
   std::vector<std::string> m_lines;
+
   /** Indentation string. */
   std::string m_indent;
 
