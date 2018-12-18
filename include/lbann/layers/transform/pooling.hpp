@@ -163,11 +163,11 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(indent);
+    auto&& desc = transform_layer::get_description(std::move(indent));
     std::stringstream ss;
 
     // Pool mode
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     switch (m_pool_mode) {
     case pool_mode::max:            ss << "max";              break;
@@ -180,7 +180,7 @@ public:
     desc.add("Pool mode", ss.str());
 
     // Pool dimensions
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_pool_dims.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_pool_dims[i];
@@ -188,7 +188,7 @@ public:
     desc.add("Pool dimensions", ss.str());
 
     // Strides
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_strides.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_strides[i];
@@ -196,7 +196,7 @@ public:
     desc.add("Strides", ss.str());
 
     // Pads
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_pads.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_pads[i];

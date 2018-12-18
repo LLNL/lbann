@@ -62,7 +62,7 @@ class zero_layer : public transform_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(indent);
+    auto&& desc = transform_layer::get_description(std::move(indent));
     desc.add("First half", m_first_half);
     desc.add("Second half", m_second_half);
     return desc;

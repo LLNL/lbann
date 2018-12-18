@@ -236,11 +236,11 @@ public:
   }
 
   description get_description(std::string indent) const override {
-    auto&& desc = learning_layer::get_description(indent);
+    auto&& desc = learning_layer::get_description(std::move(indent));
     std::stringstream ss;
 
     // Convolution dimensions
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 2; i < m_kernel_dims.size(); ++i) {
       ss << (i > 2 ? ", " : "" ) << m_kernel_dims[i];
@@ -248,7 +248,7 @@ public:
     desc.add("Convolution dimensions", ss.str());
 
     // Strides
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_strides.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_strides[i];
@@ -256,7 +256,7 @@ public:
     desc.add("Strides", ss.str());
 
     // Pads
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_pads.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_pads[i];
@@ -264,7 +264,7 @@ public:
     desc.add("Pads", ss.str());
 
     // Dilation
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     for (size_t i = 0; i < m_dilations.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_dilations[i];
@@ -275,7 +275,7 @@ public:
     desc.add("Groups", m_num_groups);
 
     // Bias
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
     ss << (m_bias_scaling_factor == DataType(0) ?
            "disabled" : "enabled");

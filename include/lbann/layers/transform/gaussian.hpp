@@ -60,7 +60,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(indent);
+    auto&& desc = transform_layer::get_description(std::move(indent));
     desc.add("Mean", m_mean);
     desc.add("Standard deviation", m_stdev);
     return desc;
