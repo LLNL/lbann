@@ -31,10 +31,10 @@
 
 namespace lbann {
 
-/** Templated class for entry-wise binary layers.
- *  'Name' should be a type such that Name() returns a human-readable
- *  layer name, e.g. an empty struct that can be converted to a
- *  string.
+/** @brief Templated class for entry-wise binary layers.
+ *  @param Layout   Parallelism scheme.
+ *  @param Device   Device allocation.
+ *  @param Name     Type that can be converted into a string.
  */
 template <data_layout Layout, El::Device Device, typename Name>
 class entrywise_binary_layer : public Layer {
@@ -58,14 +58,14 @@ protected:
 
     // Check that input dimensions match
     if (get_input_dims(0) != get_input_dims(1)) {
+      const auto& parents = get_parent_layers();
       std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
           << "has input tensors with different dimensions (";
       for (int i = 0; i < get_num_parents(); ++i) {
-        err << (i > 0 ? ", " : "")
-            << "layer \"" << m_parent_layers[i]->get_name() << "\" "
-            << "outputs ";
         const auto& dims = get_input_dims(i);
+        err << (i > 0 ? ", " : "")
+            << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {
           err << (j > 0 ? " x " : "") << dims[j];
         }

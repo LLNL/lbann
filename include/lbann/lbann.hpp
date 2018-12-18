@@ -63,6 +63,7 @@
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/math/clamp.hpp"
 
 /// Transform Layers
 #include "lbann/layers/transform/reshape.hpp"
@@ -89,6 +90,7 @@
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
+#include "lbann/layers/transform/tessellate.hpp"
 
 /// Regularization layers.
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -215,5 +217,7 @@
 #include "lbann/utils/peek_map.hpp"
 #include "lbann/utils/stack_trace.hpp"
 #include "lbann/utils/stack_profiler.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
 
 #endif // LBANN_HPP_INCLUDED

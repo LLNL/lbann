@@ -40,6 +40,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <lbann.pb.h>
 #include <vector>
 #include <string>
@@ -52,7 +53,7 @@ class lbann_callback;
 
 /** Base class for LBANN models. */
 class model {
- public:
+public:
 
   /** Constructor. */
   model(lbann_comm *comm,
@@ -92,7 +93,7 @@ class model {
                                  bool trailing_newline = true) const;
 
   /** Set up the model. */
-  virtual void setup();
+  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Add layer to model. */
   virtual void add_layer(Layer *layer);
@@ -142,6 +143,9 @@ class model {
 
   /** Return the model's weights. */
   const std::vector<weights *>& get_weights() const { return m_weights; }
+
+  /** Return the I/O thread pool */
+  std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
@@ -251,7 +255,7 @@ class model {
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
- protected:
+protected:
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
@@ -307,12 +311,12 @@ class model {
   /** List of weights in model. */
   std::vector<weights *> m_weights;
 
+  /** Threads available for I/O */
+  std::shared_ptr<thread_pool> m_io_thread_pool;
+
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
 
-  /** Construct a layer graph. */
-  virtual void construct_layer_graph(std::set<int>& nodes,
-                                     std::map<int,std::set<int>>& edges) const;
   /** Reorder layers. */
   virtual void permute_layers(const std::vector<int>& permutation);
 
@@ -425,7 +429,8 @@ class model {
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
- private:
+private:
+
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
   /** Insert evaluation layers where needed.

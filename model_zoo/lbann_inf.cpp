@@ -50,12 +50,15 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
+    // Initalize a global I/O thread pool
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
     std::vector<model*> models;
     for(auto pb_model : pbs) {
       models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
-                                                     comm, models.size() == 0));
+                                                     comm, io_thread_pool, models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given

@@ -5,24 +5,22 @@ model {
   mini_batch_size: 100
   block_size: 256
   num_epochs: 50
-  num_parallel_readers: 0
-  procs_per_model: 0
 
-  ###################################################
+  ##############################################
   # Objective function
-  ###################################################
+  ##############################################
 
   objective_function {
-    layer_term { layer: "binary_cross_entropy" }
+    layer_term { layer: "binary_cross_entropy_sum" }
     layer_term { layer: "kldiv" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
   }
 
-  ###################################################
+  ##############################################
   # Metrics
-  ###################################################
+  ##############################################
 
   metric {
     layer_metric {
@@ -31,35 +29,24 @@ model {
     }
   }
 
-  ###################################################
+  ##############################################
   # Callbacks
-  ###################################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
+  ##############################################
+
+  callback { print {} }
   callback { timer {} }
-  callback {
-    dump_outputs {
-      layers: "relu1 sum"
-      execution_modes: "test"
-    }
-  }
   callback {
     save_images {
       layers: "image reconstruction"
-      image_format: "pgm"
+      image_format: "jpg"
     }
   }
 
-  ###################################################
-  # start of layers
-  ###################################################
+  ##############################################
+  # Layers
+  ##############################################
 
-  ######################
   # Data
-  ######################
   layer {
     name: "data"
     children: "image dummy"
@@ -81,10 +68,7 @@ model {
     dummy {}
   }
 
-  ######################
   # Encoder
-  ######################
-
   layer {
     parents: "image"
     name: "encode1"
@@ -131,10 +115,7 @@ model {
     relu {}
   }
 
-  ######################
   # Latent space
-  ######################
-
   layer {
     parents: "encode3neuron"
     name: "mu"
@@ -154,10 +135,7 @@ model {
     }
   }
 
-  ######################
   # KL divergence
-  ######################
-
   layer {
     parents: "logsd"
     name: "sd"
@@ -194,23 +172,18 @@ model {
     parents: "kldiv_full"
     name: "kldiv"
     data_layout: "data_parallel"
-    reduction {
-      mode: "sum"
-    }
+    reduction { mode: "sum" }
   }
 
-  ######################
   # Generate sample
-  ######################
-
   layer {
     name: "noise"
     data_layout: "data_parallel"
     gaussian {
-      neuron_dims: "30"
       mean: 0
       stdev: 1
     }
+    hint_layer: "mu"
   }
   layer {
     parents: "noise sd"
@@ -222,21 +195,18 @@ model {
     parents: "mu sdnoise"
     name: "sample"
     data_layout: "data_parallel"
-    sum {}
+    add {}
   }
 
-  ######################
   # Decoder
-  ######################
-
   layer {
     parents: "sample"
     name: "decode4"
     data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 250
       has_bias: true
     }
+    hint_layer: "encode3"
   }
   layer {
     parents: "decode4"
@@ -249,9 +219,9 @@ model {
     name: "decode3"
     data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 500
       has_bias: true
     }
+    hint_layer: "encode2"
   }
   layer {
     parents: "decode3"
@@ -264,9 +234,9 @@ model {
     name: "decode2"
     data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 1000
       has_bias: true
     }
+    hint_layer: "encode1"
   }
   layer {
     parents: "decode2"
@@ -279,15 +249,12 @@ model {
     name: "decode1"
     data_layout: "data_parallel"
     fully_connected {
-      num_neurons: 784
       has_bias: true
     }
+    hint_layer: "image"
   }
 
-  ######################
   # Reconstruction error
-  ######################
-
   layer {
     parents: "decode1"
     name: "reconstruction"
@@ -295,10 +262,16 @@ model {
     sigmoid {}
   }
   layer {
-    parents: "reconstruction image"
+    parents: "decode1 image"
     name: "binary_cross_entropy"
     data_layout: "data_parallel"
-    binary_cross_entropy {}
+    sigmoid_binary_cross_entropy {}
+  }
+  layer {
+    parents: "binary_cross_entropy"
+    name: "binary_cross_entropy_sum"
+    data_layout: "data_parallel"
+    reduction { mode: "sum" }
   }
   layer {
     parents: "reconstruction image"
@@ -307,7 +280,4 @@ model {
     mean_squared_error {}
   }
 
-  ###################################################
-  # end of layers
-  ###################################################
 }

@@ -33,9 +33,7 @@
 
 namespace lbann {
 
-/** Split layer.
- *  This layer can accommodate an arbitrary number of outputs.
- */
+/** @brief Present input tensor to multiple outputs. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class split_layer : public transform_layer {
 public:

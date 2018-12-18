@@ -74,8 +74,8 @@ class mesh_reader : public generic_data_reader {
         m_data_width};
   }
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   /**
    * Load filename into mat.

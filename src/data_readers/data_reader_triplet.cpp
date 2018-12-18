@@ -80,8 +80,8 @@ void data_reader_triplet::set_input_params(const int width, const int height, co
 }
 
 
-bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
-
+bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   sample_t sample = m_samples.get_sample(data_id);
@@ -114,7 +114,7 @@ bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) 
 }
 
 
-bool data_reader_triplet::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_triplet::fetch_label(Mat& Y, int data_id, int mb_idx) {
   const label_t label = m_samples.get_label(data_id);
   Y.Set(label, mb_idx, 1);
   return true;
@@ -124,11 +124,6 @@ bool data_reader_triplet::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) 
 std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list_of_current_mb() const {
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
-
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-    ret.emplace_back(m_samples.get_sample(index));
-  }
   return ret;
 }
 
