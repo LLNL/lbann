@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-class data_buffer {
+class dist_data_buffer {
  public:
   /** Which rank is the root of the CircMat */
   int m_root;
@@ -47,7 +47,7 @@ class data_buffer {
   std::vector<CPUMat*> M_local_v; /** View of local matrix that holds data from data reader */
   std::vector<CircMat<El::Device::CPU>*> Ms; /** Distributed matrix used to stage local data to layer output */
 
-  data_buffer(lbann_comm *comm, int num_child_layers) :
+  dist_data_buffer(lbann_comm *comm, int num_child_layers) :
     m_root(0),
     m_local_reader_done(false),
     m_num_samples_in_batch(0),
@@ -60,11 +60,11 @@ class data_buffer {
     }
   }
 
-  data_buffer(
-    const data_buffer&) = default;
-  data_buffer& operator=(
-    const data_buffer&) = default;
-  data_buffer* copy() const { return new data_buffer(*this); }
+  dist_data_buffer(
+    const dist_data_buffer&) = default;
+  dist_data_buffer& operator=(
+    const dist_data_buffer&) = default;
+  dist_data_buffer* copy() const { return new dist_data_buffer(*this); }
 };
 
 /**
@@ -72,7 +72,7 @@ class data_buffer {
  */
 class distributed_io_buffer : public generic_io_buffer {
  public:
-  typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
+  typedef std::map<execution_mode, dist_data_buffer *> data_buffer_map_t;
   /** Requested maximum number of parallel readers (I/O streams) */
   int m_requested_max_num_parallel_readers;
  public:
@@ -134,8 +134,8 @@ class distributed_io_buffer : public generic_io_buffer {
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
   static bool check_num_parallel_readers(long data_set_size, int mini_batch_size, int num_parallel_readers, const lbann_comm* comm);
 
-  data_buffer *get_data_buffer(const execution_mode mode) const {
-    data_buffer *data_buffer = nullptr;
+  dist_data_buffer *get_data_buffer(const execution_mode mode) const {
+    dist_data_buffer *data_buffer = nullptr;
     data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
     if (it != m_data_buffers.end()) data_buffer = it->second;
 
@@ -156,19 +156,19 @@ class distributed_io_buffer : public generic_io_buffer {
 
   /// Return the rank of the current root node for the Elemental Distribution
   virtual int current_root_rank(execution_mode mode) const {
-    data_buffer *buf = get_data_buffer(mode);
+    dist_data_buffer *buf = get_data_buffer(mode);
     return buf->m_root;
   }
 
   /// Is this rank the current root node for the Elemental Distribution
   bool is_current_root(execution_mode mode) const {
-    data_buffer *buf = get_data_buffer(mode);
+    dist_data_buffer *buf = get_data_buffer(mode);
     return (m_comm->get_rank_in_model() == buf->m_root);
   }
 
   /// Is the local reader done
   virtual bool is_local_reader_done(execution_mode mode) const {
-    data_buffer *buf = get_data_buffer(mode);
+    dist_data_buffer *buf = get_data_buffer(mode);
     return buf->m_local_reader_done;
   }
 

@@ -31,10 +31,43 @@
 
 namespace lbann {
 
+class data_buffer {
+ public:
+  /** Distributed matrix used to stage local data to layer output */
+  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
+
+  data_buffer(lbann_comm *comm, int num_child_layers) {
+    m_input_buffers.clear();
+    m_input_buffers.resize(num_child_layers);
+    for(int i = 0; i < num_child_layers; i++) {
+      m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_model_grid()));
+    }
+  }
+
+  data_buffer(const data_buffer& other) {
+    m_input_buffers.clear();
+    m_input_buffers.reserve(other.m_input_buffers.size());
+    for (const auto& ptr : other.m_input_buffers) {
+      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+    }
+  }
+  data_buffer& operator=(const data_buffer& other) {
+    m_input_buffers.clear();
+    m_input_buffers.reserve(other.m_input_buffers.size());
+    for (const auto& ptr : other.m_input_buffers) {
+      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+    }
+    return *this;
+  }
+  data_buffer* copy() const { return new data_buffer(*this); }
+};
+
 /**
  * Parallel I/O routines for managing partitioned minibatches
  */
 class partitioned_io_buffer : public generic_io_buffer {
+ public:
+  typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
  public:
   partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
   partitioned_io_buffer(const partitioned_io_buffer& other);
@@ -58,11 +91,32 @@ class partitioned_io_buffer : public generic_io_buffer {
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
+  data_buffer *get_data_buffer(const execution_mode mode) const {
+    data_buffer *data_buffer = nullptr;
+    data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
+    if (it != m_data_buffers.end()) data_buffer = it->second;
+
+    switch(mode) {
+    case execution_mode::training:
+      break;
+    case execution_mode::validation:
+      break;
+    case execution_mode::testing:
+      break;
+    default:
+      throw lbann_exception(
+                            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+                            " :: distributed_io_buffer: invalid execution phase");
+    }
+    return data_buffer;
+  }
+
   /** Input buffers
    *  Each matrix column corresponds to a flattened mini-batch sample
    *  or label or responase.
    */
-  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
+  //  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
+  data_buffer_map_t m_data_buffers;
   int m_num_samples_fetched;
 };
 }
