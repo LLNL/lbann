@@ -67,7 +67,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(indent);
+    auto&& desc = transform_layer::get_description(std::move(indent));
     std::string mode_str;
     switch (m_mode) {
     case reduction_mode::SUM:     mode_str = "sum";     break;

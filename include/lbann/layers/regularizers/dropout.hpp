@@ -117,7 +117,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = regularizer_layer::get_description(indent);
+    auto&& desc = regularizer_layer::get_description(std::move(indent));
     desc.add("Keep probability", m_keep_prob);
     return desc;
   }

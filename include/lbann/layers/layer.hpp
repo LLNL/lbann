@@ -97,7 +97,7 @@ public:
    */
   inline void set_name(const std::string name) { m_name = name; }
 
-  /** Get human-readable description. */
+  /** Human-readable description. */
   virtual description get_description(std::string indent = "  ") const;
 
   /** Forward propagation step.

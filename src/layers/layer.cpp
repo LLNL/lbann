@@ -143,7 +143,7 @@ description Layer::get_description(std::string indent) const {
 
   // Construct description object
   std::stringstream ss;
-  ss << get_type() << " layer \"" << get_name() << "\"";
+  ss << get_name() << " (" << get_type() << ")";
   description desc(ss.str(), indent);
 
   // Input dimensions

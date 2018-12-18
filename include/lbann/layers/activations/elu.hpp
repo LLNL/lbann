@@ -57,7 +57,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = Layer::get_description(indent);
+    auto&& desc = Layer::get_description(std::move(indent));
     desc.add("alpha", m_alpha);
     return desc;
   }

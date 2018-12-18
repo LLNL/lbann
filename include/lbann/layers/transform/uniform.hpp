@@ -61,7 +61,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(indent);
+    auto&& desc = transform_layer::get_description(std::move(indent));
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << ")";
     desc.add("Range", ss.str());

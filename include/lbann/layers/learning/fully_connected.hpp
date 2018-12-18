@@ -108,7 +108,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description(std::string indent) const override {
-    auto&& desc = learning_layer::get_description(indent);
+    auto&& desc = learning_layer::get_description(std::move(indent));
     const auto& bias_str = (m_bias_scaling_factor == DataType(0) ?
                             "disabled" : "enabled");
     desc.add("Bias", bias_str);
