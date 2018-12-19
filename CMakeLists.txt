@@ -361,10 +361,16 @@ if (LBANN_WITH_CONDUIT)
     find_package(CONDUIT CONFIG REQUIRED)
   endif ()
   
-  # Ugh. I don't like that this requires intimate knowledge of specific targets that
-  # CONDUIT should support components.
+  # Ugh. I don't like that this requires intimate knowledge of
+  # specific targets that CONDUIT exports. It should support
+  # components.
   if (NOT TARGET conduit_relay_mpi)
     message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
+  endif ()
+
+  if (NOT TARGET conduit OR NOT TARGET conduit_relay
+      OR NOT TARGET conduit_blueprint)
+    message(FATAL_ERROR "Missing some CONDUIT required library.")
   endif ()
 
   if (NOT TARGET conduit::conduit)
