@@ -75,24 +75,24 @@ class cv_utils {
 
   // copy_buf_to_cvMat (with an El::Matrix<DataType> block)
   template<typename T = DataType, int NCh = 3>
-  static bool copy_cvMat_to_buf_with_full_info(const cv::Mat& image, ::Mat& buf, const cv_process& pp);
+  static bool copy_cvMat_to_buf_with_full_info(const cv::Mat& image, CPUMat& buf, const cv_process& pp);
 
   template<typename T = DataType>
-  static bool copy_cvMat_to_buf_with_known_type(const cv::Mat& image, ::Mat& buf, const cv_process& pp);
+  static bool copy_cvMat_to_buf_with_known_type(const cv::Mat& image, CPUMat& buf, const cv_process& pp);
 
   /** Copy a cv::Mat image into an El::Matrix<DataType> block.
    *  The argument pp specifies the parameters for image preprocessing that
    *  takes advantage of the OpenCV framework. Returns true if successful.
    */
-  static bool copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_process& pp);
+  static bool copy_cvMat_to_buf(const cv::Mat& image, CPUMat& buf, const cv_process& pp);
 
 
   // copy_buf_to_cvMat (with an El::Matrix<DataType> block)
   template<typename T = DataType, int NCh = 3>
-  static cv::Mat copy_buf_to_cvMat_with_full_info(const ::Mat& buf, const int Width, const int Height, const cv_process& pp);
+  static cv::Mat copy_buf_to_cvMat_with_full_info(const CPUMat& buf, const int Width, const int Height, const cv_process& pp);
 
   template<typename T = DataType>
-  static cv::Mat copy_buf_to_cvMat_with_known_type(const ::Mat& buf, const int Width, const int Height, const cv_process& pp);
+  static cv::Mat copy_buf_to_cvMat_with_known_type(const CPUMat& buf, const int Width, const int Height, const cv_process& pp);
 
   /** Reconstruct a cv::Mat image from an El::Matrix<DataType> block.
    *  The image size is specified by Width and Height. Type indetifies the
@@ -101,7 +101,7 @@ class cv_utils {
    *  Returns a reconstructed cv::Mat image if successful and an empty one
    *  otherwise.
    */
-  static cv::Mat copy_buf_to_cvMat(const ::Mat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
+  static cv::Mat copy_buf_to_cvMat(const CPUMat& buf, const int Width, const int Height, const int Type, const cv_process& pp);
 
   /**
    *  Use cv::imdecode() to load an image data instead of relying on cv::imread().
@@ -296,7 +296,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
  */
 template<typename T, int NCh>
 inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
-  const cv::Mat& image, ::Mat& buf, const cv_process& pp) {
+  const cv::Mat& image, CPUMat& buf, const cv_process& pp) {
   // NCh need not be a template parameter here. It can be a function argument.
   // However, keeping it as a static parameter enables custom accesses on pixels
   // For example,
@@ -379,7 +379,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_full_info(
  */
 template<typename T>
 inline bool cv_utils::copy_cvMat_to_buf_with_known_type(
-  const cv::Mat& image, ::Mat& buf, const cv_process& pp) {
+  const cv::Mat& image, CPUMat& buf, const cv_process& pp) {
   _SWITCH_CV_FUNC_KNOWN_TYPE_3PARAMS(image.channels(), T, \
                                      copy_cvMat_to_buf_with_full_info, \
                                      image, buf, pp)
@@ -402,7 +402,7 @@ inline bool cv_utils::copy_cvMat_to_buf_with_known_type(
  */
 template<typename T, int NCh>
 inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
-  const ::Mat& buf, const int Width, const int Height, const cv_process& pp) {
+  const CPUMat& buf, const int Width, const int Height, const cv_process& pp) {
 
   const int sz = Height*Width;
   _LBANN_MILD_EXCEPTION(sz*NCh != buf.Height(), \
@@ -469,7 +469,7 @@ inline cv::Mat cv_utils::copy_buf_to_cvMat_with_full_info(
  */
 template<typename T>
 inline cv::Mat cv_utils::copy_buf_to_cvMat_with_known_type(
-  const ::Mat& buf, const int Width, const int Height, const cv_process& pp) {
+  const CPUMat& buf, const int Width, const int Height, const cv_process& pp) {
   _LBANN_MILD_EXCEPTION(buf.Height() == 0u || buf.Width() == 0u || Width == 0 || Height == 0, \
                         "An empty image (" << Height << " x " << Width << ") or a buffer (" \
                         << buf.Height() << " x " << buf.Width() << ").", \

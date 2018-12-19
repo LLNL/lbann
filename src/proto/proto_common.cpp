@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <sys/stat.h>
 
-using namespace lbann;
+namespace lbann {
 
 bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
   bool master = comm->am_world_master();
@@ -38,9 +38,9 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   }
 }
 
-int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data::LbannPB& p);
 
-void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
+void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
                        bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader, bool is_shareable_validation_data_reader)
 {
 #ifdef LBANN_HAS_CONDUIT
@@ -526,7 +526,7 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lbann_data::Model& model)
+bool check_if_num_parallel_readers_set(const lbann_comm *comm, const lbann_data::Model& model)
 {
   const bool master = comm->am_world_master();
   const int parallel_io = model.num_parallel_readers();
@@ -544,7 +544,7 @@ bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lban
   return true;
 }
 
-void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void set_num_parallel_readers(const lbann_comm *comm, lbann_data::LbannPB& p)
 {
   lbann_data::Model *model = p.mutable_model();
   const bool is_set = check_if_num_parallel_readers_set(comm, *model);
@@ -555,7 +555,7 @@ void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB
   }
 }
 
-int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p)
+int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data::LbannPB& p)
 {
   const lbann_data::Model& model = p.model();
   const bool is_set = check_if_num_parallel_readers_set(comm, model);
@@ -620,7 +620,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   }
 }
 
-void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void get_cmdline_overrides(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
   std::stringstream err;
@@ -760,7 +760,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
-void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void print_parameters(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   if (!comm->am_world_master()) {
     return;
@@ -822,7 +822,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
-void print_help(lbann::lbann_comm *comm)
+void print_help(lbann_comm *comm)
 {
   if (!comm->am_world_master()) {
     return;
@@ -919,7 +919,7 @@ void copy_file(std::string fn, std::ofstream &out)
   out << s.str();
 }
 
-void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
+void save_session(lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
 {
   if (!comm->am_world_master()) {
     return;
@@ -992,3 +992,5 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   out << s;
   out.close();
 }
+
+} // namespace lbann
