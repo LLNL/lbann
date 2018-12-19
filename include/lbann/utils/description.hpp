@@ -52,7 +52,7 @@ public:
   /** @param title  First line in description message.
    *  @param indent Indentation string.
    */
-  description(std::string title, std::string indent = "  ");
+  description(std::string title);
 
   /** Print description to stream. */
   friend std::ostream& operator<<(std::ostream& os,
@@ -105,9 +105,6 @@ private:
    *  When printed, each line is indented.
    */
   std::vector<std::string> m_lines;
-
-  /** Indentation string. */
-  std::string m_indent;
 
 };
 

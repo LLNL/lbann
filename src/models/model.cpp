@@ -363,14 +363,14 @@ void model::permute_layers(const std::vector<int>& permutation) {
   m_layers = std::move(reordered_layers);
 }
 
-description model::get_description(std::string indent) const {
+description model::get_description() const {
 
   // Construct description object
-  description desc(get_name(), indent);
+  description desc(get_name());
   desc.add("Type", get_type());
 
   // Layer topology
-  description layer_topology_desc("Layer topology:", indent);
+  description layer_topology_desc("Layer topology:");
   for (const auto* l : m_layers) {
     std::stringstream ss;
     if (l == nullptr) {
@@ -414,12 +414,12 @@ description model::get_description(std::string indent) const {
   desc.add(layer_topology_desc);
 
   // Layer details
-  description layer_details_desc("Layer details:", indent);
+  description layer_details_desc("Layer details:");
   for (const auto* l : m_layers) {
     if (l == nullptr) {
       layer_details_desc.add("unknown layer");
     } else {
-      layer_details_desc.add(l->get_description(indent));
+      layer_details_desc.add(l->get_description());
     }
   }
   desc.add(std::string{});

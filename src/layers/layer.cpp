@@ -139,12 +139,12 @@ Layer& Layer::operator=(const Layer& other) {
   return *this;
 }
 
-description Layer::get_description(std::string indent) const {
+description Layer::get_description() const {
 
   // Construct description object
   std::stringstream ss;
   ss << get_name() << " (" << get_type() << ")";
-  description desc(ss.str(), indent);
+  description desc(ss.str());
 
   // Input dimensions
   const auto& parents = get_parent_layers();

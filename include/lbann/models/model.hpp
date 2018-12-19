@@ -87,8 +87,8 @@ public:
     return m_name;
   }
 
-  /** Get human-readable description. */
-  virtual description get_description(std::string indent = "  ") const;
+  /** Human-readable description. */
+  virtual description get_description() const;
 
   /** Set up the model. */
   virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);

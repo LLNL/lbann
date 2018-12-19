@@ -28,15 +28,14 @@
 
 namespace lbann {
 
-description::description(std::string title, std::string indent)
-  : m_title(std::move(title)),
-    m_indent(std::move(indent)) {}
+description::description(std::string title)
+  : m_title(std::move(title)) {}
 
 std::ostream& operator<<(std::ostream& os, const description& desc) {
   os << desc.m_title << "\n";
   for (const auto& line : desc.m_lines) {
     if (!line.empty()) {
-      os << desc.m_indent << line;
+      os << "  " << line;
     }
     os << "\n";
   }
@@ -53,7 +52,7 @@ void description::add(const description& desc) {
     if (line.empty()) {
       add(std::string{});
     } else {
-      add(desc.m_indent + line);
+      add("  " + line);
     }
   }
 }
