@@ -342,14 +342,25 @@ if (LBANN_TOPO_AWARE)
 endif (LBANN_TOPO_AWARE)
 
 if (LBANN_WITH_CONDUIT)
+  # Apparently we have to find HDF5, too.
+  find_package(HDF5 CONFIG
+    HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
+    PATH_SUFFIXES share/cmake/hdf5
+    NO_DEFAULT_PATH)
+  if (NOT CONDUIT_FOUND)
+    find_package(HDF5 CONFIG REQUIRED)
+  endif ()
+  
   find_package(CONDUIT CONFIG
     NAMES conduit
     CONFIGS conduit.cmake
     HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
     NO_DEFAULT_PATH)
-  find_package(CONDUIT REQUIRED)
-
+  if (NOT CONDUIT_FOUND)
+    find_package(CONDUIT CONFIG REQUIRED)
+  endif ()
+  
   # Ugh. I don't like that this requires intimate knowledge of specific targets that
   # CONDUIT should support components.
   if (NOT TARGET conduit_relay_mpi)
@@ -363,7 +374,7 @@ if (LBANN_WITH_CONDUIT)
   set_target_properties(conduit::conduit
     PROPERTIES
     INTERFACE_LINK_LIBRARIES
-    conduit conduit_relay conduit_relay_mpi conduit_blueprint)
+    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
 
   set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
@@ -417,10 +428,6 @@ endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
-endif ()
-
-if (LBANN_HAS_CONDUIT)
-  target_link_libraries(lbann PUBLIC CONDUIT::CONDUIT)
 endif ()
 
 if (LBANN_HAS_CUDA)
