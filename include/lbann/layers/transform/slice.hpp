@@ -83,8 +83,8 @@ public:
   /** Get slice points (const). */
   std::vector<El::Int> get_slice_points() const { return m_slice_points; }
 
-  description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(std::move(indent));
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
     desc.add("Slice dimension", m_slice_dim);
     std::stringstream ss;
     for (size_t i = 0; i < m_slice_points.size(); ++i) {

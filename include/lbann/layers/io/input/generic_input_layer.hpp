@@ -125,8 +125,8 @@ class generic_input_layer : public io_layer {
 
   std::string get_type() const override { return "generic_input"; }
 
-  description get_description(std::string indent) const override {
-    auto&& desc = io_layer::get_description(std::move(indent));
+  description get_description() const override {
+    auto&& desc = io_layer::get_description();
     desc.add("Buffer", m_io_buffers[0]->get_type());
     return desc;
   }

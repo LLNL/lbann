@@ -235,8 +235,8 @@ public:
 #endif // LBANN_HAS_CUDNN
   }
 
-  description get_description(std::string indent) const override {
-    auto&& desc = learning_layer::get_description(std::move(indent));
+  description get_description() const override {
+    auto&& desc = learning_layer::get_description();
     std::stringstream ss;
 
     // Convolution dimensions

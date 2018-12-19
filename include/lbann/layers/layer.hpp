@@ -98,7 +98,7 @@ public:
   inline void set_name(const std::string name) { m_name = name; }
 
   /** Human-readable description. */
-  virtual description get_description(std::string indent = "  ") const;
+  virtual description get_description() const;
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output

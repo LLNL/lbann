@@ -59,8 +59,8 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  description get_description(std::string indent) const override {
-    auto&& desc = transform_layer::get_description(std::move(indent));
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
     desc.add("Mean", m_mean);
     desc.add("Standard deviation", m_stdev);
     return desc;
