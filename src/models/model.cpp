@@ -426,12 +426,12 @@ description model::get_description() const {
   desc.add(layer_details_desc);
 
   // Weights
-  description weights_desc("Weights", indent);
+  description weights_desc("Weights:");
   for (const auto* w : m_weights) {
     if (w == nullptr) {
       weights_desc.add("unknown weights");
     } else {
-      weights_desc.add(w->get_description(indent));
+      weights_desc.add(w->get_description());
     }
   }
   desc.add(std::string{});

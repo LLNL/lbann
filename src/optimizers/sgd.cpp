@@ -69,8 +69,8 @@ sgd::~sgd() {
   if (m_velocity != nullptr) { delete m_velocity; }
 }
 
-description sgd::get_description(std::string indent) const {
-  auto&& desc = optimizer::get_description(std::move(indent));
+description sgd::get_description() const {
+  auto&& desc = optimizer::get_description();
   desc.add("Momentum", m_momentum);
   desc.add("Nesterov acceleration", m_nesterov);
   return desc;

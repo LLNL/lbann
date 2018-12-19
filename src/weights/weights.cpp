@@ -121,11 +121,11 @@ weights& weights::operator=(const weights& other) {
   return *this;
 }
 
-description weights::get_description(std::string indent) const {
+description weights::get_description() const {
   std::stringstream ss;
 
   // Construct description object
-  description desc(get_name(), indent);
+  description desc(get_name());
 
   // Dimensions
   const auto& dims = get_dims();
@@ -138,12 +138,12 @@ description weights::get_description(std::string indent) const {
 
   // Optimizer
   if (m_optimizer != nullptr) {
-    desc.add(m_optimizer->get_description(indent));
+    desc.add(m_optimizer->get_description());
   }
 
   // Initializer
   if (m_initializer != nullptr) {
-    desc.add(m_initializer->get_description(indent));
+    desc.add(m_initializer->get_description());
   }
 
   // Freeze state

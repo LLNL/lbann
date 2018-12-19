@@ -88,8 +88,8 @@ optimizer::~optimizer() {
   if (m_gradient_staging != nullptr)  { delete m_gradient_staging; }
 }
 
-description optimizer::get_description(std::string indent) const {
-  description desc(get_type() + " optimizer", std::move(indent));
+description optimizer::get_description() const {
+  description desc(get_type() + " optimizer");
   desc.add("Learning rate", m_learning_rate);
   return desc;
 }

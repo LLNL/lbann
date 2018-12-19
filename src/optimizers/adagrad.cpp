@@ -59,8 +59,8 @@ adagrad::~adagrad() {
   if (m_cache != nullptr) { delete m_cache; }
 }
 
-description adagrad::get_description(std::string indent) const {
-  auto&& desc = optimizer::get_description(std::move(indent));
+description adagrad::get_description() const {
+  auto&& desc = optimizer::get_description();
   desc.add("eps", m_eps);
   return desc;
 }

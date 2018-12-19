@@ -69,8 +69,8 @@ rmsprop::~rmsprop() {
   if (m_cache != nullptr) { delete m_cache; }
 }
 
-description rmsprop::get_description(std::string indent) const {
-  auto&& desc = optimizer::get_description(std::move(indent));
+description rmsprop::get_description() const {
+  auto&& desc = optimizer::get_description();
   desc.add("Decay rate", m_decay_rate);
   desc.add("eps", m_eps);
   return desc;

@@ -42,7 +42,7 @@ public:
   virtual std::string get_type() const = 0;
 
   /** Human-readable description of class instance. */
-  virtual description get_description(std::string indent = "  ") const;
+  virtual description get_description() const;
 
   /** Create a copy. */
   virtual weights_initializer* copy() const = 0;
@@ -61,7 +61,7 @@ public:
     return new constant_initializer(*this);
   }
   std::string get_type() const { return "constant"; }
-  description get_description(std::string indent) const;
+  description get_description() const;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -103,7 +103,7 @@ class uniform_initializer : public weights_initializer {
     return new uniform_initializer(*this);
   }
   std::string get_type() const { return "uniform"; }
-  description get_description(std::string indent) const;
+  description get_description() const;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -127,7 +127,7 @@ public:
     return new normal_initializer(*this);
   }
   std::string get_type() const { return "normal"; }
-  description get_description(std::string indent) const;
+  description get_description() const;
   void fill(AbsDistMat& matrix) override;
 
 private:

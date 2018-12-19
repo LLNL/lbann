@@ -54,7 +54,7 @@ class rmsprop : public optimizer {
   /** Get the optimizer name. */
   std::string get_type() const override { return "RMSprop"; }
   /** Human-readable description. */
-  description get_description(std::string indent) const override;
+  description get_description() const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;

@@ -82,7 +82,7 @@ public:
   weights* copy() const { return new weights(*this); }
 
   /** Human-readable description. */
-  description get_description(std::string indent = "  ") const;
+  description get_description() const;
 
   // -----------------------------------------------
   // Dimension accessors

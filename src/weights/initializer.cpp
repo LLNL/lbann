@@ -30,13 +30,12 @@
 
 namespace lbann {
 
-description weights_initializer::get_description(std::string indent) const {
-  return description(get_type() + " weights initializer",
-                     std::move(indent));
+description weights_initializer::get_description() const {
+  return description(get_type() + " weights initializer");
 }
 
-description constant_initializer::get_description(std::string indent) const {
-  auto&& desc = weights_initializer::get_description(std::move(indent));
+description constant_initializer::get_description() const {
+  auto&& desc = weights_initializer::get_description();
   desc.add("Value", m_value);
   return desc;
 }
@@ -91,8 +90,8 @@ void value_initializer::fill(AbsDistMat& matrix) {
 
 }
 
-description uniform_initializer::get_description(std::string indent) const {
-  auto&& desc = weights_initializer::get_description(std::move(indent));
+description uniform_initializer::get_description() const {
+  auto&& desc = weights_initializer::get_description();
   std::stringstream ss;
   ss << "[" << m_min << "," << m_max << ")";
   desc.add("Range", ss.str());
@@ -104,8 +103,8 @@ void uniform_initializer::fill(AbsDistMat& matrix) {
                (m_max + m_min) / 2, (m_max - m_min) / 2);
 }
 
-description normal_initializer::get_description(std::string indent) const {
-  auto&& desc = weights_initializer::get_description(std::move(indent));
+description normal_initializer::get_description() const {
+  auto&& desc = weights_initializer::get_description();
   desc.add("Mean", m_mean);
   desc.add("Standard deviation", m_standard_deviation);
   return desc;

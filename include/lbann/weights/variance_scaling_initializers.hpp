@@ -45,7 +45,7 @@ namespace lbann {
 class variance_scaling_initializer : public weights_initializer {
 public:
   variance_scaling_initializer(probability_distribution dist);
-  description get_description(std::string indent) const;
+  description get_description() const;
   void fill(AbsDistMat& matrix) override;
 
   /** Set fan-in parameter. */
