@@ -37,7 +37,12 @@
 #include <algorithm>
 #include "lbann/utils/exception.hpp"
 #include <mpi.h>
-#include "lbann/data_readers/conduit_hdf5_utils.hpp"
+#include "hdf5.h"
+#include "conduit/conduit.hpp"
+#include "conduit/conduit_relay.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
+#include <unordered_set>
+//#include "lbann/data_readers/conduit_hdf5_utils.hpp"
 
 namespace lbann {
 
@@ -118,7 +123,7 @@ inline size_t sample_list<SN>::get_samples_per_file(std::istream& ifstr)
   // but not for list.
   // m_samples_per_file.reserve(num_files);
 
-  while (getline(ifstr, line)) {
+  while (std::getline(ifstr, line)) {
     std::stringstream sstr(line);
     std::string filename;
 
@@ -188,10 +193,11 @@ inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
   std::string line;
 
   size_t total_num_samples = 0u;
+
   m_samples_per_file.clear();
 
   if(!ifstr.good()) { LBANN_ERROR("Unable to read HDF5 sample index format"); }
-  getline(ifstr, line);
+  std::getline(ifstr, line);
   std::stringstream header1(line);
   int sample_count, num_files;
   header1 >> sample_count;
@@ -203,24 +209,30 @@ inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
 
 
   if(!ifstr.good()) { LBANN_ERROR("Unable to read HDF5 sample index format"); }
-  getline(ifstr, line);
+  std::getline(ifstr, line);
   std::stringstream header2(line);
   std::string file_dir;
   header2 >> file_dir;
+  const std::string whitespaces (" \t\f\v\n\r");
 
   std::cout << "Reading " << sample_count << " samples from " << num_files << " files and dir " << file_dir << std::endl;
-  while (getline(ifstr, line)) {
-    std::stringstream sstr(line);
+  while (std::getline(ifstr, line)) {
+    const size_t end_of_str = line.find_last_not_of(whitespaces);
+    if (end_of_str == std::string::npos) {
+      continue;
+    }
+    std::stringstream sstr(line.substr(0, end_of_str + 1));
     std::string filename;
     int valid_samples;
     int invalid_samples;
-    std::vector<int> invalid_sample_indices;
+    std::unordered_set<size_t> invalid_sample_indices;
+    invalid_sample_indices.reserve(valid_samples + invalid_samples);
 
     sstr >> filename >> valid_samples >> invalid_samples;
     while(!sstr.eof()) {
-      int index;
+      size_t index;
       sstr >> index;
-      invalid_sample_indices.emplace_back(index);
+      invalid_sample_indices.insert(index);
     }
 
     std::cout << "I am going to load the file " << filename << " which has " << valid_samples << " valid samples and " << invalid_samples << std::endl;
@@ -230,7 +242,7 @@ inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
     samples_of_current_file.reserve(valid_samples + invalid_samples);
 
     std::string conduit_file_path = file_dir + "/" + filename;
-    hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
+    hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
     if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
       std::cout << "Opening the file didn't work" << std::endl;
       continue; // skipping the file
@@ -239,7 +251,12 @@ inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", /*samples_of_current_file*/sample_names);
     // std::cout << " I have found that there are " << samples_of_current_file.size() << " samples" << std::endl;
     //    for(auto s : samples_of_current_file) {
+    size_t i = 0u;
     for(auto s : sample_names) {
+      std::unordered_set<size_t>::const_iterator found = invalid_sample_indices.find(i++);
+      if (found == invalid_sample_indices.cend()) {
+        continue;
+      }
       std::cout << " I have found a sample " << s << std::endl;
       m_sample_list.emplace_back(std::make_pair(conduit_file_path, s));
       //      m_sample_list.emplace_back(std::make_tuple(hdf5_file_hnd/*conduit_file_path*/, s));
@@ -252,7 +269,6 @@ inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
     const size_t num_samples_of_current_file = samples_of_current_file.size();
     total_num_samples += num_samples_of_current_file;
   }
-
   return total_num_samples;
 }
 

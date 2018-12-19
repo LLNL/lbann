@@ -48,11 +48,11 @@ class sample_list {
   /// The type for arbitrarily assigned index
   using sample_id_t = size_t;
   /// Type for list of sample names in a sample file
+  using sample_t = std::template pair<std::string, sample_name_t>;
+  using flat_sample_list_t = std::template vector< sample_t >;
   using samples_t = std::template vector<sample_name_t>;
-  //  using samples_t = std::template list<sample_name_t>;
   /// Type for list where an element is the list of samples in a sample file
   using sample_files_t = std::template vector< std::pair<std::string, samples_t> >;
-  //  using sample_files_t = std::template list< std::pair<std::string, samples_t> >;
 
   sample_list() : m_num_partitions(1u) {}
 
@@ -111,8 +111,7 @@ class sample_list {
    */
   sample_files_t m_samples_per_file;
 
-  /// Contains list of all sample
-  samples_t m_sample_list;
+  flat_sample_list_t m_sample_list;
 
   /// Contains starting sample id of each file
   std::vector<sample_id_t> m_sample_range_per_file;
