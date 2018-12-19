@@ -31,12 +31,13 @@
 
 namespace lbann {
 
-/** Mean absolute error layer.
- *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
- *  mean absolute error is
- *    \f[
- *    MAE(y,\hat{y}) = \frac{1}{n} \sum\limits_{i}^{n} | y_i - \hat{y}_i |
- *    \f]
+/** @brief
+ *
+ *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+ *  @f[
+ *    MAE(y,\hat{y})
+ *      = \frac{1}{n} \sum\limits_{i=1}^{n} | y_i - \hat{y}_i |
+ *  @f]
  */
 template <data_layout T_layout, El::Device Dev>
 class mean_absolute_error_layer : public Layer {

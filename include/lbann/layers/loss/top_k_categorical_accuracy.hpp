@@ -31,13 +31,15 @@
 
 namespace lbann {
 
-/** Top-k categorical accuracy layer.
- *  The two inputs are interpreted as prediction scores and
- *  ground-truth labels, respectively. An output is set to one if the
- *  corresponding label matches one of the top-k prediction scores and
- *  is otherwise zero. Each label is assumed to be a one-hot vector
- *  and ties in the top-k prediction scores are broken in favor of
- *  entries with smaller indices.
+
+/** @brief
+ *
+ *  Requires two inputs, which are respectively interpreted as
+ *  prediction scores and as a one-hot label vector. The output is one
+ *  if the corresponding label matches one of the top-k prediction
+ *  scores and is otherwise zero. Ties in the top-k prediction scores
+ *  are broken in favor of entries with smaller indices.
+ *
  *  @todo Gracefully handle case where label is not a one-hot vector.
  */
 template <data_layout T_layout, El::Device Dev>

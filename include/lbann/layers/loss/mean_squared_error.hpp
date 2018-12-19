@@ -31,12 +31,13 @@
 
 namespace lbann {
 
-/** Mean squared error layer.
- *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
- *  mean squared error is
- *    \f[
- *    MSE(y,\hat{y}) = \frac{1}{n} \sum\limits_{i}^{n} (y_i - \hat{y}_i)^2
- *    \f]
+/** @brief
+ *
+ *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+ *  @f[
+ *    MSE(y,\hat{y})
+ *      = \frac{1}{n} \sum\limits_{i=1}^{n} (y_i - \hat{y}_i)^2
+ *  @f]
  */
 template <data_layout T_layout, El::Device Dev>
 class mean_squared_error_layer : public Layer {

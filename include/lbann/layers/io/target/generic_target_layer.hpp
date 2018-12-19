@@ -38,6 +38,10 @@
 #include <unistd.h>
 
 namespace lbann {
+
+/** @brief Deprecated.
+ *  @todo Remove.
+ */
 class generic_target_layer : public Layer {
  public:
   generic_target_layer(lbann_comm *comm)

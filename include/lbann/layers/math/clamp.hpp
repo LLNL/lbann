@@ -24,43 +24,46 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
-#define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
+#ifndef LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED
+#define LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** @brief
+/** @brief Constrain values to a range.
  *
  *  @f[
- *    \text{LeakyReLU}(x; \alpha) =
+ *    \text{clamp}(x; \text{min}, \text{max}) =
  *      \begin{cases}
- *        x        & x > 0 \\
- *        \alpha x & x \leq 0
+ *        \text{min} & x \leq \text{min}           \\
+ *        x          & \text{min} < x < \text{max} \\
+ *        \text{max} & x \geq \text{max}
  *      \end{cases}
  *  @f]
- *  See:
- *
- *  Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
- *  nonlinearities improve neural network acoustic models." In
- *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
 template <data_layout Layout, El::Device Device>
-class leaky_relu_layer : public Layer {
+class clamp_layer : public Layer {
 public:
-  leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
-    : Layer(comm), m_negative_slope(negative_slope) {}
-  leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
-  std::string get_type() const override { return "leaky ReLU"; }
+  clamp_layer(lbann_comm *comm, DataType min, DataType max)
+    : Layer(comm), m_min(min), m_max(max) {
+    if (m_min > m_max) {
+      std::stringstream err;
+      err << "[" << m_min << "," << m_max << "] is an invalid range";
+      LBANN_ERROR(err.str());
+    }
+  }
+  clamp_layer* copy() const override { return new clamp_layer(*this); }
+  std::string get_type() const override { return "clamp"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
 protected:
   std::vector<std::string> get_description() const override {
     auto&& desc = Layer::get_description();
-    desc.push_back("Negative slope: "
-                   + std::to_string(m_negative_slope));
+    std::stringstream ss;
+    ss << "Range: [" << m_min << "," << m_max << "]";
+    desc.push_back(ss.str());
     return desc;
   }
   void setup_dims() override {
@@ -71,11 +74,13 @@ protected:
   void bp_compute() override;
 
 private:
-  /** Function slope in negative region. */
-  DataType m_negative_slope;
+  /** Minimum output. */
+  DataType m_min;
+  /** Maximum output. */
+  DataType m_max;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
+#endif // LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED

@@ -670,9 +670,9 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
-    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
+    ::Al::MPIAllreduceAlgorithm algo = ::Al::MPIAllreduceAlgorithm::mpi_passthrough;
 #else
-    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
+    ::Al::MPIAllreduceAlgorithm algo = ::Al::MPIAllreduceAlgorithm::automatic;
 #endif
     ::Al::Allreduce<::Al::MPIBackend>(
       snd, rcv, count, mpi_op_to_al_op(op), c.template GetComm<::Al::MPIBackend>(), algo);
@@ -689,9 +689,9 @@ class lbann_comm {
     bytes_sent += count * sizeof(T);
 #ifdef LBANN_HAS_ALUMINUM
 #ifdef LBANN_ALUMINUM_MPI_PASSTHROUGH
-    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::mpi_passthrough;
+    ::Al::MPIAllreduceAlgorithm algo = ::Al::MPIAllreduceAlgorithm::mpi_passthrough;
 #else
-    ::Al::AllreduceAlgorithm algo = ::Al::AllreduceAlgorithm::automatic;
+    ::Al::MPIAllreduceAlgorithm algo = ::Al::MPIAllreduceAlgorithm::automatic;
 #endif
     ::Al::Allreduce<::Al::MPIBackend>(
       data, count, mpi_op_to_al_op(op), c.template GetComm<::Al::MPIBackend>(), algo);

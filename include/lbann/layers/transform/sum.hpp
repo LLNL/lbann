@@ -32,7 +32,6 @@
 
 namespace lbann {
 
-/** Sum layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sum_layer : public transform_layer {
 public:
