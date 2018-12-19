@@ -38,6 +38,8 @@
 namespace lbann {
 
 template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+
+/** @brief Interface with data reader. */
 class input_layer : public generic_input_layer {
  public:
 
