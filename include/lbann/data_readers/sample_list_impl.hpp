@@ -254,15 +254,15 @@ inline size_t sample_list<SN>::get_samples_per_hdf5_file(std::istream& ifstr)
     size_t i = 0u;
     for(auto s : sample_names) {
       std::unordered_set<size_t>::const_iterator found = invalid_sample_indices.find(i++);
-      if (found == invalid_sample_indices.cend()) {
+      if (found != invalid_sample_indices.cend()) {
         continue;
       }
       std::cout << " I have found a sample " << s << std::endl;
-      m_sample_list.emplace_back(std::make_pair(conduit_file_path, s));
+//      m_sample_list.emplace_back(std::make_pair(conduit_file_path, s));
       //      m_sample_list.emplace_back(std::make_tuple(hdf5_file_hnd/*conduit_file_path*/, s));
     }
     for(auto s : m_sample_list) {
-      std::cout << "I have found a sample " << s.first << " and " << s.second << std::endl;
+//      std::cout << "I have found a sample " << s.first << " and " << s.second << std::endl;
       //      std::cout << "I have found a sample " << std::get<0>(s) << " and " << std::get<1>(s) << std::endl;
     }
 
