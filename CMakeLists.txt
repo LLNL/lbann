@@ -342,15 +342,31 @@ if (LBANN_TOPO_AWARE)
 endif (LBANN_TOPO_AWARE)
 
 if (LBANN_WITH_CONDUIT)
-  find_package(CONDUIT)
+  find_package(CONDUIT CONFIG
+    NAMES conduit
+    CONFIGS conduit.cmake
+    HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+    PATH_SUFFIXES lib64/cmake lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(CONDUIT REQUIRED)
+
+  # Ugh. I don't like that this requires intimate knowledge of specific targets that
+  # CONDUIT should support components.
+  if (NOT TARGET conduit_relay_mpi)
+    message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
+  endif ()
+
+  if (NOT TARGET conduit::conduit)
+    add_library(conduit::conduit INTERFACE IMPORTED)
+  endif ()
+
+  set_target_properties(conduit::conduit
+    PROPERTIES
+    INTERFACE_LINK_LIBRARIES
+    conduit conduit_relay conduit_relay_mpi conduit_blueprint)
+
+  set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
-  if (NOT LBANN_HAS_CONDUIT)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_CONDUIT but Conduit not found. "
-      "Conduit is now disabled. "
-      "Try specifying CONDUIT_DIR as the root of an CONDUIT install. "
-      "Alternatively, build with LBANN_WITH_CONDUIT=OFF.")
-  endif(NOT LBANN_HAS_CONDUIT)
 endif (LBANN_WITH_CONDUIT)
 
 # Handle the documentation
@@ -385,6 +401,7 @@ target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
