@@ -222,11 +222,10 @@ class generic_input_layer : public io_layer {
     }
   }
 
-  void fetch_data_in_background(int future_active_buffer, std::string foo) {
+  void fetch_data_in_background(int future_active_buffer, execution_mode mode) {
     int active_buffer = future_active_buffer % m_io_buffers.size();
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dr_mutex);
-    execution_mode mode = this->m_model->get_execution_mode();
     setup_next_io_buffer(io_buffer);
     io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
     return;
@@ -247,7 +246,7 @@ class generic_input_layer : public io_layer {
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->fetch_data_in_background) {
       io_buffer->data_fetch_future = this->m_model->get_io_thread_pool()->submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, m_active_buffer.load(), "PRIMARY"));
+        std::bind(&generic_input_layer::fetch_data_in_background, this, m_active_buffer.load(), this->m_model->get_execution_mode()));
       io_buffer->fetch_data_in_background = true;
     }
 
@@ -322,7 +321,7 @@ class generic_input_layer : public io_layer {
     if(!m_data_set_processed) {
       int next_active_buffer = m_active_buffer + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, "BACKGROUND"));
+        std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, this->m_model->get_execution_mode()));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->data_fetch_future = std::move(background_fetch_done);
       next_io_buffer->fetch_data_in_background = true;
