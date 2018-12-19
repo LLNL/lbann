@@ -134,9 +134,9 @@ int main(int argc, char *argv[]) {
         // test for duplicates
         std::string the_test = ss.str();
         if (testme.find(the_test) != testme.end()) {
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: duplicate set of inputs deteceted! This is very bad!");
+          std::cerr <<  "duplicate set of inputs detected!\n";
         }
-
+        testme.insert(the_test);
       }
     }
   } catch (exception const &e) {

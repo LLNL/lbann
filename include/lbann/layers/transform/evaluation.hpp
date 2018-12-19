@@ -31,10 +31,7 @@
 
 namespace lbann {
 
-/** Abstract evaluation layer.
- *  Computes the average value across a mini-batch. If the input
- *  tensor has multiple neurons, their values are added together.
- */
+/** @brief Interface with objective function and metrics. */
 class abstract_evaluation_layer : public transform_layer {
 public:
 
@@ -54,6 +51,7 @@ public:
 
 protected:
   abstract_evaluation_layer(lbann_comm *comm);
+  void setup_dims() override;
   void setup_data() override;
   void fp_compute() override;
   void bp_compute() override;

@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   unary.cpp
   binary.cpp
+  clamp.cpp
   )
 
 if (LBANN_HAS_CUDA)
@@ -9,6 +10,7 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     unary.cu
     binary.cu
+    clamp.cu
     )
 endif ()
 

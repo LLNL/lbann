@@ -36,4 +36,8 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(check_for_duplicate_samples-bin lbann )
   set_target_properties(check_for_duplicate_samples-bin PROPERTIES OUTPUT_NAME check_for_duplicate_samples)
 
+  add_executable( test_mpi-bin test_mpi.cpp )
+  target_link_libraries(test_mpi-bin lbann )
+  set_target_properties(test_mpi-bin PROPERTIES OUTPUT_NAME test_mpi)
+
 endif ()
