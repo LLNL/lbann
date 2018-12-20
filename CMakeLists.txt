@@ -96,41 +96,48 @@ endif ()
 # Options
 #
 
-# This option is off by default because non-developers should not use
-# this option under normal circumstances.
-option(LBANN_WARNINGS_AS_ERRORS
-  "Build with warnings promoted to errors." OFF)
+option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
+
+option(LBANN_WITH_CNPY "Include cnpy" ON)
+
+option(LBANN_WITH_CONDUIT "Enable Conduit library" OFF)
 
 option(LBANN_WITH_CUDA "Include Nvidia CUDA" OFF)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
-option(LBANN_WITH_CNPY "Include cnpy" ON)
-
-option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
-
-option(LBANN_WITH_VTUNE
-  "Link the Intel VTune profiling library" OFF)
+option(LBANN_WITH_HWLOC
+  "Enable topology-aware optimizations" ON)
 
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(LBANN_WITH_TOPO_AWARE
-  "Enable topology-aware profiling (HWLOC)" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
-option(LBANN_WITH_ALUMINUM
-  "Enable Aluminum all-reduce library" OFF)
 
-option(LBANN_WITH_CONDUIT
-  "Enable Conduit library" OFF)
+option(LBANN_WITH_VTUNE
+  "Link the Intel VTune profiling library" OFF)
 
-option(LBANN_VERBOSE "Enable verbose output" OFF)
+# Enable parallel random matrix generation, if possible
+option(LBANN_DETERMINISTIC
+  "Use deterministic algorithms as much as possible." OFF)
 
 option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
+mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
+
+# This option is off by default because non-developers should not use
+# this option under normal circumstances.
+option(LBANN_WARNINGS_AS_ERRORS
+  "Build with warnings promoted to errors." OFF)
+mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
+
+#
+# The datatype option is not binary
+#
 
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
@@ -160,16 +167,6 @@ if (LBANN_WITH_CUDA)
     message(FATAL_ERROR "CUDA support not found. Disabling.")
     set(LBANN_WITH_CUDA OFF)
   endif ()
-endif ()
-
-# Handle a few of the easy ones straight-away
-set(LBANN_TOPO_AWARE ${LBANN_WITH_TOPO_AWARE})
-
-# Enable parallel random matrix generation, if possible
-if (LBANN_DETERMINISTIC)
-  set(LBANN_DETERMINISTIC TRUE)
-else()
-  set(LBANN_DETERMINISTIC FALSE)
 endif ()
 
 #
@@ -327,19 +324,10 @@ if (LBANN_WITH_CNPY)
   endif (NOT LBANN_HAS_CNPY)
 endif (LBANN_WITH_CNPY)
 
-if (LBANN_TOPO_AWARE)
-  # LBANN also requires HWLOC. This seems sufficient for now.
-  find_package(HWLOC)
-
-  if (NOT HWLOC_FOUND)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_TOPO_AWARE but HWLOC not found. "
-      "HWLOC is now disabled. "
-      "Try specifying HWLOC_DIR as the root of an HWLOC install. "
-      "Alternatively, build with LBANN_WITH_TOPO_AWARE=OFF.")
-    set(LBANN_TOPO_AWARE OFF)
-  endif (NOT HWLOC_FOUND)
-endif (LBANN_TOPO_AWARE)
+if (LBANN_WITH_HWLOC)
+  find_package(HWLOC REQUIRED)
+  set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
+endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
   find_package(CONDUIT)
