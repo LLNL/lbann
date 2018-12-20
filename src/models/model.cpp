@@ -22,12 +22,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_model .hpp .cpp - Abstract class for neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
@@ -36,6 +35,7 @@
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -46,6 +46,19 @@
 #include "mpi.h"
 
 namespace lbann {
+
+namespace {
+
+bool layer_has_name(std::string name, const std::vector<Layer*>& layers) {
+  for (const auto& l : layers) {
+    if (l->get_name() == name) {
+      return true;
+    }
+  }
+  return false;
+}
+
+} // namespace
 
 ////////////////////////////////////////////////////////////
 // Constructors and destructor
@@ -67,13 +80,15 @@ model::model(lbann_comm *comm,
     m_effective_mini_batch_size(mini_batch_size),
     m_current_phase(0),
     m_comm(comm),
-    m_default_optimizer(default_optimizer) {
+    m_default_optimizer(default_optimizer),
+    m_io_thread_pool() {
 
-      static int num_models = 0;
-      m_name = "Model" + std::to_string(num_models);
-      num_models++;
+  // Default model name
+  static El::Int num_models = 0;
+  m_name = "model" + std::to_string(num_models);
+  num_models++;
 
-  }
+}
 
 model::model(const model& other) :
   m_execution_mode(other.m_execution_mode),
@@ -184,18 +199,61 @@ model::~model() {
 // Model specification
 ////////////////////////////////////////////////////////////
 
-void model::add_layer(Layer *l) {
+void model::add_layer(Layer* l) {
+  std::stringstream err;
+
+  // Check for null pointer
   if (l == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as a layer.");
+    err << "attempted to add a null pointer as a layer to "
+        << "model \"" << get_name() << "\"";
+    LBANN_ERROR(err.str());
   }
+
+  // Check that the new layer name is unique
+  // Note: Adding layers is O(n^2), but this is unlikely to be a
+  // bottleneck. If it is, consider maintaining a hash table
+  // containing all layer names (and properly updating it during
+  // copies and pointer remaps).
+  if (layer_has_name(l->get_name(), m_layers)) {
+    err << "attempted to add layer \"" << l->get_name() << "\" to "
+        << "model \"" << get_name() << "\", "
+        << "but the model already contains a layer with that name";
+    LBANN_ERROR(err.str());
+  }
+
+  // Add layer to model
   m_layers.push_back(l);
+
 }
 
-void model::add_weights(weights *w) {
+void model::add_weights(weights* w) {
+  std::stringstream err;
+
+  // Check for null pointer
   if (w == nullptr) {
-    throw lbann_exception("model: Attempted to add null pointer as weights.");
+    err << "attempted to add a null pointer as weights to "
+        << "model \"" << get_name() << "\"";
+    LBANN_ERROR(err.str());
   }
+
+  // Check that the new weights name is unique
+  // Note: Adding weights is O(n^2), but this is unlikely to be a
+  // bottleneck. If it is, consider maintaining a hash table
+  // containing all weights names (and properly updating it during
+  // copies and pointer remaps).
+  const auto& name = w->get_name();
+  for (const auto& w2 : m_weights) {
+    if (w2->get_name() == name) {
+      err << "attempted to add weights \"" << name << "\" to "
+          << "model \"" << get_name() << "\", "
+          << "but the model already contains weights with that name";
+      LBANN_ERROR(err.str());
+    }
+  }
+
+  // Add weights to model
   m_weights.push_back(w);
+
 }
 
 void model::add_callback(lbann_callback *cb) {
@@ -296,30 +354,12 @@ bool model::is_execution_mode_valid(execution_mode mode) const {
   return true;
 }
 
-void model::construct_layer_graph(std::set<int>& nodes,
-                                  std::map<int,std::set<int>>& edges) const {
-  nodes.clear();
-  edges.clear();
-  const int num_layers = m_layers.size();
-  std::unordered_map<const Layer *,int> layer_indices;
-  for (int node = 0; node < num_layers; ++node) {
-    nodes.insert(node);
-    layer_indices[m_layers[node]] = node;
-  }
-  std::vector<std::set<int>> layer_graph(num_layers);
-  for (int node = 0; node < num_layers; ++node) {
-    for (const auto& child : m_layers[node]->get_child_layers()) {
-      edges[node].insert(layer_indices[child]);
-    }
-  }
-}
-
 void model::permute_layers(const std::vector<int>& permutation) {
-  const auto original_layers = m_layers;
-  m_layers.clear();
-  for (const auto& i : permutation) {
-    m_layers.push_back(original_layers[i]);
+  std::vector<Layer*> reordered_layers(permutation.size());
+  for (size_t i = 0; i < permutation.size(); ++i) {
+    reordered_layers[i] = m_layers[permutation[i]];
   }
+  m_layers = std::move(reordered_layers);
 }
 
 void model::print_description(std::ostream& os,
@@ -466,7 +506,10 @@ void model::freeze_layers_under_frozen_surface() {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void model::setup() {
+void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
+  // Setup I/O threads - set up before setting up the layers (input
+  // layer depends on having a properly initialized thread pool)
+  m_io_thread_pool = io_thread_pool;
 
   // Setup layers
   setup_layer_topology();
@@ -488,7 +531,6 @@ void model::setup() {
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
   }
-
 }
 
 void model::setup_layer_topology() {
@@ -506,35 +548,45 @@ void model::setup_layer_topology() {
     }
   }
 
-  // Add utility layers if needed
+  // Add utility layers
   add_evaluation_layers();
   add_dummy_layers();
   add_split_layers();
+
+  // Check that layer names are unique
+  std::unordered_set<std::string> names;
+  for (const auto& l : m_layers) {
+    if (names.count(l->get_name()) > 0) {
+      std::stringstream err;
+      err << "model \"" << get_name() << "\" "
+          << "has multiple layers named \"" << l->get_name() << "\"";
+      LBANN_ERROR(err.str());
+    }
+    names.insert(l->get_name());
+  }
 
 }
 
 void model::setup_layer_execution_order() {
 
   // Find input layers
-  std::vector<generic_input_layer*> input_layers;
-  std::vector<Layer*> other_layers;
-  for (auto&& l : m_layers) {
-    auto&& input = dynamic_cast<generic_input_layer*>(l);
-    if (input != nullptr) {
-      input_layers.push_back(input);
+  const int num_layers = m_layers.size();
+  std::vector<int> input_layers, other_layers;
+  for (int i = 0; i < num_layers; ++i) {
+    if (dynamic_cast<generic_input_layer*>(m_layers[i]) != nullptr) {
+      input_layers.push_back(i);
     } else {
-      other_layers.push_back(l);
+      other_layers.push_back(i);
     }
   }
 
-  // Make sure input layers are executed first
-  m_layers.clear();
-  m_layers.insert(m_layers.end(),
-                  input_layers.begin(),
-                  input_layers.end());
-  m_layers.insert(m_layers.end(),
-                  other_layers.begin(),
-                  other_layers.end());
+  // Permute layers so input layers are executed first
+  std::vector<int> permutation;
+  permutation.insert(permutation.end(),
+                     input_layers.begin(), input_layers.end());
+  permutation.insert(permutation.end(),
+                     other_layers.begin(), other_layers.end());
+  permute_layers(permutation);
 
 }
 
@@ -588,8 +640,8 @@ void model::setup_weights() {
 void model::add_connected_layers() {
 
   // Initialize breadth-first search queue with layer list
-  std::queue<const Layer *> layer_queue;
-  std::unordered_set<const Layer *> layer_set;
+  std::queue<const Layer*> layer_queue;
+  std::unordered_set<const Layer*> layer_set;
   for (const auto& layer : m_layers) {
     layer_queue.push(layer);
     layer_set.insert(layer);
@@ -601,7 +653,7 @@ void model::add_connected_layers() {
     layer_queue.pop();
 
     // Find neighbors of current node
-    std::vector<const Layer *> relatives;
+    std::vector<const Layer*> relatives;
     for (const auto& parent : layer->get_parent_layers()) {
       relatives.push_back(parent);
     }
@@ -612,7 +664,7 @@ void model::add_connected_layers() {
     // Add neighbors to search queue if they aren't in the layer list
     for (const auto& relative : relatives) {
       if (layer_set.count(relative) == 0) {
-        m_layers.push_back(const_cast<Layer *>(relative));
+        add_layer(const_cast<Layer*>(relative));
         layer_queue.push(relative);
         layer_set.insert(relative);
       }
@@ -633,21 +685,35 @@ void model::add_evaluation_layers() {
                           - m_layers.begin());
       if (pos >= m_layers.size()) {
         std::stringstream err;
-        err << "an objective function layer term corresponds to "
+        err << "an objective function layer term in "
+            << "model \"" << get_name() << "\" corresponds to "
             << "layer \"" << l->get_name() << "\", "
-            << "which is not in current model";
+            << "which isn't in the model";
         LBANN_ERROR(err.str());
       }
       if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+
+        // Create evaluation layer
         auto* eval = abstract_evaluation_layer::construct(
                        l->get_comm(),
                        l->get_data_layout(),
                        l->get_device_allocation());
-        eval->set_name(l->get_name() + "_eval");
+
+        // Set evaluation layer name
+        El::Int name_index = 1;
+        std::string name = l->get_name() + "_eval";
+        while (layer_has_name(name, m_layers)) {
+          name_index++;
+          name = l->get_name() + "_eval" + std::to_string(name_index);
+        }
+        eval->set_name(name);
+
+        // Add evaluation layer to model
         l->add_child_layer(eval);
         eval->add_parent_layer(l);
         term->set_layer(*eval);
-        m_layers.insert(m_layers.begin() + pos + 1, eval);
+        add_layer(eval);
+
       }
     }
   }
@@ -663,19 +729,32 @@ void model::add_evaluation_layers() {
         std::stringstream err;
         err << "layer metric \"" << met->name() << "\" "
             << "corresponds to layer \"" << l->get_name() << "\", "
-            << "which is not in current model";
+            << "which is not in model \"" << get_name() << "\"";
         LBANN_ERROR(err.str());
       }
       if (dynamic_cast<abstract_evaluation_layer*>(l) == nullptr) {
+
+        // Create evaluation layer
         auto* eval = abstract_evaluation_layer::construct(
                        l->get_comm(),
                        l->get_data_layout(),
                        l->get_device_allocation());
-        eval->set_name(l->get_name() + "_eval");
+
+        // Set evaluation layer name
+        El::Int name_index = 1;
+        std::string name = l->get_name() + "_eval";
+        while (layer_has_name(name, m_layers)) {
+          name_index++;
+          name = l->get_name() + "_eval" + std::to_string(name_index);
+        }
+        eval->set_name(name);
+
+        // Add evaluation layer to model
         l->add_child_layer(eval);
         eval->add_parent_layer(l);
         met->set_layer(*eval);
-        m_layers.insert(m_layers.begin() + pos + 1, eval);
+        add_layer(eval);
+
       }
     }
   }
@@ -683,12 +762,13 @@ void model::add_evaluation_layers() {
 }
 
 void model::add_dummy_layers() {
+
+  // Add dummy layers until all layers have enough children
   for (size_t i = 0; i < m_layers.size(); ++i) {
     auto layer = m_layers[i];
-
-    // Create dummy layers until current layer has enough children
-    std::vector<Layer*> dummy_layers;
     while (layer->get_num_children() < layer->get_expected_num_child_layers()) {
+
+      // Create dummy layer
       Layer *dummy = nullptr;
       using args_tuple = std::tuple<data_layout,El::Device>;
       args_tuple args(layer->get_data_layout(), layer->get_device_allocation());
@@ -707,21 +787,30 @@ void model::add_dummy_layers() {
       }
 #endif // LBANN_HAS_GPU
       if (dummy == nullptr) {
-        LBANN_ERROR("invalid arguments for layer template specialization");
+        std::stringstream err;
+        err << "could not construct dummy layer corresponding to "
+            << "layer \"" << layer->get_name() << "\" "
+            << "in model \"" << get_name() << "\"";
+        LBANN_ERROR(err.str());
       }
-      dummy->set_name(layer->get_name()
-                      + "_dummy" + std::to_string(dummy_layers.size()));
+
+      // Set dummy layer name
+      El::Int name_index = 1;
+      std::string name = layer->get_name() + "_dummy";
+      while (layer_has_name(name, m_layers)) {
+        name_index++;
+        name = layer->get_name() + "_dummy" + std::to_string(name_index);
+      }
+      dummy->set_name(name);
+
+      // Add dummy layer to model
       layer->add_child_layer(dummy);
       dummy->add_parent_layer(layer);
-      dummy_layers.push_back(dummy);
+      add_layer(dummy);
+
     }
-
-    // Add dummy layers to layer list
-    m_layers.insert(m_layers.begin() + i + 1,
-                    dummy_layers.begin(),
-                    dummy_layers.end());
-
   }
+
 }
 
 void model::add_split_layers() {
@@ -752,13 +841,25 @@ void model::add_split_layers() {
       }
 #endif // LBANN_HAS_GPU
       if (split == nullptr) {
-        LBANN_ERROR("invalid arguments for layer template specialization");
+        std::stringstream err;
+        err << "could not construct split layer corresponding to "
+            << "layer \"" << layer->get_name() << "\" "
+            << "in model \"" << get_name() << "\"";
+        LBANN_ERROR(err.str());
       }
-      split->set_name(layer->get_name() + "_split");
+
+      // Set split layer name
+      El::Int name_index = 1;
+      std::string name = layer->get_name() + "_split";
+      while (layer_has_name(name, m_layers)) {
+        name_index++;
+        name = layer->get_name() + "_split" + std::to_string(name_index);
+      }
+      split->set_name(name);
 
       // Setup relationships between split layer and child layers
       for (auto&& const_child : children) {
-        Layer *child = const_cast<Layer*>(const_child);
+        auto* child = const_cast<Layer*>(const_child);
         split->add_child_layer(child);
         auto& child_parents = child->get_parent_layers();
         std::replace(child_parents.begin(), child_parents.end(),
@@ -771,7 +872,7 @@ void model::add_split_layers() {
       split->add_parent_layer(layer);
 
       // Add split layer to layer list
-      m_layers.insert(m_layers.begin() + i + 1, split);
+      add_layer(split);
 
     }
 
@@ -1540,6 +1641,36 @@ void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
   if (m_comm->am_world_master())
     proto->set_mini_batch_size(m_max_mini_batch_size);
+}
+
+
+bool model::save_weights(persist& p) {
+  // write out fields we need to save a model's weights
+  for (weights *w : m_weights) {
+    w->save_to_checkpoint_shared(p);
+  }
+  return true;
+}
+
+bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
+  // load weights that appear in weight list.
+  for(weights *w : m_weights) {
+    w->load_from_save(latest,weight_list);
+  }
+  return true;
+}
+
+bool model::save_model() {
+  for (auto* c : m_callbacks) {
+    auto *cb = dynamic_cast<lbann_callback_save_model*>(c);
+    if(cb != nullptr) {
+      return cb->save_model(this);
+    }
+  }
+  if(m_comm->am_model_master()) {
+    LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
+  }
+  return false;
 }
 
 }  // namespace lbann

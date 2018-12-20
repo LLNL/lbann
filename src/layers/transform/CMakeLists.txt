@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_SOURCES
   evaluation.cpp
   in_top_k.cpp
   sort.cpp
+  tessellate.cpp
   )
 
 if (LBANN_HAS_CUDA)
@@ -12,6 +13,7 @@ if (LBANN_HAS_CUDA)
     crop.cu
     in_top_k.cu
     sort.cu
+    tessellate.cu
     )
 endif ()
 

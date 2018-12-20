@@ -55,10 +55,13 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
   void load() override;
-  
+
   int get_linearized_data_size() const override {
     return std::accumulate(m_dimensions.begin(), m_dimensions.end(), 1,
                            std::multiplies<int>());
+  }
+  int get_linearized_label_size() const override {
+    return m_num_labels;
   }
   int get_linearized_response_size() const override {
     return std::accumulate(m_response_dimensions.begin(),
@@ -76,9 +79,9 @@ class data_reader_synthetic : public generic_data_reader {
   }
 
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
  private:
   /** Number of samples in the dataset. */

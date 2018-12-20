@@ -1,32 +1,32 @@
+########################################################################
+# The JAG normalization values were computed over the 10M + 1MA + 1MB random
+# pulls from the 100M data set.  They are valid for the directories:
+# /p/lustre2/brainusr/datasets/10MJAG/ (10M | 1M_A | 1M_B)
+# /p/lustre2/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+# /p/gpfs1/brainusr/datasets/10MJAG/10M | 1M_A | 1M_B
+# /p/gpfs1/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+########################################################################
+
 data_reader {
   reader {
     name: "jag_conduit"
     role: "train"
     shuffle: true
     # change to a lustre path
-    #data_filedir: "/p/lscratchh/lucpeter/merlin/1BJAGS_10k_1/0/"
-    #Lassen below
-    #data_filedir: "/p/gpfs1/brainusr/1MJAG/1MJAG-A/0/"
-    #1M from 100M
-    data_filedir: "/p/gpfs1/brainusr/1MJAG_A/"
-    #Sierra may be
-    #data_filedir: "/p/gpfs1/lucpeter/gscratch1/1MJAG/1MJAG-A/0/"
-    #data_filedir: "/p/lscratchh/brainusr/datasets/1MJAG/1MJAG-A/0/"
-    #data_filename: "*/*/*.bundle"
-    data_filename: "*.bundle"
+    data_filedir: "/p/gpfs1/brainusr/datasets/10MJAG_balanced_1K/1M_A/"
+    data_filename: "*/*.bundle"
 
     validation_percent: 0
-    absolute_sample_count: 0 
+    absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     disable_responses: true
     disable_labels: true
-    is_partitioned: true   #Needed for LTFB (1PPM)
 
     split_jag_image_channels: true
 
     # JAG_Image, JAG_Scalar, JAG_Input
-    independent: [ { pieces: [JAG_Image, JAG_Scalar] }, { pieces: [JAG_Input] } ]
-    dependent: [ { pieces: [JAG_Input] } ]
+    independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: [ JAG_Input ] } ]
+    dependent: [ { pieces: [ JAG_Input ] } ]
 
     jag_image_keys: ["(0.0, 0.0)/0.0", "(90.0, 0.0)/0.0", "(90.0, 78.0)/0.0"]
 
@@ -77,44 +77,52 @@ data_reader {
 
     num_labels: 5
 
-    jag_image_normalization_params: [
-      # TODO: temporarily reusing the parameters computed for the first view here. need to obtain the parameters for the other views
-      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
-      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
-      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 }
-    ]
-
     jag_scalar_normalization_params: [
-	{ scale: 1.5420795e+01 	 bias: -8.313582e-01 }, 	 # BWx
-	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BT
-	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXt
-	{ scale: 4.4250137e+01 	 bias: -1.623055e+00 }, 	 # BWn
-	{ scale: 2.4432852e-06 	 bias: -7.724349e-01 }, 	 # MAXpressure
-	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAte
-	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXtion
-	{ scale: 1.4302059e+00 	 bias: -3.349900e+00 }, 	 # tMAXpressure
-	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAt
-	{ scale: 7.1544386e-18 	 bias: -1.869906e-02 }, 	 # Yn
-	{ scale: 3.1669860e-03 	 bias: -1.869906e-02 }, 	 # Ye
-	{ scale: 2.1041247e-02 	 bias: -3.084058e-01 }, 	 # Yx
-	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXte
-	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAtion
-	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXte
-	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXtion
-	{ scale: 1.3456596e+00 	 bias: -3.116023e+00 }, 	 # BTx
-	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXt
-	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BTn
-	{ scale: 3.0520000e-06 	 bias: -7.714907e-01 }, 	 # BApressure
-	{ scale: 1.3925443e+00 	 bias: -3.239921e+00 }, 	 # tMINradius
-	{ scale: 1.0023756e-01 	 bias: -2.815272e+00 }  	 # MINradius
+      { scale: 7.610738e+00  bias: -4.075375e-01 },   #BWx
+      { scale: 1.459875e+00  bias: -3.427656e+00 },   #BT
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXt
+      { scale: 4.375123e+01  bias: -1.593477e+00 },   #BWn
+      { scale: 1.685576e-06  bias: -5.330971e-01 },   #MAXpressure
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAte
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXtion
+      { scale: 1.430615e+00  bias: -3.351173e+00 },   #tMAXpressure
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAt
+      { scale: 7.154074e-18  bias: -1.864709e-02 },   #Yn
+      { scale: 3.166824e-03  bias: -1.864709e-02 },   #Ye
+      { scale: 2.102178e-02  bias: -3.071955e-01 },   #Yx
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXte
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAtion
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXte
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXtion
+      { scale: 1.346439e+00  bias: -3.118446e+00 },   #BTx
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXt
+      { scale: 1.459875e+00  bias: -3.427656e+00 },   #BTn
+      { scale: 2.061877e-06  bias: -5.213394e-01 },   #BApressure
+      { scale: 1.392544e+00  bias: -3.239921e+00 },   #tMINradius
+      { scale: 6.266253e-02  bias: -1.384504e+00 }   #MINradius
     ]
 
     jag_input_normalization_params: [
-      { scale: 1.666721654e+01 	bias: 5.000145788e+00}, 	# shape_model_initial_modes:(4,3)
-      { scale: 1.000025133e+01 	bias: -1.603520955e-06}, 	# betti_prl15_trans_u
-      { scale: 1.000001645e+00 	bias: -1.406676728e-06}, 	# betti_prl15_trans_v
-      { scale: 1.666672975e+00 	bias: 4.999989818e-01}, 	# shape_model_initial_modes:(2,1)
-      { scale: 1.666668753e+00 	bias: 5.000004967e-01}  	# shape_model_initial_modes:(1,0)
+      { scale: 1.666672e+00  bias: 5.000000e-01 },   #shape_model_initial_modes:(4,3)
+      { scale: 1.000002e+00  bias: -1.603483e-07 },   #betti_prl15_trans_u
+      { scale: 1.000001e+00  bias: -1.406672e-06 },   #betti_prl15_trans_v
+      { scale: 1.666675e+00  bias: 4.999992e-01 },   #shape_model_initial_modes:(2,1)
+      { scale: 1.666669e+00  bias: 5.000008e-01 }   #shape_model_initial_modes:(1,0)
+    ]
+
+    jag_image_normalization_params: [
+      { scale: 9.743581e-01  bias: 1.624460e-05 },
+      { scale: 1.689631e+01  bias: 1.740742e-05 },
+      { scale: 7.872094e+02  bias: -0.000000e+00 },
+      { scale: 1.705611e+04  bias: -0.000000e+00 },
+      { scale: 8.517343e-01  bias: 1.279279e-05 },
+      { scale: 1.424436e+01  bias: 2.859300e-05 },
+      { scale: 6.457821e+02  bias: -0.000000e+00 },
+      { scale: 1.372162e+04  bias: -0.000000e+00 },
+      { scale: 8.457383e-01  bias: 1.589667e-05 },
+      { scale: 1.431208e+01  bias: 3.069526e-05 },
+      { scale: 6.526946e+02  bias: -0.000000e+00 },
+      { scale: 1.421113e+04  bias: -0.000000e+00 }
     ]
 
     image_preprocessor {
@@ -148,24 +156,14 @@ data_reader {
       }
     }
   }
+
   reader {
     name: "jag_conduit"
     role: "test"
     shuffle: true
     # change to a lustre path
-    #data_filedir: "/p/lscratchh/lucpeter/merlin/1BJAGS_10k_1/0/"
-    #Lassen below
-    #data_filedir: "/p/gpfs1/brainusr/1MJAG/1MJAG-A/0/"
-    #Sierra may be
-    #data_filedir:"/p/gpfs1/brainusr/datasets/1M_random/"
-    #data_filedir:"/p/gpfs1/brainusr/1M_random/"
-    #1M from 100M
-    data_filedir: "/p/gpfs1/brainusr/1MJAG_B/"
-    #data_filedir:"/p/gpfs1/lucpeter/gscratch1/1MJAG/1MJAG-A/0/"
-    #data_filedir:"/p/lscratchh/brainusr/datasets/1MJAG/1MJAG-A/0/"
-    #data_filename:"*/*/*.bundle"
-    data_filename:"*.bundle"
-    #data_filename:"*/*.bundle"
+    data_filedir: "/p/gpfs1/brainusr/datasets/10MJAG_balanced_1K/1M_B"
+    data_filename: "*/*.bundle"
 
     validation_percent: 0
     absolute_sample_count: 0
@@ -176,8 +174,8 @@ data_reader {
     split_jag_image_channels: true
 
     # JAG_Image, JAG_Scalar, JAG_Input
-    independent: [ { pieces: [JAG_Image, JAG_Scalar] }, { pieces: [JAG_Input] } ]
-    dependent: [ { pieces: [JAG_Input] } ]
+    independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: [ JAG_Input ] } ]
+    dependent: [ { pieces: [ JAG_Input ] } ]
 
     jag_image_keys: ["(0.0, 0.0)/0.0", "(90.0, 0.0)/0.0", "(90.0, 78.0)/0.0"]
 
@@ -228,45 +226,54 @@ data_reader {
 
     num_labels: 5
 
-    jag_image_normalization_params: [
-      # TODO: temporarily reusing the parameters computed for the first view here. need to obtain the parameters for the other views
-      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
-      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 },
-      { scale: 28.128928461  bias: 0.0 }, { scale: 817.362315273  bias: 0.0 }, { scale: 93066.843470244  bias: 0.0 }, { scale: 4360735.362407147  bias: 0.0 }
-    ]
-
     jag_scalar_normalization_params: [
-	{ scale: 1.5420795e+01 	 bias: -8.313582e-01 }, 	 # BWx
-	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BT
-	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXt
-	{ scale: 4.4250137e+01 	 bias: -1.623055e+00 }, 	 # BWn
-	{ scale: 2.4432852e-06 	 bias: -7.724349e-01 }, 	 # MAXpressure
-	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAte
-	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXtion
-	{ scale: 1.4302059e+00 	 bias: -3.349900e+00 }, 	 # tMAXpressure
-	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAt
-	{ scale: 7.1544386e-18 	 bias: -1.869906e-02 }, 	 # Yn
-	{ scale: 3.1669860e-03 	 bias: -1.869906e-02 }, 	 # Ye
-	{ scale: 2.1041247e-02 	 bias: -3.084058e-01 }, 	 # Yx
-	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXte
-	{ scale: 2.6368040e-01 	 bias: -9.765773e-01 }, 	 # BAtion
-	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXte
-	{ scale: 1.4901131e+00 	 bias: -3.493689e+00 }, 	 # tMAXtion
-	{ scale: 1.3456596e+00 	 bias: -3.116023e+00 }, 	 # BTx
-	{ scale: 2.4198603e-01 	 bias: -9.856284e-01 }, 	 # MAXt
-	{ scale: 1.4593427e+00 	 bias: -3.426026e+00 }, 	 # BTn
-	{ scale: 3.0520000e-06 	 bias: -7.714907e-01 }, 	 # BApressure
-	{ scale: 1.3925443e+00 	 bias: -3.239921e+00 }, 	 # tMINradius
-	{ scale: 1.0023756e-01 	 bias: -2.815272e+00 }  	 # MINradius
+      { scale: 7.610738e+00  bias: -4.075375e-01 },   #BWx
+      { scale: 1.459875e+00  bias: -3.427656e+00 },   #BT
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXt
+      { scale: 4.375123e+01  bias: -1.593477e+00 },   #BWn
+      { scale: 1.685576e-06  bias: -5.330971e-01 },   #MAXpressure
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAte
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXtion
+      { scale: 1.430615e+00  bias: -3.351173e+00 },   #tMAXpressure
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAt
+      { scale: 7.154074e-18  bias: -1.864709e-02 },   #Yn
+      { scale: 3.166824e-03  bias: -1.864709e-02 },   #Ye
+      { scale: 2.102178e-02  bias: -3.071955e-01 },   #Yx
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXte
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAtion
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXte
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXtion
+      { scale: 1.346439e+00  bias: -3.118446e+00 },   #BTx
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXt
+      { scale: 1.459875e+00  bias: -3.427656e+00 },   #BTn
+      { scale: 2.061877e-06  bias: -5.213394e-01 },   #BApressure
+      { scale: 1.392544e+00  bias: -3.239921e+00 },   #tMINradius
+      { scale: 6.266253e-02  bias: -1.384504e+00 }   #MINradius
     ]
 
     jag_input_normalization_params: [
-      { scale: 1.666721654e+01 	bias: 5.000145788e+00}, 	# shape_model_initial_modes:(4,3)
-      { scale: 1.000025133e+01 	bias: -1.603520955e-06}, 	# betti_prl15_trans_u
-      { scale: 1.000001645e+00 	bias: -1.406676728e-06}, 	# betti_prl15_trans_v
-      { scale: 1.666672975e+00 	bias: 4.999989818e-01}, 	# shape_model_initial_modes:(2,1)
-      { scale: 1.666668753e+00 	bias: 5.000004967e-01}  	# shape_model_initial_modes:(1,0)
+      { scale: 1.666672e+00  bias: 5.000000e-01 },   #shape_model_initial_modes:(4,3)
+      { scale: 1.000002e+00  bias: -1.603483e-07 },   #betti_prl15_trans_u
+      { scale: 1.000001e+00  bias: -1.406672e-06 },   #betti_prl15_trans_v
+      { scale: 1.666675e+00  bias: 4.999992e-01 },   #shape_model_initial_modes:(2,1)
+      { scale: 1.666669e+00  bias: 5.000008e-01 }   #shape_model_initial_modes:(1,0)
     ]
+
+    jag_image_normalization_params: [
+      { scale: 9.743581e-01  bias: 1.624460e-05 },
+      { scale: 1.689631e+01  bias: 1.740742e-05 },
+      { scale: 7.872094e+02  bias: -0.000000e+00 },
+      { scale: 1.705611e+04  bias: -0.000000e+00 },
+      { scale: 8.517343e-01  bias: 1.279279e-05 },
+      { scale: 1.424436e+01  bias: 2.859300e-05 },
+      { scale: 6.457821e+02  bias: -0.000000e+00 },
+      { scale: 1.372162e+04  bias: -0.000000e+00 },
+      { scale: 8.457383e-01  bias: 1.589667e-05 },
+      { scale: 1.431208e+01  bias: 3.069526e-05 },
+      { scale: 6.526946e+02  bias: -0.000000e+00 },
+      { scale: 1.421113e+04  bias: -0.000000e+00 }
+    ]
+
 
     image_preprocessor {
       # assume fixed size of input images if cropper is not used

@@ -23,7 +23,7 @@ brew_check_install()
 # Check for LBANN dependencies
 brew_check_install git
 brew_check_install cmake
-brew_check_install llvm       # Require OpenMP support in clang
+brew_check_install llvm       # Require OpenMP support in clang needs --with-toolchain flag
 brew_check_install gcc49      # gfortran-4.9 is compatible with clang
 brew_check_install open-mpi
 brew_check_install doxygen
@@ -55,11 +55,11 @@ MAKE_NUM_PROCESSES=$(($(sysctl -n hw.ncpu) + 1))
 INSTALL_LBANN=0
 WITH_ALUMINUM=OFF
 GEN_DOC=0
- 
+
  export C_INCLUDE_PATH=$($COMPILER_ROOT/bin/llvm-config --includedir)
  export LIBRARY_PATH=$($COMPILER_ROOT/bin/llvm-config --libdir)
  export CPLUS_INCLUDE_PATH=$($COMPILER_ROOT/bin/llvm-config --includedir)
- 
+
 ################################################################
 # Help message
 ################################################################
@@ -121,7 +121,7 @@ while :; do
       ;;
     --doc)
       GEN_DOC=1
-      ;;      
+      ;;
     -?*)
       # Unknown option
       echo "Unknown option (${1})" >&2

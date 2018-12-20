@@ -31,9 +31,9 @@
 
 namespace lbann {
 
-/** L1 norm layer.
- *  Given an input \f$x\f$, this layer outputs
- *    \f[ L1(x) = \sum\limits_{i} | x_i | \f]
+/** @brief L1 vector norm.
+ *
+ *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
  */
 template <data_layout T_layout, El::Device Dev>
 class l1_norm_layer : public Layer {

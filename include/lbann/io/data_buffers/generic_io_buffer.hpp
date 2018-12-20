@@ -30,6 +30,9 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+
+#include <future>
 
 namespace lbann
 {
@@ -37,8 +40,8 @@ class fetch_data_functor {
  public:
   fetch_data_functor (data_reader_target_mode target_mode) :
     _target_mode(target_mode) {}
-  int operator() (CPUMat& samples, CPUMat& responses, generic_data_reader* data_reader) const {
-    int num_samples_fetched = data_reader->fetch_data(samples);
+  int operator() (CPUMat& samples, CPUMat& responses, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
+    int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched);
     int num_responses_fetched;
     switch(_target_mode) {
     case data_reader_target_mode::REGRESSION:
@@ -59,8 +62,8 @@ class fetch_data_functor {
     }
     return num_samples_fetched;
   }
-  int operator() (CPUMat& samples, generic_data_reader* data_reader) const {
-    int num_samples_fetched = data_reader->fetch_data(samples);
+  int operator() (CPUMat& samples, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
+    int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched);
     switch(_target_mode) {
     case data_reader_target_mode::NA:
       break;
@@ -101,16 +104,16 @@ public:
   }
   virtual generic_io_buffer* copy() const = 0;
 
-  /** Return this buffer's type, e.g: "partitioned_io_buffer," "distributed_io_buffer," etc. */
+  /** Return this buffer's type, e.g: "partitioned_io_buffer," etc. */
   virtual std::string get_type() const = 0;
-  virtual void set_local_matrix_bypass(CPUMat *M_local, int idx) = 0;
-  virtual void set_std_matrix_view(El::Int cur_mini_batch_size, int idx) = 0;
+  virtual void fp_setup_data(El::Int cur_mini_batch_size, int idx) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) = 0;
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {}
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {}
-  virtual bool is_data_set_processed(generic_data_reader *data_reader, execution_mode mode) = 0;
+  virtual bool update_data_set(generic_data_reader *data_reader, execution_mode mode) = 0;
+  virtual int num_samples_ready(execution_mode mode) = 0;
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
@@ -122,6 +125,10 @@ public:
   lbann_comm *m_comm;
   const fetch_data_functor *fetch_data_fn;
   const update_data_reader_functor *update_data_reader_fn;
+  std::atomic<bool> fetch_data_in_background;
+  std::future<void> data_fetch_future;
+  /// 1-D Matrix of which indices were fetched in this mini-batch
+  El::Matrix<El::Int> m_indices_fetched_per_mb;
 };
 }
 

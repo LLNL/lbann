@@ -31,11 +31,16 @@
 
 namespace lbann {
 
-/** Categorical accuracy layer.
- *  The two inputs are interpreted as predictions and ground-truth
- *  labels, respectively. An output is set to one if the top entries
- *  in both inputs are in the same position and is otherwise
- *  zero. Ties are broken in favor of entries with smaller indices.
+/** @brief 0-1 loss function.
+ *
+ *  Requires two inputs, which are respectively interpreted as
+ *  prediction scores and as a one-hot label vector. The output is one
+ *  if the top entries in both inputs are in the same position and is
+ *  otherwise zero. Ties are broken in favor of entries with smaller
+ *  indices.
+ *
+ *  This is primarily intended for use as a metric since it is not
+ *  differentiable.
  */
 template <data_layout T_layout, El::Device Dev>
 class categorical_accuracy_layer : public Layer {
@@ -55,25 +60,25 @@ public:
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims({1});
-    if (get_input_size(0) != get_input_size(1)) {
+
+    // Check that input dimensions match
+    if (get_input_dims(0) != get_input_dims(1)) {
       const auto& parents = get_parent_layers();
-      const auto& dims0 = get_input_dims(0);
-      const auto& dims1 = get_input_dims(1);
       std::stringstream err;
       err << get_type() << " layer \"" << get_name() << "\" "
-          << "expects inputs with identical dimensions, but "
-          << "layer \"" << parents[0]->get_name() << "\" outputs a ";
-      for (size_t i = 0; i < dims0.size(); ++i) {
-        err << (i > 0 ? "x" : "") << dims0[i];
+          << "has input tensors with different dimensions (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& dims = get_input_dims(i);
+        err << (i > 0 ? ", " : "")
+            << "layer \"" << parents[i]->get_name() << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
       }
-      err << " tensor and "
-          << "layer \"" << parents[1]->get_name() << "\" outputs a ";
-      for (size_t i = 0; i < dims1.size(); ++i) {
-        err << (i > 0 ? "x" : "") << dims1[i];
-      }
-      err << " tensor";
+      err << ")";
       LBANN_ERROR(err.str());
     }
+
   }
 
   void fp_compute() override;

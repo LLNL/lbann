@@ -104,6 +104,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
 
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+
   std::string get_type() const override {
     return "data_reader_jag_conduit";
   }
@@ -190,7 +192,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
-  int fetch_data(CPUMat& X) override;
+  int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
   /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
   int fetch_responses(CPUMat& Y) override;
   /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
@@ -285,7 +287,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
  protected:
   virtual void set_defaults();
-  virtual bool replicate_processor(const cv_process& pp);
+  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit& rhs);
 
 
@@ -323,13 +325,16 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Shuffle sample indices
   void shuffle_indices() override;
+  /// Shuffle sammple indices using a different RNG
+  void shuffle_indices(rng_gen& gen) override;
+
   /**
    * Compute the number of parallel readers based on the type of io_buffer,
    * the mini batch size, the requested number of parallel readers.
@@ -421,6 +426,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
+  std::unique_ptr<cv_process> m_master_pps;
 
   /**
    * Set of keys that are associated with non_numerical values.

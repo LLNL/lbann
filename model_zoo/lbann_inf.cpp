@@ -50,25 +50,33 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
+    // Initalize a global I/O thread pool
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
     std::vector<model*> models;
     for(auto pb_model : pbs) {
       models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
-                                                     comm, models.size() == 0));
+                                                     comm, io_thread_pool, models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
       for(auto m : models) {
-        load_model_weights(opts->get_string("ckpt_dir"), m);
+        lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), m);
       }
     }else {
       LBANN_ERROR("Unable to reload model");
     }
 
-    for(auto m : models) {
-      m->evaluate(execution_mode::testing);
+    /// Interleave the inference between the models so that they can use a shared data reader
+    /// Enable shared testing data readers on the command line via --share_testing_data_readers=1
+    El::Int num_samples = models[0]->get_num_iterations_per_epoch(execution_mode::testing);
+    for(El::Int s = 0; s < num_samples; s++) {
+      for(auto m : models) {
+        m->evaluate(execution_mode::testing, 1);
+      }
     }
 
     for(auto m : models) {

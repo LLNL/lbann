@@ -28,7 +28,6 @@
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
-#include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 //#include "lbann/data_store/data_store_jag_conduit.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
@@ -155,18 +154,25 @@ int data_reader_jag_conduit::get_num_data() const {
 }
 
 void data_reader_jag_conduit::shuffle_indices() {
+  shuffle_indices(get_data_seq_generator());
+}
+
+void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
     std::shuffle(m_valid_samples.begin(), m_valid_samples.end(),
-                 get_data_seq_generator());
+                 gen);
   }
-  m_valid_samples.resize(m_local_num_samples_to_use);
 }
 
 void data_reader_jag_conduit::select_subset_of_data() {
 
   m_local_num_samples_to_use = get_num_valid_local_samples();
-  shuffle_indices();
+  // Use the normal (non-data sequence) generator for shuffling and
+  // finding a subset of samples.  Otherwise the different ranks will
+  // get out of step due to initial imbalance of available samples.
+  shuffle_indices(get_generator());
+  m_valid_samples.resize(m_local_num_samples_to_use);
 
   const size_t count = get_absolute_sample_count();
   const double use_percent = get_use_percent();
@@ -254,16 +260,7 @@ data_reader_jag_conduit* data_reader_jag_conduit::get_leading_reader() {
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
-  if (m_io_buffer_type == "distributed") {
-    // Use a sufficiently large data set size for the time being, and
-    // check if it is ok when the actual size of data is available later
-    long data_set_size = 2 * get_mini_batch_size() * m_comm->get_num_models() * get_num_parallel_readers();
-    set_num_parallel_readers(distributed_io_buffer::compute_max_num_parallel_readers(
-                             data_set_size, get_mini_batch_size(),
-                             get_num_parallel_readers(), get_comm()));
-    set_sample_stride(1);
-    set_iteration_stride(get_num_parallel_readers());
-  } else if (m_io_buffer_type == "partitioned") {
+  if (m_io_buffer_type == "partitioned") {
     set_num_parallel_readers(partitioned_io_buffer::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
@@ -276,19 +273,6 @@ int data_reader_jag_conduit::compute_max_num_parallel_readers() {
 }
 
 bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
-  if (m_io_buffer_type == "distributed") {
-    const bool too_many_readers = !distributed_io_buffer::check_num_parallel_readers(data_set_size, get_mini_batch_size(), get_num_parallel_readers(), m_comm);
-    if (too_many_readers) {
-      if(m_comm->am_world_master()) {
-        std::string err =
-          "The training data set size " + std::to_string(data_set_size)
-          + " is too small for the number of parallel readers "
-          + std::to_string(get_num_parallel_readers());
-        _THROW_LBANN_EXCEPTION_(get_type(), err);
-        return false;
-      }
-    }
-  }
   return true;
 }
 #else // _JAG_OFFLINE_TOOL_MODE_
@@ -307,7 +291,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  replicate_processor(*pp);
+  m_master_pps = lbann::make_unique<cv_process>(*pp);
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
@@ -326,11 +310,11 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
 
-  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+  if (!rhs.m_master_pps) {
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  replicate_processor(*rhs.m_pps[0]);
+  m_master_pps = lbann::make_unique<cv_process>(*m_master_pps);
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -418,17 +402,18 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_normalization_params.clear();
 }
 
-/// Replicate image processor for each OpenMP thread
-bool data_reader_jag_conduit::replicate_processor(const cv_process& pp) {
-  const int nthreads = omp_get_max_threads();
+  void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
+  replicate_processor(*m_master_pps, num_io_threads);
+}
+
+/// Replicate image processor for each I/O thread
+bool data_reader_jag_conduit::replicate_processor(const cv_process& pp, const int nthreads) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
   for (int i = 0; i < nthreads; ++i) {
-    //auto ppu = std::make_unique<cv_process>(pp); // c++14
-    std::unique_ptr<cv_process> ppu(new cv_process(pp));
-    m_pps[i] = std::move(ppu);
+    m_pps[i] = lbann::make_unique<cv_process>(pp);
   }
 
   bool ok = true;
@@ -944,17 +929,6 @@ void data_reader_jag_conduit::populate_shuffled_indices(const size_t num_samples
       }
       ++s;
     }
-  } else if (m_io_buffer_type == "distributed") {
-    const int num_readers = get_iteration_stride();
-    const int mb_size = get_mini_batch_size();
-    for(size_t n = 0u; n < m_shuffled_indices.size(); ) {
-      for(int r = 0; r < num_readers; r++) {
-        for(int m = 0, si = s; (m < mb_size) && (n < m_shuffled_indices.size()); ++m) {
-          m_shuffled_indices[n++] = si++;
-        }
-      }
-      s += mb_size;
-    }
   }
 }
 
@@ -1340,7 +1314,7 @@ std::string data_reader_jag_conduit::get_description() const {
     + " - linearized data size: "   + std::to_string(get_linearized_data_size()) + "\n"
     + " - uniform_input_type: " + (m_uniform_input_type? "true" : "false") + "\n"
     + " - leading DR: " + (m_leading_reader == this ? "true" : "false")
-    + " ptr=" + leading_reader.str() + ")\n";
+    + " (ptr=" + leading_reader.str() + ")\n";
   if (!m_scalar_filter.empty()) {
     ret += " - scalar filter:";
     for (const auto& f: m_scalar_filter) {
@@ -1678,11 +1652,11 @@ int data_reader_jag_conduit::reuse_labels(CPUMat& Y) {
   return m_cached_label_mb_size;
 }
 
-int data_reader_jag_conduit::fetch_data(CPUMat& X) {
+int data_reader_jag_conduit::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
     return m_leading_reader->reuse_data(X);
   }
-  m_cached_data_mb_size = generic_data_reader::fetch_data(X);
+  m_cached_data_mb_size = generic_data_reader::fetch_data(X, indices_fetched);
   El::Copy(X, m_data_cache);
 
   return m_cached_data_mb_size;
@@ -1709,7 +1683,8 @@ int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
 }
 
 
-bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
@@ -1721,7 +1696,8 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx, in
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
@@ -1731,7 +1707,7 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx,
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
