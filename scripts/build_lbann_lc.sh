@@ -312,7 +312,12 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
+    if [ "${WITH_CONDUIT}" = "ON" ] ; then
+        module load cmake/3.12.1
+        HDF5_CMAKE_EXE=$(which cmake)
+    fi
     module load cmake/3.9.2
+    
     CMAKE_PATH=$(dirname $(which cmake))
 else
     use git
@@ -502,14 +507,6 @@ if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
 fi
 
-# Use CUDA-aware MVAPICH2 on Surface and Pascal
-if [ "${WITH_CUDA_2}" == "ON" ]; then
-  if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-    MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
-    export MV2_USE_CUDA=1
-  fi
-fi
-
 if [ -z "${MPI_HOME}" ]; then
 	if [ ${USE_MODULES} -ne 0 ]; then
 		if [ -z "$(module list 2>&1 | grep ${MPI})" ]; then
@@ -595,13 +592,13 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     # Hack for surface
 	case $CLUSTER in
 		surface)
-			. /usr/share/[mM]odules/init/bash
-			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-			;;
+		    . /usr/share/[mM]odules/init/bash
+		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    ;;
 		pascal)
-      module use /opt/modules/modulefiles
-			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-			;;
+                    module load opt
+		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    ;;
 	esac
 fi
 
@@ -657,23 +654,6 @@ else
 	OPENBLAS_ARCH=
 fi
 
-if [ "${WITH_CONDUIT}" = "ON" ] ; then
-echo $COMPILER_VERSION
-  if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
-      echo "CONDUIT_DIR not available."
-      if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
-          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
-      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
-          export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
-      elif [ "${CLUSTER}" = "catalyst" -o "${CLUSTER}" = "pascal" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
-          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-7.3.0
-      else
-          # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
-          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-dev
-      fi
-      echo "Set to the default CONDUIT_DIR="$CONDUIT_DIR
-  fi
-fi
 ################################################################
 # Setup Ninja, if using
 ################################################################
@@ -807,6 +787,9 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
+-D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
+-D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \
+-D HDF5_CMAKE_COMMAND=${HDF5_CMAKE_EXE} \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
@@ -821,7 +804,6 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_DATATYPE=${DATATYPE} \
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
--D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
