@@ -435,6 +435,7 @@ message Callback {
    CallbackSyncSelected sync_selected = 34;
    CallbackConfusionMatrix confusion_matrix = 36;
    CallbackCheckMetric check_metric = 37;
+   CallbackPerturbAdam perturb_adam = 38;
 }
 
 message CallbackLTFB {
@@ -660,6 +661,16 @@ message CallbackConfusionMatrix {
   string prediction = 1; // Prediction layer
   string label = 2;      // Label layer
   string prefix = 3;     // Prefix for output files
+}
+
+message CallbackPerturbAdam {
+  float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
+  float beta1_factor = 2;           // beta1 perturbation (in log space)
+  float beta2_factor = 3;           // beta2 perturbation (in log space)
+  float eps_factor = 4;             // eps perturbation (in log space)
+  bool perturb_during_training = 5; // Whether to periodically perturb during training
+  int64 batch_interval = 6;         // Frequency of perturbation if perturb_during_training is true
+  string weights = 7;               // Weights with Adam optimizer
 }
 
 //========================================================================
