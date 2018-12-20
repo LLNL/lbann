@@ -39,18 +39,17 @@ namespace lbann {
  *  Messages have hanging indentation and can be output to an output
  *  stream like @c std::cout. For example:
  *
- *  @code{.unparsed}
- *  Title
- *    Some numerical field: 12.3
- *    A boolean parameter: true
- *    Miscellaneous statement
- *  @endcode
+@verbatim
+Title
+  Some numerical field: 12.3
+  A boolean parameter: true
+  Miscellaneous statement
+@endverbatim
  */
 class description {
 public:
 
   /** @param title  First line in description message.
-   *  @param indent Indentation string.
    */
   description(std::string title);
 
@@ -65,9 +64,7 @@ public:
    *
    *  The line is formatted:
    *
-   *  @code{.unparsed}
-   *  <field>: <value>
-   *  @endcode
+   *  @verbatim <field>: <value> @endverbatim
    */
   template <typename T>
   void add(std::string field, T value) {
@@ -82,13 +79,13 @@ public:
    *  The indentation in @c desc is combined with the current
    *  indentation. For instance:
    *
-   *  @code{.unparsed}
-   *  Outer description
-   *    Some numerical field: 12.3
-   *    Nested description
-   *      This: abc
-   *      That: 123
-   *  @endcode
+@verbatim
+Outer description
+  Some numerical field: 12.3
+    Nested description
+      This: abc
+      That: 123
+@endverbatim
    */
   void add(const description& desc);
 
