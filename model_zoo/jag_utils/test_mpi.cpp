@@ -70,12 +70,12 @@ int main(int argc, char *argv[]) {
     comm->global_barrier();
 
     if (rank == 0) {
-      conduit::relay::mpi::send(n, 1, 22, MPI_COMM_WORLD);
+      conduit::relay::mpi::send_using_schema(n, 1, 22, MPI_COMM_WORLD);
     }
 
     else {
       conduit::Node n2;
-      conduit::relay::mpi::recv(n2, 0, 22, MPI_COMM_WORLD);
+      conduit::relay::mpi::recv_using_schema(n2, 0, 22, MPI_COMM_WORLD);
       std::cout << "\nP_1 received the following node from P_0:\n";
       n2.print();
     }
