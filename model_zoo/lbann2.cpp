@@ -54,19 +54,22 @@ int main(int argc, char *argv[]) {
 
     std::stringstream err;
 
+    // Initalize a global I/O thread pool
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+
     std::vector<lbann_data::LbannPB *> pbs;
     protobuf_utils::load_prototext(master, argc, argv, pbs);
 
     model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, true);
+                                                comm, io_thread_pool, true);
     model *model_2 = nullptr;
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm, false);
+                                           comm, io_thread_pool, false);
     }
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      load_model_weights(opts->get_string("ckpt_dir"), model_1);
+      lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), model_1);
     }
     // Train model
     if (master)  std::cerr << "\nSTARTING train - model 1\n\n";

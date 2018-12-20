@@ -37,10 +37,14 @@ option(LBANN_SB_BUILD_ALUMINUM "Pull and build Aluminum from Github" OFF)
 
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)
 
+option(LBANN_SB_BUILD_CONDUIT "Pull and build CONDUIT from Github" OFF)
+
 option(LBANN_SB_BUILD_CUB "Pull CUB from Github" OFF)
 
 option(LBANN_SB_BUILD_ELEMENTAL
   "Pull and build Elemental's main repository from Github" OFF)
+
+option(LBANN_SB_BUILD_HDF5 "Pull and build HDF5 from the internet (not github)" OFF)
 
 option(LBANN_SB_BUILD_HYDROGEN "Pull and build Hydrogen from Github" OFF)
 
@@ -67,10 +71,21 @@ if (LBANN_SB_BUILD_CNPY)
   list(APPEND _BUILD_PKGS CNPY)
 endif ()
 
+if (LBANN_SB_BUILD_CONDUIT)
+  if (LBANN_SB_BUILD_HDF5)
+    add_subdirectory(hdf5)
+    list(APPEND _BUILD_PKGS HDF5)
+  endif()
+
+  add_subdirectory(conduit)
+  list(APPEND _BUILD_PKGS CONDUIT)
+endif ()
+
 if (LBANN_SB_BUILD_CUB)
   add_subdirectory(cub)
   list(APPEND _BUILD_PKGS cub)
 endif ()
+
 
 # Elemental is *SO* complicated.
 if (LBANN_SB_BUILD_ELEMENTAL OR LBANN_SB_BUILD_HYDROGEN)

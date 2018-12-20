@@ -29,23 +29,17 @@ if (${PROJECT_NAME}_USE_PROTOBUF_MODULE)
   endif ()
 
 else ()
-  set(protobuf_MODULE_COMPATIBLE ON)
-  set(protobuf_BUILD_SHARED_LIBS ON)
-
+  option(protobuf_MODULE_COMPATIBLE
+    "Be compatible with FindProtobuf.cmake" ON)
+  option(protobuf_VERBOSE
+    "Enable verbose protobuf output" OFF)
+  
   find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG
+    NAMES protobuf PROTOBUF
     HINTS
-    "${Protobuf_DIR}"
-    "${PROTOBUF_DIR}"
-    "${Protobuf_DIR}/lib64/cmake/protobuf"
-    "${PROTOBUF_DIR}/lib64/cmake/protobuf"
-    "${Protobuf_DIR}/lib/cmake/protobuf"
-    "${PROTOBUF_DIR}/lib/cmake/protobuf"
-    "$ENV{Protobuf_DIR}"
-    "$ENV{PROTOBUF_DIR}"
-    "$ENV{Protobuf_DIR}/lib64/cmake/protobuf"
-    "$ENV{PROTOBUF_DIR}/lib64/cmake/protobuf"
-    "$ENV{Protobuf_DIR}/lib/cmake/protobuf"
-    "$ENV{PROTOBUF_DIR}/lib/cmake/protobuf"
+    "${Protobuf_DIR}" "${PROTOBUF_DIR}"
+    "$ENV{Protobuf_DIR}" "$ENV{PROTOBUF_DIR}"
+    PATH_SUFFIXES lib64/cmake/protobuf lib/cmake/protobuf
     NO_DEFAULT_PATH)
   if(NOT Protobuf_FOUND)
     find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG REQUIRED)
@@ -62,7 +56,7 @@ if (NOT TARGET protobuf::libprotobuf)
   add_library(protobuf::libprotobuf INTERFACE IMPORTED)
   set_property(TARGET protobuf::libprotobuf PROPERTY
     INTERFACE_LINK_LIBRARIES "${PROTOBUF_LIBRARIES}")
-
+  
   set_property(TARGET protobuf::libprotobuf PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_INCLUDE_DIRS}")
 endif ()

@@ -234,8 +234,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_save_model()) {
     const auto& params = proto_cb.save_model();
-    return new lbann_callback_save_model(params.dir(),
-                                         params.extension());
+    if(params.extension().size() != 0) {
+      return new lbann_callback_save_model(params.dir(),
+                                           params.disable_save_after_training(),
+                                           params.extension());
+    }else {
+      return new lbann_callback_save_model(params.dir(),
+                                           params.disable_save_after_training());
+    }
   }
 
   //////////////////////////////////////////////////////////////
@@ -342,7 +348,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_dump_outputs(layer_names,
                                            modes,
                                            params.batch_interval(),
-                                           params.prefix());
+                                           params.prefix(),
+                                           params.format());
   }
   if (proto_cb.has_dump_error_signals()) {
     const auto& params = proto_cb.dump_error_signals();

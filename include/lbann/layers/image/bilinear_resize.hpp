@@ -31,7 +31,8 @@
 
 namespace lbann {
 
-/** Bilinear resize layer.
+/** @brief Resize image with bilinear interpolation.
+ *
  *  Tensors are assumed to be image data in CHW format. Gradients are
  *  not propagated during backprop.
  */
@@ -89,7 +90,7 @@ protected:
     dims[num_dims-2] = m_height;
     dims[num_dims-1] = m_width;
     set_output_dims(dims);
-    
+
   }
 
 private:
@@ -102,7 +103,7 @@ private:
    *  Data is assumed to be in CHW format.
    */
   El::Int m_width;
-  
+
 };
 
 } // namespace lbann

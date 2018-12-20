@@ -42,9 +42,6 @@
 
 using namespace lbann;
 
-#define NUM_OUTPUT_DIRS 100
-#define NUM_SAMPLES_PER_FILE 1000
-
 void get_input_names(std::unordered_set<std::string> &s);
 void get_scalar_names(std::unordered_set<std::string> &s);
 //==========================================================================
@@ -120,7 +117,7 @@ int main(int argc, char *argv[]) {
       try {
 
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (std::exception e) {
+      } catch (...) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
       }
@@ -128,7 +125,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (...) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         continue;
       }
@@ -139,7 +136,7 @@ int main(int argc, char *argv[]) {
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (std::exception e) {
+        } catch (...) {
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
         }
@@ -147,12 +144,11 @@ int main(int argc, char *argv[]) {
         int success = n_ok.to_int64();
         if (success == 1) {
             try {
- 
               for (auto t : input_names) {
                 key = cnames[i] + "/inputs/" + t;
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
               }  
-            } catch (std::exception e) {
+            } catch (...) {
               std::cerr << rank << " :: " << "exception reading an input for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
@@ -162,7 +158,7 @@ int main(int argc, char *argv[]) {
                 key = cnames[i] + "/outputs/scalars/" + t;
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
               }  
-            } catch (std::exception e) {
+            } catch (...) {
               std::cerr << rank << " :: " << "exception reading an scalar for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
@@ -170,7 +166,7 @@ int main(int argc, char *argv[]) {
             try {  
               key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-            } catch (std::exception e) {
+            } catch (...) {
               std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
@@ -178,7 +174,7 @@ int main(int argc, char *argv[]) {
             try { 
               key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-            } catch (std::exception e) {
+            } catch (...) {
               std::cerr << rank << " :: " << "exception reading image: (90.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
@@ -187,14 +183,13 @@ int main(int argc, char *argv[]) {
             try { 
               key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-            } catch (std::exception e) {
+            } catch (...) {
               std::cerr << rank << " :: " << "exception reading image: (90.0, 78.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
           }
         }
       }
-
   } catch (exception const &e) {
     El::ReportException(e);
     finalize(comm);

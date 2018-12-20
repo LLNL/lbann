@@ -37,6 +37,9 @@
 
 namespace lbann {
 
+/** @brief Deprecated.
+ *  @todo Remove.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class target_layer : public generic_target_layer {
  public:

@@ -37,13 +37,14 @@ namespace lbann {
 enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
-  validate 
+  validate
 };
 
 enum class callback_type {
   batch,
   epoch,
   validation,
+  inference,
   invalid
 };
 
@@ -56,10 +57,10 @@ class persist {
   char m_model_filename[1024];
   char m_train_filename[1024];
   char m_validate_filename[1024];
-  callback_type ckpt_type; 
+  callback_type ckpt_type;
  public:
   char m_checkpoint_dir[1024];
-  
+
  public:
   persist();
   ~persist() {};

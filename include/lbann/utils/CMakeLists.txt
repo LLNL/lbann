@@ -22,9 +22,11 @@ set_full_path(THIS_DIR_HEADERS
   summary.hpp
   timer.hpp
   lbann_library.hpp
+  jag_utils.hpp
   )
 
 # Add the subdirectories
+add_subdirectory(threads)
 add_subdirectory(impl)
 
 # Propagate the files up the tree
