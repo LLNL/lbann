@@ -59,13 +59,6 @@ Layer* construct_layer(lbann_comm* comm,
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
-    if (io_buffer == "distributed") {
-      return new input_layer<distributed_io_buffer, layout, Dev>(comm,
-                                                                 num_parallel_readers,
-                                                                 data_readers,
-                                                                 !params.data_set_per_model(),
-                                                                 target_mode);
-    }
     if (io_buffer == "partitioned") {
       return new input_layer<partitioned_io_buffer, layout, Dev>(comm,
                                                                  num_parallel_readers,
