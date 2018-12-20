@@ -1,5 +1,5 @@
 #include "lbann/utils/timer.hpp"
-#include "sample_list.hpp"
+#include "sample_list_jag.hpp"
 #include <deque>
 #include <memory>
 #include <mpi.h>
