@@ -56,6 +56,11 @@ void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, in
 }
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
+  El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_model();
+  El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_model();
+  if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
+    local_mini_batch_size++;
+  }
   for (const auto& it : m_data_buffers) {
     data_buffer *data_buffer = it.second;
     int i = 0;
@@ -69,15 +74,10 @@ void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_t
       }
       i++;
     }
+    /// The amount of space needed will vary based on input layer type,
+    /// but the batch size is the maximum space necessary
+    El::Zeros_seq(data_buffer->m_indices_fetched_per_mb, local_mini_batch_size, 1);
   }
-  El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_model();
-  El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_model();
-  if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
-    local_mini_batch_size++;
-  }
-  /// The amount of space needed will vary based on input layer type,
-  /// but the batch size is the maximum space necessary
-  El::Zeros_seq(m_indices_fetched_per_mb, local_mini_batch_size, 1);
 }
 
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
@@ -95,9 +95,9 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     if(buf->m_input_buffers.size() == 2) {
-      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), m_indices_fetched_per_mb, data_reader);
+      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     }else {
-      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), m_indices_fetched_per_mb, data_reader);
+      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     }
     bool data_valid = (buf->m_num_samples_fetched > 0);
     if(data_valid) {
@@ -135,9 +135,37 @@ bool lbann::partitioned_io_buffer::update_data_set(generic_data_reader *data_rea
   }
 }
 
+void lbann::partitioned_io_buffer::set_fetch_data_in_background(bool flag, execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  buf->m_fetch_data_in_background = flag;
+}
+
+bool lbann::partitioned_io_buffer::is_data_fetched_in_background(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return buf->m_fetch_data_in_background;
+}
+
+/**
+ * Return the sample indices fetched in the current mini-batch.
+ */
+El::Matrix<El::Int>* lbann::partitioned_io_buffer::get_sample_indices_fetched_per_mb(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return &(buf->m_indices_fetched_per_mb);
+}
+
 int lbann::partitioned_io_buffer::num_samples_ready(execution_mode mode) {
   data_buffer *buf = get_data_buffer(mode);
   return buf->m_num_samples_fetched;
+}
+
+void lbann::partitioned_io_buffer::set_data_fetch_future(std::future<void> future, execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  buf->m_data_fetch_future = std::move(future);
+}
+
+std::future<void> lbann::partitioned_io_buffer::get_data_fetch_future(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return std::move(buf->m_data_fetch_future);
 }
 
 int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {

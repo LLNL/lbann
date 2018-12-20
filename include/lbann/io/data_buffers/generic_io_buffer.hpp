@@ -113,7 +113,12 @@ public:
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {}
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {}
   virtual bool update_data_set(generic_data_reader *data_reader, execution_mode mode) = 0;
+  virtual void set_fetch_data_in_background(bool flag, execution_mode mode) = 0;
+  virtual bool is_data_fetched_in_background(execution_mode mode) = 0;
+  virtual El::Matrix<El::Int>* get_sample_indices_fetched_per_mb(execution_mode mode) = 0;
   virtual int num_samples_ready(execution_mode mode) = 0;
+  virtual void set_data_fetch_future(std::future<void> future, execution_mode mode) = 0;
+  virtual std::future<void> get_data_fetch_future(execution_mode mode) = 0;
 
   virtual void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
   virtual void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) = 0;
@@ -125,10 +130,6 @@ public:
   lbann_comm *m_comm;
   const fetch_data_functor *fetch_data_fn;
   const update_data_reader_functor *update_data_reader_fn;
-  std::atomic<bool> fetch_data_in_background;
-  std::future<void> data_fetch_future;
-  /// 1-D Matrix of which indices were fetched in this mini-batch
-  El::Matrix<El::Int> m_indices_fetched_per_mb;
 };
 }
 
