@@ -1,4 +1,8 @@
 # Building LBANN
+## Download
+
+LBANN can be cloned from the [Github repo](https://github.com/LLNL/lbann).
+
 ## Dependencies
 
 The following third-party packages are currently required to build
