@@ -1,5 +1,5 @@
-## Building LBANN
-### Dependencies
+# Building LBANN
+## Dependencies
 
 The following third-party packages are currently required to build
 LBANN. All may be installed using
@@ -52,14 +52,14 @@ The following LLNL-maintained packages are optional.
   structured data produced by scientific simulations.
 
 
-### Building with [Spack](https://github.com/llnl/spack)
+## Building with [Spack](https://github.com/llnl/spack)
 
 Some variation on the theme of `spack install lbann`. bvanessen should
 document the spack flags or whatever they call them that LBANN
 supports. I don't know the current state of spack with respect to its
 building LBANN correctly and/or successfully.
 
-### Buidling with [CMake](https://cmake.org)
+## Buidling with [CMake](https://cmake.org)
 
 LBANN uses [CMake](https://cmake.org) for its build system and a
 version newer than or equal to 3.9.0 is required. LBANN development is
@@ -70,7 +70,7 @@ Windows machines.
 It is required that LBANN be built out-of-source. That is, CMake must
 not be invoked in a directory containing a CMakeLists.
 
-#### LBANN CMake options
+### LBANN CMake options
 The following options are exposed in the CMake build system.
 
 + `LBANN_WITH_ALUMINUM` (Default: `OFF`): Use the Aluminum communication
@@ -118,7 +118,7 @@ The following variables may also be set:
 + `LBANN_DATATYPE` (Default: `float`): The datatype to use for
   training. Currently this must be `float` or `double`.
 
-#### Controlling dependency resolution
+### Controlling dependency resolution
 The following variables may be set with CMake to identify dependencies
 that are not installed into the "typical" locations that CMake
 searches by default. They may be either exported into the environment
@@ -167,7 +167,7 @@ documentation of the packages that are causing the issues as they may
 require additional CMake/environment flags to be set before properly
 resolving.
 
-#### Example CMake invocation
+### Example CMake invocation
 A sample CMake build for LBANN might look like the following.
 
     cmake \
@@ -178,7 +178,7 @@ A sample CMake build for LBANN might look like the following.
       -D HWLOC_DIR:PATH=/path/to/hwloc \
       /path/to/lbann
 
-### Building an entire ecosystem with the "Superbuild"
+## Building an entire ecosystem with the "Superbuild"
 
 __WARNING__: This is primarily for developer convenience and is not
 meant to be robust to all possible use-cases for LBANN.
@@ -225,7 +225,7 @@ prefixed with `LBANN_SB_`; other options that appear in a CMake
 invocation for the superbuild are either interpreted on a sub-project
 basis or forwarded to certain sub-projects.
 
-#### Choosing packages to build in the Superbuild
+### Choosing packages to build in the Superbuild
 The superbuild system is _constructive_ or _additive_; that is, it
 will only build the packages that it is asked to build. Any required
 package that is not requested is assumed to exist on the system by the
@@ -249,7 +249,7 @@ _only_. Acceptable values for `<PKG>` are `ALUMINUM`, `CNPY`,
 `CONDUIT`, `CUB`, `HDF5`, `HYDROGEN`, `JPEG_TURBO`, `OPENCV`,
 `PROTOBUF` and `LBANN`.
 
-#### Forwarding options to sub-projects
+### Forwarding options to sub-projects
 The subprojects are largely pre-configured to "do the right thing" for
 building LBANN. However, there are some variables that users of the
 superbuild system may need to control. These are exposed as regular
@@ -288,7 +288,7 @@ following CMake invocation would send
       -D LBANN_SB_FWD_LBANN_SPHINX_DIR=/path/to/sphinx \
       /path/to/superbuild
 
-#### Special targets in the Superbuild
+### Special targets in the Superbuild
 Modern shells should be able to tab-complete the names of targets in
 Makefiles or Ninja files, and IDEs should display all targets
 interactively. The superbuild should create project-level targets for
@@ -312,7 +312,7 @@ and may be used to generate both tarballs at once. The resulting
 tarballs are helpful to the build system maintainers for debugging
 build issues if using the superbuild system.
 
-#### A full superbuild example
+### A full superbuild example
 A full invocation to the superbuild that builds all dependencies might
 look like the following. This example will use a CUDA-enabled build
 with Aluminum and CONDUIT support using the currently-load GCC
@@ -368,7 +368,7 @@ timely manner or at all if they do not affect the development team. To
 repeat, the superbuild exists for developer convenience and is not
 meant to supplant a legitimate package manager.
 
-### Deprecated or special-use methods
+## Deprecated or special-use methods
 At time of writing, there is another developer-only build method. The
 `build_lbann_lc.sh` script in the `scripts/` directory exists for use
 _by developers only_. Certain paths through this script require access
