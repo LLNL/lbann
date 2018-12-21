@@ -10,7 +10,7 @@ if (LBANN_HAS_PROTOBUF)
   set(PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.h")
   add_custom_command(
     COMMAND protobuf::protoc
-    "--cpp_out=${DLL_EXPORT_DECL}${CMAKE_CURRENT_BINARY_DIR}"
+    "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
     "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto"
     OUTPUT ${PROTO_SRCS} ${PROTO_HDRS}
