@@ -43,6 +43,7 @@ namespace lbann {
 class generic_input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
+  using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
   generic_input_layer(lbann_comm *comm,
@@ -52,7 +53,6 @@ class generic_input_layer : public io_layer {
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
     : io_layer(comm, data_set_spans_models, dr_mode),
       m_io_buffers(),
-      m_active_buffer(-1),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
@@ -80,6 +80,10 @@ class generic_input_layer : public io_layer {
     if(m_data_readers[execution_mode::testing] != nullptr) {
       m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
+
+    m_active_buffer[execution_mode::training].store(-1);
+    m_active_buffer[execution_mode::validation].store(-1);
+    m_active_buffer[execution_mode::testing].store(-1);
   }
 
   ~generic_input_layer() override {
@@ -239,15 +243,15 @@ class generic_input_layer : public io_layer {
     /// the data_store (via the data_reader) to read in the
     /// next mb from file, then exchange data as needed
     get_data_reader()->init_minibatch();
-    m_active_buffer++;
+    increment_active_buffer_idx(mode);
 
-    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
+    generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
 
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->is_data_fetched_in_background(mode)) {
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, m_active_buffer.load(), mode));
+        std::bind(&generic_input_layer::fetch_data_in_background, this, get_active_buffer_idx(mode), mode));
       io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       io_buffer->set_fetch_data_in_background(true, mode);
     }
@@ -290,7 +294,7 @@ class generic_input_layer : public io_layer {
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
 
     if(!m_data_set_processed) {
-      int next_active_buffer = m_active_buffer + 1;
+      int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
@@ -538,7 +542,8 @@ class generic_input_layer : public io_layer {
    * Return the sample indices fetched in the current mini-batch.
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
-    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
+    execution_mode mode = this->m_model->get_execution_mode();
+    generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
     return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_mode());
   }
 
@@ -866,9 +871,16 @@ class generic_input_layer : public io_layer {
     return true;
   }
 
+  int get_active_buffer_idx(execution_mode m) {
+    return m_active_buffer[m].load();
+  }
+  void increment_active_buffer_idx(execution_mode m) {
+    m_active_buffer[m]++;
+  }
+
  protected:
   std::vector<generic_io_buffer*> m_io_buffers;
-  std::atomic<int> m_active_buffer;
+  io_buffer_map_t m_active_buffer;
 
   dataset m_training_dataset;
   dataset m_testing_dataset;
