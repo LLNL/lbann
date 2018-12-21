@@ -80,40 +80,6 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> files;
     const std::string fn = opts->get_string("filelist"); 
     read_filelist(comm, fn, files);
-#if 0
-    const int rank = comm->get_rank_in_world();
-    int size;
-    if (!rank) {
-      std::stringstream s;
-      std::ifstream in(opts->get_string("filelist").c_str());
-      if (!in) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + opts->get_string("filelist") + " for reading");
-      }
-      std::string line;
-      while (getline(in, line)) {
-        if (line.size()) {
-          s << line << " ";
-        }
-      }
-      in.close();
-      f = s.str();
-      size = s.str().size();
-      std::cout << "size: " << size << "\n";
-    }
-    comm->world_broadcast<int>(0, &size, 1);
-    f.resize(size);
-    comm->world_broadcast<char>(0, &f[0], size);
-
-    std::stringstream s2(f);
-    std::string filename;
-    while (s2 >> filename) {
-      if (filename.size()) {
-        files.push_back(filename);
-      }
-    }
-    if (rank==1) std::cerr << "num files: " << files.size() << "\n";
-#endif
-    //=======================================================================
 
     std::vector<std::string> scalar_names;
     std::vector<std::string> input_names;
@@ -148,6 +114,12 @@ int main(int argc, char *argv[]) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
     }
 
+    sprintf(b, "%s/sample_index.%d",   dir.c_str(), rank);
+    std::ofstream out2(b);
+    if (!out) {
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + b + " for writing");
+    }
+
     size_t h = 0;
     for (size_t j=rank; j<files.size(); j+= np) {
       h += 1;
@@ -156,20 +128,15 @@ int main(int argc, char *argv[]) {
       try {
 std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (std::exception e) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
-        continue;
       } catch (...) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
         continue;
       }  
+      out2 << ">" << files[j] << "\n";
 
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
-        std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
-        continue;
       } catch (...) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         continue;
@@ -181,9 +148,6 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (std::exception e) {
-          std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
-          continue;
         } catch (...) {  
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
@@ -191,6 +155,7 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
         int success = n_ok.to_int64();
         if (success == 1) {
+          out2 << cnames[i] << "\n";
           for (auto t : scalar_names) {
             key = cnames[i] + "/outputs/scalars/" + t;
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
@@ -209,6 +174,7 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
       }
     }
     out.close();
+    out2.close();
 
     comm->global_barrier();
 
@@ -219,6 +185,13 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
       if (r != 0) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s3.str());
       }
+      s3.clear();
+      s3.str("");
+      s3 << "cat " << dir << "/sample_index* > " << dir << "/sample_idx.txt; rm -f " << dir << "/sample_index*";
+      r = system(s3.str().c_str());
+      if (r != 0) {
+        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s3.str());
+      }
     }
 
     int global_num_samples;
@@ -226,7 +199,7 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
     MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); 
 
     if (master) {
-      std::ofstream out2(dir + "/index.txt");
+      out2.open(dir + "/index.txt");
       if (!out2) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + dir  + "/index.txt for writing");
       }

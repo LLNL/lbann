@@ -407,6 +407,21 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_gpu_memory_usage();
   }
 
+  //////////////////////////////////////////////////////////////
+  // Hyperparameter exploration
+  //////////////////////////////////////////////////////////////
+  if (proto_cb.has_perturb_adam()) {
+    const auto& params = proto_cb.perturb_adam();
+    return new lbann_callback_perturb_adam(
+                 params.learning_rate_factor(),
+                 params.beta1_factor(),
+                 params.beta2_factor(),
+                 params.eps_factor(),
+                 params.perturb_during_training(),
+                 params.batch_interval(),
+                 parse_set<std::string>(params.weights()));
+  }
+
   return nullptr;
 }
 

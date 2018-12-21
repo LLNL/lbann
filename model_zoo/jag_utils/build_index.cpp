@@ -38,6 +38,7 @@
 #include <string>
 #include <sstream>
 #include "lbann/lbann.hpp"
+#include "lbann/utils/jag_utils.hpp"
 
 using namespace lbann;
 
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
       if (master) {
-        std::cout << "usage: " << argv[0] << " --base_dir=<string> --filelist=<string> --output_fn=<string>\n"
+        std::cout << "usage: " << argv[0] << " --filelist=<string> --output_fn=<string>\n"
           "where: filelist contains a list of conduit filenames;\n"
           "       base_dir / <name from filelist> should fully specify\n"
           "       a conduit filepath\n"
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (! (opts->has_string("filelist") && opts->has_string("output_fn") && opts->has_string("base_dir"))) {
+    if (! (opts->has_string("filelist") && opts->has_string("output_fn") )) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
     }
 
@@ -94,46 +95,31 @@ int main(int argc, char *argv[]) {
     }
 
     // get list of input filenames
-    std::ifstream in(input_fn.c_str());
-    if (!in) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + input_fn + " for reading");
-    }
-    std::string line;
     std::vector<std::string> filenames;
-    while (in >> line) {
-      if (line.size()) {
-        filenames.push_back(line);
-      }
-    }
+    read_filelist(comm, input_fn, filenames);
 
     int global_num_samples = 0;
     int np = comm->get_procs_in_world();
-    size_t c = 0;
     size_t total_good = 0;
     hid_t hdf5_file_hnd;
     for (size_t j=rank; j<filenames.size(); j+=np) {
-      ++c;
-      if (c % 10 == 0) {
-        std::cerr << rank << " :: processed: " << c << " files; num valid: " << total_good << "\n";
-      }
-      out << filenames[j] << " ";
-      std::stringstream s2;
-      s2 << base_dir << "/" << filenames[j];
+      std::cerr << rank << " :: processing: " << filenames[j] << "\n";
       try {
-      hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( s2.str().c_str() );
-      } catch (exception e) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << e.what() << "\n";
-        continue;
+        std::string fn = filenames[j];
+        size_t start_pos = fn.find(base_dir);
+        if (start_pos != std::string::npos) {
+          fn.replace(start_pos, base_dir.size(), "");
+        }
+        const std::string sss = base_dir + '/' + fn;
+        out << fn << " ";
+        hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( sss );
       } catch (...) {
-         std::cerr << "exception hdf5_open_file_for_read\n";
+         std::cerr << "exception hdf5_open_file_for_reading: " << filenames[j] << "\n";
          continue;
       }
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch  (exception e) {
-        std::cerr << rank << " :: exception hdf5_group_list_child_names: " << e.what() << "\n";
-        continue;
       } catch (...) {
          std::cerr << "exception hdf5_group_list_child_names\n";
          continue;
@@ -146,10 +132,8 @@ int main(int argc, char *argv[]) {
         const std::string key_1 = "/" + cnames[h] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
-        } catch (exception e) {
-          std::cerr << rank << " :: exception hdf5_read: " << e.what() << "\n";
         } catch (...) {
-           std::cerr << "exception hdf5_read file: " << s2.str() << "; key: " << key_1 << "\n";
+           std::cerr << "exception hdf5_read file: " << filenames[j] << "; key: " << key_1 << "\n";
            continue;
         }
         int success = n_ok.to_int64();
@@ -165,9 +149,6 @@ int main(int argc, char *argv[]) {
       out << is_good << " " << is_bad << " " << s5.str() << "\n";
       try {
         conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-      } catch (exception e) {
-        std::cerr << rank << " :: exception hdf5_close_file: " << e.what() << "\n";
-        continue;
       } catch (...) {
          std::cerr << "exception hdf5_close_file\n";
          continue;
