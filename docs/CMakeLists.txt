@@ -53,6 +53,9 @@ if (SPHINX_FOUND)
     COMMAND ${CMAKE_COMMAND} -E remove_directory ${SPHINX_OUTPUT_DIR}
     COMMENT "Removing Sphinx documentation."
     VERBATIM)
+
+  add_dependencies(doc sphinx)
+  add_dependencies(clean-doc clean-sphinx)
 endif ()
 
 if (DOXYGEN_FOUND)
@@ -102,6 +105,5 @@ if (DOXYGEN_FOUND)
   # future, build all types of documentation (e.g. Doxygen, Sphinx,
   # the next great thing in code documentation, etc...)
   add_dependencies(doc doxygen)
-
   add_dependencies(clean-doc clean-doxygen)
 endif()
