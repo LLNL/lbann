@@ -1,8 +1,64 @@
 find_package(Doxygen)
+find_package(Sphinx)
+
+if (SPHINX_FOUND OR DOXYGEN_FOUND)
+  add_custom_target(doc)
+  add_custom_target(clean-doc)
+endif ()
+
+if (SPHINX_FOUND)
+  set_full_path(SPHINX_SOURCES
+    conf.py
+    callbacks.rst
+    getting_started.rst
+    index.rst
+    io.rst
+    layers.rst
+    learning.rst
+    loss_functions.rst
+    metrics.rst
+    objective_functions.rst
+    optimizers.rst
+    regularizers.rst
+    transform.rst
+    weight_regularization.rst)
+
+  if (NOT SPHINX_BUILDER)
+    set(SPHINX_BUILDER "html")
+  endif ()
+  set(SPHINX_OUTPUT_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/sphinx/${SPHINX_BUILDER}")
+
+  # Apparently the Makefile generator doesn't do this properly
+  add_custom_target(make_sphinx_dir
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SPHINX_OUTPUT_DIR}"
+    COMMENT "Creating the sphinx output directory."
+    VERBATIM)
+
+  set(SPHINX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+  set(SPHINX_BUILD_DIR "${SPHINX_OUTPUT_DIR}")
+
+  add_custom_target(sphinx
+    COMMAND "${SPHINX_EXECUTABLE}" "-b" "${SPHINX_BUILDER}"
+    "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILD_DIR}"
+    BYPRODUCTS "${SPHINX_OUTPUT_DIR}/index.html"
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    SOURCES "${SPHINX_SOURCES}"
+    COMMENT
+    "Generating Sphinx documentation as ${SPHINX_OUTPUT_DIR}/index.html"
+    VERBATIM)
+  add_dependencies(sphinx make_sphinx_dir)
+
+  add_custom_target(clean-sphinx
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${SPHINX_OUTPUT_DIR}
+    COMMENT "Removing Sphinx documentation."
+    VERBATIM)
+endif ()
 
 if (DOXYGEN_FOUND)
   set(DOXYGEN_SOURCES
-    Doxyfile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
     )
 
   # Setup Dot support
@@ -27,9 +83,6 @@ if (DOXYGEN_FOUND)
     COMMENT "Creating the doxygen output directory."
     VERBATIM)
 
-  # These are not just called "doc" so that we may one day support
-  # many different in-source documentation platforms. This may be
-  # overly optimistic.
   add_custom_target(doxygen
     COMMAND "${DOXYGEN_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
     BYPRODUCTS "${DOXYGEN_OUTPUT_DIR}/html/index.html"
@@ -48,9 +101,7 @@ if (DOXYGEN_FOUND)
   # Add shortcuts that will, in the distant and possibly fictitious
   # future, build all types of documentation (e.g. Doxygen, Sphinx,
   # the next great thing in code documentation, etc...)
-  add_custom_target(doc)
   add_dependencies(doc doxygen)
 
-  add_custom_target(clean-doc)
   add_dependencies(clean-doc clean-doxygen)
 endif()
