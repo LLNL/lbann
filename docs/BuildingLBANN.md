@@ -367,3 +367,12 @@ will be evaluated on a case-by-case basis and may not be fixed in a
 timely manner or at all if they do not affect the development team. To
 repeat, the superbuild exists for developer convenience and is not
 meant to supplant a legitimate package manager.
+
+### Deprecated or special-use methods
+At time of writing, there is another developer-only build method. The
+`build_lbann_lc.sh` script in the `scripts/` directory exists for use
+_by developers only_. Certain paths through this script require access
+to a certain linux group on the Livermore Computing machines (LC) and
+the script may not work for those without that access. Please consult
+the preceding sections for alternative and preferred methods for
+building LBANN.
