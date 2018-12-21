@@ -208,8 +208,8 @@ another are not supported by the superbuild framework.
 
 + cuDNN is a freely available binary package available from NVIDIA.
 + NCCL is a freely available binary package available from
-  NVIDIA. Inspired users may also build it from source from its github
-  [repository](https://github.com/nvidia/nccl).
+  NVIDIA. Inspired users may also build it from source from its
+  [github repository](https://github.com/nvidia/nccl).
 + HWLOC is often installed by default, especially on large
   supercomputers. Certain components may require superuser access to
   configure, but these features are not used by LBANN. If it is not
@@ -217,20 +217,21 @@ another are not supported by the superbuild framework.
   manager, install using Spack, or build from
   [source](https://www.open-mpi.org/projects/hwloc/).
 
-The superbuild system is _constructive_; that is, it will only build
-the packages that it is asked to build. Any required package that is
-not requested is assumed to exist on the system by the time it is
-needed by whichever package requires it. For example, if HDF5 is
-provided by the system administrators on a system, it does not need to
-be built and CONDUIT can be built by pointing its build to the system
-HDF5.
-
 The superbuild system is itself a CMake project rooted in
 `$LBANN_HOME/superbuild` (distinct from the LBANN CMake project rooted
 in `$LBANN_HOME`). Options that control the superbuild system are
 prefixed with `LBANN_SB_`; other options that appear in a CMake
 invocation for the superbuild are either interpreted on a sub-project
 basis or forwarded to certain sub-projects.
+
+#### Choosing packages to build in the Superbuild
+The superbuild system is _constructive_ or _additive_; that is, it
+will only build the packages that it is asked to build. Any required
+package that is not requested is assumed to exist on the system by the
+time it is needed by whichever package requires it. For example, if
+HDF5 is provided by the system administrators on a system, it does not
+need to be built and CONDUIT can be built by pointing its build to the
+system HDF5.
 
 Packages are included in a superbuild by passing
 `LBANN_SB_BUILD_<PKG>` options to CMake _for each package_ that it
@@ -246,3 +247,6 @@ will invoke the superbuild to build Aluminum, Hydrogen, and LBANN
 _only_. Acceptable values for `<PKG>` are `ALUMINUM`, `CNPY`,
 `CONDUIT`, `CUB`, `HDF5`, `HYDROGEN`, `JPEG_TURBO`, `OPENCV`,
 `PROTOBUF` and `LBANN`.
+
+#### Forwarding options to sub-projects
+`LBANN_SB_FWD_<PKG>_<OPTION>=...`
