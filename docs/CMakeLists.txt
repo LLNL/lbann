@@ -7,55 +7,63 @@ if (SPHINX_FOUND OR DOXYGEN_FOUND)
 endif ()
 
 if (SPHINX_FOUND)
-  set_full_path(SPHINX_SOURCES
-    conf.py
-    callbacks.rst
-    getting_started.rst
-    index.rst
-    io.rst
-    layers.rst
-    learning.rst
-    loss_functions.rst
-    metrics.rst
-    objective_functions.rst
-    optimizers.rst
-    regularizers.rst
-    transform.rst
-    weight_regularization.rst)
+  find_package(Breathe)
+  if (NOT BREATHE_FOUND)
+    message(WARNING
+      "Sphinx has been detected, but could not find the Breathe tool. "
+      "This is currently required for building LBANN's sphinx documentation. "
+      "Please install breathe (e.g., \"pip install breathe\") and reconfigure.")
+  else ()
+    set_full_path(SPHINX_SOURCES
+      conf.py
+      callbacks.rst
+      getting_started.rst
+      index.rst
+      io.rst
+      layers.rst
+      learning.rst
+      loss_functions.rst
+      metrics.rst
+      objective_functions.rst
+      optimizers.rst
+      regularizers.rst
+      transform.rst
+      weight_regularization.rst)
 
-  if (NOT SPHINX_BUILDER)
-    set(SPHINX_BUILDER "html")
+    if (NOT SPHINX_BUILDER)
+      set(SPHINX_BUILDER "html")
+    endif ()
+    set(SPHINX_OUTPUT_DIR
+      "${CMAKE_CURRENT_BINARY_DIR}/sphinx/${SPHINX_BUILDER}")
+
+    # Apparently the Makefile generator doesn't do this properly
+    add_custom_target(make_sphinx_dir
+      COMMAND ${CMAKE_COMMAND} -E make_directory "${SPHINX_OUTPUT_DIR}"
+      COMMENT "Creating the sphinx output directory."
+      VERBATIM)
+
+    set(SPHINX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+    set(SPHINX_BUILD_DIR "${SPHINX_OUTPUT_DIR}")
+
+    add_custom_target(sphinx
+      COMMAND "${SPHINX_EXECUTABLE}" "-b" "${SPHINX_BUILDER}"
+      "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILD_DIR}"
+      BYPRODUCTS "${SPHINX_OUTPUT_DIR}/index.html"
+      WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+      SOURCES "${SPHINX_SOURCES}"
+      COMMENT
+      "Generating Sphinx documentation as ${SPHINX_OUTPUT_DIR}/index.html"
+      VERBATIM)
+    add_dependencies(sphinx make_sphinx_dir)
+
+    add_custom_target(clean-sphinx
+      COMMAND ${CMAKE_COMMAND} -E remove_directory ${SPHINX_OUTPUT_DIR}
+      COMMENT "Removing Sphinx documentation."
+      VERBATIM)
+
+    add_dependencies(doc sphinx)
+    add_dependencies(clean-doc clean-sphinx)
   endif ()
-  set(SPHINX_OUTPUT_DIR
-    "${CMAKE_CURRENT_BINARY_DIR}/sphinx/${SPHINX_BUILDER}")
-
-  # Apparently the Makefile generator doesn't do this properly
-  add_custom_target(make_sphinx_dir
-    COMMAND ${CMAKE_COMMAND} -E make_directory "${SPHINX_OUTPUT_DIR}"
-    COMMENT "Creating the sphinx output directory."
-    VERBATIM)
-
-  set(SPHINX_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-  set(SPHINX_BUILD_DIR "${SPHINX_OUTPUT_DIR}")
-
-  add_custom_target(sphinx
-    COMMAND "${SPHINX_EXECUTABLE}" "-b" "${SPHINX_BUILDER}"
-    "${SPHINX_SOURCE_DIR}" "${SPHINX_BUILD_DIR}"
-    BYPRODUCTS "${SPHINX_OUTPUT_DIR}/index.html"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-    SOURCES "${SPHINX_SOURCES}"
-    COMMENT
-    "Generating Sphinx documentation as ${SPHINX_OUTPUT_DIR}/index.html"
-    VERBATIM)
-  add_dependencies(sphinx make_sphinx_dir)
-
-  add_custom_target(clean-sphinx
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${SPHINX_OUTPUT_DIR}
-    COMMENT "Removing Sphinx documentation."
-    VERBATIM)
-
-  add_dependencies(doc sphinx)
-  add_dependencies(clean-doc clean-sphinx)
 endif ()
 
 if (DOXYGEN_FOUND)
