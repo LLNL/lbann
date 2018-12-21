@@ -40,4 +40,5 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(test_mpi-bin lbann )
   set_target_properties(test_mpi-bin PROPERTIES OUTPUT_NAME test_mpi)
 
+  add_executable( select_samples select_samples.cpp )
 endif ()

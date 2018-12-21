@@ -249,12 +249,15 @@ while :; do
         --disable-cuda)
             WITH_CUDA=OFF
             WITH_CUDA_2=OFF
+            WITH_ALUMINUM=OFF
             ;;
         --disable-topo-aware)
             WITH_TOPO_AWARE=OFF
             ;;
         --disable-aluminum)
             WITH_ALUMINUM=OFF
+            WITH_CUDA=OFF
+            WITH_CUDA_2=OFF
             ;;
         --aluminum-with-mpi-cuda)
             WITH_ALUMINUM=ON
@@ -262,6 +265,8 @@ while :; do
             ;;
         --disable-aluminum-with-nccl)
             ALUMINUM_WITH_NCCL=OFF
+            WITH_CUDA=OFF
+            WITH_CUDA_2=OFF
             ;;
         --with-conduit)
             WITH_CONDUIT=ON
