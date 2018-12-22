@@ -232,7 +232,7 @@ class generic_input_layer : public io_layer {
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dr_mutex);
     setup_next_io_buffer(io_buffer);
-    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
     return;
   }
 
