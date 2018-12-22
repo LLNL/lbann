@@ -14,11 +14,11 @@ option(Hydrogen_USE_64BIT_BLAS_INTS
 option(Hydrogen_ENABLE_TESTING "Enable the hydrogen tests." OFF)
 
 # Where to install Hydrogen
-set(Hydrogen_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+set(HYDROGEN_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Hydrogen.")
 
 # The build type for Hydrogen
-set(Hydrogen_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
+set(HYDROGEN_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for Hydrogen.")
 
 if (TARGET OPENBLAS)
@@ -61,8 +61,7 @@ endif ()
 get_property(HYDROGEN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER HYDROGEN_VARIABLES INCLUDE REGEX
   "^HYDROGEN_.*\|^Hydrogen_.*\|^LBANN_SB_FWD_HYDROGEN_.*\|^LBANN_SB_FWD_Hydrogen_.*")
-list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX
-  "Hydrogen_URL\|Hydrogen_TAG\|Hydrogen_CMAKE_GENERATOR")
+list(FILTER HYDROGEN_VARIABLES EXCLUDE REGEX "HYDROGEN_URL\|HYDROGEN_TAG")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE HYDROGEN_CMAKE_ARGS
@@ -72,19 +71,19 @@ create_cmake_arguments(
   VARIABLES ${HYDROGEN_VARIABLES})
 
 # Handle the clone mechanism. First URL
-option(Hydrogen_CLONE_VIA_SSH
+option(HYDROGEN_CLONE_VIA_SSH
   "Clone Hydrogen using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
 
-if (Hydrogen_CLONE_VIA_SSH)
-  set(Hydrogen_URL git@github.com:LLNL/Elemental.git
+if (HYDROGEN_CLONE_VIA_SSH)
+  set(HYDROGEN_URL git@github.com:LLNL/Elemental.git
     CACHE STRING "The URL from which to clone Hydrogen")
 else ()
-  set(Hydrogen_URL "https://github.com/LLNL/Elemental.git"
+  set(HYDROGEN_URL "https://github.com/LLNL/Elemental.git"
     CACHE STRING "The URL from which to clone Hydrogen")
 endif ()
 
 # ... then the tag.
-set(Hydrogen_TAG "hydrogen"
+set(HYDROGEN_TAG "hydrogen"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 include(ExternalProject)
@@ -92,12 +91,12 @@ ExternalProject_Add(HYDROGEN
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${Hydrogen_URL}
-  GIT_TAG ${Hydrogen_TAG}
+  GIT_REPOSITORY ${HYDROGEN_URL}
+  GIT_TAG ${HYDROGEN_TAG}
   ${_hydrogen_depends_tag} ${_HYDROGEN_DEPENDS}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
-  INSTALL_DIR ${Hydrogen_CMAKE_INSTALL_PREFIX}
+  INSTALL_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
   LOG_DOWNLOAD 1
   LOG_UPDATE 1
@@ -113,5 +112,5 @@ ExternalProject_Add(HYDROGEN
   ${HYDROGEN_CMAKE_ARGS}
   )
 
-set(HYDROGEN_DIR ${Hydrogen_CMAKE_INSTALL_PREFIX}
+set(HYDROGEN_DIR ${HYDROGEN_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of Hydrogen.")

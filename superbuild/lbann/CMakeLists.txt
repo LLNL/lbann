@@ -27,7 +27,7 @@ if (CMAKE_HOST_SYSTEM_NAME MATCHES "Linux")
     if (LBANN_SB_BUILD_${_pkg})
       if (_pkg STREQUAL "HYDROGEN")
         list(APPEND LBANN_CMAKE_INSTALL_RPATH
-          "${Hydrogen_CMAKE_INSTALL_PREFIX}/lib")
+          "${HYDROGEN_CMAKE_INSTALL_PREFIX}/lib")
       else ()
         list(APPEND LBANN_CMAKE_INSTALL_RPATH
           "${${_pkg}_CMAKE_INSTALL_PREFIX}/lib")
