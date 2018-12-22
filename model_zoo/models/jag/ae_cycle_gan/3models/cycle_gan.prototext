@@ -217,7 +217,7 @@ model {
     }
     name: "gen1fc1"
     data_layout: "data_parallel"
-    #weights: "gen1fc1linearity"
+    weights: "gen1fc1linearity gen1fc1bias"
     parents: "param_data_id"
   }
   layer {
@@ -234,7 +234,7 @@ model {
     }
     name: "gen1fc2"
     data_layout: "data_parallel"
-    #weights: "gen1fc2linearity"
+    weights: "gen1fc2linearity gen1fc2bias"
     parents: "gen1relu1"
   }
   layer {
@@ -259,7 +259,7 @@ model {
     }
     name: "gen1fc3"
     data_layout: "data_parallel"
-    #weights: "gen1fc3linearity"
+    weights: "gen1fc3linearity gen1fc3bias"
     #parents: "gen1dropout1"
     parents: "gen1relu2"
   }
@@ -281,7 +281,7 @@ model {
     }
     name: "gen1fc4"
     data_layout: "data_parallel"
-    #weights: "gen1fc4linearity"
+    weights: "gen1fc4linearity gen1fc4bias"
     parents: "gen1relu3"
   }
   #concat latenty sample (image_data_dummy) and param
@@ -749,9 +749,15 @@ model {
     }
   }
   weights {
+    name: "gen1fc1bias"
+  }
+  weights {
     name: "gen1fc2linearity"
     he_normal_initializer {
     }
+  }
+  weights {
+    name: "gen1fc2bias"
   }
   weights {
     name: "gen1fc3linearity"
@@ -759,9 +765,15 @@ model {
     }
   }
   weights {
+    name: "gen1fc3bias"
+  }
+  weights {
     name: "gen1fc4linearity"
     he_normal_initializer {
     }
+  }
+  weights {
+    name: "gen1fc4bias"
   }
   weights {
     name: "d1fc1linearity"
@@ -858,10 +870,10 @@ model {
   }
   #callback {
   #  ltfb {
-  #    round_size: 100
-  #    eval_metrics: "l_l2_y_eval"
-  #    increasing_metric_mode: false
-  #    weights_tosend: "gen1fc1_linearity_weights gen1fc1_bias_weights gen1fc2_linearity_weights gen1fc2_bias_weights gen1fc3_linearity_weights gen1fc3_bias_weights gen1fc4_linearity_weights gen1fc4_bias_weights gen2fc1_linearity_weights gen2fc1_bias_weights gen2fc2_linearity_weights gen2fc2_bias_weights gen2fc3_linearity_weights gen2fc3_bias_weights gen2fc4_linearity_weights gen2fc4_bias_weights"
+  #    batch_interval: 100
+  #    metric: "l_l2_y_eval"
+  #    low_score_wins: true
+  #    weights: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias gen2fc1_linearity_weights gen2fc1_bias_weights gen2fc2_linearity_weights gen2fc2_bias_weights gen2fc3_linearity_weights gen2fc3_bias_weights gen2fc4_linearity_weights gen2fc4_bias_weights"
 
    # }
  # }
@@ -884,4 +896,5 @@ model {
       execution_modes: "test"
     }
   }
+  callback { save_model { dir: "model" } }
 }

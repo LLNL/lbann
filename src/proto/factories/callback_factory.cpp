@@ -97,14 +97,11 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
 
   if (proto_cb.has_ltfb()) {
-    auto&& m = parse_list<>(proto_cb.ltfb().eval_metrics());
-    auto&& w = parse_list<>(proto_cb.ltfb().weights_tosend());
-    std::unordered_set<std::string> metric_names(m.begin(), m.end());
-    std::unordered_set<std::string> weight_names(w.begin(), w.end());
-    return new lbann_callback_ltfb(proto_cb.ltfb().round_size(),
-                                   metric_names,
-                                   proto_cb.ltfb().increasing_metric_mode(),
-                                   weight_names,
+    const auto& params = proto_cb.ltfb();
+    return new lbann_callback_ltfb(params.batch_interval(),
+                                   params.metric(),
+                                   parse_set<std::string>(params.weights()),
+                                   params.low_score_wins(),
                                    summarizer);
   }
   /// @todo
@@ -408,6 +405,21 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
   if (proto_cb.has_gpu_memory_usage()) {
     return new lbann_callback_gpu_memory_usage();
+  }
+
+  //////////////////////////////////////////////////////////////
+  // Hyperparameter exploration
+  //////////////////////////////////////////////////////////////
+  if (proto_cb.has_perturb_adam()) {
+    const auto& params = proto_cb.perturb_adam();
+    return new lbann_callback_perturb_adam(
+                 params.learning_rate_factor(),
+                 params.beta1_factor(),
+                 params.beta2_factor(),
+                 params.eps_factor(),
+                 params.perturb_during_training(),
+                 params.batch_interval(),
+                 parse_set<std::string>(params.weights()));
   }
 
   return nullptr;
