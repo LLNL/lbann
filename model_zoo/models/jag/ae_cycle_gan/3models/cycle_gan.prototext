@@ -1,8 +1,8 @@
 model {
   name: "cycgan_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_background_io: true
-  procs_per_model:0 
+  procs_per_model:0
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -40,7 +40,7 @@ model {
       layer: "l_l2_x"
     }
   }
-  num_epochs: 4 
+  num_epochs: 4
   super_steps: 10
   metric {
     layer_metric {
@@ -870,10 +870,10 @@ model {
   }
   #callback {
   #  ltfb {
-  #    round_size: 100
-  #    eval_metrics: "l_l2_y_eval"
-  #    increasing_metric_mode: false
-  #    weights_tosend: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias gen2fc1_linearity_weights gen2fc1_bias_weights gen2fc2_linearity_weights gen2fc2_bias_weights gen2fc3_linearity_weights gen2fc3_bias_weights gen2fc4_linearity_weights gen2fc4_bias_weights"
+  #    batch_interval: 100
+  #    metric: "l_l2_y_eval"
+  #    low_score_wins: true
+  #    weights: "gen1fc1linearity gen1fc1bias gen1fc2linearity gen1fc2bias gen1fc3linearity gen1fc3bias gen1fc4linearity gen1fc4bias gen2fc1_linearity_weights gen2fc1_bias_weights gen2fc2_linearity_weights gen2fc2_bias_weights gen2fc3_linearity_weights gen2fc3_bias_weights gen2fc4_linearity_weights gen2fc4_bias_weights"
 
    # }
  # }
