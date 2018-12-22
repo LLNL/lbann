@@ -35,7 +35,7 @@ if (TARGET OPENBLAS)
 endif ()
 
 # No Aluminum in hydrogen yet!
-if (TARGET Aluminum)
+if (TARGET ALUMINUM)
   option(Hydrogen_ENABLE_ALUMINUM "Whether to use Aluminum in Hydrogen" ON)
 
   if (Hydrogen_ENABLE_ALUMINUM)
@@ -45,13 +45,13 @@ if (TARGET Aluminum)
       CACHE STRING "The path to Aluminum for Hydrogen.")
 
     set(_hydrogen_depends_tag DEPENDS)
-    list(APPEND _HYDROGEN_DEPENDS Aluminum)
+    list(APPEND _HYDROGEN_DEPENDS ALUMINUM)
 
     if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
       set(Hydrogen_ENABLE_CUDA ON)
     endif ()
   endif (Hydrogen_ENABLE_ALUMINUM)
-endif (TARGET Aluminum)
+endif (TARGET ALUMINUM)
 
 if (Hydrogen_ENABLE_CUDA)
   enable_language(CUDA)

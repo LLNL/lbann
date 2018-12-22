@@ -63,7 +63,7 @@ include(LBANNSuperBuildCreateCMakeArguments)
 
 if (LBANN_SB_BUILD_ALUMINUM)
   add_subdirectory(aluminum)
-  list(APPEND _BUILD_PKGS Aluminum)
+  list(APPEND _BUILD_PKGS ALUMINUM)
 endif ()
 
 if (LBANN_SB_BUILD_CNPY)

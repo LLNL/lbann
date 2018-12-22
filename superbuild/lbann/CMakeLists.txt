@@ -40,23 +40,23 @@ if (LBANN_CMAKE_INSTALL_RPATH)
 endif ()
 
 # Build the dependency set
-if (TARGET Aluminum)
+if (TARGET ALUMINUM)
   option(LBANN_WITH_ALUMINUM "Whether to use Aluminum in LBANN" ON)
 
   if (LBANN_WITH_ALUMINUM)
     set(LBANN_SB_FWD_LBANN_Aluminum_DIR "${ALUMINUM_DIR}/lib/cmake/Aluminum"
       CACHE STRING "The path to Aluminum for LBANN.")
 
-    list(APPEND _LBANN_DEPENDS Aluminum)
+    list(APPEND _LBANN_DEPENDS ALUMINUM)
   endif (LBANN_WITH_ALUMINUM)
-endif (TARGET Aluminum)
+endif (TARGET ALUMINUM)
 if (TARGET CNPY)
   list(APPEND _LBANN_DEPENDS CNPY)
   set(LBANN_SB_FWD_LBANN_CNPY_DIR "${CNPY_DIR}")
 endif ()
 if (TARGET CONDUIT)
   option(LBANN_WITH_CONDUIT "Whether to use CONDUIT in LBANN" ON)
-  
+
   list(APPEND _LBANN_DEPENDS CONDUIT)
   set(LBANN_SB_FWD_LBANN_CONDUIT_DIR "${CONDUIT_DIR}")
 endif ()
