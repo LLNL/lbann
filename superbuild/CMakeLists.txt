@@ -41,9 +41,6 @@ option(LBANN_SB_BUILD_CONDUIT "Pull and build CONDUIT from Github" OFF)
 
 option(LBANN_SB_BUILD_CUB "Pull CUB from Github" OFF)
 
-option(LBANN_SB_BUILD_ELEMENTAL
-  "Pull and build Elemental's main repository from Github" OFF)
-
 option(LBANN_SB_BUILD_HDF5 "Pull and build HDF5 from the internet (not github)" OFF)
 
 option(LBANN_SB_BUILD_HYDROGEN "Pull and build Hydrogen from Github" OFF)
