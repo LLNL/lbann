@@ -77,8 +77,8 @@ El::Int get_partner_model_index(lbann_comm& comm,
     return comm.scatter(send_buffer.data(), comm.get_world_comm());
 
   } else { // Non-root process
-    return comm.scatter<int>(comm.get_world_master(),
-                             comm.get_world_comm());
+    return comm.scatter<El::Int>(comm.get_world_master(),
+                                 comm.get_world_comm());
   }
 }
 
