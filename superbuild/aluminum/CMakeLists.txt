@@ -44,7 +44,7 @@ create_cmake_arguments(
   VARIABLES ${ALUMINUM_VARIABLES})
 
 include(ExternalProject)
-ExternalProject_Add(ALUMINUM
+ExternalProject_Add(Aluminum
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
