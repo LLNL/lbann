@@ -235,6 +235,10 @@ public:
    */
   void collect_indices(execution_mode mode);
 
+  /** Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
+
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */

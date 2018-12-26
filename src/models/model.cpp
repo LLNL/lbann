@@ -951,6 +951,15 @@ void model::collect_indices(execution_mode mode) {
   reset_epoch_statistics(mode);
 }
 
+void model::collect_background_data_fetch(execution_mode mode) {
+  for (const auto& layer : m_layers) {
+    auto *input = dynamic_cast<generic_input_layer*>(layer);
+    if (input != nullptr) {
+      input->collect_background_data_fetch(mode);
+    }
+  }
+  return;
+}
 
 void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();

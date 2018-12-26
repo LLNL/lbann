@@ -226,6 +226,8 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   const El::Int partner_model_index = get_partner_model_index(*comm,
                                                               message_prefix);
 
+  m->collect_background_data_fetch(mode);
+
   // Evaluate local model
   if (comm->am_world_master()) {
     std::cout << message_prefix + "evaluating local model..." << std::endl;
