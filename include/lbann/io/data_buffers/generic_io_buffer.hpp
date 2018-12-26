@@ -58,7 +58,9 @@ class fetch_data_functor {
       num_responses_fetched = data_reader->fetch_labels(responses);
     }
     if(num_samples_fetched != num_responses_fetched) {
-      throw lbann_exception("Number of samples does not match the number of responses");
+      std::string err = std::string("Number of samples: ") + std::to_string(num_samples_fetched)
+        + std::string(" does not match the number of responses: ") + std::to_string(num_responses_fetched);
+      throw lbann_exception(err);
     }
     return num_samples_fetched;
   }

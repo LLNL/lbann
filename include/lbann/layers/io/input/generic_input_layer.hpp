@@ -236,6 +236,16 @@ class generic_input_layer : public io_layer {
     return;
   }
 
+  /// Check for each buffer if there is an outstanding fetch request
+  void collect_background_data_fetch(execution_mode mode) {
+    for(auto& io_buffer : m_io_buffers) {
+      if(io_buffer->is_data_fetched_in_background(mode)) {
+        io_buffer->get_data_fetch_future(mode).get();
+        io_buffer->set_fetch_data_in_background(false, mode);
+      }
+    }
+  }
+
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_mode();
 
@@ -291,7 +301,7 @@ class generic_input_layer : public io_layer {
       throw lbann_exception(err.str());
     }
 
-    m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
+    m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
     if(!m_data_set_processed) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
