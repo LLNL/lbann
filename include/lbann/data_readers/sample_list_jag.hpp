@@ -57,6 +57,8 @@ class sample_list_jag {
   /// Write the sample list of each partitions
   void write(const std::string filename) const;
 
+  const samples_t& get_list() const { return m_sample_list; }
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
@@ -104,7 +106,7 @@ class sample_list_jag {
 
 void handle_mpi_error(int ierr);
 
-void distribute_sample_list(const sample_list<std::string>& sn,
+void distribute_sample_list(const sample_list_jag& sn,
                             std::string& my_samples,
                             lbann_comm& comm);
 

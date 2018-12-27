@@ -29,10 +29,10 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 //#include "lbann/data_store/data_store_jag_conduit.hpp"
+#include "lbann/models/model.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
 #endif // _JAG_OFFLINE_TOOL_MODE_
-#include "lbann/models/model.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -933,100 +933,11 @@ void data_reader_jag_conduit::populate_shuffled_indices(const size_t num_samples
 }
 
 void data_reader_jag_conduit::load() {
-  if(m_gan_labelling) {
-    m_num_labels=2;
-  }
-
-  if (is_master()) {
-    std::cout << "JAG load GAN m_gan_labelling : label_value "
-              << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
-  }
-
-  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
-    m_valid_samples = m_leading_reader->get_valid_local_samples();
-    m_unused_samples = m_leading_reader->get_valid_local_samples_unused();
-    m_local_num_samples_to_use = m_leading_reader->get_num_valid_local_samples();
-    m_global_num_samples_to_use = m_leading_reader->get_num_data();
-    m_open_hdf5_files = m_leading_reader->get_open_hdf5_files();
-    if (is_master()) {
-      std::cout << std::endl << get_description() << std::endl << std::endl;
-    }
-    return;
-  }
-
-  const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string conduit_file_name = get_data_filename();
-  const std::string pattern = data_dir + conduit_file_name;
-  std::vector<std::string> filenames = glob(pattern);
-  if (filenames.size() < 1) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
-  }
-
-  // Shuffle the file names
-  if (is_shuffled()) {
-    std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
-  }
-
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
-
-  // handle data partitioning among models (e.g., for LTFB)
-  if (m_is_partitioned) {
-    const size_t one_more = filenames.size() % m_num_partitions;
-    const size_t min_num_files_per_partition = filenames.size()/static_cast<size_t>(m_num_partitions);
-    if (min_num_files_per_partition == 0u) {
-      _THROW_LBANN_EXCEPTION_(get_type(), "Insufficient number of files for the number of models.");
-    }
-    const size_t p = static_cast<size_t>(m_my_partition);
-    const size_t idx_start = min_num_files_per_partition * p
-                           + ((p >= one_more)? one_more : p);
-
-    const size_t idx_end = idx_start + min_num_files_per_partition
-                           + ((p < one_more)? 1u : 0u);
-    std::vector<std::string> filenames_partitioned(filenames.begin()+idx_start, filenames.begin()+idx_end);
-    filenames = filenames_partitioned;
-  }
-  const size_t num_files_to_load =
-    (m_max_files_to_load > 0u)? std::min(m_max_files_to_load, filenames.size()) : filenames.size();
-
-  filenames.resize(num_files_to_load);
-
-  double tm1 = get_time();
-
-  // Reserve m_valid_samples
-  const size_t max_num_files_to_load_per_rank = (num_files_to_load + num_readers - 1u) / num_readers;
-  bool valid_samples_reserved = false;
-  size_t idx = static_cast<size_t>(0ul);
-
-  for (size_t n = my_rank; (n < num_files_to_load) && (my_rank < num_readers); n += num_readers) {
-    load_conduit(filenames[n], idx);
-    if (!valid_samples_reserved) {
-      // reserve the sufficient capacity estimated assuming that files have the same number of samples
-      m_valid_samples.reserve(m_valid_samples.size() * (max_num_files_to_load_per_rank + 1u));
-      valid_samples_reserved = true;
-    }
-    if (is_master()) {
-      std::cerr << "time to load: " << n + num_readers << " files: " << get_time() - tm1 << std::endl;
-    }
-  }
-  if (is_master()) {
-    std::cerr << "time to load conduit files: " << get_time() - tm1
-              << "  number of valid local samples at the master rank: " << m_valid_samples.size()
-              << " local reader id=" << get_local_id(get_role()) << " for " << get_role()
-              << " leading reader=" << m_leading_reader << std::endl;
-  }
-
-  check_image_data();
-  determine_num_samples_to_use();
-
-  if (is_master()) {
-    std::cout << std::endl << get_description() << std::endl << std::endl;
-  }
+  load_list_of_samples();
 }
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
 
-void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, size_t& idx) {
+hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) {
   if (!check_if_file_exists(conduit_file_path)) {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
   }
@@ -1044,8 +955,7 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     std::string msg = get_type() + std::string(" :: skipping a file unable to read: ")
                     + conduit_file_path;
     std::cerr << __FILE__<< ' '  << __LINE__ << " :: " << msg << std::endl;
-    idx = m_valid_samples.size();
-    return;
+    return static_cast<hid_t>(0);
   }
   if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
     _THROW_LBANN_EXCEPTION_(get_type(), std::string(" Invalid file handle for ") + conduit_file_path);
@@ -1054,6 +964,82 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
   }
   m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
+
+  return hdf5_file_hnd;
+}
+
+
+void data_reader_jag_conduit::get_valid_samples_from_list(const sample_list_jag& slist) {
+  using samples_t = sample_list_jag::samples_t;
+  const samples_t& samples = slist.get_list();
+  const size_t num_samples = samples.size();
+  samples_t::const_iterator it_s = samples.cbegin();
+
+  for (size_t i = 0u; i < num_samples; ++i, ++it_s) {
+    const std::string data_dir = add_delimiter(get_file_dir());
+    const std::string conduit_file_path = data_dir + it_s->first;
+    hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
+    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+      continue;
+    }
+
+    const auto& sample_name = it_s->second;
+    m_valid_samples.push_back(sample_locator_t(sample_name, hdf5_file_hnd));
+  }
+
+  if (!m_is_data_loaded) {
+    m_is_data_loaded = true;
+
+    if (m_scalar_keys.size() == 0u) {
+      set_all_scalar_choices(); // use all by default if none is specified
+    }
+    check_scalar_keys();
+
+    if (m_input_keys.size() == 0u) {
+      set_all_input_choices(); // use all by default if none is specified
+    }
+    check_input_keys();
+  }
+}
+
+void data_reader_jag_conduit::load_list_of_samples() {
+  const std::string data_dir = add_delimiter(get_file_dir());
+  const std::string sample_list_file = data_dir + get_data_filename();
+
+  // Obtain a serialized list of samples assigned to this rank
+  // from a pre-determined list of samples to use.
+  std::string my_samples;
+
+  double tm1 = get_time();
+  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
+  m_sample_list.set_num_partitions(num_readers);
+
+  // load the sample list
+  m_sample_list.load(sample_list_file);
+  double tm2 = get_time();
+
+  m_sample_list.write("foobar");
+
+  // partition, serialize (pack) and distribute the sample list
+  //  distribute_sample_list(m_sample_list, my_samples, *m_comm);
+
+  sample_list_jag my_sample_list;
+  my_sample_list.load_from_string(my_samples);
+  get_valid_samples_from_list(my_sample_list);
+
+  double tm3 = get_time();
+
+  std::cout << "Time to load sample list: " << tm3 - tm1 << " (" << tm2 - tm1 << " + " << tm3 - tm2 << ")" << std::endl;
+}
+
+#endif // _JAG_OFFLINE_TOOL_MODE_
+
+
+void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, size_t& idx) {
+  hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
+  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    return; // skipping the file
+  }
 
   // set up mapping: need to do this since some of the data may be bad
   std::vector<std::string> sample_names;

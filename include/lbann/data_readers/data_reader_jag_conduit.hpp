@@ -40,6 +40,7 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
+#include "lbann/data_readers/sample_list_jag.hpp"
 
 namespace lbann {
 
@@ -360,10 +361,17 @@ class data_reader_jag_conduit : public generic_data_reader {
    * access local data using local indices.
    */
   void populate_shuffled_indices(const size_t num_samples);
+  /// Rely on pre-determined list of samples.
+  void load_list_of_samples();
   /// Load a data file
   void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
+
+  /// Open a conduit file and register the open file descriptor
+  hid_t open_conduit_file(const std::string& conduit_file_path);
+  /// Popilate valid sample list from a given list
+  void get_valid_samples_from_list(const sample_list_jag& slist);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Obtain the linearized size of images of a sample from the meta info
@@ -502,6 +510,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<linear_transform_t> m_image_normalization_params;
   std::vector<linear_transform_t> m_scalar_normalization_params;
   std::vector<linear_transform_t> m_input_normalization_params;
+
+  typedef std::pair<std::string, std::string> conduit_sample;
+  sample_list_jag m_sample_list;
+
   /** temporary image normalization
    * The inputs are the image to normalize, the image source id and the channel id.
    */

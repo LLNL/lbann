@@ -9,7 +9,7 @@
 #include "sample_list_jag.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
-
+#include <deque>
 #include <mpi.h>
 #include "hdf5.h"
 #include "conduit/conduit.hpp"
@@ -19,7 +19,7 @@
 
 namespace lbann {
 
-sample_list_header::sample_list_header()
+inline sample_list_header::sample_list_header()
  : m_is_exclusive(false), m_sample_count(0u), m_num_files(0u), m_file_dir("") {
 }
 
@@ -457,7 +457,7 @@ inline void handle_mpi_error(int ierr) {
 }
 
 
-inline void distribute_sample_list(const sample_list<std::string>& sn,
+inline void distribute_sample_list(const sample_list_jag& sn,
                             std::string& my_samples,
                             lbann_comm& _comm) {
   int num_ranks = 1;

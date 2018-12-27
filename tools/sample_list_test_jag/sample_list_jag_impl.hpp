@@ -12,7 +12,7 @@
 
 namespace lbann {
 
-sample_list_header::sample_list_header()
+inline sample_list_header::sample_list_header()
  : m_is_exclusive(false), m_sample_count(0u), m_num_files(0u), m_file_dir("") {
 }
 
