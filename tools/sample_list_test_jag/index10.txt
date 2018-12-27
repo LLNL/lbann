@@ -1,0 +1,13 @@
+exclusive
+10000 10
+/p/lscratchh/brainusr/datasets/10MJAG
+1M_A/3/samples_196_9.bundle 1000 0 
+1M_A/2/samples_296_7.bundle 1000 0 
+1M_A/1/samples_27_36.bundle 1000 0 
+1M_A/3/samples_331_24.bundle 1000 0 
+1M_A/2/samples_302_20.bundle 1000 0 
+1M_A/1/samples_299_17.bundle 1000 0 
+1M_A/3/samples_134_2.bundle 1000 0 
+1M_A/2/samples_144_24.bundle 1000 0 
+1M_A/1/samples_190_22.bundle 1000 0 
+1M_A/3/samples_334_13.bundle 1000 0 
