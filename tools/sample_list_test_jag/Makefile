@@ -12,14 +12,16 @@ LBANN_DIR=../..
 all: run_distributed run_centralized
 
 
+CXXFLAGS=-std=c++11 -g -Wall -O3 -D_JAG_OFFLINE_TOOL_MODE_
+
 run_distributed: sample_list_jag.hpp sample_list_jag_impl.hpp main_distributed.cpp file_utils.o
-	${CXX} -std=c++11 -g -Wall -O3 -I. -I${CONDUIT_INC} -I${HDF5_INC} -fopenmp -o run_distributed main_distributed.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5
+	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -fopenmp -o run_distributed main_distributed.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5
 
 run_centralized: sample_list_jag.hpp sample_list_jag_impl.hpp main_centralized.cpp file_utils.o
-	${MPICXX} -std=c++11 -g -Wall -O3 -I. -I${CONDUIT_INC} -I${HDF5_INC} -fopenmp -o run_centralized main_centralized.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5 -lmpi
+	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -fopenmp -o run_centralized main_centralized.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5 -lmpi
 
 file_utils.o: ${LBANN_DIR}/src/utils/file_utils.cpp
-	${CXX} -std=c++11 -g -Wall -O3 -I. -c ${LBANN_DIR}/src/utils/file_utils.cpp
+	${MPICXX} ${CXXFLAGS} -I. -c ${LBANN_DIR}/src/utils/file_utils.cpp
 
 
 clean:

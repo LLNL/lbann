@@ -5,6 +5,12 @@
 #include <string>
 #include <vector>
 
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+#include "lbann/comm.hpp"
+#else
+#include <mpi.h>
+#endif
+
 namespace lbann {
 
 struct sample_list_header {
@@ -14,6 +20,11 @@ struct sample_list_header {
   std::string m_file_dir;
 
   sample_list_header();
+
+  bool is_exclusive() const;
+  size_t get_sample_count() const;
+  size_t get_num_files() const;
+  const std::string& get_file_dir() const;
 };
 
 class sample_list_jag {
@@ -56,7 +67,11 @@ class sample_list_jag {
   /// Write the sample list of each partitions
   void write(const std::string filename) const;
 
-  const samples_t& get_list() const { return m_sample_list; }
+  /// Allow read-only access to the internal list data
+  const samples_t& get_list() const;
+
+  /// Allow the read-only access to the list header
+  const sample_list_header& get_header() const;
 
  protected:
 
@@ -103,6 +118,17 @@ class sample_list_jag {
 
 };
 
+void handle_mpi_error(int ierr);
+
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+void distribute_sample_list(const sample_list_jag& sn,
+                            std::string& my_samples,
+                            lbann_comm& comm);
+#else
+void distribute_sample_list(const sample_list_jag& sn,
+                            std::string& my_samples,
+                            MPI_Comm& comm);
+#endif
 
 } // end of namespace
 

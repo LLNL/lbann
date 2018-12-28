@@ -9,11 +9,34 @@
 #include "sample_list_jag.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include <deque>
+#include "hdf5.h"
+#include "conduit/conduit.hpp"
+#include "conduit/conduit_relay.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
+#include <unordered_set>
+#include <memory>
 
 namespace lbann {
 
 inline sample_list_header::sample_list_header()
  : m_is_exclusive(false), m_sample_count(0u), m_num_files(0u), m_file_dir("") {
+}
+
+inline bool sample_list_header::is_exclusive() const {
+  return m_is_exclusive;
+}
+
+inline size_t sample_list_header::get_sample_count() const {
+  return m_sample_count;
+}
+
+inline size_t sample_list_header::get_num_files() const {
+  return m_num_files;
+}
+
+inline const std::string& sample_list_header::get_file_dir() const {
+  return m_file_dir;
 }
 
 
@@ -107,9 +130,9 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm) cons
 
   header3 >> hdr.m_file_dir;
 
-  if (hdr.m_file_dir.empty() || !check_if_dir_exists(hdr.m_file_dir)) {
+  if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: data root directory '" + hdr.m_file_dir + "' does not exist.");
+                          + " :: data root directory '" + hdr.get_file_dir() + "' does not exist.");
   }
 
   return hdr;
@@ -126,7 +149,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
     if (end_of_str == std::string::npos) { // empty line
       continue;
     }
-    if (cnt_files++ >= m_header.m_num_files) {
+    if (cnt_files++ >= m_header.get_num_files()) {
       break;
     }
 
@@ -138,7 +161,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
 
     sstr >> filename >> valid_samples >> invalid_samples;
 
-    const std::string conduit_file_path = add_delimiter(m_header.m_file_dir) + filename;
+    const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -188,7 +211,7 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
     if (end_of_str == std::string::npos) { // empty line
       continue;
     }
-    if (cnt_files++ >= m_header.m_num_files) {
+    if (cnt_files++ >= m_header.get_num_files()) {
       break;
     }
 
@@ -199,7 +222,7 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
 
     sstr >> filename >> valid_samples >> invalid_samples;
 
-    const std::string conduit_file_path = add_delimiter(m_header.m_file_dir) + filename;
+    const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
@@ -226,9 +249,9 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
 
 inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm) {
   m_header = read_header(istrm);
-  m_sample_list.reserve(m_header.m_sample_count);
+  m_sample_list.reserve(m_header.get_sample_count());
 
-  if (m_header.m_is_exclusive) {
+  if (m_header.is_exclusive()) {
     read_exclusive_list(istrm);
   } else {
     read_inclusive_list(istrm);
@@ -292,9 +315,9 @@ inline void sample_list_jag::write_header(std::string& sstr) const {
   // The next line contains the number of samples and the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
-  sstr += (m_header.m_is_exclusive? "EXCLUSIVE\n" : "INCLUSIVE\n");
+  sstr += (m_header.is_exclusive()? "EXCLUSIVE\n" : "INCLUSIVE\n");
   sstr += std::to_string(m_sample_list.size()) + ' ' + std::to_string(m_sample_list.size()) + '\n';
-  sstr += m_header.m_file_dir + '\n';
+  sstr += m_header.get_file_dir() + '\n';
 }
 
 
@@ -322,7 +345,7 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
   sstr.clear();
 
   // reserve the string to hold the entire sample lit
-  size_t estimated_len = 30 + 42 + m_header.m_file_dir.size() + 1;
+  size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1;
   if (i_begin < i_end) {
     estimated_len += static_cast<size_t>(1.5 * (i_end - i_begin) * (it_begin->first.size() + it_begin->second.size() + 6));
     sstr.reserve(estimated_len);
@@ -398,5 +421,165 @@ inline void sample_list_jag::write(const std::string filename) const {
     write(p, filename);
   }
 }
+
+
+inline const sample_list_jag::samples_t& sample_list_jag::get_list() const {
+  return m_sample_list;
+}
+
+
+inline const sample_list_header& sample_list_jag::get_header() const {
+  return m_header;
+}
+
+
+struct send_request {
+  int m_receiver;
+  MPI_Request m_mpi_request;
+  std::shared_ptr<std::string> m_data;
+  unsigned long m_buf_size;
+
+  send_request() {
+    m_data = std::make_shared<std::string>();
+  }
+
+  void set_receiver(int recv) {
+    m_receiver = recv;
+  }
+
+  int get_receiver() const {
+    return m_receiver;
+  }
+
+  MPI_Request& request() {
+    return m_mpi_request;
+  }
+
+  std::string* data() const {
+    return m_data.get();
+  }
+
+  unsigned long& size() {
+    m_buf_size = static_cast<unsigned long>(m_data->size());
+    return m_buf_size;
+  }
+};
+
+
+inline void handle_mpi_error(int ierr) {
+  int errclass, resultlen;;
+  char err_buffer[MPI_MAX_ERROR_STRING];
+
+  if (ierr != MPI_SUCCESS) {
+    MPI_Error_class(ierr, &errclass);
+    if (errclass == MPI_ERR_RANK) {
+      fprintf(stderr, "Invalid rank used in MPI send call\n");
+      MPI_Error_string(ierr, err_buffer, &resultlen);
+      fprintf(stderr,err_buffer);
+      MPI_Finalize();             /* abort*/
+    }
+  }
+}
+
+
+#ifndef _JAG_OFFLINE_TOOL_MODE_
+inline void distribute_sample_list(const sample_list_jag& sn,
+                            std::string& my_samples,
+                            lbann_comm& _comm) {
+  MPI_Comm comm = _comm.get_model_comm().comm;
+#else
+inline void distribute_sample_list(const sample_list_jag& sn,
+                            std::string& my_samples,
+                            MPI_Comm& comm) {
+#endif
+
+  int num_ranks = 1;
+  int my_rank = 0;
+  int root_rank = 0;
+  int size_tag = 0;
+  int data_tag = 1;
+
+  // TODO: replace bare MPI calls with corresponding lbann_comm wrappers
+  MPI_Comm_rank(comm, &my_rank);
+  MPI_Comm_size(comm, &num_ranks);
+  MPI_Errhandler_set(comm, MPI_ERRORS_RETURN);
+
+  if (my_rank == root_rank) {
+
+    std::deque< send_request > send_requests;
+
+    // Start of serialization and transmission
+    MPI_Barrier(comm);
+
+    for(int i = 0; i < num_ranks; ++i) {
+      if (i == root_rank) {
+        sn.to_string(static_cast<size_t>(root_rank), my_samples);
+        continue;
+      }
+
+      send_requests.emplace_back();
+      auto& req0 = send_requests.back();
+      send_requests.emplace_back();
+      auto& req1 = send_requests.back();
+      req0.set_receiver(i);
+      req1.set_receiver(i);
+      std::string& sstr = *(req1.data());
+
+      sn.to_string(static_cast<size_t>(i), sstr);
+      unsigned long& bufsize = req1.size();
+
+      int ierr;
+      ierr = MPI_Isend(reinterpret_cast<void*>(&bufsize), 1,
+                       MPI_UNSIGNED_LONG, i, size_tag, comm, &(req0.request()));
+      handle_mpi_error(ierr);
+
+      ierr = MPI_Isend(reinterpret_cast<void*>(const_cast<char*>(sstr.data())), static_cast<int>(sstr.size()),
+                       MPI_BYTE, i, data_tag, comm, &(req1.request()));
+      handle_mpi_error(ierr);
+
+      const int n_prev_reqs = static_cast<int>(send_requests.size() - 2);
+
+      for (int j = 0; j < n_prev_reqs; ++j) {
+        MPI_Status status;
+        int flag;
+        auto& req = send_requests.front();
+
+        MPI_Test(&(req.request()), &flag, &status);
+
+        if (!flag) {
+          break;
+        }
+        send_requests.pop_front();
+      }
+    }
+
+    for (auto& req: send_requests) {
+      MPI_Status status;
+      MPI_Wait(&(req.request()), &status);
+    }
+
+    send_requests.clear();
+  } else {
+    // Start of serialization and transmission
+    MPI_Barrier(comm);
+
+    MPI_Status status;
+    int ierr;
+    unsigned long bufsize = 0u;
+    ierr = MPI_Recv(reinterpret_cast<void*>(&bufsize), 1,
+                    MPI_UNSIGNED_LONG, root_rank, size_tag, comm, &status);
+    handle_mpi_error(ierr);
+
+    my_samples.resize(bufsize);
+
+    ierr = MPI_Recv(reinterpret_cast<void*>(&my_samples[0]), static_cast<int>(bufsize),
+                    MPI_BYTE, root_rank, data_tag, comm, &status);
+    handle_mpi_error(ierr);
+  }
+
+  // End of serialization and transmission
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+
 
 } // end of namespace lbann
