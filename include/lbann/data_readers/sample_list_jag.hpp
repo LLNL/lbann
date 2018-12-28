@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <functional>
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/comm.hpp"
@@ -27,6 +28,22 @@ struct sample_list_header {
   const std::string& get_file_dir() const;
 };
 
+/**
+ * Maps a global index of a sample list to a local index.
+ * When managing the sample list in a distributed fashion, with which every
+ * one has the same copy (the whole global list), m_partition_offset must be
+ * zero. In this case, the local index is the same as the global index.
+ * When managing the sample list in a centralized fashion, with which each
+ * has a portion of the list that corresponds to the only samples it needs,
+ * a global index is subtracted by m_partition_offset for local indexing.
+ */
+struct sample_list_indexer {
+  sample_list_indexer();
+  size_t operator()(size_t idx) const;
+
+  size_t m_partition_offset;
+};
+
 class sample_list_jag {
  public:
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
@@ -38,10 +55,13 @@ class sample_list_jag {
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
 
-  sample_list_jag() : m_num_partitions(1u) {}
+  sample_list_jag();
 
   /// Set the number of partitions and clear internal states
   void set_num_partitions(size_t n);
+
+  /// Set the index mapping function
+  void set_indexer(const sample_list_indexer& indexer);
 
   /// Load a sample list from a file
   void load(const std::string& samplelist_file);
@@ -78,6 +98,9 @@ class sample_list_jag {
 
   /// Allow the read-only access to the list header
   const sample_list_header& get_header() const;
+
+  /// Allow read-only access to the metadata of the idx-th sample in the list
+  const sample_t& operator[](size_t idx) const;
 
  protected:
 
@@ -122,6 +145,8 @@ class sample_list_jag {
   /// indices to m_samples_per_file used for shuffling
   std::vector<unsigned> m_shuffled_indices;
 
+  /// Maps a global index to a local index
+  sample_list_indexer m_indexer;
 };
 
 void handle_mpi_error(int ierr);

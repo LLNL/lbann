@@ -39,6 +39,23 @@ inline const std::string& sample_list_header::get_file_dir() const {
   return m_file_dir;
 }
 
+inline sample_list_indexer::sample_list_indexer()
+: m_partition_offset(0u) {
+}
+
+inline size_t sample_list_indexer::operator()(size_t i) const {
+  if (i < m_partition_offset) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+                          + " :: index (" + std::to_string(i)
+                          + ") is less than the partition offset ("
+                          + std::to_string(m_partition_offset) + ")");
+  }
+  return i - m_partition_offset;
+}
+
+inline sample_list_jag::sample_list_jag()
+: m_num_partitions(1u) {
+}
 
 inline void sample_list_jag::set_num_partitions(size_t n) {
   if (n == 0) {
@@ -51,6 +68,10 @@ inline void sample_list_jag::set_num_partitions(size_t n) {
   if (!m_sample_list.empty()) {
     get_sample_range_per_part();
   }
+}
+
+inline void sample_list_jag::set_indexer(const sample_list_indexer& indexer) {
+  m_indexer = indexer;
 }
 
 inline void sample_list_jag::load(const std::string& samplelist_file) {
@@ -461,6 +482,15 @@ inline const sample_list_header& sample_list_jag::get_header() const {
   return m_header;
 }
 
+inline const sample_list_jag::sample_t& sample_list_jag::operator[](size_t idx) const {
+  size_t i = m_indexer(idx);
+  if (i >= m_sample_list.size()) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
+          + " :: index (" + std::to_string(i) + ") out of range [0 "
+          + std::to_string(m_sample_list.size()) + ")");
+  }
+  return m_sample_list[i];
+}
 
 struct send_request {
   int m_receiver;
