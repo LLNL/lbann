@@ -950,33 +950,14 @@ void data_reader_jag_conduit::load() {
   }
 }
 
-void data_reader_jag_conduit::get_valid_samples_from_list(const sample_list_jag& slist) {
-  using samples_t = sample_list_jag::samples_t;
-  const samples_t& samples = slist.get_list();
-
-  const sample_list_header& header = slist.get_header();
-  const std::string data_dir = add_delimiter(header.get_file_dir());
-
-  for (const auto& s : samples) {
-    const std::string conduit_file_path = data_dir + s.first;
-    hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
-    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-      continue;
-    }
-
-    m_valid_samples.push_back(sample_locator_t(s.second, hdf5_file_hnd));
-  }
-}
-
 void data_reader_jag_conduit::load_list_of_samples() {
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_filename();
 
-  // Obtain a serialized list of samples assigned to this rank
-  // from a pre-determined list of samples to use.
   std::string my_samples;
 
   double tm1 = get_time();
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
   const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
   m_sample_list.set_num_partitions(num_readers);
 
@@ -984,14 +965,7 @@ void data_reader_jag_conduit::load_list_of_samples() {
   m_sample_list.load(sample_list_file);
   double tm2 = get_time();
 
-  m_sample_list.write("foobar");
-
-  // partition, serialize (pack) and distribute the sample list
-  //  distribute_sample_list(m_sample_list, my_samples, *m_comm);
-
-  sample_list_jag my_sample_list;
-  my_sample_list.load_from_string(my_samples);
-  get_valid_samples_from_list(my_sample_list);
+  get_valid_samples_from_list(m_sample_list, my_rank);
 
   double tm3 = get_time();
 
@@ -1044,6 +1018,38 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
   }
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
+
+void data_reader_jag_conduit::get_valid_samples_from_list(const std::string data_dir,
+  const std::pair<sample_list_jag::samples_t::const_iterator, sample_list_jag::samples_t::const_iterator> it_s) {
+
+  for (auto it = it_s.first; it != it_s.second; ++it) {
+    const std::string conduit_file_path = add_delimiter(data_dir) + it->first;
+    hid_t hdf5_file_hnd = open_conduit_file(conduit_file_path);
+    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+      continue;
+    }
+
+    m_valid_samples.push_back(sample_locator_t(it->second, hdf5_file_hnd));
+  }
+}
+
+void data_reader_jag_conduit::get_valid_samples_from_list(const sample_list_jag& slist) {
+  using samples_t = sample_list_jag::samples_t;
+  const samples_t& samples = slist.get_list();
+
+  const sample_list_header& header = slist.get_header();
+
+  get_valid_samples_from_list(header.get_file_dir(), std::make_pair(samples.cbegin(), samples.cend()));
+}
+
+void data_reader_jag_conduit::get_valid_samples_from_list(const sample_list_jag& slist, size_t p) {
+  auto it = slist.get_list(p);
+
+  const sample_list_header& header = slist.get_header();
+
+  get_valid_samples_from_list(header.get_file_dir(), it);
+}
 
 
 hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) {

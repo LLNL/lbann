@@ -365,10 +365,16 @@ class data_reader_jag_conduit : public generic_data_reader {
   void load_list_of_samples();
   /// See if the image size is consistent with the linearized size
   void check_image_data();
-
-  /// Popilate valid sample list from a given list
-  void get_valid_samples_from_list(const sample_list_jag& slist);
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
+  /// Popilate valid sample list from a list given as a range of iterators to list
+  void get_valid_samples_from_list(const std::string data_dir,
+                                   const std::pair<sample_list_jag::samples_t::const_iterator,
+                                                   sample_list_jag::samples_t::const_iterator> it_s);
+  /// Popilate valid sample list from the whole list given
+  void get_valid_samples_from_list(const sample_list_jag& slist);
+  /// Popilate valid sample list for partition p
+  void get_valid_samples_from_list(const sample_list_jag& slist, size_t p);
 
   /// Open a conduit file and register the open file descriptor
   hid_t open_conduit_file(const std::string& conduit_file_path);
