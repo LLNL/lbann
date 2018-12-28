@@ -359,8 +359,6 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
     sstr += it->first + " 1 0 " + it->second + '\n';
   }
 
-  std::cerr << "estimated size vs actual size: " << estimated_len << ' ' << sstr.size() << std::endl;
-  std::cerr << "num samples: " << i_end - i_begin << " samples of rank " << p << std::endl;
   return true;
 }
 
@@ -425,6 +423,37 @@ inline void sample_list_jag::write(const std::string filename) const {
 
 inline const sample_list_jag::samples_t& sample_list_jag::get_list() const {
   return m_sample_list;
+}
+
+
+inline std::pair<sample_list_jag::samples_t::const_iterator, sample_list_jag::samples_t::const_iterator>
+sample_list_jag::get_list(size_t p) const {
+  if (p >= m_num_partitions) {
+    return std::make_pair(m_sample_list.cend(), m_sample_list.cend());
+  }
+
+  size_t i_begin, i_end;
+  get_sample_range_per_part(p, i_begin, i_end);
+
+  if (i_begin > i_end) {
+    return std::make_pair(m_sample_list.cend(), m_sample_list.cend());
+  }
+
+  samples_t::const_iterator it_begin = m_sample_list.cbegin();
+  samples_t::const_iterator it_end = m_sample_list.cbegin();
+  std::advance(it_begin, i_begin);
+  std::advance(it_end, i_end);
+
+  return std::make_pair(it_begin, it_end);
+}
+
+
+inline bool sample_list_jag::get_list(size_t p, sample_list_jag::samples_t& l_p) const {
+  const auto it = get_list(p);
+  l_p.clear();
+  std::copy(it.first, it.second, l_p.begin());
+
+  return (it.first != m_sample_list.cend());
 }
 
 

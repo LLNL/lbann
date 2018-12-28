@@ -70,6 +70,12 @@ class sample_list_jag {
   /// Allow read-only access to the internal list data
   const samples_t& get_list() const;
 
+  /// Copy the internal list data for partition p
+  bool get_list(size_t p, samples_t& l_p) const;
+
+  /// Allow read-only access to the internal list data for partition p via iterators
+  std::pair<samples_t::const_iterator, samples_t::const_iterator> get_list(size_t p) const;
+
   /// Allow the read-only access to the list header
   const sample_list_header& get_header() const;
 
