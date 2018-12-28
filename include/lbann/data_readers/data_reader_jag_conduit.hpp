@@ -182,14 +182,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Get the leader of local data reader group
   data_reader_jag_conduit* get_leading_reader();
 #else
-  /// Load a data file
-  void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
   /** Manually set m_global_num_samples_to_use and m_local_num_samples_to_use
    *  to avoid calling determine_num_samples_to_use();
    */
   void set_num_samples(size_t ns);
+  /// Load a data file
+  void load_conduit(const std::string conduit_file_path, size_t& idx);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
@@ -363,16 +363,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   void populate_shuffled_indices(const size_t num_samples);
   /// Rely on pre-determined list of samples.
   void load_list_of_samples();
-  /// Load a data file
-  void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
 
-  /// Open a conduit file and register the open file descriptor
-  hid_t open_conduit_file(const std::string& conduit_file_path);
   /// Popilate valid sample list from a given list
   void get_valid_samples_from_list(const sample_list_jag& slist);
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
+  /// Open a conduit file and register the open file descriptor
+  hid_t open_conduit_file(const std::string& conduit_file_path);
 
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
