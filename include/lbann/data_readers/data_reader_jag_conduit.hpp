@@ -82,6 +82,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type for the pair of the key string of a sample and the handle of the file that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
+  using sample_t = sample_list_jag::sample_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -154,18 +155,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load data and do data reader's chores.
   void load() override;
-  /// True if the data reader's current position is valid.
-  bool position_valid() const override;
-  /// Return the base offset.
-  void set_base_offset(const int s) override;
-  /// Set the starting mini-batch index for the epoch
-  void set_reset_mini_batch_index(const int s) override;
-  /// Get the number of samples in this dataset.
-  int get_num_data() const override;
-  /// Select the appropriate subset of data based on settings.
-  void select_subset_of_data() override;
-  /// Replace the sample indices with the unused sample indices.
-  void use_unused_index_set() override;
   /// Set the type of io_buffer that will rely on this reader
   void set_io_buffer_type(const std::string io_buffer);
 
@@ -184,12 +173,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 #else
   /// See if the image size is consistent with the linearized size
   void check_image_data();
-  /** Manually set m_global_num_samples_to_use and m_local_num_samples_to_use
-   *  to avoid calling determine_num_samples_to_use();
-   */
-  void set_num_samples(size_t ns);
-  /// Load a data file
-  void load_conduit(const std::string conduit_file_path, size_t& idx);
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
@@ -198,13 +181,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   int fetch_responses(CPUMat& Y) override;
   /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
   int fetch_labels(CPUMat& Y) override;
-
-  /// Return the number of valid samples locally available
-  size_t get_num_valid_local_samples() const;
-  /// Allow read-only access to m_valid_samples member data
-  const sample_map_t& get_valid_local_samples() const;
-  /// Allow read-only access to m_unused_samples member data
-  const sample_map_t& get_valid_local_samples_unused() const;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
@@ -331,11 +307,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Shuffle sample indices
-  void shuffle_indices() override;
-  /// Shuffle sammple indices using a different RNG
-  void shuffle_indices(rng_gen& gen) override;
-
   /**
    * Compute the number of parallel readers based on the type of io_buffer,
    * the mini batch size, the requested number of parallel readers.
@@ -348,36 +319,16 @@ class data_reader_jag_conduit : public generic_data_reader {
    * the number of models and the mini batch size.
    */
   bool check_num_parallel_readers(long data_set_size);
-  /// Determine the number of samples to use
-  void determine_num_samples_to_use();
-  /**
-   * Approximate even distribution of samples by using as much samples
-   * as commonly available to every data reader instead of using
-   * all the available samples.
-   */
-  void adjust_num_samples_to_use();
-  /**
-   * populate the m_shuffled_indices such that each data reader can
-   * access local data using local indices.
-   */
-  void populate_shuffled_indices(const size_t num_samples);
   /// Rely on pre-determined list of samples.
   void load_list_of_samples();
+  /// Open data files that contains samples and cache the file handles
+  void open_data_files();
   /// See if the image size is consistent with the linearized size
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-  /// Popilate valid sample list from a list given as a range of iterators to list
-  void get_valid_samples_from_list(const std::string data_dir,
-                                   const std::pair<sample_list_jag::samples_t::const_iterator,
-                                                   sample_list_jag::samples_t::const_iterator> it_s);
-  /// Popilate valid sample list from the whole list given
-  void get_valid_samples_from_list(const sample_list_jag& slist);
-  /// Popilate valid sample list for partition p
-  void get_valid_samples_from_list(const sample_list_jag& slist, size_t p);
-
   /// Open a conduit file and register the open file descriptor
-  hid_t open_conduit_file(const std::string& conduit_file_path);
+  hid_t open_conduit_file(const std::string& conduit_file_path) const;
 
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
@@ -385,9 +336,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   void check_scalar_keys();
   /// Make sure that the keys to choose scalar outputs are valid
   void check_input_keys();
-
-  /// Check if the given sample id is valid
-  bool check_sample_id(const size_t i) const;
 
   /**
    * Check if the key is associated with non-numeric value, that is not and
@@ -463,26 +411,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::set<std::string> m_input_filter;
   /// The list of input key prefixes to filter out
   std::vector<prefix_t> m_input_prefix_filter;
-
-  /**
-   * maps integers to sample IDs and the handle of the file that contains it.
-   * In the future the sample IDs may not be integers; also, this map only
-   * includes sample IDs that have <sample_id>/performance/success = 1
-   */
-  sample_map_t m_valid_samples;
-  /// To support validation_percent
-  sample_map_t m_unused_samples;
-
-  /**
-   * The number of local samples that are selected to use.
-   * This is less than or equal to the number of valid samples locally available.
-   */
-  size_t m_local_num_samples_to_use;
-  /**
-   * The total number of samples to use.
-   * This is the sum of m_local_num_samples_to_use.
-   */
-  size_t m_global_num_samples_to_use;
 
   /**
    * io_buffer type that will rely on this reader.
