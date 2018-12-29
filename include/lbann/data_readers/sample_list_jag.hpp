@@ -41,6 +41,10 @@ struct sample_list_indexer {
   sample_list_indexer();
   size_t operator()(size_t idx) const;
 
+  void set_partition_offset(size_t o);
+  size_t get_partition_offset() const;
+  bool check_index(size_t i) const;
+
   size_t m_partition_offset;
 };
 
@@ -63,6 +67,9 @@ class sample_list_jag {
   /// Set the index mapping function
   void set_indexer(const sample_list_indexer& indexer);
 
+  /// Get the index mapping function
+  const sample_list_indexer& get_indexer() const;
+
   /// Load a sample list from a file
   void load(const std::string& samplelist_file);
 
@@ -77,6 +84,9 @@ class sample_list_jag {
 
   /// Clear internal states
   void clear();
+
+  /// Check if a sample index is in the valid range
+  bool check_index(size_t idx) const;
 
   /// Serialize sample list for a partition
   bool to_string(size_t p, std::string& sstr) const;
