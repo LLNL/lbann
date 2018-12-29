@@ -160,7 +160,9 @@ struct softsign_op {
                                         get_error_signals());           \
   }
   INSTANTIATE(log_sigmoid_layer, log_sigmoid_op)
+#ifndef LBANN_HAS_DISTCONV
   INSTANTIATE(relu_layer, relu_op)
+#endif
   INSTANTIATE(selu_layer, selu_op)
   INSTANTIATE(sigmoid_layer, sigmoid_op)
   INSTANTIATE(softplus_layer, softplus_op)
