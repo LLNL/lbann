@@ -69,8 +69,11 @@ class sample_list_jag {
   /// Extract a sample list from a serialized sample list in a string
   void load_from_string(const std::string& samplelist);
 
-  /// Write the current sample list into a file
-  //bool write(const std::string& out_filename) const;
+  /// Tells how many samples in the list 
+  size_t size() const;
+
+  /// Tells if the internal list is empty
+  bool empty() const;
 
   /// Clear internal states
   void clear();

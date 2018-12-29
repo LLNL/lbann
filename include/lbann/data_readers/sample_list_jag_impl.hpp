@@ -102,6 +102,16 @@ inline void sample_list_jag::load_from_string(const std::string& samplelist) {
 }
 
 
+inline size_t sample_list_jag::size() const {
+  return m_sample_list.size();
+}
+
+
+inline bool sample_list_jag::empty() const {
+  return m_sample_list.empty();
+}
+
+
 inline std::string sample_list_jag::read_header_line(std::istream& istrm, const std::string& info) const {
   if (!istrm.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
