@@ -51,6 +51,7 @@
 #include "lbann/utils/peek_map.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_hdf5.hpp"
+#include "lbann/utils/jag_utils.hpp"
 
 
 // This macro may be moved to a global scope
@@ -957,7 +958,12 @@ void data_reader_jag_conduit::load() {
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string conduit_file_name = get_data_filename();
   const std::string pattern = data_dir + conduit_file_name;
-  std::vector<std::string> filenames = glob(pattern);
+  std::vector<std::string> filenames;
+  if (options::get()->has_string("filelist")) {
+    read_filelist(m_comm, options::get()->get_string("filelist"), filenames);
+  } else {
+    filenames = glob(pattern);
+  }
   if (filenames.size() < 1) {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to get data filenames");
   }
