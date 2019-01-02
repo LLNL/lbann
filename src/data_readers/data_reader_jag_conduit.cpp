@@ -227,6 +227,8 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_image_normalization_params = rhs.m_image_normalization_params;
   m_scalar_normalization_params = rhs.m_scalar_normalization_params;
   m_input_normalization_params = rhs.m_input_normalization_params;
+
+  m_sample_list = rhs.m_sample_list;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -282,6 +284,8 @@ void data_reader_jag_conduit::set_defaults() {
   m_image_normalization_params.clear();
   m_scalar_normalization_params.clear();
   m_input_normalization_params.clear();
+
+  m_sample_list.clear();
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
@@ -723,6 +727,21 @@ void data_reader_jag_conduit::check_input_keys() {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::load() {
+  if(m_gan_labelling) {
+    m_num_labels=2;
+  }
+
+  if (is_master()) {
+    std::cout << "JAG load GAN m_gan_labelling : label_value "
+              << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
+  }
+
+  if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
+    // The following member variables of the leadering reader should have been
+    // copied when this was copy-constructed: m_sample_list, and m_open_hdf5_files
+    return;
+  }
+
   load_list_of_samples();
   open_data_files();
 
@@ -738,6 +757,8 @@ void data_reader_jag_conduit::load() {
       set_all_input_choices(); // use all by default if none is specified
     }
     check_input_keys();
+
+    check_image_data();
   }
 
   m_shuffled_indices.clear();
@@ -767,7 +788,9 @@ void data_reader_jag_conduit::load_list_of_samples() {
   m_sample_list.load(sample_list_file);
   double tm2 = get_time();
 
-  std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+  if (is_master()) {
+    std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+  }
 }
 
 void data_reader_jag_conduit::open_data_files() {
