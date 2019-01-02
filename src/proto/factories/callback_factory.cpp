@@ -102,6 +102,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    params.metric(),
                                    parse_set<std::string>(params.weights()),
                                    params.low_score_wins(),
+                                   lbann_callback_ltfb::communication_algorithm::sendrecv_weights,
                                    summarizer);
   }
   /// @todo

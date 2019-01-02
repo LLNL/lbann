@@ -61,6 +61,46 @@ namespace lbann {
 class lbann_callback_ltfb : public lbann_callback {
 public:
 
+  /** LTFB communication scheme.
+   *
+   *  The specifics of these algorithms are experimental and will be
+   *  in flux.
+   */
+  enum class communication_algorithm {
+    /** Directly exchange weights values with sendrecv.
+     *
+     *  Corresponding ranks in partner models will iterate through
+     *  their weights and exchange values with sendrecvs.
+     *
+     *  Notes:
+     *    - Requires all models to be identical aside from their
+     *      weights values, so this is not suitable for hyperparameter
+     *      or model architecture exploration.
+     *    - Optimal if communication performance between ranks is
+     *      uniform and independent. If intra-model communication is
+     *      fast, it may be advantageous to gather model data on the
+     *      model master ranks and only perform inter-model
+     *      communication between the model master ranks.
+     */
+    sendrecv_weights,
+
+    /** Save and load model data with checkpoint files.
+     *
+     *  @todo Implement.
+     *
+     *  Notes:
+     *    - Supports hyperparameter exploration.
+     *    - Checkpoint files currently do not store model architecture
+     *      information, so this is not suitable for model
+     *      architecture exploraiton.
+     *    - This approach is temporary and experimental, since going
+     *      through the file system is very suboptimal. When a wire
+     *      format for model checkpoints is developed, it should be
+     *      used instead.
+     */
+    checkpoint_file
+  };
+
   /** @brief
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
@@ -74,6 +114,7 @@ public:
                       std::string metric_name,
                       std::set<std::string> weights_names = {},
                       bool low_score_wins = false,
+                      communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
                       lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
@@ -97,6 +138,8 @@ private:
   /** Whether low-scoring or high-scoring models survive a
    *  tournament. */
   bool m_low_score_wins;
+
+  communication_algorithm m_comm_algo;
 
   /** Workspace weights.
    *
