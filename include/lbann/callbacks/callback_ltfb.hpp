@@ -69,7 +69,7 @@ public:
   enum class communication_algorithm {
     /** Directly exchange weights values with sendrecv.
      *
-     *  Corresponding ranks in partner models will iterate through
+     *  Corresponding ranks in partner trainers will iterate through
      *  their weights and exchange values with sendrecvs.
      *
      *  Notes:
@@ -77,10 +77,11 @@ public:
      *      weights values, so this is not suitable for hyperparameter
      *      or model architecture exploration.
      *    - Optimal if communication performance between ranks is
-     *      uniform and independent. If intra-model communication is
-     *      fast, it may be advantageous to gather model data on the
-     *      model master ranks and only perform inter-model
-     *      communication between the model master ranks.
+     *      uniform and independent. If intra-trainer communication is
+     *      fast or if communication performance is sensitive to
+     *      network traffic, it may be advantageous to gather model
+     *      data on the trainer master ranks and only perform
+     *      inter-trainer communication between them.
      */
     sendrecv_weights,
 

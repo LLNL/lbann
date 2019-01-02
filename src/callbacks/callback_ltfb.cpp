@@ -32,33 +32,33 @@ namespace lbann {
 
 namespace {
 
-/** Generate partner model assignments.
+/** Generate partner trainer assignments.
  *
  *  Requires a scatter from the world master process. If there are an
- *  odd number of models, one of them is partnered with itself.
+ *  odd number of trainers, one of them is partnered with itself.
  */
-El::Int get_partner_model_index(lbann_comm& comm,
-                                const std::string& message_prefix) {
+El::Int get_partner_trainer_index(lbann_comm& comm,
+                                  const std::string& message_prefix) {
   if (comm.am_world_master()) { // Root process
 
-    // Assign partner models
-    // Note: The first model in 'models' is paired with the second,
-    // the third with the fourth, and so on. If there are an odd
-    // number of models, the last one is partnered with itself.
-    const El::Int num_models = comm.get_num_models();
-    const El::Int procs_per_model = comm.get_procs_per_model();
-    std::vector<El::Int> models(num_models);
-    std::iota(models.begin(), models.end(), 0);
-    std::shuffle(models.begin(), models.end(), get_fast_generator());
+    // Assign partner trainers
+    // Note: The first trainer in 'trainers' is paired with the
+    // second, the third with the fourth, and so on. If there are an
+    // odd number of trainers, the last one is partnered with itself.
+    const El::Int num_trainers = comm.get_num_models();
+    const El::Int procs_per_trainer = comm.get_procs_per_model();
+    std::vector<El::Int> trainers(num_trainers);
+    std::iota(trainers.begin(), trainers.end(), 0);
+    std::shuffle(trainers.begin(), trainers.end(), get_fast_generator());
 
     // Print partner assignments to standard output
     std::stringstream msg;
     msg << message_prefix << "tournament partners -";
-    for (El::Int i = 0; i < num_models; i += 2) {
+    for (El::Int i = 0; i < num_trainers; i += 2) {
       msg << (i > 0 ? "," : "")
-          << " {" << models[i];
-      if (i+1 < num_models) {
-        msg << "," << models[i+1];
+          << " {" << trainers[i];
+      if (i+1 < num_trainers) {
+        msg << "," << trainers[i+1];
       }
       msg << "}";
     }
@@ -66,14 +66,14 @@ El::Int get_partner_model_index(lbann_comm& comm,
     std::cout << msg.str();
 
     // Send partner assignments to all processes
-    std::vector<El::Int> send_buffer(num_models * procs_per_model);
-    for (El::Int i = 0; i < num_models; i += 2) {
-      const auto& model1 = models[i];
-      const auto& model2 = (i+1 < num_models) ? models[i+1] : model1;
-      std::fill_n(&send_buffer[model1 * procs_per_model],
-                  procs_per_model, model2);
-      std::fill_n(&send_buffer[model2 * procs_per_model],
-                  procs_per_model, model1);
+    std::vector<El::Int> send_buffer(num_trainers * procs_per_trainer);
+    for (El::Int i = 0; i < num_trainers; i += 2) {
+      const auto& trainer1 = trainers[i];
+      const auto& trainer2 = (i+1 < num_trainers) ? trainers[i+1] : trainer1;
+      std::fill_n(&send_buffer[trainer1 * procs_per_trainer],
+                  procs_per_trainer, trainer2);
+      std::fill_n(&send_buffer[trainer2 * procs_per_trainer],
+                  procs_per_trainer, trainer1);
     }
     return comm.scatter(send_buffer.data(), comm.get_world_comm());
 
@@ -83,7 +83,7 @@ El::Int get_partner_model_index(lbann_comm& comm,
   }
 }
 
-/** Exchange weights values with partner model.
+/** Exchange weights values with partner trainer.
  *
  *  @param weights_names    Names of weights to exchange. If empty,
  *                          then all weights are exchanged.
@@ -91,16 +91,16 @@ El::Int get_partner_model_index(lbann_comm& comm,
  *  @param recv_weights     Weights values recieved from partner.
  */
 void exchange_models__sendrecv_weights(lbann_comm& comm,
-                                       El::Int partner_model_index,
+                                       El::Int partner_trainer_index,
                                        const std::set<std::string>& weights_names,
                                        const std::vector<weights*>& send_weights,
                                        std::vector<weights*>& recv_weights) {
 
   // Get partner process
-  const El::Int rank_in_model = comm.get_rank_in_model();
-  const El::Int procs_per_model = comm.get_procs_per_model();
-  const El::Int partner_rank_in_world = (partner_model_index * procs_per_model
-                                         + rank_in_model);
+  const El::Int rank_in_trainer = comm.get_rank_in_model();
+  const El::Int procs_per_trainer = comm.get_procs_per_model();
+  const El::Int partner_rank_in_world = (partner_trainer_index * procs_per_trainer
+                                         + rank_in_trainer);
 
   // Exchange weights with partner
   for (size_t i = 0; i < send_weights.size(); ++i) {
@@ -114,11 +114,6 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
                    partner_rank_in_world, partner_rank_in_world);
     }
   }
-
-}
-
-void restore_local_model__sendrecv_weights(const std::vector<weights*>& original_weights,
-                                           std::vector<weights*>& recv_weights) {
 
 }
 
@@ -214,7 +209,7 @@ void lbann_callback_ltfb::setup(model *m) {
     m_workspace_weights.emplace_back(w->copy());
   }
 
-  // Make sure model does not have inter-model communication callback
+  // Make sure model does not have inter-trainer communication callback
   for (auto&& cb : m->get_callbacks()) {
     if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
       LBANN_ERROR("Detected both LTFB and imcomm callbacks. ");
@@ -241,9 +236,9 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   }
 
   // Determine partner model for tournament
-  const El::Int local_model_index = comm->get_model_rank();
-  const El::Int partner_model_index = get_partner_model_index(*comm,
-                                                              message_prefix);
+  const El::Int local_trainer_index = comm->get_model_rank();
+  const El::Int partner_trainer_index
+    = get_partner_trainer_index(*comm, message_prefix);
 
   // Evaluate local model
   if (comm->am_world_master()) {
@@ -259,7 +254,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
     *local_weights[i] = *model_weights[i];
   }
 
-  // Exchange model data with partner model
+  // Exchange model data with partner trainer
   /// @todo Use checkpointing
   if (comm->am_world_master()) {
     std::cout << message_prefix + "exchanging model data...\n";
@@ -267,7 +262,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   switch (m_comm_algo) {
   case communication_algorithm::sendrecv_weights:
     exchange_models__sendrecv_weights(*comm,
-                                      partner_model_index,
+                                      partner_trainer_index,
                                       m_weights_names,
                                       local_weights,
                                       model_weights);
@@ -285,10 +280,10 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
 
   // Choose tournament winner
   // Note: restore local model data if it got a better score.
-  El::Int tournament_winner = partner_model_index;
+  El::Int tournament_winner = partner_trainer_index;
   if ((m_low_score_wins && local_score <= partner_score) ||
       (!m_low_score_wins && local_score >= partner_score)) {
-    tournament_winner = local_model_index;
+    tournament_winner = local_trainer_index;
     switch (m_comm_algo) {
     case communication_algorithm::sendrecv_weights:
       for (size_t i = 0; i < model_weights.size(); ++i) {
@@ -305,11 +300,11 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   if (comm->am_model_master()) {
     std::stringstream msg;
     msg << message_prefix
-        << "model " << local_model_index << " "
-        << "selected model from model " << tournament_winner
-        << " (model " << local_model_index << " score "
+        << "trainer " << local_trainer_index << " "
+        << "selected model from trainer " << tournament_winner
+        << " (trainer " << local_trainer_index << " score "
         << "= " << local_score << ", "
-        << "model " << partner_model_index << " score "
+        << "trainer " << partner_trainer_index << " score "
         << "= " << partner_score << ")" << "\n";
     std::cout << msg.str();
   }
