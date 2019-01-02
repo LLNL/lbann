@@ -443,6 +443,7 @@ message CallbackLTFB {
   string metric = 2;
   string weights = 3;       // default: all weights
   bool low_score_wins = 4;
+  string communication_algorithm = 5;   // default: "sendrecv_weights"
 }
 
 message CallbackStepLearningRate {

@@ -125,6 +125,13 @@ public:
   void setup(model *m) override;
   void on_batch_begin(model *m) override;
 
+  /** Convert string to LTFB communication algorithm.
+   *
+   *  If an empty string is provided, returns @c
+   *  communication_algorithm::sendrecv_weights.
+   */
+  static communication_algorithm string_to_comm_algo(const std::string& str);
+
 private:
 
   /** Metric for tournament evaluation. */
@@ -140,6 +147,7 @@ private:
    *  tournament. */
   bool m_low_score_wins;
 
+  /** Communication scheme. */
   communication_algorithm m_comm_algo;
 
   /** Workspace weights.
