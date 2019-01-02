@@ -406,7 +406,8 @@ protected:
     const dc::Array4 output_spatial_local_shape =
         ::distconv::get_convolution_output_local_tensor_shape(
             this->m_prev_activations_t,
-            filter_dims, strides, true, dilations);
+            filter_dims, strides, true, dilations,
+            this->m_num_groups);
     return output_spatial_local_shape;
   }
 
@@ -496,7 +497,7 @@ protected:
                   m_kernel_t, this->m_activations_t,
                   this->m_error_signals_t, m_kernel_gradient_e,
                   this->m_prev_error_signals_t,
-                  pads, strides, dilations,
+                  pads, strides, dilations, this->m_num_groups,
                   m_fwd_algo, m_bwd_data_algo,
                   m_bwd_filter_algo);
   }
