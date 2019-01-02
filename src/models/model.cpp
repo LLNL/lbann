@@ -289,6 +289,22 @@ void model::set_layers(std::vector<Layer*>& layers) {
 
 }
 
+std::vector<weights*> model::get_weights() {
+  std::vector<weights*> weights_list;
+  for (const auto& w : m_weights) {
+    weights_list.push_back(w);
+  }
+  return weights_list;
+}
+
+const std::vector<weights*> model::get_weights() const {
+  std::vector<weights*> weights_list;
+  for (const auto& w : m_weights) {
+    weights_list.push_back(w);
+  }
+  return weights_list;
+}
+
 void model::replace_weights(std::vector<weights*>& new_weights) {
 
   // Check that number of weights is valid
@@ -935,6 +951,15 @@ void model::collect_indices(execution_mode mode) {
   reset_epoch_statistics(mode);
 }
 
+void model::collect_background_data_fetch(execution_mode mode) {
+  for (const auto& layer : m_layers) {
+    auto *input = dynamic_cast<generic_input_layer*>(layer);
+    if (input != nullptr) {
+      input->collect_background_data_fetch(mode);
+    }
+  }
+  return;
+}
 
 void model::train(int num_epochs, int num_batches) {
   do_train_begin_cbs();

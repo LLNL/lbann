@@ -31,8 +31,15 @@
 
 namespace lbann {
 
-/** Print verbose status updates to standard error stream.
- *  This callback is useful for "printf debugging."
+/**
+ * @brief Phase specific "printf debugging"
+ *
+ * Print verbose status updates to standard error stream.
+ * This callback is useful for "printf debugging."
+ *
+ * Takes a prototext parameter @c phase: train | validate | test | <empty>
+ * if <empty> will print messages for all phases
+ *
  */
 class lbann_callback_debug : public lbann_callback {
  public:

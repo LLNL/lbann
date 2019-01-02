@@ -133,6 +133,10 @@ public:
   /** Return the model's layers. */
   virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
 
+  const std::vector<weights*> get_weights() const;
+
+  std::vector<weights*> get_weights();
+
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
@@ -140,9 +144,6 @@ public:
  *  Only weight values are placed, pointers and layer structure are in place.
  *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
-
-  /** Return the model's weights. */
-  const std::vector<weights *>& get_weights() const { return m_weights; }
 
   /** Return the I/O thread pool */
   std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
@@ -233,6 +234,10 @@ public:
    *  data_store functionality
    */
   void collect_indices(execution_mode mode);
+
+  /** Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);

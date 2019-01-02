@@ -36,7 +36,7 @@ namespace lbann {
  *  Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
  */
 class adam : public optimizer {
- public:
+public:
 
   /** Constructor. */
   adam(lbann_comm *comm,
@@ -70,7 +70,7 @@ class adam : public optimizer {
   void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
- private:
+private:
 
   /** Update factor for first moment estimate. */
   DataType m_beta1;
@@ -87,10 +87,13 @@ class adam : public optimizer {
   /** Second moment estimates. */
   AbsDistMat *m_moment2;
 
-//************************************************************************
-// Checkpointing
-//************************************************************************
- private:
+  /** Hyperparameter exploration. */
+  friend class lbann_callback_perturb_adam;
+
+  // ===========================================
+  // Checkpointing
+  // ===========================================
+
   /* struct used to serialize mode fields in file and MPI transfer */
   struct packing_header {
     DataType beta1;
@@ -138,6 +141,7 @@ class adam : public optimizer {
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
+
 };
 
 } // namespace lbann
