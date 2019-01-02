@@ -742,42 +742,49 @@ void data_reader_jag_conduit::load() {
     return;
   }
 
-  load_list_of_samples();
-  open_data_files();
+  m_shuffled_indices.clear();
 
-  if (!m_is_data_loaded) {
-    m_is_data_loaded = true;
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
+  const std::string data_dir = add_delimiter(get_file_dir());
+  const std::string sample_list_file = data_dir + get_data_filename();
 
-    if (m_scalar_keys.size() == 0u) {
-      set_all_scalar_choices(); // use all by default if none is specified
+  if (my_rank >= num_readers) {
+    sample_list_header hdr = m_sample_list.load_header(sample_list_file);
+    // Avoid reading the entire list file but only reads the header.
+    m_shuffled_indices.resize(hdr.get_sample_count());
+  } else {
+    load_list_of_samples(sample_list_file);
+    open_data_files();
+
+    if (!m_is_data_loaded) {
+      m_is_data_loaded = true;
+
+      if (m_scalar_keys.size() == 0u) {
+        set_all_scalar_choices(); // use all by default if none is specified
+      }
+      check_scalar_keys();
+
+      if (m_input_keys.size() == 0u) {
+        set_all_input_choices(); // use all by default if none is specified
+      }
+      check_input_keys();
+
+      check_image_data();
     }
-    check_scalar_keys();
-
-    if (m_input_keys.size() == 0u) {
-      set_all_input_choices(); // use all by default if none is specified
-    }
-    check_input_keys();
-
-    check_image_data();
+    m_shuffled_indices.resize(m_sample_list.size());
   }
 
-  m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
 }
 
-void data_reader_jag_conduit::load_list_of_samples() {
-  const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_filename();
-
+void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
   const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
 
   if (my_rank >= num_readers) {
-    // TODO: Not sure if this ok. If not, at least get the number of samples from
-    // the list header and size the m_shuffled_list.
     return;
   }
 

@@ -320,7 +320,7 @@ class data_reader_jag_conduit : public generic_data_reader {
    */
   bool check_num_parallel_readers(long data_set_size);
   /// Rely on pre-determined list of samples.
-  void load_list_of_samples();
+  void load_list_of_samples(const std::string filename);
   /// Open data files that contains samples and cache the file handles
   void open_data_files();
   /// See if the image size is consistent with the linearized size

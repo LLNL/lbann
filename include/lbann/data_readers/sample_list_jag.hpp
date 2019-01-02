@@ -70,8 +70,11 @@ class sample_list_jag {
   /// Get the index mapping function
   const sample_list_indexer& get_indexer() const;
 
-  /// Load a sample list from a file
+  /// Load a sample list file
   void load(const std::string& samplelist_file);
+
+  /// Load the header of a sample list file
+  sample_list_header load_header(const std::string& samplelist_file) const;
 
   /// Extract a sample list from a serialized sample list in a string
   void load_from_string(const std::string& samplelist);
@@ -154,9 +157,6 @@ class sample_list_jag {
 
   /// Contains starting sample id of each partition
   std::vector<sample_id_t> m_sample_range_per_part;
-
-  /// indices to m_samples_per_file used for shuffling
-  std::vector<unsigned> m_shuffled_indices;
 
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;

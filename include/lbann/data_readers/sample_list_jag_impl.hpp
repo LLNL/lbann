@@ -100,18 +100,11 @@ inline void sample_list_jag::load(const std::string& samplelist_file) {
   get_sample_range_per_part();
 }
 
-/*
-inline void sample_list_jag::shuffle(gen) {
-// TODO: shuffling in a separate function, and need to pass random number generator gen
-  if (m_shuffled_indices.size() != m_sample_list.size()) {
-    m_shuffled_indices.resize(m_sample_list.size());
-    std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-  }
-  if (m_shuffle) {
-    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(), gen);
-  }
+
+inline sample_list_header sample_list_jag::load_header(const std::string& samplelist_file) const {
+  std::ifstream istr(samplelist_file);
+  return read_header(istr);
 }
-*/
 
 
 inline void sample_list_jag::load_from_string(const std::string& samplelist) {
