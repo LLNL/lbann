@@ -759,6 +759,11 @@ class generic_input_layer : public io_layer {
 
   // reload state of IO from a checkpoint
   bool load_from_checkpoint_shared(persist& p) override {
+    /** @todo This is a kludge for LTFB. Loading the checkpoint data
+     *  for data readers causes all sorts of wonky things to happen.
+     */
+    return true;
+
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
 
@@ -792,7 +797,7 @@ class generic_input_layer : public io_layer {
     }
     // TODO: assumes homogeneous hardware
     // broadcast data from rank 0
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
+    m_comm->model_broadcast(0, header);
     // set our fields
     m_training_dataset.num_samples_processed()   = (long) header.train_proc;
     m_training_dataset.total_samples()           = (long) header.train_total;
