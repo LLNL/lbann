@@ -55,13 +55,12 @@ namespace lbann {
  *    - Can this be used to explore model architectures?
  *
  *  @todo Exchange optimizer state.
- *  @todo Exchange using checkpointing.
  *  @todo Support heterogeneous models.
  */
 class lbann_callback_ltfb : public lbann_callback {
 public:
 
-  /** LTFB communication scheme.
+  /** Inter-trainer communication scheme for LTFB.
    *
    *  The specifics of these algorithms are experimental and will be
    *  in flux.
@@ -76,6 +75,8 @@ public:
      *    - Requires all models to be identical aside from their
      *      weights values, so this is not suitable for hyperparameter
      *      or model architecture exploration.
+     *    - Optimizer state is not exchanged, so there may be wonky
+     *      learning behavior immediately after a tournament.
      *    - Optimal if communication performance between ranks is
      *      uniform and independent. If intra-trainer communication is
      *      fast or if communication performance is sensitive to
@@ -110,6 +111,7 @@ public:
    *                        If empty, then all weights are exchanged.
    *  @param low_score_wins Whether low-scoring or high-scoring models
    *                        survive a tournament.
+   *  @param comm_algo      Inter-trainer communication scheme.
    */
   lbann_callback_ltfb(El::Int batch_interval,
                       std::string metric_name,
@@ -147,7 +149,7 @@ private:
    *  tournament. */
   bool m_low_score_wins;
 
-  /** Communication scheme. */
+  /** Inter-trainer communication scheme. */
   communication_algorithm m_comm_algo;
 
   /** Workspace weights.

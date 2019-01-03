@@ -24,6 +24,9 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/io/file_io.hpp"
+#include "lbann/utils/exception.hpp"
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -31,62 +34,33 @@
 #include <cstring>
 #include <cstdio>
 
-#include "lbann/io/file_io.hpp"
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "mpi.h"
+#include <sstream>
 
-static mode_t mode_dir = S_IRWXU | S_IRWXG;
-static MPI_Comm comm = MPI_COMM_WORLD;
+#include "mpi.h"
 
 /* creates directory given in dir (absolute path),
  * returns 1 if dir was created, 0 otherwise */
 int lbann::makedir(const char *dir) {
-  // get our rank
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  // have rank 0 create directory
-  int mkdir_rc;
-  mkdir_rc = mkdir(dir, mode_dir);
-  if (mkdir_rc != 0) {
-    if (errno == EEXIST) {
-      // not an error if the directory already exists
-      mkdir_rc = 0;
-    } else {
-      fprintf(stderr, "ERROR: Failed to create directory `%s' (%d: %s) @ %s:%d\n",
-              dir, errno, strerror(errno), __FILE__, __LINE__
-             );
-      fflush(stderr);
-    }
+  int mkdir_rc = mkdir(dir, S_IRWXU | S_IRWXG);
+  if (mkdir_rc == 0 || errno == EEXIST) {
+    return 1;
+  } else {
+    std::stringstream err;
+    err << "failed to create directory (" << dir << ") "
+        << "with error " << errno << " (" << strerror(errno) << ")";
+    LBANN_ERROR(err.str());
+    return 0;
   }
-
-  // return 1 if dir was created successfully
-  int ret = (mkdir_rc == 0);
-  return ret;
 }
 
 int lbann::exists(const char *file) {
-  // get our rank
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-
-  // check whether file exists
   struct stat buffer;
-  int exists = 0;
-  if (rank == 0) {
-    // TODO: would be nice to use something lighter weight than stat here
-    if (stat(file, &buffer) == 0) {
-      exists = 1;
-    }
-  }
-  MPI_Bcast(&exists, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-  return exists;
+  return (stat(file, &buffer) == 0) ? 1 : 0;
 }
 
 int lbann::openread(const char *file) {

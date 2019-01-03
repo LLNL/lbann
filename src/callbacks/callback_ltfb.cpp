@@ -135,9 +135,13 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Save model checkpoint
   persist p;
-  p.set_cb_type(callback_type::invalid);
-  p.open_checkpoint(send_dir.c_str());
-  m.save_to_checkpoint_distributed(p);
+  p.set_cb_type(callback_type::batch);
+  if (comm.am_model_master()) {
+    p.open_checkpoint(send_dir.c_str());
+  } else {
+    std::strcpy(p.m_checkpoint_dir, send_dir.c_str());
+  }
+  m.save_to_checkpoint_shared(p);
   p.close_checkpoint();
 
   // Synchronize with partner trainer
@@ -150,10 +154,16 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   }
 
   // Load model checkpoint from partner trainer
-  p.set_cb_type(callback_type::invalid);
-  p.open_restart(recv_dir.c_str());
-  m.load_from_checkpoint_distributed(p);
-  p.close_restart();
+  p.set_cb_type(callback_type::batch);
+  if (comm.am_model_master()) {
+    p.open_restart(recv_dir.c_str());
+  } else {
+    std::strcpy(p.m_checkpoint_dir, recv_dir.c_str());
+  }
+  m.load_from_checkpoint_shared(p);
+  if (comm.am_model_master()) {
+    p.close_restart();
+  }
 
   // Restore weights that shouldn't be exchanged
   if (!weights_names.empty()) {
@@ -181,10 +191,16 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Load local model checkpoint
   persist p;
-  p.set_cb_type(callback_type::invalid);
-  p.open_restart(checkpoint_dir.c_str());
-  m.load_from_checkpoint_distributed(p);
-  p.close_restart();
+  p.set_cb_type(callback_type::batch);
+  if (comm.am_model_master()) {
+    p.open_restart(checkpoint_dir.c_str());
+  } else {
+    std::strcpy(p.m_checkpoint_dir, checkpoint_dir.c_str());
+  }
+  m.load_from_checkpoint_shared(p);
+  if (comm.am_model_master()) {
+    p.close_restart();
+  }
 
 }
 
@@ -326,7 +342,6 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   }
 
   // Exchange model data with partner trainer
-  /// @todo Use checkpointing
   if (comm.am_world_master()) {
     std::cout << message_prefix + "exchanging model data...\n";
   }
