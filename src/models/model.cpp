@@ -81,7 +81,8 @@ model::model(lbann_comm *comm,
     m_current_phase(0),
     m_comm(comm),
     m_default_optimizer(default_optimizer),
-    m_io_thread_pool() {
+    m_io_thread_pool(),
+    m_background_io_allowed(true) {
 
   // Default model name
   static El::Int num_models = 0;
@@ -101,7 +102,8 @@ model::model(const model& other) :
   m_current_mini_batch_size(other.m_current_mini_batch_size),
   m_effective_mini_batch_size(other.m_effective_mini_batch_size),
   m_current_phase(other.m_current_phase),
-  m_comm(other.m_comm) {
+  m_comm(other.m_comm),
+  m_background_io_allowed(other.m_background_io_allowed) {
 
   // Deep copies
   m_objective_function = other.m_objective_function;
@@ -156,6 +158,7 @@ model& model::operator=(const model& other) {
   m_effective_mini_batch_size = other.m_effective_mini_batch_size;
   m_current_phase = other.m_current_phase;
   m_comm = other.m_comm;
+  m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
   m_objective_function = other.m_objective_function;
