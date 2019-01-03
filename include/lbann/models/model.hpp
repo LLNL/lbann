@@ -239,6 +239,12 @@ public:
       mode requested */
   virtual void collect_background_data_fetch(execution_mode mode);
 
+  /** Set a flag that can be used to enable / disable the background I/O activities */
+  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
+
+  /** Are background I/O activities enabled by the input layers */
+  bool background_io_activity_allowed() { return m_background_io_allowed; }
+
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
@@ -318,6 +324,9 @@ protected:
 
   /** Threads available for I/O */
   std::shared_ptr<thread_pool> m_io_thread_pool;
+
+  /** Flag that allows input layers to fetch data in the background */
+  bool m_background_io_allowed;
 
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
