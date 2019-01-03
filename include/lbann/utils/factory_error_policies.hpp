@@ -9,15 +9,15 @@
 namespace lbann
 {
 
-/** \class default_key_error_policy
- *  \brief Default policy describing how to handle unknown keys.
+/** @class default_key_error_policy
+ *  @brief Default policy describing how to handle unknown keys.
  *
  *  The policy must define "handle_unknown_key(KeyT const&)".
  *
  *  The default behavior is to throw an exception.
  *
- *  \tparam KeyT The type of key.
- *  \tparam ObjectT The type of the object being constructed by the factory.
+ *  @tparam KeyT The type of key.
+ *  @tparam ObjectT The type of the object being constructed by the factory.
  */
 template <typename KeyT, class ObjectT>
 struct default_key_error_policy
@@ -32,16 +32,16 @@ struct default_key_error_policy
     }
 };// class default_key_error_policy
 
-/** \class nullptr_key_error_policy
- *  \brief Policy returning a nullptr if the key is unknown
+/** @class nullptr_key_error_policy
+ *  @brief Policy returning a nullptr if the key is unknown
  *
  *  This class just returns "nullptr". Use of this class is not
  *  recommended as it probably indicates bad design that would better
  *  utilize exception handling. But it felt awkward to not at least
  *  provide it.
  *
- *  \tparam KeyT The type of key.
- *  \tparam ObjectT The type of the object being constructed by the factory.
+ *  @tparam KeyT The type of key.
+ *  @tparam ObjectT The type of the object being constructed by the factory.
  */
 template <typename KeyT, class ObjectT>
 struct nullptr_key_error_policy

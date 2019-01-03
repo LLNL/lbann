@@ -13,8 +13,8 @@
 namespace lbann
 {
 
-/** \class generic_factory
- *  \brief Generic factory template.
+/** @class generic_factory
+ *  @brief Generic factory template.
  *
  *  This is a generic factory that should be suitable for constructing
  *  objects of a particular base type. The goal is maximum reuse:
@@ -26,10 +26,10 @@ namespace lbann
  *
  *  The default behavior for key errors is to throw an exception.
  *
- *  \tparam BaseT        The base class of the types being constructed.
- *  \tparam KeyT         The index type used to differentiate concrete types.
- *  \tparam BuilderT     The functor type that builds concrete types.
- *  \tparam ErrorPolicy  The policy for handling key errors.
+ *  @tparam BaseT        The base class of the types being constructed.
+ *  @tparam KeyT         The index type used to differentiate concrete types.
+ *  @tparam BuilderT     The functor type that builds concrete types.
+ *  @tparam ErrorPolicy  The policy for handling key errors.
  */
 template <class BaseT, typename KeyT,
           typename BuilderType = std::function<std::unique_ptr<BaseT>()>,
@@ -50,12 +50,12 @@ private:
   using map_type = std::unordered_map<key_type,builder_type>;
 
 public:
-  /** \brief Register a new builder for key \c key.
+  /** @brief Register a new builder for key @c key.
    *
-   *  \param key     An identifier for a concrete type to be constructed.
-   *  \param builder An \c Invokable object that builds concrete objects.
+   *  @param key     An identifier for a concrete type to be constructed.
+   *  @param builder An @c Invokable object that builds concrete objects.
    *
-   *  \return \c true if the builder was registered successfully; \c
+   *  @return @c true if the builder was registered successfully; @c
    *      false otherise.
    */
   bool register_builder(key_type key, builder_type builder)
@@ -66,11 +66,11 @@ public:
       std::forward_as_tuple(std::move(builder))).second;
   }
 
-  /** \brief Unregister the current builder for key \c key.
+  /** @brief Unregister the current builder for key @c key.
    *
-   *  \param key The key for the builder to be removed from the factory.
+   *  @param key The key for the builder to be removed from the factory.
    *
-   *  \return \c true if a builder was unregistered; \c false
+   *  @return @c true if a builder was unregistered; @c false
    *      otherwise.
    */
   bool unregister(key_type const& key)
@@ -78,12 +78,12 @@ public:
     return m_registered_builders.erase(key);
   }
 
-  /** \brief Construct a new object.
+  /** @brief Construct a new object.
    *
-   *  \param key  The key for the object to be created.
-   *  \param args Extra arguments for the builder.
+   *  @param key  The key for the object to be created.
+   *  @param args Extra arguments for the builder.
    *
-   *  \return A newly-built object managed by an \c std::unique_ptr.
+   *  @return A newly-built object managed by an @c std::unique_ptr.
    */
   template <typename... Ts>
   std::unique_ptr<base_type> create_object(
@@ -96,9 +96,9 @@ public:
     return this->handle_unknown_key(key);
   }
 
-  /** \brief Get the names of all builders known to the factory.
+  /** @brief Get the names of all builders known to the factory.
    *
-   *  \return A list of the known keys.
+   *  @return A list of the known keys.
    */
   std::forward_list<key_type> get_registered_keys() const
   {
@@ -117,7 +117,7 @@ public:
   }
 
 private:
-  /** \brief An associative list of keys and builders. */
+  /** @brief An associative list of keys and builders. */
   map_type m_registered_builders;
 };// class generic_factory
 
