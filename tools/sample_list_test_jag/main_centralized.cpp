@@ -41,6 +41,8 @@ int main(int argc, char** argv)
   double tm1 = get_time();
   // load sample list
   sample_list_jag sn;
+  // If the number of partitions is not set (or set to 1 as the default),
+  // the entire list is sent instead of a partition.
   sn.set_num_partitions(num_ranks);
   if (my_rank == 0) {
     sn.load(sample_list_file);

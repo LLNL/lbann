@@ -5,8 +5,11 @@ CONDUIT_LIB=${CONDUIT_DIR}/lib
 
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDUIT_LIB}:${HDF5_LIB}
 #list_file=/p/lscratchh/brainusr/datasets/10MJAG/1M_A/index.txt
-if [ "${CENTRALIZED}" == "" ] ; then
-  list_file=index10.txt
+list_file=index10.txt
+
+#CENTRALIZED="TRUE"
+
+if [ "${CENTRALIZED}" == "TRUE" ] ; then
   srun -n 4 ./run_centralized ${list_file}
 else
   ./run_distributed ${list_file} 1
