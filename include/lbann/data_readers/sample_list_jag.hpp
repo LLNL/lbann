@@ -79,7 +79,7 @@ class sample_list_jag {
   /// Extract a sample list from a serialized sample list in a string
   void load_from_string(const std::string& samplelist);
 
-  /// Tells how many samples in the list 
+  /// Tells how many samples in the list
   size_t size() const;
 
   /// Tells if the internal list is empty
@@ -121,10 +121,10 @@ class sample_list_jag {
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
-  std::string read_header_line(std::istream& ifs, const std::string& info) const;
+  std::string read_header_line(std::istream& ifs, const std::string& filename, const std::string& info) const;
 
   /// Reads the header of a sample list
-  sample_list_header read_header(std::istream& istrm) const;
+  sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm);
@@ -132,13 +132,13 @@ class sample_list_jag {
   /// read the body of inclusive sample list
   void read_inclusive_list(std::istream& istrm);
 
-  /// Reads a samlpe list and populates the internal list
-  size_t get_samples_per_file(std::istream& istrm);
+  /// Reads a sample list and populates the internal list
+  size_t get_samples_per_file(std::istream& istrm, const std::string& filename);
 
-  /// Compute the samlpe index range that partition p covers
+  /// Compute the sample index range that partition p covers
   void get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const;
 
-  /// Add the header info to the gievn string
+  /// Add the header info to the given string
   void write_header(std::string& sstr) const;
 
  protected:

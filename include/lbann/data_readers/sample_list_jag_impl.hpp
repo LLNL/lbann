@@ -92,20 +92,20 @@ inline const sample_list_indexer& sample_list_jag::get_indexer() const {
 
 inline void sample_list_jag::load(const std::string& samplelist_file) {
   std::ifstream istr(samplelist_file);
-  get_samples_per_file(istr);
+  get_samples_per_file(istr, samplelist_file);
   istr.close();
 }
 
 
 inline sample_list_header sample_list_jag::load_header(const std::string& samplelist_file) const {
   std::ifstream istr(samplelist_file);
-  return read_header(istr);
+  return read_header(istr, samplelist_file);
 }
 
 
 inline void sample_list_jag::load_from_string(const std::string& samplelist) {
   std::istringstream istr(samplelist);
-  get_samples_per_file(istr);
+  get_samples_per_file(istr, "<LOAD_FROM_STRING>");
 }
 
 
@@ -125,10 +125,10 @@ inline bool sample_list_jag::check_index(size_t idx) const {
 }
 
 
-inline std::string sample_list_jag::read_header_line(std::istream& istrm, const std::string& info) const {
+inline std::string sample_list_jag::read_header_line(std::istream& istrm, const std::string& filename, const std::string& info) const {
   if (!istrm.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list for " + info);
+                          + " :: unable to read the header line of sample list " + filename + " for " + info);
   }
 
   std::string line;
@@ -136,22 +136,23 @@ inline std::string sample_list_jag::read_header_line(std::istream& istrm, const 
 
   if (line.empty()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list for " + info);
+                          + " :: unable to read the header line of sample list " + filename + " for " + info
+                          + " -- the line was empty");
   }
   return line;
 }
 
 
-inline sample_list_header sample_list_jag::read_header(std::istream& istrm) const {
+inline sample_list_header sample_list_jag::read_header(std::istream& istrm, const std::string& filename) const {
   sample_list_header hdr;
 
-  std::string line1 = read_header_line(istrm, "the exclusiveness");
+  std::string line1 = read_header_line(istrm, filename, "the exclusiveness");
   std::stringstream header1(line1);
 
-  std::string line2 = read_header_line(istrm, "the number of samlpes and the number of files");
+  std::string line2 = read_header_line(istrm, filename, "the number of samlpes and the number of files");
   std::stringstream header2(line2);
 
-  std::string line3 = read_header_line(istrm, "the data file directory");
+  std::string line3 = read_header_line(istrm, filename, "the data file directory");
   std::stringstream header3(line3);
 
   std::string sample_list_type;
@@ -291,8 +292,8 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
 }
 
 
-inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm) {
-  m_header = read_header(istrm);
+inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm, const std::string& filename) {
+  m_header = read_header(istrm, filename);
   m_sample_list.reserve(m_header.get_sample_count());
 
   if (m_header.is_exclusive()) {
