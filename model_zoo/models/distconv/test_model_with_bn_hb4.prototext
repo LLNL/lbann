@@ -30,7 +30,7 @@ model {
   }
 
   callback { print {} }
-  callback { gpu_memory_usage {} }  
+  callback { gpu_memory_usage {} }
   callback { timer {} }
   callback {
     summary {
@@ -39,7 +39,7 @@ model {
     }
   }
   callback { profiler {} }
-  
+
   layer {
     name: "data"
     children: "images labels"
@@ -60,11 +60,11 @@ model {
     data_layout: "data_parallel"
     split {}
   }
-  
+
 
   layer {
     name: "conv1"
-    parents: "images"    
+    parents: "images"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -84,7 +84,7 @@ model {
   }
   layer {
     name: "bn1"
-    parents: "conv1"	
+    parents: "conv1"
     data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
@@ -102,7 +102,7 @@ model {
   }
   layer {
     name: "relu1"
-    parents: "bn1"		
+    parents: "bn1"
     data_layout: "data_parallel"
     relu {}
     parallel_strategy {
@@ -151,7 +151,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "bn2"
@@ -169,7 +169,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "relu2"
@@ -182,7 +182,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "pool2"
@@ -201,7 +201,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
 
   layer {
@@ -222,7 +222,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "bn3"
@@ -240,7 +240,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "relu3"
@@ -253,7 +253,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
 
   layer {
@@ -274,7 +274,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "bn4"
@@ -292,7 +292,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "relu4"
@@ -305,7 +305,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
   layer {
     name: "pool4"
@@ -324,7 +324,7 @@ model {
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
-    }    
+    }
   }
 
   layer {
@@ -347,16 +347,14 @@ model {
     name: "cross_entropy"
     parents: "prob labels"
     data_layout: "data_parallel"
-    cross_entropy {}    
+    cross_entropy {}
   }
-
   layer {
     name: "top1_accuracy"
     parents: "prob labels"
     data_layout: "data_parallel"
-    top_k_categorical_accuracy { k: 1 }
+    categorical_accuracy {}
   }
-
   layer {
     name: "top5_accuracy"
     parents: "prob labels"
