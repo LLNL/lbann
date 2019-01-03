@@ -168,6 +168,7 @@
 #include "lbann/callbacks/callback_confusion_matrix.hpp"
 #include "lbann/callbacks/callback_check_gradients.hpp"
 #include "lbann/callbacks/callback_check_metric.hpp"
+#include "lbann/callbacks/callback_perturb_adam.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

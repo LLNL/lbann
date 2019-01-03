@@ -28,7 +28,6 @@
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
-#include "lbann/io/data_buffers/distributed_io_buffer.hpp"
 //#include "lbann/data_store/data_store_jag_conduit.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
@@ -261,16 +260,7 @@ data_reader_jag_conduit* data_reader_jag_conduit::get_leading_reader() {
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
-  if (m_io_buffer_type == "distributed") {
-    // Use a sufficiently large data set size for the time being, and
-    // check if it is ok when the actual size of data is available later
-    long data_set_size = 2 * get_mini_batch_size() * m_comm->get_num_models() * get_num_parallel_readers();
-    set_num_parallel_readers(distributed_io_buffer::compute_max_num_parallel_readers(
-                             data_set_size, get_mini_batch_size(),
-                             get_num_parallel_readers(), get_comm()));
-    set_sample_stride(1);
-    set_iteration_stride(get_num_parallel_readers());
-  } else if (m_io_buffer_type == "partitioned") {
+  if (m_io_buffer_type == "partitioned") {
     set_num_parallel_readers(partitioned_io_buffer::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
@@ -283,19 +273,6 @@ int data_reader_jag_conduit::compute_max_num_parallel_readers() {
 }
 
 bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
-  if (m_io_buffer_type == "distributed") {
-    const bool too_many_readers = !distributed_io_buffer::check_num_parallel_readers(data_set_size, get_mini_batch_size(), get_num_parallel_readers(), m_comm);
-    if (too_many_readers) {
-      if(m_comm->am_world_master()) {
-        std::string err =
-          "The training data set size " + std::to_string(data_set_size)
-          + " is too small for the number of parallel readers "
-          + std::to_string(get_num_parallel_readers());
-        _THROW_LBANN_EXCEPTION_(get_type(), err);
-        return false;
-      }
-    }
-  }
   return true;
 }
 #else // _JAG_OFFLINE_TOOL_MODE_
@@ -951,17 +928,6 @@ void data_reader_jag_conduit::populate_shuffled_indices(const size_t num_samples
         m_shuffled_indices[n+r] = s;
       }
       ++s;
-    }
-  } else if (m_io_buffer_type == "distributed") {
-    const int num_readers = get_iteration_stride();
-    const int mb_size = get_mini_batch_size();
-    for(size_t n = 0u; n < m_shuffled_indices.size(); ) {
-      for(int r = 0; r < num_readers; r++) {
-        for(int m = 0, si = s; (m < mb_size) && (n < m_shuffled_indices.size()); ++m) {
-          m_shuffled_indices[n++] = si++;
-        }
-      }
-      s += mb_size;
     }
   }
 }

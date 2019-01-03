@@ -855,6 +855,7 @@ void print_help(lbann_comm *comm)
        "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
+       "  --disable_background_io_activity=<bool>\n"
        "  --disable_cuda=<bool>\n"
        "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"

@@ -105,7 +105,7 @@ public:
   /** Convert the C++ thread id into a local thread pool id */
   int get_local_thread_id();
 
-    /** Convert the C++ thread id into a local thread pool id */
+  /** Convert the C++ thread id into a local thread pool id */
   int get_threads_offset() { return m_threads_offset; }
 
 private:

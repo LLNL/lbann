@@ -28,99 +28,97 @@
 #include "lbann/utils/exception.hpp"
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
-  : generic_io_buffer(comm, num_parallel_readers, data_readers),
-    m_num_samples_fetched(0) {
-  m_input_buffers.clear();
-  m_input_buffers.resize(num_child_layers);
-  for(int i = 0; i < num_child_layers; i++) {
-    m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_model_grid()));
-  }
+  : generic_io_buffer(comm, num_parallel_readers, data_readers) {
+  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
 }
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(const lbann::partitioned_io_buffer& other)
   : generic_io_buffer(other) {
-  m_input_buffers.clear();
-  m_input_buffers.reserve(other.m_input_buffers.size());
-  for (const auto& ptr : other.m_input_buffers) {
-    m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+  for (auto& buf : m_data_buffers) {
+    buf.second = buf.second->copy();
   }
 }
 
 lbann::partitioned_io_buffer& lbann::partitioned_io_buffer::operator=(const lbann::partitioned_io_buffer& other) {
   generic_io_buffer::operator=(other);
-  m_input_buffers.clear();
-  m_input_buffers.reserve(other.m_input_buffers.size());
-  for (const auto& ptr : other.m_input_buffers) {
-    m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+  for (auto& buf : m_data_buffers) {
+    buf.second = buf.second->copy();
   }
   return *this;
 }
 
 void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, int idx) {
-  m_input_buffers[idx]->Resize(m_input_buffers[idx]->Height(), cur_mini_batch_size);
+  for (auto& buf : m_data_buffers) {
+    buf.second->m_input_buffers[idx]->Resize(buf.second->m_input_buffers[idx]->Height(), cur_mini_batch_size);
+  }
 }
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
-  int i = 0;
-  for (const auto& buf : m_input_buffers) {
-    if(i == 0) {
-      buf->Resize(num_neurons, max_mini_batch_size);
-    }else if(i == 1) {
-      buf->Resize(num_targets, max_mini_batch_size);
-    }else {
-      LBANN_ERROR("Unsupported number of input channels");
-    }
-    i++;
-  }
   El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_model();
   El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_model();
   if(partial_mini_batch_size > 0 && m_comm->get_rank_in_model() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
-  /// The amount of space needed will vary based on input layer type,
-  /// but the batch size is the maximum space necessary
-  El::Zeros_seq(m_indices_fetched_per_mb, local_mini_batch_size, 1);
+  for (const auto& it : m_data_buffers) {
+    data_buffer *data_buffer = it.second;
+    int i = 0;
+    for (const auto& buf : data_buffer->m_input_buffers) {
+      if(i == 0) {
+        buf->Resize(num_neurons, max_mini_batch_size);
+      }else if(i == 1) {
+        buf->Resize(num_targets, max_mini_batch_size);
+      }else {
+        LBANN_ERROR("Unsupported number of input channels");
+      }
+      i++;
+    }
+    /// The amount of space needed will vary based on input layer type,
+    /// but the batch size is the maximum space necessary
+    El::Zeros_seq(data_buffer->m_indices_fetched_per_mb, local_mini_batch_size, 1);
+  }
 }
 
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
-  m_num_samples_fetched = 0;
-
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  if (m_comm->get_rank_in_model() < num_parallel_readers && (m_input_buffers[0]->Height() != 0 && m_input_buffers[0]->Width() != 0)) {
-    for(auto& m : m_input_buffers) {
-      Zero_seq(*m);
+  data_buffer *buf = get_data_buffer(mode);
+  buf->m_num_samples_fetched = 0;
+  if (m_comm->get_rank_in_model() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
+    for(auto& m : buf->m_input_buffers) {
+      El::Zeros_seq(*m, m->Height(), m->Width());
     }
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
-    if(m_input_buffers.size() == 2) {
-      m_num_samples_fetched = (*fetch_data_fn)(m_input_buffers[0]->Matrix(), m_input_buffers[1]->Matrix(), m_indices_fetched_per_mb, data_reader);
+    if(buf->m_input_buffers.size() == 2) {
+      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     }else {
-      m_num_samples_fetched = (*fetch_data_fn)(m_input_buffers[0]->Matrix(), m_indices_fetched_per_mb, data_reader);
+      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     }
-    bool data_valid = (m_num_samples_fetched > 0);
+    bool data_valid = (buf->m_num_samples_fetched > 0);
     if(data_valid) {
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
     }
   }
-  return m_num_samples_fetched;
+  return buf->m_num_samples_fetched;
 }
 
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
-  /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
-  Copy(*m_input_buffers[0], sample);
-  Copy(*m_input_buffers[1], response);
-  m_num_samples_fetched = 0;
+  data_buffer *buf = get_data_buffer(mode);
+  Copy(*buf->m_input_buffers[0], sample);
+  Copy(*buf->m_input_buffers[1], response);
+  buf->m_num_samples_fetched = 0;
   return;
 }
 
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {
-  /// Check to see if the local matrices are actually pointing to the sample and response local matrices, if not copy the data over
-  Copy(*m_input_buffers[0], sample);
-  m_num_samples_fetched = 0;
+  data_buffer *buf = get_data_buffer(mode);
+  Copy(*buf->m_input_buffers[0], sample);
+  buf->m_num_samples_fetched = 0;
   return;
 }
 
@@ -137,8 +135,37 @@ bool lbann::partitioned_io_buffer::update_data_set(generic_data_reader *data_rea
   }
 }
 
+void lbann::partitioned_io_buffer::set_fetch_data_in_background(bool flag, execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  buf->m_fetch_data_in_background = flag;
+}
+
+bool lbann::partitioned_io_buffer::is_data_fetched_in_background(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return buf->m_fetch_data_in_background;
+}
+
+/**
+ * Return the sample indices fetched in the current mini-batch.
+ */
+El::Matrix<El::Int>* lbann::partitioned_io_buffer::get_sample_indices_fetched_per_mb(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return &(buf->m_indices_fetched_per_mb);
+}
+
 int lbann::partitioned_io_buffer::num_samples_ready(execution_mode mode) {
-  return m_num_samples_fetched;
+  data_buffer *buf = get_data_buffer(mode);
+  return buf->m_num_samples_fetched;
+}
+
+void lbann::partitioned_io_buffer::set_data_fetch_future(std::future<void> future, execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  buf->m_data_fetch_future = std::move(future);
+}
+
+std::future<void> lbann::partitioned_io_buffer::get_data_fetch_future(execution_mode mode) {
+  data_buffer *buf = get_data_buffer(mode);
+  return std::move(buf->m_data_fetch_future);
 }
 
 int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
