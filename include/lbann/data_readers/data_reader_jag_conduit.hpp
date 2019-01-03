@@ -55,6 +55,10 @@ class hdf5_file_handles {
 
  public:
   ~hdf5_file_handles();
+
+  /// Closes all the open files and clear the information
+  void clear();
+
   /// Add a handle that corresponds to the filename fname
   bool add(const std::string fname, hid_t hnd);
   /**
@@ -307,6 +311,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
+  /// Shuffle sammple indices using a different RNG
+  void shuffle_indices(rng_gen& gen) override;
+
   /**
    * Compute the number of parallel readers based on the type of io_buffer,
    * the mini batch size, the requested number of parallel readers.
@@ -321,8 +328,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool check_num_parallel_readers(long data_set_size);
   /// Rely on pre-determined list of samples.
   void load_list_of_samples(const std::string filename);
-  /// Open data files that contains samples and cache the file handles
-  void open_data_files();
   /// See if the image size is consistent with the linearized size
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
