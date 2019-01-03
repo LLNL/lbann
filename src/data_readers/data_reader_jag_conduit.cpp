@@ -244,6 +244,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_input_normalization_params = rhs.m_input_normalization_params;
 
   m_sample_list = rhs.m_sample_list;
+  m_everyone_reads_list = rhs.m_everyone_reads_list;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -301,6 +302,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_normalization_params.clear();
 
   m_sample_list.clear();
+  m_everyone_reads_list = false;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
@@ -772,7 +774,22 @@ void data_reader_jag_conduit::load() {
     // Avoid reading the entire list file but only reads the header.
     m_shuffled_indices.resize(hdr.get_sample_count());
   } else {
-    load_list_of_samples(sample_list_file);
+    if (m_everyone_reads_list) {
+      load_list_of_samples(sample_list_file);
+    } else {
+      // model master sends the list
+      std::string my_samples;
+      if (m_comm->am_model_master()) {
+        load_list_of_samples(sample_list_file);
+        m_sample_list.to_string(my_samples);
+      }
+      m_comm->model_broadcast(m_comm->get_model_master(),
+                              &my_samples[0],
+                              static_cast<int>(my_samples.size()));
+      if (!m_comm->am_model_master()) {
+        m_sample_list.load_from_string(my_samples);
+      }
+    }
 
     if (!m_is_data_loaded) {
       m_is_data_loaded = true;
@@ -798,15 +815,6 @@ void data_reader_jag_conduit::load() {
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
-
-  if (my_rank >= num_readers) {
-    return;
-  }
-
-  m_sample_list.set_num_partitions(num_readers);
-
   // load the sample list
   double tm1 = get_time();
   m_sample_list.load(sample_list_file);
@@ -848,6 +856,16 @@ hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file
 
   return hdf5_file_hnd;
 }
+
+
+void data_reader_jag_conduit::set_everyone_reads_list() {
+  m_everyone_reads_list = true;
+}
+
+void data_reader_jag_conduit::unset_everyone_reads_list() {
+  m_everyone_reads_list = false;
+}
+
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
   return m_num_img_srcs;

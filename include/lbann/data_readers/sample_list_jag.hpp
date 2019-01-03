@@ -135,9 +135,6 @@ class sample_list_jag {
   /// Reads a samlpe list and populates the internal list
   size_t get_samples_per_file(std::istream& istrm);
 
-  /// Compute the sample index range that each partition covers
-  void get_sample_range_per_part();
-
   /// Compute the samlpe index range that partition p covers
   void get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const;
 
@@ -154,9 +151,6 @@ class sample_list_jag {
 
   /// Contains list of all sample
   samples_t m_sample_list;
-
-  /// Contains starting sample id of each partition
-  std::vector<sample_id_t> m_sample_range_per_part;
 
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;

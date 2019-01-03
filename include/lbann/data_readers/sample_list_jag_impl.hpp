@@ -79,9 +79,6 @@ inline void sample_list_jag::set_num_partitions(size_t n) {
   }
   clear();
   m_num_partitions = n;
-  if (!m_sample_list.empty()) {
-    get_sample_range_per_part();
-  }
 }
 
 inline void sample_list_jag::set_indexer(const sample_list_indexer& indexer) {
@@ -97,7 +94,6 @@ inline void sample_list_jag::load(const std::string& samplelist_file) {
   std::ifstream istr(samplelist_file);
   get_samples_per_file(istr);
   istr.close();
-  get_sample_range_per_part();
 }
 
 
@@ -110,7 +106,6 @@ inline sample_list_header sample_list_jag::load_header(const std::string& sample
 inline void sample_list_jag::load_from_string(const std::string& samplelist) {
   std::istringstream istr(samplelist);
   get_samples_per_file(istr);
-  get_sample_range_per_part();
 }
 
 
@@ -310,34 +305,7 @@ inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm) {
 }
 
 
-inline void sample_list_jag::get_sample_range_per_part() {
-  // Populates m_sample_range_per_part, requires the total number of samples
-  // and number of partitions are known.
-  const size_t total = static_cast<size_t>(m_sample_list.size());
-  const size_t one_more = total % m_num_partitions;
-  const size_t min_per_partition = total/m_num_partitions;
-
-  if (min_per_partition == 0u) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-          + " :: insufficient number of samples " + std::to_string(total)
-          + " for each partition " + std::to_string(m_num_partitions) + " to have at least one.");
-  }
-
-  m_sample_range_per_part.clear();
-  m_sample_range_per_part.resize(m_num_partitions+1u);
-
-  #pragma omp parallel for
-  for (size_t p = 0u; p < m_num_partitions; ++p) {
-    const size_t r_start = min_per_partition * p + ((p >= one_more)? one_more : p);
-    const size_t r_end = r_start + min_per_partition + ((p < one_more)? 1u : 0u);
-    m_sample_range_per_part[p+1] = r_end;
-  }
-}
-
-
 inline void sample_list_jag::get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const{
-  // Populates m_sample_range_per_part, requires the total number of samples
-  // and number of partitions are known.
   const size_t total = static_cast<size_t>(m_sample_list.size());
   const size_t one_more = total % m_num_partitions;
   const size_t min_per_partition = total/m_num_partitions;
@@ -345,17 +313,19 @@ inline void sample_list_jag::get_sample_range_per_part(const size_t p, size_t& s
   if (min_per_partition == 0u) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
           + " :: insufficient number of samples for each partition to have at least one.");
+  } else if (m_num_partitions == 1u) {
+    sid_start = 0u;
+    sid_end = total;
+  } else {
+    sid_start = min_per_partition * p + ((p >= one_more)? one_more : p);
+    sid_end = sid_start + min_per_partition + ((p < one_more)? 1u : 0u);
   }
-
-  sid_start = min_per_partition * p + ((p >= one_more)? one_more : p);
-  sid_end = sid_start + min_per_partition + ((p < one_more)? 1u : 0u);
 }
 
 
 inline void sample_list_jag::clear() {
   m_num_partitions = 1u;
   m_sample_list.clear();
-  m_sample_range_per_part.clear();
 }
 
 
@@ -371,7 +341,8 @@ inline void sample_list_jag::write_header(std::string& sstr) const {
 
 
 inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
-  if (p >= m_num_partitions) {
+  if ((m_num_partitions == 0u) ||
+      ((m_num_partitions > 1u) && (p >= m_num_partitions))) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
           + " :: partition id is out of range.");
     return false;
@@ -520,6 +491,7 @@ inline const sample_list_jag::sample_t& sample_list_jag::operator[](size_t idx) 
   return m_sample_list[i];
 }
 
+
 struct send_request {
   int m_receiver;
   MPI_Request m_mpi_request;
@@ -665,7 +637,7 @@ inline void distribute_sample_list(const sample_list_jag& sn,
   }
 
   // End of serialization and transmission
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(comm);
 }
 
 
