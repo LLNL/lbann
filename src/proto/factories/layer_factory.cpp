@@ -59,13 +59,6 @@ Layer* construct_layer(lbann_comm* comm,
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
-    if (io_buffer == "distributed") {
-      return new input_layer<distributed_io_buffer, layout, Dev>(comm,
-                                                                 num_parallel_readers,
-                                                                 data_readers,
-                                                                 !params.data_set_per_model(),
-                                                                 target_mode);
-    }
     if (io_buffer == "partitioned") {
       return new input_layer<partitioned_io_buffer, layout, Dev>(comm,
                                                                  num_parallel_readers,
@@ -452,6 +445,11 @@ Layer* construct_layer(lbann_comm* comm,
     const auto& dims = parse_list<El::Int>(params.dims());
     return new weights_layer<layout, Dev>(comm, dims);
   }
+  if (proto_layer.has_tessellate()) {
+    const auto& params = proto_layer.tessellate();
+    const auto& dims = parse_list<int>(params.dims());
+    return new tessellate_layer<layout, Dev>(comm, dims);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
@@ -539,6 +537,10 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(logical_and);
   CONSTRUCT_LAYER(logical_or);
   CONSTRUCT_LAYER(logical_xor);
+  if (proto_layer.has_clamp()) {
+    const auto& params = proto_layer.clamp();
+    return new clamp_layer<layout, Dev>(comm, params.min(), params.max());
+  }
 
   // Activation layers
   if (proto_layer.has_elu()) {

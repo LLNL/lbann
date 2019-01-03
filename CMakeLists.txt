@@ -96,41 +96,48 @@ endif ()
 # Options
 #
 
-# This option is off by default because non-developers should not use
-# this option under normal circumstances.
-option(LBANN_WARNINGS_AS_ERRORS
-  "Build with warnings promoted to errors." OFF)
+option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
+
+option(LBANN_WITH_CNPY "Include cnpy" ON)
+
+option(LBANN_WITH_CONDUIT "Enable Conduit library" OFF)
 
 option(LBANN_WITH_CUDA "Include Nvidia CUDA" OFF)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
-option(LBANN_WITH_CNPY "Include cnpy" ON)
-
-option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
-
-option(LBANN_WITH_VTUNE
-  "Link the Intel VTune profiling library" OFF)
+option(LBANN_WITH_HWLOC
+  "Enable topology-aware optimizations" ON)
 
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(LBANN_WITH_TOPO_AWARE
-  "Enable topology-aware profiling (HWLOC)" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
-option(LBANN_WITH_ALUMINUM
-  "Enable Aluminum all-reduce library" OFF)
 
-option(LBANN_WITH_CONDUIT
-  "Enable Conduit library" OFF)
+option(LBANN_WITH_VTUNE
+  "Link the Intel VTune profiling library" OFF)
 
-option(LBANN_VERBOSE "Enable verbose output" OFF)
+# Enable parallel random matrix generation, if possible
+option(LBANN_DETERMINISTIC
+  "Use deterministic algorithms as much as possible." OFF)
 
 option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
+mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
+
+# This option is off by default because non-developers should not use
+# this option under normal circumstances.
+option(LBANN_WARNINGS_AS_ERRORS
+  "Build with warnings promoted to errors." OFF)
+mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
+
+#
+# The datatype option is not binary
+#
 
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
@@ -160,16 +167,6 @@ if (LBANN_WITH_CUDA)
     message(FATAL_ERROR "CUDA support not found. Disabling.")
     set(LBANN_WITH_CUDA OFF)
   endif ()
-endif ()
-
-# Handle a few of the easy ones straight-away
-set(LBANN_TOPO_AWARE ${LBANN_WITH_TOPO_AWARE})
-
-# Enable parallel random matrix generation, if possible
-if (LBANN_DETERMINISTIC)
-  set(LBANN_DETERMINISTIC TRUE)
-else()
-  set(LBANN_DETERMINISTIC FALSE)
 endif ()
 
 #
@@ -315,42 +312,58 @@ if (LBANN_WITH_NVPROF)
 endif ()
 
 if (LBANN_WITH_CNPY)
-  find_package(CNPY)
+  find_package(CNPY REQUIRED)
   set(LBANN_HAS_CNPY ${CNPY_FOUND})
-  if (NOT LBANN_HAS_CNPY)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_CNPY but CNPY not found. "
-      "CNPY is now disabled. "
-      "Try specifying CNPY_DIR as the root of a CNPY install. "
-      "Alternatively, build with LBANN_WITH_CNPY=OFF.")
-    set(LBANN_WITH_CNPY OFF)
-  endif (NOT LBANN_HAS_CNPY)
 endif (LBANN_WITH_CNPY)
 
-if (LBANN_TOPO_AWARE)
-  # LBANN also requires HWLOC. This seems sufficient for now.
-  find_package(HWLOC)
-
-  if (NOT HWLOC_FOUND)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_TOPO_AWARE but HWLOC not found. "
-      "HWLOC is now disabled. "
-      "Try specifying HWLOC_DIR as the root of an HWLOC install. "
-      "Alternatively, build with LBANN_WITH_TOPO_AWARE=OFF.")
-    set(LBANN_TOPO_AWARE OFF)
-  endif (NOT HWLOC_FOUND)
-endif (LBANN_TOPO_AWARE)
+if (LBANN_WITH_HWLOC)
+  find_package(HWLOC REQUIRED)
+  set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
+endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
-  find_package(CONDUIT)
+  # Apparently we have to find HDF5, too.
+  find_package(HDF5 CONFIG
+    HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
+    PATH_SUFFIXES share/cmake/hdf5
+    NO_DEFAULT_PATH)
+  if (NOT CONDUIT_FOUND)
+    find_package(HDF5 CONFIG REQUIRED)
+  endif ()
+
+  find_package(CONDUIT CONFIG
+    NAMES conduit
+    CONFIGS conduit.cmake
+    HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+    PATH_SUFFIXES lib64/cmake lib/cmake
+    NO_DEFAULT_PATH)
+  if (NOT CONDUIT_FOUND)
+    find_package(CONDUIT CONFIG REQUIRED)
+  endif ()
+
+  # Ugh. I don't like that this requires intimate knowledge of
+  # specific targets that CONDUIT exports. It should support
+  # components.
+  if (NOT TARGET conduit_relay_mpi)
+    message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
+  endif ()
+
+  if (NOT TARGET conduit OR NOT TARGET conduit_relay
+      OR NOT TARGET conduit_blueprint)
+    message(FATAL_ERROR "Missing some CONDUIT required library.")
+  endif ()
+
+  if (NOT TARGET conduit::conduit)
+    add_library(conduit::conduit INTERFACE IMPORTED)
+  endif ()
+
+  set_target_properties(conduit::conduit
+    PROPERTIES
+    INTERFACE_LINK_LIBRARIES
+    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+
+  set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
-  if (NOT LBANN_HAS_CONDUIT)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_CONDUIT but Conduit not found. "
-      "Conduit is now disabled. "
-      "Try specifying CONDUIT_DIR as the root of an CONDUIT install. "
-      "Alternatively, build with LBANN_WITH_CONDUIT=OFF.")
-  endif(NOT LBANN_HAS_CONDUIT)
 endif (LBANN_WITH_CONDUIT)
 
 # Handle the documentation
@@ -385,6 +398,7 @@ target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
@@ -400,10 +414,6 @@ endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
-endif ()
-
-if (LBANN_HAS_CONDUIT)
-  target_link_libraries(lbann PUBLIC CONDUIT::CONDUIT)
 endif ()
 
 if (LBANN_HAS_CUDA)

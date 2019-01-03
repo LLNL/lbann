@@ -38,6 +38,8 @@
 namespace lbann {
 
 template <typename T_io_buffer, data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+
+/** @brief Interface with data reader. */
 class input_layer : public generic_input_layer {
  public:
 
@@ -89,12 +91,6 @@ inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::
 template<>
 inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
 
-template<>
-inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {}
-
-template<>
-inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
-
 #ifdef LBANN_HAS_GPU
 template<>
 inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {
@@ -106,12 +102,6 @@ inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::
 
 template<>
 inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
-
-template<>
-inline void input_layer<distributed_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {}
-
-template<>
-inline void input_layer<distributed_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
 #endif // LBANN_HAS_GPU
 
 }

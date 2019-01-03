@@ -32,8 +32,9 @@
 
 namespace lbann {
 
-/** Activations are drawn from Bernoulli distribution.
- *  During validation and testing, the layer outputs 0.
+/** @brief Random values with Bernoulli distribution.
+ *
+ *  During validation and testing, outputs are all zero.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class bernoulli_layer : public transform_layer {

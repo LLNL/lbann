@@ -31,11 +31,13 @@
 
 namespace lbann {
 
-/**
- * SELU dropout: alpha-scaled dropout for use with SELU activations.
- * See: Klambauer et al. "Self-Normalizing Neural Networks", 2017.
- * This makes the same default assumptions as our SELU activations.
- * The paper recommends a default dropout rate of 0.05 (keep 0.95).
+/** @brief Scaled dropout for use with SELU activations.
+ *
+ *  A default keep probability of 0.95 is recommended. See:
+ *
+ *  Gunter Klambauer, Thomas Unterthiner, Andreas Mayr, and Sepp
+ *  Hochreiter. "Self-normalizing neural networks." In Advances in
+ *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
 template <data_layout T_layout, El::Device Dev>
 class selu_dropout : public regularizer_layer {

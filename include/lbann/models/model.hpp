@@ -53,7 +53,7 @@ class lbann_callback;
 
 /** Base class for LBANN models. */
 class model {
- public:
+public:
 
   /** Constructor. */
   model(lbann_comm *comm,
@@ -133,6 +133,10 @@ class model {
   /** Return the model's layers. */
   virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
 
+  const std::vector<weights*> get_weights() const;
+
+  std::vector<weights*> get_weights();
+
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
@@ -140,9 +144,6 @@ class model {
  *  Only weight values are placed, pointers and layer structure are in place.
  *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
-
-  /** Return the model's weights. */
-  const std::vector<weights *>& get_weights() const { return m_weights; }
 
   /** Return the I/O thread pool */
   std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
@@ -234,6 +235,10 @@ class model {
    */
   void collect_indices(execution_mode mode);
 
+  /** Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
+
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
@@ -255,7 +260,7 @@ class model {
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
- protected:
+protected:
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
@@ -317,9 +322,6 @@ class model {
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
 
-  /** Construct a layer graph. */
-  virtual void construct_layer_graph(std::set<int>& nodes,
-                                     std::map<int,std::set<int>>& edges) const;
   /** Reorder layers. */
   virtual void permute_layers(const std::vector<int>& permutation);
 
@@ -432,7 +434,8 @@ class model {
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
- private:
+private:
+
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
   /** Insert evaluation layers where needed.

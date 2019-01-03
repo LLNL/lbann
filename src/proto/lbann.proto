@@ -435,13 +435,14 @@ message Callback {
    CallbackSyncSelected sync_selected = 34;
    CallbackConfusionMatrix confusion_matrix = 36;
    CallbackCheckMetric check_metric = 37;
+   CallbackPerturbAdam perturb_adam = 38;
 }
 
 message CallbackLTFB {
-  int64 round_size = 1;
-  bool increasing_metric_mode = 2; //Expectation for a good tournament metric: increasing (true) is default
-  string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
-  string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
+  int64 batch_interval = 1;
+  string metric = 2;
+  string weights = 3;       // default: all weights
+  bool low_score_wins = 4;
 }
 
 message CallbackStepLearningRate {
@@ -662,6 +663,16 @@ message CallbackConfusionMatrix {
   string prefix = 3;     // Prefix for output files
 }
 
+message CallbackPerturbAdam {
+  float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
+  float beta1_factor = 2;           // beta1 perturbation (in log space)
+  float beta2_factor = 3;           // beta2 perturbation (in log space)
+  float eps_factor = 4;             // eps perturbation (in log space)
+  bool perturb_during_training = 5; // Whether to periodically perturb during training
+  int64 batch_interval = 6;         // Frequency of perturbation if perturb_during_training is true
+  string weights = 7;               // Weights with Adam optimizer
+}
+
 //========================================================================
 // Weights
 //========================================================================
@@ -808,6 +819,7 @@ message Layer {
    InTopK in_top_k = 324;
    Sort sort = 325;
    WeightsLayer weights_layer = 326;
+   Tessellate tessellate = 327;
 
    // Learning layers
    FullyConnected fully_connected = 11;
@@ -876,6 +888,7 @@ message Layer {
    LogicalAnd logical_and = 466;
    LogicalOr logical_or = 467;
    LogicalXor logical_xor = 468;
+   Clamp clamp = 469;
 
    // Target layers
    Target target = 18;
@@ -967,6 +980,10 @@ message GreaterEqual {}
 message LogicalAnd {}
 message LogicalOr {}
 message LogicalXor {}
+message Clamp {
+  double min = 1;
+  double max = 2;
+}
 
 ///////////////////////
 // Activation layers //
@@ -1168,6 +1185,10 @@ message Sort {
 }
 
 message WeightsLayer {
+  string dims = 1;
+}
+
+message Tessellate {
   string dims = 1;
 }
 

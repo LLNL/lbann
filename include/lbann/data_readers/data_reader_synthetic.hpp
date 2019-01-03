@@ -60,6 +60,9 @@ class data_reader_synthetic : public generic_data_reader {
     return std::accumulate(m_dimensions.begin(), m_dimensions.end(), 1,
                            std::multiplies<int>());
   }
+  int get_linearized_label_size() const override {
+    return m_num_labels;
+  }
   int get_linearized_response_size() const override {
     return std::accumulate(m_response_dimensions.begin(),
                            m_response_dimensions.end(), 1,
