@@ -179,7 +179,7 @@ model *build_model_from_prototext(int argc, char **argv,
                                    pb.model());
     model->setup(io_thread_pool);
 
-    if(opts->has_bool("disable_background_io_activity") && opts->get_bool("disable_background_io_activity")) {
+    if(opts->get_bool("disable_background_io_activity")) {
       model->allow_background_io_activity(false);
     }
 
