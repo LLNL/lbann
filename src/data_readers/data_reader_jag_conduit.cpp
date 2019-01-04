@@ -303,7 +303,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_normalization_params.clear();
 
   m_sample_list.clear();
-  m_everyone_reads_list = true; //false;
+  m_everyone_reads_list = false;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
@@ -781,13 +781,17 @@ void data_reader_jag_conduit::load() {
     } else {
       // model master sends the list
       std::string my_samples;
+      int size_of_string;
       if (m_comm->am_model_master()) {
         load_list_of_samples(sample_list_file);
         m_sample_list.to_string(my_samples);
+        size_of_string = static_cast<int>(my_samples.size());
       }
+      m_comm->model_broadcast(m_comm->get_model_master(), size_of_string);
+      my_samples.resize(size_of_string);
+
       m_comm->model_broadcast(m_comm->get_model_master(),
-                              &my_samples[0],
-                              static_cast<int>(my_samples.size()));
+                              &my_samples[0], size_of_string);
       if (!m_comm->am_model_master()) {
         m_sample_list.load_from_string(my_samples);
       }
