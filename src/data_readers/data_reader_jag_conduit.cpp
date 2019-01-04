@@ -50,7 +50,7 @@
 #include "lbann/utils/glob.hpp"
 #include "lbann/utils/peek_map.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 
 
 // This macro may be moved to a global scope
@@ -196,6 +196,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
+  m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
@@ -218,7 +219,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
     _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
   }
 
-  m_master_pps = lbann::make_unique<cv_process>(*m_master_pps);
+  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -302,7 +303,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_normalization_params.clear();
 
   m_sample_list.clear();
-  m_everyone_reads_list = false;
+  m_everyone_reads_list = true; //false;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
@@ -351,10 +352,10 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   // files appearing in the sample_list.
   // However, when a file closes and the handle reassociates with a different
   // file, this vector needs to be updated.
-  hid_t h = m_open_hdf5_files->get(file_name);
+  const std::string conduit_file_path = add_delimiter(m_sample_list.get_header().get_file_dir()) + file_name;
+  hid_t h = m_open_hdf5_files->get(conduit_file_path);
 
   if (h <= static_cast<hid_t>(0)) {
-    const std::string conduit_file_path = add_delimiter(m_sample_list.get_header().get_file_dir()) + s.first;
     h = open_conduit_file(conduit_file_path);
     if (h <= static_cast<hid_t>(0)) {
       _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
@@ -373,7 +374,8 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
   const sample_t& s = m_sample_list[i];
   const std::string& file_name = s.first;
   const std::string& sample_name = s.second;
-  hid_t h = m_open_hdf5_files->get(file_name);
+  const std::string conduit_file_path = add_delimiter(m_sample_list.get_header().get_file_dir()) + file_name;
+  hid_t h = m_open_hdf5_files->get(conduit_file_path);
   return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
 }
 
