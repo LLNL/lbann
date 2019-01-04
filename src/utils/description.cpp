@@ -31,6 +31,10 @@ namespace lbann {
 description::description(std::string title)
   : m_title(std::move(title)) {}
 
+void description::set_title(std::string title) {
+  m_title = std::move(title);
+}
+
 std::ostream& operator<<(std::ostream& os, const description& desc) {
   os << desc.m_title << "\n";
   for (const auto& line : desc.m_lines) {

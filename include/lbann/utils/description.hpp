@@ -51,7 +51,10 @@ public:
 
   /** @param title  First line in description message.
    */
-  description(std::string title);
+  description(std::string title = "");
+
+  /** Set first line in description message. */
+  void set_title(std::string title);
 
   /** Print description to stream. */
   friend std::ostream& operator<<(std::ostream& os,
