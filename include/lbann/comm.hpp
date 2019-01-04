@@ -956,102 +956,13 @@ class lbann_comm {
   inline size_t get_bytes_received() const {
     return bytes_received;
   }
-  /** Return the number of bytes sent in allreduces. */
-  inline size_t get_ar_bytes_sent() const {
-    return ar_bytes_sent;
-  }
-  /** Return the number of bytes received in allreduces. */
-  inline size_t get_ar_bytes_received() const {
-    return ar_bytes_sent;
-  }
-  /** Return the number of bytes sent in allreduce reduce-scatters. */
-  inline size_t get_ar_rs_bytes_sent() const {
-    return ar_rs_bytes_sent;
-  }
-  /** Return the number of bytes received in allreduce reduce-scatters. */
-  inline size_t get_ar_rs_bytes_received() const {
-    return ar_rs_bytes_received;
-  }
-  /** Return the number of bytes sent in allreduce allgathers. */
-  inline size_t get_ar_ag_bytes_sent() const {
-    return ar_ag_bytes_sent;
-  }
-  /** Return the number of bytes received in allreduce allgathers. */
-  inline size_t get_ar_ag_bytes_received() const {
-    return ar_ag_bytes_received;
-  }
-  /** Return the time spent in allreduces. */
-  inline double get_ar_time() const {
-    return ar_time;
-  }
-  /** Return the time spent in allreduce reduce-scatters. */
-  inline double get_ar_rs_time() const {
-    return ar_rs_time;
-  }
-  /** Return the time spent in allreduce allgathers. */
-  inline double get_ar_ag_time() const {
-    return ar_ag_time;
-  }
-  /** Return the time spent in allreduce send transforms. */
-  inline double get_ar_send_transform_time() const {
-    return ar_send_transform_time;
-  }
-  /** Return the time spent in allreduce receive transforms. */
-  inline double get_ar_recv_transform_time() const {
-    return ar_recv_transform_time;
-  }
-  /** Return the time spent in allreduce receive/apply transforms. */
-  inline double get_ar_recv_apply_transform_time() const {
-    return ar_recv_apply_transform_time;
-  }
-  /** Return the time spent sending in allreduces. */
-  inline double get_ar_send_time() const {
-    return ar_send_time;
-  }
-  /** Return the time spent receiving in allreduces. */
-  inline double get_ar_recv_time() const {
-    return ar_recv_time;
-  }
-  /** Return the time spent sending in allreduce reduce-scatters. */
-  inline double get_ar_rs_send_time() const {
-    return ar_rs_send_time;
-  }
-  /** Return the time spent receiving in allreduce reduce-scatters. */
-  inline double get_ar_rs_recv_time() const {
-    return ar_rs_recv_time;
-  }
-  /** Return the time spent sending in allreduce allgathers. */
-  inline double get_ar_ag_send_time() const {
-    return ar_ag_send_time;
-  }
-  /** Return the time spent receiving in allreduce allgathers. */
-  inline double get_ar_ag_recv_time() const {
-    return ar_ag_recv_time;
-  }
+
   inline void reset_stats_counters() {
     num_model_barriers = 0;
     num_intermodel_barriers = 0;
     num_global_barriers = 0;
     bytes_sent = 0;
     bytes_received = 0;
-    ar_bytes_sent = 0;
-    ar_bytes_received = 0;
-    ar_rs_bytes_sent = 0;
-    ar_rs_bytes_received = 0;
-    ar_ag_bytes_sent = 0;
-    ar_ag_bytes_received = 0;
-    ar_time = 0.0;
-    ar_rs_time = 0.0;
-    ar_ag_time = 0.0;
-    ar_send_transform_time = 0.0;
-    ar_recv_transform_time = 0.0;
-    ar_recv_apply_transform_time = 0.0;
-    ar_send_time = 0.0;
-    ar_recv_time = 0.0;
-    ar_rs_send_time = 0.0;
-    ar_rs_recv_time = 0.0;
-    ar_ag_send_time = 0.0;
-    ar_ag_recv_time = 0.0;
   }
 
   /** Return true if mat can be transmitted. */
@@ -1066,127 +977,6 @@ class lbann_comm {
   static inline bool is_sendable(const AbsDistMat& dist_mat) {
     return is_sendable(dist_mat.LockedMatrix());
   }
-
-  // Custom allreduce implementations.
-  /** Specify different allreduce algorithms. */
-  enum class allreduce_algorithm {
-    DEFAULT,
-    DYNAMIC,  /** Choose algorithm based on data size. */
-    RECURSIVE_DOUBLING,
-    PAIRWISE_EXCHANGE_RING,
-    RING,
-    RABENSEIFNER,
-    INVALID
-  };
-
-  /** Allreduce options. */
-  struct allreduce_options {
-    /** Allreduce algorithm to use. */
-    allreduce_algorithm algo = allreduce_algorithm::DEFAULT;
-    /** Optimization: the recv_transform is the identity. */
-    bool id_recv = false;
-    /**
-     * Optimization: When communication is node-local, do not apply the
-     * send_transform. Implies id_recv when possible and sets the local flag
-     * in recv_apply_transform to true when taken advantage of.
-     */
-    bool no_local_trans = false;
-    /** Max number of concurrent reduce steps, must be >= 1. */
-    int max_reduces = 1;
-  };
-
-  /** Get the default allreduce algorithm to use (may be DYNAMIC). */
-  allreduce_algorithm get_default_allreduce_algorithm() const {
-    return default_allreduce_algo;
-  }
-  /**
-   * Set the default allreduce algorithm to algo.
-   * Do *not* set it to DEFAULT.
-   */
-  void set_default_allreduce_algorithm(allreduce_algorithm algo) {
-    default_allreduce_algo = algo;
-  }
-
-  /**
-   * Do a custom allreduce on mat on the intermodel communicator.
-   * This selects the allreduce algorithm to use based on the size of mat.
-   * All counts/sizes are in bytes.
-   * @param mat The matrix to allreduce.
-   * @param max_recv_count An upper bound on the size of data that will be
-   * received in any step; this will be the size of receive buffers used in
-   * the allreduce.
-   * @param send_transform A function that takes a range of a matrix and
-   * applies a transformation to it. The return value is a pointer to a buffer
-   * containing the transformed data, which will be sent. The int& param
-   * should be set to the count of how many elements are in the buffer. The
-   * boolean parameter indicates whether the matrix is constant between
-   * different calls to send_transform; if true, the function may be able to
-   * take advantage of this. The int parameter gives a count of how many times
-   * send_transform has been called concurrently, starting from 0.
-   * @param recv_transform A function that takes a pointer to a buffer and a
-   * matrix and applies a transform to the buffer, storing the result in the
-   * matrix. The buffer will be data transformed with send_transform and
-   * received from another rank. The return value is the actual count of the
-   * received data (i.e. the count that the data was sent using).
-   * @param recv_apply_transform A function like recv_transform except that
-   * the transformed data should be combined (applied, reduced) with the
-   * current data in the matrix argument. A boolean parameter indicates that
-   * no_local_trans was true and the data was not transformed.
-   * @param options Various allreduce options.
-   */
-  void intermodel_allreduce(
-    AbsMat& mat, int max_recv_count,
-    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, AbsMat&)> recv_transform,
-    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
-    const allreduce_options opts);
-
-  /**
-   * A recursive-doubling allreduce.
-   * This implementation only works for a power-of-2 number of processes.
-   */
-  void recursive_doubling_allreduce_pow2(
-    const El::mpi::Comm comm, AbsMat& mat, int max_recv_count,
-    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
-    const allreduce_options opts);
-
-  /**
-   * An allreduce based on a pairwise-exchange reduce-scatter followed by a
-   * ring-based allgather.
-   * @param num_reduces If >1, performs up to num_reduces reduces concurrently
-   * in the reduce-scatter phase.
-   */
-  template <El::Device D>
-  void pe_ring_allreduce(
-    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
-    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, AbsMat&)> recv_transform,
-    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
-    const allreduce_options opts);
-
-  /**
-   * An allreduce using ring-based reduce-scatter and allgather.
-   */
-  template <El::Device D>
-  void ring_allreduce(
-    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
-    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, AbsMat&)> recv_transform,
-    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
-    const allreduce_options opts);
-
-  /**
-   * An allreduce using a recursive-halving reduce-scatter followed by a
-   * recursive-doubling allgather.
-   */
-  template <El::Device D>
-  void rabenseifner_allreduce(
-    const El::mpi::Comm comm, DMat<D>& mat, int max_recv_count,
-    std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
-    std::function<int(uint8_t *, AbsMat&)> recv_transform,
-    std::function<int(uint8_t *, AbsMat&, bool)> recv_apply_transform,
-    const allreduce_options opts);
 
   /** Return the intermodel communicator. */
   El::mpi::Comm get_intermodel_comm() const {
@@ -1249,11 +1039,6 @@ class lbann_comm {
    *  num_threads directive has not been provided.
    */
   int threads_per_proc;
-  /** Pre-allocated buffers for collectives. */
-  std::map<size_t, std::vector<uint8_t *>> collective_bufs;
-  /** Current default allreduce algorithm. */
-  allreduce_algorithm default_allreduce_algo =
-    allreduce_algorithm::DYNAMIC;
 
 #ifdef LBANN_HAS_ALUMINUM
   /** Convert an MPI_Op to an Aluminum reduction operator. */
@@ -1266,25 +1051,6 @@ class lbann_comm {
   size_t num_global_barriers;
   size_t bytes_sent;
   size_t bytes_received;
-  // Allreduce statistics.
-  size_t ar_bytes_sent;
-  size_t ar_bytes_received;
-  size_t ar_rs_bytes_sent;
-  size_t ar_rs_bytes_received;
-  size_t ar_ag_bytes_sent;
-  size_t ar_ag_bytes_received;
-  double ar_time;
-  double ar_rs_time;
-  double ar_ag_time;
-  double ar_send_transform_time;
-  double ar_recv_transform_time;
-  double ar_recv_apply_transform_time;
-  double ar_send_time;
-  double ar_recv_time;
-  double ar_rs_send_time;
-  double ar_rs_recv_time;
-  double ar_ag_send_time;
-  double ar_ag_recv_time;
 
   /** Setup communicator for processes in the same compute node. */
   void setup_node_comm();
@@ -1298,13 +1064,6 @@ class lbann_comm {
    *  cores per node divided by the number of processes per node.
    */
   void setup_threads();
-
-  /**
-   * Return a buffer from collective_bufs, allocating it if needed.
-   * @param size The size of the buffer (in bytes).
-   * @param idx The index of the buffer (default 0).
-   */
-  uint8_t *get_collective_buffer(size_t size, size_t idx = 0);
 
 };
 
