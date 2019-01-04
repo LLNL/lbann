@@ -139,39 +139,23 @@ Layer& Layer::operator=(const Layer& other) {
   return *this;
 }
 
-void Layer::print_description(std::ostream& os,
-                              std::string separator,
-                              bool trailing_newline) const {
-  std::stringstream ss;
-  const auto& desc = get_description();
-  for (size_t i = 0; i < desc.size(); ++i) {
-    ss << (i > 0 ? separator : "") << desc[i];
-  }
-  os << ss.str();
-  if (trailing_newline) { os << std::endl; }
-}
+description Layer::get_description() const {
 
-std::vector<std::string> Layer::get_description() const {
-  std::vector<std::string> description;
+  // Construct description object
   std::stringstream ss;
-
-  // Name and type
-  ss.str(std::string());
-  ss.clear();
-  ss << get_type() << " layer \"" << get_name() << "\"";
-  description.push_back(ss.str());
+  ss << get_name() << " (" << get_type() << ")";
+  description desc(ss.str());
 
   // Input dimensions
   const auto& parents = get_parent_layers();
   if (!parents.empty()) {
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Input dimensions: ";
     for (size_t i = 0; i < parents.size(); ++i) {
       ss << (i > 0 ? ", " : "");
       const auto& dims = get_input_dims(i);
       for (size_t j = 0; j < dims.size(); ++j) {
-        ss << (j == 0 ? "" : " x ") << dims[j];
+        ss << (j == 0 ? "" : "x") << dims[j];
       }
       ss << " (from ";
       if (parents[i] == nullptr) {
@@ -182,20 +166,19 @@ std::vector<std::string> Layer::get_description() const {
       }
       ss << ")";
     }
-    description.push_back(ss.str());
+    desc.add("Input dimensions", ss.str());
   }
 
   // Output dimensions
   const auto& children = get_child_layers();
   if (!children.empty()) {
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Output dimensions: ";
     for (size_t i = 0; i < children.size(); ++i) {
       ss << (i > 0 ? ", " : "");
       const auto& dims = get_output_dims(i);
       for (size_t j = 0; j < dims.size(); ++j) {
-        ss << (j == 0 ? "" : " x ") << dims[j];
+        ss << (j == 0 ? "" : "x") << dims[j];
       }
       ss << " (to ";
       if (children[i] == nullptr) {
@@ -206,15 +189,14 @@ std::vector<std::string> Layer::get_description() const {
       }
       ss << ")";
     }
-    description.push_back(ss.str());
+    desc.add("Output dimensions", ss.str());
   }
 
   // Weights
   const auto& weights_list = get_weights();
   if (!weights_list.empty()) {
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Weights: ";
     for (size_t i = 0; i < weights_list.size(); ++i) {
       ss << (i > 0 ? ", " : "");
       if (weights_list[i] == nullptr) {
@@ -223,18 +205,17 @@ std::vector<std::string> Layer::get_description() const {
         const auto& dims = weights_list[i]->get_dims();
         ss << weights_list[i]->get_name() << " (";
         for (size_t j = 0; j < dims.size(); ++j) {
-          ss << (j > 0 ? " x " : "") << dims[j];
+          ss << (j > 0 ? "x" : "") << dims[j];
         }
         ss << ")";
       }
     }
-    description.push_back(ss.str());
+    desc.add("Weights", ss.str());
   }
 
   // Data layout
-  ss.str(std::string());
+  ss.str(std::string{});
   ss.clear();
-  ss << "Data layout: ";
   switch (get_data_layout()) {
   case data_layout::DATA_PARALLEL:  ss << "data-parallel";  break;
   case data_layout::MODEL_PARALLEL: ss << "model-parallel"; break;
@@ -242,12 +223,11 @@ std::vector<std::string> Layer::get_description() const {
   default:
     ss << "invalid";
   }
-  description.push_back(ss.str());
+  desc.add("Data layout", ss.str());
 
   // Device
-  ss.str(std::string());
+  ss.str(std::string{});
   ss.clear();
-  ss << "Device: ";
   switch (get_device_allocation()) {
   case El::Device::CPU: ss << "CPU";     break;
 #ifdef LBANN_HAS_GPU
@@ -255,16 +235,14 @@ std::vector<std::string> Layer::get_description() const {
 #endif // LBANN_HAS_GPU
   default:              ss << "unknown";
   }
-  description.push_back(ss.str());
+  desc.add("Device", ss.str());
 
   // Freeze state
   if (is_frozen()) {
-    description.push_back("Frozen");
+    desc.add("Frozen");
   }
 
-  // Result
-  return description;
-
+  return desc;
 }
 
 void Layer::forward_prop() {

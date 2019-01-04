@@ -33,6 +33,7 @@
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
 #include <lbann.pb.h>
 #include <string>
@@ -96,14 +97,8 @@ public:
    */
   inline void set_name(const std::string name) { m_name = name; }
 
-  /** Print human-readable layer description.
-   *  Description strings (see the get_description function) are
-   *  output with separators. By default, this means each description
-   *  string is on its own line.
-   */
-  void print_description(std::ostream& os,
-                         std::string separator = "\n  ",
-                         bool trailing_newline = true) const;
+  /** Human-readable description. */
+  virtual description get_description() const;
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
@@ -326,13 +321,6 @@ public:
   bool is_frozen() const;
 
 protected:
-
-  /** Get layer description.
-   *  Returns a vector of human-readable description strings. When the
-   *  description is printed (see the print_description function), the
-   *  strings are output with separators (e.g. newlines).
-   */
-  virtual std::vector<std::string> get_description() const;
 
   // ===========================================================
   // Setup helper functions
