@@ -51,7 +51,7 @@ class hypergradient_adam : public optimizer {
                      DataType beta1 = DataType(0.9),
                      DataType beta2 = DataType(0.99),
                      DataType eps = DataType(1e-8));
-  
+
   /** Copy constructor. */
   hypergradient_adam(const hypergradient_adam& other);
   /** Copy assignment operator. */
@@ -60,11 +60,11 @@ class hypergradient_adam : public optimizer {
   ~hypergradient_adam() override;
   /** Create a copy. */
   hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
-  
+
   /** Returns the optimizer name. */
   std::string get_type() const override { return "hypergradient Adam"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;
@@ -105,7 +105,7 @@ class hypergradient_adam : public optimizer {
     DataType current_beta1;
     DataType current_beta2;
   };
-   
+
   bool pack_scalars(persist& p) {
     p.write_datatype(persist_type::train, "hyper_learning_rate", m_hyper_learning_rate);
     p.write_datatype(persist_type::train, "beta1", m_beta1);
@@ -115,7 +115,7 @@ class hypergradient_adam : public optimizer {
     p.write_datatype(persist_type::train, "current_beta2", m_current_beta2);
     return true;
   }
-   
+
   bool unpack_scalars(persist& p, struct packing_header *header) {
     p.read_datatype(persist_type::train, "hyper_learning_rate", &m_hyper_learning_rate);
     p.read_datatype(persist_type::train, "beta1", &m_beta1);
@@ -123,7 +123,7 @@ class hypergradient_adam : public optimizer {
     p.read_datatype(persist_type::train, "eps",   &m_eps);
     p.read_datatype(persist_type::train, "current_beta1", &m_current_beta1);
     p.read_datatype(persist_type::train, "current_beta2", &m_current_beta2);
- 
+
     if(header != nullptr) {
       header->hyper_learning_rate = m_hyper_learning_rate;
       header->beta1 = m_beta1;
@@ -132,10 +132,10 @@ class hypergradient_adam : public optimizer {
       header->current_beta1 = m_current_beta1;
       header->current_beta2 = m_current_beta2;
     }
-    
+
     return true;
-  } 
-     
+  }
+
   void unpack_header(struct packing_header& header) {
     m_hyper_learning_rate = header.hyper_learning_rate;
     m_beta1 = header.beta1;
@@ -143,8 +143,8 @@ class hypergradient_adam : public optimizer {
     m_eps = header.eps;
     m_current_beta1 = header.current_beta1;
     m_current_beta2 = header.current_beta2;
-  }      
-    
+  }
+
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;

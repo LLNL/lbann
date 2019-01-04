@@ -242,9 +242,7 @@ description Layer::get_description() const {
     desc.add("Frozen");
   }
 
-  // Result
   return desc;
-
 }
 
 void Layer::forward_prop() {

@@ -92,13 +92,12 @@ adam::~adam() {
   if(m_moment2 != nullptr) { delete m_moment2; }
 }
 
-std::string adam::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "beta1=" << m_beta1 << ", "
-     << "beta2=" << m_beta2 << ", "
-     << "eps=" << m_eps;
-  return ss.str();
+description adam::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("beta1", m_beta1);
+  desc.add("beta2", m_beta2);
+  desc.add("eps", m_eps);
+  return desc;
 }
 
 void adam::setup(weights& w) {
