@@ -36,8 +36,9 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(check_for_duplicate_samples-bin lbann )
   set_target_properties(check_for_duplicate_samples-bin PROPERTIES OUTPUT_NAME check_for_duplicate_samples)
 
-  add_executable( test_mpi-bin test_mpi.cpp )
-  target_link_libraries(test_mpi-bin lbann )
-  set_target_properties(test_mpi-bin PROPERTIES OUTPUT_NAME test_mpi)
+  add_executable( test_conduit_hdf5-bin test_conduit_hdf5.cpp )
+  target_link_libraries(test_conduit_hdf5-bin lbann )
+  set_target_properties(test_conduit_hdf5-bin PROPERTIES OUTPUT_NAME test_conduit_hdf5)
 
+  add_executable( select_samples select_samples.cpp )
 endif ()

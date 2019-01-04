@@ -43,6 +43,7 @@ namespace lbann {
 class generic_input_layer : public io_layer {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
+  using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
   generic_input_layer(lbann_comm *comm,
@@ -52,7 +53,6 @@ class generic_input_layer : public io_layer {
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
     : io_layer(comm, data_set_spans_models, dr_mode),
       m_io_buffers(),
-      m_active_buffer(-1),
       m_training_dataset(),
       m_testing_dataset(),
       m_validation_dataset(),
@@ -80,6 +80,10 @@ class generic_input_layer : public io_layer {
     if(m_data_readers[execution_mode::testing] != nullptr) {
       m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
+
+    m_active_buffer[execution_mode::training].store(-1);
+    m_active_buffer[execution_mode::validation].store(-1);
+    m_active_buffer[execution_mode::testing].store(-1);
   }
 
   ~generic_input_layer() override {
@@ -127,6 +131,7 @@ class generic_input_layer : public io_layer {
   std::vector<std::string> get_description() const override {
     auto&& desc = io_layer::get_description();
     desc.push_back("Buffer: " + m_io_buffers[0]->get_type());
+    desc.push_back("Background I/O: " + (this->m_model->background_io_activity_allowed() ? std::string("Enabled") : std::string("Disabled")));
     return desc;
   }
 
@@ -228,8 +233,18 @@ class generic_input_layer : public io_layer {
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dr_mutex);
     setup_next_io_buffer(io_buffer);
-    io_buffer->fetch_to_local_matrix(get_data_reader(), mode);
+    io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
     return;
+  }
+
+  /// Check for each buffer if there is an outstanding fetch request
+  void collect_background_data_fetch(execution_mode mode) {
+    for(auto& io_buffer : m_io_buffers) {
+      if(io_buffer->is_data_fetched_in_background(mode)) {
+        io_buffer->get_data_fetch_future(mode).get();
+        io_buffer->set_fetch_data_in_background(false, mode);
+      }
+    }
   }
 
   void fp_compute() override {
@@ -239,22 +254,23 @@ class generic_input_layer : public io_layer {
     /// the data_store (via the data_reader) to read in the
     /// next mb from file, then exchange data as needed
     get_data_reader()->init_minibatch();
-    m_active_buffer++;
+    increment_active_buffer_idx(mode);
 
-    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
+    generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
 
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
-    if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->fetch_data_in_background) {
-      io_buffer->data_fetch_future = this->m_model->get_io_thread_pool()->submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, m_active_buffer.load(), this->m_model->get_execution_mode()));
-      io_buffer->fetch_data_in_background = true;
+    if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->is_data_fetched_in_background(mode)) {
+      std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
+        std::bind(&generic_input_layer::fetch_data_in_background, this, get_active_buffer_idx(mode), mode));
+      io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
+      io_buffer->set_fetch_data_in_background(true, mode);
     }
 
     // Wait for the background thread to complete fetching the data
-    if(io_buffer->fetch_data_in_background) {
-      io_buffer->data_fetch_future.get();
-      io_buffer->fetch_data_in_background = false;
+    if(io_buffer->is_data_fetched_in_background(mode)) {
+      io_buffer->get_data_fetch_future(mode).get();
+      io_buffer->set_fetch_data_in_background(false, mode);
     }
 
     int num_samples_in_batch = 0;
@@ -286,15 +302,15 @@ class generic_input_layer : public io_layer {
       throw lbann_exception(err.str());
     }
 
-    m_data_set_processed = io_buffer->update_data_set(get_data_reader(), this->m_model->get_execution_mode());
+    m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
-    if(!m_data_set_processed) {
-      int next_active_buffer = m_active_buffer + 1;
+    if(!m_data_set_processed && this->m_model->background_io_activity_allowed()) {
+      int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, this->m_model->get_execution_mode()));
+        std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
-      next_io_buffer->data_fetch_future = std::move(background_fetch_done);
-      next_io_buffer->fetch_data_in_background = true;
+      next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
+      next_io_buffer->set_fetch_data_in_background(true, mode);
     }
   }
 
@@ -537,8 +553,9 @@ class generic_input_layer : public io_layer {
    * Return the sample indices fetched in the current mini-batch.
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
-    generic_io_buffer* io_buffer = m_io_buffers[m_active_buffer % m_io_buffers.size()];
-    return &(io_buffer->m_indices_fetched_per_mb);
+    execution_mode mode = this->m_model->get_execution_mode();
+    generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+    return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_mode());
   }
 
   /**
@@ -865,9 +882,16 @@ class generic_input_layer : public io_layer {
     return true;
   }
 
+  int get_active_buffer_idx(execution_mode m) {
+    return m_active_buffer[m].load();
+  }
+  void increment_active_buffer_idx(execution_mode m) {
+    m_active_buffer[m]++;
+  }
+
  protected:
   std::vector<generic_io_buffer*> m_io_buffers;
-  std::atomic<int> m_active_buffer;
+  io_buffer_map_t m_active_buffer;
 
   dataset m_training_dataset;
   dataset m_testing_dataset;

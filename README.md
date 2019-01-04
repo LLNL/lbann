@@ -31,65 +31,13 @@ the Livermore Tournament Fast Batch (LTFB) ensemble algorithm.
 
 
 ## Building LBANN
-
-### LC Systems
-   1. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
-   2. From anywhere in the lbann directory run the LC build script located in  
-   `<LBANN_dir>/lbann/scripts/build_lbann_lc.sh`
-   3. This will build LBANN in a newly created build directory. This build script uses the CMake superbuild. Information on the super build can be found in the superbuild directory. 
-   4. After the first use of this script, subsequent uses will recompile LBANN using the Makefile found in `build/<compiler>.<cluster>.llnl.gov/lbann/build/`.
-   5. To reconfigure the build add the --reconfigure plan. For example, to change this build from a release build to a debug build, add --debug and --reconfigure. 
-   6. To completely rebuild LBANN and its dependencies add the --clean-build flag. Other useful configuration options can be viewed by running the script with the --help flag. 
-
-### OS X
-   1. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
-   2. From anywhere in the lbann directory run the LC build script located in  
-   `<LBANN_dir>/lbann/scripts/build_lbann_osx.sh`
-   3. This will build LBANN in a newly created build directory.
-
-## Building LBANN with Spack [for Users]
-
-   spack install lbann
-
-## Building LBANN with Spack [for Developers]
-
-### Installing a compiler (if needed)
-
-LBANN uses C++ features provided by newer compilers.  If you do not have the necessary compiler, you can use spack to install one.  For full details, see the [spack documentation](http://spack.readthedocs.io/en/latest/getting_started.html#compiler-configuration).
-
-    spack install gcc@7.1.0
-
-The above command builds and installs a compiler.  It prints the install path as the final line.  If successful, then register this compiler with spack using the spack compiler find command, passing the install path as an argument.
-
-    spack compiler add /path/to/compiler/install
-
-### Using spack setup
-
-Here is an example of setting up the local build environment on x86\_64 HPC system
-
-    cd lbann
-    mkdir spack_builds; cd spack_builds
-    ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m mvapich2
-    cd gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
-    make -j all
-
-[Spack Setup](http://spack.readthedocs.io/en/latest/packaging_guide.html?highlight=spack%20diy#build-system-configuration-support)
-
-The build\_lbann.sh script roughly does the following steps for this example:
-
-    spack setup lbann@local build_type=Release dtype=4 %gcc@7.1.0 ^elemental@master blas=openblas ^mvapich2
-    spack setup lbann@local %intel@18.0.0 ^mvapich2
-    mkdir -p gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
-    cd gcc-7.1.0_x86_64_mvapich2_openblas_rel/build
-    ../spconfig.py ../../..
-
-By default, MVAPICH2 builds for PSM.  For an ibverbs build of MVAPICH2, use the following:
-
-    ../scripts/spack_receipes/build_lbann.sh -c gcc@7.1.0 -b openblas -m 'mvapich2 fabrics=mrail'
+The LBANN build system is documented [here](docs/BuildingLBANN.md#top).
 
 ## LBANN Container Builds
 
-We provide basic container defintion files, and instructions for their use, in the containers subdirectory. We currently support Docker and Singularity.
+We provide basic container defintion files, and instructions for their
+use, in the containers subdirectory. We currently support Docker and
+Singularity.
 
 ## Cmake (Non LC or OSX Systems/Script alternative)
    1. Ensure the following dependencies are installed
