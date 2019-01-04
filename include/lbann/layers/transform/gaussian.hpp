@@ -59,14 +59,14 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = transform_layer::get_description();
-    desc.push_back("Mean: " + std::to_string(m_mean));
-    desc.push_back("Standard deviation: " + std::to_string(m_stdev));
+    desc.add("Mean", m_mean);
+    desc.add("Standard deviation", m_stdev);
     return desc;
   }
+
+protected:
 
   void fp_compute() override {
     auto& output = get_activations();

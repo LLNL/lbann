@@ -127,15 +127,15 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = regularizer_layer::get_description();
-    desc.push_back("alpha: " + std::to_string(m_alpha));
-    desc.push_back("beta: " + std::to_string(m_beta));
-    desc.push_back("k: " + std::to_string(m_k));
+    desc.add("alpha", m_alpha);
+    desc.add("beta", m_beta);
+    desc.add("k", m_k);
     return desc;
   }
+
+protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();

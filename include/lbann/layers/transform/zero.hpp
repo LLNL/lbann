@@ -61,14 +61,14 @@ class zero_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = transform_layer::get_description();
-    desc.push_back("First half: " + std::to_string(m_first_half));
-    desc.push_back("Second half: " + std::to_string(m_second_half));
+    desc.add("First half", m_first_half);
+    desc.add("Second half", m_second_half);
     return desc;
   }
+
+protected:
 
   void fp_compute() override {
     const auto& input = get_prev_activations();
