@@ -69,12 +69,11 @@ rmsprop::~rmsprop() {
   if (m_cache != nullptr) { delete m_cache; }
 }
 
-std::string rmsprop::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "decay_rate=" << m_decay_rate << ", "
-     << "eps=" << m_eps;
-  return ss.str();
+description rmsprop::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("Decay rate", m_decay_rate);
+  desc.add("eps", m_eps);
+  return desc;
 }
 
 void rmsprop::setup(weights& w) {

@@ -8,7 +8,7 @@ option(CONDUIT_CLONE_VIA_SSH
 if (CONDUIT_CLONE_VIA_SSH)
   message(WARNING "Requested CONDUIT clone via SSH. This will happen.\n"
     "However, CONDUIT has a git submodule that will still clone via HTTPS.")
-  
+
   set(CONDUIT_URL git@github.com:llnl/conduit.git
     CACHE STRING "The URL from which to clone CONDUIT")
 else ()
@@ -27,7 +27,7 @@ set(CONDUIT_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 
 option(CONDUIT_BUILD_SHARED_LIBS
   "Whether CONDUIT should build dynamically linked libraries."
-  "${BUILD_SHARED_LIBS}")
+  ON)
 
 # CONDUIT-specific configuration options explicitly exposed
 option(CONDUIT_ENABLE_MPI "Enable MPI support in CONDUIT." ON)
