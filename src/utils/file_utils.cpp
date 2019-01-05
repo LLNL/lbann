@@ -88,7 +88,7 @@ std::string get_ext_name(const std::string file_name) {
   parse_path(file_name, dir, basename);
 
   size_t pos = basename.find_last_of('.');
-  if (pos == 0u) {
+  if (pos >= basename.size()) {
     return "";  // hidden file
   }
   return basename.substr(pos+1, basename.size());
@@ -147,7 +147,12 @@ std::string modify_file_name(const std::string file_name, const std::string tag,
   if (!tag.empty()) {
     name = name + '.' + tag;
   }
-  return (dir + name + '.' + ext);
+
+  if(!ext.empty()) {
+    return (dir + name + '.' + ext);
+  }else {
+    return (dir + name);
+  }
 }
 
 
