@@ -12,6 +12,8 @@ LBANN. All may be installed using
 + A C++11-compliant compiler.
 + OpenMP, version 3.0 or newer.
 + An MPI-3.0 implementation.
++ [CEREAL](https://github.com/USCiLab/cereal) is used to handle
+  complex serialization tasks.
 + [CMake](https://cmake.org), version 3.9 or newer.
 + [CNPY](https://github.com/rogersce/cnpy.git) is used to ingest data
   in NumPy format. In principle this should be optional, but at time
@@ -135,6 +137,8 @@ The latter option is recommended.
   the Aluminum installation prefix _or_ the AluminumConfig.cmake
   file. If Hydrogen has not been built with Aluminum support, set
   `LBANN_WITH_ALUMINUM=ON` to enable Aluminum support.
++ `CEREAL_DIR`: The path to _either_ the CEREAL installation prefix
+  _or_ the cereal-config.cmake file.
 + `CNPY_DIR`: The path to the CNPY installation prefix. Must set
   `LBANN_WITH_CNPY=ON` to enable CNPY support.
 + `CONDUIT_DIR` or `CONDUIT_DIR`: The path to _either_ the
@@ -258,7 +262,7 @@ The subprojects are largely pre-configured to "do the right thing" for
 building LBANN. However, there are some variables that users of the
 superbuild system may need to control. These are exposed as regular
 CMake options in the individual projects' CMakeLists and can be viewed
-by running, e.g., 
+by running, e.g.,
 
     cmake -L superbuild/<pkg>/CMakeLists.txt
 
@@ -301,7 +305,7 @@ above. For example, after a successful CMake configuration of the
 superbuild using the Ninja generator, the command
 
     ninja HYDROGEN
-    
+
 will build the sub-DAG ending with Hydrogen. If
 `LBANN_SB_BUILD_LBANN=ON`, `ninja LBANN` is equivalent to `ninja`
 since LBANN depends on all other targets built by the superbuild.
