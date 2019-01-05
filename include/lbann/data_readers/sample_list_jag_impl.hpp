@@ -329,6 +329,9 @@ inline void sample_list_jag::clear() {
   m_sample_list.clear();
 }
 
+template <class Archive> void sample_list_jag::serialize( Archive & ar ) {
+  ar(m_num_partitions, m_header, m_sample_list);
+}
 
 inline void sample_list_jag::write_header(std::string& sstr) const {
   // The first line indicate if the list is exclusive or inclusive

@@ -12,6 +12,10 @@
 #include <mpi.h>
 #endif
 
+#include <cereal/types/vector.hpp>
+#include <cereal/types/string.hpp>
+#include <cereal/types/utility.hpp>
+
 namespace lbann {
 
 struct sample_list_header {
@@ -26,6 +30,9 @@ struct sample_list_header {
   size_t get_sample_count() const;
   size_t get_num_files() const;
   const std::string& get_file_dir() const;
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(m_is_exclusive, m_sample_count, m_num_files, m_file_dir);
+  }
 };
 
 /**
@@ -87,6 +94,8 @@ class sample_list_jag {
 
   /// Clear internal states
   void clear();
+
+  template <class Archive> void serialize( Archive & ar );
 
   /// Check if a sample index is in the valid range
   bool check_index(size_t idx) const;

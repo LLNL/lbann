@@ -333,6 +333,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool check_num_parallel_readers(long data_set_size);
   /// Rely on pre-determined list of samples.
   void load_list_of_samples(const std::string filename);
+  /// Load the sample list from a serialized archive from another rank
+  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+
   /// See if the image size is consistent with the linearized size
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
