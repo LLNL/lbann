@@ -1,4 +1,6 @@
-# This library is header-only. Few options.
+# This library is header-only. Few options. Still need to pass C and
+# CXX compilers though. :/
+enable_language(C)
 
 option(CEREAL_CLONE_VIA_SSH
   "Clone CEREAL using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
@@ -37,6 +39,8 @@ ExternalProject_Add(CEREAL
   LOG_INSTALL 1
   LOG_TEST 1
   CMAKE_ARGS
+  -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
   -DCMAKE_INSTALL_PREFIX=${CEREAL_CMAKE_INSTALL_PREFIX}
   -DJUST_INSTALL_CEREAL=ON
   -DWITH_WERROR=OFF
