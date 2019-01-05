@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     conduit::Node n_ok;
     conduit::Node tmp;
 
-    if (master) std::cout << np << hdf5_file_hnd << "\n";
+    //    if (master) std::cout << np << hdf5_file_hnd << "\n";
 
     int num_samples = 0;
 
@@ -128,9 +128,9 @@ int main(int argc, char *argv[]) {
 std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
       } catch (...) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
+        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
-      }  
+      }
 
       std::vector<std::string> cnames;
       try {
@@ -145,16 +145,16 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (...) {  
+        } catch (...) {
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
-        }  
+        }
 
         int success = n_ok.to_int64();
         if (success == 1) {
-            
 
-            try {  
+
+            try {
               key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
               conduit::float32_array emi = tmp.value();
@@ -172,7 +172,7 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
               continue;
             }
 
-            try { 
+            try {
               key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
               conduit::float32_array emi = tmp.value();
@@ -189,8 +189,8 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
               std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
-  
-            try { 
+
+            try {
               key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
               conduit::float32_array emi = tmp.value();
@@ -216,8 +216,8 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
 
     std::vector<float> global_v_min(12);
     std::vector<float> global_v_max(12);
-    MPI_Reduce(v_min.data(), global_v_min.data(), 12, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD); 
-    MPI_Reduce(v_max.data(), global_v_max.data(), 12, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD); 
+    MPI_Reduce(v_min.data(), global_v_min.data(), 12, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(v_max.data(), global_v_max.data(), 12, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
 
     if (master) {
       for (int j=0; j<12; j++) {
