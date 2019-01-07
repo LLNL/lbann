@@ -413,7 +413,7 @@ inline bool sample_list_jag::to_string(std::string& sstr) const {
 
 
 inline void sample_list_jag::write(size_t p, const std::string filename) const {
-  std::string filename_p = modify_file_name(filename, std::to_string(p));
+  std::string filename_p = modify_file_name(filename, std::string("p") + std::to_string(p));
 
   std::string dir, basename;
   parse_path(filename_p, dir, basename);
