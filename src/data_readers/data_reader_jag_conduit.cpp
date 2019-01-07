@@ -247,7 +247,9 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_input_normalization_params = rhs.m_input_normalization_params;
 
   m_sample_list = rhs.m_sample_list;
-  m_everyone_reads_list = rhs.m_everyone_reads_list;
+  m_list_per_trainer = rhs.m_list_per_trainer;
+  m_list_per_model = rhs.m_list_per_model;
+  m_list_per_rank = rhs.m_list_per_rank;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -305,7 +307,9 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_normalization_params.clear();
 
   m_sample_list.clear();
-  m_everyone_reads_list = false;
+  m_list_per_trainer = false;
+  m_list_per_model = false;
+  m_list_per_rank = false;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
@@ -778,7 +782,9 @@ void data_reader_jag_conduit::load() {
     // Avoid reading the entire list file but only reads the header.
     m_shuffled_indices.resize(hdr.get_sample_count());
   } else {
-    if (m_everyone_reads_list) {
+    /// The use of these flags need to be updated to properly separate
+    /// how index lists are used between trainers, models, and ranks
+    if (m_list_per_trainer || m_list_per_model || m_list_per_rank) {
       load_list_of_samples(sample_list_file);
       std::stringstream s;
       std::string basename = get_basename_without_ext(sample_list_file);
@@ -894,16 +900,6 @@ hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file
 
   return hdf5_file_hnd;
 }
-
-
-void data_reader_jag_conduit::set_everyone_reads_list() {
-  m_everyone_reads_list = true;
-}
-
-void data_reader_jag_conduit::unset_everyone_reads_list() {
-  m_everyone_reads_list = false;
-}
-
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
   return m_num_img_srcs;

@@ -179,10 +179,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-  /// Set to have every reader instances in a model reads list
-  void set_everyone_reads_list();
-  /// Set to master reader instances in a model reads list
-  void unset_everyone_reads_list();
+  /// Set every reader instances in a trainer to have an independent index list
+  void set_list_per_trainer(bool flag) { m_list_per_trainer = flag; };
+  /// Set every reader instances in a model to have an independent index list
+  void set_list_per_model(bool flag) { m_list_per_model = flag; };
+  /// Set every rank to have an independent index list
+  void set_list_per_rank(bool flag) { m_list_per_rank = flag; };
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
   int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
@@ -459,7 +461,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   typedef std::pair<std::string, std::string> conduit_sample;
   sample_list_jag m_sample_list;
-  bool m_everyone_reads_list;
+  bool m_list_per_trainer;
+  bool m_list_per_model;
+  bool m_list_per_rank;
 
   /** temporary image normalization
    * The inputs are the image to normalize, the image source id and the channel id.

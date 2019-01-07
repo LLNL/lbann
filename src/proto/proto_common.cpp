@@ -131,6 +131,9 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
       reader->set_data_index_list(readme.index_list());
+      reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
+      reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
+      reader_jag_conduit->set_list_per_rank(readme.index_list_per_rank());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing
