@@ -780,20 +780,26 @@ void data_reader_jag_conduit::load() {
   } else {
     if (m_everyone_reads_list) {
       load_list_of_samples(sample_list_file);
+      std::stringstream s;
+      std::string basename = get_basename_without_ext(sample_list_file);
+      std::string ext = get_ext_name(sample_list_file);
+      s << basename << "." << ext;
+      m_sample_list.write(s.str());
     } else {
       // model master sends the list
       std::string sample_list_archive;
       int size_of_archive;
       if (m_comm->am_model_master()) {
         load_list_of_samples(sample_list_file);
-        // const std::string filename = "running_output_" + m_comm->get_rank_in_model() + std::string("_") + std::to_string(getpid()) + "_" + std::to_string(get_time());
-        // std::cout << "outputing file to " << filename << std::endl;
-        // m_sample_list.write(filename);
+        std::stringstream s;
+        std::string basename = get_basename_without_ext(sample_list_file);
+        std::string ext = get_ext_name(sample_list_file);
+        s << basename << "." << ext;
+        m_sample_list.write(s.str());
 
         std::stringstream ss;
         cereal::BinaryOutputArchive oarchive(ss); // Create an output archive
         oarchive(m_sample_list);
-        // std::cout << "I think that the size of the archive is " << ss.str().size() << std::endl;
         sample_list_archive = ss.str();
         size_of_archive = sample_list_archive.size();
       }
@@ -805,11 +811,6 @@ void data_reader_jag_conduit::load() {
 
       if (!m_comm->am_model_master()) {
         load_list_of_samples_from_archive(sample_list_archive);
-        // std::stringstream s;
-        // s << "unarchived_output_" << m_comm->get_rank_in_model() << std::string("_") << std::to_string(getpid()) << std::to_string(get_time());
-        // //        std::string foo = "unarchived_output_" + m_comm->get_rank_in_model() + std::string("_") + std::to_string(getpid());
-        // std::cout << "SECNOND outputing file to " << s.str() << std::endl;
-        // m_sample_list.write(s.str());
       }
     }
 
