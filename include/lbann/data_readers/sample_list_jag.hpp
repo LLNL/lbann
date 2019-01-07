@@ -20,7 +20,10 @@ namespace lbann {
 
 struct sample_list_header {
   bool m_is_exclusive;
-  size_t m_sample_count;
+  /// Number of included samples
+  size_t m_included_sample_count;
+  /// Number of excluded samples
+  size_t m_excluded_sample_count;
   size_t m_num_files;
   std::string m_file_dir;
 
@@ -31,7 +34,7 @@ struct sample_list_header {
   size_t get_num_files() const;
   const std::string& get_file_dir() const;
   template <class Archive> void serialize( Archive & ar ) {
-    ar(m_is_exclusive, m_sample_count, m_num_files, m_file_dir);
+    ar(m_is_exclusive, m_included_sample_count, m_excluded_sample_count, m_num_files, m_file_dir);
   }
 };
 
@@ -54,6 +57,9 @@ struct sample_list_indexer {
 
   size_t m_partition_offset;
 };
+
+static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
+static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
 class sample_list_jag {
  public:
@@ -134,6 +140,9 @@ class sample_list_jag {
 
   /// Reads the header of a sample list
   sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
+
+  /// Get the list of samples that exist in a conduit bundle
+  bool get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm);

@@ -20,7 +20,7 @@
 namespace lbann {
 
 inline sample_list_header::sample_list_header()
- : m_is_exclusive(false), m_sample_count(0u), m_num_files(0u), m_file_dir("") {
+  : m_is_exclusive(false), m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u), m_file_dir("") {
 }
 
 inline bool sample_list_header::is_exclusive() const {
@@ -28,7 +28,7 @@ inline bool sample_list_header::is_exclusive() const {
 }
 
 inline size_t sample_list_header::get_sample_count() const {
-  return m_sample_count;
+  return m_included_sample_count;
 }
 
 inline size_t sample_list_header::get_num_files() const {
@@ -149,7 +149,7 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   std::string line1 = read_header_line(istrm, filename, "the exclusiveness");
   std::stringstream header1(line1);
 
-  std::string line2 = read_header_line(istrm, filename, "the number of samlpes and the number of files");
+  std::string line2 = read_header_line(istrm, filename, "the number of samples and the number of files");
   std::stringstream header2(line2);
 
   std::string line3 = read_header_line(istrm, filename, "the data file directory");
@@ -159,7 +159,7 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   header1 >> sample_list_type;
   std::for_each(sample_list_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
 
-  const std::string type_exclusive = "EXCLUSIVE";
+  const std::string type_exclusive = conduit_hdf5_exclusion_list;
   size_t found = sample_list_type.find(type_exclusive);
 
   if (found != std::string::npos) {
@@ -170,7 +170,8 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
     hdr.m_is_exclusive = false;
   }
 
-  header2 >> hdr.m_sample_count;
+  header2 >> hdr.m_included_sample_count;
+  header2 >> hdr.m_excluded_sample_count;
   header2 >> hdr.m_num_files;
 
   header3 >> hdr.m_file_dir;
@@ -183,6 +184,27 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   return hdr;
 }
 
+inline bool sample_list_jag::get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples) {
+  hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+
+  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    std::cout << "Opening the file didn't work" << std::endl;
+    return false; // skipping the file
+  }
+
+  conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
+
+  if(sample_names.size() != (included_samples + excluded_samples)) {
+    LBANN_ERROR(std::string("File does not contain the correct number of samples: found ")
+                + std::to_string(sample_names.size())
+                + std::string(" -- this does not equal the expected number of samples that are marked for inclusion: ")
+                + std::to_string(included_samples)
+                + std::string(" and exclusion: ")
+                + std::to_string(excluded_samples));
+  }
+
+  return true;
+}
 
 inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
   const std::string whitespaces(" \t\f\v\n\r");
@@ -200,11 +222,11 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
 
     std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
     std::string filename;
-    size_t valid_samples;
-    size_t invalid_samples;
-    std::unordered_set<size_t> excluded_sample_indices;
+    size_t included_samples;
+    size_t excluded_samples;
+    std::unordered_set<std::string> excluded_sample_indices;
 
-    sstr >> filename >> valid_samples >> invalid_samples;
+    sstr >> filename >> included_samples >> excluded_samples;
 
     const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
@@ -213,33 +235,51 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
                             + " :: data file '" + filename + "' does not exist.");
     }
 
-    excluded_sample_indices.reserve(valid_samples + invalid_samples);
+    excluded_sample_indices.reserve(excluded_samples);
 
     while(!sstr.eof()) {
-      size_t index;
+      std::string index;
       sstr >> index;
       excluded_sample_indices.insert(index);
     }
 
-    hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-
-    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-      std::cout << "Opening the file didn't work" << std::endl;
-      continue; // skipping the file
+    if(excluded_sample_indices.size() != excluded_samples) {
+      LBANN_ERROR(std::string("Index file does not contain the correct number of excluded samples: expected ")
+                  + std::to_string(excluded_samples)
+                  + std::string(" exclusions but found ")
+                  + std::to_string(excluded_sample_indices.size()));
     }
 
     std::vector<std::string> sample_names;
-    conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
+    bool file_valid = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
+    if(!file_valid) {
+      continue; // skipping the file
+    }
 
-    size_t i = 0u;
+    size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
-      std::unordered_set<size_t>::const_iterator found = excluded_sample_indices.find(i++);
+      std::unordered_set<std::string>::const_iterator found = excluded_sample_indices.find(s);
       if (found != excluded_sample_indices.cend()) {
         continue;
       }
 
       m_sample_list.emplace_back(filename, s);
+      valid_sample_count++;
     }
+
+    if(valid_sample_count != included_samples) {
+      LBANN_ERROR(std::string("Bundle file does not contain the correct number of included samples: expected ")
+                  + std::to_string(included_samples)
+                  + std::string(" samples, but found ")
+                  + std::to_string(valid_sample_count));
+    }
+  }
+
+  if (m_header.get_num_files() != cnt_files) {
+    LBANN_ERROR(std::string("Sample list number of files requested ")
+                + std::to_string(m_header.get_num_files())
+                + std::string(" does not equal number of files loaded ")
+                + std::to_string(cnt_files));
   }
 
   m_header.m_is_exclusive = false;
@@ -262,10 +302,10 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
 
     std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
     std::string filename;
-    size_t valid_samples;
-    size_t invalid_samples;
+    size_t included_samples;
+    size_t excluded_samples;
 
-    sstr >> filename >> valid_samples >> invalid_samples;
+    sstr >> filename >> included_samples >> excluded_samples;
 
     const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
@@ -274,20 +314,37 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
                             + " :: data file '" + filename + "' does not exist.");
     }
 
-    hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-
-    if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-      std::cerr << "Opening the file didn't work" << std::endl;
+    std::vector<std::string> sample_names;
+    bool file_valid = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
+    if(!file_valid) {
       continue; // skipping the file
     }
+    std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
-    std::vector<std::string> sample_names;
-
+    size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
       std::string sample_name;;
       sstr >> sample_name;
+      std::unordered_set<std::string>::const_iterator found = set_of_samples.find(sample_name);
+      if (found == set_of_samples.cend()) {
+        LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name);
+      }
       m_sample_list.emplace_back(filename, sample_name);
+      valid_sample_count++;
     }
+    if(valid_sample_count != included_samples) {
+      LBANN_ERROR(std::string("Bundle file does not contain the correct number of included samples: expected ")
+                  + std::to_string(included_samples)
+                  + std::string(" samples, but found ")
+                  + std::to_string(valid_sample_count));
+    }
+  }
+
+  if (m_header.get_num_files() != cnt_files) {
+    LBANN_ERROR(std::string("Sample list number of files requested ")
+                + std::to_string(m_header.get_num_files())
+                + std::string(" does not equal number of files loaded ")
+                + std::to_string(cnt_files));
   }
 }
 
@@ -300,6 +357,13 @@ inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm, const s
     read_exclusive_list(istrm);
   } else {
     read_inclusive_list(istrm);
+  }
+
+  if(m_header.get_sample_count() != m_sample_list.size()) {
+    LBANN_ERROR(std::string("Sample list count ")
+                + std::to_string(m_header.get_sample_count())
+                + std::string(" does not equal sample list size ")
+                + std::to_string(m_sample_list.size()));
   }
 
   return m_sample_list.size();
@@ -338,8 +402,9 @@ inline void sample_list_jag::write_header(std::string& sstr) const {
   // The next line contains the number of samples and the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
-  sstr += (m_header.is_exclusive()? "EXCLUSIVE\n" : "INCLUSIVE\n");
-  sstr += std::to_string(m_sample_list.size()) + ' ' + std::to_string(m_sample_list.size()) + '\n';
+  sstr += (m_header.is_exclusive()? conduit_hdf5_exclusion_list + "\n" : conduit_hdf5_inclusion_list + "\n");
+  /// Include the number of invalid samples, which for an inclusive index list is always 0
+  sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(m_sample_list.size()) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
 
