@@ -145,7 +145,7 @@ std::string modify_file_name(const std::string file_name, const std::string tag,
   name = get_basename_without_ext(name);
 
   if (!tag.empty()) {
-    name = name + '.' + tag;
+    name = name + '_' + tag;
   }
 
   if(!ext.empty()) {
