@@ -70,6 +70,8 @@ model *build_model_from_prototext(int argc, char **argv,
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(comm, pb);
 
+    customize_data_readers_index_list(comm, pb);
+
     lbann_data::Model *pb_model = pb.mutable_model();
 
     // Adjust the number of parallel readers; this may be adjusted

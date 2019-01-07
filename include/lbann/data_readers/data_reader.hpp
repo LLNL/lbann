@@ -86,7 +86,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
-    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_file_dir(""), m_data_index_list(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
@@ -151,6 +151,18 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If set_local_file_dir was not called, returns the empty string
    */
   std::string get_local_file_dir() const;
+
+  /**
+   * Set the index list for your data (images, etc).
+   * The index lists contains an enumeration of all samples in the
+   * data set.
+   */
+  void set_data_index_list(std::string s);
+
+  /**
+   * Returns the complete index list for your data set.
+   */
+  std::string get_data_index_list() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -827,6 +839,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
+  std::string m_data_index_list;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;

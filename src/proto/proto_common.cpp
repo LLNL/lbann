@@ -130,6 +130,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+      reader->set_data_index_list(readme.index_list());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing
@@ -617,6 +618,31 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     r->set_percent_of_data_to_use( percent );
+  }
+}
+
+void customize_data_readers_index_list(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+{
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  const lbann_data::Model& pb_model = p.model();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    std::stringstream s;
+    std::string basename = get_basename_without_ext(r->index_list());
+    std::string ext = get_ext_name(r->index_list());
+    if(r->index_list_per_model()) {
+      s << pb_model.name() << "_";
+    }
+    if(r->index_list_per_trainer()) {
+      s << "t" << comm->get_model_rank() << "_";
+    }
+    if(r->index_list_per_rank()) {
+      s << "r" << comm->get_rank_in_model() << "_";
+    }
+    s << basename;
+    s << "." << ext;
+    r->set_index_list(s.str());
   }
 }
 

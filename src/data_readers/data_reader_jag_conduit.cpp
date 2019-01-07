@@ -768,7 +768,7 @@ void data_reader_jag_conduit::load() {
   const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
   const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
   const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_filename();
+  const std::string sample_list_file = data_dir + get_data_index_list();
 
   if (my_rank >= num_readers) {
     // Make sure to have all the reader instances be aware of the number of
