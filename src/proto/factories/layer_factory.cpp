@@ -493,7 +493,8 @@ Layer* construct_layer(lbann_comm* comm,
               comm,
               params.decay(),
               params.epsilon(),
-              params.global_stats());
+              params.global_stats(),
+              params.nodelocal_stats());
     } 
     LAYOUT_ERR(proto_layer.name(), "batch_normalization");
   }

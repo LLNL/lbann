@@ -77,6 +77,10 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
       m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
       m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
       num_per_sum = channel_size * width;
+    } else if (m_use_nodelocal_stats) {
+      m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
+      m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
+      num_per_sum = channel_size * local_width * m_comm->get_procs_per_node();
     } else {
       num_per_sum = channel_size * local_width;
     }
@@ -215,6 +219,13 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
       m_comm->allreduce(*m_var_gradient,
                         m_var_gradient->RedundantComm(),
                         El::mpi::SUM);
+    } else if (m_use_nodelocal_stats) {
+      m_comm->allreduce(*m_mean_gradient,
+                        m_comm->get_node_comm(),
+                        El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient,
+                        m_comm->get_node_comm(),
+                        El::mpi::SUM);
     }
   } else {
     El::Zero(*m_mean_gradient);
@@ -232,9 +243,14 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   }
 
   // Compute error signal
-  const auto& num_per_sum = (m_use_global_stats ?
-                             width * channel_size :
-                             local_width * channel_size);
+  El::Int num_per_sum;
+  if (m_use_global_stats) {
+    num_per_sum = channel_size * width;
+  } else if (m_use_nodelocal_stats) {
+    num_per_sum = channel_size * local_width * m_comm->get_procs_per_node();
+  } else {
+    num_per_sum = channel_size * local_width;
+  }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
   } else {

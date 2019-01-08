@@ -1029,6 +1029,7 @@ message BatchNormalization {
   double bias_init = 3;      //default: 0.0
   double epsilon = 4;        //default: 1e-5
   bool global_stats = 5;     //default: false
+  bool nodelocal_stats = 6;  //default: false
 }
 
 message SeluDropout {

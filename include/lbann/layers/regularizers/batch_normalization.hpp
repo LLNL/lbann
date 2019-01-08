@@ -56,6 +56,8 @@ private:
   DataType m_epsilon;
   /** Whether to use global statistics when training. */
   bool m_use_global_stats;
+  /** Whether to aggregate statistics within a node when training. */
+  bool m_use_nodelocal_stats;
 
   /** Current minibatch means. */
   std::unique_ptr<AbsDistMat> m_mean;
@@ -82,11 +84,13 @@ public:
   batch_normalization_layer(lbann_comm *comm,
                             DataType decay=0.9,
                             DataType epsilon=1e-5,
-                            bool use_global_stats = false)
+                            bool use_global_stats = false,
+                            bool use_nodelocal_stats = false)
     : regularizer_layer(comm),
       m_decay(decay),
       m_epsilon(epsilon),
-      m_use_global_stats(use_global_stats) {
+      m_use_global_stats(use_global_stats),
+      m_use_nodelocal_stats(use_nodelocal_stats) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
 #ifdef LBANN_DETERMINISTIC
@@ -100,6 +104,7 @@ public:
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_use_global_stats(other.m_use_global_stats),
+      m_use_nodelocal_stats(other.m_use_nodelocal_stats),
       m_mean(other.m_mean ? other.m_mean->Copy() : nullptr),
       m_var(other.m_var ? other.m_var->Copy() : nullptr),
       m_mean_gradient(other.m_mean_gradient ?
@@ -116,6 +121,7 @@ public:
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_use_global_stats = other.m_use_global_stats;
+    m_use_nodelocal_stats = other.m_use_nodelocal_stats;
 
     // Deep copy matrices
     m_mean.reset(other.m_mean ? other.m_mean->Copy() : nullptr);
@@ -142,6 +148,7 @@ public:
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     desc.add("Global statistics", m_use_global_stats);
+    desc.add("Node-local statistics", m_use_nodelocal_stats);
     return desc;
   }
 
