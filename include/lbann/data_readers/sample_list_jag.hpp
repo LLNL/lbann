@@ -157,7 +157,7 @@ class sample_list_jag {
   void get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const;
 
   /// Add the header info to the given string
-  void write_header(std::string& sstr) const;
+  void write_header(std::string& sstr, size_t num_files) const;
 
  protected:
 
@@ -172,6 +172,8 @@ class sample_list_jag {
 
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;
+
+  std::unordered_map<std::string, size_t> m_file_map;
 };
 
 void handle_mpi_error(int ierr);

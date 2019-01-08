@@ -166,7 +166,7 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
     std::cout << "Exclusive (" + sample_list_type + ") sample list" << std::endl;
     hdr.m_is_exclusive = true;
   } else {
-    std::cout << "Inclusive sample list" << std::endl;
+    std::cout << "Inclusive (" + sample_list_type + ") sample list" << std::endl;
     hdr.m_is_exclusive = false;
   }
 
@@ -256,6 +256,19 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
       continue; // skipping the file
     }
 
+    if(m_file_map.count(filename) > 0) {
+      if(sample_names.size() != m_file_map[filename]) {
+        LBANN_ERROR(std::string("The same file ")
+                    + filename
+                    + " was opened multiple times and reported different sizes: "
+                    + std::to_string(sample_names.size())
+                    + " and "
+                    + std::to_string(m_file_map[filename]));
+      }
+    }else {
+      m_file_map[filename] = sample_names.size();
+    }
+
     size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
       std::unordered_set<std::string>::const_iterator found = excluded_sample_indices.find(s);
@@ -319,6 +332,20 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
     if(!file_valid) {
       continue; // skipping the file
     }
+
+    if(m_file_map.count(filename) > 0) {
+      if(sample_names.size() != m_file_map[filename]) {
+        LBANN_ERROR(std::string("The same file ")
+                    + filename
+                    + " was opened multiple times and reported different sizes: "
+                    + std::to_string(sample_names.size())
+                    + " and "
+                    + std::to_string(m_file_map[filename]));
+      }
+    }else {
+      m_file_map[filename] = sample_names.size();
+    }
+
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
     size_t valid_sample_count = 0u;
@@ -397,14 +424,14 @@ template <class Archive> void sample_list_jag::serialize( Archive & ar ) {
   ar(m_num_partitions, m_header, m_sample_list);
 }
 
-inline void sample_list_jag::write_header(std::string& sstr) const {
+inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) const {
   // The first line indicate if the list is exclusive or inclusive
   // The next line contains the number of samples and the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
   sstr += (m_header.is_exclusive()? conduit_hdf5_exclusion_list + "\n" : conduit_hdf5_inclusion_list + "\n");
   /// Include the number of invalid samples, which for an inclusive index list is always 0
-  sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(m_sample_list.size()) + '\n';
+  sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
 
@@ -440,12 +467,26 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
     sstr.reserve(estimated_len);
   }
 
+  std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
+  for (const auto& s : m_sample_list) {
+    tmp_file_map[s.first].emplace_back(s.second);
+  }
   // write the list header
-  write_header(sstr);
+  write_header(sstr, tmp_file_map.size());
 
   // write the list body
-  for (samples_t::const_iterator it = it_begin; it != it_end; ++it) {
-    sstr += it->first + " 1 0 " + it->second + '\n';
+  for (const auto& f : tmp_file_map) {
+    // File name
+    sstr += f.first;
+    // Number of included samples
+    sstr += std::string(" ") + std::to_string(f.second.size());
+    // Number of excluded samples
+    sstr += std::string(" ") + std::to_string(m_file_map.at(f.first) - f.second.size());
+    // Inclusion sample list
+    for (const auto& s : f.second) {
+      sstr += ' ' + s;
+    }
+    sstr += '\n';
   }
 
   return true;
