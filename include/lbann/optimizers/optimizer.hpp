@@ -31,6 +31,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/description.hpp"
 #include "lbann/weights/weights.hpp"
 #include <string>
 #include <unordered_set>
@@ -57,8 +58,8 @@ class optimizer {
 
   /** Get the optimizer name. */
   virtual std::string get_type() const = 0;
-  /** Get a human-readable description of the optimizer. */
-  virtual std::string get_description() const;
+  /** Human-readable description. */
+  virtual description get_description() const;
 
   /** Whether the optimizer has been set up. */
   inline bool is_initialized() const { return m_weights != nullptr; }

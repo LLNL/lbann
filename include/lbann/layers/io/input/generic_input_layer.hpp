@@ -128,10 +128,10 @@ class generic_input_layer : public io_layer {
 
   std::string get_type() const override { return "generic_input"; }
 
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = io_layer::get_description();
-    desc.push_back("Buffer: " + m_io_buffers[0]->get_type());
-    desc.push_back("Background I/O: " + (this->m_model->background_io_activity_allowed() ? std::string("Enabled") : std::string("Disabled")));
+    desc.add("Buffer", m_io_buffers[0]->get_type());
+    desc.add("Background I/O", this->m_model->background_io_activity_allowed());
     return desc;
   }
 

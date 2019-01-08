@@ -30,6 +30,16 @@
 
 namespace lbann {
 
+description weights_initializer::get_description() const {
+  return description(get_type() + " weights initializer");
+}
+
+description constant_initializer::get_description() const {
+  auto&& desc = weights_initializer::get_description();
+  desc.add("Value", m_value);
+  return desc;
+}
+
 void constant_initializer::fill(AbsDistMat& matrix) {
   if (m_value == DataType(0)) {
     El::Zero(matrix);
@@ -80,9 +90,24 @@ void value_initializer::fill(AbsDistMat& matrix) {
 
 }
 
+description uniform_initializer::get_description() const {
+  auto&& desc = weights_initializer::get_description();
+  std::stringstream ss;
+  ss << "[" << m_min << "," << m_max << ")";
+  desc.add("Range", ss.str());
+  return desc;
+}
+
 void uniform_initializer::fill(AbsDistMat& matrix) {
   uniform_fill(matrix, matrix.Height(), matrix.Width(),
                (m_max + m_min) / 2, (m_max - m_min) / 2);
+}
+
+description normal_initializer::get_description() const {
+  auto&& desc = weights_initializer::get_description();
+  desc.add("Mean", m_mean);
+  desc.add("Standard deviation", m_standard_deviation);
+  return desc;
 }
 
 void normal_initializer::fill(AbsDistMat& matrix) {
@@ -90,4 +115,4 @@ void normal_initializer::fill(AbsDistMat& matrix) {
                 m_mean, m_standard_deviation);
 }
 
-}  // namespace lbann
+} // namespace lbann

@@ -59,16 +59,6 @@ public:
 
   }
 
-  std::vector<std::string> get_description() const override {
-    auto&& desc = learning_layer::get_description();
-    if (m_bias_scaling_factor == DataType(0)) {
-      desc.push_back("Bias: disabled");
-    } else {
-      desc.push_back("Bias: enabled");
-    }
-    return desc;
-  }
-
   fully_connected_layer(const fully_connected_layer& other) :
     learning_layer(other),
     m_bias_scaling_factor(other.m_bias_scaling_factor),
@@ -116,6 +106,14 @@ public:
   std::string get_type() const override { return "fully connected"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  description get_description() const override {
+    auto&& desc = learning_layer::get_description();
+    const auto& bias_str = (m_bias_scaling_factor == DataType(0) ?
+                            "disabled" : "enabled");
+    desc.add("Bias", bias_str);
+    return desc;
+  }
 
 protected:
 

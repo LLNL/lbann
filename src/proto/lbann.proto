@@ -321,6 +321,7 @@ message L1WeightRegularization {
 
 message L2WeightRegularization {
   double scale_factor = 1;
+  string weights = 2;   // If empty, L2 regularization is applied to all weights
 }
 
 message GroupLassoWeightRegularization {
@@ -443,6 +444,7 @@ message CallbackLTFB {
   string metric = 2;
   string weights = 3;       // default: all weights
   bool low_score_wins = 4;
+  string communication_algorithm = 5;   // default: "sendrecv_weights"
 }
 
 message CallbackStepLearningRate {
