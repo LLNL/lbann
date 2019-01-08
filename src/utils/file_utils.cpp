@@ -130,7 +130,7 @@ std::string add_delimiter(const std::string dir) {
 
 /**
  * Add tag to a file name and/or change the extension.
- * i.e., given a file_name as "name.ext", a new name "name.tag.new_ext" is returned
+ * i.e., given a file_name as "name.ext", a new name "name_tag.new_ext" is returned
  * If a new extension is not specified, it assumes the same.
  * To change the extension without adding a tag, set tag to a null string.
  */
