@@ -40,5 +40,11 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(test_conduit_hdf5-bin lbann )
   set_target_properties(test_conduit_hdf5-bin PROPERTIES OUTPUT_NAME test_conduit_hdf5)
 
-  add_executable( select_samples select_samples.cpp )
+  add_executable( select_samples-bin select_samples.cpp )
+  target_link_libraries(select_samples-bin lbann )
+  set_target_properties(select_samples-bin PROPERTIES OUTPUT_NAME select_samples)
+
+  add_executable( build_sample_id_mapping-bin build_sample_id_mapping.cpp )
+  target_link_libraries(build_sample_id_mapping-bin lbann )
+  set_target_properties(build_sample_id_mapping-bin PROPERTIES OUTPUT_NAME build_sample_id_mapping)
 endif ()
