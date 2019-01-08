@@ -83,20 +83,18 @@ public:
   /** Get slice points (const). */
   std::vector<El::Int> get_slice_points() const { return m_slice_points; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = transform_layer::get_description();
-    desc.push_back("Slice dimension: "
-                   + std::to_string(m_slice_dim));
+    desc.add("Slice dimension", m_slice_dim);
     std::stringstream ss;
-    ss << "Slice points: ";
     for (size_t i = 0; i < m_slice_points.size(); ++i) {
       ss << (i > 0 ? ", " : "") << m_slice_points[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Slice points", ss.str());
     return desc;
   }
+
+protected:
 
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);

@@ -50,10 +50,9 @@ class adagrad : public optimizer {
   adagrad* copy() const override { return new adagrad(*this); }
 
   /** Get the optimizer name. */
-  std::string get_type() const override { return "Adagrad"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
-
+  std::string get_type() const override { return "AdaGrad"; }
+  /** Human-readable description. */
+  description get_description() const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;
@@ -78,7 +77,7 @@ class adagrad : public optimizer {
 
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
-  
+
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** AdaGrad cache. */

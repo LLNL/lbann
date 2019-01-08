@@ -128,9 +128,10 @@ class generic_input_layer : public io_layer {
 
   std::string get_type() const override { return "generic_input"; }
 
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = io_layer::get_description();
-    desc.push_back("Buffer: " + m_io_buffers[0]->get_type());
+    desc.add("Buffer", m_io_buffers[0]->get_type());
+    desc.add("Background I/O", this->m_model->background_io_activity_allowed());
     return desc;
   }
 
@@ -303,7 +304,7 @@ class generic_input_layer : public io_layer {
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
-    if(!m_data_set_processed) {
+    if(!m_data_set_processed && this->m_model->background_io_activity_allowed()) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));

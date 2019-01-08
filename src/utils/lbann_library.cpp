@@ -179,6 +179,10 @@ model *build_model_from_prototext(int argc, char **argv,
                                    pb.model());
     model->setup(io_thread_pool);
 
+    if(opts->get_bool("disable_background_io_activity")) {
+      model->allow_background_io_activity(false);
+    }
+
     //under development; experimental
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
       if (master) {
@@ -201,7 +205,7 @@ model *build_model_from_prototext(int argc, char **argv,
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      model->print_description(std::cout);
+      std::cout << model->get_description();
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;

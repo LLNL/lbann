@@ -32,16 +32,22 @@
 
 namespace lbann {
 
-/** Abstract variance scaling weights initializer.
- *  Values are randomly sampled from a probability distribution with a
- *  variance determined by a "fan-in" and a "fan-out" parameter. This
- *  is a generalization of "Xavier" initialization.
+/** @brief Generalization of "Xavier" initialization.
+ *
+ *  Weights values are randomly sampled from a probability
+ *  distribution with a variance determined by a "fan-in" and a
+ *  "fan-out" parameter.
+ *
+ *  Weights with variance scaling initialization are only compatible
+ *  with layers that set fan-in and fan-out parameters, e.g. the
+ *  convolution and fully-connected layers.
  */
 class variance_scaling_initializer : public weights_initializer {
 public:
   variance_scaling_initializer(probability_distribution dist);
+  description get_description() const;
   void fill(AbsDistMat& matrix) override;
-  
+
   /** Set fan-in parameter. */
   void set_fan_in(El::Int fan_in) { m_fan_in = fan_in; }
   /** Set fan-out parameter. */
@@ -50,7 +56,7 @@ public:
 protected:
   /** Get probability distribution variance. */
   virtual DataType get_variance(El::Int fan_in, El::Int fan_out) = 0;
-  
+
 private:
   /** Probability distribution. */
   probability_distribution m_prob_dist;
@@ -61,9 +67,9 @@ private:
 
 };
 
-/** Glorot initializer.
- *  Initialize with variance of 2 / (fan-in + fan-out). Also called
- *  Xavier initialization.
+/** @brief Fill weights with variance of 2 / (fan-in + fan-out).
+ *
+ *  Also called Xavier initialization.
  */
 class glorot_initializer : public variance_scaling_initializer {
 public:
@@ -72,13 +78,12 @@ public:
   glorot_initializer* copy() const override {
     return new glorot_initializer(*this);
   }
+  std::string get_type() const { return "Glorot"; }
 protected:
   DataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
-/** He initializer.
- *  Initialize with variance of 2 / fan-in.
- */
+/** @brief Fill weights with variance of 2 / fan-in. */
 class he_initializer : public variance_scaling_initializer {
 public:
   he_initializer(probability_distribution prob_dist)
@@ -86,13 +91,12 @@ public:
   he_initializer* copy() const override {
     return new he_initializer(*this);
   }
+  std::string get_type() const { return "He"; }
 protected:
   DataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
-/** LeCun initializer.
- *  Initialize with variance of 1 / fan-in.
- */
+/** @brief Fill weights with variance of 1 / fan-in. */
 class lecun_initializer : public variance_scaling_initializer {
 public:
   lecun_initializer(probability_distribution prob_dist)
@@ -100,6 +104,7 @@ public:
   lecun_initializer* copy() const override {
     return new lecun_initializer(*this);
   }
+  std::string get_type() const { return "LeCun"; }
 protected:
   DataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };

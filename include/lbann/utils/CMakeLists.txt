@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_HEADERS
   cuda.hpp
   cudnn.hpp
   dataset.hpp
+  description.hpp
   entrywise_operator.hpp
   exception.hpp
   glob.hpp

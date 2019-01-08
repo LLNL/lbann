@@ -121,6 +121,39 @@ weights& weights::operator=(const weights& other) {
   return *this;
 }
 
+description weights::get_description() const {
+  std::stringstream ss;
+
+  // Construct description object
+  description desc(get_name());
+
+  // Dimensions
+  const auto& dims = get_dims();
+  ss.str(std::string{});
+  ss.clear();
+  for (size_t i = 0; i < dims.size(); ++i) {
+    ss << (i > 0 ? "x" : "") << dims[i];
+  }
+  desc.add("Dimensions", ss.str());
+
+  // Optimizer
+  if (m_optimizer != nullptr) {
+    desc.add(m_optimizer->get_description());
+  }
+
+  // Initializer
+  if (m_initializer != nullptr) {
+    desc.add(m_initializer->get_description());
+  }
+
+  // Freeze state
+  if (is_frozen()) {
+    desc.add("Frozen");
+  }
+
+  return desc;
+}
+
 // -----------------------------------------------
 // Dimension accessors
 // -----------------------------------------------
