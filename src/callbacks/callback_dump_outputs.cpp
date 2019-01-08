@@ -26,7 +26,12 @@
 
 #include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/io/file_io.hpp"
+
+#include <libgen.h>
+
+#ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
+#endif // LBANN_HAS_CNPY
 
 namespace lbann {
 
@@ -50,6 +55,8 @@ void save_text(const std::string& file_name,
     fs << "\n";
   }
 }
+
+#ifdef LBANN_HAS_CNPY
 
 /** Save NumPy binary file. */
 void save_npy(const std::string& file_name,
@@ -78,6 +85,8 @@ void save_npz(const std::string& file_name,
   cnpy::npz_save(file_name, tensor_name, data.LockedBuffer(), shape);
 }
 
+#endif // LBANN_HAS_CNPY
+
 } // namespace
 
 lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> layer_names,
@@ -94,7 +103,10 @@ lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> l
   // Initialize file format
   if (m_file_format.empty()) { m_file_format = "csv"; }
   if (m_file_format != "csv" && m_file_format != "tsv"
-      && m_file_format != "npy" && m_file_format != "npz") {
+#ifdef LBANN_HAS_CNPY
+      && m_file_format != "npy" && m_file_format != "npz"
+#endif // LBANN_HAS_CNPY
+      ) {
     LBANN_ERROR("invalid file format (" + m_file_format + ")");
   }
 
@@ -121,8 +133,17 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
   if (!m_layer_names.empty()
       && m_layer_names.count(l.get_name()) == 0) { return; }
 
-  // Create the directory
-  lbann::makedir(m_file_prefix.c_str());
+  // Create directory if needed
+  // Note: dirname takes a non-const C-string as input and ignores
+  // trailing '/' characters.
+  std::vector<char> prefix_(m_file_prefix.size() + 2);
+  m_file_prefix.copy(prefix_.data(), m_file_prefix.size());
+  prefix_[prefix_.size()-2] = 'a';
+  prefix_[prefix_.size()-1] = '\0';
+  const std::string dir = dirname(prefix_.data());
+  if (dir != ".") {
+    lbann::makedir(dir.c_str());
+  }
 
   // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {
@@ -141,7 +162,9 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
         save_text(file_name, ",", data);
       } else if (m_file_format == "tsv") {
         save_text(file_name, "\t", data);
-      } else if (m_file_format == "npy") {
+      }
+#ifdef LBANN_HAS_CNPY
+      else if (m_file_format == "npy") {
         save_npy(file_name, l.get_output_dims(i), data);
       } else if (m_file_format == "npz") {
         save_npz(file_name,
@@ -149,6 +172,7 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
                  l.get_output_dims(i),
                  data);
       }
+#endif // LBANN_HAS_CNPY
     }
   }
 
