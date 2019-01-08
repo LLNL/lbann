@@ -86,6 +86,12 @@ class sort_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Descending", m_descending);
+    return desc;
+  }
+
  protected:
 
   void setup_dims() override {

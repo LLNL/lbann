@@ -43,9 +43,6 @@ option(LBANN_SB_BUILD_CONDUIT "Pull and build CONDUIT from Github" OFF)
 
 option(LBANN_SB_BUILD_CUB "Pull CUB from Github" OFF)
 
-option(LBANN_SB_BUILD_ELEMENTAL
-  "Pull and build Elemental's main repository from Github" OFF)
-
 option(LBANN_SB_BUILD_HDF5 "Pull and build HDF5 from the internet (not github)" OFF)
 
 option(LBANN_SB_BUILD_HYDROGEN "Pull and build Hydrogen from Github" OFF)
@@ -65,7 +62,7 @@ include(LBANNSuperBuildCreateCMakeArguments)
 
 if (LBANN_SB_BUILD_ALUMINUM)
   add_subdirectory(aluminum)
-  list(APPEND _BUILD_PKGS Aluminum)
+  list(APPEND _BUILD_PKGS ALUMINUM)
 endif ()
 
 if (LBANN_SB_BUILD_CEREAL)
@@ -90,41 +87,34 @@ endif ()
 
 if (LBANN_SB_BUILD_CUB)
   add_subdirectory(cub)
-  list(APPEND _BUILD_PKGS cub)
+  list(APPEND _BUILD_PKGS CUB)
 endif ()
 
-
-# Elemental is *SO* complicated.
-if (LBANN_SB_BUILD_ELEMENTAL OR LBANN_SB_BUILD_HYDROGEN)
+if (LBANN_SB_BUILD_HYDROGEN)
   option(LBANN_SB_BUILD_OPENBLAS "Pull and build OpenBLAS from Github" OFF)
 
   if (LBANN_SB_BUILD_OPENBLAS)
     add_subdirectory(openblas)
-    list(APPEND _BUILD_PKGS OpenBLAS)
+    list(APPEND _BUILD_PKGS OPENBLAS)
   endif ()
 
-  if (LBANN_SB_BUILD_HYDROGEN)
-    add_subdirectory(hydrogen)
-    list(APPEND _BUILD_PKGS Hydrogen)
-  else ()
-    add_subdirectory(elemental)
-    list(APPEND _BUILD_PKGS Elemental)
-  endif ()
+  add_subdirectory(hydrogen)
+  list(APPEND _BUILD_PKGS HYDROGEN)
 endif ()
 
 if (LBANN_SB_BUILD_JPEG_TURBO)
   add_subdirectory(jpeg-turbo)
-  list(APPEND _BUILD_PKGS jpeg-turbo)
+  list(APPEND _BUILD_PKGS JPEG-TURBO)
 endif ()
 
 if (LBANN_SB_BUILD_OPENCV)
   add_subdirectory(opencv)
-  list(APPEND _BUILD_PKGS OpenCV)
+  list(APPEND _BUILD_PKGS OPENCV)
 endif ()
 
 if (LBANN_SB_BUILD_PROTOBUF)
   add_subdirectory(protobuf)
-  list(APPEND _BUILD_PKGS Protobuf)
+  list(APPEND _BUILD_PKGS PROTOBUF)
 endif ()
 
 #
@@ -139,12 +129,7 @@ endif ()
 message("\n-----------------------------------------------------------------\n")
 message("LBANN SuperBuild will build the following packages:\n")
 foreach (pkg ${_BUILD_PKGS})
-  string(TOUPPER "${pkg}" pkg_upper)
-  if (NOT ${pkg_upper}_CMAKE_INSTALL_PREFIX)
-    message("  -- ${pkg} (${${pkg}_CMAKE_INSTALL_PREFIX})")
-  else()
-    message("  -- ${pkg} (${${pkg_upper}_CMAKE_INSTALL_PREFIX})")
-  endif ()
+  message("  -- ${pkg} (${${pkg}_CMAKE_INSTALL_PREFIX})")
 endforeach ()
 message("\n-----------------------------------------------------------------\n")
 

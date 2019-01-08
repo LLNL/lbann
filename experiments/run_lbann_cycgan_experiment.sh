@@ -372,11 +372,6 @@ echo "# ======== Useful info and initialization ========" >> ${BATCH_SCRIPT}
 echo "date"                                             >> ${BATCH_SCRIPT}
 echo "${MPIRUN} hostname > ${NODE_LIST}"                >> ${BATCH_SCRIPT}
 echo "sort --unique --output=${NODE_LIST} ${NODE_LIST}" >> ${BATCH_SCRIPT}
-case ${USE_GPU} in
-    YES|yes|TRUE|true|ON|on|1)
-        echo "export MV2_USE_CUDA=0"                    >> ${BATCH_SCRIPT}
-        ;;
-esac
 case ${CLUSTER} in
     pascal)
         echo "export OMP_NUM_THREADS=8"                 >> ${BATCH_SCRIPT}

@@ -59,11 +59,10 @@ adagrad::~adagrad() {
   if (m_cache != nullptr) { delete m_cache; }
 }
 
-std::string adagrad::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "eps=" << m_eps;
-  return ss.str();
+description adagrad::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("eps", m_eps);
+  return desc;
 }
 
 void adagrad::setup(weights& w) {

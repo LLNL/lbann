@@ -45,8 +45,8 @@ The following LLNL-maintained packages are required.
 + [Hydrogen](https://github.com/llnl/elemental) is a fork of the
   Elemental distributed dense linear-algebra library and it may be
   installed via [spack](https://github.com/llnl/spack) using the
-  package name "hydrogen". If CUDA support is required in LBANN,
-  Hydrogen must also be build with CUDA support.
+  package name "hydrogen". If CUDA support is enabled in Hydrogen,
+  LBANN will inherit this support.
 
 The following LLNL-maintained packages are optional.
 
@@ -86,10 +86,6 @@ The following options are exposed in the CMake build system.
 + `LBANN_WITH_CNPY` (Default: `ON`): Build with support for CNPY for reading
   Numpy data.
 
-+ `LBANN_WITH_CUDA` (Default: `OFF`): Enable a CUDA-aware build. If
-  this flag is `ON` and Hydrogen CUDA support cannot be detected,
-  LBANN's configuration step will fail.
-
 + `LBANN_WITH_CONDUIT` (Default: `OFF`): Build with support for CONDUIT.
 
 + `LBANN_WITH_NVPROF` (Default: `OFF`): Build with extra annotations for NVPROF.
@@ -123,6 +119,14 @@ The following variables may also be set:
 
 + `LBANN_DATATYPE` (Default: `float`): The datatype to use for
   training. Currently this must be `float` or `double`.
+
+The following variable has been deprecated and removed:
+
++ `LBANN_WITH_CUDA`. The "CUDA-ness" of LBANN is now tied 1:1 with the
+  "CUDA-ness" of Hydrogen. At present, it seems like unnecessary
+  overhead to support the situation in which Hydrogen has CUDA support
+  but LBANN doesn't want to use it until a compelling use-case reveals
+  itself.
 
 ### Controlling dependency resolution
 The following variables may be set with CMake to identify dependencies

@@ -63,18 +63,13 @@ class input_layer : public generic_input_layer {
     return new input_layer(*this);
   }
 
-  std::string get_type() const override {
-    return std::string {}
-      + "input:"
-      + m_io_buffers[0]->get_type();
-  }
-
   inline void validate_data_layout();
 
   inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
     generic_input_layer::initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
   }
 
+  std::string get_type() const override { return "input"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 

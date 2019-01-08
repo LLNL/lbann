@@ -55,8 +55,8 @@ class sgd : public optimizer {
 
   /** Get the optimizer name. */
   std::string get_type() const override { return "SGD"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;

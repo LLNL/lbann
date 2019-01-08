@@ -810,45 +810,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  disable_cuda:            " << m.disable_cuda()  << std::endl
             << "  random_seed:             " << m.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
-            << "     (only used for metrics)\n"
-            << "\n"
-            << " Optimizer:  ";
-
-  const lbann_data::Optimizer &o = p.optimizer();
-  if (o.has_adagrad()) {
-    const lbann_data::Adagrad &a = o.adagrad();
-    std::cout << "  Adagrad\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  eps:        " << a.eps()  << std::endl;
-  } else if (o.has_rmsprop()) {
-    const lbann_data::Rmsprop &a = o.rmsprop();
-    std::cout <<  "  Rmsprop\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  decay_rate: " << a.decay_rate()  << std::endl
-              << "  eps:        " << a.eps()  << std::endl;
-  } else if (o.has_adam()) {
-    const lbann_data::Adam &a = o.adam();
-    std::cout << "  Adam\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  beta1:      " << a.beta1()  << std::endl
-              << "  beta2:      " << a.beta2()  << std::endl
-              << "  eps:        " << a.eps()  << std::endl;
-  } else if (o.has_hypergradient_adam()) {
-    const lbann_data::HypergradientAdam &a = o.hypergradient_adam();
-    std::cout << "  HypergradientAdam\n"
-              << "  init_learning_rate:  " << a.init_learning_rate()  << std::endl
-              << "  hyper_learning_rate: " << a.hyper_learning_rate()  << std::endl
-              << "  beta1:               " << a.beta1()  << std::endl
-              << "  beta2:               " << a.beta2()  << std::endl
-              << "  eps:                 " << a.eps()  << std::endl;
-  } else if (o.has_sgd()) {
-    const lbann_data::Sgd &a = o.sgd();
-    std::cout << "  Sgd\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  momentum:   " << a.momentum()  << std::endl
-              << "  decay_rate: " << a.decay_rate()  << std::endl
-              << "  nesterov:   " << a.nesterov()  << std::endl;
-  }
+            << "     (only used for metrics)\n";
 }
 
 void print_help(lbann::lbann_comm *comm)
@@ -884,6 +846,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
+       "  --disable_background_io_activity=<bool>\n"
        "  --disable_cuda=<bool>\n"
        "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"

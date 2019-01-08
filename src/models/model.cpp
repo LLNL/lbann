@@ -36,6 +36,7 @@
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/description.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -81,7 +82,8 @@ model::model(lbann_comm *comm,
     m_current_phase(0),
     m_comm(comm),
     m_default_optimizer(default_optimizer),
-    m_io_thread_pool() {
+    m_io_thread_pool(),
+    m_background_io_allowed(true) {
 
   // Default model name
   static El::Int num_models = 0;
@@ -101,7 +103,8 @@ model::model(const model& other) :
   m_current_mini_batch_size(other.m_current_mini_batch_size),
   m_effective_mini_batch_size(other.m_effective_mini_batch_size),
   m_current_phase(other.m_current_phase),
-  m_comm(other.m_comm) {
+  m_comm(other.m_comm),
+  m_background_io_allowed(other.m_background_io_allowed) {
 
   // Deep copies
   m_objective_function = other.m_objective_function;
@@ -156,6 +159,7 @@ model& model::operator=(const model& other) {
   m_effective_mini_batch_size = other.m_effective_mini_batch_size;
   m_current_phase = other.m_current_phase;
   m_comm = other.m_comm;
+  m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
   m_objective_function = other.m_objective_function;
@@ -378,19 +382,16 @@ void model::permute_layers(const std::vector<int>& permutation) {
   m_layers = std::move(reordered_layers);
 }
 
-void model::print_description(std::ostream& os,
-                              std::string separator,
-                              bool trailing_newline) const {
+description model::get_description() const {
 
-  // Model properties
-  std::stringstream ss;
-  ss << "model \"" << get_name() << "\""
-     << separator << "Type: " << get_type();
+  // Construct description object
+  description desc(get_name());
+  desc.add("Type", get_type());
 
   // Layer topology
-  ss << separator << "Layer topology:";
+  description layer_topology_desc("Layer topology:");
   for (const auto* l : m_layers) {
-    ss << separator << "  ";
+    std::stringstream ss;
     if (l == nullptr) {
       ss << "unknown layer: {} -> {}";
     } else {
@@ -426,25 +427,39 @@ void model::print_description(std::ostream& os,
       }
       ss << "}";
     }
+    layer_topology_desc.add(ss.str());
   }
+  desc.add(std::string{});
+  desc.add(layer_topology_desc);
 
   // Layer details
-  ss << separator << "Layer details:";
+  description layer_details_desc("Layer details:");
   for (const auto* l : m_layers) {
-    ss << separator << "  ";
     if (l == nullptr) {
-      ss << "unknown layer";
+      layer_details_desc.add("unknown layer");
     } else {
-      l->print_description(ss, separator + "    ", false);
+      layer_details_desc.add(l->get_description());
     }
   }
+  desc.add(std::string{});
+  desc.add(layer_details_desc);
 
-  /// @todo Descriptions for objective function, weights, metrics,
-  /// callbacks
+  // Weights
+  description weights_desc("Weights:");
+  for (const auto* w : m_weights) {
+    if (w == nullptr) {
+      weights_desc.add("unknown weights");
+    } else {
+      weights_desc.add(w->get_description());
+    }
+  }
+  desc.add(std::string{});
+  desc.add(weights_desc);
 
-  // Output result to stream
-  os << ss.str();
-  if (trailing_newline) { os << std::endl; }
+  /// @todo Descriptions for objective function, metrics, callbacks
+
+  // Result
+  return desc;
 
 }
 

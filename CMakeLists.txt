@@ -102,8 +102,6 @@ option(LBANN_WITH_CNPY "Include cnpy" ON)
 
 option(LBANN_WITH_CONDUIT "Enable Conduit library" OFF)
 
-option(LBANN_WITH_CUDA "Include Nvidia CUDA" OFF)
-
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
 option(LBANN_WITH_HWLOC
@@ -142,32 +140,6 @@ mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
-
-# Enable CUDA if necessary
-if (LBANN_WITH_CUDA)
-  include(CheckLanguage)
-  check_language(CUDA)
-  if (CMAKE_CUDA_COMPILER)
-    enable_language(CUDA)
-
-    # Handle C++11-ness of CUDA
-    if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
-      set(CMAKE_CUDA_STANDARD 11)
-      set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-    endif ()
-
-    # This enables all the CUDA-specific macros...
-    find_package(CUDA)
-  endif ()
-
-  set(LBANN_HAS_CUDA ${CUDA_FOUND})
-
-  if (LBANN_HAS_CUDA)
-  else ()
-    message(FATAL_ERROR "CUDA support not found. Disabling.")
-    set(LBANN_WITH_CUDA OFF)
-  endif ()
-endif ()
 
 #
 # Initialize build
@@ -218,6 +190,20 @@ if (NOT OpenCV_FOUND)
 endif ()
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA, LBANN gets CUDA.
+set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
+set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
+
+if (LBANN_HAS_CUDA)
+  enable_language(CUDA)
+
+  if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
+    set(CMAKE_CUDA_STANDARD 11)
+  endif ()
+
+  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+endif ()
+
 if (LBANN_WITH_ALUMINUM)
   # Aluminum may have already been found by Hydrogen
   if (NOT Aluminum_FOUND)
@@ -244,10 +230,9 @@ if (LBANN_WITH_ALUMINUM)
 
   else ()
 
-    if (AL_HAS_CUDA AND NOT LBANN_WITH_CUDA)
+    if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
       message(WARNING
-        "Aluminum has CUDA support but LBANN has been configured "
-        "with LBANN_WITH_CUDA=OFF.")
+        "Aluminum has CUDA support but CUDA support has not been found.")
     endif ()
 
     option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
@@ -426,21 +411,6 @@ if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
 endif ()
 
-if (LBANN_HAS_CUDA)
-  target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
-  target_link_libraries(lbann PUBLIC cuda::toolkit)
-  if (LBANN_WITH_NVPROF)
-    target_link_libraries(lbann PUBLIC ${NVTX_LIBRARIES})
-  endif ()
-  target_link_libraries(lbann PUBLIC ${cuBLAS_LIBRARIES})
-
-  if(LBANN_HAS_NCCL2)
-    target_link_libraries(lbann PUBLIC cuda::nccl)
-  endif()
-endif()
-if(LBANN_HAS_CUDNN)
-  target_link_libraries(lbann PUBLIC ${cuDNN_LIBRARIES})
-endif ()
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()

@@ -13,7 +13,7 @@ if (HDF5_CLONE_VIA_SSH)
   message(FATAL_ERROR
     "SSH cloning of HDF5 currently disabled. "
     "I don't know the SSH URL at this time.")
-  
+
   set(HDF5_URL I_DONT_KNOW
     CACHE STRING "The URL from which to clone HDF5")
 else ()
@@ -32,7 +32,7 @@ set(HDF5_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 
 option(HDF5_BUILD_SHARED_LIBS
   "Whether HDF5 should build dynamically linked libraries."
-  "${BUILD_SHARED_LIBS}")
+  ON)
 
 set(HDF5_CMAKE_COMMAND "${CMAKE_COMMAND}"
   CACHE FILEPATH
@@ -45,8 +45,10 @@ option(HDF5_USE_16_API_DEFAULT "Use 1.6 API by default" OFF)
 option(HDF5_USE_18_API_DEFAULT "Use 1.8 API by default" ON)
 option(HDF5_USE_110_API_DEFAULT "Use 1.10 API by default" OFF)
 option(HDF5_USE_112_API_DEFAULT "Use 1.12 API by default" OFF)
-
 option(HDF5_BUILD_FORTRAN "Build HDF5 with fortran support" OFF)
+
+# At present, this is required for LBANN/JAG use.
+option(HDF5_ENABLE_Z_LIB_SUPPORT "Build HDF5 with ZLIB support" ON)
 
 if (HDF5_BUILD_FORTRAN)
   enable_language(Fortran)
