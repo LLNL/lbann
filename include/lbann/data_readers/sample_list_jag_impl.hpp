@@ -20,7 +20,7 @@
 namespace lbann {
 
 inline sample_list_header::sample_list_header()
-  : m_is_exclusive(false), m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u), m_file_dir("") {
+  : m_is_exclusive(false), m_included_sample_count(0u), m_num_files(0u), m_file_dir("") {
 }
 
 inline bool sample_list_header::is_exclusive() const {
@@ -171,7 +171,6 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   }
 
   header2 >> hdr.m_included_sample_count;
-  header2 >> hdr.m_excluded_sample_count;
   header2 >> hdr.m_num_files;
 
   header3 >> hdr.m_file_dir;
@@ -430,8 +429,7 @@ inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) c
   // The next line contains the root data file directory
 
   sstr += (m_header.is_exclusive()? conduit_hdf5_exclusion_list + "\n" : conduit_hdf5_inclusion_list + "\n");
-  /// Include the number of invalid samples, which for an inclusive index list is always 0
-  sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(num_files) + '\n';
+  sstr += std::to_string(m_sample_list.size()) + " " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
 
