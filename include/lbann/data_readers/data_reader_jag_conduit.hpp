@@ -345,6 +345,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Open a conduit file and register the open file descriptor
   hid_t open_conduit_file(const std::string& conduit_file_path) const;
 
+  /// Open all conduit files for all the samples to cache the file descriptor
+  void open_all_conduit_files() const;
+
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
   /// Make sure that the keys to choose scalar outputs are valid

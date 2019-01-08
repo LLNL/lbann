@@ -353,11 +353,6 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const sample_t& s = m_sample_list[i];
   const std::string& file_name = s.first;
   const std::string& sample_name = s.second;
-  // TODO: instead of querying the file handle with file name every time,
-  // we could use a vector of file handles that matches the order of data
-  // files appearing in the sample_list.
-  // However, when a file closes and the handle reassociates with a different
-  // file, this vector needs to be updated.
   const std::string conduit_file_path = add_delimiter(m_sample_list.get_header().get_file_dir()) + file_name;
   hid_t h = m_open_hdf5_files->get(conduit_file_path);
 
@@ -841,6 +836,8 @@ void data_reader_jag_conduit::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+
+  //open_all_conduit_files();
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
@@ -899,6 +896,14 @@ hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file
   m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
 
   return hdf5_file_hnd;
+}
+
+void data_reader_jag_conduit::open_all_conduit_files() const {
+  const auto& sl = m_sample_list.get_list();
+  const std::string data_dir = add_delimiter((m_sample_list.get_header()).get_file_dir());
+  for (const auto s: sl) {
+    open_conduit_file(data_dir + s.first);
+  }
 }
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
