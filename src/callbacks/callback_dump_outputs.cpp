@@ -27,8 +27,6 @@
 #include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/io/file_io.hpp"
 
-#include <libgen.h>
-
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
 #endif // LBANN_HAS_CNPY
@@ -38,6 +36,7 @@ namespace lbann {
 namespace {
 
 /** Save text file.
+ *
  *  Each line corresponds to a mini-batch sample. This is the
  *  transpose of our internal column-major matrix representation.
  */
@@ -56,12 +55,14 @@ void save_text(const std::string& file_name,
   }
 }
 
-#ifdef LBANN_HAS_CNPY
 
 /** Save NumPy binary file. */
 void save_npy(const std::string& file_name,
               const std::vector<int>& dims,
               const CPUMat& data) {
+#ifndef LBANN_HAS_CNPY
+  LBANN_ERROR("CNPY not detected");
+#else
   if (!data.Contiguous()) {
     LBANN_ERROR("expected contiguous data matrix");
   }
@@ -69,6 +70,7 @@ void save_npy(const std::string& file_name,
   shape.push_back(data.Width());
   for (const auto& d : dims) { shape.push_back(d); }
   cnpy::npy_save(file_name, data.LockedBuffer(), shape);
+#endif // LBANN_HAS_CNPY
 }
 
 /** Save NumPy zip file. */
@@ -76,6 +78,9 @@ void save_npz(const std::string& file_name,
               const std::string& tensor_name,
               const std::vector<int>& dims,
               const CPUMat& data) {
+#ifndef LBANN_HAS_CNPY
+  LBANN_ERROR("CNPY not detected");
+#else
   if (!data.Contiguous()) {
     LBANN_ERROR("expected contiguous data matrix");
   }
@@ -83,31 +88,44 @@ void save_npz(const std::string& file_name,
   shape.push_back(data.Width());
   for (const auto& d : dims) { shape.push_back(d); }
   cnpy::npz_save(file_name, tensor_name, data.LockedBuffer(), shape);
-}
-
 #endif // LBANN_HAS_CNPY
+}
 
 } // namespace
 
 lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> layer_names,
                                                          std::set<execution_mode> modes,
                                                          El::Int batch_interval,
-                                                         std::string file_prefix,
+                                                         std::string directory,
                                                          std::string file_format)
   : lbann_callback(std::max(batch_interval, El::Int(1))),
     m_layer_names(std::move(layer_names)),
     m_modes(std::move(modes)),
-    m_file_prefix(std::move(file_prefix)),
+    m_directory(std::move(directory)),
     m_file_format(std::move(file_format)) {
+  std::stringstream err;
+
+  // Initialize directory for output files
+  // Note: Default directory is current working directory. Make sure
+  // pathname has trailing slash.
+  if (m_directory.empty()) { m_directory = "./"; }
+  if (m_directory.back() != '/') { m_directory += "/"; }
 
   // Initialize file format
   if (m_file_format.empty()) { m_file_format = "csv"; }
-  if (m_file_format != "csv" && m_file_format != "tsv"
-#ifdef LBANN_HAS_CNPY
-      && m_file_format != "npy" && m_file_format != "npz"
+#ifndef LBANN_HAS_CNPY
+  if (m_file_format == "npy" || m_file_format == "npz") {
+    err << "callback \"" << this->name() << "\" attempted "
+        << "to use NumPy file format (" << m_file_format << "), "
+        << "but CNPY was not detected";
+    LBANN_ERROR(err.str());
+  }
 #endif // LBANN_HAS_CNPY
-      ) {
-    LBANN_ERROR("invalid file format (" + m_file_format + ")");
+  if (m_file_format != "csv" && m_file_format != "tsv"
+      && m_file_format != "npy" && m_file_format != "npz") {
+    err << "callback \"" << this->name() << "\" attempted "
+        << "to use invalid file format (" << m_file_format << ")";
+    LBANN_ERROR(err.str());
   }
 
 }
@@ -133,24 +151,15 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
   if (!m_layer_names.empty()
       && m_layer_names.count(l.get_name()) == 0) { return; }
 
-  // Create directory if needed
-  // Note: dirname takes a non-const C-string as input and ignores
-  // trailing '/' characters.
-  std::vector<char> prefix_(m_file_prefix.size() + 2);
-  m_file_prefix.copy(prefix_.data(), m_file_prefix.size());
-  prefix_[prefix_.size()-2] = 'a';
-  prefix_[prefix_.size()-1] = '\0';
-  const std::string dir = dirname(prefix_.data());
-  if (dir != ".") {
-    lbann::makedir(dir.c_str());
-  }
+  // Create directory
+  lbann::makedir(m_directory.c_str());
 
   // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {
     const CircMat<El::Device::CPU> circ_data(l.get_activations(i));
     if (circ_data.CrossRank() == circ_data.Root()) {
       const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
-      const std::string file_name = (m_file_prefix
+      const std::string file_name = (m_directory
                                      + m.get_name()
                                      + "-" + _to_string(mode)
                                      + "-epoch" + std::to_string(epoch)
@@ -162,9 +171,7 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
         save_text(file_name, ",", data);
       } else if (m_file_format == "tsv") {
         save_text(file_name, "\t", data);
-      }
-#ifdef LBANN_HAS_CNPY
-      else if (m_file_format == "npy") {
+      } else if (m_file_format == "npy") {
         save_npy(file_name, l.get_output_dims(i), data);
       } else if (m_file_format == "npz") {
         save_npz(file_name,
@@ -172,7 +179,6 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
                  l.get_output_dims(i),
                  data);
       }
-#endif // LBANN_HAS_CNPY
     }
   }
 

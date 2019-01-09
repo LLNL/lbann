@@ -35,7 +35,7 @@ namespace lbann {
  *
  *  Saves a file for each output tensor of each selected layer,
  *  computed at each mini-batch step. Output files have the form
- *  "<prefix><model>-<mode>-epoch<#>-step<#>-<layer>-output<#>.<format>".
+ *  "<model>-<mode>-epoch<#>-step<#>-<layer>-output<#>.<format>".
  *  This is primarily intended as a debugging tool, although it can be
  *  used for inference when performance is not critical.
  *
@@ -56,14 +56,15 @@ public:
    *                        (default: dump outputs for all modes).
    *  @param batch_interval Frequency of output dumps (default: dump
    *                        outputs at each mini-batch step).
-   *  @param file_prefix    Prefix for output file names.
+   *  @param directory      Directory for output files (default: current
+   *                        working directory).
    *  @param file_format    Output file format. Options are csv, tsv,
    *                        npy, npz (default: csv).
    */
   lbann_callback_dump_outputs(std::set<std::string> layer_names = {},
                               std::set<execution_mode> modes = {},
                               El::Int batch_interval = 0,
-                              std::string file_prefix = "",
+                              std::string directory = "",
                               std::string file_format = "");
   lbann_callback_dump_outputs* copy() const override {
     return new lbann_callback_dump_outputs(*this);
@@ -75,27 +76,26 @@ public:
 
 private:
 
-  /** Names of layers with output dumps.
-   *
-   *  If empty, outputs will be dumped for all layers.
+  /** @brief   Names of layers with output dumps.
+   *  @details If empty, outputs will be dumped for all layers.
    */
   std::set<std::string> m_layer_names;
 
-  /** Execution modes with output dumps.
-   *
-   *  If empty, outputs will be dumped for all execution modes.
+  /** @brief   Execution modes with output dumps.
+   *  @details If empty, outputs will be dumped for all execution modes.
    */
   std::set<execution_mode> m_modes;
 
-  /** Prefix for output files. */
-  std::string m_file_prefix;
+  /** @brief   Directory for output files.
+   *  @details Pathname has trailing '/'.
+   */
+  std::string m_directory;
 
-  /** Output file format. */
+  /** @brief Output file format. */
   std::string m_file_format;
 
-  /** Dump outputs to file.
-   *
-   *  Returns immediately if an output dump is not needed.
+  /** @brief   Dump outputs to file.
+   *  @details Returns immediately if an output dump is not needed.
    */
   void dump_outputs(const model& m, const Layer& l);
 

@@ -44,7 +44,7 @@ model {
   callback { timer {} }
   callback {
     dump_outputs {
-      prefix: "dump_acts/"
+      directory: "dump_acts/"
       layers: "data sigmoid"
       execution_modes: "test"
     }
