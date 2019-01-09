@@ -58,6 +58,11 @@ private:
   bool m_use_global_stats;
   /** Whether to aggregate statistics within a node when training. */
   bool m_use_nodelocal_stats;
+  /**
+   * Cache of node-local num_per_sum results for node-local stats.
+   * Indexed by effective mini-batch size.
+   */
+  std::unordered_map<El::Int, El::Int> m_num_per_sum_cache;
 
   /** Current minibatch means. */
   std::unique_ptr<AbsDistMat> m_mean;
@@ -105,6 +110,7 @@ public:
       m_epsilon(other.m_epsilon),
       m_use_global_stats(other.m_use_global_stats),
       m_use_nodelocal_stats(other.m_use_nodelocal_stats),
+      m_num_per_sum_cache(other.m_num_per_sum_cache),
       m_mean(other.m_mean ? other.m_mean->Copy() : nullptr),
       m_var(other.m_var ? other.m_var->Copy() : nullptr),
       m_mean_gradient(other.m_mean_gradient ?
@@ -122,6 +128,7 @@ public:
     m_epsilon = other.m_epsilon;
     m_use_global_stats = other.m_use_global_stats;
     m_use_nodelocal_stats = other.m_use_nodelocal_stats;
+    m_num_per_sum_cache = other.m_num_per_sum_cache;
 
     // Deep copy matrices
     m_mean.reset(other.m_mean ? other.m_mean->Copy() : nullptr);

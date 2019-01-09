@@ -346,7 +346,13 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
     } else if (m_use_nodelocal_stats) {
       m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
       m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
-      num_per_sum = channel_size * local_width * m_comm->get_procs_per_node();
+      if (m_num_per_sum_cache.count(width) == 0) {
+        num_per_sum = channel_size * local_width;
+        num_per_sum = m_comm->allreduce(num_per_sum, m_comm->get_node_comm());
+        m_num_per_sum_cache[width] = num_per_sum;
+      } else {
+        num_per_sum = m_num_per_sum_cache[width];
+      }
     } else {
       num_per_sum = channel_size * local_width;
     }
@@ -486,7 +492,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   if (m_use_global_stats) {
     num_per_sum = channel_size * width;
   } else if (m_use_nodelocal_stats) {
-    num_per_sum = channel_size * local_width * m_comm->get_procs_per_node();
+    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
   } else {
     num_per_sum = channel_size * local_width;
   }
