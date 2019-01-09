@@ -64,9 +64,11 @@ class sample_list_jag {
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
   using sample_name_t = std::string;
   /// The type for arbitrarily assigned index
-  using sample_id_t = size_t;
+  using sample_id_t = std::size_t;
   /// To describe a sample as a pair of the file to which it belongs and its name
-  using sample_t = std::pair<std::string, sample_name_t>;
+  //  using sample_t = std::pair<std::string, sample_name_t>;
+  using sample_t = std::pair<sample_id_t, sample_name_t>;
+  using sample_id_map_t = std::pair<std::string, hid_t>;
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
 
@@ -131,6 +133,22 @@ class sample_list_jag {
   /// Allow read-only access to the metadata of the idx-th sample in the list
   const sample_t& operator[](size_t idx) const;
 
+  const std::string& get_samples_filename(sample_id_t id) const {
+    return (m_sample_id_map[id]).first;
+  }
+
+  hid_t get_samples_hdf5_handle(sample_id_t id) const {
+    return (m_sample_id_map[id]).second;
+  }
+
+  void set_samples_filename(sample_id_t id, const std::string& filename) {
+    m_sample_id_map[id].first = filename;
+  }
+
+  void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
+    m_sample_id_map[id].second = h;
+  }
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
@@ -140,7 +158,7 @@ class sample_list_jag {
   sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
 
   /// Get the list of samples that exist in a conduit bundle
-  bool get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
+  hid_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm);
@@ -167,6 +185,9 @@ class sample_list_jag {
 
   /// Contains list of all sample
   samples_t m_sample_list;
+
+  /// Maps sample IDs to file names
+  std::vector<sample_id_map_t> m_sample_id_map;
 
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;

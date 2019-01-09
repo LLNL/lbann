@@ -87,6 +87,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
   using sample_t = sample_list_jag::sample_t;
+  using sample_id_t = sample_list_jag::sample_id_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -343,10 +344,10 @@ class data_reader_jag_conduit : public generic_data_reader {
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Open a conduit file and register the open file descriptor
-  hid_t open_conduit_file(const std::string& conduit_file_path) const;
+  hid_t open_conduit_file(const std::string& conduit_file_path);
 
   /// Open all conduit files for all the samples to cache the file descriptor
-  void open_all_conduit_files() const;
+  void open_all_conduit_files();
 
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();

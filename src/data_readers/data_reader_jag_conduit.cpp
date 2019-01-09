@@ -168,7 +168,7 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
   }
   generic_data_reader::shuffle_indices(gen);
 
-  m_open_hdf5_files->clear();
+  //  m_open_hdf5_files->clear();
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
@@ -351,21 +351,19 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
 
 bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
   const sample_t& s = m_sample_list[i];
-  const std::string& file_name = s.first;
+  sample_id_t id = s.first;
   const std::string& sample_name = s.second;
-  const std::string conduit_file_path = add_delimiter(m_sample_list.get_header().get_file_dir()) + file_name;
-  hid_t h = m_open_hdf5_files->get(conduit_file_path);
-
-  if (h <= static_cast<hid_t>(0)) {
-    h = open_conduit_file(conduit_file_path);
-    if (h <= static_cast<hid_t>(0)) {
-      _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
-                                          " for sample "+ sample_name);
-      return false;
-    }
-  }
+  const std::string& file_name = m_sample_list.get_samples_filename(id);
+  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
 
   const std::string path = sample_name + key;
+
+  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
+                                        " for sample "+ sample_name);
+    return false;
+  }
+
   conduit::relay::io::hdf5_read(h, path, node);
 
   return true;
@@ -373,10 +371,18 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];
-  const std::string& file_name = s.first;
+  sample_id_t id = s.first;
+  const std::string& file_name = m_sample_list.get_samples_filename(id);
   const std::string& sample_name = s.second;
-  const std::string conduit_file_path = add_delimiter(m_sample_list.get_header().get_file_dir()) + file_name;
-  hid_t h = m_open_hdf5_files->get(conduit_file_path);
+  const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+
+  const std::string path = sample_name + key;
+  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+    _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
+                                        " for sample "+ sample_name);
+    return false;
+  }
+
   return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
 }
 
@@ -812,6 +818,7 @@ void data_reader_jag_conduit::load() {
 
       if (!m_comm->am_model_master()) {
         load_list_of_samples_from_archive(sample_list_archive);
+        open_all_conduit_files();
       }
     }
 
@@ -836,8 +843,6 @@ void data_reader_jag_conduit::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
-
-  //open_all_conduit_files();
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
@@ -868,7 +873,7 @@ void data_reader_jag_conduit::load_list_of_samples_from_archive(const std::strin
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
 
-hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) const {
+hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) {
   if (!check_if_file_exists(conduit_file_path)) {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
   }
@@ -898,11 +903,14 @@ hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file
   return hdf5_file_hnd;
 }
 
-void data_reader_jag_conduit::open_all_conduit_files() const {
+void data_reader_jag_conduit::open_all_conduit_files() {
   const auto& sl = m_sample_list.get_list();
   const std::string data_dir = add_delimiter((m_sample_list.get_header()).get_file_dir());
   for (const auto s: sl) {
-    open_conduit_file(data_dir + s.first);
+    sample_id_t id = s.first;
+    const std::string& filename = m_sample_list.get_samples_filename(id);
+    hid_t h = open_conduit_file(data_dir + filename);
+    m_sample_list.set_samples_hdf5_handle(id, h);
   }
 }
 

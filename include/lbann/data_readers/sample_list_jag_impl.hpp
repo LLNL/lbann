@@ -183,12 +183,12 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   return hdr;
 }
 
-inline bool sample_list_jag::get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples) {
+inline hid_t sample_list_jag::get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples) {
   hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
 
   if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
     std::cout << "Opening the file didn't work" << std::endl;
-    return false; // skipping the file
+    return hdf5_file_hnd;
   }
 
   conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
@@ -202,7 +202,7 @@ inline bool sample_list_jag::get_conduit_bundle_samples(std::string conduit_file
                 + std::to_string(excluded_samples));
   }
 
-  return true;
+  return hdf5_file_hnd;;
 }
 
 inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
@@ -250,8 +250,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
     }
 
     std::vector<std::string> sample_names;
-    bool file_valid = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
-    if(!file_valid) {
+    hid_t hdf5_file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
+    if(hdf5_file_hnd <= static_cast<hid_t>(0)) {
       continue; // skipping the file
     }
 
@@ -275,7 +275,9 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
         continue;
       }
 
-      m_sample_list.emplace_back(filename, s);
+      sample_id_t index = m_sample_id_map.size();
+      m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+      m_sample_list.emplace_back(index, s);
       valid_sample_count++;
     }
 
@@ -327,8 +329,8 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
     }
 
     std::vector<std::string> sample_names;
-    bool file_valid = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
-    if(!file_valid) {
+    hid_t hdf5_file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
+    if(hdf5_file_hnd <= static_cast<hid_t>(0)) {
       continue; // skipping the file
     }
 
@@ -355,7 +357,9 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
       if (found == set_of_samples.cend()) {
         LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name);
       }
-      m_sample_list.emplace_back(filename, sample_name);
+      sample_id_t index = m_sample_id_map.size();
+      m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+      m_sample_list.emplace_back(index, sample_name);
       valid_sample_count++;
     }
     if(valid_sample_count != included_samples) {
@@ -420,7 +424,7 @@ inline void sample_list_jag::clear() {
 }
 
 template <class Archive> void sample_list_jag::serialize( Archive & ar ) {
-  ar(m_num_partitions, m_header, m_sample_list);
+  ar(m_num_partitions, m_header, m_sample_list, m_sample_id_map);
 }
 
 inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) const {
@@ -451,6 +455,12 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
     return false;
   }
 
+  std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
+  for (const auto& s : m_sample_list) {
+    std::string filename = (m_sample_id_map[s.first]).first;
+    tmp_file_map[filename].emplace_back(s.second);
+  }
+
   samples_t::const_iterator it_begin = m_sample_list.cbegin();
   samples_t::const_iterator it_end = m_sample_list.cbegin();
   std::advance(it_begin, i_begin);
@@ -461,14 +471,10 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
   // reserve the string to hold the entire sample lit
   size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1;
   if (i_begin < i_end) {
-    estimated_len += static_cast<size_t>(1.5 * (i_end - i_begin) * (it_begin->first.size() + it_begin->second.size() + 6));
+    estimated_len += tmp_file_map.size();
     sstr.reserve(estimated_len);
   }
 
-  std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
-  for (const auto& s : m_sample_list) {
-    tmp_file_map[s.first].emplace_back(s.second);
-  }
   // write the list header
   write_header(sstr, tmp_file_map.size());
 
