@@ -444,6 +444,7 @@ message CallbackLTFB {
   string metric = 2;
   string weights = 3;       // default: all weights
   bool low_score_wins = 4;
+  string communication_algorithm = 5;   // default: "sendrecv_weights"
 }
 
 message CallbackStepLearningRate {
@@ -493,7 +494,7 @@ message CallbackDumpOutputs {
   string layers = 1;          // Default: all layers
   string execution_modes = 2; // Default: all modes
   int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
-  string prefix = 4;          // Prefix for output files
+  string directory = 4;       // Directory for output files
   string format = 5;          // Options: csv, tsv, npy, npz (default: csv)
 }
 
