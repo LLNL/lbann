@@ -354,9 +354,9 @@ model {
   }
   callback {
     dump_outputs {
-     # prefix:"/p/lscratchh/brainusr/jacobs32/EuroViz/ae_loss/"
-     # #prefix:"/p/gpfs1/jacobs32/EuroViz3/ae_loss/"
-      prefix:"ae_loss/"
+     # directory:"/p/lscratchh/brainusr/jacobs32/EuroViz/ae_loss/"
+     # #directory:"/p/gpfs1/jacobs32/EuroViz3/ae_loss/"
+      directory:"ae_loss/"
       layers: "ae_err"
       execution_modes: "test"
     }
