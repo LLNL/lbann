@@ -51,7 +51,7 @@ model {
 
   callback {
     dump_outputs {
-      prefix: "/dir/to/dump_y_activations/"
+      directory: "/dir/to/dump_y_activations/"
       layers: "image_data_dummy gen1fc4_1"
       execution_modes: "test"
     }

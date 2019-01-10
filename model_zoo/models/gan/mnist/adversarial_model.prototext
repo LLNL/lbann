@@ -43,7 +43,7 @@ model {
 
   callback {
     dump_outputs {
-      prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_acts_32mb/"
+      directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_acts_32mb/"
       layers: "fc4_tanh sum"
       #layers: "fc4_tanh data sum"
       #batch_interval: 844
