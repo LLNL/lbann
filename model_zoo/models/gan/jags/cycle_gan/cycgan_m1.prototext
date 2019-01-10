@@ -538,7 +538,7 @@ model {
   }
   #callback {
   #  dump_outputs {
-  #    prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
+  #    directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
   #    layers: "image_data_dummy"
   #    execution_modes: "test"
   #  }

@@ -346,7 +346,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_dump_outputs(layer_names,
                                            modes,
                                            params.batch_interval(),
-                                           params.prefix(),
+                                           params.directory(),
                                            params.format());
   }
   if (proto_cb.has_dump_error_signals()) {

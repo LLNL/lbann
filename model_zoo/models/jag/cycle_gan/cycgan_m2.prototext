@@ -524,7 +524,7 @@ model {
   }
   #callback {
   #  dump_outputs {
-  #    prefix: "/dir/to/dump_y_activations/"
+  #    directory: "/dir/to/dump_y_activations/"
   #    batch_interval: 100
   #    layers: "image_data_dummy gen1fc4_1 l_l2_y"
   #    execution_modes: "test"
