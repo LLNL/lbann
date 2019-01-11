@@ -73,11 +73,13 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
       local_var(channel, 0) = sqsum;
     }
     El::Int num_per_sum;
-    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
+    switch (m_stats_aggregation) {
+    case batch_normalization_stats_aggregation::global:
       m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
       m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
       num_per_sum = channel_size * width;
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
+      break;
+    case batch_normalization_stats_aggregation::node_local:
       m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
       m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
       if (m_num_per_sum_cache.count(width) == 0) {
@@ -87,8 +89,12 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
       } else {
         num_per_sum = m_num_per_sum_cache[width];
       }
-    } else {
+      break;
+    case batch_normalization_stats_aggregation::local:
       num_per_sum = channel_size * local_width;
+      break;
+    default:
+      LBANN_ERROR("Unknown batch normalization stats aggregation");
     }
 
     // Compute minibatch statistics
@@ -250,12 +256,18 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
   // Compute error signal
   El::Int num_per_sum;
-  if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
+  switch (m_stats_aggregation) {
+  case batch_normalization_stats_aggregation::global:
     num_per_sum = channel_size * width;
-  } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
+    break;
+  case batch_normalization_stats_aggregation::node_local:
     num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
-  } else {
+    break;
+  case batch_normalization_stats_aggregation::local:
     num_per_sum = channel_size * local_width;
+    break;
+  default:
+    LBANN_ERROR("Unknown batch normalization stats aggregation");
   }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
