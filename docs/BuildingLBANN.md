@@ -73,7 +73,7 @@ The following LLNL-maintained packages are optional.
   cd build
   mkdir <build_dir>
   cd <build_dir>
-  spack env create -d . ../../spack_environments/developer_release_cuda_spack.yaml
+  spack env create -d . ../../spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppcle
   spack install
   spack env loads
   source loads
