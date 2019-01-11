@@ -8,9 +8,12 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${CONDUIT_LIB}:${HDF5_LIB}
 list_file=index10.txt
 
 #CENTRALIZED="TRUE"
+ALLGATHER="TRUE"
 
 if [ "${CENTRALIZED}" == "TRUE" ] ; then
   srun -n 4 ./run_centralized ${list_file}
+elif [ "${ALLGATHER}" == "TRUE" ] ; then
+  srun -n 2 ./run_allgather 'index10.*.txt'
 else
   ./run_distributed ${list_file} 1
 fi

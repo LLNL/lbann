@@ -7,22 +7,26 @@ CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-4.9.3-serial
 CONDUIT_INC=${CONDUIT_DIR}/include
 CONDUIT_LIB=${CONDUIT_DIR}/lib
 LBANN_DIR=../..
+CEREAL_INC=${LBANN_DIR}/build/gnu.Release.quartz.llnl.gov/cereal/src/include
 
 
-all: run_distributed run_centralized
+all: run_distributed run_centralized run_allgather
 
 
 CXXFLAGS=-std=c++11 -g -Wall -O3 -D_JAG_OFFLINE_TOOL_MODE_
 
 run_distributed: sample_list_jag.hpp sample_list_jag_impl.hpp main_distributed.cpp file_utils.o
-	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -fopenmp -o run_distributed main_distributed.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5
+	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -I${CEREAL_INC} -fopenmp -o run_distributed main_distributed.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5
 
 run_centralized: sample_list_jag.hpp sample_list_jag_impl.hpp main_centralized.cpp file_utils.o
-	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -fopenmp -o run_centralized main_centralized.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5 -lmpi
+	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -I${CEREAL_INC} -fopenmp -o run_centralized main_centralized.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5 -lmpi
+
+run_allgather: sample_list_jag.hpp sample_list_jag_impl.hpp main_allgather.cpp file_utils.o
+	${MPICXX} ${CXXFLAGS} -I. -I${CONDUIT_INC} -I${HDF5_INC} -I${CEREAL_INC} -fopenmp -o run_allgather main_allgather.cpp file_utils.o -L${CONDUIT_LIB} -lconduit -lconduit_relay -L${HDF5_LIB} -lhdf5 -lmpi
 
 file_utils.o: ${LBANN_DIR}/src/utils/file_utils.cpp
 	${MPICXX} ${CXXFLAGS} -I. -c ${LBANN_DIR}/src/utils/file_utils.cpp
 
 
 clean:
-	rm -f *.o run_centralized run_distributed
+	rm -f *.o run_centralized run_distributed run_allgather
