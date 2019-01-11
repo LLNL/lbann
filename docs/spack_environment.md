@@ -78,5 +78,5 @@
       buildable: False
       version: [rolling-release]
       paths:
-        spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel-ppcle: /usr/tce/modulefiles/MPI/gcc/7.3.1/spectrum-mpi/rolling-release
+        spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel-ppcle: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
 
