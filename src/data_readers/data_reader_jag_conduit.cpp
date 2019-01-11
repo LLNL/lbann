@@ -176,7 +176,11 @@ int data_reader_jag_conduit::compute_max_num_parallel_readers() {
     set_num_parallel_readers(partitioned_io_buffer::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
-    set_sample_stride(get_num_parallel_readers());
+    if (m_list_per_rank) {
+      set_sample_stride(1);
+    } else {
+      set_sample_stride(get_num_parallel_readers());
+    }
     set_iteration_stride(1);
   } else {
     _THROW_LBANN_EXCEPTION_(get_type(), " unknown io_buffer type: " + m_io_buffer_type);
@@ -1043,6 +1047,16 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points_independent() con
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const {
   return get_slice_points(m_independent_groups);
+}
+
+int data_reader_jag_conduit::get_num_data() const {
+
+  if (m_list_per_rank) {
+    /// @todo this only works if all of the lists are of the same size
+    return (int)m_shuffled_indices.size() * get_num_parallel_readers();
+  }else {
+    return (int)m_shuffled_indices.size();
+  }
 }
 
 int data_reader_jag_conduit::get_num_labels() const {

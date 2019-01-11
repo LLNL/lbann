@@ -356,7 +356,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
-    return (m_current_pos < (int)m_shuffled_indices.size());
+    return (m_current_pos < get_num_data());
   }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
@@ -579,6 +579,14 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
+
+  /// Does the data reader have a unqiue index list per rank
+  virtual bool has_list_per_rank() const { return false; }
+  /// Does the data reader have a unqiue index list per model
+  virtual bool has_list_per_model() const { return false; }
+  /// Does the data reader have a unqiue index list per trainer
+  virtual bool has_list_per_trainer() const { return false; }
+
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);

@@ -22,17 +22,21 @@ struct sample_list_header {
   bool m_is_exclusive;
   /// Number of included samples
   size_t m_included_sample_count;
+  /// Number of excluded samples
+  size_t m_excluded_sample_count;
   size_t m_num_files;
   std::string m_file_dir;
+  std::string m_sample_list_filename;
 
   sample_list_header();
 
   bool is_exclusive() const;
   size_t get_sample_count() const;
   size_t get_num_files() const;
+  const std::string& get_sample_list_filename() const;
   const std::string& get_file_dir() const;
   template <class Archive> void serialize( Archive & ar ) {
-    ar(m_is_exclusive, m_included_sample_count, m_num_files, m_file_dir);
+    ar(m_is_exclusive, m_included_sample_count, m_excluded_sample_count, m_num_files, m_file_dir, m_sample_list_filename);
   }
 };
 
