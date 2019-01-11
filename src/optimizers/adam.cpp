@@ -35,13 +35,7 @@ adam::adam(lbann_comm *comm,
            DataType beta2,
            DataType eps)
   : optimizer(comm, learning_rate),
-    m_beta1(beta1),
-    m_beta2(beta2),
-    m_eps(eps),
-    m_current_beta1(1),
-    m_current_beta2(1),
-    m_moment1(nullptr),
-    m_moment2(nullptr) {}
+    m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
 adam::adam(const adam& other)
   : optimizer(other),
@@ -50,11 +44,8 @@ adam::adam(const adam& other)
     m_eps(other.m_eps),
     m_current_beta1(other.m_current_beta1),
     m_current_beta2(other.m_current_beta2),
-    m_moment1(other.m_moment1),
-    m_moment2(other.m_moment2) {
-  if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
-  if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-}
+    m_moment1(other.m_moment1 ? other.m_moment1->Copy() : nullptr),
+    m_moment2(other.m_moment2 ? other.m_moment2->Copy() : nullptr) {}
 
 adam& adam::operator=(const adam& other) {
   optimizer::operator=(other);
@@ -63,33 +54,11 @@ adam& adam::operator=(const adam& other) {
   m_eps = other.m_eps;
   m_current_beta1 = other.m_current_beta1;
   m_current_beta2 = other.m_current_beta2;
-
-  // Copy moment matrices
-  if (m_moment1 != nullptr && other.m_moment1 != nullptr
-      && m_moment1->DistData() == other.m_moment1->DistData()) {
-    El::Copy(*other.m_moment1, *m_moment1);
-  }
-  else {
-    if (m_moment1 != nullptr) { delete m_moment1; }
-    m_moment1 = other.m_moment1;
-    if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
-  }
-  if (m_moment2 != nullptr && other.m_moment2 != nullptr
-      && m_moment2->DistData() == other.m_moment2->DistData()) {
-    El::Copy(*other.m_moment2, *m_moment2);
-  }
-  else {
-    if (m_moment2 != nullptr) { delete m_moment2; }
-    m_moment2 = other.m_moment2;
-    if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-  }
-
+  m_moment1.reset(other.m_moment1 ?
+                  other.m_moment1->Copy() : nullptr);
+  m_moment2.reset(other.m_moment2 ?
+                  other.m_moment2->Copy() : nullptr);
   return *this;
-}
-
-adam::~adam() {
-  if(m_moment1 != nullptr) { delete m_moment1; }
-  if(m_moment2 != nullptr) { delete m_moment2; }
 }
 
 description adam::get_description() const {
@@ -100,19 +69,36 @@ description adam::get_description() const {
   return desc;
 }
 
+const AbsDistMat& adam::get_moment1() const {
+  if (m_moment1 == nullptr) {
+    LBANN_ERROR(get_type() + " optimizer "
+                + "attempted to access moment1 before it was setup");
+  }
+  return *m_moment1;
+}
+AbsDistMat& adam::get_moment1() {
+  // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
+  return const_cast<AbsDistMat&>(static_cast<const adam&>(*this).get_moment1());
+}
+const AbsDistMat& adam::get_moment2() const {
+  if (m_moment2 == nullptr) {
+    LBANN_ERROR(get_type() + " optimizer "
+                + "attempted to access moment2 before it was setup");
+  }
+  return *m_moment2;
+}
+AbsDistMat& adam::get_moment2() {
+  // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
+  return const_cast<AbsDistMat&>(static_cast<const adam&>(*this).get_moment2());
+}
+
 void adam::setup(weights& w) {
   optimizer::setup(w);
-
-  // Allocate matrices
-  const int height = m_gradient->Height();
-  const int width = m_gradient->Width();
-  m_moment1 = m_gradient->Construct(m_gradient->Grid(),
-                                    m_gradient->Root());
-  m_moment2 = m_gradient->Construct(m_gradient->Grid(),
-                                    m_gradient->Root());
-  El::Zeros(*m_moment1, height, width);
-  El::Zeros(*m_moment2, height, width);
-
+  const auto& gradient = this->get_gradient();
+  m_moment1.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_moment2.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
+  El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
 }
 
 void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
@@ -186,10 +172,10 @@ bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment1);
+  p.write_distmat(persist_type::train, l_name, m_moment1.get());
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment2);
+  p.write_distmat(persist_type::train, l_name, m_moment2.get());
 
   return true;
 }
@@ -207,10 +193,10 @@ bool adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment1);
+  p.read_distmat(persist_type::train, l_name, m_moment1.get());
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment2);
+  p.read_distmat(persist_type::train, l_name, m_moment2.get());
 
   return true;
 }
@@ -245,4 +231,4 @@ bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix)
   return true;
 }
 
-}  // namespace lbann
+} // namespace lbann
