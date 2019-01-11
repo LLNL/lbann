@@ -4,73 +4,73 @@
 
 + Copy the following text into ~/.spack/linux/compilers.yaml
 
-compilers:
-- compiler:
-    environment: {}
-    extra_rpaths: []
-    flags: {}
-    modules: []
-    operating_system: rhel7
-    paths:
-      cc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gcc
-      cxx: /usr/tce/packages/gcc/gcc-7.3.0/bin/g++
-      f77: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
-      fc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
-    spec: gcc@7.3.0
-    target: x86_64
-- compiler:
-    environment: {}
-    extra_rpaths: []
-    flags: {}
-    modules: []
-    operating_system: rhel7
-    paths:
-      cc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gcc
-      cxx: /usr/tce/packages/gcc/gcc-7.3.1/bin/g++
-      f77: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
-      fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
-    spec: gcc@7.3.1
-    target: ppc64le
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-7.3.0/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
+      spec: gcc@7.3.0
+      target: x86_64
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-7.3.1/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
+      spec: gcc@7.3.1
+      target: ppc64le
 
 + Copy the following text into ~/.spack/linux/packages.yaml
 
-packages:
-  all:
-    compiler: [gcc]
-    
-  cmake:
-    variants: ~openssl ~ncurses
-    paths:
-      cmake@3.12.1 arch=linux-rhel7-x86_64:  /usr/tce/packages/cmake/cmake-3.12.1
+  packages:
+    all:
+      compiler: [gcc]
+      
+    cmake:
+      variants: ~openssl ~ncurses
+      paths:
+        cmake@3.12.1 arch=linux-rhel7-x86_64:  /usr/tce/packages/cmake/cmake-3.12.1
 
-  mvapich2:
-    buildable: True
-    version: [2.3]
-    paths:
-      mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-x86_64: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
+    mvapich2:
+      buildable: True
+      version: [2.3]
+      paths:
+        mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-x86_64: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
 
-  hwloc:
-    buildable: False
-    version: [2.0.2]
-    paths:
-      hwloc@2.0.2 arch=linux-rhel7-x86_64: /usr/lib64/libhwloc.so
+    hwloc:
+      buildable: False
+      version: [2.0.2]
+      paths:
+        hwloc@2.0.2 arch=linux-rhel7-x86_64: /usr/lib64/libhwloc.so
 
-  cuda:
-    buildable: False
-    version: [10.0.130]
-    paths:
-      cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
+    cuda:
+      buildable: False
+      version: [10.0.130]
+      paths:
+        cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
 
-  cudnn:
-    buildable: False
-    version: [7.4.2]
-    paths:
-      cudnn@7.4.2 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/cudnn/cudnn-7.1.4/cuda-10.0_x86_64
+    cudnn:
+      buildable: False
+      version: [7.4.2]
+      paths:
+        cudnn@7.4.2 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/cudnn/cudnn-7.1.4/cuda-10.0_x86_64
 
-  nccl:
-    buildable: False
-    version: [2.3]
-    paths:
-      nccl@2.3 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda10.0_x86_64
+    nccl:
+      buildable: False
+      version: [2.3]
+      paths:
+        nccl@2.3 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda10.0_x86_64
 
 

@@ -58,43 +58,47 @@ The following LLNL-maintained packages are optional.
 
 ## Building with [Spack](https://github.com/llnl/spack)
 
-ml gcc/7.3.0
-ml mvapich2/2.3
-spack compiler add gcc@7.3.0
++ Download and install [Spack](https://github.com/llnl/spack)
 
-mkdir build
-cd build
-mkdir <build_dir>
-cd <build_dir>
-spack env create -d . ../../spack_environments/developer_release_cuda_spack.yaml
-spack install
-spack env loads
-source loads
++ Setup your environment
 
-    cmake \
-      -G Ninja \
-      -D CMAKE_BUILD_TYPE:STRING=Release \
-      -D LBANN_WITH_CUDA:BOOL=ON \
-      -D LBANN_WITH_NVPROF:BOOL=ON \
-      -D LBANN_DATATYPE:STRING=float \
-      -D LBANN_WITH_TOPO_AWARE:BOOL=False \
-      -D LBANN_WITH_ALUMINUM:BOOL=True \
-      -D LBANN_WITH_CONDUIT:BOOL=False \
-      -D LBANN_WITH_CUDA:BOOL=True \
-      -D LBANN_WITH_CUDNN:BOOL=True \
-      -D LBANN_WITH_NCCL:BOOL=False \
-      -D LBANN_WITH_SOFTMAX_CUDA:BOOL=True \
-      -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=False \
-      -D LBANN_WITH_TBINF=OFF \
-      -D LBANN_WITH_VTUNE:BOOL=False \
-      -D LBANN_DATATYPE=float \
-      -D CMAKE_INSTALL_PREFIX:PATH=/usr/WS1/vanessen/lbann_spack.git/build/gnu.Release.pascal.llnl.gov \
-      ../..
+  ml gcc/7.3.0
+  ml mvapich2/2.3
 
-Some variation on the theme of `spack install lbann`. bvanessen should
-document the spack flags or whatever they call them that LBANN
-supports. I don't know the current state of spack with respect to its
-building LBANN correctly and/or successfully.
++ Create baseline versions of the user-level :spack configuation files:`spack_environment.md`
+
++ Establish a spack environment and install software dependencies
+
+  mkdir build
+  cd build
+  mkdir <build_dir>
+  cd <build_dir>
+  spack env create -d . ../../spack_environments/developer_release_cuda_spack.yaml
+  spack install
+  spack env loads
+  source loads
+
++ Build locally from source
+
+  cmake \
+    -G Ninja \
+    -D CMAKE_BUILD_TYPE:STRING=Release \
+    -D LBANN_WITH_CUDA:BOOL=ON \
+    -D LBANN_WITH_NVPROF:BOOL=ON \
+    -D LBANN_DATATYPE:STRING=float \
+    -D LBANN_WITH_TOPO_AWARE:BOOL=False \
+    -D LBANN_WITH_ALUMINUM:BOOL=True \
+    -D LBANN_WITH_CONDUIT:BOOL=False \
+    -D LBANN_WITH_CUDA:BOOL=True \
+    -D LBANN_WITH_CUDNN:BOOL=True \
+    -D LBANN_WITH_NCCL:BOOL=False \
+    -D LBANN_WITH_SOFTMAX_CUDA:BOOL=True \
+    -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=False \
+    -D LBANN_WITH_TBINF=OFF \
+    -D LBANN_WITH_VTUNE:BOOL=False \
+    -D LBANN_DATATYPE=float \
+    -D CMAKE_INSTALL_PREFIX:PATH=/usr/WS1/vanessen/lbann_spack.git/build/gnu.Release.pascal.llnl.gov \
+    ../..
 
 ## Buidling with [CMake](https://cmake.org)
 
