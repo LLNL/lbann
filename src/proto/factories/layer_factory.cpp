@@ -494,8 +494,8 @@ Layer* construct_layer(lbann_comm* comm,
         batch_normalization_stats_aggregation::local;
       if (aggr_str == "local" || aggr_str.empty()) {
         aggr = batch_normalization_stats_aggregation::local;
-      } else if (aggr_str == "nodelocal") {
-        aggr = batch_normalization_stats_aggregation::nodelocal;
+      } else if (aggr_str == "node_local") {
+        aggr = batch_normalization_stats_aggregation::node_local;
       } else if (aggr_str == "global") {
         aggr = batch_normalization_stats_aggregation::global;
       } else {

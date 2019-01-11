@@ -36,7 +36,7 @@ enum class batch_normalization_stats_aggregation {
   /** Statistics are aggregated only within a single rank. */
   local,
   /** Statistics are aggregated among every rank in a single node. */
-  nodelocal,
+  node_local,
   /** Statistics are aggregated among every rank in the model. */
   global
 };
@@ -162,7 +162,7 @@ public:
     case batch_normalization_stats_aggregation::local:
       desc.add("Statistics aggregation", "local");
       break;
-    case batch_normalization_stats_aggregation::nodelocal:
+    case batch_normalization_stats_aggregation::node_local:
       desc.add("Statistics aggregation", "node-local");
       break;
     case batch_normalization_stats_aggregation::global:
@@ -209,7 +209,7 @@ protected:
       if (output.DistRank() == 0) {
         std::cerr << err.str() << std::endl;
       }
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::nodelocal
+    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local
                && local_mini_batch_size*m_comm->get_procs_per_node() <= 4) {
       std::stringstream err;
       err << "LBANN warning: "
