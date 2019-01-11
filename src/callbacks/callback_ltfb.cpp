@@ -123,8 +123,8 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       // Exchange optimizer state
       const auto* send_opt = send.get_optimizer();
       auto* recv_opt = recv.get_optimizer();
-      const auto* send_sgd = reinterpret_cast<const sgd*>(send_opt);
-      auto* recv_sgd = reinterpret_cast<sgd*>(recv_opt);
+      const auto* send_sgd = dynamic_cast<const sgd*>(send_opt);
+      auto* recv_sgd = dynamic_cast<sgd*>(recv_opt);
       if (send_sgd != nullptr && recv_sgd != nullptr) {
         El::SendRecv(send_sgd->get_velocity().LockedMatrix(),
                      recv_sgd->get_velocity().Matrix(),
@@ -132,8 +132,8 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
                      partner_rank_in_world,
                      partner_rank_in_world);
       }
-      const auto* send_adam = reinterpret_cast<const adam*>(send_opt);
-      auto* recv_adam = reinterpret_cast<adam*>(recv_opt);
+      const auto* send_adam = dynamic_cast<const adam*>(send_opt);
+      auto* recv_adam = dynamic_cast<adam*>(recv_opt);
       if (send_adam != nullptr && recv_adam != nullptr) {
         El::SendRecv(send_adam->get_moment1().LockedMatrix(),
                      recv_adam->get_moment1().Matrix(),
