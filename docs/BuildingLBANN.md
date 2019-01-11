@@ -60,45 +60,48 @@ The following LLNL-maintained packages are optional.
 
 + Download and install [Spack](https://github.com/llnl/spack)
 
-+ Setup your environment
++ Setup your compiler environment. For example, on LLNL's LC machines,
+  one might load the following modules:
 
-  ml gcc/7.3.0
-  ml mvapich2/2.3
+        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130
 
-+ Create baseline versions of the user-level :spack configuation files:`spack_environment.md`
++ Create baseline versions of the user-level :Spack configuation
+  files, `spack_environment.md`.
 
 + Establish a spack environment and install software dependencies
 
-  mkdir build
-  cd build
-  mkdir <build_dir>
-  cd <build_dir>
-  spack env create -d . ../../spack_environments/developer_release_cuda_spack.yaml
-  spack install
-  spack env loads
-  source loads
+        mkdir build
+        cd build
+        mkdir <build_dir>
+        cd <build_dir>
+        spack env create -d . ../../spack_environments/developer_release_cuda_spack.yaml
+        spack install
+        spack env loads
+        source loads
 
-+ Build locally from source
++ Build locally from source. See below for a list and descriptions of
+  all CMake flags known to LBANN's build system. An example build
+  might be:
 
-  cmake \
-    -G Ninja \
-    -D CMAKE_BUILD_TYPE:STRING=Release \
-    -D LBANN_WITH_CUDA:BOOL=ON \
-    -D LBANN_WITH_NVPROF:BOOL=ON \
-    -D LBANN_DATATYPE:STRING=float \
-    -D LBANN_WITH_TOPO_AWARE:BOOL=False \
-    -D LBANN_WITH_ALUMINUM:BOOL=True \
-    -D LBANN_WITH_CONDUIT:BOOL=False \
-    -D LBANN_WITH_CUDA:BOOL=True \
-    -D LBANN_WITH_CUDNN:BOOL=True \
-    -D LBANN_WITH_NCCL:BOOL=False \
-    -D LBANN_WITH_SOFTMAX_CUDA:BOOL=True \
-    -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=False \
-    -D LBANN_WITH_TBINF=OFF \
-    -D LBANN_WITH_VTUNE:BOOL=False \
-    -D LBANN_DATATYPE=float \
-    -D CMAKE_INSTALL_PREFIX:PATH=/usr/WS1/vanessen/lbann_spack.git/build/gnu.Release.pascal.llnl.gov \
-    ../..
+        cmake \
+          -G Ninja \
+          -D CMAKE_BUILD_TYPE:STRING=Release \
+          -D LBANN_WITH_CUDA:BOOL=ON \
+          -D LBANN_WITH_NVPROF:BOOL=ON \
+          -D LBANN_DATATYPE:STRING=float \
+          -D LBANN_WITH_TOPO_AWARE:BOOL=False \
+          -D LBANN_WITH_ALUMINUM:BOOL=ON \
+          -D LBANN_WITH_CONDUIT:BOOL=OFF \
+          -D LBANN_WITH_CUDA:BOOL=ON \
+          -D LBANN_WITH_CUDNN:BOOL=ON \
+          -D LBANN_WITH_NCCL:BOOL=OFF \
+          -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
+          -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
+          -D LBANN_WITH_TBINF=OFF \
+          -D LBANN_WITH_VTUNE:BOOL=OFF \
+          -D LBANN_DATATYPE=float \
+          -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
+          /path/to/lbann
 
 ## Buidling with [CMake](https://cmake.org)
 
