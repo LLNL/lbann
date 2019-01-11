@@ -187,6 +187,11 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Set every rank to have an independent index list
   void set_list_per_rank(bool flag) { m_list_per_rank = flag; };
 
+  bool has_list_per_rank() const { return m_list_per_rank; }
+  bool has_list_per_model() const { return m_list_per_model; }
+  bool has_list_per_trainer() const { return m_list_per_trainer; }
+
+
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
   int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
   /// Fetch responses of a mini-batch or reuse it from the cache of the leading reader
@@ -222,6 +227,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the slice points for linearized dependent variables
   std::vector<El::Int> get_slice_points_dependent() const;
 
+  int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
   int get_linearized_size(const std::string& desc) const override;

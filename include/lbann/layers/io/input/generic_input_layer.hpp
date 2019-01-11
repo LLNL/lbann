@@ -450,29 +450,67 @@ class generic_input_layer : public io_layer {
    */
   void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
 
-    /// Setup the training data set so that it spans all models
-    m_io_buffers[0]->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size,
-                                                                  get_data_reader(execution_mode::training));
+    generic_data_reader *dr = get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      if(dr->has_list_per_rank()) {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_per_rank_local_index_sets(mini_batch_size, dr);
+      }else {
+        /// Setup the training data set so that it spans all models
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size, dr);
+      }
+    }
 
-    /// Each model uses the entire validation and testing data sets
-    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                               get_data_reader(execution_mode::validation));
-    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                               get_data_reader(execution_mode::testing));
+    dr = get_data_reader(execution_mode::validation);
+    if(dr != nullptr) {
+      if(dr->has_list_per_rank()) {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_per_rank_local_index_sets(mini_batch_size, dr);
+      }else {
+        /// Each model uses the entire validation and testing data sets
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
+      }
+    }
+
+    dr = get_data_reader(execution_mode::testing);
+    if(dr != nullptr) {
+      if(dr->has_list_per_rank()) {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_per_rank_local_index_sets(mini_batch_size, dr);
+      }else {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
+      }
+    }
 
   }
 
   void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
 
-    /// Setup the training data set so that it spans all models
-    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                               get_data_reader(execution_mode::training));
+    generic_data_reader *dr = get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      if(dr->has_list_per_rank()) {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_per_rank_local_index_sets(mini_batch_size, dr);
+      }else {
+        /// Setup the training data set so that it spans all models
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
+      }
+    }
 
-    /// Each model uses the entire validation and testing data sets
-    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                               get_data_reader(execution_mode::validation));
-    m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size,
-                                                               get_data_reader(execution_mode::testing));
+    dr = get_data_reader(execution_mode::validation);
+    if(dr != nullptr) {
+      if(dr->has_list_per_rank()) {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_per_rank_local_index_sets(mini_batch_size, dr);
+      }else {
+        /// Each model uses the entire validation and testing data sets
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
+      }
+    }
+
+    dr = get_data_reader(execution_mode::testing);
+    if(dr != nullptr) {
+      if(dr->has_list_per_rank()) {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_per_rank_local_index_sets(mini_batch_size, dr);
+      }else {
+        m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
+      }
+    }
 
   }
 
