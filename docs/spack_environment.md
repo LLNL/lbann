@@ -4,6 +4,7 @@
 
 + Copy the following text into ~/.spack/linux/compilers.yaml
 
+```
     compilers:
     - compiler:
         environment: {}
@@ -31,9 +32,11 @@
           fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
         spec: gcc@7.3.1
         target: ppc64le
+```
 
 + Copy the following text into ~/.spack/linux/packages.yaml
 
+```
     packages:
       all:
         compiler: [gcc]
@@ -79,3 +82,4 @@
         version: [rolling-release]
         paths:
           spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel-ppcle: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
+```
