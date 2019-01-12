@@ -5,6 +5,13 @@ import sys
 import random
 import time
 
+
+def runme(cmd) :
+  print 'about to run system call:', cmd
+  t = cmd.split()
+  r = subprocess.check_call(t)
+
+
 if len(sys.argv) < 8:
   print '\nusage:', sys.argv[0], 'index_fn sample_mapping_fn num_samples num_lists output_dir output_base_name random_seed [HOST]'
   print 'function: creates "num_lists" sample lists from index_fn;'
@@ -65,29 +72,13 @@ first_fn = output_dir + '/t0_' + output_base_name + '.txt'
 bar_fn = output_dir + '/t_' + output_base_name + '.txt_bar'
 
 print 'constructing trainer file # 0 ... please wait ...'
-cmd = [exe, 
-       '--index_fn=' + index_fn, \
-       '--sample_mapping_fn=' + mapping_fn,    \
-       '--num_samples=' + num_samples,   \
-       '--output_fn=' + first_fn, \
-       '--random_seed=' + seed]
+cmd = exe + ' --index_fn=' + index_fn + ' --sample_mapping_fn=' + mapping_fn \
+          + ' --num_samples=' + num_samples + ' --output_fn=' + first_fn    \
+          + ' --random_seed=' + seed
+runme(cmd)
 
-r = subprocess.check_output( cmd )
-'''
-if r != 0 :
-  print 'xxxxxx', r
-  print 'system call failed: $',
-  for f in cmd : print f,
-  exit(9)
-'''
-
-r = subprocess.check_output(['mv' , first_fn + '_bar', bar_fn])
-'''
-if r != 0 :
-  print 'xxxxxx', r
-  print 'system call failed: $ mv', first_fn + '_bar', bar_fn
-  exit(9)
-'''
+cmd = 'mv ' + first_fn + '_bar ' + bar_fn
+runme(cmd)
 
 filenames = []
 filenames.append(first_fn)
@@ -96,27 +87,18 @@ for j in range(1, num_lists) :
   fn = output_dir + '/t' + str(j) + '_' + output_base_name + '.txt'
   print 'constructing trainer file #', j, '... please wait ...'
 
-  cmd = [exe, '--index_fn=' + index_fn, \
-     '--sample_mapping_fn=' + mapping_fn,    \
-     '--num_samples=' + num_samples,   \
-     '--output_fn=' + fn, \
-     '--random_seed=' + seed]
-  r = subprocess.check_output( cmd )
-  '''
-  if r != 0 :
-    print 'system call failed: $',
-    for f in cmd : print f,
-    exit(9)
-  '''
-
-  r = subprocess.check_output(['mv' , fn + '_bar', bar_fn])
-  '''
-  print 'xxxxxx', r
-  if r != 0 :
-    print 'system call failed: $ mv', first_fn + '_bar', bar_fn
-  '''
+  cmd = exe + ' --index_fn=' + bar_fn + ' --sample_mapping_fn=' + mapping_fn \
+            + ' --num_samples=' + num_samples + ' --output_fn=' + fn    \
+            + ' --random_seed=' + seed
+  runme(cmd)
   filenames.append(fn)
+
+  cmd = 'mv ' + fn + '_bar ' + bar_fn
+  runme(cmd)
 filenames.append(bar_fn)
+
+os.system('chgrp brain ' + output_dir + '/*')
+os.system('chmod 660 ' + output_dir + '/*')
 
 print
 print '=================================================================\n'
