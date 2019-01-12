@@ -74,6 +74,7 @@
             version: [2.3]
             paths:
               nccl@2.3 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda10.0_x86_64
+
           spectrum-mpi:
             buildable: False
             version: [rolling-release]

@@ -58,7 +58,11 @@ The following LLNL-maintained packages are optional.
 
 ## Building with [Spack](https://github.com/llnl/spack)
 
-+ Download and install [Spack](https://github.com/llnl/spack)
++ Download and install [Spack](https://github.com/llnl/spack).
+  Additionally setup shell support as discussed
+  [here][https://spack.readthedocs.io/en/latest/module_file_support.html#id2].
+
+        . ${SPACK_ROOT}/share/spack/setup-env.sh
 
 + Setup your compiler environment. For example, on LLNL's LC machines,
   one might load the following modules:
