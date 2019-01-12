@@ -7,6 +7,7 @@ contain unique indices.
 usage: sanity.py id_mapping_fn bar_fn t0_fn [t1_fn, ...]
 '''
 
+
 import sys
 
 if len(sys.argv) == 1 :
