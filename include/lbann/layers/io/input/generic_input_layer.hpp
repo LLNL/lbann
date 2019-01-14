@@ -277,11 +277,11 @@ class generic_input_layer : public io_layer {
     if(io_buffer->num_samples_ready(mode) > 0) {
       num_samples_in_batch = io_buffer->num_samples_ready(mode);
     }else {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "I/O buffer does not contain valid samples ("<< num_samples_in_batch
-            << ")";
-        throw lbann_exception(err.str());
+        if(!get_data_reader()->position_is_overrun()) {
+          std::stringstream err;
+          err << "I/O buffer does not contain valid samples ("<< num_samples_in_batch << ")";
+          LBANN_ERROR(err.str());
+        }
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {

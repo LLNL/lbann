@@ -520,9 +520,9 @@ model {
   }
   callback {
     dump_outputs {
-      #prefix: "/p/lscratchh/jacobs32/EuroViz/fw_out_loss/"
-      #prefix: "/p/gpfs1/jacobs32/EuroViz2/fw_out_loss/"
-      prefix: "fw_out_loss/"
+      #directory: "/p/lscratchh/jacobs32/EuroViz/fw_out_loss/"
+      #directory: "/p/gpfs1/jacobs32/EuroViz2/fw_out_loss/"
+      directory: "fw_out_loss/"
       layers: "fw_out_loss"
       execution_modes: "test"
       format: "npy"
@@ -539,7 +539,7 @@ model {
 
   #callback {
   #  dump_outputs {
-  #    prefix:"/p/lscratchh/brainusr/jacobs32/EuroViz/"
+  #    directory:"/p/lscratchh/brainusr/jacobs32/EuroViz/"
   #    layers: "squared_error"
   #    execution_modes: "test"
   #  }
