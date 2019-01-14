@@ -1,5 +1,7 @@
 ============================== (Pending) Release Notes: v0.98 ==============================
 Support for new training algorithms:
+- Hyperparameter exploration with Adam optimizers
+- LTFB can perform inter-trainer communication via checkpoint files
 
 Support for new network structures:
 
@@ -14,6 +16,8 @@ Model portability & usability:
 - Output dumping callback exports in CSV, TSV, .npy, or .npz formats
 
 Internal features:
+- Expanded layer documentation
+- Utility class for nicely formatted descriptions
 
 I/O & data readers:
  - Overhauled the I/O system to use an independent background thread

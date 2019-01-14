@@ -5,14 +5,27 @@ import sys
 import random
 import time
 
-if len(sys.argv) < 6:
-  print 'usage:', sys.argv[0], 'index_fn num_samples num_lists output_dir output_base_fn [random_seed]'
-  print 'function: creates "num_lists" sample lists from "index_fn;'
-  print '          each list will contain "num_samples.'
-  print 'Notes: The "output_dir" will be created if it doesn\'t exit;'
-  print '       Output files are of the form: <output_dir>/base_fn_T#_sample_list.txt'
-  print '       If "random_see" is not given, the randum number generator will'
-  print '       be seeded with int(time.time())'
+
+def runme(cmd) :
+  print 'about to run system call:', cmd
+  t = cmd.split()
+  r = subprocess.check_call(t)
+
+
+if len(sys.argv) < 8:
+  print '\nusage:', sys.argv[0], 'index_fn sample_mapping_fn num_samples num_lists output_dir output_base_name random_seed [HOST]'
+  print 'function: creates "num_lists" sample lists from index_fn;'
+  print '          each list will contain "num_samples." Each list is printed'
+  print '          to a separate file'
+  print
+  print 'if your environment doesn\'t contain HOST (e.g: $echo $HOST pascal83) then you'
+  print 'can specify HOST as the final cmd line param'
+  print
+  print 'example invocation, lassen:'
+  print '   $ build_trainer_lists.py /p/gpfs1/brainusr/datasets/10MJAG/1M_B/index.txt /p/gpfs1/brainusr/datasets/10MJAG/1M_B/id_mapping.txt 10000 4 /p/gpfs1/brainusr/datasets/10MJAG/1M_B sample_list 42\n'
+  print
+  print 'example invocation, lustre:'
+  print '   $ build_trainer_lists.py /p/lscratchh/brainusr/datasets/10MJAG/1M_B/index.txt /p/lscratchh/brainusr/datasets/10MJAG/1M_B/id_mapping.txt 10000 4 /p/lscratchh/brainusr/datasets/10MJAG/1M_B sample_list 42\n'
   exit(9)
 
 # defaults; because who doesn't use gnu?
@@ -23,10 +36,29 @@ compiler = 'gnu'
 lbann_dir = subprocess.check_output(['git', 'rev-parse', '--show-toplevel'])[:-1]
 
 # get cluster name
+host = ''
+if len(sys.argv) == 9 :
+  host = sys.argv[8]
+else :
+  try :
+    host = os.environ['HOST']
+  except :
+    print '\nYour environment does not appear to contain the HOST variable;'
+    print 'therefore, please specify HOST as the final argument on the cmd line'
+    exit(9)
+
 cluster = ''
 for x in os.environ['HOST'] :
   if not x.isdigit() :
     cluster += x
+
+index_fn = sys.argv[1]
+mapping_fn = sys.argv[2]
+num_samples = sys.argv[3]
+num_lists = int(sys.argv[4])
+output_dir = sys.argv[5]
+output_base_name = sys.argv[6]
+seed = sys.argv[7]
 
 # get path to the c++ executable
 exe = lbann_dir + '/build/' + compiler + '.' + build + '.' + cluster \
@@ -34,36 +66,42 @@ exe = lbann_dir + '/build/' + compiler + '.' + build + '.' + cluster \
 cur_dir = os.getcwd()
 
 # seed the random number generator
-r_seed = int(time.time())
-if (len(sys.argv) == 7) : 
-  random.seed(int(sys.argv[6]))
+random.seed(seed)
 
-index_fn = sys.argv[1]
-n_samples = sys.argv[2]
-n_trainers = int(sys.argv[3])
-output_dir = sys.argv[4]
-lbann_dir = subprocess.check_output(['mkdir', '-p', sys.argv[4]])
-output_base_fn = sys.argv[5]
+first_fn = output_dir + '/t0_' + output_base_name + '.txt'
+bar_fn = output_dir + '/t_' + output_base_name + '.txt_bar'
 
-first_fn = output_dir + '/' + output_base_fn + '_T_0_sample_list.txt'
-bar_fn =  output_dir + '/' + output_base_fn + '_sample_list_bar.txt'
+print 'constructing trainer file # 0 ... please wait ...'
+cmd = exe + ' --index_fn=' + index_fn + ' --sample_mapping_fn=' + mapping_fn \
+          + ' --num_samples=' + num_samples + ' --output_fn=' + first_fn    \
+          + ' --random_seed=' + seed
+runme(cmd)
 
-print 'constructing trainer file # 0 ... this may take up to a minute ...'
-r = subprocess.check_output([exe, index_fn, n_samples, first_fn, str(r_seed)])
-r = subprocess.check_output(['mv' , first_fn + '_bar', bar_fn])
+cmd = 'mv ' + first_fn + '_bar ' + bar_fn
+runme(cmd)
 
 filenames = []
 filenames.append(first_fn)
 
-for j in range(1, n_trainers) :
-  fn = output_dir + '/' + output_base_fn + '_T_' + str(j) + '_sample_list.txt'
-  print 'constructing trainer file #', j, '... this may take up to a minute ...'
-  r = subprocess.check_output([exe, bar_fn, n_samples, fn, str(r_seed)])
-  r = subprocess.check_output(['mv' , fn + '_bar', bar_fn])
+for j in range(1, num_lists) :
+  fn = output_dir + '/t' + str(j) + '_' + output_base_name + '.txt'
+  print 'constructing trainer file #', j, '... please wait ...'
+
+  cmd = exe + ' --index_fn=' + bar_fn + ' --sample_mapping_fn=' + mapping_fn \
+            + ' --num_samples=' + num_samples + ' --output_fn=' + fn    \
+            + ' --random_seed=' + seed
+  runme(cmd)
   filenames.append(fn)
+
+  cmd = 'mv ' + fn + '_bar ' + bar_fn
+  runme(cmd)
 filenames.append(bar_fn)
 
+os.system('chgrp brain ' + output_dir + '/*')
+os.system('chmod 660 ' + output_dir + '/*')
+
 print
+print '=================================================================\n'
 print 'generated these files:'
 for f in filenames :
   print f
