@@ -69,17 +69,21 @@ The following LLNL-maintained packages are optional.
 
         ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130
 
-+ Create baseline versions of the user-level spack configuation
-  files. See [here](spack_environment.md) for details.
-
 + Establish a spack environment and install software dependencies:
 
         mkdir <build_dir>
         cd <build_dir>
-        spack env create -d . /path/to/lbann/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppcle
+        spack env create -d . /path/to/lbann/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
         spack install
         spack env loads
         source loads
+
+++ Note that the environments provided here have a set of external
+   packages and compilers that are installed on an LLNL LC CZ sytem.
+   Please update these for your system environment.  Alternatively,
+   you can create baseline versions of the user-level spack configuation
+   files and remove the externals and compilers from the spack.yaml
+   file. See [here](spack_environment.md) for details.
 
 + Build locally from source. See below for a list and descriptions of
   all CMake flags known to LBANN's build system. An example build

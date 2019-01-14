@@ -60,14 +60,14 @@
             version: [9.2.88, 10.0.130]
             paths:
               cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
-              cuda@9.2.88 arch=linux-rhel-ppcle: /usr/tce/packages/cuda/cuda-9.2.88/
+              cuda@9.2.88 arch=linux-rhel-ppc64le: /usr/tce/packages/cuda/cuda-9.2.88/
 
           cudnn:
             buildable: False
             version: [7.4.2]
             paths:
               cudnn@7.4.2 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-10.0_x86_64
-              cudnn@7.4.2 arch=linux-rhel-ppcle: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppcle
+              cudnn@7.4.2 arch=linux-rhel-ppc64le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppcle
 
           nccl:
             buildable: False
@@ -79,4 +79,4 @@
             buildable: False
             version: [rolling-release]
             paths:
-              spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel-ppcle: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
+              spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel-ppc64le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
