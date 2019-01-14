@@ -24,7 +24,7 @@ spack:
 # Remove and/or replace these with your site specific packages and paths
 ################################################################################ 
 #  include:
-#    - env_ppc64le.yaml
+#    - externals_llnl_lc_cz.yaml
   packages:
     all:
       providers:
@@ -64,13 +64,14 @@ spack:
       version: [7.4.2]
       paths:
         cudnn@7.4.2 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-10.0_x86_64
-        cudnn@7.4.2 arch=linux-rhel-ppc64le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppcle
+        cudnn@7.4.2 arch=linux-rhel-ppc64le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppc64le
 
     nccl:
       buildable: False
       version: [2.3]
       paths:
         nccl@2.3 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda10.0_x86_64
+        nccl@2.3 arch=linux-rhel7-ppc64le: /usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
 
     spectrum-mpi:
       buildable: False
