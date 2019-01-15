@@ -75,6 +75,7 @@ class sample_list_jag {
   using sample_id_map_t = std::pair<std::string, hid_t>;
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
+  using samples_id_map_v_t = std::vector< sample_id_map_t >;
 
   sample_list_jag();
 
@@ -154,6 +155,7 @@ class sample_list_jag {
   }
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
+  template<typename T> void all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
   void all_gather_packed_lists(lbann_comm& comm);
 
  protected:
@@ -194,7 +196,7 @@ class sample_list_jag {
   samples_t m_sample_list;
 
   /// Maps sample IDs to file names
-  std::vector<sample_id_map_t> m_sample_id_map;
+  samples_id_map_v_t m_sample_id_map;
 
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;
