@@ -153,6 +153,9 @@ class sample_list_jag {
     m_sample_id_map[id].second = h;
   }
 
+  void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
+  void all_gather_packed_lists(lbann_comm& comm);
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message

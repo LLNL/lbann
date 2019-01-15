@@ -796,6 +796,9 @@ void data_reader_jag_conduit::load() {
       std::string ext = get_ext_name(sample_list_file);
       s << basename << "." << ext;
       m_sample_list.write(s.str());
+
+      m_sample_list.all_gather_packed_lists(*m_comm);
+
     } else {
       // model master sends the list
       std::string sample_list_archive;

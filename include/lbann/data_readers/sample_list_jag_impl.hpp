@@ -17,6 +17,9 @@
 #include <unordered_set>
 #include <memory>
 
+#include <cereal/archives/binary.hpp>
+#include <sstream>
+
 namespace lbann {
 
 inline sample_list_header::sample_list_header()
@@ -183,8 +186,8 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   header3 >> hdr.m_file_dir;
 
   if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: data root directory '" + hdr.get_file_dir() + "' does not exist.");
+    LBANN_ERROR(std::string{} + "file " + filename
+                 + " :: data root directory '" + hdr.get_file_dir() + "' does not exist.");
   }
 
   return hdr;
@@ -237,8 +240,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
     const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + filename + "' does not exist.");
+      LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
     }
 
     excluded_sample_indices.reserve(excluded_samples);
@@ -424,6 +426,118 @@ inline void sample_list_jag::get_sample_range_per_part(const size_t p, size_t& s
     sid_start = min_per_partition * p + ((p >= one_more)? one_more : p);
     sid_end = sid_start + min_per_partition + ((p < one_more)? 1u : 0u);
   }
+}
+
+inline void sample_list_jag::all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm) {
+
+  int size_of_list_archive = archive.size();
+
+  std::vector<int> packed_sizes(comm.get_procs_per_model());
+
+  comm.model_all_gather(size_of_list_archive, packed_sizes);
+
+  int total_packed_size = 0;
+
+  std::vector<int> displ;
+  displ.assign(comm.get_procs_per_model()+1, 0);
+
+  for (size_t i = 0u; i < packed_sizes.size(); ++i) {
+    const auto sz = packed_sizes[i];
+    displ[i+1] = displ[i] + sz;
+  }
+  total_packed_size = displ.back();
+
+  if (total_packed_size <= 0) {
+    return;
+  }
+
+  std::cout << "I think that the total packed size is " << total_packed_size << std::endl;
+  for (size_t i = 0u; i < packed_sizes.size(); ++i) {
+    std::cout << "I think that the partial packed size for " << i << " is " << packed_sizes[i] << " with offset " << displ[i] << std::endl;
+  }
+
+  std::string all_samples;
+  all_samples.resize(static_cast<size_t>(total_packed_size));
+
+  //  int num_bytes = static_cast<int>(sizeof(decltype(list_archive.back())) * list_archive.size());
+
+  //  std::vector<int> displ;
+  std::vector<El::byte> local_data(archive.begin(), archive.end());
+  std::vector<El::byte> packed_data(all_samples.begin(), all_samples.end());
+  comm.model_all_gather(local_data,
+                        packed_data,
+                        packed_sizes,
+                        displ);
+
+  //  std::vector<std::string> per_rank_buffers(comm.get_procs_per_model());
+  for (size_t i = 0u; i < packed_sizes.size(); ++i) {
+    std::string& buf = gathered_archive/*per_rank_buffers*/[i];
+    const auto sz = packed_sizes[i];
+    displ[i+1] = displ[i] + sz;
+    std::vector<El::byte>::const_iterator first = packed_data.begin() + displ[i];
+    std::vector<El::byte>::const_iterator last = packed_data.begin() + displ[i] + sz;
+    /*per_rank_buffers[i]*/buf.resize(sz);
+    /*per_rank_buffers[i]*/buf.assign(first, last);//copy(packed_data[displ[i]], packed_data[displ[i] + sz);
+  }
+  return;
+}
+
+inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
+  std::string list_archive;
+  int size_of_list_archive;
+
+  std::stringstream ss;
+  cereal::BinaryOutputArchive oarchive(ss); // Create an output archive
+  // only archive the actual samples_t list as well as the sample_id_map_t
+  oarchive(m_sample_list);
+  list_archive = ss.str();
+  size_of_list_archive = list_archive.size();
+
+  std::cout << size_of_list_archive;
+
+  // m_comm->model_broadcast(m_comm->get_model_master(), size_of_list_archive);
+  // sample_list_archive.resize(size_of_archive);
+
+  //  int my_packed_size = static_cast<int>(size_of_list_archive);
+  std::vector<std::string> per_rank_buffers(comm.get_procs_per_model());
+
+  all_gather_archive(list_archive, per_rank_buffers, comm);
+
+  std::vector<samples_t> per_rank_samples(comm.get_procs_per_model());
+  for (size_t i = 0u; i < per_rank_buffers.size(); ++i) {
+    std::string& buf = per_rank_buffers[i];
+    samples_t& samples = per_rank_samples[i];
+
+    std::stringstream in_ss(buf/*per_rank_buffers[i]*/);
+    cereal::BinaryInputArchive iarchive(in_ss);
+    //    iarchive(per_rank_samples[i]);
+    iarchive(samples);
+
+    //    std::cout << "I am going to print the buffer for rank " << i << " : " << per_rank_samples[i]. << std::endl;
+  }
+
+  samples_t& rank_samples = per_rank_samples[comm.get_rank_in_model()];
+  for(size_t i = 0; i < m_sample_list.size(); i++) {
+    if(m_sample_list[i].first != rank_samples[i].first && m_sample_list[i].second != rank_samples[i].second) {
+      std::cout << "I dont think that hte sample " << i << " matches:"
+                << m_sample_list[i].first << " != " << rank_samples[i].first
+                << " and " <<  m_sample_list[i].second << " != " << rank_samples[i].second
+                << std::endl;
+    }
+  }
+
+  // comm.model_all_gather(reinterpret_cast<El::byte const*>(local_data[0]),
+  //                       reinterpret_cast<El::byte*>(packed_data[0]),
+  //                       packed_sizes,
+  //                       displ);
+  // comm.model_all_gatherv(const_cast<void*>(reinterpret_cast<const void*>(&my_samples[0])),
+  //                num_bytes,
+  //                MPI_BYTE,
+  //                reinterpret_cast<void*>(&all_samples[0]),
+  //                &packed_sizes[0],
+  //                &displ[0],
+  //                MPI_BYTE,
+  //                comm);
 }
 
 
