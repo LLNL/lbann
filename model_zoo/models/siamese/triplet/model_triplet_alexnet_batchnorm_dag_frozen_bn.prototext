@@ -623,7 +623,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -679,7 +679,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -735,7 +735,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -776,7 +776,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -817,7 +817,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -868,7 +868,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_fc6_scale bn_fc6_bias bn_fc6_running_mean bn_fc6_running_variance"
   }
@@ -913,7 +913,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -969,7 +969,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -1025,7 +1025,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -1066,7 +1066,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -1107,7 +1107,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -1158,7 +1158,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_fc6_scale bn_fc6_bias bn_fc6_running_mean bn_fc6_running_variance"
   }
@@ -1203,7 +1203,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -1259,7 +1259,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -1315,7 +1315,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -1356,7 +1356,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -1397,7 +1397,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -1448,7 +1448,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_fc6_scale bn_fc6_bias bn_fc6_running_mean bn_fc6_running_variance"
   }
@@ -1493,7 +1493,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 
@@ -1527,7 +1527,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 

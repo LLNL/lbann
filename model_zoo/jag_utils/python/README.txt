@@ -1,11 +1,7 @@
-As always, run without cmd params for usage
-
-select_samples.py 
-
-  generates sample lists from a master index.txt; it's preferable 
-  (because it's faster) to use lbann/model_zoo/jag_utils/select_samples
-
 build_trainer_lists.py
 
-  This is a wrapper that calls lbann/model_zoo/jag_utils/select_samples
-  to generate a set of sample_list files.
+  This is a wrapper that calls the c++ code:
+    lbann/model_zoo/jag_utils/select_samples
+
+  Function: generates a set of sample_list files
+  s.t, any sample_ID appears in at most one sample_list file.
