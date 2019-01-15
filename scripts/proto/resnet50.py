@@ -21,9 +21,9 @@ class ConvBNRelu2d:
         self.bn_stats_aggregation = bn_stats_aggregation
 
     def __call__(self, x):
-        name = (self.name
+        name = ('{0}_step{1}'.format(self.name, self.step)
                 if self.step
-                else '{0}_step{1}'.format(self.name, self.step))
+                else self.name)
         self.step += 1
         conv = lp.Convolution(name + '_conv', x,
                               num_dims=2,
@@ -66,13 +66,11 @@ class ResBottleneck:
                                            bn_stats_aggregation=bn_stats_aggregation)
         else:
             self.downsample = None
-        self.sum = lp.Sum(name + '_sum', data_layout)
-        self.relu = lp.Relu(name + '_relu', data_layout)
 
     def __call__(self, x):
-        name = (self.name
+        name = ('{0}_step{1}'.format(self.name, self.step)
                 if self.step
-                else '{0}_step{1}'.format(self.name, self.step))
+                else self.name)
         self.step += 1
         conv = self.conv3(self.conv2(self.conv1(x)))
         if self.downsample is None:
@@ -155,7 +153,7 @@ obj = lp.ObjectiveFunction(ce, [lp.L2WeightRegularization(
 top1_metric = lp.Metric('categorical accuracy', top1, '%')
 top5_metric = lp.Metric('top-5 categorical accuracy', top5, '%')
 
-lp.save_model('resnet50.prototext', input, dl, 256, 90, obj,
+lp.save_model('resnet50.prototext', input, 256, 90, obj,
               metrics=[top1_metric, top5_metric],
               callbacks=[lp.CallbackPrint(), lp.CallbackTimer(),
                          lp.CallbackDropFixedLearningRate(

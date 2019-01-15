@@ -22,18 +22,26 @@ class Layer:
 
     def __init__(self, name='', inputs=[], outputs=[],
                  weights=[], data_layout=''):
-        self.name = name if name else 'layer{0}'.format(Layer.num_layers)
-        self.inputs = (inputs
-                       if isinstance(inputs, (list,))
-                       else [inputs])
-        self.outputs = (outputs
-                        if isinstance(outputs, (list,))
-                        else [outputs])
-        self.weights = (weights
-                        if isinstance(weights, (list,))
-                        else [weights])
-        self.data_layout = data_layout
         Layer.num_layers += 1
+        self.name = name if name else 'layer{0}'.format(Layer.num_layers-1)
+        self.inputs = []
+        self.outputs = []
+        self.weights = []
+        self.data_layout = data_layout
+
+        # Initialize inputs, outputs, and weights
+        for l in (inputs
+                  if isinstance(inputs, collections.Iterable)
+                  else [inputs]):
+            self.add_input(l)
+        for l in (outputs
+                  if isinstance(outputs, collections.Iterable)
+                  else [outputs]):
+            self.add_output(output)
+        for w in (weights
+                  if isinstance(weights, collections.Iterable)
+                  else [weights]):
+            self.add_weights(w)
 
     def export_proto(self):
         """Construct protobuf message for the layer."""
@@ -77,8 +85,8 @@ def _create_layer_subclass(type_name, layer_field_name):
     # Sub-class constructor.
     def __init__(self, name='', inputs=[], outputs=[],
                  weights=[], data_layout='', **kwargs):
-        super().__init__(self, name, inputs, outputs,
-                         weights, data_layout)
+        Layer.__init__(self, name, inputs, outputs,
+                       weights, data_layout)
         for field in kwargs:
             if field not in field_names:
                 raise ValueError('Unknown argument {0}'.format(field))
@@ -90,7 +98,7 @@ def _create_layer_subclass(type_name, layer_field_name):
 
     # Method for exporting a protobuf message.
     def export_proto(self):
-        proto = super().export_proto()
+        proto = Layer.export_proto(self)
         layer_message = getattr(proto, layer_field_name)
         layer_message.SetInParent() # Create empty message
         for field_name in field_names:
@@ -355,13 +363,12 @@ def traverse_layer_graph(start_layers):
         layers.append(l)
         visited.add(l)
         for output in l.outputs:
-            if (output not in visited):
-                and all([(input in visited)
-                         for input in output.inputs])):
+            if ((output not in visited)
+                and all([(i in visited) for i in output.inputs])):
                 stack.append(output)
     return layers
 
-def save_model(filename, layers, data_layout, mini_batch_size, epochs,
+def save_model(filename, layers, mini_batch_size, epochs,
                objective_func, metrics=[], callbacks=[]):
     """Save a model to filename.
 
@@ -369,7 +376,6 @@ def save_model(filename, layers, data_layout, mini_batch_size, epochs,
 
     """
     pb = lbann_pb2.LbannPB()
-    pb.model.data_layout = data_layout
     pb.model.mini_batch_size = mini_batch_size
     pb.model.block_size = 256  # TODO: Make configurable.
     pb.model.num_epochs = epochs
@@ -382,7 +388,7 @@ def save_model(filename, layers, data_layout, mini_batch_size, epochs,
     for callback in callbacks:
         callback.proto(pb.model)
     layers = traverse_layer_graph(layers)
-    pb.model.extend([l.export_proto() for l in layers])
+    pb.model.layer.extend([l.export_proto() for l in layers])
     with open(filename, 'wb') as f:
         f.write(google.protobuf.text_format.MessageToString(
             pb, use_index_order=True).encode())
