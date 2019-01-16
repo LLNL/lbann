@@ -288,7 +288,7 @@ struct CUDAClock {
     FORCE_CHECK_CUDA(cudaEventCreate(&m_ev));
   }
   ~CUDAClock() {
-    FORCE_CHECK_CUDA(cudaEventDestroy(m_ev));
+    cudaEventDestroy(m_ev);
   }
   void record(cudaStream_t s=0) {
     FORCE_CHECK_CUDA(cudaEventRecord(m_ev, s));
