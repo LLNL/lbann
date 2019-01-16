@@ -76,36 +76,6 @@
 
 namespace lbann {
 
-hdf5_file_handles::~hdf5_file_handles() {
-  clear();
-}
-
-void hdf5_file_handles::clear() {
-  for (auto& h: m_open_hdf5_files) {
-    conduit::relay::io::hdf5_close_file(h.second);
-  }
-  m_open_hdf5_files.clear();
-  m_open_hdf5_handles.clear();
-}
-
-bool hdf5_file_handles::add(const std::string fname, hid_t hnd) {
-  auto ret1 = m_open_hdf5_files.insert(std::pair<std::string, hid_t>(fname, hnd));
-  auto ret2 = m_open_hdf5_handles.insert(std::pair<hid_t, std::string>(hnd, fname));
-  return ret1.second && ret2.second;
-}
-
-hid_t hdf5_file_handles::get(const std::string& fname) const {
-  std::unordered_map<std::string, hid_t>::const_iterator it = m_open_hdf5_files.find(fname);
-  if (it == m_open_hdf5_files.end()) {
-    return static_cast<hid_t>(-1);
-  }
-  return it->second;
-}
-
-std::string hdf5_file_handles::get(const hid_t h) const {
-  return peek_map(m_open_hdf5_handles, h);
-}
-
 std::unordered_map<std::string, int> data_reader_jag_conduit::m_num_local_readers;
 
 const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
@@ -145,14 +115,6 @@ int data_reader_jag_conduit::get_local_id(const std::string role) const {
   return m_local_reader_id;
 }
 
-void data_reader_jag_conduit::set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f) {
-  m_open_hdf5_files = f;
-}
-
-std::shared_ptr<hdf5_file_handles>& data_reader_jag_conduit::get_open_hdf5_files() {
-  return m_open_hdf5_files;
-}
-
 void data_reader_jag_conduit::set_leading_reader(data_reader_jag_conduit* r) {
   m_leading_reader = r;
 }
@@ -167,8 +129,6 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
     return;
   }
   generic_data_reader::shuffle_indices(gen);
-
-  //  m_open_hdf5_files->clear();
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
@@ -202,7 +162,6 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
-  m_open_hdf5_files = std::make_shared<hdf5_file_handles>();
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
@@ -235,7 +194,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_input_prefix_filter = rhs.m_input_prefix_filter;
   m_io_buffer_type = rhs.m_io_buffer_type;
   m_local_reader_id = rhs.m_local_reader_id;
-  m_open_hdf5_files = rhs.m_open_hdf5_files;
   //TODO: need  to make sure this is what we want
   m_leading_reader = rhs.m_leading_reader;
 
@@ -300,7 +258,6 @@ void data_reader_jag_conduit::set_defaults() {
   m_input_prefix_filter.clear();
   m_io_buffer_type = "";
   m_local_reader_id = 0;
-  m_open_hdf5_files = nullptr;
   m_leading_reader = this;
   m_cached_data_mb_size = 0;
   m_cached_response_mb_size = 0;
@@ -363,8 +320,8 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const std::string path = sample_name + key;
 
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
-                                        " for sample "+ sample_name);
+    LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
+                " for sample "+ sample_name);
     return false;
   }
 
@@ -779,7 +736,7 @@ void data_reader_jag_conduit::load() {
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
 
-  if (my_rank >= num_readers) {
+  if (my_rank >= num_readers) { /// @todo this should go away it is broken
     // Make sure to have all the reader instances be aware of the number of
     // samples in use regardless of whether it participates data ingestion
     // or not.
@@ -789,17 +746,24 @@ void data_reader_jag_conduit::load() {
   } else {
     /// The use of these flags need to be updated to properly separate
     /// how index lists are used between trainers, models, and ranks
-    if (m_list_per_trainer || m_list_per_model || m_list_per_rank) {
-      load_list_of_samples(sample_list_file);
+    /// @todo m_list_per_trainer || m_list_per_model
+    if (m_list_per_rank) {
+      load_list_of_samples(sample_list_file, m_comm->get_procs_per_model(), m_comm->get_rank_in_model());
       std::stringstream s;
       std::string basename = get_basename_without_ext(sample_list_file);
       std::string ext = get_ext_name(sample_list_file);
-      s << basename << "." << ext;
+      s << "r" << m_comm->get_rank_in_model() << basename << "." << ext;
+      m_sample_list.write(s.str());
+    } else {
+      load_list_of_samples(sample_list_file, m_comm->get_procs_per_model(), m_comm->get_rank_in_model());
+      m_sample_list.all_gather_packed_lists(*m_comm);
+      std::stringstream s;
+      std::string basename = get_basename_without_ext(sample_list_file);
+      std::string ext = get_ext_name(sample_list_file);
+      s << "r" << m_comm->get_rank_in_model() << "_per_rank_" << basename << "." << ext;
       m_sample_list.write(s.str());
 
-      m_sample_list.all_gather_packed_lists(*m_comm);
-
-    } else {
+#if 0
       // model master sends the list
       std::string sample_list_archive;
       int size_of_archive;
@@ -827,6 +791,7 @@ void data_reader_jag_conduit::load() {
         load_list_of_samples_from_archive(sample_list_archive);
         open_all_conduit_files();
       }
+#endif
     }
 
     if (!m_is_data_loaded) {
@@ -852,10 +817,10 @@ void data_reader_jag_conduit::load() {
   select_subset_of_data();
 }
 
-void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
+void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
   // load the sample list
   double tm1 = get_time();
-  m_sample_list.load(sample_list_file);
+  m_sample_list.load(sample_list_file, stride, offset);
   double tm2 = get_time();
 
   if (is_master()) {
@@ -879,7 +844,7 @@ void data_reader_jag_conduit::load_list_of_samples_from_archive(const std::strin
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-
+#if 0
 hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) {
   if (!check_if_file_exists(conduit_file_path)) {
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
@@ -905,7 +870,6 @@ hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file
   if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
     _THROW_LBANN_EXCEPTION_(get_type(), std::string(" Invalid file handle for ") + conduit_file_path);
   }
-  m_open_hdf5_files->add(conduit_file_path, hdf5_file_hnd);
 
   return hdf5_file_hnd;
 }
@@ -920,6 +884,7 @@ void data_reader_jag_conduit::open_all_conduit_files() {
     m_sample_list.set_samples_hdf5_handle(id, h);
   }
 }
+#endif
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
   return m_num_img_srcs;

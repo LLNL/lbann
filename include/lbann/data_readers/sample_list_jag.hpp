@@ -12,6 +12,7 @@
 #include <mpi.h>
 #endif
 
+#include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/utility.hpp>
@@ -89,7 +90,7 @@ class sample_list_jag {
   const sample_list_indexer& get_indexer() const;
 
   /// Load a sample list file
-  void load(const std::string& samplelist_file);
+  void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
 
   /// Load the header of a sample list file
   sample_list_header load_header(const std::string& samplelist_file) const;
@@ -155,7 +156,7 @@ class sample_list_jag {
   }
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
-  template<typename T> void all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
+  template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
   void all_gather_packed_lists(lbann_comm& comm);
 
  protected:
@@ -170,13 +171,13 @@ class sample_list_jag {
   hid_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
-  void read_exclusive_list(std::istream& istrm);
+  void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
 
   /// read the body of inclusive sample list
-  void read_inclusive_list(std::istream& istrm);
+  void read_inclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
 
   /// Reads a sample list and populates the internal list
-  size_t get_samples_per_file(std::istream& istrm, const std::string& filename);
+  size_t get_samples_per_file(std::istream& istrm, const std::string& filename, size_t stride=1, size_t offset=0);
 
   /// Compute the sample index range that partition p covers
   void get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const;

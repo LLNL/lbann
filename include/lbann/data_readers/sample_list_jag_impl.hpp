@@ -97,9 +97,9 @@ inline const sample_list_indexer& sample_list_jag::get_indexer() const {
 }
 
 
-inline void sample_list_jag::load(const std::string& samplelist_file) {
+inline void sample_list_jag::load(const std::string& samplelist_file, size_t stride, size_t offset) {
   std::ifstream istr(samplelist_file);
-  get_samples_per_file(istr, samplelist_file);
+  get_samples_per_file(istr, samplelist_file, stride, offset);
   istr.close();
 }
 
@@ -112,7 +112,7 @@ inline sample_list_header sample_list_jag::load_header(const std::string& sample
 
 inline void sample_list_jag::load_from_string(const std::string& samplelist) {
   std::istringstream istr(samplelist);
-  get_samples_per_file(istr, "<LOAD_FROM_STRING>");
+  get_samples_per_file(istr, "<LOAD_FROM_STRING>", 1, 0);
 }
 
 
@@ -212,10 +212,10 @@ inline hid_t sample_list_jag::get_conduit_bundle_samples(std::string conduit_fil
                 + std::to_string(excluded_samples));
   }
 
-  return hdf5_file_hnd;;
+  return hdf5_file_hnd;
 }
 
-inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
+inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt_files = 0u;
   std::string line;
@@ -227,6 +227,10 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
     }
     if (cnt_files++ >= m_header.get_num_files()) {
       break;
+    }
+    // Check to see if there is a strided load and skip the lines that are not for this rank
+    if ((cnt_files-1)%stride != offset) {
+      continue;
     }
 
     std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
@@ -277,15 +281,15 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
       m_file_map[filename] = sample_names.size();
     }
 
+    sample_id_t index = m_sample_id_map.size();
+    m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+
     size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
       std::unordered_set<std::string>::const_iterator found = excluded_sample_indices.find(s);
       if (found != excluded_sample_indices.cend()) {
         continue;
       }
-
-      sample_id_t index = m_sample_id_map.size();
-      m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
       m_sample_list.emplace_back(index, s);
       valid_sample_count++;
     }
@@ -311,7 +315,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm) {
 }
 
 
-inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
+  inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt_files = 0u;
   std::string line;
@@ -323,6 +327,10 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
     }
     if (cnt_files++ >= m_header.get_num_files()) {
       break;
+    }
+    // Check to see if there is a strided load and skip the lines that are not for this rank
+    if ((cnt_files-1)%stride != offset) {
+      continue;
     }
 
     std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
@@ -360,6 +368,9 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
 
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
+    sample_id_t index = m_sample_id_map.size();
+    m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+
     size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
       std::string sample_name;;
@@ -368,8 +379,6 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
       if (found == set_of_samples.cend()) {
         LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name);
       }
-      sample_id_t index = m_sample_id_map.size();
-      m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
       m_sample_list.emplace_back(index, sample_name);
       valid_sample_count++;
     }
@@ -390,17 +399,17 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm) {
 }
 
 
-inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm, const std::string& filename) {
+inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm, const std::string& filename, size_t stride, size_t offset) {
   m_header = read_header(istrm, filename);
   m_sample_list.reserve(m_header.get_sample_count());
 
   if (m_header.is_exclusive()) {
-    read_exclusive_list(istrm);
+    read_exclusive_list(istrm, stride, offset);
   } else {
-    read_inclusive_list(istrm);
+    read_inclusive_list(istrm, stride, offset);
   }
 
-  if(m_header.get_sample_count() != m_sample_list.size()) {
+  if(stride == 1 && m_header.get_sample_count() != m_sample_list.size()) {
     LBANN_ERROR(std::string("Sample list count ")
                 + std::to_string(m_header.get_sample_count())
                 + std::string(" does not equal sample list size ")
@@ -471,7 +480,7 @@ inline void sample_list_jag::all_gather_archive(const std::string &archive, std:
 }
 
 template<typename T>
-inline void sample_list_jag::all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm) {
+inline size_t sample_list_jag::all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm) {
   std::string archive;
   std::stringstream ss;
   cereal::BinaryOutputArchive oarchive(ss);
@@ -484,6 +493,7 @@ inline void sample_list_jag::all_gather_field(T data, std::vector<T>& gathered_d
 
   std::vector<T> per_rank_data(comm.get_procs_per_model());
 
+  size_t gathered_field_size = 0;
   for (size_t i = 0u; i < gathered_archive.size(); ++i) {
     std::string& buf = gathered_archive[i];
     T& tmp = gathered_data[i];
@@ -491,34 +501,66 @@ inline void sample_list_jag::all_gather_field(T data, std::vector<T>& gathered_d
     std::stringstream in_ss(buf);
     cereal::BinaryInputArchive iarchive(in_ss);
     iarchive(tmp);
+    gathered_field_size += tmp.size();
   }
-  return;
+  return gathered_field_size;
 }
 
 inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
-  std::vector<samples_t> per_rank_samples(comm.get_procs_per_model());
-  std::vector<samples_id_map_v_t> per_rank_sample_id_map(comm.get_procs_per_model());
+  int num_ranks = comm.get_procs_per_model();
+  std::vector<samples_t> per_rank_samples(num_ranks);
+  std::vector<samples_id_map_v_t> per_rank_sample_id_map(num_ranks);
+  std::vector<std::unordered_map<std::string, size_t>> per_rank_file_map(num_ranks);
 
-  all_gather_field(m_sample_list, per_rank_samples, comm);
-  all_gather_field(m_sample_id_map, per_rank_sample_id_map, comm);
+  size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
+  size_t num_ids = all_gather_field(m_sample_id_map, per_rank_sample_id_map, comm);
+  size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
 
-  samples_t& rank_samples = per_rank_samples[comm.get_rank_in_model()];
-  for(size_t i = 0; i < m_sample_list.size(); i++) {
-    if(m_sample_list[i].first != rank_samples[i].first && m_sample_list[i].second != rank_samples[i].second) {
-      std::cout << "I dont think that hte sample " << i << " matches:"
-                << m_sample_list[i].first << " != " << rank_samples[i].first
-                << " and " <<  m_sample_list[i].second << " != " << rank_samples[i].second
-                << std::endl;
-    }
+  // Close the existing open files
+  for(auto f : m_sample_id_map) {
+    conduit::relay::io::hdf5_close_file(f.second);
   }
 
-  samples_id_map_v_t& rank_sample_id_map = per_rank_sample_id_map[comm.get_rank_in_model()];
-  for(size_t i = 0; i < m_sample_id_map.size(); i++) {
-    if(m_sample_id_map[i].first != rank_sample_id_map[i].first && m_sample_id_map[i].second != rank_sample_id_map[i].second) {
-      std::cout << "I dont think that hte sample id map " << i << " matches:"
-                << m_sample_id_map[i].first << " != " << rank_sample_id_map[i].first
-                << " and " <<  m_sample_id_map[i].second << " != " << rank_sample_id_map[i].second
-                << std::endl;
+  m_sample_list.clear();
+  m_sample_id_map.clear();
+  m_sample_list.reserve(num_samples);
+  m_sample_id_map.reserve(num_ids);
+  m_file_map.reserve(num_files);
+
+  for(int r = 0; r < num_ranks; r++) {
+    const samples_t& sample_list = per_rank_samples[r];
+    const samples_id_map_v_t& sample_id_map = per_rank_sample_id_map[r];
+    const std::unordered_map<std::string, size_t>& file_map = per_rank_file_map[r];
+    for (const auto& s : sample_list) {
+      sample_id_t index = s.first;
+      const std::string& filename = sample_id_map[index].first;
+      if(index >= m_sample_id_map.size()
+         || (m_sample_id_map.back()/*[m_sample_id_map.size()-1]*/.first != filename)) {
+        index = m_sample_id_map.size();
+
+        // Open the file on this rank
+        const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
+        if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
+          LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
+        }
+        hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+        if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+          LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
+        }
+        m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+        // Update the file map structure
+        if(m_file_map.count(filename) == 0) {
+          m_file_map[filename] = file_map.at(filename);
+        }
+      }else {
+        for(size_t i = 0; i < m_sample_id_map.size(); i++) {
+          if(filename == m_sample_id_map[i].first) {
+            index = i;
+            break;
+          }
+        }
+      }
+      m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
   }
 

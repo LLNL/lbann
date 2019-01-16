@@ -43,37 +43,6 @@
 #include "lbann/data_readers/sample_list_jag.hpp"
 
 namespace lbann {
-
-/**
- * Store the handles of open hdf5 files, and close files at the end of the
- * life time of this container object.
- */
-class hdf5_file_handles {
- protected:
-  std::unordered_map<std::string, hid_t> m_open_hdf5_files;
-  std::map<hid_t, std::string> m_open_hdf5_handles;
-
- public:
-  ~hdf5_file_handles();
-
-  /// Closes all the open files and clear the information
-  void clear();
-
-  /// Add a handle that corresponds to the filename fname
-  bool add(const std::string fname, hid_t hnd);
-  /**
-   *  Returns the handle that corresponds to the given file name.
-   *  Reuturns a negative value if not found.
-   */
-  hid_t get(const std::string& fname) const;
-
-  std::string get(const hid_t h) const;
-
-  /// Returns the read-only access to the internal data
-  const std::unordered_map<std::string, hid_t>& get() const { return m_open_hdf5_files; }
-};
-
-
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
  */
@@ -168,9 +137,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Get the id of this local instance
   int get_local_id(const std::string role) const;
   /// Set the set of open hdf5 data files
-  void set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f);
-  /// Get the set of open hdf5 data files
-  std::shared_ptr<hdf5_file_handles>& get_open_hdf5_files();
+  // void set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f);
+  // /// Get the set of open hdf5 data files
+  // std::shared_ptr<hdf5_file_handles>& get_open_hdf5_files();
   /// Set the leader of local data reader group
   void set_leading_reader(data_reader_jag_conduit* r);
   /// Get the leader of local data reader group
@@ -341,7 +310,7 @@ class data_reader_jag_conduit : public generic_data_reader {
    */
   bool check_num_parallel_readers(long data_set_size);
   /// Rely on pre-determined list of samples.
-  void load_list_of_samples(const std::string filename);
+  void load_list_of_samples(const std::string filename, size_t stride=1, size_t offset=0);
   /// Load the sample list from a serialized archive from another rank
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
 
@@ -349,11 +318,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
+#if 0
   /// Open a conduit file and register the open file descriptor
   hid_t open_conduit_file(const std::string& conduit_file_path);
 
   /// Open all conduit files for all the samples to cache the file descriptor
   void open_all_conduit_files();
+#endif
 
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
@@ -447,9 +418,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   static std::unordered_map<std::string, int> m_num_local_readers;
   /// locally addressable id in case of multiple data reader instances attached to a model
   int m_local_reader_id;
-
-  /// Shared set of the handles of open HDF5 files
-  std::shared_ptr<hdf5_file_handles> m_open_hdf5_files;
 
   /**
    * The leading data reader among the local readers, which actually does the
