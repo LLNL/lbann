@@ -21,3 +21,12 @@ See [`example/lbann2onnx.py`](example/lbann2onnx.py) for details.
 
 ## Support Status
 See [`docs/l2o.md`](docs/l2o.md) and [`docs/o2l.md`](docs/o2l.md) for details.
+
+## Example: [MNIST](/model_zoo/models/simple_mnist/model_mnist_simple_1.prototext)
+See [`viz/`](viz/) for more details.
+
+### LBANN (vizualized with [viz.py](/viz/viz.py))
+<img src="viz/mnist/mnist_lbann.png" width="200" />
+
+### ONNX (vizualized with [Netron](https://github.com/lutzroeder/netron))
+<img src="viz/mnist/mnist_onnx_netron.png" width="200" />
