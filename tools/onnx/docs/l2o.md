@@ -20,7 +20,7 @@
   * `reduction`
 * [Math Layers](../lbann_onnx/l2o/layers/math.py)
   * `relu`
-  * `relu`
+  * `leaky_relu`
   * `sigmoid`
   * `tanh`
   * `softmax`
