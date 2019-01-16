@@ -207,24 +207,24 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
                                          "dummy"])):
         return {}
 
+    if l.HasField("split"):
+        if l.name not in tensorShapes.keys():
+            lbann_onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(l.name) \
+                                       + " This error may happen when you set incorret an input tensor name.")
+            lbann_onnx.util.printParsingState(l, tensorShapes)
+            exit()
+
+        ipt = onnx.helper.make_tensor_value_info(name="{}_0".format(l.name),
+                                                 elem_type=lbann_onnx.ELEM_TYPE,
+                                                 shape=tensorShapes[l.name])
+
+        return {"inputs": [ipt]}
+
     lbannInputs = list(map(lambda x: "{}_0".format(x),
                            l.parents.split(" ") if l.parents != "" else []))
     lbannOutputs = l.children.split(" ") if len(l.children) > 0 else []
 
     for f in LAYERS.keys():
-        if l.HasField("split"):
-            if l.name not in tensorShapes.keys():
-                lbann_onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(l.name) \
-                                           + " This error may happen when you set incorret an input tensor name.")
-                lbann_onnx.util.printParsingState(l, tensorShapes)
-                exit()
-
-            ipt = onnx.helper.make_tensor_value_info(name="{}_0".format(l.name),
-                                                     elem_type=lbann_onnx.ELEM_TYPE,
-                                                     shape=tensorShapes[l.name])
-
-            return {"inputs": [ipt]}
-
         if l.HasField(f):
             for i in lbannInputs:
                 if not i in tensorShapes.keys():
@@ -237,7 +237,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
                 arg = list(filter(lambda x: x.name == l.unpooling.pooling_layer, knownNodes))[0]
 
             ret = LAYERS[f](arg,
-                               list(map(lambda x: tensorShapes[x], lbannInputs)))
+                            list(map(lambda x: tensorShapes[x], lbannInputs)))
             if ret is None:
                 return {}
 
