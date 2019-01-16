@@ -1,21 +1,26 @@
-import lbann_proto as lp
-import blocks as b
+from proto import lbann_proto as lp
+from proto import blocks as b
 
 dl = 'data_parallel'
 blocks = [3, 4, 6, 3]  # Blocks for ResNet-50.
-bn_global = True
+bn_stats_aggregation = 'local'
 
 # Create the layers.
 input = lp.Input('data', dl, io_buffer='partitioned')
 images = lp.Split('images', dl)
 labels = lp.Split('labels', dl)
-conv1 = b.ConvBNRelu2d('conv1', dl, 64, 7, stride=2, padding=3, bn_global=bn_global)
+conv1 = b.ConvBNRelu2d('conv1', dl, 64, 7, stride=2, padding=3,
+                       bn_stats_aggregation=bn_stats_aggregation)
 pool1 = lp.Pooling('pool1', dl, num_dims=2, has_vectors=False, pool_dims_i=3,
                    pool_pads_i=1, pool_strides_i=2, pool_mode='max')
-layer1 = b.ResBlock('block1', dl, blocks[0], 64, 256, stride=1, bn_global=bn_global)
-layer2 = b.ResBlock('block2', dl, blocks[1], 128, 512, stride=2, bn_global=bn_global)
-layer3 = b.ResBlock('block3', dl, blocks[2], 256, 1024, stride=2, bn_global=bn_global)
-layer4 = b.ResBlock('block4', dl, blocks[3], 512, 2048, stride=2, bn_global=bn_global)
+layer1 = b.ResBlock('block1', dl, blocks[0], 64, 256, stride=1,
+                    bn_stats_aggregation=bn_stats_aggregation)
+layer2 = b.ResBlock('block2', dl, blocks[1], 128, 512, stride=2,
+                    bn_stats_aggregation=bn_stats_aggregation)
+layer3 = b.ResBlock('block3', dl, blocks[2], 256, 1024, stride=2,
+                    bn_stats_aggregation=bn_stats_aggregation)
+layer4 = b.ResBlock('block4', dl, blocks[3], 512, 2048, stride=2,
+                    bn_stats_aggregation=bn_stats_aggregation)
 avgpool = lp.Pooling('avgpool', dl, num_dims=2, has_vectors=False, pool_dims_i=7,
                      pool_pads_i=0, pool_strides_i=1, pool_mode='average')
 fc = lp.FullyConnected('fc1000', dl, num_neurons=1000, has_bias=False)
