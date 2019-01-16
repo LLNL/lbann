@@ -17,7 +17,7 @@ The Python packages of ONNX, NumPy and Prootbuf can be install via `pip3 install
    * This will generate converted ONNX models if you set `SAVE_ONNX=True`.
 
 ## How to Use
-See `example/lbann_to_onnx.py` for details.
+See [`example/lbann_to_onnx.py`](example/lbann_to_onnx.py) for details.
 
 ## Support Status
-See `docs/l2o.md` and `docs/o2l.md` for details.
+See [`docs/l2o.md`](docs/l2o.md) and [`docs/o2l.md`](docs/o2l.md) for details.
