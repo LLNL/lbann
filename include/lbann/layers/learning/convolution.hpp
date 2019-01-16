@@ -370,13 +370,15 @@ protected:
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
     if (this->distconv_enabled()) {
-      int stencil_h = (this->m_kernel_dims[2] - 1) / 2;
-      int stencil_w = (this->m_kernel_dims[3] - 1) / 2;
+      int stencil_h = (this->m_kernel_dims[2] - 1) / 2
+          * this->m_dilations[0];
+      int stencil_w = (this->m_kernel_dims[3] - 1) / 2
+          * this->m_dilations[1];
       dc::Array4 overlap(0);
-      if (this->get_parallel_strategy().width_groups > 1) {
+      if (this->get_parallel_strategy().width_splits > 1) {
         overlap[0] = stencil_w;
       }
-      if (this->get_parallel_strategy().height_groups > 1) {
+      if (this->get_parallel_strategy().height_splits > 1) {
         overlap[1] = stencil_h;
       }
       auto &prev_activations_dist = dists[this][0];

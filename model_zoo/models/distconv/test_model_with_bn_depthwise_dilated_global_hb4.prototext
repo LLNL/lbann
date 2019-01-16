@@ -226,6 +226,7 @@ model {
     parallel_strategy {
       sample_groups: 1
       height_groups: 4
+      height_splits: 1
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
