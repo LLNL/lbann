@@ -129,31 +129,39 @@ top5 = lp.TopKCategoricalAccuracy('top5_accuracy', [softmax, labels], k=5)
 layers = lp.traverse_layer_graph(input)
 
 # Explicitly set up weights for all layers.
-weights = []  # For saving the non-batchnorm weights.
-def setup_weights(l):
+weights = []
+l2_reg_weights = []
+for l in layers:
     if type(l) == lp.Convolution:
-        w = l.add_weights(lp.HeNormalInitializer(), name_suffix='_kernel')
-        weights.append(w)
+        kernel = lp.Weights(l.name + '_kernel', lp.HeNormalInitializer())
+        l.add_weights(kernel)
+        weights.append(kernel)
+        l2_reg_weights.append(kernel)
     elif type(l) == lp.BatchNormalization:
-        # Set the initial scale of the last BN of each residual block to be 0.
-        # A bit hackish, this assumes the particular naming scheme.
-        if l.name.endswith('_conv3_bn'):
-            l.add_weights(lp.ConstantInitializer(value=0.0), name_suffix='_scale')
-        else:
-            l.add_weights(lp.ConstantInitializer(value=1.0), name_suffix='_scale')
-        l.add_weights(lp.ConstantInitializer(value=0.0), name_suffix='_bias')
+        init_scale = 0.0 if ('conv3' in l.name) else 1.0
+        scale = lp.Weights(l.name + '_scale',
+                           lp.ConstantInitializer(value=init_scale))
+        bias = lp.Weights(l.name + '_bias',
+                          lp.ConstantInitializer(value=0.0))
+        l.add_weights(scale)
+        l.add_weights(bias)
+        weights.extend([scale, bias])
     elif type(l) == lp.FullyConnected:
-        w = l.add_weights(lp.NormalInitializer(mean=0.0, standard_deviation=0.01))
-        weights.append(w)
-map(setup_weights, layers)
+        matrix = lp.Weights(l.name + '_matrix',
+                            lp.NormalInitializer(mean=0.0, standard_deviation=0.01))
+        l.add_weights(matrix)
+        weights.append(matrix)
+        l2_reg_weights.append(matrix)
 
 # Objective function/metrics.
 obj = lp.ObjectiveFunction(ce, [lp.L2WeightRegularization(
-    scale_factor=1e-4, weights=weights)])
+    scale_factor=1e-4, weights=l2_reg_weights)])
 top1_metric = lp.Metric('categorical accuracy', top1, '%')
 top5_metric = lp.Metric('top-5 categorical accuracy', top5, '%')
 
-lp.save_model('resnet50.prototext', input, 256, 90, obj,
+lp.save_model('resnet50.prototext', 256, 90, obj,
+              layers=layers,
+              weights=weights,
               metrics=[top1_metric, top5_metric],
               callbacks=[lp.CallbackPrint(), lp.CallbackTimer(),
                          lp.CallbackDropFixedLearningRate(

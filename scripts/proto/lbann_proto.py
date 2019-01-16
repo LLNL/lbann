@@ -47,8 +47,7 @@ class Layer:
 
     num_layers = 0  # Static counter, used for default layer names
 
-    def __init__(self, name='', inputs=[], outputs=[],
-                 weights=[], data_layout=''):
+    def __init__(self, name, inputs, outputs, weights, data_layout):
         Layer.num_layers += 1
         self.name = name if name else 'layer{0}'.format(Layer.num_layers-1)
         self.inputs = []
@@ -93,15 +92,12 @@ class Layer:
     def add_weights(self, w):
         self.weights.append(w)
 
-def _create_layer_subclass(type_name, layer_field_name):
+def _create_layer_subclass(type_name):
     """Generate a new Layer sub-class based on lbann.proto.
 
     'type_name' is the name of a message in lbann.proto,
     e.g. 'FullyConnected'. It will be the name of the generated
     sub-class.
-
-    'layer_field_name' is the name of the corresponding field within
-    the 'Layer' message in lbann.proto.
 
     """
 
@@ -109,11 +105,17 @@ def _create_layer_subclass(type_name, layer_field_name):
     layer_type = getattr(lbann_pb2, type_name)
     field_names = list(layer_type.DESCRIPTOR.fields_by_name.keys())
 
+    # Name of corresponding field within the 'Layer' message in lbann.proto.
+    layer_field_name = None
+    for field in lbann_pb2.Layer.DESCRIPTOR.fields:
+        if field.message_type and field.message_type.name == type_name:
+            layer_field_name = field.name
+            break
+
     # Sub-class constructor.
     def __init__(self, name='', inputs=[], outputs=[],
-                 weights=[], data_layout='', **kwargs):
-        Layer.__init__(self, name, inputs, outputs,
-                       weights, data_layout)
+                 weights=[], data_layout='data_parallel', **kwargs):
+        Layer.__init__(self, name, inputs, outputs, weights, data_layout)
         for field in kwargs:
             if field not in field_names:
                 raise ValueError('Unknown argument {0}'.format(field))
@@ -146,12 +148,12 @@ _skip_fields = [
     'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
     'weights_data', 'top', 'bottom', 'type', 'motif_layer'
 ]
-_generated_layers = {}
+_generated_classes = {}
 for field in lbann_pb2.Layer.DESCRIPTOR.fields:
     if field.name not in _skip_fields:
         type_name = field.message_type.name
-        _generated_layers[type_name] = _create_layer_subclass(type_name, field.name)
-_add_to_module_namespace(_generated_layers)
+        _generated_classes[type_name] = _create_layer_subclass(type_name)
+_add_to_module_namespace(_generated_classes)
 
 # Set up weight initializers.
 class Initializer:
@@ -160,17 +162,24 @@ class Initializer:
     def __init__(self):
         pass
 
-    def proto(self, weights):
-        """Add the initializer to the protobuf weights."""
-        raise NotImplementedError('proto not implemented')
+    def export_proto(self):
+        """Construct protobuf message for the weight initializer."""
+        raise NotImplementedError('export_proto not implemented')
 
-# Will hold all classes created by _create_proto_initializer.
-_proto_initializers = {}
-def _create_proto_initializer(type_name, message_name):
-    """Create a new Initializer subclass for an initializer."""
+def _create_init_subclass(type_name):
+    """Generate a new Initializer sub-class based on lbann.proto.
+
+    'type_name' is the name of a message in lbann.proto,
+    e.g. 'ConstantInitializer'. It will be the name of the generated
+    sub-class.
+
+    """
+
+    # Extract the names of all fields
     init_type = getattr(lbann_pb2, type_name)
     field_names = list(init_type.DESCRIPTOR.fields_by_name.keys())
-    # Create init method which sets fields.
+
+    # Sub-class constructor.
     def __init__(self, **kwargs):
         Initializer.__init__(self)
         for field in kwargs:
@@ -181,37 +190,62 @@ def _create_proto_initializer(type_name, message_name):
                 setattr(self, field_name, kwargs[field_name])
             else:
                 setattr(self, field_name, None)
-    # Method for adding to the protobuf weights.
-    def proto(self, weights):
-        init_field = getattr(weights, message_name)
-        init_field.SetInParent()  # Create empty message.
+
+    # Method for exporting a protobuf message.
+    def export_proto(self):
+        proto = init_type()
         for field_name in field_names:
             v = getattr(self, field_name)
             if v is not None:
-                setattr(init_field, field_name, v)
-    _proto_initializers[type_name] = type(type_name, (Initializer,),
-                                          {'__init__': __init__, 'proto': proto})
+                setattr(proto, field_name, v)
+        return proto
 
-# Generate Initializer sub-classes.
+    # Create sub-class.
+    return type(type_name, (Initializer,),
+                {'__init__': __init__,
+                 'export_proto': export_proto})
+
+# Generate Initializer sub-classes from lbann.proto.
+# Note: The list of skip fields must be updated if any new fields are
+# added to the Weights message in lbann.proto
+_skip_fields = ['name', 'optimizer']
+_generated_classes = {}
 for field in lbann_pb2.Weights.DESCRIPTOR.fields:
-    if field.name not in ['name', 'optimizer']:
-        _create_proto_initializer(field.message_type.name, field.name)
-_add_to_module_namespace(_proto_initializers)
+    if field.name not in _skip_fields:
+        type_name = field.message_type.name
+        _generated_classes[type_name] = _create_init_subclass(type_name)
+_add_to_module_namespace(_generated_classes)
 
-# Set up weights.
 class Weights:
-    """Base class for weights."""
+    """Trainable model parameters."""
 
-    def __init__(self, name, initializer):
-        """Initialize weights with name and an initializer."""
+    def __init__(self, name, initializer=None, optimizer=None):
         self.name = name
         self.initializer = initializer
+        self.optimizer = optimizer
 
-    def proto(self, model):
-        """Add weights to the protobuf model."""
-        weights = model.weights.add()
-        weights.name = self.name
-        self.initializer.proto(weights)
+    def export_proto(self):
+        """Construct protobuf message for the weights."""
+        proto = lbann_pb2.Weights()
+        proto.name = self.name
+
+        # Set initializer if needed
+        if self.initializer:
+            type_name = type(self.initializer).__name__
+            field_name = None
+            for field in lbann_pb2.Weights.DESCRIPTOR.fields:
+                if field.message_type and field.message_type.name == type_name:
+                    field_name = field.name
+                    break
+            init_message = getattr(proto, field_name)
+            init_message.CopyFrom(self.initializer.export_proto())
+            init_message.SetInParent()
+
+        # TODO: implement
+        if self.optimizer:
+            raise NotImplementedError('Weights cannot handle non-default optimizers')
+
+        return proto
 
 # Set up objective functions.
 # Objective functions use only layer terms, and treats all other messages as
@@ -395,8 +429,8 @@ def traverse_layer_graph(start_layers):
                 stack.append(output)
     return layers
 
-def save_model(filename, layers, mini_batch_size, epochs,
-               objective_func, metrics=[], callbacks=[]):
+def save_model(filename, mini_batch_size, epochs, objective_func,
+               layers=[], weights=[], metrics=[], callbacks=[]):
     """Save a model to filename.
 
     Provide the first module (i.e. the input layer) to be saved.
@@ -408,14 +442,26 @@ def save_model(filename, layers, mini_batch_size, epochs,
     pb.model.num_epochs = epochs
     pb.model.num_parallel_readers = 0  # TODO: Make configurable
     pb.model.procs_per_model = 0  # TODO: Make configurable
+
     # Add the objective function, metrics, and callbacks.
     objective_func.proto(pb.model)
     for metric in metrics:
         metric.proto(pb.model)
     for callback in callbacks:
         callback.proto(pb.model)
+
+    # Add layers
     layers = traverse_layer_graph(layers)
     pb.model.layer.extend([l.export_proto() for l in layers])
+
+    # Add weights
+    weights = set(weights)
+    for l in layers:
+        for w in l.weights:
+            weights.add(w)
+    pb.model.weights.extend([w.export_proto() for w in weights])
+
+    # Write to file
     with open(filename, 'wb') as f:
         f.write(google.protobuf.text_format.MessageToString(
             pb, use_index_order=True).encode())
