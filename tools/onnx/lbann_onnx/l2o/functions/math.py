@@ -11,17 +11,14 @@ def parse_leaky_relu(lp, inputShapes):
 def parse_sigmoid(lp, inputShapes):
     return {"op": "Sigmoid"}
 
+def parse_tanh(lp, inputShape):
+    return {"op": "Tanh"}
+
 def parse_softmax(lp, inputShapes):
     return {"op": "Softmax"}
 
 def parse_exp(lp, inputShapes):
     return {"op": "Exp"}
-
-def parse_square(lp, inputShapes):
-    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
-
-def parse_rsqrt(lp, inputShapes):
-    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
 
 def parse_add(lp, inputShapes):
     return {"op": "Sum"}
@@ -55,3 +52,11 @@ def parse_constant(lp, inputShapes):
                                                        data_type=lbann_onnx.ELEM_TYPE,
                                                        dims=shape,
                                                        vals=np.full(shape, float(lp.value)))}}
+
+# Dummy parsers
+
+def parse_square(lp, inputShapes):
+    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
+
+def parse_rsqrt(lp, inputShapes):
+    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape

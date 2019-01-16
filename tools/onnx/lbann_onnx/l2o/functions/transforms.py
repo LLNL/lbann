@@ -26,12 +26,6 @@ def parse_concatenation(lp, inputShapes):
     return {"op": "Concat",
             "attrs": {"axis": lp.concatenation_axis}}
 
-def parse_evaluation(lp, inputShapes):
-    return {"op": "LbannEvaluation"}
-
-def parse_zero(lp, inputShape):
-    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
-
 def parse_gaussian(lp, inputShape):
     # mean, stdev, neuron_dims
     return {"op": "RandomNormal",
@@ -41,9 +35,6 @@ def parse_gaussian(lp, inputShape):
                       "scale": lp.stdev,
                       "shape": lp.neuron_dims if isinstance(lp.neuron_dims, list) \
                       else list(map(int, lp.neuron_dims.split(" ")))}}
-
-def parse_tanh(lp, inputShape):
-    return {"op": "Tanh"}
 
 def parse_reshape(lp, inputShape):
     shape = list(map(int, lp.dims.split(" ")))
@@ -57,3 +48,13 @@ def parse_reduction(lp, inputShapes):
     return {"op": {"sum": "ReduceSum",
                    "average": "ReduceMean"}[lp.mode],
             "attrs": {"keepdims": 0}}
+
+##
+## Dummy parsers
+##
+
+def parse_evaluation(lp, inputShapes):
+    return {"op": "LbannEvaluation"}
+
+def parse_zero(lp, inputShape):
+    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
