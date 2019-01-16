@@ -1,14 +1,15 @@
 import re
 import onnx
 
-import lbann2onnx
-import lbann2onnx.util
-from lbann2onnx.functions.learnings    import *
-from lbann2onnx.functions.math         import *
-from lbann2onnx.functions.regularizers import *
-from lbann2onnx.functions.transforms   import *
-from lbann2onnx.functions.losses       import *
-import lbann2onnx.functions as functions
+import lbann_onnx
+import lbann_onnx.lbann2onnx
+import lbann_onnx.lbann2onnx.util
+from lbann_onnx.lbann2onnx.functions.learnings    import *
+from lbann_onnx.lbann2onnx.functions.math         import *
+from lbann_onnx.lbann2onnx.functions.regularizers import *
+from lbann_onnx.lbann2onnx.functions.transforms   import *
+from lbann_onnx.lbann2onnx.functions.losses       import *
+import lbann_onnx.lbann2onnx.functions as functions
 
 FUNCTIONS = dict(map(lambda x: (x[0].group(1), getattr(functions, x[1])),
                      filter(lambda x: x[0] is not None,
@@ -28,13 +29,13 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
     for f in FUNCTIONS.keys():
         if l.HasField("split"):
             if l.name not in tensorShapes.keys():
-                lbann2onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(l.name) \
+                lbann_onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(l.name) \
                                            + " This error may happen when you set incorret an input tensor name.")
-                lbann2onnx.util.printParsingState(l, tensorShapes)
+                lbann_onnx.util.printParsingState(l, tensorShapes)
                 exit()
 
             ipt = onnx.helper.make_tensor_value_info(name="{}_0".format(l.name),
-                                                     elem_type=lbann2onnx.ELEM_TYPE,
+                                                     elem_type=lbann_onnx.ELEM_TYPE,
                                                      shape=tensorShapes[l.name])
 
             return {"inputs": [ipt]}
@@ -42,8 +43,8 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
         if l.HasField(f):
             for i in lbannInputs:
                 if not i in tensorShapes.keys():
-                    lbann2onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(i))
-                    lbann2onnx.util.printParsingState(l, tensorShapes)
+                    lbann_onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(i))
+                    lbann_onnx.util.printParsingState(l, tensorShapes)
                     exit()
 
             arg = getattr(l, f)
@@ -77,7 +78,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
                                          **ret["attrs"])
 
             inputs = list(map(lambda x: onnx.helper.make_tensor_value_info(name=paramNames[x],
-                                                                           elem_type=lbann2onnx.ELEM_TYPE,
+                                                                           elem_type=lbann_onnx.ELEM_TYPE,
                                                                            shape=ret["params"][x]),
                               range(len(ret["params"]))))
 

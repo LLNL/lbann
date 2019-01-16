@@ -1,4 +1,5 @@
-from lbann2onnx.util import parseSpatialAttributes, printError
+from lbann_onnx.util import printError
+from lbann_onnx.lbann2onnx.util import parseSpatialAttributes
 from functools import reduce
 
 import numpy as np

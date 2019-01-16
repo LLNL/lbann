@@ -9,10 +9,8 @@ import numpy as np
 from functools import reduce
 import sys
 
-from lbann2onnx.functions import parseLbannLayer
-
-ELEM_TYPE = onnx.TensorProto.FLOAT
-ELEM_TYPE_NP = np.float32
+import lbann_onnx
+from lbann_onnx.lbann2onnx.functions import parseLbannLayer
 
 def getTensorShapes(o):
     o = onnx.shape_inference.infer_shapes(o)
@@ -101,7 +99,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
 
         if l.hint_layer:
             if not l.HasField("fully_connected"):
-                util.printError("\"hint_layer\" in non-fully-connected layers are not supported.")
+                lbann_onnx.util.printError("\"hint_layer\" in non-fully-connected layers are not supported.")
                 exit()
 
             dims = None
@@ -120,11 +118,11 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
 
         if l.num_neurons_from_data_reader:
             if not l.HasField("fully_connected"):
-                util.printError("\"num_neurons_from_data_reader\" in non-fully-connected layers are not supported.")
+                lbann_onnx.util.printError("\"num_neurons_from_data_reader\" in non-fully-connected layers are not supported.")
                 exit()
 
             assert len(inputs) > 0
-            dims = util.getDimFromValueInfo(inputs[0])
+            dims = lbann_onnx.util.getDimFromValueInfo(inputs[0])
             assert len(dims) > 1 and dims[0] == miniBatchSize
             l.fully_connected.num_neurons = int(np.prod(dims[1:]))
 
@@ -175,7 +173,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
         for i,p in enumerate(params[l]):
             name = "{}_p{}".format(l, i)
             inits.append(onnx.helper.make_tensor(name=name,
-                                                 data_type=ELEM_TYPE,
+                                                 data_type=lbann_onnx.ELEM_TYPE,
                                                  dims=p.shape,
                                                  vals=p.tobytes(),
                                                  raw=True))
@@ -183,12 +181,12 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     for metric in pb.model.metric:
         assert metric.HasField("layer_metric")
         outputs.append(onnx.helper.make_tensor_value_info(name="{}_0".format(metric.layer_metric.layer),
-                                                          elem_type=ELEM_TYPE,
+                                                          elem_type=lbann_onnx.ELEM_TYPE,
                                                           shape=[]))
 
     for term in pb.model.objective_function.layer_term:
         outputs.append(onnx.helper.make_tensor_value_info(name="{}_0".format(term.layer),
-                                                          elem_type=ELEM_TYPE,
+                                                          elem_type=lbann_onnx.ELEM_TYPE,
                                                           shape=[]))
 
     g = onnx.helper.make_graph(nodes, "graph", inputs, outputs, inits)

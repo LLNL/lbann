@@ -1,5 +1,6 @@
-import lbann2onnx
-from lbann2onnx.util import parseSpatialAttributes, getNodeAttributeByName
+import lbann_onnx
+from lbann_onnx.util import getNodeAttributeByName
+from lbann_onnx.lbann2onnx.util import parseSpatialAttributes
 import onnx
 import numpy as np
 
@@ -35,7 +36,7 @@ def parse_gaussian(lp, inputShape):
     # mean, stdev, neuron_dims
     return {"op": "RandomNormal",
             "outputCount": 1,
-            "attrs": {"dtype": lbann2onnx.ELEM_TYPE,
+            "attrs": {"dtype": lbann_onnx.ELEM_TYPE,
                       "mean": lp.mean,
                       "scale": lp.stdev,
                       "shape": lp.neuron_dims if isinstance(lp.neuron_dims, list) \

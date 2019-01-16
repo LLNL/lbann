@@ -9,8 +9,8 @@ import unittest
 import subprocess
 import os
 
-import lbann2onnx
-import lbann2onnx.util
+import lbann_onnx.lbann2onnx
+import lbann_onnx.lbann2onnx.util
 
 LBANN_ROOT_ENV = os.getenv("LBANN_ROOT")
 if LBANN_ROOT_ENV is not None:
@@ -20,14 +20,14 @@ else:
     LBANN_ROOT = subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip().decode("utf-8")
 
 LBANN_MODEL_ROOT = "{}/model_zoo/models".format(LBANN_ROOT)
-SAVE_ONNX = True
+SAVE_ONNX = False
 MB_PLACEHOLDER = "MB"
 
 class TestLbann2Onnx(unittest.TestCase):
 
     def _test(self, model, inputShapes, testedOutputs=[]):
         modelName = re.compile("^.*?/?([^/.]+).prototext$").search(model).group(1)
-        o, miniBatchSize = lbann2onnx.parseLbannModelPB(model, inputShapes)
+        o, miniBatchSize = lbann_onnx.lbann2onnx.parseLbannModelPB(model, inputShapes)
 
         if SAVE_ONNX:
             onnx.save(o, "{}.onnx".format(modelName))
@@ -37,7 +37,7 @@ class TestLbann2Onnx(unittest.TestCase):
             assert len(node) == 1, node
             outputVI = list(filter(lambda x: x.name == node[0].output[0], o.graph.value_info))
             assert len(outputVI) == 1, outputVI
-            outputShapeActual = lbann2onnx.util.getDimFromValueInfo(outputVI[0])
+            outputShapeActual = lbann_onnx.util.getDimFromValueInfo(outputVI[0])
             outputShapeWithMB = list(map(lambda x: miniBatchSize if x == MB_PLACEHOLDER else x, outputShape))
             assert outputShapeWithMB == outputShapeActual, (outputShapeWithMB, outputShapeActual)
 

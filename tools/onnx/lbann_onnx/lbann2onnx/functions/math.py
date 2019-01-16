@@ -1,6 +1,6 @@
 import onnx
 import numpy as np
-import lbann2onnx
+import lbann_onnx
 
 def parse_relu(lp, inputShapes):
     return {"op": "Relu"}
@@ -49,6 +49,6 @@ def parse_constant(lp, inputShapes):
     shape = list(map(int, lp.num_neurons.split(" ")))
     return {"op": "Constant",
             "attrs": {"value": onnx.helper.make_tensor(name='constant_{}'.format(hash(str(lp.value))),
-                                                       data_type=lbann2onnx.ELEM_TYPE,
+                                                       data_type=lbann_onnx.ELEM_TYPE,
                                                        dims=shape,
                                                        vals=np.full(shape, float(lp.value)))}}
