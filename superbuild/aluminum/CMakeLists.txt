@@ -23,8 +23,9 @@ set (ALUMINUM_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 
 # Configuration options explicitly exposed
 option(ALUMINUM_ENABLE_CUDA "Enable CUDA support." OFF)
-option(ALUMINUM_ENABLE_MPI_CUDA "Enable MPI-CUDA support." OFF)
-option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." OFF)
+option(ALUMINUM_ENABLE_MPI_CUDA "Enable MPI-CUDA support." ON)
+option(ALUMINUM_ENABLE_MPI_CUDA_RMA "Enable RMA in MPI-CUDA." ON)
+option(ALUMINUM_ENABLE_NCCL "Enable NCCL support." ON)
 
 if (ALUMINUM_ENABLE_CUDA OR ALUMINUM_ENABLE_MPI_CUDA OR ALUMINUM_ENABLE_NCCL)
   enable_language(CUDA)
