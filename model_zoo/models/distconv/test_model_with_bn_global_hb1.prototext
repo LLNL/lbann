@@ -8,28 +8,38 @@ model {
   procs_per_model: 0
 
   objective_function {
-    layer_term { layer: "cross_entropy_eval" }
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
   }
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy"
+      unit: "%"
     }
   }
 
   callback { print {} }
+  callback { gpu_memory_usage {} }  
   callback { timer {} }
   callback {
     summary {
       dir: "."
       mat_interval: 0
     }
-  }  
-
+  }
+  callback { profiler {} }
+  
   layer {
     name: "data"
     children: "images labels"
@@ -81,7 +91,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true      
+      global_stats: true
     }
     parallel_strategy {
       sample_groups: 1
@@ -344,15 +354,15 @@ model {
     cross_entropy {}    
   }
   layer {
-    name: "cross_entropy_eval"
-    parents: "cross_entropy"
-    data_layout: "data_parallel"
-    evaluation {}    
-  }
-  layer {
-    name: "target"
+    name: "top1_accuracy"
     parents: "prob labels"
     data_layout: "data_parallel"
-    target {}
-  }  
+    categorical_accuracy {}
+  }
+  layer {
+    name: "top5_accuracy"
+    parents: "prob labels"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 5 }
+  }
 }
