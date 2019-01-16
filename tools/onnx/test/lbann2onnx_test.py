@@ -8,8 +8,10 @@ import re
 import unittest
 import subprocess
 import os
+import numpy as np
 
 import lbann_onnx.l2o
+import lbann_onnx.util
 import lbann_onnx.l2o.util
 
 LBANN_ROOT_ENV = os.getenv("LBANN_ROOT")
@@ -21,6 +23,7 @@ else:
 
 LBANN_MODEL_ROOT = "{}/model_zoo/models".format(LBANN_ROOT)
 SAVE_ONNX = False
+ADD_DUMMY_PARAMS = False
 MB_PLACEHOLDER = "MB"
 
 class TestLbann2Onnx(unittest.TestCase):
@@ -28,6 +31,27 @@ class TestLbann2Onnx(unittest.TestCase):
     def _test(self, model, inputShapes, testedOutputs=[]):
         modelName = re.compile("^.*?/?([^/.]+).prototext$").search(model).group(1)
         o, miniBatchSize = lbann_onnx.l2o.parseLbannModelPB(model, inputShapes)
+
+        if ADD_DUMMY_PARAMS:
+            dummyInits = []
+            for i in o.graph.input:
+                if i.name in inputShapes.keys():
+                    continue
+
+                shape = lbann_onnx.util.getDimFromValueInfo(i)
+                dummyInits.append(onnx.helper.make_tensor(name=i.name,
+                                                          data_type=lbann_onnx.ELEM_TYPE,
+                                                          dims=shape,
+                                                          vals=np.zeros(shape, dtype=lbann_onnx.ELEM_TYPE_NP).tobytes(),
+                                                          raw=True))
+
+            g = onnx.helper.make_graph(o.graph.node,
+                                       o.graph.name,
+                                       o.graph.input,
+                                       o.graph.output,
+                                       list(o.graph.initializer) + dummyInits,
+                                       value_info=o.graph.value_info)
+            o = onnx.helper.make_model(g)
 
         if SAVE_ONNX:
             onnx.save(o, "{}.onnx".format(modelName))
