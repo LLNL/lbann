@@ -680,19 +680,6 @@ if [ ${USE_NINJA} -ne 0 ]; then
     fi
 fi
 
-# Temporary Distconv stuff
-################################################################
-if [[ $MPI_HOME == *spectrum* ]]; then
-	MPI_TYPE=smpi
-elif [[ $MPI_HOME == *mvapich* ]]; then
-	MPI_TYPE=mvapich
-else
-	echo "Unknown MPI type: $MPI_HOME"
-	exit 1
-fi
-DISTCONV_DIR=$HOME/lbann/install/$CLUSTER/${COMPILER}_$MPI_TYPE/$BUILD_TYPE/distconv
-P2P_DIR=$HOME/lbann/install/$CLUSTER/${COMPILER}_$MPI_TYPE/$BUILD_TYPE/p2p
-
 ################################################################
 # Display parameters
 ################################################################
@@ -833,10 +820,11 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+-D LBANN_SB_BUILD_DISTCONV=${WITH_DISTCONV} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
+-D LBANN_SB_BUILD_P2P=${WITH_DISTCONV} \
+-D LBANN_WITH_P2P=${WITH_DISTCONV} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
--D LBANN_SB_FWD_LBANN_DISTCONV_DIR=${DISTCONV_DIR} \
--D LBANN_SB_FWD_LBANN_P2P_DIR=${P2P_DIR} \
 ${SUPERBUILD_DIR}
 EOF
 )

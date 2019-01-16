@@ -13,7 +13,7 @@ find_path(P2P_INCLUDE_DIRS p2p/p2p.hpp
   PATH_SUFFIXES include
   NO_DEFAULT_PATH
   DOC "Directory with P2P header.")
-find_path(P2P_INCLUDE_DIRS p2p.hpp)
+find_path(P2P_INCLUDE_DIRS p2p/p2p.hpp)
 
 # Find the library
 find_library(P2P_LIBRARY p2p

@@ -137,8 +137,11 @@ mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 # The datatype option is not binary
 #
 
-option(${UPPER_PROJECT_NAME}_WITH_DISTCONV
+option(LBANN_WITH_DISTCONV
   "Enable Distconv distributed convolution" OFF)
+
+option(LBANN_WITH_P2P
+  "Enable P2P library" OFF)
 
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
@@ -410,8 +413,8 @@ endif (LBANN_WITH_CONDUIT)
 
 if (LBANN_WITH_DISTCONV)
   message(STATUS "DISTCONV requested")
-  find_package(DISTCONV)
   find_package(P2P)
+  find_package(DISTCONV)
   set(LBANN_HAS_DISTCONV ${DISTCONV_FOUND}) 
   if (NOT LBANN_HAS_DISTCONV)
     message(FATAL_ERROR
@@ -663,7 +666,8 @@ append_str_tf(_str
   LBANN_HAS_DOXYGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_ALUMINUM
-  LBANN_HAS_CONDUIT)
+  LBANN_HAS_CONDUIT
+  LBANN_HAS_DISTCONV)
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 

@@ -109,6 +109,24 @@ if (TARGET PROTOBUF)
   endif ()
 endif ()
 
+# Distconv
+if (TARGET P2P)
+  option(LBANN_WITH_P2P "Whether to use P2P in LBANN" ON)
+  if (LBANN_WITH_P2P)
+    set(LBANN_SB_FWD_LBANN_P2P_DIR "${P2P_DIR}"
+      CACHE STRING "The path to P2P for LBANN.")
+    list(APPEND _LBANN_DEPENDS P2P)
+  endif (LBANN_WITH_P2P)
+endif (TARGET P2P)
+if (TARGET DISTCONV)
+  option(LBANN_WITH_DISTCONV "Whether to use DISTCONV in LBANN" ON)
+  if (LBANN_WITH_DISTCONV)
+    set(LBANN_SB_FWD_LBANN_DISTCONV_DIR "${DISTCONV_DIR}"
+      CACHE STRING "The path to Distconv for LBANN.")
+    list(APPEND _LBANN_DEPENDS DISTCONV)
+  endif (LBANN_WITH_DISTCONV)
+endif (TARGET DISTCONV)
+
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")
