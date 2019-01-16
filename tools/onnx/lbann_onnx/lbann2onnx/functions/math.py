@@ -23,6 +23,9 @@ def parse_square(lp, inputShapes):
 def parse_rsqrt(lp, inputShapes):
     return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
 
+def parse_add(lp, inputShapes):
+    return {"op": "Sum"}
+
 def parse_sum(lp, inputShapes):
     return {"op": "Sum"}
 

@@ -91,6 +91,6 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
 
             return {"node": node, "inputs": inputs, "inits": inits}
 
-    lbann2onnx.util.printError("Unimplemented LBANN operator: {}".format(l))
+    lbann_onnx.util.printError("Unimplemented LBANN operator: {}".format(l))
 
     assert False

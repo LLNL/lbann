@@ -98,10 +98,6 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
         #           "out_{}.onnx".format(len(nodes)))
 
         if l.hint_layer:
-            if not l.HasField("fully_connected"):
-                lbann_onnx.util.printError("\"hint_layer\" in non-fully-connected layers are not supported.")
-                exit()
-
             dims = None
 
             hintLayer = list(filter(lambda x: x.name == l.hint_layer, nodes))
@@ -113,8 +109,17 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
                 dims = inputShapes[l.hint_layer]
 
             assert dims is not None
-            assert len(dims) > 1 and dims[0] == miniBatchSize
-            l.fully_connected.num_neurons = int(np.prod(dims[1:]))
+
+            if l.HasField("fully_connected"):
+                assert len(dims) > 1 and dims[0] == miniBatchSize
+                l.fully_connected.num_neurons = int(np.prod(dims[1:]))
+
+            elif l.HasField("gaussian"):
+                l.gaussian.neuron_dims = " ".join(map(str, dims))
+
+            else:
+                lbann_onnx.util.printError("\"hint_layer\" is supported only for fully_connected or gaussian.")
+                exit()
 
         if l.num_neurons_from_data_reader:
             if not l.HasField("fully_connected"):
