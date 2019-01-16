@@ -2,14 +2,14 @@ import re
 import onnx
 
 import lbann_onnx
-import lbann_onnx.lbann2onnx
-import lbann_onnx.lbann2onnx.util
-from lbann_onnx.lbann2onnx.functions.learnings    import *
-from lbann_onnx.lbann2onnx.functions.math         import *
-from lbann_onnx.lbann2onnx.functions.regularizers import *
-from lbann_onnx.lbann2onnx.functions.transforms   import *
-from lbann_onnx.lbann2onnx.functions.losses       import *
-import lbann_onnx.lbann2onnx.functions as functions
+import lbann_onnx.l2o
+import lbann_onnx.l2o.util
+from lbann_onnx.l2o.functions.learnings    import *
+from lbann_onnx.l2o.functions.math         import *
+from lbann_onnx.l2o.functions.regularizers import *
+from lbann_onnx.l2o.functions.transforms   import *
+from lbann_onnx.l2o.functions.losses       import *
+import lbann_onnx.l2o.functions as functions
 
 FUNCTIONS = dict(map(lambda x: (x[0].group(1), getattr(functions, x[1])),
                      filter(lambda x: x[0] is not None,

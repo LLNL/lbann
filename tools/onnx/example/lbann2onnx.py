@@ -5,7 +5,7 @@ import re
 import onnx
 import os
 
-import lbann2onnx
+import l2o
 
 def parseInputShape(s):
     name, shape = re.compile("^([^=]+)=([0-9,]+)$").search(s).groups()
@@ -29,7 +29,7 @@ onnxPath = args.onnx_path
 inputShapes = dict(map(parseInputShape, args.input_shape))
 addValueInfo = args.add_value_info
 
-model, miniBatchSize = lbann2onnx.parseLbannModelPB(os.path.expanduser(lbannPath),
-                                                    inputShapes,
-                                                    addValueInfo=addValueInfo)
+model, miniBatchSize = l2o.parseLbannModelPB(os.path.expanduser(lbannPath),
+                                             inputShapes,
+                                             addValueInfo=addValueInfo)
 onnx.save(model, os.path.expanduser(onnxPath))

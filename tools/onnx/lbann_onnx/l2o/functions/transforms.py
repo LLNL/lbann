@@ -1,6 +1,6 @@
 import lbann_onnx
 from lbann_onnx.util import getNodeAttributeByName
-from lbann_onnx.lbann2onnx.util import parseSpatialAttributes
+from lbann_onnx.l2o.util import parseSpatialAttributes
 import onnx
 import numpy as np
 

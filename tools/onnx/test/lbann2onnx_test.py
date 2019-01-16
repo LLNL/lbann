@@ -9,8 +9,8 @@ import unittest
 import subprocess
 import os
 
-import lbann_onnx.lbann2onnx
-import lbann_onnx.lbann2onnx.util
+import lbann_onnx.l2o
+import lbann_onnx.l2o.util
 
 LBANN_ROOT_ENV = os.getenv("LBANN_ROOT")
 if LBANN_ROOT_ENV is not None:
@@ -27,7 +27,7 @@ class TestLbann2Onnx(unittest.TestCase):
 
     def _test(self, model, inputShapes, testedOutputs=[]):
         modelName = re.compile("^.*?/?([^/.]+).prototext$").search(model).group(1)
-        o, miniBatchSize = lbann_onnx.lbann2onnx.parseLbannModelPB(model, inputShapes)
+        o, miniBatchSize = lbann_onnx.l2o.parseLbannModelPB(model, inputShapes)
 
         if SAVE_ONNX:
             onnx.save(o, "{}.onnx".format(modelName))

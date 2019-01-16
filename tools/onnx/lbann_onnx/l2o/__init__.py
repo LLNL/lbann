@@ -10,7 +10,7 @@ from functools import reduce
 import sys
 
 import lbann_onnx
-from lbann_onnx.lbann2onnx.functions import parseLbannLayer
+from lbann_onnx.l2o.functions import parseLbannLayer
 
 def getTensorShapes(o):
     o = onnx.shape_inference.infer_shapes(o)
