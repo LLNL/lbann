@@ -4,7 +4,7 @@ These are a convenience for common paradigms built on top of basic layers.
 
 """
 
-import lbann_proto as lp
+from . import lbann_proto as lp
 
 class SeparableConvolution2d(lp.Module):
     """Depthwise-separable convolution."""
