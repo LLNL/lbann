@@ -1,8 +1,6 @@
-# Support Status of LBANN/ONNX Operators
+# Support Status of LBANN->ONNX Conversion
 
-## LBANN to ONNX
-
-### Supported Layers
+## Supported Layers
 * I/O Layers
   * An `io` layer is converted to ONNX's input tensor(s) since ONNX models cannot represent the abstraction of I/O.
 * [Learning Layers](../lbann_onnx/l2o/functions/learnings.py)
@@ -34,7 +32,7 @@
   * `weighted_sum` (partially supported)
   * `constant`
 
-### Dummy/Non-supported Layers
+## Dummy/Non-supported Layers
 Some LBANN layers are not supported since there is no equivalent operation in ONNX.
 
 * [Transform Layers](../lbann_onnx/l2o/functions/transforms.py)
@@ -46,15 +44,15 @@ Some LBANN layers are not supported since there is no equivalent operation in ON
 * [Loss Functions](../lbann_onnx/l2o/functions/losses.py)
   * Since ONNX is intended for describing DNN models, loss functions cannot be represented directly. They still can be described by combining ONNX's arithemtic operations.
 
-### Difference between LBANN/ONNX Models
+## Difference between LBANN/ONNX Models
 The following attributes are stored in ONNX nodes to keep the original information of LBANN models.
 * `lbannOp`: The original layer type as a string
 * `lbannDataLayout`: The `data_layout` attribute of the original layer as a string
 
 An ONNX's `Reshape` node is inserted before a `Gemm` node if the input dimension is not 2D.
 
-### Example: `fc6` of [AlexNet](../../../model_zoo/models/alexnet/model_alexnet.prototext)
-#### `fc6` in LBANN:
+## Example: `fc6` of [AlexNet](../../../model_zoo/models/alexnet/model_alexnet.prototext)
+### `fc6` in LBANN:
 ```
 layer {
   name: "fc6"
@@ -67,7 +65,7 @@ layer {
 }
 ```
 
-#### `fc6` in ONNX:
+### `fc6` in ONNX:
 ```
 node {
   input: "pool5_0_reshaped_15"
@@ -94,6 +92,3 @@ node {
 }
 ```
 `fc6_p0` and `fc6_p1` represent its two parameter tensors (weights and biases).
-
-## ONNX to LBANN
-TBD
