@@ -223,7 +223,7 @@ protected :
   std::unordered_map<int, int> m_owner;
 
   /// fills in m_owner
-  void build_index_owner();
+  virtual void build_index_owner();
 
   /// mostly for use during development and debugging
   virtual void extended_testing() {}
