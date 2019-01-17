@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/distconv.hpp"
 #include <cstdio>
 #include <string>
 
@@ -37,11 +38,21 @@ namespace {
 
 void fill_matrix(CPUMat& mat) {
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
-  auto& gen = get_fast_generator();
+  auto randgen_method = dc::get_synthetic_data_reader_randgen();
   const El::Int height = mat.Height();  // Width is 1.
   DataType * __restrict__ buf = mat.Buffer();
-  for (El::Int i = 0; i < height; ++i) {
-    buf[i] = dist(gen);
+  if (randgen_method == "MT") {
+    auto& gen = get_generator();
+    for (El::Int i = 0; i < height; ++i) {
+      buf[i] = dist(gen);
+    }
+  } else if (randgen_method == "ONE") {
+    std::fill_n(buf, height, (DataType) 1);
+  } else {
+    auto& gen = get_fast_generator();
+    for (El::Int i = 0; i < height; ++i) {
+      buf[i] = dist(gen);
+    }
   }
 }
 

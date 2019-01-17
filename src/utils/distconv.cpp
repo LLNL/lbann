@@ -49,6 +49,8 @@ bool opt_use_partial_aggregation_in_bn = false;
 std::string opt_convolution_fwd_algorithm("DEFAULT");
 std::string opt_convolution_bwd_data_algorithm("DEFAULT");
 std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
+// Allowed values: MINSTD, MT, and ONE
+std::string opt_synthetic_data_reader_randgen("MINSTD");
 
 void set_options() {
   if (options_set) return;
@@ -77,6 +79,10 @@ void set_options() {
   if (env) {
     opt_convolution_bwd_filter_algorithm = env;
   }
+  env = getenv("LBANN_DISTCONV_SYNTHETIC_DATA_READER_RANDGEN");
+  if (env) {
+    opt_synthetic_data_reader_randgen = env;
+  }
   options_set = true;
 }
 
@@ -99,6 +105,9 @@ void print_options(std::ostream &os) {
        << std::endl;
     ss << "  convolution_bwd_filter_algorithm: "
        << opt_convolution_bwd_filter_algorithm
+       << std::endl;
+    ss << "  synthetic_data_reader_randgen: "
+       << opt_synthetic_data_reader_randgen
        << std::endl;
     os << ss.str();
   }
@@ -245,6 +254,10 @@ std::string get_convolution_bwd_data_algorithm() {
 
 std::string get_convolution_bwd_filter_algorithm() {
   return opt_convolution_bwd_filter_algorithm;
+}
+
+std::string get_synthetic_data_reader_randgen() {
+  return opt_synthetic_data_reader_randgen;
 }
 
 p2p::P2P &get_p2p() {

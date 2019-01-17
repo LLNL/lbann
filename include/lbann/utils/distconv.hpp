@@ -154,6 +154,10 @@ std::string get_convolution_bwd_data_algorithm();
  */
 std::string get_convolution_bwd_filter_algorithm();
 
+/** Query method for random number generation in synthetic data reader.
+ */
+std::string get_synthetic_data_reader_randgen();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
