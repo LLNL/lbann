@@ -209,19 +209,19 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::string get_description() const;
 
   /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i) const;
+  std::vector<cv::Mat> get_cv_images(const conduit::Node& sample) const;
 
   /**
    * Return the images of the i-th sample as an 1-D vector of lbann::DataType
    * There is one image per view, each of which is taken at closest to the bang time.
    */
-  std::vector<ch_t> get_images(const size_t i) const;
+  std::vector<ch_t> get_images(const conduit::Node& sample) const;
 
   /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i) const;
+  std::vector<scalar_t> get_scalars(const conduit::Node& sample) const;
 
   /// Return the simulation input parameters of the i-th sample
-  std::vector<input_t> get_inputs(const size_t i) const;
+  std::vector<input_t> get_inputs(const conduit::Node& sample) const;
 
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
@@ -287,7 +287,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Export cached labels minibatch
   int reuse_labels(CPUMat& Y);
 
-  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
+  bool fetch(CPUMat& X, const conduit::Node& sample, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
@@ -349,7 +349,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool has_conduit_path(const size_t i, const std::string& key) const;
 
   /// Obtain image data
-  std::vector< std::vector<ch_t> > get_image_data(const size_t i) const;
+  std::vector< std::vector<ch_t> > get_image_data(const conduit::Node& sample) const;
 
  protected:
   /// The flat list of independent variable types
