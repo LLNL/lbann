@@ -137,7 +137,10 @@ def _create_layer_subclass(type_name):
         for field_name in field_names:
             v = getattr(self, field_name)
             if v is not None:
-                setattr(layer_message, field_name, v)
+                if type(v) is list: # Repeated field
+                    getattr(layer_message, field_name).extend(v)
+                else: # Singular field
+                    setattr(layer_message, field_name, v)
         return proto
 
     # Create sub-class.
@@ -147,11 +150,11 @@ def _create_layer_subclass(type_name):
 # Generate Layer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Layer message in lbann.proto
-_skip_fields = [
+_skip_fields = set([
     'name', 'parents', 'children', 'data_layout', 'device_allocation',
     'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
     'weights_data', 'top', 'bottom', 'type', 'motif_layer'
-]
+])
 _generated_classes = {}
 for field in lbann_pb2.Layer.DESCRIPTOR.fields:
     if field.name not in _skip_fields:
@@ -228,7 +231,10 @@ def _create_init_subclass(type_name):
         for field_name in field_names:
             v = getattr(self, field_name)
             if v is not None:
-                setattr(proto, field_name, v)
+                if type(v) is list: # Repeated field
+                    getattr(proto, field_name).extend(v)
+                else: # Singular field
+                    setattr(proto, field_name, v)
         return proto
 
     # Create sub-class.
@@ -239,7 +245,7 @@ def _create_init_subclass(type_name):
 # Generate Initializer sub-classes from lbann.proto.
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Weights message in lbann.proto
-_skip_fields = ['name', 'optimizer']
+_skip_fields = set(['name', 'optimizer'])
 _generated_classes = {}
 for field in lbann_pb2.Weights.DESCRIPTOR.fields:
     if field.name not in _skip_fields:
@@ -365,7 +371,12 @@ class ObjectiveFunction:
 # ==============================================
 
 class Metric:
-    """Metric that takes value from a layer."""
+    """Metric that takes value from a layer.
+
+    Corresponds to a "layer metric" in LBANN. This may need to be
+    generalized if any other LBANN metrics are implemented.
+
+    """
 
     def __init__(self, layer, name='', unit=''):
         """Initialize a metric based of off layer."""
@@ -388,22 +399,34 @@ class Metric:
 class Callback:
     """Base class for callbacks."""
 
-    def __init__(self): pass
+    def __init__(self):
+        pass
 
-    def proto(self, model):
-        """Add this callback to the protobuf model."""
-        raise NotImplementedError('proto not implemented')
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        return lbann_pb2.Callback()
 
-    def _add_callback(self, model):
-        """Add a callback message to model."""
-        return model.callback.add()
+def _create_callback_subclass(type_name):
+    """Generate a new Callback sub-class based on lbann.proto.
 
-_proto_callbacks = {}  # Will hold all classes created by create_proto_callback.
-def _create_proto_callback(type_name, message_name):
-    """Create a new Callback subclass for a callback."""
+    'type_name' is the name of a message in lbann.proto,
+    e.g. 'CallbackPrint'. It will be the name of the generated
+    sub-class.
+
+    """
+
+    # Extract the names of all fields.
     callback_type = getattr(lbann_pb2, type_name)
     field_names = list(callback_type.DESCRIPTOR.fields_by_name.keys())
-    # Create the init method which sets fields.
+
+    # Name of corresponding field within the 'Callback' message in lbann.proto.
+    callback_field_name = None
+    for field in lbann_pb2.Callback.DESCRIPTOR.fields:
+        if field.message_type and field.message_type.name == type_name:
+            callback_field_name = field.name
+            break
+
+    # Sub-class constructor.
     def __init__(self, **kwargs):
         Callback.__init__(self)
         for field in kwargs:
@@ -414,27 +437,35 @@ def _create_proto_callback(type_name, message_name):
                 setattr(self, field_name, kwargs[field_name])
             else:
                 setattr(self, field_name, None)
-    # Method for adding to the protobuf model.
-    def proto(self, model):
-        callback = self._add_callback(model)
-        callback_field = getattr(callback, message_name)
-        callback_field.SetInParent()  # Create empty message.
+
+    # Method for exporting a protobuf message.
+    def export_proto(self):
+        proto = Callback.export_proto(self)
+        callback_message = getattr(proto, callback_field_name)
+        callback_message.SetInParent() # Create empty message
         for field_name in field_names:
             v = getattr(self, field_name)
             if v is not None:
-                # Handle repeated fields.
-                if type(v) is list:
-                    field = getattr(callback_field, field_name)
-                    field.extend(v)
-                else:
-                    setattr(callback_field, field_name, v)
-    _proto_callbacks[type_name] = type(type_name, (Callback,),
-                                       {'__init__': __init__, 'proto': proto})
+                if type(v) is list: # Repeated field
+                    getattr(callback_message, field_name).extend(v)
+                else: # Singular field
+                    setattr(callback_message, field_name, v)
+        return proto
 
-# Generate Callback sub-classes.
+    # Create sub-class.
+    return type(type_name, (Callback,),
+                {'__init__': __init__, 'export_proto': export_proto})
+
+# Generate Callback sub-classes from lbann.proto
+# Note: The list of skip fields must be updated if any new fields are
+# added to the Callback message in lbann.proto
+_skip_fields = set([])
+_generated_classes = {}
 for field in lbann_pb2.Callback.DESCRIPTOR.fields:
-    _create_proto_callback(field.message_type.name, field.name)
-_add_to_module_namespace(_proto_callbacks)
+    if field.name not in _skip_fields:
+        type_name = field.message_type.name
+        _generated_classes[type_name] = _create_callback_subclass(type_name)
+_add_to_module_namespace(_generated_classes)
 
 # ==============================================
 # Export models
@@ -444,6 +475,8 @@ def save_model(filename, mini_batch_size, epochs,
                layers=[], weights=[], objective_function=None,
                metrics=[], callbacks=[]):
     """Save a model to file."""
+
+    # Initialize protobuf message
     pb = lbann_pb2.LbannPB()
     pb.model.mini_batch_size = mini_batch_size
     pb.model.block_size = 256  # TODO: Make configurable.
@@ -462,15 +495,14 @@ def save_model(filename, mini_batch_size, epochs,
             weights.add(w)
     pb.model.weights.extend([w.export_proto() for w in weights])
 
-    # Add metrics and callbacks
-    pb.model.metric.extend([m.export_proto() for m in metrics])
-    for callback in callbacks:
-        callback.proto(pb.model)
-
     # Add objective function
     if not objective_function:
         objective_function = ObjectiveFunction()
     pb.model.objective_function.CopyFrom(objective_function.export_proto())
+
+    # Add metrics and callbacks
+    pb.model.metric.extend([m.export_proto() for m in metrics])
+    pb.model.callback.extend([c.export_proto() for c in callbacks])
 
     # Write to file
     with open(filename, 'wb') as f:
