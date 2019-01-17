@@ -748,7 +748,7 @@ void data_reader_jag_conduit::load() {
     /// how index lists are used between trainers, models, and ranks
     /// @todo m_list_per_trainer || m_list_per_model
     if (m_list_per_rank) {
-      load_list_of_samples(sample_list_file, m_comm->get_procs_per_model(), m_comm->get_rank_in_model());
+      load_list_of_samples(sample_list_file, 1, 0);
       std::stringstream s;
       std::string basename = get_basename_without_ext(sample_list_file);
       std::string ext = get_ext_name(sample_list_file);
@@ -762,36 +762,6 @@ void data_reader_jag_conduit::load() {
       std::string ext = get_ext_name(sample_list_file);
       s << "r" << m_comm->get_rank_in_model() << "_per_rank_" << basename << "." << ext;
       m_sample_list.write(s.str());
-
-#if 0
-      // model master sends the list
-      std::string sample_list_archive;
-      int size_of_archive;
-      if (m_comm->am_model_master()) {
-        load_list_of_samples(sample_list_file);
-        std::stringstream s;
-        std::string basename = get_basename_without_ext(sample_list_file);
-        std::string ext = get_ext_name(sample_list_file);
-        s << basename << "." << ext;
-        m_sample_list.write(s.str());
-
-        std::stringstream ss;
-        cereal::BinaryOutputArchive oarchive(ss); // Create an output archive
-        oarchive(m_sample_list);
-        sample_list_archive = ss.str();
-        size_of_archive = sample_list_archive.size();
-      }
-      m_comm->model_broadcast(m_comm->get_model_master(), size_of_archive);
-      sample_list_archive.resize(size_of_archive);
-
-      m_comm->model_broadcast(m_comm->get_model_master(),
-                              &sample_list_archive[0], size_of_archive);
-
-      if (!m_comm->am_model_master()) {
-        load_list_of_samples_from_archive(sample_list_archive);
-        open_all_conduit_files();
-      }
-#endif
     }
 
     if (!m_is_data_loaded) {
