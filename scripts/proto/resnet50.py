@@ -25,7 +25,8 @@ class ConvBNRelu2d:
                 if self.step
                 else self.name)
         self.step += 1
-        conv = lp.Convolution(name + '_conv', x,
+        conv = lp.Convolution(x,
+                              name=name+'_conv',
                               num_dims=2,
                               num_output_channels=self.out_channels,
                               has_vectors=False,
@@ -34,11 +35,12 @@ class ConvBNRelu2d:
                               conv_strides_i=self.stride,
                               conv_dilations_i=self.dilation,
                               has_bias=self.bias)
-        bn = lp.BatchNormalization(name + '_bn', conv,
+        bn = lp.BatchNormalization(conv,
+                                   name=name+'_bn',
                                    decay=0.9, epsilon=1e-5,
                                    stats_aggregation=bn_stats_aggregation)
         if self.relu:
-            return lp.Relu(name + '_relu', bn)
+            return lp.Relu(bn, name=name+'_relu')
         else:
             return bn
 
@@ -77,8 +79,8 @@ class ResBottleneck:
             residual = x
         else:
             residual = self.downsample(x)
-        sum = lp.Sum(name + '_sum', [conv, residual])
-        return lp.Relu(name + '_relu', sum)
+        sum = lp.Sum([conv, residual], name=name+'_sum')
+        return lp.Relu(sum, name=name+'_relu')
 
 class ResBlock:
     """ResNet block, constructed of some number of bottleneck layers."""
@@ -102,12 +104,12 @@ class ResBlock:
         return x
 
 # Construct layer graph.
-input = lp.Input('input', io_buffer='partitioned')
-images = lp.Split('images', input)
-labels = lp.Split('labels', input)
+input = lp.Input(io_buffer='partitioned')
+images = lp.Identity(input)
+labels = lp.Identity(input)
 conv1 = ConvBNRelu2d('conv1', 64, 7, stride=2, padding=3,
                      bn_stats_aggregation=bn_stats_aggregation)(images)
-pool1 = lp.Pooling('pool1', conv1, num_dims=2, has_vectors=False,
+pool1 = lp.Pooling(conv1, num_dims=2, has_vectors=False,
                    pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
                    pool_mode='max')
 block1 = ResBlock('block1', blocks[0], 64, 256, stride=1,
@@ -118,14 +120,14 @@ block3 = ResBlock('block3', blocks[2], 256, 1024, stride=2,
                   bn_stats_aggregation=bn_stats_aggregation)(block2)
 block4 = ResBlock('block4', blocks[3], 512, 2048, stride=2,
                   bn_stats_aggregation=bn_stats_aggregation)(block3)
-avgpool = lp.Pooling('avgpool', block4, num_dims=2, has_vectors=False,
+avgpool = lp.Pooling(block4, num_dims=2, has_vectors=False,
                      pool_dims_i=7, pool_pads_i=0, pool_strides_i=1,
                      pool_mode='average')
-fc = lp.FullyConnected('fc1000', avgpool, num_neurons=1000, has_bias=False)
-softmax = lp.Softmax('prob', fc)
-ce = lp.CrossEntropy('cross_entropy', [softmax, labels])
-top1 = lp.CategoricalAccuracy('top1_accuracy', [softmax, labels])
-top5 = lp.TopKCategoricalAccuracy('top5_accuracy', [softmax, labels], k=5)
+fc = lp.FullyConnected(avgpool, hint_layer=labels, has_bias=False)
+softmax = lp.Softmax(fc)
+ce = lp.CrossEntropy([softmax, labels])
+top1 = lp.CategoricalAccuracy([softmax, labels])
+top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
 layers = lp.traverse_layer_graph(input)
 
 # Explicitly set up weights for all layers.

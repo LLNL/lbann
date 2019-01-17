@@ -63,48 +63,51 @@ class Layer:
 
     num_layers = 0  # Static counter, used for default layer names
 
-    def __init__(self, name, inputs, outputs, weights, data_layout):
+    def __init__(self, parents, children, weights,
+                 name, data_layout, hint_layer):
         Layer.num_layers += 1
-        self.name = name if name else 'layer{0}'.format(Layer.num_layers-1)
-        self.inputs = []
-        self.outputs = []
+        self.parents = []
+        self.children = []
         self.weights = []
+        self.name = name if name else 'layer{0}'.format(Layer.num_layers)
         self.data_layout = data_layout
+        self.hint_layer = hint_layer
 
-        # Initialize inputs, outputs, and weights
-        for l in _make_iterable(inputs):
-            self.add_input(l)
-        for l in _make_iterable(outputs):
-            self.add_output(output)
+        # Initialize parents, children, and weights
+        for l in _make_iterable(parents):
+            self.add_parent(l)
+        for l in _make_iterable(children):
+            self.add_child(child)
         for w in _make_iterable(weights):
             self.add_weights(w)
 
     def export_proto(self):
         """Construct and return a protobuf message."""
         proto = lbann_pb2.Layer()
-        proto.parents = ' '.join([l.name for l in self.inputs])
-        proto.children = ' '.join([l.name for l in self.outputs])
+        proto.parents = ' '.join([l.name for l in self.parents])
+        proto.children = ' '.join([l.name for l in self.children])
         proto.weights = ' '.join([w.name for w in self.weights])
         proto.name = self.name
         proto.data_layout = self.data_layout
+        proto.hint_layer = self.hint_layer.name if self.hint_layer else ''
         return proto
 
-    def add_input(self, input):
-        """This layer will receive an input tensor from 'input'."""
-        self.inputs.append(input)
-        input.outputs.append(self)
+    def add_parent(self, parent):
+        """This layer will receive an input tensor from 'parent'."""
+        self.parents.append(parent)
+        parent.children.append(self)
 
-    def add_output(self, output):
-        """"This layer will send an output tensor to 'output'."""
-        self.outputs.append(output)
-        output.inputs.append(self)
+    def add_child(self, child):
+        """"This layer will send an output tensor to 'child'."""
+        self.children.append(child)
+        child.parents.append(self)
 
     def add_weights(self, w):
         self.weights.append(w)
 
-    def __call__(self, input):
-        """This layer will recieve an input tensor from 'input'"""
-        self.add_input(input)
+    def __call__(self, parent):
+        """This layer will recieve an input tensor from 'parent'"""
+        self.add_parent(parent)
 
 def _create_layer_subclass(type_name):
     """Generate a new Layer sub-class based on lbann.proto.
@@ -127,9 +130,11 @@ def _create_layer_subclass(type_name):
             break
 
     # Sub-class constructor.
-    def __init__(self, name='', inputs=[], outputs=[],
-                 weights=[], data_layout='data_parallel', **kwargs):
-        Layer.__init__(self, name, inputs, outputs, weights, data_layout)
+    def __init__(self, parents=[], children=[], weights=[],
+                 name='', data_layout='data_parallel', hint_layer=None,
+                 **kwargs):
+        Layer.__init__(self, parents, children, weights,
+                       name, data_layout, hint_layer)
         for field in kwargs:
             if field not in field_names:
                 raise ValueError('Unknown argument {0}'.format(field))
@@ -177,7 +182,7 @@ def traverse_layer_graph(start_layers):
 
     The traversal starts from the entries in 'start_layers'. The
     traversal is in depth-first order, except that no layer is visited
-    until all its inputs have been visited.
+    until all its parents have been visited.
 
     """
     layers = []
@@ -187,10 +192,10 @@ def traverse_layer_graph(start_layers):
         l = stack.pop()
         layers.append(l)
         visited.add(l)
-        for output in l.outputs:
-            if ((output not in visited)
-                and all([(i in visited) for i in output.inputs])):
-                stack.append(output)
+        for child in l.children:
+            if ((child not in visited)
+                and all([(i in visited) for i in child.parents])):
+                stack.append(child)
     return layers
 
 # ==============================================
