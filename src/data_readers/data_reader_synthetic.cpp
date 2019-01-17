@@ -36,7 +36,6 @@ namespace lbann {
 namespace {
 
 void fill_matrix(CPUMat& mat) {
-#if 0
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
   auto& gen = get_fast_generator();
   const El::Int height = mat.Height();  // Width is 1.
@@ -44,11 +43,6 @@ void fill_matrix(CPUMat& mat) {
   for (El::Int i = 0; i < height; ++i) {
     buf[i] = dist(gen);
   }
-#else
-  const El::Int height = mat.Height();  // Width is 1.
-  DataType * __restrict__ buf = mat.Buffer();
-  std::fill_n(buf, height, (DataType) 1);
-#endif
 }
 
 }  // anonymous namespace
