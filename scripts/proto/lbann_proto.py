@@ -42,6 +42,10 @@ def _add_to_module_namespace(stuff):
     for k, v in stuff.items():
         g[k] = v
 
+# ==============================================
+# Layers
+# ==============================================
+
 class Layer:
     """Base class for layers."""
 
@@ -70,7 +74,7 @@ class Layer:
             self.add_weights(w)
 
     def export_proto(self):
-        """Construct protobuf message for the layer."""
+        """Construct and return a protobuf message."""
         proto = lbann_pb2.Layer()
         proto.parents = ' '.join([l.name for l in self.inputs])
         proto.children = ' '.join([l.name for l in self.outputs])
@@ -155,6 +159,33 @@ for field in lbann_pb2.Layer.DESCRIPTOR.fields:
         _generated_classes[type_name] = _create_layer_subclass(type_name)
 _add_to_module_namespace(_generated_classes)
 
+def traverse_layer_graph(start_layers):
+    """Traverse a layer graph.
+
+    The traversal starts from the entries in 'start_layers'. The
+    traversal is in depth-first order, except that no layer is visited
+    until all its inputs have been visited.
+
+    """
+    layers = []
+    visited = set()
+    stack = (start_layers
+             if isinstance(start_layers, (list,))
+             else [start_layers])
+    while stack:
+        l = stack.pop()
+        layers.append(l)
+        visited.add(l)
+        for output in l.outputs:
+            if ((output not in visited)
+                and all([(i in visited) for i in output.inputs])):
+                stack.append(output)
+    return layers
+
+# ==============================================
+# Weights and weight initializers
+# ==============================================
+
 # Set up weight initializers.
 class Initializer:
     """Base class for weight initializers."""
@@ -163,7 +194,7 @@ class Initializer:
         pass
 
     def export_proto(self):
-        """Construct protobuf message for the weight initializer."""
+        """Construct and return a protobuf message."""
         raise NotImplementedError('export_proto not implemented')
 
 def _create_init_subclass(type_name):
@@ -225,7 +256,7 @@ class Weights:
         self.optimizer = optimizer
 
     def export_proto(self):
-        """Construct protobuf message for the weights."""
+        """Construct and return a protobuf message."""
         proto = lbann_pb2.Weights()
         proto.name = self.name
 
@@ -247,116 +278,115 @@ class Weights:
 
         return proto
 
-# Set up objective functions.
-# Objective functions use only layer terms, and treats all other messages as
-# regularization/etc. terms. This is not strictly true right now, but is the
-# direction being moved in.
-class ObjectiveRegularization:
-    """Base class for objective function regularization terms."""
+# ==============================================
+# Objective functions
+# ==============================================
+
+class ObjectiveFunctionTerm:
+    """Base class for objective function terms."""
 
     def __init__(self):
         pass
 
-    def proto(self, objfunc):
-        """Add the regularization term to the protobuf objective function."""
-        raise NotImplementedError('proto not implemented')
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        raise NotImplementedError('export_proto not implemented')
 
-# Will hold all classes created by create_proto_objective_regularization.
-_proto_objective_regularization = {}
-def _create_proto_objective_regularization(type_name, message_name):
-    """Create a new ObjectiveRegularization subclass for regularization."""
-    objreg_type = getattr(lbann_pb2, type_name)
-    field_names = list(objreg_type.DESCRIPTOR.fields_by_name.keys())
-    # Create init method which sets fields.
-    def __init__(self, **kwargs):
-        ObjectiveRegularization.__init__(self)
-        for field in kwargs:
-            if field not in field_names:
-                raise ValueError('Unknown argument {0}'.format(field))
-        for field_name in field_names:
-            if field_name in kwargs:
-                setattr(self, field_name, kwargs[field_name])
-            else:
-                setattr(self, field_name, None)
-    # Method for adding to the protobuf objective function.
-    def proto(self, objfunc):
-        objreg_field = getattr(objfunc, message_name)
-        objreg = objreg_field.add()
-        objreg.SetInParent()  # Needed to create empty messages.
-        for field_name in field_names:
-            v = getattr(self, field_name)
-            if v is not None:
-                # Ugly hack, special case for L2WeightRegularization:
-                if field_name == 'weights':
-                    setattr(objreg, field_name, ' '.join([w.name for w in v]))
-                else:
-                    setattr(objreg, field_name, v)
-    _proto_objective_regularization[type_name] = type(
-        type_name, (ObjectiveRegularization,),
-        {'__init__': __init__, 'proto': proto})
+class LayerTerm(ObjectiveFunctionTerm):
+    """Objective function term that takes value from a layer."""
 
-# Generate ObjectiveRegularization sub-classes.
-for field in lbann_pb2.ObjectiveFunction.DESCRIPTOR.fields:
-    # Skip layer_term because we already use it, skip cross_entropy because it
-    # is a real layer.
-    # TODO: This should get cleaned up more, once we delete the old objective
-    # functions from lbann.proto.
-    if field.name not in ['layer_term', 'cross_entropy']:
-        _create_proto_objective_regularization(field.message_type.name,
-                                               field.name)
-_add_to_module_namespace(_proto_objective_regularization)
+    def __init__(self, layer, scale=1.0):
+        self.layer = layer
+        self.scale = scale
+
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        proto = lbann_pb2.LayerTerm()
+        proto.layer = self.layer.name
+        proto.scale_factor = self.scale
+        return proto
+
+class L2WeightRegularization(ObjectiveFunctionTerm):
+    """Objective function term for L2 regularization on weights."""
+
+    def __init__(self, weights=[], scale=1.0):
+        self.scale = scale
+        self.weights = (weights
+                        if isinstance(weights, collections.Iterable)
+                        else [weights])
+
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        proto = lbann_pb2.L2WeightRegularization()
+        proto.scale_factor = self.scale
+        proto.weights = ' '.join([w.name for w in self.weights])
+        return proto
 
 class ObjectiveFunction:
-    """Basic building block for objective functions."""
+    """Objective function for optimization algorithm."""
 
-    def __init__(self, layers, regularization=[]):
+    def __init__(self, terms=[]):
         """Create an objective function with layer terms and regularization.
 
-        layers is a layer, or a sequence of either layers or (layer, scale)
-        tuples.
+        'terms' should be a sequence of 'ObjectiveFunctionTerm's and
+        'Layer's.
 
         """
-        if type(layers) is not list:
-            self.layers = [layers]
-        else:
-            self.layers = layers
-        self.regularization = regularization
+        if not isinstance(terms, collections.Iterable):
+            terms = [terms]
+        self.terms = []
+        for t in terms:
+            self.add_term(t)
 
-    def proto(self, model):
-        """Add the objective function to the protobuf model."""
-        objfunc = model.objective_function
-        # Add layer terms.
-        for layer in self.layers:
-            term = objfunc.layer_term.add()
-            if type(layer) is tuple:
-                term.layer = layer[0].name
-                term.scale_factor = layer[1]
-            else:
-                term.layer = layer.name
-        # Add regularization terms.
-        for objreg in self.regularization:
-            objreg.proto(objfunc)
+    def add_term(self, term):
+        """Add a term to the objective function.
 
-# Set up metrics.
-# We only support layer metrics, so this is simple.
+        'term' may be a 'Layer', in which case a 'LayerTerm' is
+        constructed and added to the objective function.
+
+        """
+        if isinstance(term, Layer):
+            term = LayerTerm(term)
+        self.terms.append(term)
+
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        proto = lbann_pb2.ObjectiveFunction()
+        for term in self.terms:
+            term_message = term.export_proto()
+            if type(term) is LayerTerm:
+                proto.layer_term.extend([term_message])
+            elif type(term) is L2WeightRegularization:
+                proto.l2_weight_regularization.extend([term_message])
+        return proto
+
+# ==============================================
+# Metrics
+# ==============================================
+
 class Metric:
-    """Basic building block for metrics."""
+    """Metric that takes value from a layer."""
 
-    def __init__(self, name, layer, unit):
+    def __init__(self, layer, name='', unit=''):
         """Initialize a metric based of off layer."""
-        self.name = name
         self.layer = layer
+        self.name = name if name else self.layer.name
         self.unit = unit
 
-    def proto(self, model):
-        metric = model.metric.add()
-        metric.layer_metric.name = self.name
-        metric.layer_metric.layer = self.layer.name
-        metric.layer_metric.unit = self.unit
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        proto = lbann_pb2.Metric()
+        proto.layer_metric.layer = self.layer.name
+        proto.layer_metric.name = self.name
+        proto.layer_metric.unit = self.unit
+        return proto
 
-# Set up callbacks.
+# ==============================================
+# Callbacks
+# ==============================================
+
 class Callback:
-    """Basic building block for callbacks."""
+    """Base class for callbacks."""
 
     def __init__(self): pass
 
@@ -406,49 +436,20 @@ for field in lbann_pb2.Callback.DESCRIPTOR.fields:
     _create_proto_callback(field.message_type.name, field.name)
 _add_to_module_namespace(_proto_callbacks)
 
-def traverse_layer_graph(start_layers):
-    """Traverse a layer graph.
+# ==============================================
+# Export models
+# ==============================================
 
-    The traversal starts from the entries in 'start_layers'. The
-    traversal is in depth-first order, except that no layer is visited
-    until all its inputs have been visited.
-
-    """
-    layers = []
-    visited = set()
-    stack = (start_layers
-             if isinstance(start_layers, (list,))
-             else [start_layers])
-    while stack:
-        l = stack.pop()
-        layers.append(l)
-        visited.add(l)
-        for output in l.outputs:
-            if ((output not in visited)
-                and all([(i in visited) for i in output.inputs])):
-                stack.append(output)
-    return layers
-
-def save_model(filename, mini_batch_size, epochs, objective_func,
-               layers=[], weights=[], metrics=[], callbacks=[]):
-    """Save a model to filename.
-
-    Provide the first module (i.e. the input layer) to be saved.
-
-    """
+def save_model(filename, mini_batch_size, epochs,
+               layers=[], weights=[], objective_function=None,
+               metrics=[], callbacks=[]):
+    """Save a model to file."""
     pb = lbann_pb2.LbannPB()
     pb.model.mini_batch_size = mini_batch_size
     pb.model.block_size = 256  # TODO: Make configurable.
     pb.model.num_epochs = epochs
     pb.model.num_parallel_readers = 0  # TODO: Make configurable
     pb.model.procs_per_model = 0  # TODO: Make configurable
-
-    # Add the objective function, metrics, and callbacks.
-    objective_func.proto(pb.model)
-    for metric in metrics:
-        metric.proto(pb.model)
-    for callback in callbacks:
-        callback.proto(pb.model)
 
     # Add layers
     layers = traverse_layer_graph(layers)
@@ -460,6 +461,16 @@ def save_model(filename, mini_batch_size, epochs, objective_func,
         for w in l.weights:
             weights.add(w)
     pb.model.weights.extend([w.export_proto() for w in weights])
+
+    # Add metrics and callbacks
+    pb.model.metric.extend([m.export_proto() for m in metrics])
+    for callback in callbacks:
+        callback.proto(pb.model)
+
+    # Add objective function
+    if not objective_function:
+        objective_function = ObjectiveFunction()
+    pb.model.objective_function.CopyFrom(objective_function.export_proto())
 
     # Write to file
     with open(filename, 'wb') as f:

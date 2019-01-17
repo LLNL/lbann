@@ -153,16 +153,17 @@ for l in layers:
         weights.append(matrix)
         l2_reg_weights.append(matrix)
 
-# Objective function/metrics.
-obj = lp.ObjectiveFunction(ce, [lp.L2WeightRegularization(
-    scale_factor=1e-4, weights=l2_reg_weights)])
-top1_metric = lp.Metric('categorical accuracy', top1, '%')
-top5_metric = lp.Metric('top-5 categorical accuracy', top5, '%')
+# Set up other model components.
+obj = lp.ObjectiveFunction(
+          [ce, lp.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)])
+metrics = [lp.Metric(top1, name='categorical accuracy', unit='%'),
+           lp.Metric(top5, name='top-5 categorical accuracy', unit='%')]
+callbacks = [lp.CallbackPrint(),
+             lp.CallbackTimer(),
+             lp.CallbackDropFixedLearningRate(
+                 drop_epoch=[30, 60, 80], amt=0.1)]
 
-lp.save_model('resnet50.prototext', 256, 90, obj,
-              layers=layers,
-              weights=weights,
-              metrics=[top1_metric, top5_metric],
-              callbacks=[lp.CallbackPrint(), lp.CallbackTimer(),
-                         lp.CallbackDropFixedLearningRate(
-                             drop_epoch=[30, 60, 80], amt=0.1)])
+# Export model to file
+lp.save_model('resnet50.prototext', 256, 90,
+              layers=layers, weights=weights, objective_function=obj,
+              metrics=metrics, callbacks=callbacks)
