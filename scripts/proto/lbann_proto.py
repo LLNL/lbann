@@ -94,16 +94,18 @@ class Layer:
 
     def add_parent(self, parent):
         """This layer will receive an input tensor from 'parent'."""
-        self.parents.append(parent)
-        parent.children.append(self)
+        for p in _make_iterable(parent):
+            self.parents.append(p)
+            p.children.append(self)
 
     def add_child(self, child):
         """"This layer will send an output tensor to 'child'."""
-        self.children.append(child)
-        child.parents.append(self)
+        for c in _make_iterable(child):
+            self.children.append(c)
+            c.parents.append(self)
 
     def add_weights(self, w):
-        self.weights.append(w)
+        self.weights.extend(_make_iterable(w))
 
     def __call__(self, parent):
         """This layer will recieve an input tensor from 'parent'"""
@@ -177,26 +179,40 @@ for field in lbann_pb2.Layer.DESCRIPTOR.fields:
         _generated_classes[type_name] = _create_layer_subclass(type_name)
 _add_to_module_namespace(_generated_classes)
 
-def traverse_layer_graph(start_layers):
-    """Traverse a layer graph.
+def traverse_layer_graph(layers):
+    """Generator function for a topologically ordered graph traversal.
 
-    The traversal starts from the entries in 'start_layers'. The
-    traversal is in depth-first order, except that no layer is visited
-    until all its parents have been visited.
+    'layers' should be a 'Layer' or a sequence of 'Layer's. All layers
+    that are connected to 'layers' will be traversed.
+
+    The layer graph is assumed to be acyclic. Strange things may
+    happen if this does not hold.
 
     """
-    layers = []
+
+    # DFS to find root nodes in layer graph
+    roots = []
     visited = set()
-    stack = [l for l in _make_iterable(start_layers)]
+    stack = list(_make_iterable(layers))
     while stack:
         l = stack.pop()
-        layers.append(l)
-        visited.add(l)
-        for child in l.children:
-            if ((child not in visited)
-                and all([(i in visited) for i in child.parents])):
-                stack.append(child)
-    return layers
+        if l not in visited:
+            visited.add(l)
+            if not l.parents:
+                roots.append(l)
+            else:
+                stack.extend(l.parents)
+
+    # DFS to traverse layer graph in topological order
+    visited = set()
+    stack = roots
+    while stack:
+        l = stack.pop()
+        if (l not in visited
+            and all([(p in visited) for p in l.parents])):
+            visited.add(l)
+            stack.extend(l.children)
+            yield l
 
 # ==============================================
 # Weights and weight initializers
@@ -334,7 +350,7 @@ class L2WeightRegularization(ObjectiveFunctionTerm):
 
     def __init__(self, weights=[], scale=1.0):
         self.scale = scale
-        self.weights = [w for w in _make_iterable(weights)]
+        self.weights = list(_make_iterable(weights))
 
     def export_proto(self):
         """Construct and return a protobuf message."""
@@ -498,14 +514,13 @@ def save_model(filename, mini_batch_size, epochs,
     pb.model.procs_per_model = 0  # TODO: Make configurable
 
     # Add layers
-    layers = traverse_layer_graph(layers)
+    layers = list(traverse_layer_graph(layers))
     pb.model.layer.extend([l.export_proto() for l in layers])
 
     # Add weights
     weights = set(weights)
     for l in layers:
-        for w in l.weights:
-            weights.add(w)
+        weights.update(l.weights)
     pb.model.weights.extend([w.export_proto() for w in weights])
 
     # Add objective function

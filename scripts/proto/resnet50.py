@@ -128,32 +128,25 @@ softmax = lp.Softmax(fc)
 ce = lp.CrossEntropy([softmax, labels])
 top1 = lp.CategoricalAccuracy([softmax, labels])
 top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
-layers = lp.traverse_layer_graph(input)
+layers = list(lp.traverse_layer_graph(input))
 
 # Explicitly set up weights for all layers.
-weights = []
 l2_reg_weights = []
 for l in layers:
     if type(l) == lp.Convolution:
-        kernel = lp.Weights(l.name + '_kernel', lp.HeNormalInitializer())
-        l.add_weights(kernel)
-        weights.append(kernel)
-        l2_reg_weights.append(kernel)
+        l.add_weights(lp.Weights(l.name + '_kernel', lp.HeNormalInitializer()))
+        l2_reg_weights.extend(l.weights)
     elif type(l) == lp.BatchNormalization:
         init_scale = 0.0 if ('conv3' in l.name) else 1.0
-        scale = lp.Weights(l.name + '_scale',
-                           lp.ConstantInitializer(value=init_scale))
-        bias = lp.Weights(l.name + '_bias',
-                          lp.ConstantInitializer(value=0.0))
-        l.add_weights(scale)
-        l.add_weights(bias)
-        weights.extend([scale, bias])
+        l.add_weights([lp.Weights(l.name + '_scale',
+                                  lp.ConstantInitializer(value=init_scale)),
+                       lp.Weights(l.name + '_bias',
+                          lp.ConstantInitializer(value=0.0))])
     elif type(l) == lp.FullyConnected:
-        matrix = lp.Weights(l.name + '_matrix',
-                            lp.NormalInitializer(mean=0.0, standard_deviation=0.01))
-        l.add_weights(matrix)
-        weights.append(matrix)
-        l2_reg_weights.append(matrix)
+        l.add_weights(lp.Weights(
+            l.name + '_matrix',
+            lp.NormalInitializer(mean=0.0, standard_deviation=0.01)))
+        l2_reg_weights.extend(l.weights)
 
 # Set up other model components.
 obj = lp.ObjectiveFunction(
@@ -167,5 +160,5 @@ callbacks = [lp.CallbackPrint(),
 
 # Export model to file
 lp.save_model('resnet50.prototext', 256, 90,
-              layers=layers, weights=weights, objective_function=obj,
+              layers=layers, objective_function=obj,
               metrics=metrics, callbacks=callbacks)
