@@ -132,7 +132,6 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
             assert len(dims) > 1 and dims[0] == miniBatchSize
             l.fully_connected.num_neurons = int(np.prod(dims[1:]))
 
-        # FIXME: ret always has these keys
         ret = parseLbannLayer(l, inputShapes, nodes)
         if "inputs" in ret.keys():
             inputs.extend(ret["inputs"])
@@ -141,39 +140,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
             inits.extend(ret["inits"])
 
         if "nodes" in ret.keys():
-            for node in ret["nodes"]:
-                if node.op_type in ["Gemm"]:
-                    for i_input in range(len(node.input)):
-                        if node.op_type == "Gemm" and i_input != 0:
-                            continue
-
-                        nameBeforeReshape = node.input[i_input]
-                        shapeBeforeReshape = inputShapes[nameBeforeReshape]
-
-                        if len(shapeBeforeReshape) != 2:
-                            nameAfterReshape = "{}_reshaped_{}".format(nameBeforeReshape, len(nodes))
-                            if len(shapeBeforeReshape) > 2:
-                                shapeAfterReshape = [shapeBeforeReshape[0], int(np.prod(shapeBeforeReshape[1:]))]
-                            else:
-                                shapeAfterReshape = [1, shapeBeforeReshape[0]]
-
-                            shapeName = "{}_shape_{}".format(nameBeforeReshape, len(nodes))
-
-                            reshape = onnx.helper.make_node("Reshape",
-                                                            inputs=[nameBeforeReshape, shapeName],
-                                                            outputs=[nameAfterReshape])
-                            shapeInit = onnx.helper.make_tensor(name=shapeName,
-                                                                data_type=onnx.TensorProto.INT64,
-                                                                dims=[2],
-                                                                vals=np.array(shapeAfterReshape, dtype=np.int64).tobytes(),
-                                                                raw=True)
-
-                            nodes.append(reshape)
-                            inits.append(shapeInit)
-
-                            node.input[i_input] = nameAfterReshape
-
-                nodes.append(node)
+            nodes.extend(ret["nodes"])
 
     for l in params.keys():
         for i,p in enumerate(params[l]):

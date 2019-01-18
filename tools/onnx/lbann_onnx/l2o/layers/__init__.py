@@ -58,6 +58,7 @@ class LbannLayerParser():
                                                shape=shape)
         self.inputs.append(i)
 
+    # TODO: remove dataType from arguments
     def appendParamWithInit(self, name, shape, dataType, data):
         self.appendParam(name, shape)
         init = onnx.helper.make_tensor(name=name,
