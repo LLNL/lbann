@@ -184,19 +184,8 @@
 
 /// Objective functions
 #include "lbann/objective_functions/objective_function.hpp"
-#include "lbann/objective_functions/loss_functions/cross_entropy.hpp"
-#include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
-#include "lbann/objective_functions/loss_functions/binary_cross_entropy.hpp"
-#include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
-#include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
-#include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
-#include "lbann/objective_functions/loss_functions/mean_absolute_error.hpp"
-#include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
-#include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
-#include "lbann/objective_functions/weight_regularization/l1.hpp"
-#include "lbann/objective_functions/weight_regularization/l2.hpp"
-#include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
 
 /// Metrics
 #include "lbann/metrics/layer_metric.hpp"
