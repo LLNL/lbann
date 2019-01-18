@@ -22,19 +22,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_checknan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_checknan.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 namespace {
 
-/** Check whether a matrix contains a NaN. 
+/** Check whether a matrix contains a NaN.
  *  If a NaN entry is detected, return true and output the local entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
@@ -54,7 +51,7 @@ bool has_nan(const AbsDistMat& mat, El::Int& row, El::Int& col) {
   return false;
 }
 
-/** Check whether a matrix contains an inf. 
+/** Check whether a matrix contains an inf.
  *  If an inf entry is detected, return true and output the entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */

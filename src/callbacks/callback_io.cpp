@@ -30,7 +30,6 @@
 
 #include "lbann/callbacks/callback_io.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
-#include "lbann/layers/io/target/generic_target_layer.hpp"
 
 namespace lbann {
 
@@ -51,13 +50,6 @@ void lbann_callback_io::on_epoch_end(model *m) {
                   << input->get_total_num_training_samples() << " ("
                   << input->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << std::endl;
       }
-      // auto *target = (generic_target_layer *) dynamic_cast<generic_target_layer *> (layer);
-      // if(target != nullptr) {
-      //   std::cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
-      //             << target->get_num_samples_trained() << " training labels of "
-      //             << target->get_total_num_training_samples() << " ("
-      //             << target->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << std::endl;
-      // }
     }
   }
 }
@@ -74,13 +66,6 @@ void lbann_callback_io::on_test_end(model *m) {
                   << input->get_total_num_testing_samples() << " ("
                   << input->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << std::endl;
       }
-      // auto *target = (generic_target_layer *) dynamic_cast<generic_target_layer *> (layer);
-      // if(target != nullptr) {
-      //   std::cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
-      //             << target->get_num_samples_tested() << " test labels of "
-      //             << target->get_total_num_testing_samples() << " ("
-      //             << target->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << std::endl;
-      // }
     }
   }
 }
