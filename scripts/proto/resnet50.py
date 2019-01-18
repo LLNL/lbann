@@ -2,14 +2,14 @@ import lbann_proto as lp
 import lbann_modules as lm
 
 blocks = [3, 4, 6, 3]  # Blocks for ResNet-50.
-bn_stats_aggregation = 'global'
+bn_stats_aggregation = 'local'
 
 class ConvBNRelu2d(lm.Module):
     """Convolution -> Batch normalization -> ReLU"""
 
     def __init__(self, out_channels, kernel_size,
                  stride=1, padding=0, dilation=1,
-                 bn_init_scale=1.0, bn_stats_aggregation='global',
+                 bn_init_scale=1.0, bn_stats_aggregation='local',
                  relu=True):
         conv_weights = [lp.Weights(initializer=lp.HeNormalInitializer()),
                         lp.Weights()]
@@ -37,7 +37,7 @@ class ResBottleneck(lm.Module):
 
     def __init__(self, mid_channels, out_channels,
                  stride, dilation=1, downsample=False,
-                 bn_stats_aggregation='global'):
+                 bn_stats_aggregation='local'):
         self.conv1 = ConvBNRelu2d(mid_channels, 1,
                                   stride=1, padding=0, dilation=1,
                                   bn_stats_aggregation=bn_stats_aggregation)
@@ -74,7 +74,7 @@ class ResBlock:
     """
 
     def __init__(self, num_layers, mid_channels, out_channels,
-                 stride, dilation=1, bn_stats_aggregation='global'):
+                 stride, dilation=1, bn_stats_aggregation='local'):
         self.layers = []
         self.layers.append(ResBottleneck(
             mid_channels, out_channels,
