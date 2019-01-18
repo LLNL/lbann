@@ -1,8 +1,8 @@
 import re
 
 class LbannLayerParser():
-    def __init__(self, lp, inputShapes):
-        self.lp = lp
+    def __init__(self, l, inputShapes):
+        self.l = l
         self.inputShapes = inputShapes
 
     def parse(self):
