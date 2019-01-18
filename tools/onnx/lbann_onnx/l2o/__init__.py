@@ -232,14 +232,10 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
                     lbann_onnx.util.printParsingState(l, tensorShapes)
                     exit()
 
-            # OPTIMIZE
-            lParsed = l
-            if f == "unpooling":
-                lParsed = list(filter(lambda x: x.name == l.unpooling.pooling_layer, knownNodes))[0]
-
-            p = PARSERS[f](lParsed,
-                             f,
-                            list(map(lambda x: tensorShapes[x], lbannInputs)))
+            p = PARSERS[f](l,
+                           f,
+                           list(map(lambda x: tensorShapes[x], lbannInputs)),
+                           knownNodes)
             p.parse()
             return {"node": p.nodes[0], "inputs": p.inputs, "inits": p.inits}
 

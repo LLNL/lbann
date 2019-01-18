@@ -2,10 +2,11 @@ import re
 import onnx.helper
 
 class LbannLayerParser():
-    def __init__(self, l, layerType, inputShapes):
+    def __init__(self, l, layerType, inputShapes, knownNodes):
         self.l = l
         self.layerType = layerType
         self.inputShapes = inputShapes
+        self.knownNodes = knownNodes # necessary to get existing nodes' information for unpooling
 
         self.nodes = []
 

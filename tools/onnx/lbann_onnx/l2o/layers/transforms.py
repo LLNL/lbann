@@ -14,9 +14,11 @@ class LbannLayerParser_pooling(LbannLayerParser):
 
 class LbannLayerParser_unpooling(LbannLayerParser):
     def parse(self):
-        # OPTIMIZE: self.l is an ONNX Pooling node only in this parser function
+        unpoolNode = list(filter(lambda x: x.name == self.l.unpooling.pooling_layer,
+                                 self.knownNodes))
+        assert len(unpoolNode) == 1
         self.appendOperator("MaxUnpool",
-                attrs=dict(map(lambda x: (x, getNodeAttributeByName(self.l, x).ints),
+                attrs=dict(map(lambda x: (x, getNodeAttributeByName(unpoolNode[0], x).ints),
                                   ["kernel_shape", "pads", "strides"])))
 
 class LbannLayerParser_slice(LbannLayerParser):
