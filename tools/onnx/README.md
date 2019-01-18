@@ -30,3 +30,6 @@ See [`viz/`](viz/) for more details.
 
 ### ONNX (vizualized with [Netron](https://github.com/lutzroeder/netron))
 <img src="viz/mnist/mnist_onnx_netron.png" width="200" />
+
+### ONNX with the original node names
+<img src="viz/mnist/mnist_onnx_netron_name.png" width="200" />

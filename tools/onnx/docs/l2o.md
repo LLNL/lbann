@@ -31,6 +31,13 @@
   * `abs`
   * `weighted_sum` (partially supported)
   * `constant`
+* [Loss/Objective Functions](../lbann_onnx/l2o/layers/losses.py)
+  * `cross_entropy`
+  * `binary_cross_entropy`
+  * `sigmoid_binary_cross_entropy`
+  * `categorical_accuracy`
+  * `mean_absolute_error`
+  * `mean_squared_error`
 
 ## Dummy/Non-supported Layers
 Some LBANN layers are not supported since there is no equivalent operation in ONNX.
@@ -41,8 +48,6 @@ Some LBANN layers are not supported since there is no equivalent operation in ON
 * [Math Layers](../lbann_onnx/l2o/layers/math.py)
   * `square`
   * `rsqrt`
-* [Loss Functions](../lbann_onnx/l2o/layers/losses.py)
-  * Since ONNX is intended for describing DNN models, loss functions cannot be represented directly. They still can be described by combining ONNX's arithemtic operations.
 
 ## Difference between LBANN/ONNX Models
 * The following attributes are stored in ONNX nodes to keep the original information of LBANN models.
