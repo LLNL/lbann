@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
   if (master) cerr << "reading filelist\n";
   vector<string> filenames;
   string base_dir = opts->get_string("base_dir");
-  if (!base_dir.back() == '/') {
+  if (base_dir.back() != '/') {
     base_dir += '/';
   }
   char b[1024];

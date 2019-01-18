@@ -22,17 +22,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// init_image_data_readers .hpp .cpp - initialize image_data_reader by prototext
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _INIT_IMAGE_DATA_READERS_HPP_
-#define _INIT_IMAGE_DATA_READERS_HPP_
+#ifndef LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED
+#define LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/comm.hpp"
 
-extern void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
-extern void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* reader);
-extern void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, lbann::generic_data_reader* &reader);
+namespace lbann {
 
-#endif // _INIT_IMAGE_DATA_READERS_HPP_
+extern void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader);
+extern void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* reader);
+extern void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader);
+
+} // namespace lbann
+
+#endif // LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED

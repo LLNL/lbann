@@ -26,6 +26,8 @@
 
 #include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
 
+namespace {
+
 double digamma(double x) {
   double result = 0.0;
   double z = x;
@@ -41,6 +43,8 @@ double digamma(double x) {
   result += std::log(z) - s/2.0 - s2/12.0 + s4/120.0 - s6/252.0 + s8/240.0 - (5.0/660.0)*s4*s6 +(691.0/32760.0)*s6*s6 - s6*s8/12.0;
   return result;
 }
+
+} // namespace
 
 namespace lbann {
 

@@ -32,7 +32,7 @@
 #include <google/protobuf/text_format.h>
 #include <memory> // for dynamic_pointer_cast
 
-using namespace lbann;
+namespace lbann {
 
 /// set up a cropper
 static void set_cropper(const lbann_data::ImagePreprocessor& pb_preprocessor,
@@ -614,4 +614,6 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
 
   // setup preprocessor
   init_generic_preprocessor(pb_readme, master, reader);
+}
+
 }

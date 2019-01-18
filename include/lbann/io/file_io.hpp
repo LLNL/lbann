@@ -26,6 +26,8 @@
 // lbann_file_io .hpp .cpp - Input / output utilities
 ////////////////////////////////////////////////////////////////////////////////
 
+/// @todo Remove this file.
+
 #ifndef LBANN_IO_H
 #define LBANN_IO_H
 
@@ -34,15 +36,17 @@
 #include <fcntl.h>
 
 namespace lbann {
-
+/// @todo Deprecated.
 int makedir(const char *dirname);
-
+/// @todo Deprecated.
 int exists(const char *filename);
-
+/// @todo Deprecated.
 int openread(const char *filename);
+/// @todo Deprecated.
 int closeread(int fd, const char *filename);
-
+/// @todo Deprecated.
 int openwrite(const char *filename);
+/// @todo Deprecated.
 int closewrite(int fd, const char *filename);
 }
 

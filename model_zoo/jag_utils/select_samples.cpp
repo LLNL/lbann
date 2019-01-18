@@ -27,6 +27,12 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
 
+  if (np!= 1) {
+    if (master) {
+      LBANN_ERROR("please run with a single processor");
+    }
+  }
+
   options *opts = options::get();
   opts->init(argc, argv);
 
@@ -82,7 +88,6 @@ int main(int argc, char **argv) {
     }
   }
   in.close();
-  cerr << "DONE! reading sample mapping\n";
   cerr << "num lines processed: " << n << "\n";
 
   //==========================================================================
@@ -125,7 +130,6 @@ int main(int argc, char **argv) {
         break;
       }
     }
-    cerr << "DONE!\n";
   
     // loop over each entry from in input index file; determine which, if any,
     // local indices will be added to the INCLUSION index
@@ -182,6 +186,7 @@ int main(int argc, char **argv) {
     //=====================================================================
     //open output file and write 1st header line
     const std::string name1 = output_fn + "_bar";
+    std::cerr << "\nWRITING output file: " << name1 << "\n";
     std::ofstream out(name1.c_str());
     if (!out) {
       err << "failed to open " << name1 << " for writing\n";
@@ -233,6 +238,7 @@ int main(int argc, char **argv) {
     //=====================================================================
     // open output file and write 1st header line
     out.open(output_fn.c_str());
+    std::cerr << "\nWRITING output file: " << output_fn << "\n";
     if (!out) {
       err << "failed to open " << output_fn << " for writing\n";
       LBANN_ERROR(err.str());

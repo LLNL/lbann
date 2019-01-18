@@ -8,6 +8,7 @@ set_full_path(THIS_DIR_HEADERS
   description.hpp
   entrywise_operator.hpp
   exception.hpp
+  file_utils.hpp
   glob.hpp
   im2col.hpp
   mild_exception.hpp

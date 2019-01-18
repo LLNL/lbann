@@ -27,6 +27,8 @@
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/optimizers/sgd.hpp"
+#include "lbann/optimizers/adam.hpp"
 
 namespace lbann {
 
@@ -104,14 +106,47 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
 
   // Exchange weights with partner
   for (size_t i = 0; i < send_weights.size(); ++i) {
+    const auto& send = *send_weights[i];
+    auto& recv = *recv_weights[i];
     if (weights_names.empty()
         || (std::find(weights_names.begin(), weights_names.end(),
-                      send_weights[i]->get_name())
+                      send.get_name())
             != weights_names.end())) {
-      const auto& send_data = send_weights[i]->get_values().LockedMatrix();
-      auto& recv_data = recv_weights[i]->get_values().Matrix();
-      El::SendRecv(send_data, recv_data, comm.get_world_comm(),
-                   partner_rank_in_world, partner_rank_in_world);
+
+      // Exchange weights values
+      El::SendRecv(send.get_values().LockedMatrix(),
+                   recv.get_values().Matrix(),
+                   comm.get_world_comm(),
+                   partner_rank_in_world,
+                   partner_rank_in_world);
+
+      // Exchange optimizer state
+      const auto* send_opt = send.get_optimizer();
+      auto* recv_opt = recv.get_optimizer();
+      const auto* send_sgd = dynamic_cast<const sgd*>(send_opt);
+      auto* recv_sgd = dynamic_cast<sgd*>(recv_opt);
+      if (send_sgd != nullptr && recv_sgd != nullptr) {
+        El::SendRecv(send_sgd->get_velocity().LockedMatrix(),
+                     recv_sgd->get_velocity().Matrix(),
+                     comm.get_world_comm(),
+                     partner_rank_in_world,
+                     partner_rank_in_world);
+      }
+      const auto* send_adam = dynamic_cast<const adam*>(send_opt);
+      auto* recv_adam = dynamic_cast<adam*>(recv_opt);
+      if (send_adam != nullptr && recv_adam != nullptr) {
+        El::SendRecv(send_adam->get_moment1().LockedMatrix(),
+                     recv_adam->get_moment1().Matrix(),
+                     comm.get_world_comm(),
+                     partner_rank_in_world,
+                     partner_rank_in_world);
+        El::SendRecv(send_adam->get_moment2().LockedMatrix(),
+                     recv_adam->get_moment2().Matrix(),
+                     comm.get_world_comm(),
+                     partner_rank_in_world,
+                     partner_rank_in_world);
+      }
+
     }
   }
 
