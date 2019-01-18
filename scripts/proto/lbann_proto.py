@@ -45,8 +45,8 @@ def _add_to_module_namespace(stuff):
 def _make_iterable(obj):
     """Convert to an iterable object.
 
-    Simply returns 'obj' if it is alredy iterable. Otherwise returns a
-    1-tuple containing 'obj'.
+    Simply returns `obj` if it is alredy iterable. Otherwise returns a
+    1-tuple containing `obj`.
 
     """
     if isinstance(obj, Iterable):
@@ -61,15 +61,15 @@ def _make_iterable(obj):
 class Layer:
     """Base class for layers."""
 
-    num_layers = 0  # Static counter, used for default layer names
+    global_count = 0  # Static counter, used for default names
 
     def __init__(self, parents, children, weights,
                  name, data_layout, hint_layer):
-        Layer.num_layers += 1
+        Layer.global_count += 1
         self.parents = []
         self.children = []
         self.weights = []
-        self.name = name if name else 'layer{0}'.format(Layer.num_layers)
+        self.name = name if name else 'layer{0}'.format(Layer.global_count)
         self.data_layout = data_layout
         self.hint_layer = hint_layer
 
@@ -93,13 +93,13 @@ class Layer:
         return proto
 
     def add_parent(self, parent):
-        """This layer will receive an input tensor from 'parent'."""
+        """This layer will receive an input tensor from `parent`."""
         for p in _make_iterable(parent):
             self.parents.append(p)
             p.children.append(self)
 
     def add_child(self, child):
-        """"This layer will send an output tensor to 'child'."""
+        """"This layer will send an output tensor to `child`."""
         for c in _make_iterable(child):
             self.children.append(c)
             c.parents.append(self)
@@ -108,14 +108,18 @@ class Layer:
         self.weights.extend(_make_iterable(w))
 
     def __call__(self, parent):
-        """This layer will recieve an input tensor from 'parent'"""
+        """This layer will recieve an input tensor from `parent`.
+
+        Syntactic sugar around `add_parent` function.
+
+        """
         self.add_parent(parent)
 
 def _create_layer_subclass(type_name):
     """Generate a new Layer sub-class based on lbann.proto.
 
-    'type_name' is the name of a message in lbann.proto,
-    e.g. 'FullyConnected'. It will be the name of the generated
+    `type_name` is the name of a message in lbann.proto,
+    e.g. `FullyConnected`. It will be the name of the generated
     sub-class.
 
     """
@@ -124,7 +128,7 @@ def _create_layer_subclass(type_name):
     layer_type = getattr(lbann_pb2, type_name)
     field_names = list(layer_type.DESCRIPTOR.fields_by_name.keys())
 
-    # Name of corresponding field within the 'Layer' message in lbann.proto.
+    # Name of corresponding field within the `Layer` message in lbann.proto.
     layer_field_name = None
     for field in lbann_pb2.Layer.DESCRIPTOR.fields:
         if field.message_type and field.message_type.name == type_name:
@@ -182,8 +186,8 @@ _add_to_module_namespace(_generated_classes)
 def traverse_layer_graph(layers):
     """Generator function for a topologically ordered graph traversal.
 
-    'layers' should be a 'Layer' or a sequence of 'Layer's. All layers
-    that are connected to 'layers' will be traversed.
+    `layers` should be a `Layer` or a sequence of `Layer`s. All layers
+    that are connected to `layers` will be traversed.
 
     The layer graph is assumed to be acyclic. Strange things may
     happen if this does not hold.
@@ -227,13 +231,14 @@ class Initializer:
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        raise NotImplementedError('export_proto not implemented')
+        # Should be overridden in all sub-classes
+        raise NotImplementedError
 
 def _create_init_subclass(type_name):
     """Generate a new Initializer sub-class based on lbann.proto.
 
-    'type_name' is the name of a message in lbann.proto,
-    e.g. 'ConstantInitializer'. It will be the name of the generated
+    `type_name` is the name of a message in lbann.proto,
+    e.g. `ConstantInitializer`. It will be the name of the generated
     sub-class.
 
     """
@@ -285,8 +290,11 @@ _add_to_module_namespace(_generated_classes)
 class Weights:
     """Trainable model parameters."""
 
-    def __init__(self, name, initializer=None, optimizer=None):
-        self.name = name
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(self, initializer=None, optimizer=None, name=''):
+        Weights.global_count += 1
+        self.name = name if name else 'weights{0}'.format(Weights.global_count)
         self.initializer = initializer
         self.optimizer = optimizer
 
@@ -329,7 +337,8 @@ class ObjectiveFunctionTerm:
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        raise NotImplementedError('export_proto not implemented')
+        # Should be overridden in all sub-classes
+        raise NotImplementedError
 
 class LayerTerm(ObjectiveFunctionTerm):
     """Objective function term that takes value from a layer."""
@@ -365,8 +374,8 @@ class ObjectiveFunction:
     def __init__(self, terms=[]):
         """Create an objective function with layer terms and regularization.
 
-        'terms' should be a sequence of 'ObjectiveFunctionTerm's and
-        'Layer's.
+        `terms` should be a sequence of `ObjectiveFunctionTerm`s and
+        `Layer`s.
 
         """
         self.terms = []
@@ -376,7 +385,7 @@ class ObjectiveFunction:
     def add_term(self, term):
         """Add a term to the objective function.
 
-        'term' may be a 'Layer', in which case a 'LayerTerm' is
+        `term` may be a `Layer`, in which case a `LayerTerm` is
         constructed and added to the objective function.
 
         """
@@ -438,8 +447,8 @@ class Callback:
 def _create_callback_subclass(type_name):
     """Generate a new Callback sub-class based on lbann.proto.
 
-    'type_name' is the name of a message in lbann.proto,
-    e.g. 'CallbackPrint'. It will be the name of the generated
+    `type_name` is the name of a message in lbann.proto,
+    e.g. `CallbackPrint`. It will be the name of the generated
     sub-class.
 
     """
@@ -448,7 +457,7 @@ def _create_callback_subclass(type_name):
     callback_type = getattr(lbann_pb2, type_name)
     field_names = list(callback_type.DESCRIPTOR.fields_by_name.keys())
 
-    # Name of corresponding field within the 'Callback' message in lbann.proto.
+    # Name of corresponding field within the `Callback` message in lbann.proto.
     callback_field_name = None
     for field in lbann_pb2.Callback.DESCRIPTOR.fields:
         if field.message_type and field.message_type.name == type_name:

@@ -1,101 +1,89 @@
 import lbann_proto as lp
+import lbann_modules as lm
 
 blocks = [3, 4, 6, 3]  # Blocks for ResNet-50.
 bn_stats_aggregation = 'global'
 
-class ConvBNRelu2d:
+class ConvBNRelu2d(lm.Module):
     """Convolution -> Batch normalization -> ReLU"""
 
-    def __init__(self, name, out_channels, kernel_size,
-                 stride=1, padding=0, dilation=1, bias=False, relu=True,
-                 bn_stats_aggregation='global'):
-        self.step = 0
-        self.name = name
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding = padding
-        self.dilation = dilation
-        self.bias = bias
-        self.relu = relu
+    def __init__(self, out_channels, kernel_size,
+                 stride=1, padding=0, dilation=1,
+                 bn_init_scale=1.0, bn_stats_aggregation='global',
+                 relu=True):
+        conv_weights = [lp.Weights(initializer=lp.HeNormalInitializer()),
+                        lp.Weights()]
+        self.conv = lm.Convolution2dModule(out_channels, kernel_size,
+                                           stride=stride, padding=padding,
+                                           dilation=dilation, bias=False,
+                                           weights=conv_weights)
+        self.bn_weights = [lp.Weights(lp.ConstantInitializer(value=bn_init_scale)),
+                           lp.Weights(lp.ConstantInitializer(value=0.0))]
         self.bn_stats_aggregation = bn_stats_aggregation
+        self.relu = relu
 
     def __call__(self, x):
-        name = ('{0}_step{1}'.format(self.name, self.step)
-                if self.step
-                else self.name)
-        self.step += 1
-        conv = lp.Convolution(x,
-                              name=name+'_conv',
-                              num_dims=2,
-                              num_output_channels=self.out_channels,
-                              has_vectors=False,
-                              conv_dims_i=self.kernel_size,
-                              conv_pads_i=self.padding,
-                              conv_strides_i=self.stride,
-                              conv_dilations_i=self.dilation,
-                              has_bias=self.bias)
-        bn = lp.BatchNormalization(conv,
-                                   name=name+'_bn',
+        conv = self.conv(x)
+        bn = lp.BatchNormalization(conv, weights=self.bn_weights,
                                    decay=0.9, epsilon=1e-5,
-                                   stats_aggregation=bn_stats_aggregation)
+                                   stats_aggregation=self.bn_stats_aggregation)
         if self.relu:
-            return lp.Relu(bn, name=name+'_relu')
+            return lp.Relu(bn)
         else:
             return bn
 
-class ResBottleneck:
+class ResBottleneck(lm.Module):
     """ResNet bottleneck building block."""
 
-    def __init__(self, name, mid_channels, out_channels, stride,
-                 dilation=1, downsample=False,
+    def __init__(self, mid_channels, out_channels,
+                 stride, dilation=1, downsample=False,
                  bn_stats_aggregation='global'):
-        self.step = 0
-        self.name = name
-        self.conv1 = ConvBNRelu2d(name + '_conv1', mid_channels, 1,
+        self.conv1 = ConvBNRelu2d(mid_channels, 1,
                                   stride=1, padding=0, dilation=1,
                                   bn_stats_aggregation=bn_stats_aggregation)
-        self.conv2 = ConvBNRelu2d(name + '_conv2', mid_channels, 3,
+        self.conv2 = ConvBNRelu2d(mid_channels, 3,
                                   stride=stride, padding=dilation, dilation=dilation,
                                   bn_stats_aggregation=bn_stats_aggregation)
-        self.conv3 = ConvBNRelu2d(name + '_conv3', out_channels, 1,
-                                  stride=1, padding=0, dilation=1, relu=False,
-                                  bn_stats_aggregation=bn_stats_aggregation)
+        self.conv3 = ConvBNRelu2d(out_channels, 1,
+                                  stride=1, padding=0, dilation=1,
+                                  bn_init_scale=0.0,
+                                  bn_stats_aggregation=bn_stats_aggregation,
+                                  relu=False)
         if downsample:
-            self.downsample = ConvBNRelu2d(name + '_proj', out_channels, 1,
-                                           stride=stride, padding=0,
-                                           dilation=1, relu=False,
-                                           bn_stats_aggregation=bn_stats_aggregation)
+            self.downsample = ConvBNRelu2d(out_channels, 1,
+                                           stride=stride, padding=0, dilation=1,
+                                           bn_stats_aggregation=bn_stats_aggregation,
+                                           relu=False)
         else:
             self.downsample = None
 
     def __call__(self, x):
-        name = ('{0}_step{1}'.format(self.name, self.step)
-                if self.step
-                else self.name)
-        self.step += 1
         conv = self.conv3(self.conv2(self.conv1(x)))
         if self.downsample is None:
             residual = x
         else:
             residual = self.downsample(x)
-        sum = lp.Sum([conv, residual], name=name+'_sum')
-        return lp.Relu(sum, name=name+'_relu')
+        return lp.Relu(lp.Add([conv, residual]))
 
 class ResBlock:
-    """ResNet block, constructed of some number of bottleneck layers."""
+    """ResNet block, constructed of some number of bottleneck layers.
 
-    def __init__(self, name, num_layers, mid_channels, out_channels,
+    Here we use "layer" in the PyTorch/TensorFlow/Keras sense of the
+    word, not the way LBANN uses it.
+
+    """
+
+    def __init__(self, num_layers, mid_channels, out_channels,
                  stride, dilation=1, bn_stats_aggregation='global'):
         self.layers = []
         self.layers.append(ResBottleneck(
-            name + '_bottleneck1', mid_channels, out_channels,
+            mid_channels, out_channels,
             stride, dilation=dilation, downsample=True,
             bn_stats_aggregation=bn_stats_aggregation))
         for i in range(num_layers - 1):
             self.layers.append(ResBottleneck(
-                name + '_bottleneck{0}'.format(i+2), mid_channels,
-                out_channels, stride=1, dilation=dilation, downsample=False,
+                mid_channels, out_channels,
+                stride=1, dilation=dilation, downsample=False,
                 bn_stats_aggregation=bn_stats_aggregation))
 
     def __call__(self, x):
@@ -107,18 +95,18 @@ class ResBlock:
 input = lp.Input(io_buffer='partitioned')
 images = lp.Identity(input)
 labels = lp.Identity(input)
-conv1 = ConvBNRelu2d('conv1', 64, 7, stride=2, padding=3,
+conv1 = ConvBNRelu2d(64, 7, stride=2, padding=3,
                      bn_stats_aggregation=bn_stats_aggregation)(images)
 pool1 = lp.Pooling(conv1, num_dims=2, has_vectors=False,
                    pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
                    pool_mode='max')
-block1 = ResBlock('block1', blocks[0], 64, 256, stride=1,
+block1 = ResBlock(blocks[0], 64, 256, stride=1,
                   bn_stats_aggregation=bn_stats_aggregation)(pool1)
-block2 = ResBlock('block2', blocks[1], 128, 512, stride=2,
+block2 = ResBlock(blocks[1], 128, 512, stride=2,
                   bn_stats_aggregation=bn_stats_aggregation)(block1)
-block3 = ResBlock('block3', blocks[2], 256, 1024, stride=2,
+block3 = ResBlock(blocks[2], 256, 1024, stride=2,
                   bn_stats_aggregation=bn_stats_aggregation)(block2)
-block4 = ResBlock('block4', blocks[3], 512, 2048, stride=2,
+block4 = ResBlock(blocks[3], 512, 2048, stride=2,
                   bn_stats_aggregation=bn_stats_aggregation)(block3)
 avgpool = lp.Pooling(block4, num_dims=2, has_vectors=False,
                      pool_dims_i=7, pool_pads_i=0, pool_strides_i=1,
@@ -130,27 +118,15 @@ top1 = lp.CategoricalAccuracy([softmax, labels])
 top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
 layers = list(lp.traverse_layer_graph(input))
 
-# Explicitly set up weights for all layers.
-l2_reg_weights = []
+# Setup objective function
+l2_reg_weights = set()
 for l in layers:
-    if type(l) == lp.Convolution:
-        l.add_weights(lp.Weights(l.name + '_kernel', lp.HeNormalInitializer()))
-        l2_reg_weights.extend(l.weights)
-    elif type(l) == lp.BatchNormalization:
-        init_scale = 0.0 if ('conv3' in l.name) else 1.0
-        l.add_weights([lp.Weights(l.name + '_scale',
-                                  lp.ConstantInitializer(value=init_scale)),
-                       lp.Weights(l.name + '_bias',
-                          lp.ConstantInitializer(value=0.0))])
-    elif type(l) == lp.FullyConnected:
-        l.add_weights(lp.Weights(
-            l.name + '_matrix',
-            lp.NormalInitializer(mean=0.0, standard_deviation=0.01)))
-        l2_reg_weights.extend(l.weights)
+    if type(l) == lp.Convolution or type(l) == lp.FullyConnected:
+        l2_reg_weights.update(l.weights)
+l2_reg = lp.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
+obj = lp.ObjectiveFunction([ce, l2_reg])
 
-# Set up other model components.
-obj = lp.ObjectiveFunction(
-          [ce, lp.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)])
+# Set up metrics and callbacks
 metrics = [lp.Metric(top1, name='categorical accuracy', unit='%'),
            lp.Metric(top5, name='top-5 categorical accuracy', unit='%')]
 callbacks = [lp.CallbackPrint(),
