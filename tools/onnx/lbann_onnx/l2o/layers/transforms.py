@@ -8,57 +8,57 @@ import numpy as np
 class LbannLayerParser_pooling(LbannLayerParser):
     def parse(self):
         params = self.l.pooling
-        return {"op": {"max": "MaxPool",
+        self.appendOperator({"max": "MaxPool",
                        "average": "AveragePool"}[params.pool_mode],
-                "attrs": parseSpatialAttributes(params, "pool", False)}
+                attrs=parseSpatialAttributes(params, "pool", False))
 
 class LbannLayerParser_unpooling(LbannLayerParser):
     def parse(self):
         # OPTIMIZE: self.l is an ONNX Pooling node only in this parser function
-        return {"op": "MaxUnpool",
-                "attrs": dict(map(lambda x: (x, getNodeAttributeByName(self.l, x).ints),
-                                  ["kernel_shape", "pads", "strides"]))}
+        self.appendOperator("MaxUnpool",
+                attrs=dict(map(lambda x: (x, getNodeAttributeByName(self.l, x).ints),
+                                  ["kernel_shape", "pads", "strides"])))
 
 class LbannLayerParser_slice(LbannLayerParser):
     def parse(self):
         params = self.l.slice
         offsets = list(map(int, params.slice_points.split(" ")))
         sizes = list(map(lambda x: offsets[x+1]-offsets[x], range(len(offsets)-1)))
-        return {"op": "Split",
-                "attrs": {"axis": params.slice_axis,
-                          "split": sizes}}
+        self.appendOperator("Split",
+                attrs={"axis": params.slice_axis,
+                          "split": sizes})
 
 class LbannLayerParser_concatenation(LbannLayerParser):
     def parse(self):
-        return {"op": "Concat",
-                "attrs": {"axis": self.l.concatenation.concatenation_axis}}
+        self.appendOperator("Concat",
+                attrs={"axis": self.l.concatenation.concatenation_axis})
 
 class LbannLayerParser_gaussian(LbannLayerParser):
     def parse(self):
         params = self.l.gaussian
         # mean, stdev, neuron_dims
-        return {"op": "RandomNormal",
-                "outputCount": 1,
-                "attrs": {"dtype": lbann_onnx.ELEM_TYPE,
+        self.appendOperator("RandomNormal",
+                attrs={"dtype": lbann_onnx.ELEM_TYPE,
                           "mean": params.mean,
                           "scale": params.stdev,
                           "shape": params.neuron_dims if isinstance(params.neuron_dims, list) \
-                          else list(map(int, params.neuron_dims.split(" ")))}}
+                          else list(map(int, params.neuron_dims.split(" ")))})
 
 class LbannLayerParser_reshape(LbannLayerParser):
     def parse(self):
         shape = list(map(int, self.l.reshape.dims.split(" ")))
-        return {"op": "Reshape",
-                "paramCount": 1,
-                "inits": [{"shape": np.array(shape).shape,
-                           "dataType": onnx.TensorProto.INT64,
-                           "value": np.array(shape, dtype=np.int64).tobytes()}]}
+        pNames = self.appendOperator("Reshape", {}, paramShapes=[np.array(shape).shape])
+        assert len(pNames) == 1
+        self.appendInit(pNames[0],
+                        shape=np.array(shape).shape,
+                        dataType=onnx.TensorProto.INT64,
+                        data=np.array(shape, dtype=np.int64).tobytes())
 
 class LbannLayerParser_reduction(LbannLayerParser):
     def parse(self):
-        return {"op": {"sum": "ReduceSum",
+        self.appendOperator({"sum": "ReduceSum",
                        "average": "ReduceMean"}[self.l.reduction.mode],
-                "attrs": {"keepdims": 0}}
+                attrs={"keepdims": 0})
 
 ##
 ## Dummy parsers
@@ -66,8 +66,8 @@ class LbannLayerParser_reduction(LbannLayerParser):
 
 class LbannLayerParser_evaluation(LbannLayerParser):
     def parse(self):
-        return {"op": "LbannEvaluation"}
+        self.appendOperator("LbannEvaluation")
 
 class LbannLayerParser_zero(LbannLayerParser):
     def parse(self):
-        return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
+        self.appendOperator("Identity") # TODO: this is a dummy operation to perform correct infer_shape

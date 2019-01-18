@@ -237,44 +237,10 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
             if f == "unpooling":
                 lParsed = list(filter(lambda x: x.name == l.unpooling.pooling_layer, knownNodes))[0]
 
-            ret = PARSERS[f](lParsed,
-                            list(map(lambda x: tensorShapes[x], lbannInputs))).parse()
-            if ret is None:
-                return {}
-
-            defVals = {"paramCount": 0,
-                       "outputCount": 1,
-                       "params": [],
-                       "inits": [],
-                       "attrs": {}}
-            for k in defVals.keys():
-                if not k in ret.keys():
-                    ret[k] = defVals[k]
-
-            paramNames = list(map(lambda x: "{}_p{}".format(l.name, x), range(ret["paramCount"])))
-            inputNames  = lbannInputs + paramNames
-            outputNames = list(map(lambda x: "{}_{}".format(l.name, x), range(ret["outputCount"]))) if len(lbannOutputs) == 0 else list(map(lambda x: "{}_0".format(x), lbannOutputs))
-
-            node = onnx.helper.make_node(ret["op"],
-                                         inputs=inputNames,
-                                         outputs=outputNames,
-                                         name=l.name,
-                                         lbannOp=f,
-                                         lbannDataLayout=l.data_layout,
-                                         **ret["attrs"])
-
-            inputs = list(map(lambda x: onnx.helper.make_tensor_value_info(name=paramNames[x],
-                                                                           elem_type=lbann_onnx.ELEM_TYPE,
-                                                                           shape=ret["params"][x]),
-                              range(len(ret["params"]))))
-
-            inits = list(map(lambda x: onnx.helper.make_tensor(name=paramNames[x],
-                                                               data_type=ret["inits"][x]["dataType"],
-                                                               dims=ret["inits"][x]["shape"],
-                                                               vals=ret["inits"][x]["value"],
-                                                               raw=True),
-                             range(len(ret["inits"]))))
-
-            return {"node": node, "inputs": inputs, "inits": inits}
+            p = PARSERS[f](lParsed,
+                             f,
+                            list(map(lambda x: tensorShapes[x], lbannInputs)))
+            p.parse()
+            return {"node": p.nodes[0], "inputs": p.inputs, "inits": p.inits}
 
     NotImplementedError("Unimplemented LBANN operator: {}".format(l))

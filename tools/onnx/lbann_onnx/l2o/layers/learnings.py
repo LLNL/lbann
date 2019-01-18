@@ -14,10 +14,10 @@ class LbannLayerParser_fully_connected(LbannLayerParser):
         wShape = [outputSize,
                   int(np.prod(self.inputShapes[0][1:])) if len(self.inputShapes[0]) >= 2 else self.inputShapes[0][0]]
         bShape = [outputSize]
-        return {"op": "Gemm",
-                "paramCount": 2 if params.has_bias else 1,
-                "attrs": {"transB": 1},
-                "params": [wShape, bShape] if params.has_bias else [wShape]}
+
+        self.appendOperator("Gemm",
+                            {"transB": 1},
+                            ([wShape, bShape] if params.has_bias else [wShape]))
 
 class LbannLayerParser_convolution(LbannLayerParser):
     def parse(self):
@@ -34,7 +34,6 @@ class LbannLayerParser_convolution(LbannLayerParser):
                   *attrs["kernel_shape"]]
         bShape = [wShape[0]]
 
-        return {"op": "Conv",
-                "paramCount": 2 if params.has_bias else 1,
-                "attrs": attrs,
-                "params": [wShape, bShape] if params.has_bias else [wShape]}
+        self.appendOperator("Conv",
+                            attrs,
+                            ([wShape, bShape] if params.has_bias else [wShape]))
