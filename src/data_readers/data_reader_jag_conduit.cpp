@@ -731,56 +731,45 @@ void data_reader_jag_conduit::load() {
 
   m_shuffled_indices.clear();
 
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
-  const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
 
-  if (my_rank >= num_readers) { /// @todo this should go away it is broken
-    // Make sure to have all the reader instances be aware of the number of
-    // samples in use regardless of whether it participates data ingestion
-    // or not.
-    sample_list_header hdr = m_sample_list.load_header(sample_list_file);
-    // Avoid reading the entire list file but only reads the header.
-    m_shuffled_indices.resize(hdr.get_sample_count());
+  /// The use of these flags need to be updated to properly separate
+  /// how index lists are used between trainers, models, and ranks
+  /// @todo m_list_per_trainer || m_list_per_model
+  if (m_list_per_rank) {
+    load_list_of_samples(sample_list_file, 1, 0);
+    std::stringstream s;
+    std::string basename = get_basename_without_ext(sample_list_file);
+    std::string ext = get_ext_name(sample_list_file);
+    s << "r" << m_comm->get_rank_in_model() << basename << "." << ext;
+    m_sample_list.write(s.str());
   } else {
-    /// The use of these flags need to be updated to properly separate
-    /// how index lists are used between trainers, models, and ranks
-    /// @todo m_list_per_trainer || m_list_per_model
-    if (m_list_per_rank) {
-      load_list_of_samples(sample_list_file, 1, 0);
-      std::stringstream s;
-      std::string basename = get_basename_without_ext(sample_list_file);
-      std::string ext = get_ext_name(sample_list_file);
-      s << "r" << m_comm->get_rank_in_model() << basename << "." << ext;
-      m_sample_list.write(s.str());
-    } else {
-      load_list_of_samples(sample_list_file, m_comm->get_procs_per_model(), m_comm->get_rank_in_model());
-      m_sample_list.all_gather_packed_lists(*m_comm);
-      std::stringstream s;
-      std::string basename = get_basename_without_ext(sample_list_file);
-      std::string ext = get_ext_name(sample_list_file);
-      s << "r" << m_comm->get_rank_in_model() << "_per_rank_" << basename << "." << ext;
-      m_sample_list.write(s.str());
-    }
-
-    if (!m_is_data_loaded) {
-      m_is_data_loaded = true;
-
-      if (m_scalar_keys.size() == 0u) {
-        set_all_scalar_choices(); // use all by default if none is specified
-      }
-      check_scalar_keys();
-
-      if (m_input_keys.size() == 0u) {
-        set_all_input_choices(); // use all by default if none is specified
-      }
-      check_input_keys();
-
-      check_image_data();
-    }
-    m_shuffled_indices.resize(m_sample_list.size());
+    load_list_of_samples(sample_list_file, m_comm->get_procs_per_model(), m_comm->get_rank_in_model());
+    m_sample_list.all_gather_packed_lists(*m_comm);
+    std::stringstream s;
+    std::string basename = get_basename_without_ext(sample_list_file);
+    std::string ext = get_ext_name(sample_list_file);
+    s << "r" << m_comm->get_rank_in_model() << "_per_rank_" << basename << "." << ext;
+    m_sample_list.write(s.str());
   }
+
+  if (!m_is_data_loaded) {
+    m_is_data_loaded = true;
+
+    if (m_scalar_keys.size() == 0u) {
+      set_all_scalar_choices(); // use all by default if none is specified
+    }
+    check_scalar_keys();
+
+    if (m_input_keys.size() == 0u) {
+      set_all_input_choices(); // use all by default if none is specified
+    }
+    check_input_keys();
+
+    check_image_data();
+  }
+  m_shuffled_indices.resize(m_sample_list.size());
 
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 

@@ -187,6 +187,7 @@ int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set
     num_parallel_readers = comm->get_procs_per_model();
   }
 
+#if 0
   if(mini_batch_size < num_parallel_readers) {
     if (comm->am_model_master()) {
       std::cout << "Warning the requested number of parallel readers "
@@ -198,7 +199,7 @@ int lbann::partitioned_io_buffer::compute_max_num_parallel_readers(long data_set
     }
     num_parallel_readers = mini_batch_size;
   }
-
+#endif
   return num_parallel_readers;
 }
 
