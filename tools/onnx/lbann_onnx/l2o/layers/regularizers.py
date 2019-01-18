@@ -3,11 +3,13 @@ from lbann_onnx.l2o.layers import LbannLayerParser
 class LbannLayerParser_batch_normalization(LbannLayerParser):
     def parse(self):
         params = self.l.batch_normalization
-        self.appendOperator("BatchNormalization",
-                            paramShapes=[[self.inputShapes[0][1]]]*4,
-                            attrs={"epsilon":  params.epsilon,
-                                   "momentum": params.decay,
-                                   "spatial":  1})
+        outputs, paramNames = self.appendOperator("BatchNormalization",
+                                                  paramCount=4,
+                                                  attrs={"epsilon":  params.epsilon,
+                                                         "momentum": params.decay,
+                                                         "spatial":  1})
+        for p in paramNames:
+            self.appendParam(p, [self.inputShapes[0][1]])
 
 class LbannLayerParser_local_response_normalization(LbannLayerParser):
     def parse(self):
