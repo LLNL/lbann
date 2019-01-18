@@ -3,16 +3,6 @@
 These are a convenience for common layer patterns that are often the
 basic building blocks for larger models.
 
-A possible note of confusion: LBANN uses the term "layer" in a
-somewhat unpopular manner. In LBANN and Caffe, a layer is a single
-operation that is applied to a fixed set of input tensors to obtain a
-fixed set of output tensors. In PyTorch, TensorFlow, and Keras, a
-layer is a pattern of operations that can be applied multiple times to
-different sets of input tensors, each time obtaining a different set
-of output tensors. Their usage of the word "layer" is closer to our
-usage of the word "module." In fact, PyTorch's "layers" are subclasses
-of their "module."
-
 """
 
 import lbann_proto as lp
