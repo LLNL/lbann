@@ -32,7 +32,8 @@ class TestLbann2Onnx(unittest.TestCase):
         if ADD_DUMMY_PARAMS:
             dummyInits = []
             for i in o.graph.input:
-                if i.name in list(map(lambda x: "{}_0".format(x), inputShapes.keys())): # TODO: remove "_0"
+                if i.name in list(map(lambda x: "{}_0".format(x), inputShapes.keys())) or \
+                   i.name in list(map(lambda x: x.name, o.graph.initializer)):# TODO: remove "_0"
                     continue
 
                 shape = lbann_onnx.util.getDimFromValueInfo(i)
