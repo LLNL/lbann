@@ -1,62 +1,78 @@
 import onnx
 import numpy as np
+
 import lbann_onnx
+from lbann_onnx.l2o.layers import LbannLayerParser
 
-def parse_relu(lp, inputShapes):
-    return {"op": "Relu"}
+class LbannLayerParser_relu(LbannLayerParser):
+    def parse(self):
+        return {"op": "Relu"}
 
-def parse_leaky_relu(lp, inputShapes):
-    return {"op": "LeakyRelu"}
+class LbannLayerParser_leaky_relu(LbannLayerParser):
+    def parse(self):
+        return {"op": "LeakyRelu"}
 
-def parse_sigmoid(lp, inputShapes):
-    return {"op": "Sigmoid"}
+class LbannLayerParser_sigmoid(LbannLayerParser):
+    def parse(self):
+        return {"op": "Sigmoid"}
 
-def parse_tanh(lp, inputShape):
-    return {"op": "Tanh"}
+class LbannLayerParser_tanh(LbannLayerParser):
+    def parse(self):
+        return {"op": "Tanh"}
 
-def parse_softmax(lp, inputShapes):
-    return {"op": "Softmax"}
+class LbannLayerParser_softmax(LbannLayerParser):
+    def parse(self):
+        return {"op": "Softmax"}
 
-def parse_exp(lp, inputShapes):
-    return {"op": "Exp"}
+class LbannLayerParser_exp(LbannLayerParser):
+    def parse(self):
+        return {"op": "Exp"}
 
-def parse_add(lp, inputShapes):
-    return {"op": "Sum"}
+class LbannLayerParser_add(LbannLayerParser):
+    def parse(self):
+        return {"op": "Sum"}
 
-def parse_sum(lp, inputShapes):
-    return {"op": "Sum"}
+class LbannLayerParser_sum(LbannLayerParser):
+    def parse(self):
+        return {"op": "Sum"}
 
-def parse_hadamard(lp, inputShapes):
-    return {"op": "Mul"}
+class LbannLayerParser_hadamard(LbannLayerParser):
+    def parse(self):
+        return {"op": "Mul"}
 
-def parse_abs(lp, inputShapes):
-    return {"op": "Abs"}
+class LbannLayerParser_abs(LbannLayerParser):
+    def parse(self):
+        return {"op": "Abs"}
 
-def parse_weighted_sum(lp, inputShapes):
-    factors = list(map(float, lp.scaling_factors.split(" ")))
-     # TODO: support any weighted_sum
-    if factors == [1, 1]:
-        return {"op": "Add"}
-    elif factors == [1, -1]:
-        return {"op": "Sub"}
-    elif factors == [0.5, 0.5]:
-        return {"op": "Mean"}
+class LbannLayerParser_weighted_sum(LbannLayerParser):
+    def parse(self):
+        factors = list(map(float, self.lp.scaling_factors.split(" ")))
+         # TODO: support any weighted_sum
+        if factors == [1, 1]:
+            return {"op": "Add"}
+        elif factors == [1, -1]:
+            return {"op": "Sub"}
+        elif factors == [0.5, 0.5]:
+            return {"op": "Mean"}
 
-    # TODO: this is a dummy operation to perform correct infer_shape
-    return {"op": "Sum", "attrs": {"lbannWightedSumFactors": factors}}
+        # TODO: this is a dummy operation to perform correct infer_shape
+        return {"op": "Sum", "attrs": {"lbannWightedSumFactors": factors}}
 
-def parse_constant(lp, inputShapes):
-    shape = list(map(int, lp.num_neurons.split(" ")))
-    return {"op": "Constant",
-            "attrs": {"value": onnx.helper.make_tensor(name='constant_{}'.format(hash(str(lp.value))),
-                                                       data_type=lbann_onnx.ELEM_TYPE,
-                                                       dims=shape,
-                                                       vals=np.full(shape, float(lp.value)))}}
+class LbannLayerParser_constant(LbannLayerParser):
+    def parse(self):
+        shape = list(map(int, self.lp.num_neurons.split(" ")))
+        return {"op": "Constant",
+                "attrs": {"value": onnx.helper.make_tensor(name='constant_{}'.format(hash(str(self.lp.value))),
+                                                           data_type=lbann_onnx.ELEM_TYPE,
+                                                           dims=shape,
+                                                           vals=np.full(shape, float(self.lp.value)))}}
 
 # Dummy parsers
 
-def parse_square(lp, inputShapes):
-    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
+class LbannLayerParser_square(LbannLayerParser):
+    def parse(self):
+        return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
 
-def parse_rsqrt(lp, inputShapes):
-    return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape
+class LbannLayerParser_rsqrt(LbannLayerParser):
+    def parse(self):
+        return {"op": "Identity"} # TODO: this is a dummy operation to perform correct infer_shape

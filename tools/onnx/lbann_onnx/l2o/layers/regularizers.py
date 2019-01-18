@@ -1,17 +1,22 @@
-def parse_batch_normalization(lp, inputShapes):
-    return {"op": "BatchNormalization",
-            "paramCount": 4,
-            "attrs": {"epsilon":  lp.epsilon,
-                      "momentum": lp.decay,
-                      "spatial":  1}}
+from lbann_onnx.l2o.layers import LbannLayerParser
 
-def parse_local_response_normalization(lp, inputShapes):
-    return {"op": "LRN",
-            "attrs": {"alpha": lp.lrn_alpha,
-                      "beta":  lp.lrn_beta,
-                      "bias":  lp.lrn_k,
-                      "size":  lp.window_width}}
+class LbannLayerParser_batch_normalization(LbannLayerParser):
+    def parse(self):
+        return {"op": "BatchNormalization",
+                "paramCount": 4,
+                "attrs": {"epsilon":  self.lp.epsilon,
+                          "momentum": self.lp.decay,
+                          "spatial":  1}}
 
-def parse_dropout(lp, inputShapes):
-    return {"op": "Dropout",
-            "attrs": {"ratio": 1-lp.keep_prob}}
+class LbannLayerParser_local_response_normalization(LbannLayerParser):
+    def parse(self):
+        return {"op": "LRN",
+                "attrs": {"alpha": self.lp.lrn_alpha,
+                          "beta":  self.lp.lrn_beta,
+                          "bias":  self.lp.lrn_k,
+                          "size":  self.lp.window_width}}
+
+class LbannLayerParser_dropout(LbannLayerParser):
+    def parse(self):
+        return {"op": "Dropout",
+                "attrs": {"ratio": 1-self.lp.keep_prob}}

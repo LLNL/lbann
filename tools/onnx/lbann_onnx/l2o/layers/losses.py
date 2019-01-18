@@ -1,23 +1,33 @@
-def parse_cross_entropy(lp, inputShapes):
-    return {"op": "LbannCrossEntropy"}
+from lbann_onnx.l2o.layers import LbannLayerParser
 
-def parse_binary_cross_entropy(lp, inputShapes):
-    return {"op": "LbannBinaryCrossEntropy"}
+class LbannLayerParser_cross_entropy(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannCrossEntropy"}
 
-def parse_sigmoid_binary_cross_entropy(lp, inputShapes):
-    return {"op": "LbannSigmoidBinaryCrossEntropy"}
+class LbannLayerParser_binary_cross_entropy(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannBinaryCrossEntropy"}
 
-def parse_categorical_accuracy(lp, inputShapes):
-    return {"op": "LbannCategoricalAccuracy"}
+class LbannLayerParser_sigmoid_binary_cross_entropy(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannSigmoidBinaryCrossEntropy"}
 
-def parse_top_k_categorical_accuracy(lp, inputShapes):
-    return {"op": "LbannTopKCategoricalAccuracy"}
+class LbannLayerParser_categorical_accuracy(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannCategoricalAccuracy"}
 
-def parse_mean_absolute_error(lp, inputShapes):
-    return {"op": "LbannMeanAbsoluteError"}
+class LbannLayerParser_top_k_categorical_accuracy(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannTopKCategoricalAccuracy"}
 
-def parse_mean_squared_error(lp, inputShapes):
-    return {"op": "LbannMeanSquaredError"}
+class LbannLayerParser_mean_absolute_error(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannMeanAbsoluteError"}
 
-def parse_l2_norm2(lp, inputShapes):
-    return {"op": "LbannL2Norm2"}
+class LbannLayerParser_mean_squared_error(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannMeanSquaredError"}
+
+class LbannLayerParser_l2_norm2(LbannLayerParser):
+    def parse(self):
+        return {"op": "LbannL2Norm2"}

@@ -10,7 +10,7 @@ from functools import reduce
 import sys
 
 import lbann_onnx
-from lbann_onnx.l2o.layers import LAYERS
+from lbann_onnx.l2o.layers import PARSERS
 
 def getTensorShapes(o):
     o = onnx.shape_inference.infer_shapes(o)
@@ -224,7 +224,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
                            l.parents.split(" ") if l.parents != "" else []))
     lbannOutputs = l.children.split(" ") if len(l.children) > 0 else []
 
-    for f in LAYERS.keys():
+    for f in PARSERS.keys():
         if l.HasField(f):
             for i in lbannInputs:
                 if not i in tensorShapes.keys():
@@ -236,8 +236,8 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
             if f == "unpooling":
                 arg = list(filter(lambda x: x.name == l.unpooling.pooling_layer, knownNodes))[0]
 
-            ret = LAYERS[f](arg,
-                            list(map(lambda x: tensorShapes[x], lbannInputs)))
+            ret = PARSERS[f](arg,
+                            list(map(lambda x: tensorShapes[x], lbannInputs))).parse()
             if ret is None:
                 return {}
 
@@ -276,6 +276,4 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
 
             return {"node": node, "inputs": inputs, "inits": inits}
 
-    lbann_onnx.util.printError("Unimplemented LBANN operator: {}".format(l))
-
-    assert False
+    NotImplementedError("Unimplemented LBANN operator: {}".format(l))
