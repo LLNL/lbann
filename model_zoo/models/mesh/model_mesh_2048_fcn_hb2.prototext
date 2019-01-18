@@ -74,7 +74,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -87,7 +87,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -105,7 +105,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -118,7 +118,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
@@ -127,7 +127,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -140,7 +140,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -158,7 +158,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -171,7 +171,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 256
+      num_output_channels: 128
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
@@ -180,7 +180,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -193,7 +193,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -211,113 +211,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv1_4"
-    parents: "bn1_3"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu1_4"
-    parents: "conv1_4"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn1_4"
-    parents: "relu1_4"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv1_5"
-    parents: "bn1_4"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 256
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu1_5"
-    parents: "conv1_5"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn1_5"
-    parents: "relu1_5"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -326,11 +220,11 @@ model {
 
   layer {
     name: "conv2_1"
-    parents: "bn1_5"
+    parents: "bn1_3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 384
+      num_output_channels: 256
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "2 2"
@@ -339,7 +233,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -352,7 +246,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -370,7 +264,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -383,7 +277,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 384
+      num_output_channels: 256
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
@@ -392,7 +286,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -405,7 +299,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -423,7 +317,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -436,7 +330,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 384
+      num_output_channels: 256
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
@@ -445,7 +339,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -458,7 +352,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -476,113 +370,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv2_4"
-    parents: "bn2_3"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 384
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu2_4"
-    parents: "conv2_4"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn2_4"
-    parents: "relu2_4"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv2_5"
-    parents: "bn2_4"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 384
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu2_5"
-    parents: "conv2_5"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn2_5"
-    parents: "relu2_5"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -591,11 +379,11 @@ model {
 
   layer {
     name: "conv3_1"
-    parents: "bn2_5"
+    parents: "bn2_3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 512
+      num_output_channels: 256
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "2 2"
@@ -604,7 +392,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -617,7 +405,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -635,7 +423,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -648,7 +436,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 512
+      num_output_channels: 256
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
@@ -657,7 +445,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -670,7 +458,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -688,7 +476,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -701,7 +489,7 @@ model {
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 512
+      num_output_channels: 256
       conv_dims: "3 3"
       conv_pads: "1 1"
       conv_strides: "1 1"
@@ -710,7 +498,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -723,7 +511,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -741,113 +529,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv3_4"
-    parents: "bn3_3"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 512
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu3_4"
-    parents: "conv3_4"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn3_4"
-    parents: "relu3_4"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv3_5"
-    parents: "bn3_4"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 512
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu3_5"
-    parents: "conv3_5"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn3_5"
-    parents: "relu3_5"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -856,7 +538,7 @@ model {
 
   layer {
     name: "conv4_1"
-    parents: "bn3_5"
+    parents: "bn3_3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -869,7 +551,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -882,7 +564,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -900,7 +582,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -922,7 +604,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -935,7 +617,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -953,7 +635,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -975,7 +657,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -988,7 +670,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1006,113 +688,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv4_4"
-    parents: "bn4_3"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 384
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu4_4"
-    parents: "conv4_4"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn4_4"
-    parents: "relu4_4"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv4_5"
-    parents: "bn4_4"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 384
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu4_5"
-    parents: "conv4_5"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn4_5"
-    parents: "relu4_5"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1121,7 +697,7 @@ model {
 
   layer {
     name: "conv5_1"
-    parents: "bn4_5"
+    parents: "bn4_3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -1134,7 +710,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1147,7 +723,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1165,7 +741,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1187,7 +763,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1200,7 +776,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1218,7 +794,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1240,7 +816,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1253,7 +829,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1271,113 +847,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv5_4"
-    parents: "bn5_3"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 384
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu5_4"
-    parents: "conv5_4"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn5_4"
-    parents: "relu5_4"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv5_5"
-    parents: "bn5_4"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 384
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu5_5"
-    parents: "conv5_5"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn5_5"
-    parents: "relu5_5"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1386,20 +856,20 @@ model {
 
   layer {
     name: "conv6_1"
-    parents: "bn5_5"
+    parents: "bn5_3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
       conv_dims: "3 3"
       conv_pads: "1 1"
-      conv_strides: "1 1"
+      conv_strides: "2 2"
       has_bias: false
       has_vectors: true
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1412,7 +882,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1430,7 +900,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1452,7 +922,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1465,7 +935,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1483,7 +953,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1505,7 +975,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1518,7 +988,7 @@ model {
     relu {}
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1536,7 +1006,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1544,118 +1014,12 @@ model {
   }
 
   layer {
-    name: "conv6_4"
+    name: "fcn4194304"
     parents: "bn6_3"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
-      num_output_channels: 128
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu6_4"
-    parents: "conv6_4"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn6_4"
-    parents: "relu6_4"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "conv6_5"
-    parents: "bn6_4"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 128
-      conv_dims: "3 3"
-      conv_pads: "1 1"
-      conv_strides: "1 1"
-      has_bias: false
-      has_vectors: true
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "relu6_5"
-    parents: "conv6_5"
-    data_layout: "data_parallel"
-    relu {}
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-  layer {
-    name: "bn6_5"
-    parents: "relu6_5"
-    data_layout: "data_parallel"
-    batch_normalization {
-      decay: 0.9
-      scale_init: 1.0
-      bias_init: 0.0
-      epsilon: 1e-5
-    }
-    parallel_strategy {
-      sample_groups: 1
-      height_groups: 1
-      width_groups: 1
-      channel_groups: 1
-      filter_groups: 1
-    }
-  }
-
-  layer {
-    name: "fcn1048576"
-    parents: "bn6_5"
-    data_layout: "data_parallel"
-    convolution {
-      num_dims: 2
-      num_output_channels: 1024
+      num_output_channels: 4096
       conv_dims: "1 1"
       conv_pads: "0 0"
       conv_strides: "1 1"
@@ -1664,7 +1028,7 @@ model {
     }
     parallel_strategy {
       sample_groups: 1
-      height_groups: 1
+      height_groups: 2
       width_groups: 1
       channel_groups: 1
       filter_groups: 1
@@ -1672,17 +1036,17 @@ model {
   }
 
   layer {
-    parents: "fcn1048576"
-    name: "fcn1048576_reshape"
+    parents: "fcn4194304"
+    name: "fcn4194304_reshape"
     data_layout: "data_parallel"
     reshape {
-      dims: "1048576"
+      dims: "4194304"
     }
   }
 
   layer {
     name: "sigmoid"
-    parents: "fcn1048576_reshape"
+    parents: "fcn4194304_reshape"
     data_layout: "data_parallel"
     sigmoid {}
   }

@@ -1672,8 +1672,17 @@ model {
   }
 
   layer {
-    name: "sigmoid"
     parents: "fcn1048576"
+    name: "fcn1048576_reshape"
+    data_layout: "data_parallel"
+    reshape {
+      dims: "1048576"
+    }
+  }
+
+  layer {
+    name: "sigmoid"
+    parents: "fcn1048576_reshape"
     data_layout: "data_parallel"
     sigmoid {}
   }
