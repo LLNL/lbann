@@ -61,7 +61,7 @@ model {
 
   callback {
     dump_outputs {
-      prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jag_imgs/gan/"
+      directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jag_imgs/gan/"
       #batch_interval: 100
       layers: "image_data_dummy gen1fc4"
       execution_modes: "tests"

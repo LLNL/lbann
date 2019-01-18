@@ -489,11 +489,34 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
+      const auto& aggr_str = params.stats_aggregation();
+      batch_normalization_stats_aggregation aggr =
+        batch_normalization_stats_aggregation::local;
+      if (aggr_str == "local" || aggr_str.empty()) {
+        aggr = batch_normalization_stats_aggregation::local;
+      } else if (aggr_str == "node_local") {
+        aggr = batch_normalization_stats_aggregation::node_local;
+      } else if (aggr_str == "global") {
+        aggr = batch_normalization_stats_aggregation::global;
+      } else {
+        err << "Invalid batch normalization stats aggregation " << aggr_str;
+        LBANN_ERROR(err.str());
+        return nullptr;
+      }
+      // Set defaults if not given.
+      auto decay = params.decay();
+      if (decay == 0.0) {
+        decay = 0.9;
+      }
+      auto epsilon = params.epsilon();
+      if (epsilon == 0.0) {
+        epsilon = 1e-5;
+      }
       return new batch_normalization_layer<data_layout::DATA_PARALLEL, Dev>(
-              comm,
-              params.decay(),
-              params.epsilon(),
-              params.global_stats());
+        comm,
+        decay,
+        epsilon,
+        aggr);
     } 
     LAYOUT_ERR(proto_layer.name(), "batch_normalization");
   }
@@ -504,7 +527,8 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_local_response_normalization()) {
  const auto& params = proto_layer.local_response_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new local_response_normalization_layer<data_layout::DATA_PARALLEL, Dev>(        comm,
+      return new local_response_normalization_layer<data_layout::DATA_PARALLEL, Dev>(
+             comm,
              params.window_width(),
              params.lrn_alpha(),
              params.lrn_beta(),

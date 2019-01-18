@@ -358,6 +358,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual bool position_valid() const {
     return (m_current_pos < get_num_data());
   }
+  /// True if the data reader's current position is not valid but within # ranks per model
+  /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
+  virtual bool position_is_overrun() const {
+    int end_pos = (int)m_shuffled_indices.size();
+    return (m_current_pos >= end_pos && (m_current_pos - end_pos) < m_comm->get_procs_per_model());
+  }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
     /// Note that data readers can start at a non-zero index if there
