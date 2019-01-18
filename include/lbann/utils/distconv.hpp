@@ -29,6 +29,7 @@
 
 #include "lbann_config.hpp"
 #include "El.hpp"
+#include "lbann/comm.hpp"
 #include <vector>
 
 #ifdef LBANN_HAS_DISTCONV
@@ -48,6 +49,7 @@
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle.hpp"
 #include "distconv/tensor/shuffle_p2p.hpp"
+#include "distconv/tensor/shuffle_al.hpp"
 #include "distconv/tensor/algorithms.hpp"
 #include "p2p/p2p.hpp"
 
@@ -70,6 +72,8 @@ using TensorDev = ::distconv::tensor::Tensor<
 using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<
   4, DataType>;
 using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<
+  4, DataType>;
+using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
   4, DataType>;
 
 using Dist = ::distconv::tensor::Distribution<4>;
@@ -165,6 +169,10 @@ int get_number_of_pre_generated_synthetic_data();
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
+
+/** Get Aluminum MPI-CUDA backend
+ */
+Al::mpicuda_backend::comm_type &get_mpicuda();
 
 /** Get Distconv backend handle.
  */
