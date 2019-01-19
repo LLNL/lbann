@@ -11,12 +11,9 @@ class ConvBNRelu2d(lm.Module):
                  stride=1, padding=0, dilation=1,
                  bn_init_scale=1.0, bn_stats_aggregation='local',
                  relu=True):
-        conv_weights = [lp.Weights(initializer=lp.HeNormalInitializer()),
-                        lp.Weights()]
         self.conv = lm.Convolution2dModule(out_channels, kernel_size,
                                            stride=stride, padding=padding,
-                                           dilation=dilation, bias=False,
-                                           weights=conv_weights)
+                                           dilation=dilation, bias=False)
         self.bn_weights = [lp.Weights(lp.ConstantInitializer(value=bn_init_scale)),
                            lp.Weights(lp.ConstantInitializer(value=0.0))]
         self.bn_stats_aggregation = bn_stats_aggregation
@@ -111,7 +108,9 @@ block4 = ResBlock(blocks[3], 512, 2048, stride=2,
 avgpool = lp.Pooling(block4, num_dims=2, has_vectors=False,
                      pool_dims_i=7, pool_pads_i=0, pool_strides_i=1,
                      pool_mode='average')
-fc = lp.FullyConnected(avgpool, hint_layer=labels, has_bias=False)
+fc = lp.FullyConnected(avgpool,
+                       weights=lp.Weights(initializer=lp.HeNormalInitializer()),
+                       hint_layer=labels, has_bias=False)
 softmax = lp.Softmax(fc)
 ce = lp.CrossEntropy([softmax, labels])
 top1 = lp.CategoricalAccuracy([softmax, labels])

@@ -81,11 +81,26 @@ class FullyConnectedModule(Module):
         self.instance = 0
         self.size = size
         self.bias = bias
-        self.weights = list(_make_iterable(weights))
         self.name = (name
                      if name
                      else 'fcmodule{0}'.format(FullyConnectedModule.global_count))
         self.data_layout = data_layout
+
+        # Initialize weights
+        # Note: If weights are not provided, matrix weights are
+        # initialized with He normal scheme and bias weights are
+        # initialized with zeros.
+        self.weights = list(_make_iterable(weights))
+        if len(self.weights) > 2:
+            raise ValueError('`FullyConnectedModule` has '
+                             'at most two weights, '
+                             'but got {0}'.format(len(self.weights)))
+        if len(self.weights) == 0:
+            self.weights.append(
+                lp.Weights(initializer=lp.HeNormalInitializer()))
+        if len(self.weights) == 1:
+            self.weights.append(
+                lp.Weights(initializer=lp.ConstantInitializer(value=0.0)))
 
         # Initialize activation layer
         self.activation = None
@@ -99,11 +114,6 @@ class FullyConnectedModule(Module):
 
     def forward(self, x):
         self.instance += 1
-        if self.instance > 1 and len(self.weights) != 2:
-            warnings.warn('Attempted to instantiate multiple instances '
-                          'of `FullyConnectedModule` without setting weights '
-                          'for matrix and bias. The weights will not '
-                          'be properly shared across the instances.')
         name = '{0}_instance{1}'.format(self.name, self.instance)
         y = lp.FullyConnected(x,
                               weights=self.weights,
@@ -164,6 +174,22 @@ class Convolution2dModule(Module):
                      if name
                      else 'convmodule{0}'.format(Convolution2dModule.global_count))
 
+        # Initialize weights
+        # Note: If weights are not provided, kernel weights are
+        # initialized with He normal scheme and bias weights are
+        # initialized with zeros.
+        self.weights = list(_make_iterable(weights))
+        if len(self.weights) > 2:
+            raise ValueError('`Convolution2dModule` has '
+                             'at most two weights, '
+                             'but got {0}'.format(len(self.weights)))
+        if len(self.weights) == 0:
+            self.weights.append(
+                lp.Weights(initializer=lp.HeNormalInitializer()))
+        if len(self.weights) == 1:
+            self.weights.append(
+                lp.Weights(initializer=lp.ConstantInitializer(value=0.0)))
+
         # Initialize activation layer
         self.activation = None
         if activation:
@@ -176,11 +202,6 @@ class Convolution2dModule(Module):
 
     def forward(self, x):
         self.instance += 1
-        if self.instance > 1 and len(self.weights) != 2:
-            warnings.warn('Attempted to instantiate multiple instances '
-                          'of `Convolution` without setting weights '
-                          'for kernel and bias. The weights will not '
-                          'be properly shared across the instances.')
         name = '{0}_instance{1}'.format(self.name, self.instance)
         y = lp.Convolution(x,
                            weights=self.weights,
