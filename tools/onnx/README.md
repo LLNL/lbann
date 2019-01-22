@@ -18,19 +18,19 @@ The Python packages of ONNX, NumPy and Prootbuf can be install via `pip3 install
    * This will generate converted ONNX models if you set `SAVE_ONNX=True`.
 
 ## How to Use
-See [`example/lbann2onnx.py`](example/lbann2onnx.py) for details.
+See [`example/lbann2onnx.py`](example/lbann2onnx.py) and [`example/onnx2lbann.py`](example/onnx2lbann.py) for details.
 
 ## Support Status
 See [`docs/l2o.md`](docs/l2o.md) and [`docs/o2l.md`](docs/o2l.md) for details.
 
-## Example: [MNIST](/model_zoo/models/simple_mnist/model_mnist_simple_1.prototext)
-See [`viz/`](viz/) for more details.
+## Example: Converting [the MNIST model](/model_zoo/models/simple_mnist/model_mnist_simple_1.prototext) from LBANN to ONNX
+See [`viz/l2o/`](viz/l2o/) for more details.
 
 ### LBANN (vizualized with [viz.py](/viz/viz.py))
-<img src="viz/mnist/mnist_lbann.png" width="200" />
+<img src="viz/l2o/mnist/mnist_lbann.png" width="200" />
 
 ### ONNX (vizualized with [Netron](https://github.com/lutzroeder/netron))
-<img src="viz/mnist/mnist_onnx_netron.png" width="200" />
+<img src="viz/l2o/mnist/mnist_onnx_netron.png" width="200" />
 
 ### ONNX with the original node names
-<img src="viz/mnist/mnist_onnx_netron_name.png" width="200" />
+<img src="viz/l2o/mnist/mnist_onnx_netron_name.png" width="200" />
