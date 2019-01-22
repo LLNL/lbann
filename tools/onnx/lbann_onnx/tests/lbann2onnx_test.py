@@ -1,24 +1,15 @@
-#!/usr/bin/env python3
-
 import onnx
 import re
 import unittest
-import subprocess
 import os
 import numpy as np
 
 import lbann_onnx.l2o
 import lbann_onnx.util
 import lbann_onnx.l2o.util
+from lbann_onnx import getLbannRoot
 
-LBANN_ROOT_ENV = os.getenv("LBANN_ROOT")
-if LBANN_ROOT_ENV is not None:
-    LBANN_ROOT = LBANN_ROOT_ENV
-
-else:
-    LBANN_ROOT = subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip().decode("utf-8")
-
-LBANN_MODEL_ROOT = "{}/model_zoo/models".format(LBANN_ROOT)
+LBANN_MODEL_ROOT = "{}/model_zoo/models".format(getLbannRoot())
 SAVE_ONNX = False
 ADD_DUMMY_PARAMS = False
 MB_PLACEHOLDER = "MB"

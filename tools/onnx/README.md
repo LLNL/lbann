@@ -7,13 +7,14 @@ This tool provides a way to convert [LBANN](https://github.com/LLNL/lbann) model
 * Python >= 3.7.2
 * [ONNX](https://github.com/onnx/onnx) >= 1.3.0
 * [NumPy](http://www.numpy.org/) >= 1.16.0
-* [Protobuf]() >= 3.6.1
+* [Protobuf](https://github.com/protocolbuffers/protobuf) >= 3.6.1
 
 The Python packages of ONNX, NumPy and Prootbuf can be install via `pip3 install onnx numpy protobuf`.
 
 ## How to Setup
-1. Run `make_lbann_pb2.sh`. This script will generate `lbann_pb2.py`.
-2. Run `test/lbann2onnx_test.py` to verify the generated Protobuf definition.
+1. Run `pip3 install -e .`
+2. Run `python3 -c "import lbann_onnx"` to verify that the package has been installed.
+3. Run `python3 setup.py test` to verify the generated Protobuf definition.
    * This will generate converted ONNX models if you set `SAVE_ONNX=True`.
 
 ## How to Use

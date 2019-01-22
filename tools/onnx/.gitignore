@@ -1,1 +1,4 @@
 lbann_pb2.py
+
+lbann_onnx.egg-info/*
+dist/*
