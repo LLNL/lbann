@@ -1,5 +1,6 @@
 import sys
 import onnx
+import numpy as np
 
 def printError(s):
     sys.stderr.write("lbann-onnx error: {}\n".format(s))
@@ -48,7 +49,7 @@ def getOneSidePads(pads, assertEvens=False):
         assert not assertEvens
         d = set(np.array(ends)-np.array(ends))
         assert d == set([0]) or d == set([0, 1]) # accept |p_end - p_begin| = 0 or 1
-        lbann_onnx.util.printError("Padding widths of at least one dimension is not the same: {}".format(pads))
+        printError("Padding widths of at least one dimension is not the same: {}".format(pads))
 
     return begins
 
