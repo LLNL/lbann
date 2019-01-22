@@ -12,7 +12,7 @@ def parseInputShape(s):
     return (name, list(map(int, shape.split(","))))
 
 parser = argparse.ArgumentParser(description="Convert a LBANN model to an ONNX model",
-                                 epilog="Usage: lbann_to_onnx.py model_alexnet.prototext output.onnx image=3,224,224 label=1000")
+                                 epilog="Usage: lbann2onnx.py model_alexnet.prototext output.onnx image=3,224,224 label=1000")
 parser.add_argument("lbann_path", type=str,
                     help="Path to a LBANN model in .prototext")
 parser.add_argument("onnx_path", type=str,

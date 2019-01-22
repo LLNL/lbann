@@ -13,7 +13,8 @@ import lbann_onnx
 from lbann_onnx.l2o.layers import PARSERS
 
 # TODO: move to util.py
-def getTensorShapes(o):
+# TODO: check if includeOutputShapes works in l2o
+def getTensorShapes(o, includeOutputShapes=False):
     o = onnx.shape_inference.infer_shapes(o)
 
     # infer Split-ted shapes manually (https://github.com/onnx/onnx/issues/1735)
@@ -56,6 +57,9 @@ def getTensorShapes(o):
 
     vis = o.graph.value_info
     vis.extend(o.graph.input)
+    if includeOutputShapes:
+        vis.extend(o.graph.output)
+
     return dict(map(lambda x: (x.name,
                                list(map(lambda y: y.dim_value, x.type.tensor_type.shape.dim))),
                     vis))
