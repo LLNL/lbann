@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import onnx
+from onnx import numpy_helper
 import re
 import unittest
 import os
@@ -30,11 +31,8 @@ class TestLbann2Onnx(unittest.TestCase):
                     continue
 
                 shape = lbann_onnx.util.getDimFromValueInfo(i)
-                dummyInits.append(onnx.helper.make_tensor(name=i.name,
-                                                          data_type=lbann_onnx.ELEM_TYPE,
-                                                          dims=shape,
-                                                          vals=np.zeros(shape, dtype=lbann_onnx.ELEM_TYPE_NP).tobytes(),
-                                                          raw=True))
+                dummyInits.append(numpy_helper.from_array(np.zeros(shape, dtype=lbann_onnx.ELEM_TYPE_NP),
+                                                       name=i.name))
 
             g = onnx.helper.make_graph(o.graph.node,
                                        o.graph.name,

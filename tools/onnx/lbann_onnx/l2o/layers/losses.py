@@ -21,8 +21,7 @@ class LbannLossLayerParser(LbannLayerParser):
         h3,_ = self.appendOperator("Mul", {}, 0, [h1, h2], 1)
         self.appendParamWithInit(h2,
                                  shape=[1],
-                                 dataType=lbann_onnx.ELEM_TYPE,
-                                 data=np.array([alpha], dtype=lbann_onnx.ELEM_TYPE_NP).tobytes())
+                                 data=np.array([alpha], dtype=lbann_onnx.ELEM_TYPE_NP))
         self.appendOperator("Squeeze", {}, 0, [h3])
 
 # -y * log(y_p)
@@ -39,8 +38,7 @@ class LbannLayerParser_binary_cross_entropy(LbannLossLayerParser):
         one = self.createHiddenTensorName()
         self.appendParamWithInit(one,
                                  shape=self.inputShapes[0],
-                                 dataType=lbann_onnx.ELEM_TYPE,
-                                 data=np.full(self.inputShapes[0], 1.0, dtype=lbann_onnx.ELEM_TYPE_NP).tobytes())
+                                 data=np.full(self.inputShapes[0], 1.0, dtype=lbann_onnx.ELEM_TYPE_NP))
 
         predicted, truth = self.getLbannInputNames()
         predictedLog,_ = self.appendOperator("Log", {}, 0, [predicted], 1)
@@ -68,8 +66,7 @@ class LbannLayerParser_sigmoid_binary_cross_entropy(LbannLossLayerParser):
         one = self.createHiddenTensorName()
         self.appendParamWithInit(one,
                                  shape=self.inputShapes[0],
-                                 dataType=lbann_onnx.ELEM_TYPE,
-                                 data=np.full(self.inputShapes[0], 1.0, dtype=lbann_onnx.ELEM_TYPE_NP).tobytes())
+                                 data=np.full(self.inputShapes[0], 1.0, dtype=lbann_onnx.ELEM_TYPE_NP))
         predAbsNegExpPOne,_ = self.appendOperator("Add",{}, 0, [predAbsNegExp, one], 1)
         predAbsNegExpPOneLog,_ = self.appendOperator("Log",{}, 0, [predAbsNegExpPOne], 1)
 

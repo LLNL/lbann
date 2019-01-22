@@ -1,5 +1,6 @@
 import re
 import onnx.helper
+from onnx import numpy_helper
 
 class LbannLayerParser():
     def __init__(self, l, layerType, inputShapes, knownNodes):
@@ -59,13 +60,9 @@ class LbannLayerParser():
         self.inputs.append(i)
 
     # TODO: remove dataType from arguments
-    def appendParamWithInit(self, name, shape, dataType, data):
+    def appendParamWithInit(self, name, shape, data):
         self.appendParam(name, shape)
-        init = onnx.helper.make_tensor(name=name,
-                                       dims=shape,
-                                       data_type=dataType,
-                                       vals=data,
-                                       raw=True) # OPTIMIZE
+        init = onnx.numpy_helper.from_array(data, name=name)
 
         self.inits.append(init)
 

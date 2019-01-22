@@ -48,7 +48,7 @@ class LbannLayerParser_weighted_sum(LbannLayerParser):
     def parse(self):
         params = self.l.weighted_sum
         factors = list(map(float, params.scaling_factors.split(" ")))
-         # TODO: support any weighted_sum
+        # TODO: support any weighted_sum
         if factors == [1, 1]:
             self.appendOperator("Add")
 
@@ -68,10 +68,9 @@ class LbannLayerParser_constant(LbannLayerParser):
         shape = list(map(int, params.num_neurons.split(" ")))
 
         self.appendOperator("Constant",
-                            attrs={"value": onnx.helper.make_tensor(name='constant_{}'.format(hash(str(params.value))),
-                                                           data_type=lbann_onnx.ELEM_TYPE,
-                                                           dims=shape,
-                                                           vals=np.full(shape, float(params.value)))})
+                            attrs={"value": numpy_heler.from_array(np.full(shape,
+                                                                           float(params.value),
+                                                                           dtype=lbann_onnx.ELEM_TYPE_NP))})
 
 # Dummy parsers
 

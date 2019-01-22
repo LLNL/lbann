@@ -1,16 +1,28 @@
 import sys
 import numpy as np
 import onnx
+import onnx.numpy_helper
 import google.protobuf.text_format as txtf
 
 import lbann_pb2
 import lbann_onnx.util
 import lbann_onnx.o2l.layers as layers
-from lbann_onnx.l2o import getTensorShapes
+from lbann_onnx.l2o import getStaticTensorShapes
+
+def getTensorInitial(name, graph):
+    for init in graph.initializer:
+        if name == init.name:
+            return onnx.numpy_helper.to_array(init)
+
+    return None
+
+def getNodeName(i_op):
+    i, op = i_op
+    return "{}_{}".format(op.op_type, i)
 
 def onnxToLbannLayers(o, lbannInputNames, l2oInputMap, dataLayout="auto"):
     graph = o.graph
-    tensorShapes = getTensorShapes(o, includeOutputShapes=True)
+    tensorShapes = getStaticTensorShapes(o)
     opNames = list(map(getNodeName, enumerate(graph.node)))
 
     producers = {}
@@ -54,7 +66,15 @@ def onnxNodeToLbannLayer(op, opName, inputShapes, outputShapes, inits, parents, 
 
     dic = getattr(layers, parserName)(op, inputShapes, outputShapes, inits).parse()
 
-    validParents = list(filter(lambda x: x, parents)) # TODO: assert
+    validParents = []
+    hitInvalid = False
+    for i, p in enumerate(parents):
+        if p is not None:
+            assert not hitInvalid
+            validParents.append(p)
+
+        else:
+            hitInvalid = True
 
     assert dataLayout == "auto"
     l = lbann_pb2.Layer(name=opName,
@@ -62,37 +82,3 @@ def onnxNodeToLbannLayer(op, opName, inputShapes, outputShapes, inits, parents, 
                         data_layout=("model_parallel" if "fully_connected" in dic.keys() else "data_parallel"),
                         **dic)
     return l
-
-def getNodeName(i_op):
-    i, op = i_op
-    return "{}_{}".format(op.op_type, i)
-
-# TODO: move to util
-def getTensorInitial(name, graph):
-    for init in graph.initializer:
-        if name == init.name:
-            return np.frombuffer(init.raw_data, elemTypeToNumpy(init.data_type))
-
-    return None
-
-# TODO: move to util
-def elemTypeToNumpy(t):
-    if t == onnx.TensorProto.FLOAT:
-        return np.float32
-    elif t == onnx.TensorProto.UINT8:
-        return np.uint8
-    elif t == onnx.TensorProto.INT8:
-        return np.int8
-    elif t == onnx.TensorProto.UINT16:
-        return np.uint16
-    elif t == onnx.TensorProto.INT16:
-        return np.int16
-    elif t == onnx.TensorProto.INT32:
-        return np.int32
-    elif t == onnx.TensorProto.INT64:
-        return np.int64
-    elif t == onnx.TensorProto.STRING:
-        return np.str
-    elif t == onnx.TensorProto.BOOL:
-        return np.bool
-    assert False

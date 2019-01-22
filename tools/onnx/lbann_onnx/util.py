@@ -13,8 +13,7 @@ def printParsingState(node, knownShapes):
 def getDimFromValueInfo(vi):
     return list(map(lambda x: x.dim_value, vi.type.tensor_type.shape.dim))
 
-# TODO: type check
-def getNodeAttributeByName(node, attr, defVal=None, typeConversion=False):
+def getNodeAttributeByName(node, attr, defVal=None):
     ret = list(filter(lambda x: x.name == attr, node.attribute))
     if len(ret) != 1:
         if defVal is not None:
@@ -23,9 +22,6 @@ def getNodeAttributeByName(node, attr, defVal=None, typeConversion=False):
         assert False
 
     v = ret[0]
-    if not typeConversion:
-        return v
-
     t = v.type
     if t == onnx.AttributeProto.INTS:
         return v.ints
@@ -38,6 +34,29 @@ def getNodeAttributeByName(node, attr, defVal=None, typeConversion=False):
 
     assert False
 
-# TODO: replace old list2LbannList expressions
 def list2LbannList(l):
     return " ".join(map(str, l))
+
+def getOneSidePads(pads, assertEvens=False):
+    # [s1, s2, ..., e1, e2, ...] -> [s1, s2, ...]
+    assert len(pads)%2 == 0
+    count = int(len(pads)/2)
+
+    begins = pads[:count]
+    ends   = pads[count:]
+    if not begins == ends:
+        assert not assertEvens
+        d = set(np.array(ends)-np.array(ends))
+        assert d == set([0]) or d == set([0, 1]) # accept |p_end - p_begin| = 0 or 1
+        lbann_onnx.util.printError("Padding widths of at least one dimension is not the same: {}".format(pads))
+
+    return begins
+
+def getStaticTensorShapes(o):
+    o = onnx.shape_inference.infer_shapes(o)
+    vis = o.graph.value_info
+    vis.extend(o.graph.input)
+    vis.extend(o.graph.output)
+    return dict(map(lambda x: (x.name,
+                               list(map(lambda y: y.dim_value, x.type.tensor_type.shape.dim))),
+                    vis))

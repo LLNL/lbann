@@ -20,8 +20,7 @@ class LbannLayerParser_fully_connected(LbannLayerParser):
             h2,_ = self.appendOperator("Reshape", {}, 0, [self.getLbannInputNames()[0], h1], 1)
             self.appendParamWithInit(h1,
                                      shape=np.array(shape).shape,
-                                     dataType=onnx.TensorProto.INT64,
-                                     data=np.array(shape, dtype=np.int64).tobytes())
+                                     data=np.array(shape, dtype=np.int64))
             gemmInput = h2
 
         params = self.l.fully_connected

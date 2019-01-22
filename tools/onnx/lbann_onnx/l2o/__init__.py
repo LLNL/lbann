@@ -11,58 +11,7 @@ import sys
 
 import lbann_onnx
 from lbann_onnx.l2o.layers import PARSERS
-
-# TODO: move to util.py
-# TODO: check if includeOutputShapes works in l2o
-def getTensorShapes(o, includeOutputShapes=False):
-    o = onnx.shape_inference.infer_shapes(o)
-
-    # infer Split-ted shapes manually (https://github.com/onnx/onnx/issues/1735)
-    while False:
-        hasSplit = False
-        for n in o.graph.node:
-            if n.op_type == "Split":
-                splits = list(filter(lambda x: x.name == "split", n.attribute))
-                if len(splits) == 0:
-                    continue
-
-                assert len(splits) == 1
-                split = splits[0].ints
-                axes = list(filter(lambda x: x.name == "axis", n.attribute))
-                axis = axes[0].i if len(axes) == 1 else 0
-
-                inputVI = list(filter(lambda x: x.name == n.input[0], list(o.graph.value_info) + list(o.graph.input)))[0]
-                inputShape = getDimFromValueInfo(inputVI)
-                outputShapes = list(map(lambda x: x.shape, np.split(np.zeros(inputShape), np.cumsum(split)[:-1], axis)))
-                vis = list(o.graph.value_info)
-                for outputName, outputShape in zip(n.output, outputShapes):
-                    vis.append(onnx.helper.make_tensor_value_info(name=outputName,
-                                                                  elem_type=inputVI.type.tensor_type.elem_type,
-                                                                  shape=outputShape))
-
-                g = onnx.helper.make_graph(o.graph.node,
-                                           o.graph.input,
-                                           o.graph.output,
-                                           o.graph.initializer,
-                                           vis)
-                o = onnx.helper.make_model(g)
-
-                hasSplit = True
-
-        if hasSplit:
-            o = onnx.shape_inference.infer_shapes(o)
-
-        else:
-            break
-
-    vis = o.graph.value_info
-    vis.extend(o.graph.input)
-    if includeOutputShapes:
-        vis.extend(o.graph.output)
-
-    return dict(map(lambda x: (x.name,
-                               list(map(lambda y: y.dim_value, x.type.tensor_type.shape.dim))),
-                    vis))
+from lbann_onnx.util import list2LbannList, getStaticTensorShapes
 
 def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     with open(path, "r") as f:
@@ -83,8 +32,8 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
 
     for l in pb.model.layer:
         # OPTIMIZE: avoid performing infer_shapes in every iteration. value_info can be passed via make_graph
-        inputShapes = getTensorShapes(onnx.helper.make_model(onnx.helper.make_graph(nodes, "graph",
-                                                                                    inputs, outputs, inits)))
+        inputShapes = getStaticTensorShapes(onnx.helper.make_model(onnx.helper.make_graph(nodes, "graph",
+                                                                                          inputs, outputs, inits)))
         inputShapes.update(modelInputShapes)
         inputShapes.update(dict(map(lambda x: (x.name, x.dims), inits)))
 
@@ -120,7 +69,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
                 l.fully_connected.num_neurons = int(np.prod(dims[1:]))
 
             elif l.HasField("gaussian"):
-                l.gaussian.neuron_dims = " ".join(map(str, dims))
+                l.gaussian.neuron_dims = list2LbannList(dims)
 
             else:
                 lbann_onnx.util.printError("\"hint_layer\" is supported only for fully_connected or gaussian.")
@@ -149,11 +98,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     for l in params.keys():
         for i,p in enumerate(params[l]):
             name = "{}_p{}".format(l, i)
-            inits.append(onnx.helper.make_tensor(name=name,
-                                                 data_type=lbann_onnx.ELEM_TYPE,
-                                                 dims=p.shape,
-                                                 vals=p.tobytes(),
-                                                 raw=True))
+            inits.append(onnx.math_helper.to_array(p, name=name))
 
     for metric in pb.model.metric:
         assert metric.HasField("layer_metric")

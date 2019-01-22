@@ -18,7 +18,7 @@ class LbannLayerParser_unpooling(LbannLayerParser):
                                  self.knownNodes))
         assert len(unpoolNode) == 1
         self.appendOperator("MaxUnpool",
-                            attrs=dict(map(lambda x: (x, getNodeAttributeByName(unpoolNode[0], x).ints),
+                            attrs=dict(map(lambda x: (x, getNodeAttributeByName(unpoolNode[0], x)),
                                            ["kernel_shape", "pads", "strides"])))
 
 class LbannLayerParser_slice(LbannLayerParser):
@@ -53,8 +53,7 @@ class LbannLayerParser_reshape(LbannLayerParser):
         self.appendOperator("Reshape", {}, 0, [self.getLbannInputNames()[0], h])
         self.appendParamWithInit(h,
                                  shape=np.array(shape).shape,
-                                 dataType=onnx.TensorProto.INT64,
-                                 data=np.array(shape, dtype=np.int64).tobytes())
+                                 data=np.array(shape, dtype=np.int64))
 
 class LbannLayerParser_reduction(LbannLayerParser):
     def parse(self):
