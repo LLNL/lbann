@@ -114,12 +114,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
       type = lbann_callback_imcomm::comm_type::NONE;
     } else if (type_str == "normal") {
       type = lbann_callback_imcomm::comm_type::NORMAL;
-    } else if (type_str == "onebit_quantization") {
-      type = lbann_callback_imcomm::comm_type::ONEBIT_QUANTIZATION;
-    } else if (type_str == "thresh_quantization") {
-      type = lbann_callback_imcomm::comm_type::THRESH_QUANTIZATION;
-    } else if (type_str == "adaptive_quantization") {
-      type = lbann_callback_imcomm::comm_type::ADAPTIVE_QUANTIZATION;
     } else {
       err << "invalid inter-model communication type (" << type_str << ")";
       LBANN_ERROR(err.str());
