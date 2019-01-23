@@ -91,13 +91,13 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
   // read current epoch and step counters from model
   El::Timer timer;
   lbann_comm *comm = m->get_comm();
-  comm->model_barrier();
+  comm->trainer_barrier();
   // let user know we're saving the weights
   int epoch = m->get_cur_epoch();
   int step = m->get_cur_step();
   if (comm->am_trainer_master()) {
     timer.Start();
-    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_model_rank(), epoch, step);
+    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_trainer_rank(), epoch, step);
     fflush(stdout);
   }
 
@@ -108,7 +108,7 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
     p.open_checkpoint(epochdir.c_str());
   }
   // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-  comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+  comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
   m->save_weights(p);
   // close our checkpoint
   p.close_checkpoint();
@@ -126,7 +126,7 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
     printf("[%s.%d] Saving model weights complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           m->get_name().c_str(), comm->get_model_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
+           m->get_name().c_str(), comm->get_trainer_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
     fflush(stdout);
   }
   p.reset_bytes();

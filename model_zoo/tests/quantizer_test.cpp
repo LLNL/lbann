@@ -104,7 +104,7 @@ void check_allreduced_mat(lbann_comm *comm, const DistMat& mat,
   }
   // Compute the global error and compare.
   Mat global_qerror(qerror);
-  comm->intermodel_sum_matrix(global_qerror);
+  comm->intertrainer_sum_matrix(global_qerror);
   Mat with_qerror(mat.LockedMatrix());
   with_qerror += global_qerror;
   ASSERT_MAT_EQ(exact_sum.LockedMatrix(), with_qerror);
@@ -120,8 +120,8 @@ void test_onebit_quantize_allreduce(lbann_comm *comm, DistMat& mat,
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   lbann_quantizer quantizer;
-  quantizer.intermodel_sum_onebit_quantized(comm, mat, qerror);
-  comm->intermodel_sum_matrix(exact_sum);
+  quantizer.intertrainer_sum_onebit_quantized(comm, mat, qerror);
+  comm->intertrainer_sum_matrix(exact_sum);
   check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
@@ -135,9 +135,9 @@ void test_threshold_quantize_allreduce(lbann_comm *comm, DistMat& mat,
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   lbann_quantizer quantizer;
-  quantizer.intermodel_sum_threshold_quantized(comm, mat, qerror,
+  quantizer.intertrainer_sum_threshold_quantized(comm, mat, qerror,
       DataType(2.0), DataType(-2.0));
-  comm->intermodel_sum_matrix(exact_sum);
+  comm->intertrainer_sum_matrix(exact_sum);
   check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
@@ -151,8 +151,8 @@ void test_adaptive_quantize_allreduce(lbann_comm *comm, DistMat& mat,
   Mat qerror;
   El::Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   lbann_quantizer quantizer;
-  quantizer.intermodel_sum_adaptive_quantized(comm, mat, qerror, 1);
-  comm->intermodel_sum_matrix(exact_sum);
+  quantizer.intertrainer_sum_adaptive_quantized(comm, mat, qerror, 1);
+  comm->intertrainer_sum_matrix(exact_sum);
   check_allreduced_mat(comm, mat, exact_sum, qerror, exact);
 }
 
@@ -194,25 +194,25 @@ void test_allreduces() {
   // Note: Threshold quantized allreduce not currently supported.
   for (El::Int mat_size = 1; mat_size <= 4096; mat_size *= 2) {
     // Test Rademacher matrix (should be exact);
-    DistMat rademacher_mat(comm->get_model_grid());
-    if (comm->get_model_rank() == 0) {
+    DistMat rademacher_mat(comm->get_trainer_grid());
+    if (comm->get_trainer_rank() == 0) {
       El::Rademacher(rademacher_mat, mat_size, mat_size);
-      comm->intermodel_broadcast_matrix(rademacher_mat, 0);
+      comm->intertrainer_broadcast_matrix(rademacher_mat, 0);
     } else {
       rademacher_mat.Resize(mat_size, mat_size);
-      comm->intermodel_broadcast_matrix(rademacher_mat, 0);
+      comm->intertrainer_broadcast_matrix(rademacher_mat, 0);
     }
-    if (comm->get_model_rank() % 2 == 1) {
+    if (comm->get_trainer_rank() % 2 == 1) {
       El::Scale(DataType(-1), rademacher_mat);
     }
     DistMat onebit_rademacher(rademacher_mat),
             threshold_rademacher(rademacher_mat),
             adaptive_rademacher(rademacher_mat);
-    if (comm->get_model_rank() % 2 == 1) {
+    if (comm->get_trainer_rank() % 2 == 1) {
       // Adaptive quantization disregards 0s, so we need this to sum to a
       // different value instead.
       // In the case of 3 models, don't scale by 2 or else elements sum to 0.
-      if (comm->get_num_models() != 3) {
+      if (comm->get_num_trainers() != 3) {
         El::Scale(DataType(2), adaptive_rademacher);
       }
     }

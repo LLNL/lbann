@@ -48,7 +48,7 @@ std::vector<double> test_normal(lbann_comm *comm, DistMat& mat) {
   std::vector<double> times;
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
-    comm->intermodel_sum_matrix(mat);
+    comm->intertrainer_sum_matrix(mat);
     double tot = get_time() - start;
     times.push_back(tot);
     normal_summarizer->reduce_scalar("time", tot, trial);
@@ -125,7 +125,7 @@ std::vector<double> test_onebit(lbann_comm *comm, DistMat& mat) {
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
-    quantizer.intermodel_sum_onebit_quantized(comm, mat, qerror);
+    quantizer.intertrainer_sum_onebit_quantized(comm, mat, qerror);
     double tot = get_time() - start;
     times.push_back(tot);
     onebit_summarizer->reduce_scalar("time", tot, trial);
@@ -145,7 +145,7 @@ std::vector<double> test_thresh(lbann_comm *comm, DistMat& mat,
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
-    quantizer.intermodel_sum_threshold_quantized(
+    quantizer.intertrainer_sum_threshold_quantized(
       comm, mat, qerror, thresh, -thresh);
     double tot = get_time() - start;
     times.push_back(tot);
@@ -165,7 +165,7 @@ std::vector<double> test_adaptive(lbann_comm *comm, DistMat& mat,
   Zeros(qerror, mat.LocalHeight(), mat.LocalWidth());
   for (int trial = 0; trial < num_trials; ++trial) {
     double start = get_time();
-    quantizer.intermodel_sum_adaptive_quantized(
+    quantizer.intertrainer_sum_adaptive_quantized(
       comm, mat, qerror, proportion);
     double tot = get_time() - start;
     times.push_back(tot);
@@ -240,11 +240,11 @@ int main(int argc, char **argv) {
   adaptive_summarizer = new lbann_summary("qbm/adaptive", comm);
 
   if (comm->am_world_master()) {
-    std::cout << "Models: " << comm->get_num_models() << std::endl;
-    std::cout << "Procs per model: " << comm->get_procs_per_model() << std::endl;
+    std::cout << "Models: " << comm->get_num_trainers() << std::endl;
+    std::cout << "Procs per model: " << comm->get_procs_per_trainer() << std::endl;
   }
   for (int mat_size = 64; mat_size <= 16384; mat_size *= 2) {
-    DistMat mat(comm->get_model_grid());
+    DistMat mat(comm->get_trainer_grid());
     El::Gaussian(mat, mat_size, mat_size, (DataType) 0.0, (DataType) 0.4);
     test_mat(comm, mat);
   }

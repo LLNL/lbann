@@ -72,8 +72,8 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
   }
   m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_trainer();
-  m_np = m_comm->get_procs_per_model();
-  m_mpi_comm = m_comm->get_model_comm().comm;
+  m_np = m_comm->get_procs_per_trainer();
+  m_mpi_comm = m_comm->get_trainer_comm().comm;
 
   m_dir = m_reader->get_file_dir();
 
@@ -97,7 +97,7 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_dir = m_reader->get_local_file_dir();
   }
 
-  if (m_comm->get_num_models() != 1) {
+  if (m_comm->get_num_trainers() != 1) {
     if (m_master) {
       std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
                 << "a single model; please ask Dave Hysom to fix!\n\n";
@@ -221,7 +221,7 @@ void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, b
 void generic_data_store::exchange_mb_counts() {
   int my_num_indices = m_my_minibatch_indices_v.size();
   m_mb_counts.resize(m_np);
-  m_comm->model_all_gather<int>(my_num_indices, m_mb_counts);
+  m_comm->trainer_all_gather<int>(my_num_indices, m_mb_counts);
 }
 
 void generic_data_store::exchange_mb_indices() {
@@ -255,7 +255,7 @@ void generic_data_store::exchange_partitioned_indices() {
   //determine the largest number of minibatches over all processors
   std::vector<int> counts(m_np);
   int my_num_mb = m_my_minibatch_indices->size();
-  m_comm->model_all_gather<int>(my_num_mb, counts);
+  m_comm->trainer_all_gather<int>(my_num_mb, counts);
   m_num_minibatches = 0;
   for (auto t : counts) {
     m_num_minibatches = (size_t)t > m_num_minibatches ? t : m_num_minibatches;
@@ -269,7 +269,7 @@ void generic_data_store::exchange_partitioned_indices() {
   for (auto t : (*m_my_minibatch_indices)) {
     count += t.size();
   }
-  m_comm->model_all_gather<int>(count, counts);
+  m_comm->trainer_all_gather<int>(count, counts);
 
 
   //now, fill in the vector
@@ -406,7 +406,7 @@ void generic_data_store::build_index_owner() {
     num_indices = 1;
   }
   std::vector<int>counts(m_np);
-  m_comm->model_all_gather<int>(num_indices, counts);
+  m_comm->trainer_all_gather<int>(num_indices, counts);
 
   std::vector<int> disp(m_np);
   disp[0] = 0;

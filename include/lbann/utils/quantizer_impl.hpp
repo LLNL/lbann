@@ -493,7 +493,7 @@ void lbann_quantizer::adaptive_quantize_slice(
 }
 
 template <typename colT, typename rowT>
-void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
+void lbann_quantizer::intertrainer_sum_adaptive_quantized_impl(
   lbann_comm *comm, Mat& mat, Mat& qerror, int proportion) {
   // Ensure types are reasonable.
   static_assert(std::is_integral<colT>::value && std::is_integral<rowT>::value,
@@ -565,7 +565,7 @@ void lbann_quantizer::intermodel_sum_adaptive_quantized_impl(
   };
   lbann_comm::allreduce_options opts;
   opts.max_reduces = 4;
-  comm->intermodel_allreduce(
+  comm->intertrainer_allreduce(
     mat, max_size,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),

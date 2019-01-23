@@ -125,8 +125,8 @@ class lbann_quantizer {
    * should use SGD as the optimizer for those layers to avoid applying AdaGrad
    * twice.
    */
-  void intermodel_sum_onebit_quantized(lbann_comm *comm, Mat& mat, Mat& qerror);
-  void intermodel_sum_onebit_quantized(lbann_comm *comm, DistMat& mat,
+  void intertrainer_sum_onebit_quantized(lbann_comm *comm, Mat& mat, Mat& qerror);
+  void intertrainer_sum_onebit_quantized(lbann_comm *comm, DistMat& mat,
                                        Mat& qerror);
 
   /**
@@ -160,12 +160,12 @@ class lbann_quantizer {
                             DataType pos_thresh, DataType neg_thresh,
                             bool delta = false);
   /**
-   * As with intermodel_sum_onebit_quantized, but use threshold quantization.
+   * As with intertrainer_sum_onebit_quantized, but use threshold quantization.
    */
-  void intermodel_sum_threshold_quantized(lbann_comm *comm, Mat& mat,
+  void intertrainer_sum_threshold_quantized(lbann_comm *comm, Mat& mat,
                                           Mat& qerror, DataType pos_thresh,
                                           DataType neg_thresh);
-  void intermodel_sum_threshold_quantized(lbann_comm *comm, DistMat& mat,
+  void intertrainer_sum_threshold_quantized(lbann_comm *comm, DistMat& mat,
                                           Mat& qerror, DataType pos_thresh,
                                           DataType neg_thresh);
 
@@ -195,11 +195,11 @@ class lbann_quantizer {
   void adaptive_unquantize(const rowT *q, DistMat& mat);
 
   /**
-   * As with intermodel_sum_onebit_quantized, but use adaptive quantization.
+   * As with intertrainer_sum_onebit_quantized, but use adaptive quantization.
    */
-  void intermodel_sum_adaptive_quantized(
+  void intertrainer_sum_adaptive_quantized(
     lbann_comm *comm, Mat& mat, Mat& qerror, int proportion);
-  void intermodel_sum_adaptive_quantized(
+  void intertrainer_sum_adaptive_quantized(
     lbann_comm *comm, DistMat& mat, Mat& qerror, int proportion);
 
   /**
@@ -316,7 +316,7 @@ class lbann_quantizer {
                                std::vector<rowT>& slice, colT start,
                                colT end, int proportion);
   template <typename colT, typename rowT>
-  void intermodel_sum_adaptive_quantized_impl(
+  void intertrainer_sum_adaptive_quantized_impl(
     lbann_comm *comm, Mat& mat, Mat& qerror, int proportion);
 
   /**

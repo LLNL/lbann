@@ -188,11 +188,11 @@ void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
   // be called multiple times without affecting correctness.
   auto&& comm = *m.get_comm();
   if (comm.am_trainer_master()) {
-    comm.model_reduce(static_cast<El::Int*>(MPI_IN_PLACE),
+    comm.trainer_reduce(static_cast<El::Int*>(MPI_IN_PLACE),
                       counts.size(),
                       counts.data());
   } else {
-    comm.model_reduce(counts.data(), counts.size(),
+    comm.trainer_reduce(counts.data(), counts.size(),
                       comm.get_trainer_master());
     counts.assign(counts.size(), 0);
   }

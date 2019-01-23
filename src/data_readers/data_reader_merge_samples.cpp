@@ -55,7 +55,7 @@ data_reader_merge_samples::~data_reader_merge_samples() {}
 void data_reader_merge_samples::load_using_data_store() {
   // load the subsidiary data readers
   int global_num_readers = m_data_readers.size();
-  int np = m_comm->get_procs_per_model();
+  int np = m_comm->get_procs_per_trainer();
   for (int j=0; j<global_num_readers; j++) {
     int owner = j % np;
     m_data_readers[j]->set_compound_rank(owner);
@@ -71,7 +71,7 @@ void data_reader_merge_samples::load_using_data_store() {
   label_size = m_data_readers[0]->get_linearized_label_size();
   const std::vector<int> data_dims = m_data_readers[0]->get_data_dims();
   /*
-  MPI_Comm comm = m_comm->get_model_comm().comm;
+  MPI_Comm comm = m_comm->get_trainer_comm().comm;
   std::vector<int> data_dims_2 = data_dims;
   MPI_Bcast(&num_labels, 1, MPI_INT, 0, comm);
   MPI_Bcast(&data_size, 1, MPI_INT, 0, comm);

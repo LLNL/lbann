@@ -207,7 +207,7 @@ void lbann_quantizer::onebit_unquantize_add(const QuantizedMatrix& qmat,
   }
 }
 
-void lbann_quantizer::intermodel_sum_onebit_quantized(
+void lbann_quantizer::intertrainer_sum_onebit_quantized(
   lbann_comm *comm, CPUMat& mat, CPUMat& qerror) {
   // Initialize qerror.
   if (qerror.Height() == 0) {
@@ -257,7 +257,7 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
   };
   lbann_comm::allreduce_options opts;
   opts.max_reduces = 4;
-  comm->intermodel_allreduce(
+  comm->intertrainer_allreduce(
     mat, sizeof(qtype) * get_onebit_quantized_matrix_height(mat) * mat.Width(),
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
@@ -265,9 +265,9 @@ void lbann_quantizer::intermodel_sum_onebit_quantized(
     opts);
 }
 
-void lbann_quantizer::intermodel_sum_onebit_quantized(
+void lbann_quantizer::intertrainer_sum_onebit_quantized(
   lbann_comm *comm, DistMat& mat, CPUMat& qerror) {
-  intermodel_sum_onebit_quantized(comm, mat.Matrix(), qerror);
+  intertrainer_sum_onebit_quantized(comm, mat.Matrix(), qerror);
 }
 
 void lbann_quantizer::threshold_quantize(const Mat& mat, ThreshQuantized& quant,
@@ -453,7 +453,7 @@ void lbann_quantizer::threshold_quantize_apply(
   }
 }
 
-void lbann_quantizer::intermodel_sum_threshold_quantized(
+void lbann_quantizer::intertrainer_sum_threshold_quantized(
   lbann_comm *comm, Mat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh) {
   // Temporarily not supported until threshold quantization is updated to
@@ -461,39 +461,39 @@ void lbann_quantizer::intermodel_sum_threshold_quantized(
   throw lbann_exception("Threshold quantized allreduce not supported");
 }
 
-void lbann_quantizer::intermodel_sum_threshold_quantized(
+void lbann_quantizer::intertrainer_sum_threshold_quantized(
   lbann_comm *comm, DistMat& mat, Mat& qerror, DataType pos_thresh,
   DataType neg_thresh) {
-  intermodel_sum_threshold_quantized(comm, mat.Matrix(), qerror, pos_thresh,
+  intertrainer_sum_threshold_quantized(comm, mat.Matrix(), qerror, pos_thresh,
                                      neg_thresh);
 }
 
-void lbann_quantizer::intermodel_sum_adaptive_quantized(
+void lbann_quantizer::intertrainer_sum_adaptive_quantized(
   lbann_comm *comm, Mat& mat, Mat& qerror, int proportion) {
   // Select which algorithm to use based on the size of mat.
   // Multiply at 64 bits to avoid overflows.
   size_t mat_size = ((size_t) mat.Height()) * ((size_t) mat.Width());
   // Check signed version because we need one bit for the quantized value.
   if (mat_size > std::numeric_limits<int32_t>::max()) {
-    intermodel_sum_adaptive_quantized_impl<uint64_t, uint64_t>(
+    intertrainer_sum_adaptive_quantized_impl<uint64_t, uint64_t>(
       comm, mat, qerror, proportion);
   } else {
     // Check whether we can use 16-bit row indices.
     // Determine the column type (at compile time) based upon DataType.
     using colT = std::conditional<sizeof(DataType) <= 4, uint32_t, uint64_t>::type;
     if (mat.Height() > std::numeric_limits<int16_t>::max()) {
-      intermodel_sum_adaptive_quantized_impl<colT, uint32_t>(
+      intertrainer_sum_adaptive_quantized_impl<colT, uint32_t>(
         comm, mat, qerror, proportion);
     } else {
-      intermodel_sum_adaptive_quantized_impl<colT, uint16_t>(
+      intertrainer_sum_adaptive_quantized_impl<colT, uint16_t>(
         comm, mat, qerror, proportion);
     }
   }
 }
 
-void lbann_quantizer::intermodel_sum_adaptive_quantized(
+void lbann_quantizer::intertrainer_sum_adaptive_quantized(
   lbann_comm *comm, DistMat& mat, Mat& qerror, int proportion) {
-  intermodel_sum_adaptive_quantized(comm, mat.Matrix(), qerror,
+  intertrainer_sum_adaptive_quantized(comm, mat.Matrix(), qerror,
                                     proportion);
 }
 

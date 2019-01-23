@@ -35,9 +35,9 @@ namespace {
 std::string rank_string(const lbann_comm& comm) {
   std::stringstream msg;
   msg << "rank " << comm.get_rank_in_world();
-  if (comm.get_num_models() > 1) {
+  if (comm.get_num_trainers() > 1) {
     msg << " (rank " << comm.get_rank_in_trainer()
-        << " of model " << comm.get_model_rank() << ")";
+        << " of model " << comm.get_trainer_rank() << ")";
   }
   return msg.str();
 }

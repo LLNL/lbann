@@ -148,7 +148,7 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
   }
 
   // Communicate hyperparameters from master processes
-  comm.model_broadcast(comm.get_trainer_master(),
+  comm.trainer_broadcast(comm.get_trainer_master(),
                        hyperparameters.data(),
                        hyperparameters.size());
 

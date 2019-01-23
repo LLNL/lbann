@@ -62,15 +62,15 @@ void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
   size_t used = total - available;
   auto comm = m->get_comm();
   if (comm->am_trainer_master()) {
-    auto num_procs = comm->get_procs_per_model();
+    auto num_procs = comm->get_procs_per_trainer();
     std::vector<size_t> used_list(num_procs);
-    comm->model_gather(used, used_list.data());
+    comm->trainer_gather(used, used_list.data());
     double used_mean = get_mean(used_list) / 1024.0 / 1024.0 / 1024.0;
     double used_median = get_median(used_list) / 1024.0 / 1024.0 / 1024.0;
     double used_max = get_max(used_list) / 1024.0 / 1024.0 / 1024.0;
     double used_min = get_min(used_list) / 1024.0 / 1024.0 / 1024.0;
     std::stringstream ss;
-    ss << "Model " << m->get_comm()->get_model_rank()
+    ss << "Model " << m->get_comm()->get_trainer_rank()
        << " GPU memory usage statistics : "
        << std::setprecision(3)
        << used_mean  << " GiB mean, "
@@ -86,7 +86,7 @@ void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
        << " GiB total)" << std::endl;
     std::cout << ss.str();
   } else {
-    comm->model_gather(used, comm->get_trainer_master());
+    comm->trainer_gather(used, comm->get_trainer_master());
   }
 #endif
 }

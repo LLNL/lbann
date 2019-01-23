@@ -81,7 +81,7 @@ bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
 void dump_network(model *m) {
   for (const auto* l : m->get_layers()) {
     std::stringstream ss;
-    ss << "model" << m->get_comm()->get_model_rank()
+    ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
        << "-epoch" << m->get_cur_epoch()
        << "-step" << m->get_cur_step()
@@ -100,7 +100,7 @@ void dump_network(model *m) {
   }
   for (auto* w : m->get_weights()) {
     std::stringstream ss;
-    ss << "model" << m->get_comm()->get_model_rank()
+    ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
        << "-epoch" << m->get_cur_epoch()
        << "-step" << m->get_cur_step()

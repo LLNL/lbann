@@ -151,16 +151,16 @@ void lbann_callback_print::report_results(model *m) {
   }
 
   if (comm->am_trainer_master()) {
-    const int num_models = comm->get_num_models();
+    const int num_models = comm->get_num_trainers();
 
     // Report objective function value
     const EvalType obj_fn = m->get_objective_function()->get_mean_value(mode);
     const int obj_fn_samples = m->get_objective_function()->get_statistics_num_samples(mode);
     if (comm->am_world_master()) {
-      std::vector<EvalType> obj_fn_list(comm->get_num_models());
-      std::vector<int> num_samples_list(comm->get_num_models());
-      comm->intermodel_gather(obj_fn, obj_fn_list);
-      comm->intermodel_gather(obj_fn_samples, num_samples_list);
+      std::vector<EvalType> obj_fn_list(comm->get_num_trainers());
+      std::vector<int> num_samples_list(comm->get_num_trainers());
+      comm->intertrainer_gather(obj_fn, obj_fn_list);
+      comm->intertrainer_gather(obj_fn_samples, num_samples_list);
       for (int i = 0; i < num_models; ++i) {
         std::cout << m->get_name() << " (instance " <<  i <<  ") "  << mode_string << " "
                   << "objective function : " << obj_fn_list[i]
@@ -179,8 +179,8 @@ void lbann_callback_print::report_results(model *m) {
                   << std::endl;
       }
     } else {
-      comm->intermodel_gather(obj_fn, comm->get_world_master());
-      comm->intermodel_gather(obj_fn_samples, comm->get_world_master());
+      comm->intertrainer_gather(obj_fn, comm->get_world_master());
+      comm->intertrainer_gather(obj_fn_samples, comm->get_world_master());
     }
 
     // Report score for each metric
@@ -188,10 +188,10 @@ void lbann_callback_print::report_results(model *m) {
       const EvalType score = met->get_mean_value(mode);
       const int score_samples = met->get_statistics_num_samples(mode);
       if (comm->am_world_master()) {
-        std::vector<EvalType> score_list(comm->get_num_models());
-        std::vector<int> num_samples_list(comm->get_num_models());
-        comm->intermodel_gather(score, score_list);
-        comm->intermodel_gather(score_samples, num_samples_list);
+        std::vector<EvalType> score_list(comm->get_num_trainers());
+        std::vector<int> num_samples_list(comm->get_num_trainers());
+        comm->intertrainer_gather(score, score_list);
+        comm->intertrainer_gather(score_samples, num_samples_list);
         for (int i = 0; i < num_models; ++i) {
           std::cout << m->get_name() << " (instance " << i <<  ") " << mode_string << " "
                     << met->name() << " : "
@@ -212,8 +212,8 @@ void lbann_callback_print::report_results(model *m) {
                     << std::endl;
         }
       } else {
-        comm->intermodel_gather(score, comm->get_intermodel_master());
-        comm->intermodel_gather(score_samples, comm->get_intermodel_master());
+        comm->intertrainer_gather(score, comm->get_intertrainer_master());
+        comm->intertrainer_gather(score_samples, comm->get_intertrainer_master());
       }
     }
 

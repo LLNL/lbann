@@ -875,12 +875,12 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
     n_min = std::numeric_limits<unsigned long long>::max();
   }
 
-  m_comm->model_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
+  m_comm->trainer_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
 
   // Find the first rank that has the minimum number of valid samples
   int rank_tmp_1st = (n_loc == n_min)? my_rank : num_readers;
   int rank_min_1st;
-  m_comm->model_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
+  m_comm->trainer_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
 
   // Determine the number of samples to use
   m_global_num_samples_to_use = static_cast<size_t>(n_min * num_readers + rank_min_1st);
@@ -897,7 +897,7 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
   // Compute data yield
   unsigned long long n_valid_local = num_valid_samples;
   unsigned long long n_valid_global = 0u;
-  m_comm->model_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
+  m_comm->trainer_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
 
   if (is_master()) {
     const double yield = static_cast<double>(m_global_num_samples_to_use)/n_valid_global;

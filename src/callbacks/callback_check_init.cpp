@@ -40,7 +40,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
   if (comm->am_world_master()) {
     std::cout << "Checking all model initial weights match..." << std::endl;
   }
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_trainers() == 1) {
     return;
   }
 
@@ -52,9 +52,9 @@ void lbann_callback_check_init::on_train_begin(model *m) {
     // and compares them.
     const AbsMat& local_matrix = w->get_values().LockedMatrix();
     CPUMat remote_matrix(local_matrix.Height(), local_matrix.Width());
-    for (int model = 1; model < comm->get_num_models(); ++model) {
+    for (int model = 1; model < comm->get_num_trainers(); ++model) {
       comm->global_barrier();
-      if (comm->get_model_rank() == 0) {
+      if (comm->get_trainer_rank() == 0) {
         comm->recv(remote_matrix, model);
         if (!check_equal(local_matrix, remote_matrix)) {
           std::stringstream ss;
@@ -64,7 +64,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
              << "does not match model 0";
           throw lbann_exception(ss.str());
         }
-      } else if (comm->get_model_rank() == model) {
+      } else if (comm->get_trainer_rank() == model) {
         comm->send(local_matrix, 0);
       }
     }

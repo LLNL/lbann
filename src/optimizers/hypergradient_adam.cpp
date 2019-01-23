@@ -228,7 +228,7 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
     unpack_scalars(p, &header);
   }
 
-  m_comm->model_broadcast(0, header);
+  m_comm->trainer_broadcast(0, header);
 
   unpack_header(header);
 

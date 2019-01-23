@@ -187,9 +187,9 @@ bool metric::load_from_checkpoint_shared(persist& p) {
     m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
   }
 
-  m_comm->model_broadcast(0, training_header);
-  m_comm->model_broadcast(0, validation_header);
-  m_comm->model_broadcast(0, testing_header);
+  m_comm->trainer_broadcast(0, training_header);
+  m_comm->trainer_broadcast(0, validation_header);
+  m_comm->trainer_broadcast(0, testing_header);
 
   m_statistics[execution_mode::training].unpack_header(training_header);
   m_statistics[execution_mode::validation].unpack_header(validation_header);

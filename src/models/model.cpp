@@ -1555,7 +1555,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   load_rng_from_checkpoint_shared(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
-  m_comm->model_broadcast(0, header);
+  m_comm->trainer_broadcast(0, header);
   // set our member params from values read from disk
   if (p.get_cb_type() != callback_type::validation) {
     m_execution_mode     = (execution_mode) header.execution_mode;

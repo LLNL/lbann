@@ -110,12 +110,12 @@ void lbann_callback_imcomm::setup(model *m) {
 
 void lbann_callback_imcomm::on_train_begin(model *m) {
   lbann_comm *comm = m->get_comm();
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_trainers() == 1) {
     return;  // No point with only one model.
   }
   for (weights *w : m->get_weights()) {
     AbsDistMat *values = w->get_values().Copy();
-    comm->intermodel_broadcast_matrix(*values, 0);
+    comm->intertrainer_broadcast_matrix(*values, 0);
     w->set_values(*values);
     delete values;
   }
@@ -123,7 +123,7 @@ void lbann_callback_imcomm::on_train_begin(model *m) {
 
 void lbann_callback_imcomm::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
-  if (comm->get_num_models() == 1 ||
+  if (comm->get_num_trainers() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
@@ -131,7 +131,7 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
     imcomm_params& params = m_weights_params[w];
     optimizer *opt = w->get_optimizer();
     if (ct_does_quantization(params.ct)) {
-      comm->intermodel_sum_matrix(params.error);
+      comm->intertrainer_sum_matrix(params.error);
       opt->clear_gradient();
       auto gradient = opt->get_gradient().Copy();
       Mat *local_gradients = nullptr;
@@ -155,7 +155,7 @@ void lbann_callback_imcomm::on_epoch_end(model *m) {
 
 void lbann_callback_imcomm::on_backward_prop_end(model *m) {
   lbann_comm *comm = m->get_comm();
-  if (comm->get_num_models() == 1 ||
+  if (comm->get_num_trainers() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
@@ -178,18 +178,18 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     }
     switch (params.ct) {
     case NORMAL:
-      comm->intermodel_sum_matrix(*local_gradients);
+      comm->intertrainer_sum_matrix(*local_gradients);
       break;
     case ONEBIT_QUANTIZATION:
-      m_quantizer.intermodel_sum_onebit_quantized(
+      m_quantizer.intertrainer_sum_onebit_quantized(
         comm, *local_gradients, params.error);
       break;
     case THRESH_QUANTIZATION:
-      m_quantizer.intermodel_sum_threshold_quantized(
+      m_quantizer.intertrainer_sum_threshold_quantized(
         comm, *local_gradients, params.error, params.pos_thresh, params.neg_thresh);
       break;
     case ADAPTIVE_QUANTIZATION:
-      m_quantizer.intermodel_sum_adaptive_quantized(
+      m_quantizer.intertrainer_sum_adaptive_quantized(
         comm, *local_gradients, params.error, params.proportion);
       break;
     default:

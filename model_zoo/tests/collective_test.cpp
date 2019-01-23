@@ -61,7 +61,7 @@ void test_rd_allreduce(lbann_comm *comm, DistMat& dmat) {
   Mat& mat = dmat.Matrix();
   int max_recv_count = sizeof(DataType) * mat.Height() * mat.Width();
   comm->recursive_doubling_allreduce_pow2(
-    comm->get_intermodel_comm(), mat, max_recv_count,
+    comm->get_intertrainer_comm(), mat, max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), {});
 }
@@ -92,7 +92,7 @@ void test_pe_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   lbann_comm::allreduce_options opts;
   opts.id_recv = true;
   comm->pe_ring_allreduce(
-    comm->get_intermodel_comm(), mat, max_recv_count,
+    comm->get_intertrainer_comm(), mat, max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
@@ -124,7 +124,7 @@ void test_ring_allreduce(lbann_comm *comm, DistMat& dmat) {
   lbann_comm::allreduce_options opts;
   opts.id_recv = true;
   comm->ring_allreduce(
-    comm->get_intermodel_comm(), mat, max_recv_count,
+    comm->get_intertrainer_comm(), mat, max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
@@ -156,7 +156,7 @@ void test_rabenseifner_allreduce(lbann_comm *comm, DistMat& dmat) {
   lbann_comm::allreduce_options opts;
   opts.id_recv = true;
   comm->rabenseifner_allreduce(
-    comm->get_intermodel_comm(), mat, max_recv_count,
+    comm->get_intertrainer_comm(), mat, max_recv_count,
     std::function<uint8_t *(Mat&, El::IR, El::IR, int&, bool, int)>(send_transform),
     std::function<int(uint8_t *, Mat&)>(recv_transform),
     std::function<int(uint8_t *, Mat&, bool)>(recv_apply_transform), opts);
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
         rab_times;
     // First trial is a warmup.
     for (int trial = 0; trial < num_trials + 1; ++trial) {
-      DistMat rd_mat(comm->get_model_grid());
+      DistMat rd_mat(comm->get_trainer_grid());
       El::Uniform(rd_mat, mat_size, mat_size, DataType(0.0), DataType(1.0));
       DistMat exact_mat(rd_mat);
       DistMat pe_ring_mat(rd_mat);
@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
       comm->global_barrier();
       // Baseline.
       double start = get_time();
-      comm->intermodel_sum_matrix(exact_mat);
+      comm->intertrainer_sum_matrix(exact_mat);
       mpi_times.push_back(get_time() - start);
       comm->global_barrier();
       // Recursive doubling.

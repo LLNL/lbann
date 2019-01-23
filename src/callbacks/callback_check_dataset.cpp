@@ -88,13 +88,13 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
 
   int num_samples = training_set.size();
-  std::vector<int> vec_num_samples(comm->get_procs_per_model());
+  std::vector<int> vec_num_samples(comm->get_procs_per_trainer());
   if (comm->am_trainer_master()) {
-    comm->model_gather(num_samples, vec_num_samples.data());
+    comm->trainer_gather(num_samples, vec_num_samples.data());
   }else {
-    comm->model_gather(num_samples, comm->get_trainer_master());
+    comm->trainer_gather(num_samples, comm->get_trainer_master());
   }
-  std::vector<int> sample_offsets(comm->get_procs_per_model());
+  std::vector<int> sample_offsets(comm->get_procs_per_trainer());
   std::partial_sum(vec_num_samples.begin(), vec_num_samples.end(), sample_offsets.begin());
   std::cout << "Training [" << comm->get_rank_in_trainer() << "] offsets";
   for (const auto& idx : sample_offsets) {
@@ -124,12 +124,12 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
       input->get_num_iterations_per_epoch(execution_mode::training) * m->get_max_mini_batch_size());
 
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
-    // comm->model_gatherv(local_data.data(), local_data.size(),
+    // comm->trainer_gatherv(local_data.data(), local_data.size(),
     //                     model_training_set.data(), vec_num_samples.data(), sample_offsets.data());
 
     std::cout << "Training: The entire model has processed " << model_training_set.size() << " elements" << std::endl;
   } else {
-    // comm->model_gatherv(local_data.data(), local_data.size(),
+    // comm->trainer_gatherv(local_data.data(), local_data.size(),
     //                     m->get_comm()->get_trainer_master());
   }
 
