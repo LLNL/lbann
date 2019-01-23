@@ -8,9 +8,11 @@ import lbann_onnx.o2l
 import lbann_pb2
 from lbann_onnx import getLbannRoot
 from lbann_onnx.util import parseBoolEnvVar
+from lbann_onnx.tests.util import isModelDumpEnabled, createAndGetDumpedModelsDir
 
 ONNX_MODEL_ZOO_ROOT = "{}/tools/onnx/onnx_model_zoo".format(getLbannRoot())
-SAVE_PROTOTEXT = parseBoolEnvVar("LBANN_ONNX_DUMP_MODELS", False)
+SAVE_PROTOTEXT = isModelDumpEnabled()
+DUMP_DIR = createAndGetDumpedModelsDir()
 DATA_LAYER_NAME = "image"
 LABEL_LAYER_NAME = "label"
 
@@ -29,7 +31,7 @@ class TestOnnx2Lbann(unittest.TestCase):
         pb = lbann_pb2.LbannPB(model=model)
 
         if SAVE_PROTOTEXT:
-            with open("{}.prototext".format(modelName), "w") as f:
+            with open(os.path.join(DUMP_DIR, "{}.prototext".format(modelName)), "w") as f:
                 f.write(txtf.MessageToString(pb))
 
     def test_o2l_mnist(self):

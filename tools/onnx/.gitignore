@@ -1,6 +1,7 @@
 lbann_pb2.py
 onnx_model_zoo/*.tar.gz
 onnx_model_zoo/*/*
+dumped_models/*
 
 lbann_onnx.egg-info/*
 dist/*

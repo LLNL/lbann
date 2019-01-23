@@ -11,9 +11,11 @@ import lbann_onnx.util
 import lbann_onnx.l2o.util
 from lbann_onnx import getLbannRoot
 from lbann_onnx.util import parseBoolEnvVar
+from lbann_onnx.tests.util import isModelDumpEnabled, createAndGetDumpedModelsDir
 
 LBANN_MODEL_ROOT = "{}/model_zoo/models".format(getLbannRoot())
-SAVE_ONNX = parseBoolEnvVar("LBANN_ONNX_DUMP_MODELSx", False)
+SAVE_ONNX = isModelDumpEnabled()
+DUMP_DIR = createAndGetDumpedModelsDir()
 ADD_DUMMY_PARAMS = parseBoolEnvVar("LBANN_ONNX_ADD_DUMMY_PARAMS", False)
 MB_PLACEHOLDER = "MB"
 
@@ -43,7 +45,7 @@ class TestLbann2Onnx(unittest.TestCase):
             o = onnx.helper.make_model(g)
 
         if SAVE_ONNX:
-            onnx.save(o, "{}.onnx".format(modelName))
+            onnx.save(o, os.path.join(DUMP_DIR, "{}.onnx".format(modelName)))
 
         for nodeName, outputShape in testedOutputs:
             node = list(filter(lambda x: x.name == nodeName, o.graph.node))
