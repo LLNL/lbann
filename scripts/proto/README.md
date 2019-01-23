@@ -164,7 +164,7 @@ components (layers, weights, etc.) is in `src/proto/lbann.proto`. All
 fields present in a message are supported as keyword arguments in this
 API.
 
-## `lbann_module`
+## `lbann_modules
 
 This presently consists of a small number of neural network modules,
 which are patterns of layers that take an input layer to produce an

@@ -510,7 +510,7 @@ _add_to_module_namespace(_generated_classes)
 # ==============================================
 
 def save_model(filename, mini_batch_size, epochs,
-               layers=[], weights=[], objective_function=None,
+               layers, weights=[], objective_function=None,
                metrics=[], callbacks=[]):
     """Save a model to file."""
 
