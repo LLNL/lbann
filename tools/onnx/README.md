@@ -1,6 +1,7 @@
 # lbann-onnx
 This tool provides a way to convert [LBANN](https://github.com/LLNL/lbann) models from/to [ONNX](https://github.com/onnx/onnx) models.
-* `LBANN_ROOT` environment variable may be used to explicitly specify a LBANN root directory (otherwise, `git rev-parse --show-toplevel` is used).
+* `LBANN_ROOT` environment variable may be used to explicitly specify a LBANN root directory.
+   * Otherwise, `git rev-parse --show-toplevel` is used.
 
 ## Requirements
 * [LBANN](https://github.com/LLNL/lbann)
@@ -9,14 +10,13 @@ This tool provides a way to convert [LBANN](https://github.com/LLNL/lbann) model
 * [NumPy](http://www.numpy.org/) >= 1.16.0
 * [Protobuf](https://github.com/protocolbuffers/protobuf) >= 3.6.1
 
-The Python packages of ONNX, NumPy and Prootbuf can be install via `pip3 install onnx numpy protobuf`.
-
 ## How to Setup
 1. Run `pip3 install -e .`
+   * `pip3` tries to install the dependent libralies if you don't have.
 2. Run `python3 -c "import lbann_onnx"` to verify that the package has been installed.
 3. Run `python3 setup.py test` to verify generated Protobuf/ONNX files.
    * You may need to run [`scripts/download_onnx_model_zoo.sh`](scripts/download_onnx_model_zoo.sh) to get pre-trained ONNX models.
-   * This will generate converted Protobuf/ONNX models if `LBANN_ONNX_DUMP_MODELS=1` is set.
+   * Converted Protobuf/ONNX models will be generated if `LBANN_ONNX_DUMP_MODELS=1` is set.
 
 ## How to Use
 See [`example/lbann2onnx.py`](example/lbann2onnx.py) and [`example/onnx2lbann.py`](example/onnx2lbann.py) for details.
