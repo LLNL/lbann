@@ -35,13 +35,14 @@ layers, weights, objective functions, metrics, and
 callbacks. `lbann_modules` consists of manually-curated higher-level
 building blocks that are commonly used in neural networks.
 
-_A possible point of confusion_: LBANN constructs a static graph
-(specifically, a DAG) of layers, as opposed to the dynamic execution
-graphs that many other frameworks (e.g. PyTorch, TensorFlow) support.
-This interface is just for building that graph, and does not actually
-run the model. Also note that a module is different from a layer: A
-layer is a single instance of an operator, whereas a module creates
-multiple instances of a (set of) layers with the same parameters.
+_Possible points of confusion_: LBANN constructs a static graph of
+layers (specifically a DAG), as opposed to the dynamic execution
+graphs that are supported in some other frameworks (e.g. PyTorch and
+TensorFlow). This interface is just for building that graph, and does
+not actually run the model. Also note that a module is different from
+a layer: a layer is a single instance of an operator, whereas a module
+creates multiple instances of a (set of) layers with the same
+parameters.
 
 ## `lbann_proto`
 
@@ -162,7 +163,7 @@ components (layers, weights, etc.) is in `src/proto/lbann.proto`. All
 fields present in a message are supported as keyword arguments in this
 API.
 
-## `lbann_modules
+## `lbann_modules`
 
 This presently consists of a small number of neural network modules,
 which are patterns of layers that take an input layer to produce an
