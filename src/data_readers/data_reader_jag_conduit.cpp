@@ -28,7 +28,7 @@
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
-//#include "lbann/data_store/data_store_jag_conduit.hpp"
+#include "lbann/data_store/data_store_jag.hpp"
 #include "lbann/models/model.hpp"
 #else
 #include "data_reader_jag_conduit.hpp"
@@ -236,6 +236,7 @@ data_reader_jag_conduit::~data_reader_jag_conduit() {
 }
 
 void data_reader_jag_conduit::set_defaults() {
+  m_jag_store = nullptr;
   m_independent.clear();
   m_independent_groups.clear();
   m_dependent.clear();
@@ -312,13 +313,19 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
 
 bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
   const sample_t& s = m_sample_list[i];
-  sample_id_t id = s.first;
   const std::string& sample_name = s.second;
-  const std::string& file_name = m_sample_list.get_samples_filename(id);
-  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
-
   const std::string path = sample_name + key;
 
+  if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
+    //@todo may want to change to a pointer, or something similar,
+    //      to avoid copying
+    node = m_jag_store->get_conduit_node(path);
+    return true;
+  }
+
+  sample_id_t id = s.first;
+  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  const std::string& file_name = m_sample_list.get_samples_filename(id);
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
                 " for sample "+ sample_name);
@@ -326,6 +333,9 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   }
 
   conduit::relay::io::hdf5_read(h, path, node);
+  if (m_jag_store != nullptr) {
+    m_jag_store->set_conduit_node(node);
+  }
 
   return true;
 }
@@ -1409,6 +1419,12 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_jag_store = new data_store_jag(this, m);  // *data_store_jag
+  m_data_store = m_jag_store;                 // *generic_data_store
+  m_data_store->setup();
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
