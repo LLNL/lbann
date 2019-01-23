@@ -203,7 +203,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
 bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if(p.get_cb_type() == callback_type::batch)
     optimizer::save_to_checkpoint_shared(p,name_prefix);
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p);
   }
 
@@ -224,7 +224,7 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
   if(p.get_cb_type() == callback_type::batch)
     optimizer::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p, &header);
   }
 

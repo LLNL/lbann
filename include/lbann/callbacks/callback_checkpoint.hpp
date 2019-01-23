@@ -151,7 +151,7 @@ static inline std::string get_distributed_checkpoint_dirname(model *m, std::stri
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
   ss << "." << comm->get_model_rank();
-  ss << ".rank." << comm->get_rank_in_model();
+  ss << ".rank." << comm->get_rank_in_trainer();
   ss << ".epoch." << epoch;
   ss << ".step."<< step << "/";
   return ss.str();

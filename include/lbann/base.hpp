@@ -185,7 +185,7 @@ static void __attribute__((used)) _print_local_matrix_dims(AbsMat *m, const char
 #define log_msg(...) {\
   char str[256];\
   sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << m_comm->get_model_rank() << "." << m_comm->get_rank_in_model() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
+  std::cout << "[" << m_comm->get_model_rank() << "." << m_comm->get_rank_in_trainer() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
   }
 #define log_simple_msg(...) {\
   char str[256];\

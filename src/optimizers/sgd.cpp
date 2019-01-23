@@ -146,7 +146,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p);
   }
 
@@ -160,7 +160,7 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p, &header);
   }
 

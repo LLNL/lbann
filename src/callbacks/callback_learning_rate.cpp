@@ -68,7 +68,7 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
   lbann_comm *comm = m->get_comm();
-  if (comm->am_model_master() && new_lr != old_global_lr) {
+  if (comm->am_trainer_master() && new_lr != old_global_lr) {
     std::cout << "Model " << comm->get_model_rank() << ": "
               << "changing global learning rate to " << new_lr
               << " at epoch " << m->get_cur_epoch() << std::endl;

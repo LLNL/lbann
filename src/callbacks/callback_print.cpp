@@ -150,9 +150,9 @@ void lbann_callback_print::report_results(model *m) {
     throw lbann_exception(err.str());
   }
 
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     const int num_models = comm->get_num_models();
-    
+
     // Report objective function value
     const EvalType obj_fn = m->get_objective_function()->get_mean_value(mode);
     const int obj_fn_samples = m->get_objective_function()->get_statistics_num_samples(mode);

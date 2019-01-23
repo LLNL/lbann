@@ -60,7 +60,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
           std::stringstream ss;
           ss << "check_init: "
              << "model " << model << " "
-             << "rank in model " << comm->get_rank_in_model() << " "
+             << "rank in model " << comm->get_rank_in_trainer() << " "
              << "does not match model 0";
           throw lbann_exception(ss.str());
         }

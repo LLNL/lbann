@@ -38,13 +38,13 @@ T get_mean(const std::vector<T> &v) {
 template <typename T>
 T get_median(const std::vector<T> &v) {
   std::vector<T> tmp = v;
-  int median_idx = tmp.size() / 2 - 1 + tmp.size() % 2;  
+  int median_idx = tmp.size() / 2 - 1 + tmp.size() % 2;
   std::nth_element(tmp.begin(), tmp.begin() + median_idx, tmp.end());
   return tmp[median_idx];
 }
 template <typename T>
 T get_max(const std::vector<T> &v) {
-  return *std::max_element(v.begin(), v.end());  
+  return *std::max_element(v.begin(), v.end());
 }
 template <typename T>
 T get_min(const std::vector<T> &v) {
@@ -61,7 +61,7 @@ void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
   FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
   size_t used = total - available;
   auto comm = m->get_comm();
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     auto num_procs = comm->get_procs_per_model();
     std::vector<size_t> used_list(num_procs);
     comm->model_gather(used, used_list.data());
@@ -72,21 +72,21 @@ void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
     std::stringstream ss;
     ss << "Model " << m->get_comm()->get_model_rank()
        << " GPU memory usage statistics : "
-       << std::setprecision(3)        
+       << std::setprecision(3)
        << used_mean  << " GiB mean, "
-       << std::setprecision(3)        
+       << std::setprecision(3)
        << used_median  << " GiB median, "
-       << std::setprecision(3)        
+       << std::setprecision(3)
        << used_max  << " GiB max, "
-       << std::setprecision(3)        
+       << std::setprecision(3)
        << used_min  << " GiB min "
        << "("
-       << std::setprecision(3)      
+       << std::setprecision(3)
        << (total / 1024.0 / 1024.0 / 1024.0)
        << " GiB total)" << std::endl;
     std::cout << ss.str();
   } else {
-    comm->model_gather(used, comm->get_model_master());
+    comm->model_gather(used, comm->get_trainer_master());
   }
 #endif
 }

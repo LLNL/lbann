@@ -38,7 +38,7 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
-    m_reader(reader), 
+    m_reader(reader),
     m_my_minibatch_indices(nullptr),
     m_epoch(0),
     m_in_memory(true),
@@ -71,7 +71,7 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
         throw lbann_exception(err.str());
   }
   m_master = m_comm->am_world_master();
-  m_rank = m_comm->get_rank_in_model();
+  m_rank = m_comm->get_rank_in_trainer();
   m_np = m_comm->get_procs_per_model();
   m_mpi_comm = m_comm->get_model_comm().comm;
 
@@ -174,7 +174,7 @@ void generic_data_store::setup() {
 
 void generic_data_store::print_partitioned_indices() {
   if (! m_master) {
-    return; 
+    return;
   }
   std::cerr << "\n\n=============================================\n"
             << "minibatch indices:\n";
@@ -203,11 +203,11 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "stat failed for dir: " << dir
-        << " and fn: " << fn 
+        << " and fn: " << fn
         << " on node: " << getenv("SLURMD_NODENAME");
     throw lbann_exception(err.str());
   }
-  return st.st_size;   
+  return st.st_size;
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
@@ -294,7 +294,7 @@ void generic_data_store::exchange_partitioned_indices() {
   for (size_t k=1; k<counts.size(); k++) {
     displ[k] = displ[k-1] + counts[k-1];
   }
-  
+
   //construct recv vector
   int n = std::accumulate(counts.begin(), counts.end(), 0);
   std::vector<int> all_w(n);
@@ -412,7 +412,7 @@ void generic_data_store::build_index_owner() {
   disp[0] = 0;
   for (int h=1; h<m_np; h++) {
     disp[h] = disp[h-1] + counts[h-1];
-  }  
+  }
   int num_global_indices = std::accumulate(counts.begin(), counts.end(), 0);
   std::vector<int> my_indices;
   my_indices.reserve(num_indices);

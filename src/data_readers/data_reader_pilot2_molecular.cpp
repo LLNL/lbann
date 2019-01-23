@@ -40,7 +40,7 @@ void pilot2_molecular_reader::load() {
   // support for data store functionality: when not using data store, all procs
   // load the data; when using data store, only one does so
   bool is_mine = true;
-  int rank = m_comm->get_rank_in_model();
+  int rank = m_comm->get_rank_in_trainer();
   // note: when support for merge_samples is in place, the condition
   //       "get_role() == "test" will go away. For now we need it, else
   //       merge_samples will break

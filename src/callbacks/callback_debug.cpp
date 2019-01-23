@@ -36,7 +36,7 @@ std::string rank_string(const lbann_comm& comm) {
   std::stringstream msg;
   msg << "rank " << comm.get_rank_in_world();
   if (comm.get_num_models() > 1) {
-    msg << " (rank " << comm.get_rank_in_model()
+    msg << " (rank " << comm.get_rank_in_trainer()
         << " of model " << comm.get_model_rank() << ")";
   }
   return msg.str();
@@ -131,7 +131,7 @@ void lbann_callback_debug::on_backward_prop_begin(model *m, Layer *l) {
   }
 }
 void lbann_callback_debug::on_backward_prop_end(model *m, Layer *l) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) { 
+  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is   ending backward prop for " << batch_step_string(*m)

@@ -79,7 +79,7 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
   int ramp_time = 0;
   if (schedule(m, new_mbsize, new_lr, ramp_time)) {
     if (new_mbsize > m->get_max_mini_batch_size()) {
-      if (comm->am_model_master()) {
+      if (comm->am_trainer_master()) {
         std::cout << "Model " << comm->get_model_rank() << ": WARNING " <<
           "requested new mini-batch size " << new_mbsize <<
           " is greater than the model maximum mini-batch size " <<
@@ -99,13 +99,13 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
         float cur_lr = get_current_learning_rate(m);
         m_lr_incr = (new_lr - cur_lr) / ramp_time;
       }
-      if (comm->am_model_master()) {
+      if (comm->am_trainer_master()) {
         std::cout << "Model " << comm->get_model_rank() <<
           ": Changing mini-batch size to " << new_mbsize <<
           " and learning rate to " << new_lr << " at epoch " <<
           m->get_cur_epoch() << std::endl;
       }
-    } else if (comm->am_model_master()) {
+    } else if (comm->am_trainer_master()) {
       std::cout << "Model " << comm->get_model_rank() <<
         ": Changing mini-batch size to " << new_mbsize <<
         " at epoch " << m->get_cur_epoch() << std::endl;
@@ -116,7 +116,7 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
     --m_ramp_count;
     float target_lr = get_current_learning_rate(m) + m_lr_incr;
     change_learning_rate(m, target_lr);
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       std::cout << "Model " << comm->get_model_rank() <<
         ": Variable-size mini-batch ramping learning rate to " <<
         target_lr << std::endl;

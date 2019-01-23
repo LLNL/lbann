@@ -103,7 +103,7 @@ void lbann_callback_timer::timing_end(model& m) {
   // Report timing results
   auto& comm = *m.get_comm();
   const El::Int num_models = comm.get_num_models();
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
 
     // Gather timing results in world master
     std::vector<EvalType> run_time_list(num_models);

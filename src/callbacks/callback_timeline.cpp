@@ -49,7 +49,7 @@ void lbann_callback_timeline::on_train_begin(model *m) {
 void lbann_callback_timeline::on_train_end(model *m) {
   const std::string path = m_outdir + "/timeline.m" +
     std::to_string(m->get_comm()->get_model_rank()) + "." +
-    std::to_string(m->get_comm()->get_rank_in_model()) + ".txt";
+    std::to_string(m->get_comm()->get_rank_in_trainer()) + ".txt";
   std::ofstream f(path);
   for (const auto& kv : m_fp_times) {
     const std::string layer_name = "fp-" + kv.first;

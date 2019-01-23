@@ -1480,7 +1480,7 @@ struct lbann_model_header {
 bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
   if (p.get_cb_type() != callback_type::validation) {
-    if (m_comm->am_model_master()) {
+    if (m_comm->am_trainer_master()) {
       p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
       p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
       p.write_uint64(persist_type::train, "current_epoch",      (uint64_t) m_current_epoch);
@@ -1511,7 +1511,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
     }
   }
   else{
-    if (m_comm->am_model_master()) {
+    if (m_comm->am_trainer_master()) {
       p.write_uint64(persist_type::validate, "current_validataion_step",       (uint64_t) m_current_validation_step);
     }
     save_rng_to_checkpoint_shared(p, m_comm);
@@ -1535,7 +1535,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // read state from file
   struct lbann_model_header header;
   // Assume checkpoint reload from epoch end not step end
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     if (p.get_cb_type() != callback_type::validation) {
       p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
       p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
@@ -1718,7 +1718,7 @@ bool model::save_model() {
       return cb->save_model(this);
     }
   }
-  if(m_comm->am_model_master()) {
+  if(m_comm->am_trainer_master()) {
     LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
   }
   return false;

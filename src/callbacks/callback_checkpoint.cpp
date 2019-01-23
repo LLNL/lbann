@@ -99,7 +99,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   if (!m_checkpoint_shared && m_checkpoint_secs != 0.0) {
     // have rank 0 determine whether we should checkpoint
     // to avoid issues with clock skew, we rely on rank 0 to make decision
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       // get the current time
       EvalType current = MPI_Wtime();
       // compute time next checkpoint is due
@@ -134,7 +134,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   // So, it needs to be in the root folder.
   comm->model_barrier();
   // let user know we're saving a checkpoint
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     epoch = m->get_cur_epoch();
     step = m->get_cur_step();
     timer.Start();
@@ -161,7 +161,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     m->save_to_checkpoint_distributed(p);
     p.close_checkpoint();
     // Print latest checkpoint to file
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       latest_file = get_last_distributed_checkpoint_filename(m, dir);
       write_latest(latest_file, epoch, step);
     }
@@ -171,7 +171,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     strcpy(dir, m_checkpoint_dir.c_str());
     makedir(dir);
     epochdir = get_shared_checkpoint_dirname(m, dir, epoch, step);
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       p.open_checkpoint(epochdir.c_str());
     }
     // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
@@ -179,7 +179,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     m->save_to_checkpoint_shared(p);
     // close our checkpoint
     p.close_checkpoint();
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       latest_file = get_last_shared_checkpoint_filename(m, dir);
       write_latest(latest_file, epoch, step);
     }
@@ -187,7 +187,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
 
   uint64_t bytes_count = p.get_bytes();
 
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     EvalType secs = timer.Stop();
     EvalType bw = 0;
     if (secs > 0.0) {
@@ -220,7 +220,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   lbann_comm *comm = m->get_comm();
   int shared = 1;
   // Grab latest checkpoint information, checks for latest in dist and shared, restarts from most recent between the two.
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     if(m_per_rank_dir.length()){
       snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), m_checkpoint_dir.c_str());
       latest_file = get_last_distributed_checkpoint_filename(m, dir);
@@ -278,7 +278,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   // time how long this takes
   El::Timer timer;
   // let user know we're restarting from a checkpoint
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     timer.Start();
     printf("Restart: epoch %d ...\n", epoch);
     fflush(stdout);
@@ -294,20 +294,20 @@ bool lbann_callback_checkpoint::restart(model *m) {
   }
   else {
     epochdir = get_shared_checkpoint_dirname(m, dir, epoch, step);
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       p.open_restart(epochdir.c_str());
     }
     // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->load_from_checkpoint_shared(p);
-    if(comm->am_model_master())
+    if(comm->am_trainer_master())
       p.close_restart();
   }
 
   // close our checkpoint
   uint64_t bytes_count = p.get_bytes();
   // let user know we've completed reading our restart
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     EvalType secs = timer.Stop();
     EvalType bw = 0.0;
     if (secs > 0.0) {

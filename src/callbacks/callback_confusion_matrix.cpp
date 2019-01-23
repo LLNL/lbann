@@ -187,18 +187,18 @@ void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
   // Note: Counts in non-root processes are set to zero, so this can
   // be called multiple times without affecting correctness.
   auto&& comm = *m.get_comm();
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     comm.model_reduce(static_cast<El::Int*>(MPI_IN_PLACE),
                       counts.size(),
                       counts.data());
   } else {
     comm.model_reduce(counts.data(), counts.size(),
-                      comm.get_model_master());
+                      comm.get_trainer_master());
     counts.assign(counts.size(), 0);
   }
 
   // Save confusion matrix on master process
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     const auto& num_classes = get_predictions(m).Height();
     const auto& total_count = std::accumulate(counts.begin(), counts.end(), 0);
     const auto& scale = DataType(1) / total_count;

@@ -611,7 +611,7 @@ void generic_data_reader::use_unused_index_set() {
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name) {
   // rank 0 writes the training state file
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p,name);
   }
   return true;
@@ -621,7 +621,7 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const char *name) {
   // rank 0 reads the training state file
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p,&header,name);
   }
   m_comm->model_broadcast(0, header);
@@ -630,7 +630,7 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const c
   m_comm->model_broadcast(0, m_shuffled_indices);
 
   // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
-  m_current_pos += m_comm->get_rank_in_model();
+  m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 

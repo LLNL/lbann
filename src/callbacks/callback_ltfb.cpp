@@ -99,7 +99,7 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
                                        std::vector<weights*>& recv_weights) {
 
   // Get partner process
-  const El::Int rank_in_trainer = comm.get_rank_in_model();
+  const El::Int rank_in_trainer = comm.get_rank_in_trainer();
   const El::Int procs_per_trainer = comm.get_procs_per_model();
   const El::Int partner_rank_in_world = (partner_trainer * procs_per_trainer
                                          + rank_in_trainer);
@@ -171,7 +171,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   // Save model checkpoint
   persist p;
   p.set_cb_type(callback_type::batch);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.open_checkpoint(send_dir.c_str());
   } else {
     std::strcpy(p.m_checkpoint_dir, send_dir.c_str());
@@ -181,7 +181,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Synchronize with partner trainer
   {
-    const auto rank_in_trainer = comm.get_rank_in_model();
+    const auto rank_in_trainer = comm.get_rank_in_trainer();
     DataType send = false, recv = false;
     comm.sendrecv(&send, 1, partner_trainer, rank_in_trainer,
                   &recv, 1, partner_trainer, rank_in_trainer,
@@ -190,13 +190,13 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Load model checkpoint from partner trainer
   p.set_cb_type(callback_type::batch);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.open_restart(recv_dir.c_str());
   } else {
     std::strcpy(p.m_checkpoint_dir, recv_dir.c_str());
   }
   m.load_from_checkpoint_shared(p);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.close_restart();
   }
 
@@ -227,13 +227,13 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
   // Load local model checkpoint
   persist p;
   p.set_cb_type(callback_type::batch);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.open_restart(checkpoint_dir.c_str());
   } else {
     std::strcpy(p.m_checkpoint_dir, checkpoint_dir.c_str());
   }
   m.load_from_checkpoint_shared(p);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.close_restart();
   }
 
@@ -426,7 +426,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   }
 
   // Report tournament winner
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     std::stringstream msg;
     msg << message_prefix
         << "trainer " << local_trainer << " "

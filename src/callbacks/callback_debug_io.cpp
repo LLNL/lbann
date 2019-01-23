@@ -41,7 +41,7 @@ void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
     return;
   }
 
-  if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers()) {
+  if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
     if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
       print_fp_start(m, input);
     }
@@ -67,7 +67,7 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, generic_input_laye
     throw lbann_exception("Illegal execution mode in evaluate forward prop function");
   }
   std::cout << "[" << m->get_comm()->get_model_rank()
-            << "." << m->get_comm()->get_rank_in_model()
+            << "." << m->get_comm()->get_rank_in_trainer()
             << "] @" << m->get_cur_epoch() << "." << step
             << " Phase: " << _to_string(m->get_execution_mode())
             << " starting forward propagation for layer " << input->get_name()
@@ -111,7 +111,7 @@ void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode 
 
   if(data_reader->get_rank() < data_reader->get_num_parallel_readers()) {
     std::cout << "[" << m->get_comm()->get_model_rank()
-              << "." << m->get_comm()->get_rank_in_model()
+              << "." << m->get_comm()->get_rank_in_trainer()
               << "] @" << 0 << "." << step
               << " Starting Phase: " << _to_string(mode)
               << " " << (data_reader->get_num_iterations_per_epoch() - 1)
@@ -131,7 +131,7 @@ void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode 
               << std::endl;
   }else {
     std::cout << "[" << m->get_comm()->get_model_rank()
-              << "." << m->get_comm()->get_rank_in_model()
+              << "." << m->get_comm()->get_rank_in_trainer()
               << "] @" << 0 << "." << step
               << " Starting Phase: " << _to_string(mode)
               << " " << (data_reader->get_num_iterations_per_epoch())
@@ -157,7 +157,7 @@ void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, La
     return;
   }
 
-  if(m->get_comm()->get_rank_in_model() < input->get_data_reader()->get_num_parallel_readers()) {
+  if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
     if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
       print_fp_start(m, input);
     }

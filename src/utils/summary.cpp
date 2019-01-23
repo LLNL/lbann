@@ -59,7 +59,7 @@ void lbann_summary::reduce_mean(const std::string tag,
   El::DistData mat_format(mat);
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sum on master process if matrix is Star,Star
-    if(m_comm->am_model_master()) {
+    if(m_comm->am_trainer_master()) {
       sum = local_sum(mat.LockedMatrix());
     }
   } else {
@@ -99,7 +99,7 @@ void lbann_summary::reduce_stdev(const std::string tag,
   El::DistData mat_format(mat);
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
-    if(m_comm->am_model_master()) {
+    if(m_comm->am_trainer_master()) {
       local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   } else {
@@ -117,7 +117,7 @@ void lbann_summary::reduce_stdev(const std::string tag,
 void lbann_summary::reduce_scalar(const std::string tag,
                                   DataType s,
                                   int step) {
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     m_pending_scalars.emplace_back(tag, step, s);
   }
 }
@@ -146,7 +146,7 @@ void lbann_summary::reduce_histogram(const std::string tag,
   El::DistData mat_format(mat);
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
-    if(m_comm->am_model_master()) {
+    if(m_comm->am_trainer_master()) {
       local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   } else {
@@ -207,7 +207,7 @@ void lbann_summary::flush_means() {
   for (const auto& op : m_pending_means) {
     local_sums.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_sums(local_sums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
@@ -218,7 +218,7 @@ void lbann_summary::flush_means() {
     gather_scalar_summary(m_pending_means, global_sums);
   } else {
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
   }
   m_pending_means.clear();
 }
@@ -231,14 +231,14 @@ void lbann_summary::flush_mins() {
   for (const auto& op : m_pending_mins) {
     local_mins.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_mins(local_mins.size());
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
                          global_mins.data(), El::mpi::MIN);
     gather_scalar_summary(m_pending_mins, global_mins);
   } else {
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
-                         m_comm->get_model_master(), El::mpi::MIN);
+                         m_comm->get_trainer_master(), El::mpi::MIN);
   }
   m_pending_mins.clear();
 }
@@ -251,14 +251,14 @@ void lbann_summary::flush_maxes() {
   for (const auto& op : m_pending_maxes) {
     local_maxes.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_maxes(local_maxes.size());
     m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
                          global_maxes.data(), El::mpi::MAX);
     gather_scalar_summary(m_pending_maxes, global_maxes);
   } else {
     m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
-                         m_comm->get_model_master(), El::mpi::MAX);
+                         m_comm->get_trainer_master(), El::mpi::MAX);
   }
   m_pending_maxes.clear();
 }
@@ -273,7 +273,7 @@ void lbann_summary::flush_stdevs() {
     local_sums.push_back(op.local);
     local_sqsums.push_back(op.local2);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     // Compute the model sample standard deviation as:
     // sqrt[1/(n-1) (sqsum - (1/n)*sum^2)]
     // The n-1 is to use an unbiased variance estimate.
@@ -295,9 +295,9 @@ void lbann_summary::flush_stdevs() {
     gather_scalar_summary(m_pending_stdevs, global_sums);
   } else {
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
     m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
   }
   m_pending_stdevs.clear();
 }
@@ -306,7 +306,7 @@ void lbann_summary::flush_scalars() {
   if (m_pending_scalars.empty()) {
     return;
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> local_scalars;
     for (const auto& op : m_pending_scalars) {
       local_scalars.push_back(op.local);
@@ -324,14 +324,14 @@ void lbann_summary::flush_sum_scalars() {
   for (const auto& op : m_pending_sum_scalars) {
     local_sums.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_sums(local_sums.size());
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     gather_scalar_summary(m_pending_sum_scalars, global_sums);
   } else {
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
   }
   m_pending_sum_scalars.clear();
 }
@@ -382,7 +382,7 @@ void lbann_summary::flush_histograms() {
     local_sqsums.push_back(op.sqsum);
     buckets.insert(buckets.end(), op.buckets.begin(), op.buckets.end());
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> model_mins(local_mins.size());
     std::vector<DataType> model_maxes(local_maxes.size());
     std::vector<DataType> model_sums(local_sums.size());
@@ -446,15 +446,15 @@ void lbann_summary::flush_histograms() {
     }
   } else {
     m_comm->model_reduce(local_mins.data(), local_mins.size(),
-                         m_comm->get_model_master(), El::mpi::MIN);
+                         m_comm->get_trainer_master(), El::mpi::MIN);
     m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
-                         m_comm->get_model_master(), El::mpi::MAX);
+                         m_comm->get_trainer_master(), El::mpi::MAX);
     m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
     m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
     m_comm->model_reduce(buckets.data(), buckets.size(),
-                         m_comm->get_model_master());
+                         m_comm->get_trainer_master());
   }
   m_pending_histograms.clear();
 }
