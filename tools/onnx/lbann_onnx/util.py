@@ -1,9 +1,11 @@
+import os
 import sys
 import onnx
 import numpy as np
 
 def printWarning(s):
-    sys.stderr.write("lbann-onnx warning: {}\n".format(s))
+    if parseBoolEnvVar("LBANN_ONNX_VERBOSE", False):
+        sys.stderr.write("lbann-onnx warning: {}\n".format(s))
 
 def printParsingState(node, knownShapes):
     printWarning("Operation: \n\n{}".format(node))
@@ -61,3 +63,10 @@ def getStaticTensorShapes(o):
     return dict(map(lambda x: (x.name,
                                list(map(lambda y: y.dim_value, x.type.tensor_type.shape.dim))),
                     vis))
+
+def parseBoolEnvVar(name, defVal):
+    if not name in os.environ.keys():
+        return defVal
+
+    v = os.environ[name]
+    return v == "1"

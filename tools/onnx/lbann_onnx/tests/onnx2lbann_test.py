@@ -7,7 +7,7 @@ import google.protobuf.text_format as txtf
 import lbann_onnx.o2l
 import lbann_pb2
 from lbann_onnx import getLbannRoot
-from lbann_onnx.tests.util import parseBoolEnvVar
+from lbann_onnx.util import parseBoolEnvVar
 
 ONNX_MODEL_ZOO_ROOT = "{}/tools/onnx/onnx_model_zoo".format(getLbannRoot())
 SAVE_PROTOTEXT = parseBoolEnvVar("LBANN_ONNX_DUMP_MODELS", False)
@@ -32,22 +32,22 @@ class TestOnnx2Lbann(unittest.TestCase):
             with open("{}.prototext".format(modelName), "w") as f:
                 f.write(txtf.MessageToString(pb))
 
-    def test_mnist(self):
+    def test_o2l_mnist(self):
         self._test("mnist")
 
-    def test_alexnet(self):
+    def test_o2l_alexnet(self):
         self._test("bvlc_alexnet")
 
-    def test_caffenet(self):
+    def test_o2l_caffenet(self):
         self._test("bvlc_reference_caffenet")
 
-    def test_googlenet(self):
+    def test_o2l_googlenet(self):
         self._test("bvlc_googlenet")
 
-    def test_vgg19(self):
+    def test_o2l_vgg19(self):
         self._test("vgg19")
 
-    def test_resnet50(self):
+    def test_o2l_resnet50(self):
         self._test("resnet50")
 
 if __name__ == "__main__":

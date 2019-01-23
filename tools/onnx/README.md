@@ -20,6 +20,7 @@ The Python packages of ONNX, NumPy and Prootbuf can be install via `pip3 install
 
 ## How to Use
 See [`example/lbann2onnx.py`](example/lbann2onnx.py) and [`example/onnx2lbann.py`](example/onnx2lbann.py) for details.
+* Set `LBANN_ONNX_VERBOSE=1` to show detailed conversion warnings.
 
 ## Support Status
 See [`docs/l2o.md`](docs/l2o.md) and [`docs/o2l.md`](docs/o2l.md) for details.
