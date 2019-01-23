@@ -58,7 +58,7 @@ model {
   }
   callback {
     imcomm {
-      intermodel_comm_method: "normal"
+      intertrainer_comm_method: "normal"
       all_optimizers: true
     }
   }
