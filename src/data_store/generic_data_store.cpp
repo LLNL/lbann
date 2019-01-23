@@ -50,36 +50,28 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_verbose(false)
 {
   if (m_reader == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_reader is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_reader is nullptr");
   }
 
   if (m_model == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_model is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_model is nullptr");
   }
 
   m_comm = m_model->get_comm();
   if (m_comm == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_comm is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_comm is nullptr");
   }
+
   m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_model();
   m_np = m_comm->get_procs_per_model();
   m_mpi_comm = m_comm->get_model_comm().comm;
-
   m_dir = m_reader->get_file_dir();
 
   set_name("generic_data_store");
-  options *opts = options::get();
+
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
+  options *opts = options::get();
   if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
     m_extended_testing = true;
   }

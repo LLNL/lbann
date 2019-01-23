@@ -689,9 +689,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns the data store
   generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
-      std::stringstream err;
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_data_store is nullptr";
+      LBANN_ERROR("m_data_store is nullptr");
     }
     return m_data_store;
   }
