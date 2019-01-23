@@ -35,15 +35,13 @@ layers, weights, objective functions, metrics, and
 callbacks. `lbann_modules` consists of manually-curated higher-level
 building blocks that are commonly used in neural networks.
 
-_A possible point of confusion_: LBANN uses the term "layer" in a
-somewhat unpopular manner. In LBANN and Caffe, a layer is a single
-operation that is applied to a fixed set of input tensors to obtain a
-fixed set of output tensors. In PyTorch, TensorFlow, and Keras, a
-layer is a pattern of operations that can be applied multiple times to
-different sets of input tensors, each time obtaining a different set
-of output tensors. Their usage of the word "layer" is closer to our
-usage of the word "module." In fact, PyTorch's "layers" are subclasses
-of their `Module` class.
+_A possible point of confusion_: LBANN constructs a static graph
+(specifically, a DAG) of layers, as opposed to the dynamic execution
+graphs that many other frameworks (e.g. PyTorch, TensorFlow) support.
+This interface is just for building that graph, and does not actually
+run the model. Also note that a module is different from a layer: A
+layer is a single instance of an operator, whereas a module creates
+multiple instances of a (set of) layers with the same parameters.
 
 ## `lbann_proto`
 
