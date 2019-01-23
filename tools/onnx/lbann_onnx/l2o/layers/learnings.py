@@ -1,4 +1,3 @@
-from lbann_onnx.util import printError
 from lbann_onnx.l2o.util import parseSpatialAttributes
 from lbann_onnx.l2o.layers import LbannLayerParser
 from functools import reduce

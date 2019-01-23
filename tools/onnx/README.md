@@ -14,8 +14,9 @@ The Python packages of ONNX, NumPy and Prootbuf can be install via `pip3 install
 ## How to Setup
 1. Run `pip3 install -e .`
 2. Run `python3 -c "import lbann_onnx"` to verify that the package has been installed.
-3. Run `python3 setup.py test` to verify the generated Protobuf definition.
-   * This will generate converted ONNX models if you set `SAVE_ONNX=True`.
+3. Run `python3 setup.py test` to verify generated Protobuf/ONNX files.
+   * You may need to run [`scripts/download_onnx_model_zoo.sh`](scripts/download_onnx_model_zoo.sh) to get pre-trained ONNX models.
+   * This will generate converted Protobuf/ONNX models if `LBANN_ONNX_DUMP_MODELS=1` is set.
 
 ## How to Use
 See [`example/lbann2onnx.py`](example/lbann2onnx.py) and [`example/onnx2lbann.py`](example/onnx2lbann.py) for details.

@@ -1,20 +1,20 @@
-#!/usr/bin/env python3
-
-import onnx
-from onnx import numpy_helper
 import re
 import unittest
 import os
+
+import onnx
+from onnx import numpy_helper
 import numpy as np
 
 import lbann_onnx.l2o
 import lbann_onnx.util
 import lbann_onnx.l2o.util
 from lbann_onnx import getLbannRoot
+from lbann_onnx.tests.util import parseBoolEnvVar
 
 LBANN_MODEL_ROOT = "{}/model_zoo/models".format(getLbannRoot())
-SAVE_ONNX = False
-ADD_DUMMY_PARAMS = False
+SAVE_ONNX = parseBoolEnvVar("LBANN_ONNX_DUMP_MODELSx", False)
+ADD_DUMMY_PARAMS = parseBoolEnvVar("LBANN_ONNX_ADD_DUMMY_PARAMS", False)
 MB_PLACEHOLDER = "MB"
 
 class TestLbann2Onnx(unittest.TestCase):
@@ -32,7 +32,7 @@ class TestLbann2Onnx(unittest.TestCase):
 
                 shape = lbann_onnx.util.getDimFromValueInfo(i)
                 dummyInits.append(numpy_helper.from_array(np.zeros(shape, dtype=lbann_onnx.ELEM_TYPE_NP),
-                                                       name=i.name))
+                                                          name=i.name))
 
             g = onnx.helper.make_graph(o.graph.node,
                                        o.graph.name,

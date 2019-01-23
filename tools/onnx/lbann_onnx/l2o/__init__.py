@@ -72,12 +72,12 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
                 l.gaussian.neuron_dims = list2LbannList(dims)
 
             else:
-                lbann_onnx.util.printError("\"hint_layer\" is supported only for fully_connected or gaussian.")
+                lbann_onnx.util.printWarning("\"hint_layer\" is supported only for fully_connected or gaussian.")
                 exit()
 
         if l.num_neurons_from_data_reader:
             if not l.HasField("fully_connected"):
-                lbann_onnx.util.printError("\"num_neurons_from_data_reader\" in non-fully-connected layers are not supported.")
+                lbann_onnx.util.printWarning("\"num_neurons_from_data_reader\" in non-fully-connected layers are not supported.")
                 exit()
 
             assert len(inputs) > 0
@@ -126,7 +126,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
 
     if l.HasField("split"):
         if l.name not in tensorShapes.keys():
-            lbann_onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(l.name) \
+            lbann_onnx.util.printWarning("The shape of \"{}\" cannot be inferred.".format(l.name) \
                                        + " This error may happen when you set incorret an input tensor name.")
             lbann_onnx.util.printParsingState(l, tensorShapes)
             exit()
@@ -145,7 +145,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
         if l.HasField(f):
             for i in lbannInputs:
                 if not i in tensorShapes.keys():
-                    lbann_onnx.util.printError("The shape of \"{}\" cannot be inferred.".format(i))
+                    lbann_onnx.util.printWarning("The shape of \"{}\" cannot be inferred.".format(i))
                     lbann_onnx.util.printParsingState(l, tensorShapes)
                     exit()
 

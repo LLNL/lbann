@@ -61,7 +61,7 @@ def onnxNodeToLbannLayer(op, opName, inputShapes, outputShapes, inits, parents, 
     opType = op.op_type
     parserName = "parse_{}".format(opType)
     if not hasattr(layers, parserName):
-        print(lbann_onnx.util.printError("op_type \"{}\" is not supported.".format(opType)))
+        print(lbann_onnx.util.printWarning("op_type \"{}\" is not supported.".format(opType)))
         assert False
 
     dic = getattr(layers, parserName)(op, inputShapes, outputShapes, inits).parse()

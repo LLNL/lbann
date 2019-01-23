@@ -2,14 +2,14 @@ import sys
 import onnx
 import numpy as np
 
-def printError(s):
-    sys.stderr.write("lbann-onnx error: {}\n".format(s))
+def printWarning(s):
+    sys.stderr.write("lbann-onnx warning: {}\n".format(s))
 
 def printParsingState(node, knownShapes):
-    printError("Operation: \n\n{}".format(node))
-    printError("The list of known shapes:")
+    printWarning("Operation: \n\n{}".format(node))
+    printWarning("The list of known shapes:")
     for n, s in knownShapes.items():
-        printError("   {:10} {}".format(n, tuple(s)))
+        printWarning("   {:10} {}".format(n, tuple(s)))
 
 def getDimFromValueInfo(vi):
     return list(map(lambda x: x.dim_value, vi.type.tensor_type.shape.dim))
@@ -49,7 +49,7 @@ def getOneSidePads(pads, assertEvens=False):
         assert not assertEvens
         d = set(np.array(ends)-np.array(ends))
         assert d == set([0]) or d == set([0, 1]) # accept |p_end - p_begin| = 0 or 1
-        printError("Padding widths of at least one dimension is not the same: {}".format(pads))
+        printWarning("Padding widths of at least one dimension is not the same: {}".format(pads))
 
     return begins
 
