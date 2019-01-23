@@ -77,6 +77,7 @@ The following LLNL-maintained packages are optional.
         spack install
         spack env loads
         source loads
+        unset LIBRARY_PATH
 
 ++ Note that the environments provided here have a set of external
    packages and compilers that are installed on an LLNL LC CZ sytem.
@@ -84,6 +85,15 @@ The following LLNL-maintained packages are optional.
    you can create baseline versions of the user-level spack configuation
    files and remove the externals and compilers from the spack.yaml
    file. See [here](spack_environment.md) for details.
+
+++ Note that the spack module files set the LIBRARY_PATH environment
+   variable. This behavior allows autotools based builds to pickup the
+   correct libraries, but interferes with the way that CMake sets up
+   RPATHs.  To correctly establish the RPATH please unset the variable
+   as noted above, or you can explicity pass the RPATH fields to CMake
+   using a command such as:
+
+         cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
 
 + Build locally from source. See below for a list and descriptions of
   all CMake flags known to LBANN's build system. An example build

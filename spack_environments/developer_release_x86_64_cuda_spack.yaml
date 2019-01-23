@@ -23,8 +23,8 @@ spack:
 # Include paths to standard compilers and packages on LLNL LC systems
 # Remove and/or replace these with your site specific packages and paths
 ################################################################################
-#  include:
-#    - externals_llnl_lc_cz.yaml
+# include:
+#   - externals_llnl_lc_cz.yaml
   packages:
     all:
       providers:
