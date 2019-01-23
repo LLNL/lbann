@@ -55,8 +55,8 @@ namespace lbann {
 #endif // #ifdef LBANN_DEBUG
 
 lbann_comm::lbann_comm(int ppm, El::mpi::Comm world) :
-  world_comm(std::move(world)), grid(nullptr), procs_per_model(ppm), num_model_barriers(0),
-  num_intermodel_barriers(0), num_global_barriers(0), bytes_sent(0),
+  world_comm(std::move(world)), grid(nullptr), procs_per_trainer(ppm), num_trainer_barriers(0),
+  num_intertrainer_barriers(0), num_global_barriers(0), bytes_sent(0),
   bytes_received(0) {
 #ifdef LBANN_HAS_ALUMINUM
   // Don't have argc/argv here, but MPI should already be init'd.
@@ -64,8 +64,8 @@ lbann_comm::lbann_comm(int ppm, El::mpi::Comm world) :
   char** argv_dummy = nullptr;
   ::Al::Initialize(argc_dummy, argv_dummy);
 #endif
-  // Set up the initial model split
-  split_models(procs_per_model);
+  // Set up the initial trainer split
+  split_trainers(procs_per_trainer);
 
   // Initialize node communicators
   setup_node_comm();
@@ -78,8 +78,8 @@ lbann_comm::lbann_comm(int ppm, El::mpi::Comm world) :
 
 lbann_comm::~lbann_comm() {
   delete grid;
-  El::mpi::Free(model_comm);
-  El::mpi::Free(intermodel_comm);
+  El::mpi::Free(trainer_comm);
+  El::mpi::Free(intertrainer_comm);
   El::mpi::Free(node_comm);
   for (auto&& buf_vec : collective_bufs) {
     for (auto&& buf : buf_vec.second) {
@@ -91,52 +91,52 @@ lbann_comm::~lbann_comm() {
 #endif
 }
 
-void lbann_comm::split_models(int ppm) {
+void lbann_comm::split_trainers(int ppm) {
   int world_size = El::mpi::Size(get_world_comm());
-  procs_per_model = ppm;
+  procs_per_trainer = ppm;
   if (ppm == 0) {
-    procs_per_model = world_size;
+    procs_per_trainer = world_size;
   }
   // Check if parameters are valid
-  if (procs_per_model > world_size) {
+  if (procs_per_trainer > world_size) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Not enough processes to create one model; procs_per_model: " +
-      std::to_string(procs_per_model) + " is larger than world_size: " +
+      " :: Not enough processes to create one trainer; procs_per_trainer: " +
+      std::to_string(procs_per_trainer) + " is larger than world_size: " +
       std::to_string(world_size));
   }
-  if (world_size % procs_per_model != 0) {
+  if (world_size % procs_per_trainer != 0) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: Procs per model does not divide total number of procs; procs_per_model: " +
-      std::to_string(procs_per_model) + " total number of procs (world size): " +
+      " :: Procs per trainer does not divide total number of procs; procs_per_trainer: " +
+      std::to_string(procs_per_trainer) + " total number of procs (world size): " +
       std::to_string(world_size));
   }
 
-  num_models = world_size / procs_per_model;
-  model_rank = El::mpi::Rank(get_world_comm()) / procs_per_model;
-  rank_in_model = El::mpi::Rank(get_world_comm()) % procs_per_model;
+  num_trainers = world_size / procs_per_trainer;
+  trainer_rank = El::mpi::Rank(get_world_comm()) / procs_per_trainer;
+  rank_in_trainer = El::mpi::Rank(get_world_comm()) % procs_per_trainer;
 
-  // Initialize model and intermodel communicators
-  El::mpi::Split(get_world_comm(), model_rank, rank_in_model, model_comm);
-  El::mpi::Split(get_world_comm(), rank_in_model, model_rank,
-                 intermodel_comm);
+  // Initialize trainer and intertrainer communicators
+  El::mpi::Split(get_world_comm(), trainer_rank, rank_in_trainer, trainer_comm);
+  El::mpi::Split(get_world_comm(), rank_in_trainer, trainer_rank,
+                 intertrainer_comm);
 
   // Initialize Elemental grid
   if (grid != nullptr) {
     delete grid;
   }
-  grid = new Grid(model_comm);
+  grid = new Grid(trainer_comm);
 }
 
-void lbann_comm::intermodel_sum_matrix(AbsMat& mat) {
+void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) {
   bytes_sent += sizeof(DataType) * mat.Height() * mat.Width();
-  El::AllReduce(mat, intermodel_comm, El::mpi::SUM);
+  El::AllReduce(mat, intertrainer_comm, El::mpi::SUM);
   bytes_received += sizeof(DataType) * mat.Height() * mat.Width();
 }
 
-void lbann_comm::intermodel_sum_matrix(AbsDistMat& mat) {
-  allreduce(mat, intermodel_comm, El::mpi::SUM);
+void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat) {
+  allreduce(mat, intertrainer_comm, El::mpi::SUM);
 }
 
 void lbann_comm::allreduce(AbsMat& m,
@@ -349,12 +349,12 @@ bool lbann_comm::test(Al::request& req) {
   return req_test;
 }
 
-void lbann_comm::intermodel_broadcast_matrix(AbsMat& mat, int root) {
-  El::Broadcast(mat, intermodel_comm, root);
+void lbann_comm::intertrainer_broadcast_matrix(AbsMat& mat, int root) {
+  El::Broadcast(mat, intertrainer_comm, root);
 }
 
-void lbann_comm::intermodel_broadcast_matrix(AbsDistMat& mat, int root) {
-  El::Broadcast(mat, intermodel_comm, root);
+void lbann_comm::intertrainer_broadcast_matrix(AbsDistMat& mat, int root) {
+  El::Broadcast(mat, intertrainer_comm, root);
 }
 
 template<>
@@ -364,14 +364,14 @@ void lbann_comm::broadcast<std::string>(const int root, std::string& str, El::mp
   str.assign(data.begin(), data.end());
 }
 
-void lbann_comm::intermodel_barrier() {
-  ++num_intermodel_barriers;
-  barrier(intermodel_comm);
+void lbann_comm::intertrainer_barrier() {
+  ++num_intertrainer_barriers;
+  barrier(intertrainer_comm);
 }
 
-void lbann_comm::model_barrier() {
-  ++num_model_barriers;
-  barrier(model_comm);
+void lbann_comm::trainer_barrier() {
+  ++num_trainer_barriers;
+  barrier(trainer_comm);
 }
 
 void lbann_comm::global_barrier() {
@@ -383,31 +383,31 @@ void lbann_comm::barrier(const El::mpi::Comm c) {
   El::mpi::Barrier(c);
 }
 
-void lbann_comm::send(const AbsMat& mat, int model, int rank) {
-  El::Send(mat, get_world_comm(), get_world_rank(model, rank));
+void lbann_comm::send(const AbsMat& mat, int trainer, int rank) {
+  El::Send(mat, get_world_comm(), get_world_rank(trainer, rank));
 }
 
-void lbann_comm::send(const DistMat& mat, int model, int rank) {
-  send(mat.LockedMatrix(), model, rank);
+void lbann_comm::send(const DistMat& mat, int trainer, int rank) {
+  send(mat.LockedMatrix(), trainer, rank);
 }
 
-void lbann_comm::nb_send(const AbsMat& mat, int model, int rank,
+void lbann_comm::nb_send(const AbsMat& mat, int trainer, int rank,
                          El::mpi::Request<DataType>& req) {
-  nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), model, rank, req);
+  nb_send(mat.LockedBuffer(), mat.Height() * mat.Width(), trainer, rank, req);
 }
 
-void lbann_comm::nb_send(const DistMat& mat, int model, int rank,
+void lbann_comm::nb_send(const DistMat& mat, int trainer, int rank,
                          El::mpi::Request<DataType>& req) {
-  nb_send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), model,
+  nb_send(mat.LockedBuffer(), mat.LocalHeight() * mat.LocalWidth(), trainer,
           rank, req);
 }
 
-void lbann_comm::recv(AbsMat& mat, int model, int rank) {
-  El::Recv(mat, get_world_comm(), get_world_rank(model, rank));
+void lbann_comm::recv(AbsMat& mat, int trainer, int rank) {
+  El::Recv(mat, get_world_comm(), get_world_rank(trainer, rank));
 }
 
-void lbann_comm::recv(DistMat& mat, int model, int rank) {
-  recv(mat.Matrix(), model, rank);
+void lbann_comm::recv(DistMat& mat, int trainer, int rank) {
+  recv(mat.Matrix(), trainer, rank);
 }
 
 void lbann_comm::recv(AbsMat& mat) {
@@ -418,14 +418,14 @@ void lbann_comm::recv(DistMat& mat) {
   recv(mat.Matrix());
 }
 
-void lbann_comm::nb_recv(AbsMat& mat, int model, int rank,
+void lbann_comm::nb_recv(AbsMat& mat, int trainer, int rank,
                          El::mpi::Request<DataType>& req) {
-  nb_recv(mat.Buffer(), mat.Height() * mat.Width(), model, rank, req);
+  nb_recv(mat.Buffer(), mat.Height() * mat.Width(), trainer, rank, req);
 }
 
-void lbann_comm::nb_recv(DistMat& mat, int model, int rank,
+void lbann_comm::nb_recv(DistMat& mat, int trainer, int rank,
                          El::mpi::Request<DataType>& req) {
-  nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), model, rank, req);
+  nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), trainer, rank, req);
 }
 
 void lbann_comm::nb_recv(AbsMat& mat, El::mpi::Request<DataType>& req) {
@@ -436,7 +436,7 @@ void lbann_comm::nb_recv(DistMat& mat, El::mpi::Request<DataType>& req) {
   nb_recv(mat.Buffer(), mat.LocalHeight() * mat.LocalWidth(), req);
 }
 
-void lbann_comm::intermodel_allreduce(
+void lbann_comm::intertrainer_allreduce(
   AbsMat& mat, int max_recv_count,
   std::function<uint8_t *(AbsMat&, El::IR, El::IR, int&, bool, int)> send_transform,
   std::function<int(uint8_t *, AbsMat&)> recv_transform,
@@ -447,7 +447,7 @@ void lbann_comm::intermodel_allreduce(
   if (algo == allreduce_algorithm::DEFAULT) {
     algo = get_default_allreduce_algorithm();
   }
-  const int nprocs = get_num_models();
+  const int nprocs = get_num_trainers();
   const El::Int small_message_threshold = 64*64;
   if (algo == allreduce_algorithm::DYNAMIC) {
     // For small messages and power-of-2 number of processes, use RD.
@@ -461,28 +461,28 @@ void lbann_comm::intermodel_allreduce(
   switch (algo) {
   case allreduce_algorithm::RECURSIVE_DOUBLING:
     recursive_doubling_allreduce_pow2(
-      intermodel_comm, mat, max_recv_count,
+      intertrainer_comm, mat, max_recv_count,
       send_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::PAIRWISE_EXCHANGE_RING:
     pe_ring_allreduce<El::Device::CPU>(
-      intermodel_comm, mat, max_recv_count, send_transform,
+      intertrainer_comm, mat, max_recv_count, send_transform,
       recv_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::RING:
     ring_allreduce<El::Device::CPU>(
-      intermodel_comm, mat, max_recv_count, send_transform,
+      intertrainer_comm, mat, max_recv_count, send_transform,
       recv_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::RABENSEIFNER:
     rabenseifner_allreduce<El::Device::CPU>(
-      intermodel_comm, mat, max_recv_count, send_transform,
+      intertrainer_comm, mat, max_recv_count, send_transform,
       recv_transform, recv_apply_transform, opts);
     break;
   case allreduce_algorithm::DEFAULT:
   case allreduce_algorithm::DYNAMIC:
   default:
-    throw lbann_exception("intermodel_allreduce: bad algorithm");
+    throw lbann_exception("intertrainer_allreduce: bad algorithm");
     break;
   }
 }
