@@ -185,13 +185,15 @@ void setup_unpooling_pointers(lbann_comm* comm,
 
 } // namespace
 
-std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          const lbann_data::Model& proto_model) {
+std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Model& proto_model) {
   std::stringstream err;
 
   // List of layers
-  std::vector<Layer*> layers;
+  std::vector<std::unique_ptr<Layer>> layers;
+  layers.reserve(proto_model.layer_size());
 
   // Map from names to layer pointers
   std::unordered_map<std::string, Layer*> names_to_layers;
@@ -241,7 +243,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
 #endif // LBANN_HAS_GPU
 
     // Construct layer
-    Layer* l = nullptr;
+    std::unique_ptr<Layer> l;
 #define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
     do {                                                                \
       if (layout == T_layout && device == T_device) {        \
@@ -275,7 +277,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       err << "layer name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_layers[name] = l;
+    names_to_layers[name] = l.get();
 
     if (proto_layer.freeze()) {
       #ifdef LBANN_DEBUG
@@ -286,18 +288,21 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       l->freeze();
     }
     // Add layer to list
-    layers.push_back(l);
+    layers.emplace_back(std::move(l));
 
   }
 
   // Setup pointers between layers
-  setup_parents_and_children(comm, layers, names_to_layers, proto_model);
-  setup_hints(layers, names_to_layers, proto_model);
-  setup_target_pointers(comm, layers, names_to_layers, proto_model);
-  setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
+  std::vector<Layer*> layer_pointers;
+  layer_pointers.reserve(layers.size());
+  for (auto&& ptr : layers) { layer_pointers.push_back(ptr.get()); }
+  setup_parents_and_children(comm, layer_pointers, names_to_layers, proto_model);
+  setup_hints(layer_pointers, names_to_layers, proto_model);
+  setup_target_pointers(comm, layer_pointers, names_to_layers, proto_model);
+  setup_unpooling_pointers(comm, layer_pointers, names_to_layers, proto_model);
 
   // Optionally Set num_neurons = num_labels
-  setup_fc_num_neurons(layers, data_readers, proto_model);
+  setup_fc_num_neurons(layer_pointers, data_readers, proto_model);
 
   // Return layer list
   return layers;
