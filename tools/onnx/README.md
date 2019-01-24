@@ -19,7 +19,7 @@ This tool provides a way to convert [LBANN](https://github.com/LLNL/lbann) model
    * Converted Protobuf/ONNX models will be generated if `LBANN_ONNX_DUMP_MODELS=1` is set.
 
 ## How to Use
-See [`example/lbann2onnx.py`](example/lbann2onnx.py) and [`example/onnx2lbann.py`](example/onnx2lbann.py) for details.
+See [`examples/lbann2onnx.py`](examples/lbann2onnx.py) and [`examples/onnx2lbann.py`](examples/onnx2lbann.py) for details.
 * Set `LBANN_ONNX_VERBOSE=1` to show detailed conversion warnings.
 
 ## Support Status
