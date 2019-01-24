@@ -30,6 +30,7 @@ class OnnxSpatialLayerParser(OnnxLayerParser):
             dic["dilations"] = self.parseAttrList("dilations", [1]*num_dims)
 
         dic = dict(map(lambda x: ("{}_{}".format(prefix, x), dic[x]), dic.keys()))
+        dic["has_vectors"] = True
         dic["num_dims"] = num_dims
         return dic
 

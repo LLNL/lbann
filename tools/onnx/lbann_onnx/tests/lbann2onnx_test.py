@@ -9,8 +9,7 @@ import numpy as np
 import lbann_onnx.l2o
 import lbann_onnx.util
 import lbann_onnx.l2o.util
-from lbann_onnx import getLbannRoot
-from lbann_onnx.util import parseBoolEnvVar
+from lbann_onnx.util import parseBoolEnvVar, getLbannRoot
 from lbann_onnx.tests.util import isModelDumpEnabled, createAndGetDumpedModelsDir
 
 LBANN_MODEL_ROOT = "{}/model_zoo/models".format(getLbannRoot())

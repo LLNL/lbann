@@ -4,7 +4,7 @@ from setuptools.command.install import install
 import os.path
 import subprocess
 
-from lbann_onnx import getLbannRoot
+from lbann_onnx.util import getLbannRoot
 
 class installCmd(install):
     def run(self):

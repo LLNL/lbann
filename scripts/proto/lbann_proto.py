@@ -164,9 +164,14 @@ def _create_layer_subclass(type_name):
                     setattr(layer_message, field_name, v)
         return proto
 
+    # Method for returning the names of all fields.
+    def get_field_names(self):
+        return field_names
+
     # Create sub-class.
     return type(type_name, (Layer,),
-                {'__init__': __init__, 'export_proto': export_proto})
+                {'__init__': __init__, 'export_proto': export_proto,
+                 'get_field_names': get_field_names})
 
 # Generate Layer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are

@@ -1,7 +1,15 @@
 import os
 import sys
 import onnx
+import subprocess
 import numpy as np
+
+def getLbannRoot():
+    env = os.getenv("LBANN_ROOT")
+    if env is not None:
+        return env
+
+    return subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).strip().decode("utf-8")
 
 def printWarning(s):
     if parseBoolEnvVar("LBANN_ONNX_VERBOSE", False):
@@ -39,6 +47,9 @@ def getNodeAttributeByName(node, attr, defVal=None):
 
 def list2LbannList(l):
     return " ".join(map(str, l))
+
+def lbannList2List(l):
+    return list(map(int, l.split(" ")))
 
 def getOneSidePads(pads, assertEvens=False):
     # [s1, s2, ..., e1, e2, ...] -> [s1, s2, ...]

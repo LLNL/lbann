@@ -6,8 +6,7 @@ import google.protobuf.text_format as txtf
 
 import lbann_onnx.o2l
 import lbann_pb2
-from lbann_onnx import getLbannRoot
-from lbann_onnx.util import parseBoolEnvVar
+from lbann_onnx.util import parseBoolEnvVar, getLbannRoot
 from lbann_onnx.tests.util import isModelDumpEnabled, createAndGetDumpedModelsDir
 
 ONNX_MODEL_ZOO_ROOT = "{}/tools/onnx/onnx_model_zoo".format(getLbannRoot())
