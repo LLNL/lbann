@@ -29,6 +29,7 @@ endfunction()
 add_mpi_ctest( quantizer_bm )
 add_mpi_ctest( comm_test )
 add_mpi_ctest( quantizer_test )
+add_mpi_ctest( conduit_timing_test )
 if (NOT APPLE) # FIXME: Weird linking errors; ignoring for now...
   add_mpi_ctest( collective_test )
 endif ()
