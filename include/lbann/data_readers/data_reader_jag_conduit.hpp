@@ -43,6 +43,9 @@
 #include "lbann/data_readers/sample_list_jag.hpp"
 
 namespace lbann {
+
+class data_store_jag;
+
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
  */
@@ -250,6 +253,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
+  data_store_jag *m_jag_store;
+
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit& rhs);
