@@ -360,7 +360,7 @@ if (LBANN_WITH_CONDUIT)
   set_target_properties(conduit::conduit
     PROPERTIES
     INTERFACE_LINK_LIBRARIES
-    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+    ${_conduit_interface_link_libs})
 
   set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
