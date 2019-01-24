@@ -313,7 +313,11 @@ if (LBANN_WITH_CONDUIT)
     PATH_SUFFIXES share/cmake/hdf5
     NO_DEFAULT_PATH)
   if (NOT CONDUIT_FOUND)
-    find_package(HDF5 CONFIG REQUIRED)
+    find_package(HDF5 CONFIG)
+  endif ()
+  if (NOT CONDUIT_FOUND)
+    find_package(HDF5 REQUIRED)
+    set(HDF5_FOUND_WITH_MODULE TRUE)
   endif ()
 
   find_package(CONDUIT CONFIG
@@ -340,6 +344,17 @@ if (LBANN_WITH_CONDUIT)
 
   if (NOT TARGET conduit::conduit)
     add_library(conduit::conduit INTERFACE IMPORTED)
+  endif ()
+
+  set(_conduit_interface_link_libs
+    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+  if (HDF5_FOUND_WITH_MODULE)
+    list(APPEND _conduit_interface_link_libs
+      ${HDF5_LIBRARIES})
+
+    set_target_properties(conduit::conduit
+      PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES ${HDF5_INCLUDE_DIRS})
   endif ()
 
   set_target_properties(conduit::conduit
