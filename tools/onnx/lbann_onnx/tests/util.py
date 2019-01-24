@@ -8,6 +8,6 @@ def isModelDumpEnabled():
 
 def createAndGetDumpedModelsDir():
     if not os.path.exists(DUMPED_MODELS_DIR):
-        os.path.mkdir(DUMPED_MODELS_DIR)
+        os.mkdir(DUMPED_MODELS_DIR)
 
     return DUMPED_MODELS_DIR
