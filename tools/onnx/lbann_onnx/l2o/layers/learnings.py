@@ -1,3 +1,4 @@
+from lbann_onnx.parserDescriptor import parserDescriptor
 from lbann_onnx.l2o.util import parseSpatialAttributes
 from lbann_onnx.l2o.layers import LbannLayerParser
 from functools import reduce
@@ -5,6 +6,7 @@ from functools import reduce
 import numpy as np
 import onnx
 
+@parserDescriptor(["Reshape", "Gemm"])
 class LbannLayerParser_fully_connected(LbannLayerParser):
     def parse(self):
         gemmInput, = self.getLbannInputNames()
@@ -38,6 +40,7 @@ class LbannLayerParser_fully_connected(LbannLayerParser):
         if params.has_bias:
             self.appendParam(paramNames[1], bShape)
 
+@parserDescriptor(["Conv"])
 class LbannLayerParser_convolution(LbannLayerParser):
     def parse(self):
         params = self.l.convolution

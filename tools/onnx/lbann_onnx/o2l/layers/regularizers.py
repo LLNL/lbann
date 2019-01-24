@@ -1,6 +1,8 @@
 from lbann_onnx.o2l.layers import OnnxLayerParser
+from lbann_onnx.parserDescriptor import parserDescriptor
 import lbann_pb2
 
+@parserDescriptor(["local_response_normalization"])
 class parse_LRN(OnnxLayerParser):
     def parse(self):
         local_response_normalization = lbann_pb2.LocalResponseNormalization(
@@ -11,6 +13,7 @@ class parse_LRN(OnnxLayerParser):
         )
         return {"local_response_normalization": local_response_normalization}
 
+@parserDescriptor(["batch_normalization"])
 class parse_BatchNormalization(OnnxLayerParser):
     def parse(self):
         batch_normalization = lbann_pb2.BatchNormalization(
@@ -19,6 +22,7 @@ class parse_BatchNormalization(OnnxLayerParser):
         )
         return {"batch_normalization": batch_normalization}
 
+@parserDescriptor(["dropout"])
 class parse_Dropout(OnnxLayerParser):
     def parse(self):
         return {"dropout": lbann_pb2.Dropout(keep_prob = 1.0-self.getNodeAttribute("ratio"))}

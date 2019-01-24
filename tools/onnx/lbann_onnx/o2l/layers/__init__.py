@@ -1,3 +1,4 @@
+import re
 import numpy as np
 
 import lbann_onnx.util
@@ -38,3 +39,10 @@ from lbann_onnx.o2l.layers.learnings import *
 from lbann_onnx.o2l.layers.math import *
 from lbann_onnx.o2l.layers.regularizers import *
 from lbann_onnx.o2l.layers.transforms import *
+import lbann_onnx.o2l.layers as layers
+
+PARSERS = dict(map(lambda x: (x, getattr(layers, "parse_{}".format(x))),
+                   map(lambda x: x.group(1),
+                       filter(lambda x: x is not None,
+                              map(lambda x: re.compile("parse_(.+)$").match(x),
+                                  dir(layers))))))

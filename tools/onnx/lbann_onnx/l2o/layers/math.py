@@ -2,48 +2,60 @@ import onnx
 import numpy as np
 
 import lbann_onnx
+from lbann_onnx.parserDescriptor import parserDescriptor
 from lbann_onnx.l2o.layers import LbannLayerParser
 
+@parserDescriptor(["Relu"])
 class LbannLayerParser_relu(LbannLayerParser):
     def parse(self):
         self.appendOperator("Relu")
 
+@parserDescriptor(["LeakyRelu"])
 class LbannLayerParser_leaky_relu(LbannLayerParser):
     def parse(self):
         self.appendOperator("LeakyRelu")
 
+@parserDescriptor(["Sigmoid"])
 class LbannLayerParser_sigmoid(LbannLayerParser):
     def parse(self):
         self.appendOperator("Sigmoid")
 
+@parserDescriptor(["Tanh"])
 class LbannLayerParser_tanh(LbannLayerParser):
     def parse(self):
         self.appendOperator("Tanh")
 
+@parserDescriptor(["Softmax"])
 class LbannLayerParser_softmax(LbannLayerParser):
     def parse(self):
         self.appendOperator("Softmax")
 
+@parserDescriptor(["Exp"])
 class LbannLayerParser_exp(LbannLayerParser):
     def parse(self):
         self.appendOperator("Exp")
 
+@parserDescriptor(["Sum"])
 class LbannLayerParser_add(LbannLayerParser):
     def parse(self):
         self.appendOperator("Sum")
 
+@parserDescriptor(["Sum"])
 class LbannLayerParser_sum(LbannLayerParser):
     def parse(self):
         self.appendOperator("Sum")
 
+@parserDescriptor(["Mul"])
 class LbannLayerParser_hadamard(LbannLayerParser):
     def parse(self):
         self.appendOperator("Mul")
 
+@parserDescriptor(["Abs"])
 class LbannLayerParser_abs(LbannLayerParser):
     def parse(self):
         self.appendOperator("Abs")
 
+@parserDescriptor(stub=True)
 class LbannLayerParser_weighted_sum(LbannLayerParser):
     def parse(self):
         params = self.l.weighted_sum
@@ -62,6 +74,7 @@ class LbannLayerParser_weighted_sum(LbannLayerParser):
             # TODO: this is a dummy operation to perform correct infer_shape
             self.appendOperator("Sum", attrs={"lbannWightedSumFactors": factors})
 
+@parserDescriptor(["Constant"])
 class LbannLayerParser_constant(LbannLayerParser):
     def parse(self):
         params = self.l.constant
@@ -73,11 +86,12 @@ class LbannLayerParser_constant(LbannLayerParser):
                                                                            dtype=lbann_onnx.ELEM_TYPE_NP))})
 
 # Dummy parsers
-
+@parserDescriptor(stub=True)
 class LbannLayerParser_square(LbannLayerParser):
     def parse(self):
         self.appendOperator("Identity") # TODO: this is a dummy operation to perform correct infer_shape
 
+@parserDescriptor(stub=True)
 class LbannLayerParser_rsqrt(LbannLayerParser):
     def parse(self):
         self.appendOperator("Identity") # TODO: this is a dummy operation to perform correct infer_shape

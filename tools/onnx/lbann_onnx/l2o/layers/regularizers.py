@@ -1,5 +1,7 @@
+from lbann_onnx.parserDescriptor import parserDescriptor
 from lbann_onnx.l2o.layers import LbannLayerParser
 
+@parserDescriptor(["BatchNormalization"])
 class LbannLayerParser_batch_normalization(LbannLayerParser):
     def parse(self):
         params = self.l.batch_normalization
@@ -11,6 +13,7 @@ class LbannLayerParser_batch_normalization(LbannLayerParser):
         for p in paramNames:
             self.appendParam(p, [self.inputShapes[0][1]])
 
+@parserDescriptor(["LRN"])
 class LbannLayerParser_local_response_normalization(LbannLayerParser):
     def parse(self):
         params = self.l.local_response_normalization
@@ -20,6 +23,7 @@ class LbannLayerParser_local_response_normalization(LbannLayerParser):
                                    "bias": params.lrn_k,
                                    "size": params.window_width})
 
+@parserDescriptor(["Dropout"])
 class LbannLayerParser_dropout(LbannLayerParser):
     def parse(self):
         self.appendOperator("Dropout",

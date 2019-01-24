@@ -1,21 +1,4 @@
 # Support Status of ONNX->LBANN Conversion
-
-## Supported Layers
-* `Add`
-* `AveragePool`
-* `BatchNormalization`
-* `Concat`
-* `Conv`
-* `Dropout`
-* `Gemm`
-* `LRN`
-* `MatMul`
-* `MaxPool`
-* `Relu`
-* `Reshape`
-* `Softmax`
-* `Sum`
-
 ## Example: `fc6` of [AlexNet](https://github.com/onnx/models/tree/master/bvlc_alexnet)
 ### `fc6` in ONNX:
 ```

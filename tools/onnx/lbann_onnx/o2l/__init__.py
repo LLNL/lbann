@@ -6,7 +6,7 @@ import google.protobuf.text_format as txtf
 
 import lbann_pb2
 import lbann_onnx.util
-import lbann_onnx.o2l.layers as layers
+from lbann_onnx.o2l.layers import PARSERS
 from lbann_onnx.l2o import getStaticTensorShapes
 
 def getTensorInitial(name, graph):
@@ -59,12 +59,11 @@ def onnxToLbannLayers(o, lbannInputNames, l2oInputMap, dataLayout="auto"):
 
 def onnxNodeToLbannLayer(op, opName, inputShapes, outputShapes, inits, parents, dataLayout):
     opType = op.op_type
-    parserName = "parse_{}".format(opType)
-    if not hasattr(layers, parserName):
+    if not opType in PARSERS.keys():
         print(lbann_onnx.util.printWarning("op_type \"{}\" is not supported.".format(opType)))
         assert False
 
-    dic = getattr(layers, parserName)(op, inputShapes, outputShapes, inits).parse()
+    dic = PARSERS[opType](op, inputShapes, outputShapes, inits).parse()
 
     validParents = []
     hitInvalid = False

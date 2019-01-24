@@ -1,8 +1,9 @@
 from lbann_onnx.o2l.layers import OnnxLayerParser, OnnxSpatialLayerParser
+from lbann_onnx.parserDescriptor import parserDescriptor
 from lbann_onnx.util import list2LbannList
 import lbann_pb2
 
-
+@parserDescriptor(["relu"])
 class OnnxPoolingLayerParser(OnnxSpatialLayerParser):
     def parse_MaxAveragePool(self, average):
         num_dims = len(self.inputShapes[0])-2
@@ -12,15 +13,18 @@ class OnnxPoolingLayerParser(OnnxSpatialLayerParser):
         )
         return {"pooling": pooling}
 
+@parserDescriptor(["pooling"])
 class parse_MaxPool(OnnxPoolingLayerParser):
     def parse(self):
         return self.parse_MaxAveragePool(average=False)
 
+@parserDescriptor(["pooling"])
 class parse_AveragePool(OnnxPoolingLayerParser):
     def parse(self):
         return self.parse_MaxAveragePool(average=True)
 
 # TODO: return identity if not necessary
+@parserDescriptor(["reshape"])
 class parse_Reshape(OnnxLayerParser):
     def parse(self):
         reshape = lbann_pb2.Reshape(

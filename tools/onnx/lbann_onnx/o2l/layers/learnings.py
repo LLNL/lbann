@@ -1,6 +1,8 @@
 from lbann_onnx.o2l.layers import OnnxLayerParser, OnnxSpatialLayerParser
+from lbann_onnx.parserDescriptor import parserDescriptor
 import lbann_pb2
 
+@parserDescriptor(["convolution"])
 class parse_Conv(OnnxSpatialLayerParser):
     def parse(self):
         num_dims = len(self.inputShapes[0])-2
@@ -13,6 +15,7 @@ class parse_Conv(OnnxSpatialLayerParser):
         )
         return {"convolution": convolution}
 
+@parserDescriptor(["fully_connected"])
 class parse_Gemm(OnnxLayerParser):
     def parse(self):
         # REVIEW: transpose?
@@ -25,6 +28,7 @@ class parse_Gemm(OnnxLayerParser):
         )
         return {"fully_connected": fully_connected}
 
+@parserDescriptor(["fully_connected"])
 class parse_MatMul(OnnxLayerParser):
     def parse(self):
         fully_connected = lbann_pb2.FullyConnected(

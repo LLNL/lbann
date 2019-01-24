@@ -23,7 +23,10 @@ See [`examples/lbann2onnx.py`](examples/lbann2onnx.py) and [`examples/onnx2lbann
 * Set `LBANN_ONNX_VERBOSE=1` to show detailed conversion warnings.
 
 ## Support Status
-See [`docs/l2o.md`](docs/l2o.md) and [`docs/o2l.md`](docs/o2l.md) for details.
+See the following documentation for details.
+* [Operators/Layers Support Status](docs/support_status.md)
+* [Details of the LBANN -> ONNX Conversion](docs/l2o.md)
+* [Details of the ONNX -> LBANN Conversion](docs/o2l.md)
 
 ## Example: Converting [the MNIST model](/model_zoo/models/simple_mnist/model_mnist_simple_1.prototext) from LBANN to ONNX
 See [`viz/l2o/`](viz/l2o/) for more details.
