@@ -319,7 +319,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
     //@todo may want to change to a pointer, or something similar,
     //      to avoid copying
-    node = m_jag_store->get_conduit_node(path);
+    node = m_jag_store->get_conduit_node(i);
     return true;
   }
 
@@ -334,7 +334,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
 
   conduit::relay::io::hdf5_read(h, path, node);
   if (m_jag_store != nullptr) {
-    m_jag_store->set_conduit_node(node);
+    m_jag_store->set_conduit_node(i);
   }
 
   return true;

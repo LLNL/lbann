@@ -62,9 +62,9 @@ class data_store_jag : public generic_data_store {
   void setup() override;
 
   /// return the conduit node 
-  const conduit::Node & get_conduit_node(const std::string &path) const;
+  const conduit::Node & get_conduit_node(int data_id) const;
 
-  void set_conduit_node(const conduit::Node &node);
+  void set_conduit_node(int data_id);
 
 protected :
 

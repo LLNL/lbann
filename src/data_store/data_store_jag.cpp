@@ -364,10 +364,10 @@ if (m_master) std::cout << "opening file #" << j << " of "<< my_files.size() << 
 #endif
 }
 
-void data_store_jag::set_conduit_node(const conduit::Node &node) {
+void data_store_jag::set_conduit_node(int data_id) {
 }
   
-const conduit::Node & data_store_jag::get_conduit_node(const std::string &path) const {
+const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 #if 0
   //TODO: add error checking
   std::vector<int>::const_iterator it = std::upper_bound(m_sample_ownership.begin(), m_sample_ownership.end(), data_id);
