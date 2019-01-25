@@ -316,6 +316,7 @@ if (LBANN_WITH_CONDUIT)
     find_package(HDF5 CONFIG)
   endif ()
   if (NOT CONDUIT_FOUND)
+    enable_language(C) # WHY??????????????
     find_package(HDF5 REQUIRED)
     set(HDF5_FOUND_WITH_MODULE TRUE)
   endif ()
