@@ -22,5 +22,11 @@ setup(
     author="Lawrence Livermore National Security, LLC.",
     license="Apache 2.0",
     packages=["lbann"],
-    install_requires=["protobuf>=3.0.0"]
+    install_requires=["protobuf>=3.0.0",
+                      "onnx>=1.3.0",
+                      "numpy>=1.16.0",
+                      "protobuf>=3.6.1",
+                      "nose>=1.3.7"],
+    test_suite="nose.collector",
+    tests_require=["nose"],
 )
