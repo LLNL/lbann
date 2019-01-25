@@ -26,6 +26,8 @@ default Python search path. If these fail, you should manually set
 your Python path to include the directory with `lbann_pb2` (e.g. by
 setting the `PYTHONPATH` environment variable).
 
+Run `pip3 install -e .` on this directory to install this package.
+
 # Use
 
 This consists of two components, `lbann_proto` and
