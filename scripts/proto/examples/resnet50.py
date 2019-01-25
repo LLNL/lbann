@@ -1,5 +1,5 @@
-import lbann_proto as lp
-import lbann_modules as lm
+import lbann.lbann_proto as lp
+import lbann.lbann_modules as lm
 
 blocks = [3, 4, 6, 3]  # Blocks for ResNet-50.
 bn_stats_aggregation = 'local'

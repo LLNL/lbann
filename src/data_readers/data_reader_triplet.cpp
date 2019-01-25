@@ -82,7 +82,7 @@ void data_reader_triplet::set_input_params(const int width, const int height, co
 
 bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
 
   sample_t sample = m_samples.get_sample(data_id);
   for(size_t i=0u; i < m_num_img_srcs; ++i) {

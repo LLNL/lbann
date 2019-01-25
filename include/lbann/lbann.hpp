@@ -24,12 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Top level LBANN header
- *  - includes everything needed for the models in the model zoo
- */
-#ifndef LBANN_HPP_INCLUDED
-#define LBANN_HPP_INCLUDED
+#ifndef LBANN_LBANN_HPP_INCLUDED
+#define LBANN_LBANN_HPP_INCLUDED
 
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"
@@ -221,4 +217,4 @@
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
 
-#endif // LBANN_HPP_INCLUDED
+#endif // LBANN_LBANN_HPP_INCLUDED
