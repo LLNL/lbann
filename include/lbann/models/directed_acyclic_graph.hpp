@@ -34,7 +34,7 @@ namespace lbann {
 
 /** Neural network model with a DAG layer graph. */
 class directed_acyclic_graph_model : public model {
- public:
+public:
 
   directed_acyclic_graph_model(lbann_comm *comm,
                                El::Int max_mini_batch_size,
@@ -46,12 +46,7 @@ class directed_acyclic_graph_model : public model {
   directed_acyclic_graph_model* copy() const override { return new directed_acyclic_graph_model(*this); }
   std::string get_type() const override { return "directed acyclic graph"; }
 
- protected:
-
-  /** @details For general DAG models, users need to manually specify
-   *  each layer to freeze in the model description prototext.
-   */
-  void freeze_layers_under_frozen_surface() override {}
+protected:
 
   /** Set up layer execution order.
    *

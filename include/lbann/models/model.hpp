@@ -117,6 +117,12 @@ public:
     return m_metrics;
   }
 
+  /** Size of model's list of layers. */
+  El::Int get_num_layers() const noexcept;
+  /** @param pos Position in model's list of layers. */
+  Layer& get_layer(El::Int pos);
+  /** @param pos Position in model's list of layers. */
+  const Layer& get_layer(El::Int pos) const;
   /** @brief Return list of layers in model.
    *  @details The list is in execution order for forward propagation.
    */
@@ -341,13 +347,18 @@ protected:
   virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
                               const std::unordered_map<weights*,weights*>& weights_map);
 
-  /** @details In case that a layer is frozen, also freeze layers that
-   *  precede it if that makes senses for the particular model, such
-   *  as sequential or siamese.  For othe models, users can manually
+  /** @brief
+   *
+   *  In case that a layer is frozen, also freeze layers that precede
+   *  it if that makes senses for the particular model, such as
+   *  sequential or siamese.  For othe models, users can manually
    *  control the behaivor by indicating whether to freeze each layer
    *  in the model description prototext.
+   *
+   *  For general DAG models, users need to manually specify each
+   *  layer to freeze in the model description prototext.
    */
-  virtual void freeze_layers_under_frozen_surface();
+  virtual void freeze_layers_under_frozen_surface() {}
 
   /** Set up topology of layer graph.
    *
@@ -404,9 +415,9 @@ protected:
    */
   virtual void reconcile_weight_values();
 
-  ////////////////////////////////////////////////////////////
+  // ===========================================
   // Callbacks
-  ////////////////////////////////////////////////////////////
+  // ===========================================
 
   /** Execute callbacks at start of training. */
   virtual void do_train_begin_cbs();
@@ -456,28 +467,45 @@ private:
    */
   std::vector<std::unique_ptr<Layer>> m_layers;
 
+  // ===========================================
+  // Functions to add utility layers
+  // ===========================================
+
   /** Insert evaluation layers where needed.
    *
-   *  If an objective function layer term or a layer metric
-   *  corresponds to a layer that is not an evaluation layer, an
-   *  evaluation layer is added as a child of the original layer and
-   *  set as the corresponding layer to the layer term or layer
-   *  metric.
+   *  If a @c lbann::layer_term or @c lbann::layer_metric corresponds
+   *  to a layer that is not an evaluation_layer, an evaluation layer
+   *  is created and added to the model.
+   *
+   *  @param layer_set      Layers in model. Updated with any newly
+   *                        created layers.
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_evaluation_layers();
+  void add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
+                             std::unordered_set<std::string>& layer_names);
+
   /** Insert dummy layers after layers with too few children.
    *
    *  If a layer expects more child layers than it has, add dummy
    *  layers until it has enough children.
+   *
+   *  @param layer_set      Layers in model. Updated with any newly
+   *                        created layers.
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_dummy_layers();
+  void add_dummy_layers(std::unordered_set<std::string>& layer_names);
   /** Insert split layers after layers with too many children.
    *
    *  If a layer expects one child layer but has multiple, add a split
-   *  layer. The split layer will be the original layer's child and
-   *  the split layer's children will be the original children.
+   *  layer to the model.
+   *
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_split_layers();
+  void add_split_layers(std::unordered_set<std::string>& layer_names);
+
 };
 
 } // namespace lbann
