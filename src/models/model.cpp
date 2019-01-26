@@ -45,6 +45,7 @@
 #include <lbann.pb.h>
 #include <set>
 #include <map>
+#include <cmath>
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
@@ -1838,6 +1839,18 @@ void model::setup_distconv() {
   }
   for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {
     (*it)->setup_tensors_bwd(dists[*it]);
+  }
+  size_t available = cuda::get_available_memory_capacity();
+  size_t workspace_memory = available;
+  // set aside some space for shuffling, halo exchange, etc.
+  workspace_memory -= 1 << 28;
+  dc::MPIRootPrintStreamInfo()
+      << "Current available memory: " << available << " (" << int(available / 1024.0 / 1024.0)
+      << " MB), workspace: " << workspace_memory
+      << " (" << int(workspace_memory / 1024.0 / 1024.0)
+      << " MB)";
+  for (const auto& layer : m_layers) {
+    layer->setup_distconv_post(workspace_memory);
   }
 }
 

@@ -1549,6 +1549,24 @@ Dist get_hydrogen_matrix_distribution() {
 }
 } // namespace
 
+size_t Layer::estimate_memory_usage(const std::array<Dist, 4> &dists) {
+  if (!distconv_enabled()) {
+    return 0;
+  }
+  auto max_mb = this->m_model->get_max_mini_batch_size();
+  size_t usage = 0;
+  // fp
+  if (m_parent_copy_in_required || m_parent_shuffle_required) {
+    usage += get_input_size() * max_mb / dists[0].get_split_shape().get_size();
+  }
+  usage += get_output_size() * max_mb / dists[1].get_split_shape().get_size();
+  // bp
+  if (m_child_copy_out_required || m_child_shuffle_required) {
+    usage += get_output_size() * max_mb / dists[3].get_split_shape().get_size();
+  }
+  usage += get_input_size() * max_mb / dists[2].get_split_shape().get_size();
+  return usage * sizeof(DataType);
+}
 void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
   const Array4 input_tensor_shape =
       {get_input_dims()[2], get_input_dims()[1],
@@ -1638,8 +1656,9 @@ void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
                         << "activations: " << m_activations_t;
 }
 
-void Layer::setup_tensors_bwd(const std::array<Dist, 4> &dists) {
-}
+void Layer::setup_tensors_bwd(const std::array<Dist, 4> &dists) {}
+
+void Layer::setup_distconv_post(size_t) {}
 
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);

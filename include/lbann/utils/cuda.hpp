@@ -280,6 +280,20 @@ using vector = ::thrust::device_vector<T, allocator<T>>;
   
 } // namespace thrust
 
+inline size_t get_available_memory_capacity() {
+  size_t available;
+  size_t total;
+  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
+  return available;
+}
+
+inline size_t get_total_memory_capacity() {
+  size_t available;
+  size_t total;
+  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
+  return total;
+}
+
 } // namespace cuda
 
 struct CUDAClock {

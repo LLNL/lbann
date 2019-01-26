@@ -475,6 +475,11 @@ protected:
     this->setup_prev_error_signals_tensor(dists);
     this->setup_error_signals_tensor(dists);
     this->setup_error_signals_copyout_tensor(dists);
+  }
+
+  void setup_distconv_post(size_t ws_size) override {
+    Layer::setup_distconv_post(ws_size);
+    if (!this->distconv_enabled()) return;
 
     if (getenv("DISTCONV_DETERMINISTIC")) {
       // Same algorithm as LBANN
@@ -501,7 +506,8 @@ protected:
                   this->m_prev_error_signals_t,
                   pads, strides, dilations, this->m_num_groups,
                   m_fwd_algo, m_bwd_data_algo,
-                  m_bwd_filter_algo);
+                  m_bwd_filter_algo,
+                  ws_size);
   }
 
  protected:
