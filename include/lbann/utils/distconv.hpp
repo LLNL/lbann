@@ -158,6 +158,10 @@ std::string get_convolution_bwd_filter_algorithm();
  */
 std::string get_synthetic_data_reader_randgen();
 
+/** Query the number of synthetic data to pre-generate.
+ */
+int get_number_of_pre_generated_synthetic_data();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();

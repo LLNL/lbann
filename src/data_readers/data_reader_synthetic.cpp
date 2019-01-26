@@ -31,28 +31,39 @@
 #include "lbann/utils/distconv.hpp"
 #include <cstdio>
 #include <string>
+#include <algorithm>
 
 namespace lbann {
 
 namespace {
 
-void fill_matrix(CPUMat& mat) {
-  std::normal_distribution<DataType> dist(DataType(0), DataType(1));
+void fill_buffer(DataType *buf, size_t len) {
   auto randgen_method = dc::get_synthetic_data_reader_randgen();
-  const El::Int height = mat.Height();  // Width is 1.
-  DataType * __restrict__ buf = mat.Buffer();
+  if (randgen_method == "ONE") {
+    std::fill_n(buf, len, (DataType) 1);
+    return;
+  }
+  std::normal_distribution<DataType> dist(DataType(0), DataType(1));
   if (randgen_method == "MT") {
     auto& gen = get_generator();
-    for (El::Int i = 0; i < height; ++i) {
+    for (size_t i = 0; i < len; ++i) {
       buf[i] = dist(gen);
     }
-  } else if (randgen_method == "ONE") {
-    std::fill_n(buf, height, (DataType) 1);
   } else {
     auto& gen = get_fast_generator();
-    for (El::Int i = 0; i < height; ++i) {
+    for (size_t i = 0; i < len; ++i) {
       buf[i] = dist(gen);
     }
+  }
+}
+
+void fill_matrix(CPUMat& mat, DataType *pre_generated=nullptr) {
+  const El::Int height = mat.Height();  // Width is 1.
+  DataType * __restrict__ buf = mat.Buffer();
+  if (pre_generated) {
+    std::copy(pre_generated, pre_generated + height, buf);
+  } else {
+    fill_buffer(buf, height);
   }
 }
 
@@ -66,18 +77,22 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              std::vector<int> dims,
                                              int num_labels, bool shuffle)
   : generic_data_reader(shuffle), m_num_samples(num_samples),
-    m_num_labels(num_labels), m_dimensions(dims) {}
+    m_num_labels(num_labels), m_dimensions(dims) {
+  pre_generate();
+}
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              std::vector<int> dims,
                                              std::vector<int> response_dims,
                                              bool shuffle)
   : generic_data_reader(shuffle), m_num_samples(num_samples),
-    m_num_labels(0), m_dimensions(dims), m_response_dimensions(response_dims) {}
+    m_num_labels(0), m_dimensions(dims), m_response_dimensions(response_dims) {
+  pre_generate();
+}
 
 bool data_reader_synthetic::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  fill_matrix(X_v);
+  fill_matrix(X_v, get_next_pre_generated_datum());
   return true;
 }
 
@@ -103,6 +118,28 @@ void data_reader_synthetic::load() {
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
+}
+
+void data_reader_synthetic::pre_generate() {
+  m_num_pre_generated_data = dc::get_number_of_pre_generated_synthetic_data();
+  if (m_num_pre_generated_data == 0) return;
+  size_t len = get_linearized_data_size() * m_num_pre_generated_data;
+  dc::MPIRootPrintStreamDebug()
+      << "Pre-generating " << m_num_pre_generated_data << " samples, which consumes "
+      << (len * sizeof(DataType) / float(1024 * 1024)) << " MB of memory";
+  m_pre_generated_data.reset(new DataType[len], std::default_delete<DataType[]>());
+  fill_buffer(m_pre_generated_data.get(), len);
+  m_pre_generated_data_idx = 0;
+}
+
+DataType *data_reader_synthetic::get_next_pre_generated_datum() {
+  if (m_num_pre_generated_data == 0) return nullptr;
+  auto idx = m_pre_generated_data_idx * get_linearized_data_size();
+  ++m_pre_generated_data_idx;
+  if (m_pre_generated_data_idx == m_num_pre_generated_data) {
+    m_pre_generated_data_idx = 0;
+  }
+  return m_pre_generated_data.get() + idx;
 }
 
 }  // namespace lbann

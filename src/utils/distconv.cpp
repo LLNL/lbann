@@ -51,6 +51,7 @@ std::string opt_convolution_bwd_data_algorithm("DEFAULT");
 std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
 // Allowed values: MINSTD, MT, and ONE
 std::string opt_synthetic_data_reader_randgen("MINSTD");
+int opt_num_pre_generated_synthetic_data = 0;
 
 void set_options() {
   if (options_set) return;
@@ -83,6 +84,10 @@ void set_options() {
   if (env) {
     opt_synthetic_data_reader_randgen = env;
   }
+  env = getenv("LBANN_DISTCONV_NUM_PRE_GENERATED_SYNTHETIC_DATA");
+  if (env) {
+    opt_num_pre_generated_synthetic_data = atoi(env);
+  }
   options_set = true;
 }
 
@@ -108,6 +113,9 @@ void print_options(std::ostream &os) {
        << std::endl;
     ss << "  synthetic_data_reader_randgen: "
        << opt_synthetic_data_reader_randgen
+       << std::endl;
+    ss << "  num_pre_generated_synthetic_data: "
+       << opt_num_pre_generated_synthetic_data
        << std::endl;
     os << ss.str();
   }
@@ -258,6 +266,10 @@ std::string get_convolution_bwd_filter_algorithm() {
 
 std::string get_synthetic_data_reader_randgen() {
   return opt_synthetic_data_reader_randgen;
+}
+
+int get_number_of_pre_generated_synthetic_data() {
+  return opt_num_pre_generated_synthetic_data;
 }
 
 p2p::P2P &get_p2p() {
