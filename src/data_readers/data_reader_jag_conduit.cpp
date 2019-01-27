@@ -311,7 +311,7 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
   return n_base[key];
 }
 
-bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
+bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node, bool any_node) const {
   const sample_t& s = m_sample_list[i];
   const std::string& sample_name = s.second;
   const std::string path = sample_name + key;
@@ -319,7 +319,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
     //@todo may want to change to a pointer, or something similar,
     //      to avoid copying
-    node = m_jag_store->get_conduit_node(i);
+    node = m_jag_store->get_conduit_node(i, any_node);
     return true;
   }
 
@@ -479,7 +479,7 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
     return;
   }
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar);
+  load_conduit_node(0, "/outputs/scalars", n_scalar, true);
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -510,7 +510,7 @@ void data_reader_jag_conduit::set_all_input_choices() {
   }
 
   conduit::Node n_input;
-  load_conduit_node(0, "/inputs", n_input);
+  load_conduit_node(0, "/inputs", n_input, true);
   m_input_keys.reserve(n_input.number_of_children());
   const std::vector<std::string>& child_names = n_input.child_names();
   for (const auto& key: child_names) {
@@ -542,7 +542,7 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   conduit::Node n_imageset;
-  load_conduit_node(first_idx, "/outputs/images", n_imageset);
+  load_conduit_node(first_idx, "/outputs/images", n_imageset, true);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
@@ -558,7 +558,7 @@ void data_reader_jag_conduit::check_image_data() {
     }
   }
   conduit::Node n_image;
-  load_conduit_node(first_idx, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image);
+  load_conduit_node(first_idx, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image, true);
   conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
@@ -613,7 +613,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
 
   conduit::Node n_scalar;
   size_t first_idx = m_sample_list.get_indexer().get_partition_offset();
-  load_conduit_node(first_idx, "/outputs/scalars", n_scalar);
+  load_conduit_node(first_idx, "/outputs/scalars", n_scalar, true);
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -674,7 +674,7 @@ void data_reader_jag_conduit::check_input_keys() {
 
   conduit::Node n_input;
   size_t first_idx = m_sample_list.get_indexer().get_partition_offset();
-  load_conduit_node(first_idx, "/inputs", n_input);
+  load_conduit_node(first_idx, "/inputs", n_input, true);
   conduit::NodeConstIterator itr = n_input.children();
 
   while (itr.has_next()) {
