@@ -316,14 +316,6 @@ if (LBANN_WITH_CONDUIT)
     find_package(HDF5 CONFIG)
   endif ()
   if (NOT CONDUIT_FOUND)
-    include(CheckLanguage)
-    check_language(C)
-    if (NOT CMAKE_C_COMPILER)
-      # This is really bad. And should not be necessary. :(
-      set(CMAKE_C_COMPILER "${CMAKE_CXX_COMPILER}"
-        CACHE FILEPATH "The C compiler" FORCE)
-    endif ()
-
     enable_language(C) # WHY??????????????
     find_package(HDF5 REQUIRED)
     set(HDF5_FOUND_WITH_MODULE TRUE)
