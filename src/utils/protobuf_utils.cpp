@@ -207,6 +207,15 @@ void protobuf_utils::verify_prototext(bool master, const std::vector<lbann_data:
           std::cerr << "model #" << j << " is missing data_set_metadata\n";
         }
       }
+      if (!t->data_reader().requires_data_set_metadata() && t->has_data_set_metadata()) {
+        is_good = false;
+        if (master) {
+          std::stringstream err;
+          err << "model #" << j << " is has data_set_metadata but does not require it\n"
+              << " please check your command line\n";
+          LBANN_ERROR(err.str());
+        }
+      }
     }
     if (! t->has_model()) {
       is_good = false;
