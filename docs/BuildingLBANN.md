@@ -79,23 +79,24 @@ The following LLNL-maintained packages are optional.
         source loads
         unset LIBRARY_PATH
 
-++ Note that the environments provided here have a set of external
-   packages and compilers that are installed on an LLNL LC CZ sytem.
-   Please update these for your system environment.  Alternatively,
-   you can create baseline versions of the user-level spack configuation
-   files and remove the externals and compilers from the spack.yaml
-   file. See [here](spack_environment.md) for details.
+  + Note that the environments provided here have a set of external
+    packages and compilers that are installed on an LLNL LC CZ sytem.
+    Please update these for your system environment.  Alternatively,
+    you can create baseline versions of the user-level spack configuation
+    files and remove the externals and compilers from the spack.yaml
+    file. See [here](spack_environment.md) for details.
 
-++ Note that the spack module files set the LIBRARY_PATH environment
-   variable. This behavior allows autotools based builds to pickup the
-   correct libraries, but interferes with the way that CMake sets up
-   RPATHs.  To correctly establish the RPATH please unset the variable
-   as noted above, or you can explicity pass the RPATH fields to CMake
-   using a command such as:
+  + Note that the spack module files set the LIBRARY_PATH environment
+    variable. This behavior allows autotools based builds to pickup the
+    correct libraries, but interferes with the way that CMake sets up
+    RPATHs.  To correctly establish the RPATH please unset the variable
+    as noted above, or you can explicity pass the RPATH fields to CMake
+    using a command such as:
 
          cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
 
-+ Build locally from source. See below for a list and descriptions of
++ Build LBANN locally from source and build Hydrogen and Aluminum
+  using the superbuild.  See below for a list and descriptions of
   all CMake flags known to LBANN's build system. An example build
   might be:
 
@@ -118,6 +119,32 @@ The following LLNL-maintained packages are optional.
           -D LBANN_DATATYPE=float \
           -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
           /path/to/lbann
+
+        cmake \
+          -G Ninja \
+          -D LBANN_SB_BUILD_ALUMINUM=ON \
+          -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
+          -D ALUMINUM_ENABLE_NCCL=ON \
+          -D LBANN_SB_BUILD_HYDROGEN=ON \
+          -D Hydrogen_ENABLE_CUDA=ON \
+          -D LBANN_SB_BUILD_LBANN=ON \
+          -D CMAKE_BUILD_TYPE:STRING=Release \
+          -D LBANN_WITH_CUDA:BOOL=ON \
+          -D LBANN_WITH_NVPROF:BOOL=ON \
+          -D LBANN_DATATYPE:STRING=float \
+          -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
+          -D LBANN_WITH_ALUMINUM:BOOL=ON \
+          -D LBANN_WITH_CONDUIT:BOOL=ON \
+          -D LBANN_WITH_CUDA:BOOL=ON \
+          -D LBANN_WITH_CUDNN:BOOL=ON \
+          -D LBANN_WITH_NCCL:BOOL=ON \
+          -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
+          -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
+          -D LBANN_WITH_TBINF=OFF \
+          -D LBANN_WITH_VTUNE:BOOL=OFF \
+          -D LBANN_DATATYPE=float \
+          -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
+          /path/to/lbann/superbuild
 
 ## Buidling with [CMake](https://cmake.org)
 
