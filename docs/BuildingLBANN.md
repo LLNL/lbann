@@ -102,26 +102,6 @@ The following LLNL-maintained packages are optional.
 
         cmake \
           -G Ninja \
-          -D CMAKE_BUILD_TYPE:STRING=Release \
-          -D LBANN_WITH_CUDA:BOOL=ON \
-          -D LBANN_WITH_NVPROF:BOOL=ON \
-          -D LBANN_DATATYPE:STRING=float \
-          -D LBANN_WITH_TOPO_AWARE:BOOL=False \
-          -D LBANN_WITH_ALUMINUM:BOOL=ON \
-          -D LBANN_WITH_CONDUIT:BOOL=OFF \
-          -D LBANN_WITH_CUDA:BOOL=ON \
-          -D LBANN_WITH_CUDNN:BOOL=ON \
-          -D LBANN_WITH_NCCL:BOOL=OFF \
-          -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
-          -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
-          -D LBANN_WITH_TBINF=OFF \
-          -D LBANN_WITH_VTUNE:BOOL=OFF \
-          -D LBANN_DATATYPE=float \
-          -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
-          /path/to/lbann
-
-        cmake \
-          -G Ninja \
           -D LBANN_SB_BUILD_ALUMINUM=ON \
           -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
           -D ALUMINUM_ENABLE_NCCL=ON \
