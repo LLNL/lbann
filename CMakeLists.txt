@@ -312,10 +312,10 @@ if (LBANN_WITH_CONDUIT)
     HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
     PATH_SUFFIXES share/cmake/hdf5
     NO_DEFAULT_PATH)
-  if (NOT CONDUIT_FOUND)
+  if (NOT HDF5_FOUND)
     find_package(HDF5 CONFIG)
   endif ()
-  if (NOT CONDUIT_FOUND)
+  if (NOT HDF5_FOUND)
     enable_language(C) # WHY??????????????
     find_package(HDF5 REQUIRED)
     set(HDF5_FOUND_WITH_MODULE TRUE)
