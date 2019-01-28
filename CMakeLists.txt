@@ -363,13 +363,13 @@ if (LBANN_WITH_CONDUIT)
 
     set_target_properties(conduit::conduit
       PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES ${HDF5_INCLUDE_DIRS})
+      INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
   endif ()
 
   set_target_properties(conduit::conduit
     PROPERTIES
     INTERFACE_LINK_LIBRARIES
-    ${_conduit_interface_link_libs})
+    "${_conduit_interface_link_libs}")
 
   set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
