@@ -768,6 +768,9 @@ void data_reader_jag_conduit::load() {
   /// how index lists are used between trainers, models, and ranks
   /// @todo m_list_per_trainer || m_list_per_model
   if (m_list_per_rank) {
+    if (m_data_store != nullptr) {
+      LBANN_ERROR("m_list_per_rank > 0 and  m_data_store != nullptr; don't know how to handle this; please contact Dave Hysom");
+    }
     load_list_of_samples(sample_list_file, 1, 0);
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
