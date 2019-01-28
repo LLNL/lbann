@@ -799,7 +799,7 @@ void print_help(lbann_comm *comm)
        "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string> --metadata=<string>\n"
        "\n"
        "  However, if you are re-running an experiment from a previously saved\n"
-       "  file, you only need to specify --model=<string>\n"
+       "  file, you only need to specify --prototext=<string>\n"
        "  When proto is run, an output file containing the concatenated prototext\n"
        "  files, along with other data is written. The default name for this file\n"
        "  is 'data.prototext'  You can specify an alternative name via the option:\n"
@@ -896,7 +896,7 @@ void save_session(lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& 
 
   //do not write output file for a repeated experiment;
   //may want to revisit this decision later ...
-  if (opts->has_string("loadme")) {
+  if (opts->has_string("prototext")) {
     return;
   }
 
@@ -942,7 +942,7 @@ void save_session(lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& 
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << file_name << "\n#\n#\n";
+      << " --prototext=" << file_name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};

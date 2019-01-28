@@ -44,6 +44,7 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
   std::vector<std::string> optimizers;
   std::vector<std::string> readers;
   std::vector<std::string> data_set_metadata;
+  bool single_file_load = false;
   for (int k=1; k<argc; k++) {
     std::string s(argv[k]);
     if (s[0] != '-' or s[1] != '-') {
@@ -62,8 +63,9 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
     if (equal_sign != std::string::npos) {
       std::string which = s.substr(2, equal_sign-2);
       std::string fn = s.substr(equal_sign+1);
-      if (which == "loadme") {
+      if (which == "prototext") {
         models.push_back(fn);
+        single_file_load = true;
       }
       if (which == "model") {
         models.push_back(fn);
@@ -80,38 +82,42 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
     }
   }
 
-  size_t n = models.size();
-  if (! (optimizers.size() == 1 || optimizers.size() == n)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " you specified " << n << " model filenames, and " << optimizers.size()
-        << " optimizer filenames; you must specify either one or "<< n
-        << " optimizer filenames";
-    throw lbann_exception(err.str());
-  }
-  if (! (readers.size() == 1 || readers.size() == n)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " you specified " << n << " model filenames, and " << readers.size()
-        << " reader filenames; you must specify either one or "<< n
-        << " reader filenames";
-    throw lbann_exception(err.str());
-  }
+  if(!single_file_load) {
+    size_t n = models.size();
+    if (! (optimizers.size() == 1 || optimizers.size() == n)) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " you specified " << n << " model filenames, and " << optimizers.size()
+          << " optimizer filenames; you must specify either one or "<< n
+          << " optimizer filenames";
+      throw lbann_exception(err.str());
+    }
+    if (! (readers.size() == 1 || readers.size() == n)) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " you specified " << n << " model filenames, and " << readers.size()
+          << " reader filenames; you must specify either one or "<< n
+          << " reader filenames";
+      throw lbann_exception(err.str());
+    }
 
-  if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " you specified " << n << " model filenames, and " << data_set_metadata.size()
-        << " data set metadata filenames; you must specify either zero, one, or "<< n
-        << " data set metadata filenames";
-    throw lbann_exception(err.str());
+    if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
+      std::stringstream err;
+      err << __FILE__ << " " << __LINE__ << " :: "
+          << " you specified " << n << " model filenames, and " << data_set_metadata.size()
+          << " data set metadata filenames; you must specify either zero, one, or "<< n
+          << " data set metadata filenames";
+      throw lbann_exception(err.str());
+    }
   }
 
   names.clear();
   for (size_t i=0; i<models.size(); i++) {
     prototext_fn_triple t;
     t.model = models[i];
-    if (readers.size() == 1) {
+    if (readers.size() == 0) {
+      t.reader = "none";
+    }else if (readers.size() == 1) {
       t.reader = readers[0];
     } else {
       t.reader = readers[i];
@@ -123,7 +129,9 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
     } else {
       t.data_set_metadata = data_set_metadata[i];
     }
-    if (optimizers.size() == 1) {
+    if (optimizers.size() == 0) {
+      t.optimizer = "none";
+    }else if (optimizers.size() == 1) {
       t.optimizer = optimizers[0];
     } else {
       t.optimizer = optimizers[i];
