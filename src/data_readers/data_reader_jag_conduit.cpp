@@ -505,6 +505,11 @@ void data_reader_jag_conduit::set_input_choices(const std::vector<std::string>& 
 }
 
 void data_reader_jag_conduit::set_all_input_choices() {
+  //@TODO revisit later -- don't know how to handle this yet
+  if (m_data_store != nullptr) {
+    return;
+  }
+
   if (m_sample_list.empty()) {
     return;
   }
@@ -532,6 +537,11 @@ void data_reader_jag_conduit::set_linearized_image_size() {
 }
 
 void data_reader_jag_conduit::check_image_data() {
+  //@TODO revisit later -- don't know how to handle this yet
+  if (m_data_store != nullptr) {
+    return;
+  }
+
   if (m_sample_list.empty()) {
     return;
   }
@@ -594,6 +604,11 @@ void data_reader_jag_conduit::check_image_data() {
 }
 
 void data_reader_jag_conduit::check_scalar_keys() {
+  //@TODO revisit later -- don't know how to handle this yet
+  if (m_data_store != nullptr) {
+    return;
+  }
+
   if (m_scalar_keys.empty()) {
     return;
   }
@@ -655,6 +670,11 @@ void data_reader_jag_conduit::check_scalar_keys() {
 
 
 void data_reader_jag_conduit::check_input_keys() {
+  //@TODO revisit later -- don't know how to handle this yet
+  if (m_data_store != nullptr) {
+    return;
+  }
+
   if (m_input_keys.empty()) {
     return;
   }
@@ -1435,6 +1455,11 @@ void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename
 }
 
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
+  //@TODO revisit later -- don't know how to handle this yet
+  if (m_data_store != nullptr) {
+    return;
+  }
+
   conduit::Node n;
   load_conduit_node(sample_id, "", n);
   n.schema().print();
