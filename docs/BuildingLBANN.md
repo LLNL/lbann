@@ -60,7 +60,7 @@ The following LLNL-maintained packages are optional.
 
 + Download and install [Spack](https://github.com/llnl/spack).
   Additionally setup shell support as discussed
-  [here][https://spack.readthedocs.io/en/latest/module_file_support.html#id2].
+  [here](https://spack.readthedocs.io/en/latest/module_file_support.html#id2).
 
         . ${SPACK_ROOT}/share/spack/setup-env.sh
 
@@ -126,7 +126,7 @@ The following LLNL-maintained packages are optional.
           -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
           /path/to/lbann/superbuild
 
-## Buidling with [CMake](https://cmake.org)
+## Building with [CMake](https://cmake.org)
 
 LBANN uses [CMake](https://cmake.org) for its build system and a
 version newer than or equal to 3.9.0 is required. LBANN development is
