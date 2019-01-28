@@ -67,7 +67,6 @@ void data_store_jag::setup() {
   }
 
 /*
-  m_minibatch_data.resize(m_np);
   m_send_buffer.resize(m_np);
   m_send_buffer_2.resize(m_np);
   m_send_requests.resize(m_np);
@@ -81,43 +80,17 @@ void data_store_jag::setup() {
   // builds map: shuffled_index subscript -> owning proc
 //  build_index_owner();
 
-#if 0
   if (! m_in_memory) {
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "not yet implemented";
-  td::unordered_map<int, int> m_owner;
-  throw lbann_exception(err.str());
+    LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
   } 
   
   else {
-    //sanity check
-    conduit_reader *reader = dynamic_cast<conduit_reader*>(m_reader);
-    if (reader == nullptr) {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "dynamic_cast<conduit_reader*>(m_reader) failed";
-      throw lbann_exception(err.str());
-    }
-    m_data_reader = reader;
-
-    //load_variable_names();
-
     if (m_master) std::cout << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
     
     if (m_master) std::cout << "calling exchange_mb_indices()\n";
     exchange_mb_indices();
-
-    if (m_master) std::cout << "calling get_my_datastore_indices\n";
-    get_my_datastore_indices();
-
-    if (m_master) std::cout << "calling populate_datastore()\n";
-    populate_datastore(); 
-
-    if (m_master) std::cout << "calling exchange_data()\n";
-    exchange_data();
-    if (m_master) std::cout << "DONE! calling exchange_data()\n";
   }
-#endif
   if (m_master) {
     std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
   }
@@ -135,6 +108,8 @@ void data_store_jag::get_indices(std::unordered_set<int> &indices, int p) {
 
 
 void data_store_jag::exchange_data() {
+  LBANN_ERROR("starting data_store_jag::exchange_data for epoch: " + std::to_string(m_epoch) + "; not yet implemented; m_data.size: " + std::to_string(m_data.size()));
+
 #if 0
   double tm1 = get_time();
 
@@ -240,169 +215,24 @@ if (m_master) std::cout << "finished waiting!\n\n";
 #endif
 }
 
-void data_store_jag::populate_datastore() {
-#if 0
-  // master reads the index file and bcasts to all others
-  int n;
-  std::string st;
-  if (m_master) {
-    const std::string filelist = m_reader->get_data_filename();
-    std::ifstream in(filelist.c_str());
-    if (!in) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + filelist + " for reading");
-    }
-    in.seekg(0, std::ios_base::end);
-    n = in.tellg();
-    in.seekg(0, std::ios_base::beg);
-    st.resize(n);
-    in.read((char*)st.data(), n);
+void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
+  if (m_data.find(data_id) != m_data.end()) {
+    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
-  MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  st.resize(n);
-  MPI_Bcast(&st[0], n, MPI_BYTE, 0, MPI_COMM_WORLD);
-
-  // get num samples, num conduit files, and base data directory
-  int num_files;
-  std::string base_dir;
-  std::stringstream ss(st);
-  ss >> m_num_samples >> num_files >> base_dir;
-  std::string line;
-  getline(ss, line); //discard '\n' at end of 2nd line of file
-  
-  // build vector to be used to map a sample index to the owning processor;
-  // also, cache the lines from the index file that contain data for the
-  // files and samples that this processor owns.
-  int num_files_per_proc = num_files / m_np;
-  int remainder = num_files % m_np;
-  m_sample_ownership.reserve(m_np+1); 
-  m_sample_ownership.push_back(0);
-  std::string fn;
-  int tot = 0;
-  std::vector<std::string> my_files;
-  for (int proc = 0; proc<m_np; proc++) {
-    int k = proc < remainder ? num_files_per_proc + 1 : num_files_per_proc;
-    for (int hh = 0; hh<k; ++hh) {
-      getline(ss, line);
-      if (proc == m_rank) {
-        my_files.push_back(line);
-      }
-      std::stringstream s3(line);
-      s3 >> fn >> n;
-      tot += n;
-    }  
-    m_sample_ownership.push_back(tot);
-  }  
-  int my_num_samples = m_sample_ownership[m_rank+1] - m_sample_ownership[m_rank];
-  if (m_master) std::cout << "num samples: " << my_num_samples << "\n";
-
-  // load this processor's data
-  if (m_master) std::cout << "starting to load data ...\n";
-  int my_first = m_sample_ownership[m_rank];
-  m_my_datastore_indices.clear();
-  m_data.resize(my_num_samples);
-  size_t sample_id_count = 0;
-  for (size_t j=0; j<my_files.size(); j++) {
-    std::stringstream s(my_files[j]);
-    int good;
-    size_t failed;
-    s >> fn >> good >> failed;
-    std::unordered_set<int> bad_indices;
-    int bad;
-    while (s >> bad) {
-      bad_indices.insert(bad);
-    }
-    if (bad_indices.size() != failed) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: num_bad: " + std::to_string(failed) + " num bad_indices: " + std::to_string(bad_indices.size()) + " should be equal!");
-    }
-    const std::string filename = base_dir + "/" + fn;
-if (m_master) std::cout << "opening file #" << j << " of "<< my_files.size() << "\n";
-    hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( filename );
-    std::vector<std::string> cnames;
-    conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-    conduit::Node tmp;
-    for (size_t jj=0; jj<cnames.size(); jj++) {
-      if (bad_indices.find(jj) == bad_indices.end()) {
-        const std::string key =  cnames[jj] + "/inputs";
-        if (sample_id_count > m_data.size()) {
-          throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: sample_id_count: " + std::to_string(sample_id_count) + " m_data.size(): " + std::to_string(m_data.size()));
-        }
-        conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-        m_data[sample_id_count]["/inputs"] = tmp;
-
-        /*
-        const std::vector<std::string> &scalar_keys = m_data_reader->get_scalar_choices();
-        for (auto scalar_key : scalar_keys) {
-          const std::string sc_key = cnames[jj] +  "/outputs/scalars/"  + scalar_key;
-          conduit::relay::io::hdf5_read(hdf5_file_hnd, sc_key, tmp);
-          m_data[sample_id_count]["outputs/scalars/" + scalar_key] = tmp;
-        }
-        */
-
-        // read in all scalars; this wastes a bit of memory, but is about twice
-        // as fast as looping over each scalar that we're actually interested
-        // in; and the amount of wasted memory is small compared to memory
-        // required by the images
-        const std::string sc_key = cnames[jj] +  "/outputs/scalars/";
-        conduit::relay::io::hdf5_read(hdf5_file_hnd, sc_key, tmp);
-        m_data[sample_id_count]["outputs/scalars/"] = tmp;
-
-        const std::vector<std::string> &image_keys = m_data_reader->get_image_choices();
-        for (auto image_key : image_keys) {
-          const std::string img_key  = cnames[j] + "/outputs/images/" + image_key + "/0.0/emi";
-          conduit::relay::io::hdf5_read(hdf5_file_hnd, img_key, tmp);
-          m_data[sample_id_count]["outputs/images/" + image_key + "/0.0/emi"] = tmp;
-        }
-        m_my_datastore_indices.insert(sample_id_count + my_first);
-        ++sample_id_count;
-      }
-    }
-    conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
-  }
-  if (sample_id_count != m_data.size()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: sample_id_count: " + std::to_string(sample_id_count) + " m_data.size(): " + std::to_string(m_data.size()) + " should be equal");
-  }  
-#endif
-}
-
-void data_store_jag::set_conduit_node(int data_id) {
+  m_data[data_id] = node;
 }
   
 const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
-#if 0
-  //TODO: add error checking
-  std::vector<int>::const_iterator it = std::upper_bound(m_sample_ownership.begin(), m_sample_ownership.end(), data_id);
-  int idx = (it - m_sample_ownership.begin()) - 1;
-  #ifdef DEBUG
-  if (m_master) {
-    std::cout << "data_id: " << data_id << "  idx: " << idx << "\n";
+  if (any_node) {
+    LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
   }
-  #endif
-  return m_minibatch_data[idx];
-#endif
-
-//this will go away; temp code to get buid working
-conduit::Node *n = new conduit::Node;
-return *n;
-}
-
-void data_store_jag::testme() {
-#if 0
-  if (m_master) {
-    std::cout << "starting testme\n";
-    std::vector<int> &mine = m_all_minibatch_indices[m_rank];
-    for (auto idx : mine) {
-      int s = (*m_shuffled_indices)[idx];
-      std::cout << "idx: " << idx << " shuffled: " << s << "\n";
-      const conduit::Node &n = get_node(s, 0);
-      n.print();
-      std::cout << "  is_external? " << n.is_data_external() << "\n";
-      std::stringstream key;
-      key << "/" << s << "/inputs";
-      conduit::Node nd = n[key.str()];
-      nd.print();
-    }
+  
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
+  if (t == m_minibatch_data.end()) {
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
   }
-#endif
+
+  return t->second;
 }
 
 #if 0

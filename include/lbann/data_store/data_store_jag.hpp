@@ -64,7 +64,7 @@ class data_store_jag : public generic_data_store {
   /// return the conduit node 
   const conduit::Node & get_conduit_node(int data_id, bool any_node = false) const;
 
-  void set_conduit_node(int data_id);
+  void set_conduit_node(int data_id, conduit::Node &node);
 
 protected :
 
@@ -86,14 +86,11 @@ protected :
   //void get_indices(std::unordered_set<int> &indices, int p);
 
   /// This vector contains the Nodes that this processor owns
-  std::vector<conduit::Node> m_data;
-
-  /// fills in m_data (the data store)
-  void populate_datastore();
+  std::unordered_map<int, conduit::Node> m_data;
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
-  std::vector<conduit::Node> m_minibatch_data;
+  std::unordered_map<int, conduit::Node> m_minibatch_data;
 
   /// work space; used in exchange_data
   std::vector<conduit::Node> m_send_buffer;

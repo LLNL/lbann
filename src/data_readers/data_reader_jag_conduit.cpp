@@ -334,7 +334,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
 
   conduit::relay::io::hdf5_read(h, path, node);
   if (m_jag_store != nullptr) {
-    m_jag_store->set_conduit_node(i);
+    m_jag_store->set_conduit_node(i, node);
   }
 
   return true;
