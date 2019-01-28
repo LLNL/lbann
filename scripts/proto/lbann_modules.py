@@ -61,7 +61,7 @@ class FullyConnectedModule(Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, size, bias=True, weights=[], activation=None,
-                 name='', data_layout='data_parallel'):
+                 name=None, data_layout='data_parallel'):
         """Initialize fully-connected module.
 
         Args:
@@ -139,7 +139,7 @@ class Convolution2dModule(Module):
 
     def __init__(self, out_channels, kernel_size,
                  stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=''):
+                 weights=[], activation=None, name=None):
         """Initialize convolution module.
 
         Args:

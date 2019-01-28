@@ -137,7 +137,7 @@ def _create_layer_subclass(type_name):
 
     # Sub-class constructor.
     def __init__(self, parents=[], children=[], weights=[],
-                 name='', data_layout='data_parallel', hint_layer=None,
+                 name=None, data_layout='data_parallel', hint_layer=None,
                  **kwargs):
         Layer.__init__(self, parents, children, weights,
                        name, data_layout, hint_layer)
@@ -292,7 +292,7 @@ class Weights:
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, initializer=None, optimizer=None, name=''):
+    def __init__(self, initializer=None, optimizer=None, name=None):
         Weights.global_count += 1
         self.name = name if name else 'weights{0}'.format(Weights.global_count)
         self.initializer = initializer
@@ -416,7 +416,7 @@ class Metric:
 
     """
 
-    def __init__(self, layer, name='', unit=''):
+    def __init__(self, layer, name=None, unit=''):
         """Initialize a metric based of off layer."""
         self.layer = layer
         self.name = name if name else self.layer.name
