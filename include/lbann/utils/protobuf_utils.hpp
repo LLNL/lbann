@@ -15,6 +15,7 @@ namespace lbann {
 struct prototext_fn_triple {
   std::string model;
   std::string reader;
+  std::string data_set_metadata;
   std::string optimizer;
 };
 
@@ -32,11 +33,11 @@ public :
                 const bool master,
                 const int argc,
                 char **argv,
-                std::vector<lbann_data::LbannPB *> &models_out); 
+                std::vector<lbann_data::LbannPB *> &models_out);
 
 
   /** parses the command line for --model=<string> --reader=<string>
-   *  optimizer=<string> and their multi counterparts: 
+   *  optimizer=<string> and their multi counterparts:
    *  --model={<string_1>,<string_2>,...}
    *  --reader={<string_1>,<string_2>,...}
    *  --optimizer={<string_1>,<string_2>,...}
@@ -46,8 +47,8 @@ public :
    */
   static void parse_prototext_filenames_from_command_line(
                bool master,
-               int argc, 
-               char **argv, 
+               int argc,
+               char **argv,
                std::vector<prototext_fn_triple> &names);
 
   static void read_in_prototext_files(
@@ -59,11 +60,10 @@ public :
    *  optimizer and reader
    */
   static void verify_prototext(
-               bool master, 
+               bool master,
                const std::vector<lbann_data::LbannPB *> &models);
 
 };
 
-} //namespace lbann 
+} //namespace lbann
 #endif
-

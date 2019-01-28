@@ -55,6 +55,8 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
 
+  const lbann_data::DataSetMetaData& pb_metadata = p.data_set_metadata();
+
   // A separate explicit validation set is created only if a reader with role "validate"
   // is found in the list of data readers. Otherwise, a validation set is created as a
   // percentage of data from the train set.
@@ -84,18 +86,20 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       set_up_generic_preprocessor = false;
     } else if ((name == "imagenet") || (name == "imagenet_patches") ||
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
-      init_image_data_reader(readme, master, reader);
+      init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
 
+      const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
+
       using var_t = data_reader_jag::variable_t;
 
       // composite independent variable
-      std::vector< std::vector<var_t> > independent_type(readme.independent_size());
+      std::vector< std::vector<var_t> > independent_type(pb_schema.independent_size());
 
-      for (int i=0; i < readme.independent_size(); ++i) {
-        const lbann_data::Reader::JAGDataSlice& slice = readme.independent(i);
+      for (int i=0; i < pb_schema.independent_size(); ++i) {
+        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.independent(i);
         const int slice_size = slice.pieces_size();
         for (int k=0; k < slice_size; ++k) {
           const auto var_type = static_cast<var_t>(slice.pieces(k));
@@ -106,10 +110,10 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       reader_jag->set_independent_variable_type(independent_type);
 
       // composite dependent variable
-      std::vector< std::vector<var_t> > dependent_type(readme.dependent_size());
+      std::vector< std::vector<var_t> > dependent_type(pb_schema.dependent_size());
 
-      for (int i=0; i < readme.dependent_size(); ++i) {
-        const lbann_data::Reader::JAGDataSlice& slice = readme.dependent(i);
+      for (int i=0; i < pb_schema.dependent_size(); ++i) {
+        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.dependent(i);
         const int slice_size = slice.pieces_size();
         for (int k=0; k < slice_size; ++k) {
           const auto var_type = static_cast<var_t>(slice.pieces(k));
@@ -126,7 +130,7 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       set_up_generic_preprocessor = false;
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
-      init_image_data_reader(readme, master, reader);
+      init_image_data_reader(readme, pb_metadata, master, reader);
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
@@ -159,7 +163,7 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       }
       set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit_hdf5") {
-      init_image_data_reader(readme, master, reader);
+      init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
@@ -201,7 +205,7 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
           npy_readers.push_back(reader_numpy);
 #ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
-          init_image_data_reader(readme, master, reader);
+          init_image_data_reader(readme, pb_metadata, master, reader);
           set_up_generic_preprocessor = false;
           npy_readers.push_back(reader);
 #endif
@@ -792,7 +796,7 @@ void print_help(lbann_comm *comm)
 
   std::cerr <<
        "General usage: you need to specify three prototext files, e.g:\n"
-       "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string>\n"
+       "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string> --metadata=<string>\n"
        "\n"
        "  However, if you are re-running an experiment from a previously saved\n"
        "  file, you only need to specify --model=<string>\n"

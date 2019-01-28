@@ -22,6 +22,9 @@ Internal features:
 I/O & data readers:
  - Overhauled the I/O system to use an independent background thread
    pool for fetching data
+ - Added support for data set metadata file that provides both schema
+   and normalization values unique to a given data set.  Demonstrated
+   use in JAG Conduit data reader.
 
 Build system:
 
