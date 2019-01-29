@@ -1146,15 +1146,17 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 
 
 std::vector< std::vector<data_reader_jag_conduit::ch_t> >
-data_reader_jag_conduit::get_image_data(const conduit::Node& sample) const {
+data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& sample) const {
   std::vector< std::vector<ch_t> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
-    std::string conduit_obj = std::string("/outputs/images/") + emi_tag + "/emi";
-    conduit_ch_t emi = sample[conduit_obj].value();
+    conduit::Node n_image;
+    load_conduit_node(sample_id, "/outputs/images/" + emi_tag + "/emi", n_image);
+    sample.update(n_image);
+    conduit_ch_t emi = n_image.value();
     const size_t num_vals = emi.number_of_elements();
-    const ch_t* emi_data = sample[conduit_obj].value();
+    const ch_t* emi_data = n_image.value();
     image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
@@ -1181,8 +1183,8 @@ void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t
   img.convertTo(img, -1, tr.first, tr.second);
 }
 
-std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const conduit::Node& sample) const {
-  const std::vector< std::vector<ch_t> > img_data(get_image_data(sample));
+std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
+  const std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
   std::vector<cv::Mat> images;
 
   if (m_split_channels) {
@@ -1219,8 +1221,8 @@ std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const conduit::Node&
   return images;
 }
 
-std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > img_data(get_image_data(sample));
+std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) const {
+  std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
   std::vector<ch_t> images;
 
   if (m_split_channels) {
@@ -1257,15 +1259,17 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
   return images;
 }
 
-std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const conduit::Node& sample) const {
+std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
   auto tr = m_scalar_normalization_params.cbegin();
 
   for(const auto key: m_scalar_keys) {
-    std::string conduit_obj = std::string("/outputs/scalars/") + key;
-    const scalar_t val_raw = static_cast<scalar_t>(sample[conduit_obj].to_value());
+    conduit::Node n_scalar;
+    load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
+    sample.update(n_scalar);
+    const scalar_t val_raw = static_cast<scalar_t>(n_scalar.to_value());
     const scalar_t val = static_cast<scalar_t>(val_raw * tr->first + tr->second);
     scalars.push_back(val);
     tr ++;
@@ -1273,7 +1277,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   return scalars;
 }
 
-std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const conduit::Node& sample) const {
+std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id, conduit::Node& sample) const {
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
@@ -1285,16 +1289,20 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
-      std::string conduit_obj = std::string("/inputs/") + key;
-      const input_t val_raw = static_cast<input_t>(sample[conduit_obj].value());
+      conduit::Node n_input;
+      load_conduit_node(sample_id, "/inputs/" + key, n_input);
+      sample.update(n_input);
+      const input_t val_raw = static_cast<input_t>(n_input.value());
       const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
       inputs.push_back(val);
       tr ++;
     }
   } else {
     for(const auto key: m_input_keys) {
-      std::string conduit_obj = std::string("/inputs/") + key;
-      add_val(key, sample[conduit_obj], inputs); // more overhead but general
+      conduit::Node n_input;
+      load_conduit_node(sample_id, "/inputs/" + key, n_input);
+      sample.update(n_input);
+      add_val(key, n_input, inputs); // more overhead but general
       input_t& val = inputs.back();
       val = static_cast<input_t>(val * tr->first + tr->second);
       tr ++;
@@ -1318,7 +1326,7 @@ data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>
   return X_v;
 }
 
-bool data_reader_jag_conduit::fetch(CPUMat& X, const conduit::Node& sample, int mb_idx, int tid,
+bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
@@ -1327,7 +1335,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, const conduit::Node& sample, int 
       const size_t image_size = m_split_channels? get_linearized_1ch_image_size() : get_linearized_image_size();
       const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector<cv::Mat> images = get_cv_images(sample);
+      std::vector<cv::Mat> images = get_cv_images(data_id, sample);
 
       if (images.size() != num_images) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
@@ -1341,12 +1349,12 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, const conduit::Node& sample, int 
       break;
     }
     case JAG_Scalar: {
-      const std::vector<scalar_t> scalars(get_scalars(sample));
+      const std::vector<scalar_t> scalars(get_scalars(data_id, sample));
       set_minibatch_item<scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
       break;
     }
     case JAG_Input: {
-      const std::vector<input_t> inputs(get_inputs(sample));
+      const std::vector<input_t> inputs(get_inputs(data_id, sample));
       set_minibatch_item<input_t>(X, mb_idx, inputs.data(), get_linearized_input_size());
       break;
     }
@@ -1408,12 +1416,13 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
+  // Create a node to hold all of the data
   conduit::Node node;
-  load_conduit_node(data_id, "/", node);
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     // The third argument mb_idx below is 0 because it is for the view of X not X itself
-    ok = fetch(X_v[i], node, 0, tid, m_independent[i], "datum");
+    ok = fetch(X_v[i], data_id, node, 0, tid, m_independent[i], "datum");
   }
+  // Once the node has been populated save it in the data store
   return ok;
 }
 
@@ -1422,11 +1431,12 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
+  // Create a node to hold all of the data
   conduit::Node node;
-  load_conduit_node(data_id, "/", node);
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], node, 0, tid, m_dependent[i], "response");
+    ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
+  // Once the node has been populated save it in the data store
   return ok;
 }
 
