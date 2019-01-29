@@ -64,6 +64,67 @@ class ConvBNRelu(lm.Module):
         else:
             return bn
 
+class BasicBlock(lm.Module):
+    """Residual block without bottlenecking.
+
+    The number of output channels is the same as the number of
+    internal channels. Assumes image data in NCHW format. This is the
+    residual block used in ResNet-{18,34}.
+
+    """
+
+    def __init__(self, in_channels, mid_channels,
+                 downsample, zero_init_residual,
+                 bn_stats_aggregation, name):
+        """Initialize residual block.
+
+        Args:
+            in_channels (int): Number of input channels.
+            mid_channels (int): Number of channels in residual branch.
+            downsample (bool): Perform spatial downsampling (by a
+                factor of 2 in each spatial dimension).
+            zero_init_residual (bool): Zero-initialize the scale in
+                the final batch normalization in the residual branch.
+            bn_stats_aggregation (str): Aggregation mode for batch
+                normalization statistics.
+            name (str): Module name.
+
+        """
+        super().__init__()
+        self.name = name
+        self.instance = 0
+        self.out_channels = mid_channels
+
+        # Skip connection
+        if downsample:
+            self.branch1 = ConvBNRelu(self.out_channels, 1, 2, 0,
+                                      False, bn_stats_aggregation,
+                                      False, self.name + '_branch1')
+        elif in_channels != self.out_channels:
+            self.branch1 = ConvBNRelu(self.out_channels, 1, 1, 0,
+                                      False, bn_stats_aggregation,
+                                      False, self.name + '_branch1')
+        else:
+            self.branch1 = None
+
+        # Residual branch
+        self.branch2a = ConvBNRelu(mid_channels, 3,
+                                   (2 if downsample else 1), 1,
+                                   False, bn_stats_aggregation,
+                                   True, self.name + '_branch2a')
+        self.branch2b = ConvBNRelu(self.out_channels, 3, 1, 1,
+                                   zero_init_residual,
+                                   bn_stats_aggregation,
+                                   False, self.name + '_branch2b')
+
+    def forward(self, x):
+        self.instance += 1
+        y1 = self.branch1(x) if self.branch1 else x
+        y2 = self.branch2b(self.branch2a(x))
+        z = lp.Add([y1, y2],
+                   name='{0}_sum_instance{1}'.format(self.name,self.instance))
+        return lp.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
+
 class BottleneckBlock(lm.Module):
     """Residual block with bottlenecking.
 
@@ -159,10 +220,10 @@ class ResNet(lm.Module):
             block (type): Residual block type, which should be a
                 `lbann_modules.Module`.
             output_size (int): Size of output tensor.
-            layer_sizes (list of int): Number of blocks in each ResNet
-                layer.
-            layer_channels (list of int): Number of internal channels
-                in each ResNet layer.
+            layer_sizes (`Iterable` containing `int`s): Number of
+                blocks in each ResNet layer.
+            layer_channels (`Iterable` containing `int`s): Number of
+                internal channels in each ResNet layer.
             zero_init_residual (bool): Whether to initialize the final
                 batch normalization in residual branches with zeros.
             bn_stats_aggregation (str): Aggregation mode for batch
@@ -203,6 +264,86 @@ class ResNet(lm.Module):
             x = b(x)
         x = lp.ChannelwiseMean(x, name='{0}_avgpool_instance{1}'.format(self.name,self.instance))
         return self.fc(x)
+
+class ResNet18(ResNet):
+    """ResNet-18.
+
+    Assumes image data in NCHW format.
+
+    See:
+        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
+        learning for image recognition. In Proceedings of the IEEE
+        Conference on Computer Vision and Pattern Recognition
+        (pp. 770-778).
+
+    """
+
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(self, output_size,
+                 zero_init_residual=False,
+                 bn_stats_aggregation='local',
+                 name=None):
+        """Initialize ResNet-18.
+
+        Args:
+            output_size (int): Size of output tensor.
+            zero_init_residual (bool, optional): Whether to initialize
+                the final batch normalization in residual branches
+                with zeros.
+            bn_stats_aggregation (str, optional): Aggregation mode for
+                batch normalization statistics.
+            name (str, optional): Module name
+                (default: 'resnet18_module<index>')
+
+        """
+        ResNet18.global_count += 1
+        if name is None:
+            name = 'resnet18_module{0}'.format(ResNet18.global_count)
+        super().__init__(BasicBlock, output_size,
+                         (2,2,2,2), (64,128,256,512),
+                         zero_init_residual, bn_stats_aggregation,
+                         name)
+
+class ResNet34(ResNet):
+    """ResNet-34.
+
+    Assumes image data in NCHW format.
+
+    See:
+        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
+        learning for image recognition. In Proceedings of the IEEE
+        Conference on Computer Vision and Pattern Recognition
+        (pp. 770-778).
+
+    """
+
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(self, output_size,
+                 zero_init_residual=False,
+                 bn_stats_aggregation='local',
+                 name=None):
+        """Initialize ResNet-34.
+
+        Args:
+            output_size (int): Size of output tensor.
+            zero_init_residual (bool, optional): Whether to initialize
+                the final batch normalization in residual branches
+                with zeros.
+            bn_stats_aggregation (str, optional): Aggregation mode for
+                batch normalization statistics.
+            name (str, optional): Module name
+                (default: 'resnet34_module<index>')
+
+        """
+        ResNet34.global_count += 1
+        if name is None:
+            name = 'resnet34_module{0}'.format(ResNet34.global_count)
+        super().__init__(BasicBlock, output_size,
+                         (3,4,6,3), (64,128,256,512),
+                         zero_init_residual, bn_stats_aggregation,
+                         name)
 
 class ResNet50(ResNet):
     """ResNet-50.
@@ -335,17 +476,20 @@ if __name__ == '__main__':
     output_size = 1000
     bn_stats_aggregation = 'local'
     zero_init_residual=False
-    resnet_variant = 50
-    resnet_variant_dict = {50: ResNet50, 101: ResNet101, 152: ResNet152}
+    resnet_variant = 18
+
+    # Choose ResNet variant
+    resnet_variant_dict = {18: ResNet18, 34: ResNet34,
+                           50: ResNet50, 101: ResNet101, 152: ResNet152}
+    resnet = resnet_variant_dict[resnet_variant](
+        output_size,
+        zero_init_residual=zero_init_residual,
+        bn_stats_aggregation=bn_stats_aggregation)
 
     # Construct layer graph.
     input = lp.Input(io_buffer='partitioned')
     images = lp.Identity(input)
     labels = lp.Identity(input)
-    resnet = resnet_variant_dict[resnet_variant](
-        output_size,
-        zero_init_residual=zero_init_residual,
-        bn_stats_aggregation=bn_stats_aggregation)
     softmax = lp.Softmax(resnet(images))
     ce = lp.CrossEntropy([softmax, labels])
     top1 = lp.CategoricalAccuracy([softmax, labels])
