@@ -238,7 +238,7 @@ message Model {
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
-  int64 procs_per_model = 51;
+  int64 procs_per_trainer = 51;
   int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
@@ -461,7 +461,7 @@ message CallbackDispIOStats {
 }
 
 message CallbackImComm {
-  string intermodel_comm_method = 1;
+  string intertrainer_comm_method = 1;
   bool all_optimizers = 2;
 }
 

@@ -15,6 +15,8 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
     # NVCC in CUDA 9.1 does not support GCC versions later than 6
     COMPILER=gnu
     module load gcc/4.9.3
+elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
+    module load gcc/7.3.1
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -441,9 +443,9 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
 			# no power9 option shown in the manual
-            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
-            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
-            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
+            C_FLAGS="${C_FLAGS} -mcpu=power9 -mtune=power9"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power9 -mtune=power9"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power9 -mtune=power9"
         fi
     fi
 else

@@ -45,7 +45,7 @@ void lbann_callback_io::on_epoch_end(model *m) {
        || m_layer_indices.find(layer) != m_layer_indices.end()) {
       auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
-        std::cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
+        std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_trained() << " training samples of "
                   << input->get_total_num_training_samples() << " ("
                   << input->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << std::endl;
@@ -61,7 +61,7 @@ void lbann_callback_io::on_test_end(model *m) {
        || m_layer_indices.find(layer) != m_layer_indices.end()) {
       auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
-        std::cout << "Rank " << comm->get_model_rank() << "." << comm->get_rank_in_model() << " processed "
+        std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_tested() << " test samples of "
                   << input->get_total_num_testing_samples() << " ("
                   << input->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << std::endl;

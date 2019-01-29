@@ -1,0 +1,108 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - protobuf@3.6.1 build_type=Release +shared
+  - aluminum@master build_type=RelWithDebInfo +gpu+mpi_cuda~nccl
+  - hydrogen@develop+al blas=openblas build_type=Release +cuda+hybrid+int64~int64_blas~mpfr~omp_taskloops+openmp_blas~quad~scalapack+shared~test
+  - conduit@master+cmake~doc~doxygen+hdf5+mpi+python+shared~silo
+  - cnpy@master build_type=RelWithDebInfo
+  - opencv@3.4.3 build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png+powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab+vsx~vtk+zlib
+  - cereal@1.2.2 build_type=RelWithDebInfo patches=2dfa0bff9816d0ebd8a1bcc70ced4483b3cda83a982ea5027f1aaadceaa15aac,720265382f29b744488d67e8df5000f2ca1b4dceb2018835fb5dc7a3a1c23f75,91f968e9ac3964e1a689a9ad379ab16f7803ac3d34d24f87ebcaecaa3f9a2f16
+  - ninja@1.8.2
+  - zlib@1.2.11
+  mirrors: {}
+  modules:
+    enable: []
+  repos: []
+  config: {}
+################################################################################
+# Include paths to standard compilers and packages on LLNL LC systems
+# Remove and/or replace these with your site specific packages and paths
+################################################################################ 
+#  include:
+#    - externals_llnl_lc_cz.yaml
+  packages:
+    all:
+      providers:
+        mpi: [spectrum-mpi@rolling-release arch=linux-rhel-ppc64le, mvapich2@2.3 arch=linux-rhel7-x86_64]
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: [gcc@7.3.0 arch=linux-rhel7-x86_64, gcc@7.3.1 arch=linux-rhel-ppc64le]
+      
+    cmake:
+      variants: ~openssl ~ncurses
+      paths:
+        cmake@3.12.1 arch=linux-rhel7-x86_64:  /usr/tce/packages/cmake/cmake-3.12.1
+
+    mvapich2:
+      buildable: True
+      version: [2.3]
+      paths:
+        mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-x86_64: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
+
+    hwloc:
+      buildable: False
+      version: [2.0.2]
+      paths:
+        hwloc@2.0.2 arch=linux-rhel7-x86_64: /usr/lib64/libhwloc.so
+
+    cuda:
+      buildable: False
+      version: [9.2.88, 10.0.130]
+      paths:
+        cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
+        cuda@9.2.88 arch=linux-rhel-ppc64le: /usr/tce/packages/cuda/cuda-9.2.88/
+
+    cudnn:
+      buildable: False
+      version: [7.4.2]
+      paths:
+        cudnn@7.4.2 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-10.0_x86_64
+        cudnn@7.4.2 arch=linux-rhel-ppc64le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppc64le
+
+    nccl:
+      buildable: False
+      version: [2.3]
+      paths:
+        nccl@2.3 arch=linux-rhel7-x84_64: /usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda10.0_x86_64
+        nccl@2.3 arch=linux-rhel7-ppc64le: /usr/workspace/wsb/brain/nccl2/nccl_2.2.13-1+cuda9.2_ppc64le
+
+    spectrum-mpi:
+      buildable: False
+      version: [rolling-release]
+      paths:
+        spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel-ppc64le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
+          
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-7.3.0/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
+      spec: gcc@7.3.0
+      target: x86_64
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-7.3.1/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
+      spec: gcc@7.3.1
+      target: ppc64le

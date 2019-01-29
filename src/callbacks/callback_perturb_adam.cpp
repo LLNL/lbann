@@ -95,7 +95,7 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
 
   // Perturb hyperparameters on master process
   std::vector<DataType> hyperparameters(4);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
 
     // Useful constants
     // Note: half_epsilon is the difference between 1.0 and the next
@@ -148,7 +148,7 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
   }
 
   // Communicate hyperparameters from master processes
-  comm.model_broadcast(comm.get_model_master(),
+  comm.trainer_broadcast(comm.get_trainer_master(),
                        hyperparameters.data(),
                        hyperparameters.size());
 

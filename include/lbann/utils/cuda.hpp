@@ -83,10 +83,19 @@
     }                                                           \
     LBANN_CUDA_SYNC(false);                                     \
   } while (0)
+#define FORCE_CHECK_CUDA_NOSYNC(cuda_call)                      \
+  do {                                                          \
+    cudaError_t status_CHECK_CUDA = (cuda_call);                \
+    if (status_CHECK_CUDA != cudaSuccess) {                     \
+      LBANN_ERROR(std::string("CUDA error (")                   \
+                  + cudaGetErrorString(status_CHECK_CUDA)       \
+                  + std::string(")"));                          \
+    }                                                           \
+  } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA(cuda_call);
 #else
-#define CHECK_CUDA(cuda_call) (cuda_call)
+#define CHECK_CUDA(cuda_call) FORCE_CHECK_CUDA_NOSYNC(cuda_call)
 #endif // #ifdef LBANN_DEBUG
 
 namespace lbann {
