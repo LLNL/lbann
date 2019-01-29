@@ -137,7 +137,7 @@ def _create_layer_subclass(type_name):
 
     # Sub-class constructor.
     def __init__(self, parents=[], children=[], weights=[],
-                 name='', data_layout='data_parallel', hint_layer=None,
+                 name=None, data_layout='data_parallel', hint_layer=None,
                  **kwargs):
         Layer.__init__(self, parents, children, weights,
                        name, data_layout, hint_layer)
@@ -292,7 +292,7 @@ class Weights:
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, initializer=None, optimizer=None, name=''):
+    def __init__(self, initializer=None, optimizer=None, name=None):
         Weights.global_count += 1
         self.name = name if name else 'weights{0}'.format(Weights.global_count)
         self.initializer = initializer
@@ -416,7 +416,7 @@ class Metric:
 
     """
 
-    def __init__(self, layer, name='', unit=''):
+    def __init__(self, layer, name=None, unit=''):
         """Initialize a metric based of off layer."""
         self.layer = layer
         self.name = name if name else self.layer.name
@@ -517,10 +517,10 @@ def save_model(filename, mini_batch_size, epochs,
     # Initialize protobuf message
     pb = lbann_pb2.LbannPB()
     pb.model.mini_batch_size = mini_batch_size
-    pb.model.block_size = 256  # TODO: Make configurable.
     pb.model.num_epochs = epochs
-    pb.model.num_parallel_readers = 0  # TODO: Make configurable
-    pb.model.procs_per_model = 0  # TODO: Make configurable
+    pb.model.block_size = 256           # TODO: Make configurable.
+    pb.model.num_parallel_readers = 0   # TODO: Make configurable
+    pb.model.procs_per_trainer = 0      # TODO: Make configurable
 
     # Add layers
     layers = list(traverse_layer_graph(layers))
