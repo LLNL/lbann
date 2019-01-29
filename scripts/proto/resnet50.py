@@ -2,7 +2,7 @@ import lbann_proto as lp
 import lbann_modules as lm
 
 # ==============================================
-# ResNet-specific modules
+# Helper modules
 # ==============================================
 
 class ConvBNRelu(lm.Module):
@@ -188,6 +188,10 @@ class BottleneckBlock(lm.Module):
         z = lp.Add([y1, y2],
                    name='{0}_sum_instance{1}'.format(self.name,self.instance))
         return lp.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
+
+# ==============================================
+# ResNet modules
+# ==============================================
 
 class ResNet(lm.Module):
     """Residual neural network.
@@ -466,25 +470,42 @@ class ResNet152(ResNet):
                          name)
 
 # ==============================================
-# Construct model
+# Export model prototext
 # ==============================================
 
 if __name__ == '__main__':
 
     # Options
-    model_file = 'model.prototext'
-    output_size = 1000
-    bn_stats_aggregation = 'local'
-    zero_init_residual=False
-    resnet_variant = 18
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', help='exported prototext file')
+    parser.add_argument(
+        '--resnet',
+        action='store', default=50, type=int,
+        choices=(18, 34, 50, 101, 152),
+        help='ResNet variant (default: 50)')
+    parser.add_argument(
+        '--num-labels', action='store', default=1000, type=int,
+        help='number of data classes (default: 1000)')
+    parser.add_argument(
+        '--bn-stats-aggregation',
+        action='store', default='local', type=str,
+        help=('aggregation mode for batch normalization statistics '
+              '(default: "local")'))
+    parser.add_argument(
+        '--disable-zero-init-residual',
+        action='store_false',
+        help='initialize all batch normalization scales with ones',
+        dest='zero_init_residual')
+    args = parser.parse_args()
 
     # Choose ResNet variant
     resnet_variant_dict = {18: ResNet18, 34: ResNet34,
                            50: ResNet50, 101: ResNet101, 152: ResNet152}
-    resnet = resnet_variant_dict[resnet_variant](
-        output_size,
-        zero_init_residual=zero_init_residual,
-        bn_stats_aggregation=bn_stats_aggregation)
+    resnet = resnet_variant_dict[args.resnet](
+        args.num_labels,
+        zero_init_residual=args.zero_init_residual,
+        bn_stats_aggregation=args.bn_stats_aggregation)
 
     # Construct layer graph.
     input = lp.Input(io_buffer='partitioned')
@@ -513,6 +534,6 @@ if __name__ == '__main__':
                      drop_epoch=[30, 60, 80], amt=0.1)]
 
     # Export model to file
-    lp.save_model(model_file, 256, 90,
+    lp.save_model(args.file, 256, 100,
                   layers=layers, objective_function=obj,
                   metrics=metrics, callbacks=callbacks)
