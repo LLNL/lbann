@@ -13,7 +13,7 @@ spack:
   - ninja@1.8.2
   - zlib@1.2.11
   - openblas@0.3.4 cpu_target=auto ~ilp64+pic+shared threads=none ~virtual_machine
-  - cuda@10.0.130
+  - cuda@9.2.88
   - cudnn@7.4.2
   - cub@1.7.1
   - nccl@2.3.7-1
