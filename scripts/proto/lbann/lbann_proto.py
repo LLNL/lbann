@@ -517,10 +517,10 @@ def save_model(filename, mini_batch_size, epochs,
     # Initialize protobuf message
     pb = lbann_pb2.LbannPB()
     pb.model.mini_batch_size = mini_batch_size
-    pb.model.block_size = 256  # TODO: Make configurable.
     pb.model.num_epochs = epochs
-    pb.model.num_parallel_readers = 0  # TODO: Make configurable
-    pb.model.procs_per_model = 0  # TODO: Make configurable
+    pb.model.block_size = 256           # TODO: Make configurable.
+    pb.model.num_parallel_readers = 0   # TODO: Make configurable
+    pb.model.procs_per_trainer = 0      # TODO: Make configurable
 
     # Add layers
     layers = list(traverse_layer_graph(layers))

@@ -169,11 +169,11 @@ class BottleneckBlock(lm.Module):
             self.branch1 = None
 
         # Residual branch
-        self.branch2a = ConvBNRelu(mid_channels, 1,
-                                   (2 if downsample else 1), 0,
+        self.branch2a = ConvBNRelu(mid_channels, 1, 1, 0,
                                    False, bn_stats_aggregation,
                                    True, self.name + '_branch2a')
-        self.branch2b = ConvBNRelu(mid_channels, 3, 1, 1,
+        self.branch2b = ConvBNRelu(mid_channels, 3,
+                                   (2 if downsample else 1), 1,
                                    False, bn_stats_aggregation,
                                    True, self.name + '_branch2b')
         self.branch2c = ConvBNRelu(self.out_channels, 1, 1, 0,
@@ -285,7 +285,7 @@ class ResNet18(ResNet):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, output_size,
-                 zero_init_residual=False,
+                 zero_init_residual=True,
                  bn_stats_aggregation='local',
                  name=None):
         """Initialize ResNet-18.
@@ -325,7 +325,7 @@ class ResNet34(ResNet):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, output_size,
-                 zero_init_residual=False,
+                 zero_init_residual=True,
                  bn_stats_aggregation='local',
                  name=None):
         """Initialize ResNet-34.
@@ -365,7 +365,7 @@ class ResNet50(ResNet):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, output_size,
-                 zero_init_residual=False,
+                 zero_init_residual=True,
                  bn_stats_aggregation='local',
                  name=None):
         """Initialize ResNet-50.
@@ -405,7 +405,7 @@ class ResNet101(ResNet):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, output_size,
-                 zero_init_residual=False,
+                 zero_init_residual=True,
                  bn_stats_aggregation='local',
                  name=None):
         """Initialize ResNet-101.
@@ -445,7 +445,7 @@ class ResNet152(ResNet):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, output_size,
-                 zero_init_residual=False,
+                 zero_init_residual=True,
                  bn_stats_aggregation='local',
                  name=None):
         """Initialize ResNet-152.
@@ -470,7 +470,7 @@ class ResNet152(ResNet):
                          name)
 
 # ==============================================
-# Export model prototext
+# Export prototext
 # ==============================================
 
 if __name__ == '__main__':
@@ -478,7 +478,10 @@ if __name__ == '__main__':
     # Options
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('file', help='exported prototext file')
+    parser.add_argument(
+        'file',
+        nargs='?', default='model.prototext', type=str,
+        help='exported prototext file')
     parser.add_argument(
         '--resnet',
         action='store', default=50, type=int,
@@ -492,11 +495,6 @@ if __name__ == '__main__':
         action='store', default='local', type=str,
         help=('aggregation mode for batch normalization statistics '
               '(default: "local")'))
-    parser.add_argument(
-        '--disable-zero-init-residual',
-        action='store_false',
-        help='initialize all batch normalization scales with ones',
-        dest='zero_init_residual')
     args = parser.parse_args()
 
     # Choose ResNet variant
@@ -504,7 +502,6 @@ if __name__ == '__main__':
                            50: ResNet50, 101: ResNet101, 152: ResNet152}
     resnet = resnet_variant_dict[args.resnet](
         args.num_labels,
-        zero_init_residual=args.zero_init_residual,
         bn_stats_aggregation=args.bn_stats_aggregation)
 
     # Construct layer graph.
