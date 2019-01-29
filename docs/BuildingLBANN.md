@@ -96,7 +96,7 @@ The following LLNL-maintained packages are optional.
     files and remove the externals and compilers from the spack.yaml
     file. See [here](spack_environment.md) for details.
 
-  + Note that the initial build of all of the standard packages in spack 
+  + Note that the initial build of all of the standard packages in spack
     will take a while.
 
   + Note that the spack module files set the LIBRARY_PATH environment
@@ -139,6 +139,7 @@ The following LLNL-maintained packages are optional.
           -D LBANN_DATATYPE=float \
           -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
           ${LBANN_HOME}/superbuild
+        ninja
 
 ## Building with [CMake](https://cmake.org)
 
