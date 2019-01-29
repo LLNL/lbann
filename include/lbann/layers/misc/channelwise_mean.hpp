@@ -41,7 +41,7 @@ public:
     static_assert(Layout == data_layout::DATA_PARALLEL,
                   "channelwise_mean_layer only supports "
                   "data-parallel data layout");
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       LBANN_WARNING("channelwise_mean_layer is experimental "
                     "and may be deprecated at any time");
     }

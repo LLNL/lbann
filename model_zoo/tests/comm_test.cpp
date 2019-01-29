@@ -74,20 +74,20 @@ void test_creation() {
 /** Verify ranks are all reasonable. */
 void test_ranks() {
   lbann_comm *comm = init_comm();
-  int model_rank = comm->get_model_rank();
+  int model_rank = comm->get_trainer_rank();
   ASSERT_TRUE(model_rank >= 0);
   ASSERT_TRUE(model_rank < LBANN_COMM_TEST_PROCS);
-  int rank_in_model = comm->get_rank_in_model();
+  int rank_in_model = comm->get_rank_in_trainer();
   ASSERT_TRUE(rank_in_model >= 0);
   ASSERT_TRUE(rank_in_model < LBANN_COMM_TEST_PPM);
-  ASSERT_TRUE(comm->get_num_models() == LBANN_COMM_TEST_NUM_MODELS);
+  ASSERT_TRUE(comm->get_num_trainers() == LBANN_COMM_TEST_NUM_MODELS);
   fini_comm(comm);
 }
 
 /** Verify the grid is valid. */
 void test_grid() {
   lbann_comm *comm = init_comm();
-  Grid& grid = comm->get_model_grid();
+  Grid& grid = comm->get_trainer_grid();
   ASSERT_TRUE(grid.Size() == LBANN_COMM_TEST_PPM);
   fini_comm(comm);
 }
@@ -95,32 +95,32 @@ void test_grid() {
 /** Verify matrices work properly. */
 void test_mat() {
   lbann_comm *comm = init_comm();
-  DistMat mat(comm->get_model_grid());
+  DistMat mat(comm->get_trainer_grid());
   create_mat(mat, 42.0);
-  ASSERT_EQ(mat.DistRank(), comm->get_rank_in_model());
+  ASSERT_EQ(mat.DistRank(), comm->get_rank_in_trainer());
   // Only validates the local portion.
   validate_mat(mat, 42.0);
   fini_comm(comm);
 }
 
 /** Verify inter-model matrix summation works. */
-void test_intermodel_sum_matrix() {
+void test_intertrainer_sum_matrix() {
   lbann_comm *comm = init_comm();
-  DistMat mat(comm->get_model_grid());
+  DistMat mat(comm->get_trainer_grid());
   create_mat(mat);
-  comm->intermodel_barrier();
-  comm->intermodel_sum_matrix(mat);
+  comm->intertrainer_barrier();
+  comm->intertrainer_sum_matrix(mat);
   validate_mat(mat, (float) LBANN_COMM_TEST_NUM_MODELS);
   fini_comm(comm);
 }
 
 /** Verify inter-model matrix broadcast works. */
-void test_intermodel_broadcast_matrix() {
+void test_intertrainer_broadcast_matrix() {
   lbann_comm *comm = init_comm();
-  DistMat mat(comm->get_model_grid());
-  create_mat(mat, (float) comm->get_model_rank());
-  comm->intermodel_barrier();
-  comm->intermodel_broadcast_matrix(mat, 0);
+  DistMat mat(comm->get_trainer_grid());
+  create_mat(mat, (float) comm->get_trainer_rank());
+  comm->intertrainer_barrier();
+  comm->intertrainer_broadcast_matrix(mat, 0);
   validate_mat(mat, (float) 0);  // Should come from the 0'th model.
   fini_comm(comm);
 }
@@ -128,15 +128,15 @@ void test_intermodel_broadcast_matrix() {
 /** Verify sends/receives of blob data work. */
 void test_send_recv_blob() {
   lbann_comm *comm = init_comm();
-  int send_model = (comm->get_model_rank() + 1) % LBANN_COMM_TEST_NUM_MODELS;
-  int recv_model = (comm->get_model_rank() + LBANN_COMM_TEST_NUM_MODELS - 1) %
+  int send_model = (comm->get_trainer_rank() + 1) % LBANN_COMM_TEST_NUM_MODELS;
+  int recv_model = (comm->get_trainer_rank() + LBANN_COMM_TEST_NUM_MODELS - 1) %
                    LBANN_COMM_TEST_NUM_MODELS;
   int send_data = 42;
   int recv_data = 0;
   El::SyncInfo<El::Device::CPU> syncInfoCPU;
   // Test sends/recvs with full model/rank spec.
-  comm->send(&send_data, 1, send_model, comm->get_rank_in_model(), syncInfoCPU);
-  comm->recv(&recv_data, 1, recv_model, comm->get_rank_in_model(), syncInfoCPU);
+  comm->send(&send_data, 1, send_model, comm->get_rank_in_trainer(), syncInfoCPU);
+  comm->recv(&recv_data, 1, recv_model, comm->get_rank_in_trainer(), syncInfoCPU);
   ASSERT_EQ(send_data, recv_data);
   // Test sends/recvs with only the model.
   recv_data = 0;
@@ -145,7 +145,7 @@ void test_send_recv_blob() {
   ASSERT_EQ(send_data, recv_data);
   // Test with receiving from anywhere.
   recv_data = 0;
-  comm->send(&send_data, 1, send_model, comm->get_rank_in_model(), syncInfoCPU);
+  comm->send(&send_data, 1, send_model, comm->get_rank_in_trainer(), syncInfoCPU);
   comm->recv(&recv_data, 1, syncInfoCPU);
   ASSERT_EQ(send_data, recv_data);
   fini_comm(comm);
@@ -154,22 +154,22 @@ void test_send_recv_blob() {
 /** Verify sends/receives of matrices work. */
 void test_send_recv_mat() {
   lbann_comm *comm = init_comm();
-  int send_model = (comm->get_model_rank() + 1) % LBANN_COMM_TEST_NUM_MODELS;
-  int recv_model = (comm->get_model_rank() + LBANN_COMM_TEST_NUM_MODELS - 1) %
+  int send_model = (comm->get_trainer_rank() + 1) % LBANN_COMM_TEST_NUM_MODELS;
+  int recv_model = (comm->get_trainer_rank() + LBANN_COMM_TEST_NUM_MODELS - 1) %
                    LBANN_COMM_TEST_NUM_MODELS;
-  DistMat send_mat(comm->get_model_grid());
-  DistMat recv_mat(comm->get_model_grid());
-  create_mat(send_mat, (float) comm->get_model_rank());
+  DistMat send_mat(comm->get_trainer_grid());
+  DistMat recv_mat(comm->get_trainer_grid());
+  create_mat(send_mat, (float) comm->get_trainer_rank());
   create_mat(recv_mat, (DataType) 42.0);
-  comm->send(send_mat, send_model, comm->get_rank_in_model());
-  comm->recv(recv_mat, recv_model, comm->get_rank_in_model());
+  comm->send(send_mat, send_model, comm->get_rank_in_trainer());
+  comm->recv(recv_mat, recv_model, comm->get_rank_in_trainer());
   validate_mat(recv_mat, (float) recv_model);
   El::Fill(recv_mat, (DataType) 42.0);
   comm->send(send_mat, send_model);
   comm->recv(recv_mat, recv_model);
   validate_mat(recv_mat, (float) recv_model);
   El::Fill(recv_mat, (DataType) 42.0);
-  comm->send(send_mat, send_model, comm->get_rank_in_model());
+  comm->send(send_mat, send_model, comm->get_rank_in_trainer());
   comm->recv(recv_mat);
   validate_mat(recv_mat, (float) recv_model);
   fini_comm(comm);
@@ -184,8 +184,8 @@ int main(int argc, char **argv) {
     test_ranks();
     test_grid();
     test_mat();
-    test_intermodel_sum_matrix();
-    test_intermodel_broadcast_matrix();
+    test_intertrainer_sum_matrix();
+    test_intertrainer_broadcast_matrix();
     test_send_recv_blob();
     test_send_recv_mat();
     El::mpi::Barrier(El::mpi::COMM_WORLD);
