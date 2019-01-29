@@ -75,7 +75,7 @@ weights::weights(lbann_comm* comm)
   m_matrix_dist.colCut = 0;
   m_matrix_dist.rowCut = 0;
   m_matrix_dist.root = 0;
-  m_matrix_dist.grid = &(comm->get_model_grid());
+  m_matrix_dist.grid = &(comm->get_trainer_grid());
   m_matrix_dist.device = El::Device::CPU;
 
 }

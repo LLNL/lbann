@@ -47,7 +47,7 @@ void lbann_callback_dump_weights::dump_weights(model *m, std::string s) {
     }
     const std::string file
       = (m_basename
-         + "model" + std::to_string(m->get_comm()->get_model_rank())
+         + "model" + std::to_string(m->get_comm()->get_trainer_rank())
          + epoch
          + "-" + w->get_name()
          + "-Weights");
