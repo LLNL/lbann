@@ -73,13 +73,19 @@ The following LLNL-maintained packages are optional.
 
         ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
 
-+ Establish a spack environment and install software dependencies:
++ Establish a spack environment and install software dependencies.
+  Note that there are four environments to pick from along two axis:
+  1) developers or users and 2) x86_64 and ppc64le.  For example if
+  you are a developer and want to build the inside of the git repo use
+  the following instructions:
 
-        mkdir <build_dir>
-        cd <build_dir>
-        spack env create -d . /path/to/lbann/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+        export LBANN_HOME=<path to lbann git repo>
+        export LBANN_BUILD_DIR=<path to a directory>
+        export LBANN_INSTALL_DIR=<path to a directory>
+        cd ${LBANN_BUILD_DIR}
+        spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
         spack install
-        spack env loads
+        spack env loads # Spack creates a file named loads that has all of the correct modules
         source loads
         unset LIBRARY_PATH
 
@@ -103,9 +109,10 @@ The following LLNL-maintained packages are optional.
          cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
 
 + Build LBANN locally from source and build Hydrogen and Aluminum
-  using the superbuild.  See below for a list and descriptions of
-  all CMake flags known to LBANN's build system. An example build
-  might be:
+  using the superbuild.  See below for a list and descriptions of all
+  CMake flags known to LBANN's build system. An example build that
+  expects LBANN_HOME, LBANN_BUILD_DIR, LBANN_INSTALL_DIR environment
+  variables might be:
 
         cmake \
           -G Ninja \
@@ -130,8 +137,8 @@ The following LLNL-maintained packages are optional.
           -D LBANN_WITH_TBINF=OFF \
           -D LBANN_WITH_VTUNE:BOOL=OFF \
           -D LBANN_DATATYPE=float \
-          -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
-          /path/to/lbann/superbuild
+          -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
+          ${LBANN_HOME}/superbuild
 
 ## Building with [CMake](https://cmake.org)
 
