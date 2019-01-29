@@ -97,10 +97,12 @@ class FullyConnectedModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.HeNormalInitializer()))
+                lp.Weights(initializer=lp.HeNormalInitializer(),
+                           name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.ConstantInitializer(value=0.0)))
+                lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
+                           name=self.name+'_bias'))
 
         # Initialize activation layer
         self.activation = None
@@ -185,10 +187,12 @@ class Convolution2dModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.HeNormalInitializer()))
+                lp.Weights(initializer=lp.HeNormalInitializer(),
+                           name=self.name+'_kernel'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.ConstantInitializer(value=0.0)))
+                lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
+                           name=self.name+'_bias'))
 
         # Initialize activation layer
         self.activation = None
