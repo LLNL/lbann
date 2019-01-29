@@ -1,13 +1,11 @@
-import re
-import os
-import sys
 import unittest
 import onnx
+import re
 
 import lbann.onnx
 import lbann.onnx.o2l
-from lbann.onnx.util import getLbannRoot, list2LbannList, lbannList2List
-
+from lbann.onnx.util import lbannList2List
+from lbann.onnx.tests.util import getLbannVectorField
 import lbann.lbann_proto as lp
 
 def makeFloatTensorVI(name, shape):
@@ -36,13 +34,6 @@ def convertOnnxNode(node, inputs, params):
     return layers[-1]
 
 
-def getVectorField(fields, name):
-    if fields.has_vectors:
-        return getattr(fields, name)
-
-    else:
-        return list2LbannList([getattr(fields, "{}_i".format(name))])
-
 class TestOnnx2LbannLayer(unittest.TestCase):
     def _assertFields(self, lbannFields, onnxFields):
         hasVectors = False
@@ -61,8 +52,8 @@ class TestOnnx2LbannLayer(unittest.TestCase):
             onnxField  = getattr(onnxFields,  fieldName)
 
             if hasVectors and "{}_i".format(fieldName) in lbannFields.get_field_names():
-                lbannField = lbannList2List(getVectorField(lbannFields, fieldName))
-                onnxField = lbannList2List(getVectorField(onnxFields, fieldName))
+                lbannField = lbannList2List(getLbannVectorField(lbannFields, fieldName))
+                onnxField = lbannList2List(getLbannVectorField(onnxFields, fieldName))
                 if len(lbannField) < len(onnxField):
                     assert len(lbannField) == 1
                     lbannField *= len(onnxField)
@@ -79,7 +70,7 @@ class TestOnnx2LbannLayer(unittest.TestCase):
 
             assertFunc = self.assertEqual
             if isinstance(lbannField, float) and isinstance(onnxField, float):
-                   assertFunc = self.assertAlmostEqual
+                assertFunc = self.assertAlmostEqual
 
             assertFunc(
                 lbannField,

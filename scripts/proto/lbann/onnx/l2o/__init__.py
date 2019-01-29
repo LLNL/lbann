@@ -73,13 +73,11 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
                 l.gaussian.neuron_dims = list2LbannList(dims)
 
             else:
-                lbann.onnx.util.printWarning("\"hint_layer\" is supported only for fully_connected or gaussian.")
-                exit()
+                raise NotImplementedError("\"hint_layer\" is supported only for fully_connected or gaussian.")
 
         if l.num_neurons_from_data_reader:
             if not l.HasField("fully_connected"):
-                lbann.onnx.util.printWarning("\"num_neurons_from_data_reader\" in non-fully-connected layers are not supported.")
-                exit()
+                raise NotImplementedError("\"num_neurons_from_data_reader\" in non-fully-connected layers are not supported.")
 
             assert len(inputs) > 0
             dims = lbann.onnx.util.getDimFromValueInfo(inputs[0])
@@ -119,7 +117,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
 
     return o, miniBatchSize
 
-def parseLbannLayer(l, tensorShapes, knownNodes):
+def parseLbannLayer(l, tensorShapes, knownNodes=[]):
     if any(map(lambda x: l.HasField(x), ["input",
                                          "identity", # LBANN's "identity" does not have outputs
                                          "dummy"])):
@@ -127,10 +125,8 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
 
     if l.HasField("split"):
         if l.name not in tensorShapes.keys():
-            lbann.onnx.util.printWarning("The shape of \"{}\" cannot be inferred.".format(l.name) \
-                                       + " This error may happen when you set incorret an input tensor name.")
-            lbann.onnx.util.printParsingState(l, tensorShapes)
-            exit()
+            raise RuntimeError("The shape of \"{}\" cannot be inferred.".format(l.name) \
+                               + " This error may happen when you set incorret an input tensor name.")
 
         ipt = onnx.helper.make_tensor_value_info(name="{}_0".format(l.name),
                                                  elem_type=lbann.onnx.ELEM_TYPE,
@@ -146,9 +142,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
         if l.HasField(f):
             for i in lbannInputs:
                 if not i in tensorShapes.keys():
-                    lbann.onnx.util.printWarning("The shape of \"{}\" cannot be inferred.".format(i))
-                    lbann.onnx.util.printParsingState(l, tensorShapes)
-                    exit()
+                    raise RuntimeError("The shape of \"{}\" cannot be inferred.".format(i))
 
             p = PARSERS[f](l,
                            f,

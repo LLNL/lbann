@@ -1,5 +1,6 @@
 import os
-from lbann.onnx.util import parseBoolEnvVar
+import unittest
+from lbann.onnx.util import parseBoolEnvVar, list2LbannList
 
 DUMPED_MODELS_DIR = "dumped_models"
 
@@ -11,3 +12,10 @@ def createAndGetDumpedModelsDir():
         os.mkdir(DUMPED_MODELS_DIR)
 
     return DUMPED_MODELS_DIR
+
+def getLbannVectorField(fields, name):
+    if fields.has_vectors:
+        return getattr(fields, name)
+
+    else:
+        return list2LbannList([getattr(fields, "{}_i".format(name))])

@@ -22,17 +22,21 @@ import re
 import unittest
 
 from lbann.onnx.tests.onnx2lbann_layer_test import TestOnnx2LbannLayer
+from lbann.onnx.tests.lbann2onnx_layer_test import TestLbann2OnnxLayer
 from lbann.onnx.o2l.layers import PARSERS as PARSERS_o2l
 from lbann.onnx.l2o.layers import PARSERS as PARSERS_l2o
 
 def getTestedO2LLayers():
-    return set(map(lambda x: x.group(1).split("_")[0],
+    return set(map(lambda x: x.group(1),
                    filter(lambda x: x is not None,
                           map(lambda x: re.compile("test_o2l_layer_(.+)").match(x),
                               dir(TestOnnx2LbannLayer())))))
 
-def getTestedL2oLayers():
-    return set([])
+def getTestedL2OLayers():
+    return set(map(lambda x: x.group(1),
+                   filter(lambda x: x is not None,
+                          map(lambda x: re.compile("test_l2o_layer_(.+)").match(x),
+                              dir(TestLbann2OnnxLayer())))))
 
 def addLinkToOnnxOperator(op):
     return "[{}](https://github.com/onnx/onnx/blob/master/docs/Operators.md#{})".format(op, op)
@@ -45,25 +49,26 @@ def createTable(o2l):
         "| {} | Converted {} | Supported | Tested | Bijective |".format(
             onnxOp if o2l else lbannOp,
             lbannOp if o2l else onnxOp,
-            ),
+        ),
         "|---|---|:-:|:-:|:-:|",
     ]
 
     bijections = getBijections(PARSERS_o2l if o2l else PARSERS_l2o,
                                PARSERS_l2o if o2l else PARSERS_o2l)
-    testedParsers = getTestedO2LLayers() if o2l else getTestedL2oLayers()
+    testedParsers = getTestedO2LLayers() if o2l else getTestedL2OLayers()
     for l, p in (PARSERS_o2l if o2l else PARSERS_l2o).items():
         converted = ", ".join(list(map(lambda x: x if o2l else addLinkToOnnxOperator(x),
                                        p.convertedLayers)))
         if p.arithmetic:
             converted = "[Multiple operators]"
 
+        tested = any([re.compile(l).match(x) is not None for x in testedParsers])
         lines.append(
             "| {} | {} | {} | {} | {} | ".format(
                 addLinkToOnnxOperator(l) if o2l else l,
                 converted,
                 "✔" if not p.stub else "",
-                "✔" if l in testedParsers else "",
+                "✔" if tested else "",
                 "✔" if l in bijections else "",
             )
         )
