@@ -113,8 +113,8 @@ public:
       m_dilations(dilations),
       m_num_groups(groups),
       m_bias_scaling_factor(has_bias ? DataType(1) : DataType(0)),
-      m_kernel_gradient(this->m_comm->get_model_grid()),
-      m_bias_gradient(this->m_comm->get_model_grid())
+      m_kernel_gradient(this->m_comm->get_trainer_grid()),
+      m_bias_gradient(this->m_comm->get_trainer_grid())
 #ifdef LBANN_HAS_CUDNN
     , m_kernel_cudnn_desc(nullptr),
       m_convolution_cudnn_desc(nullptr),

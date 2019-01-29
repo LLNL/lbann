@@ -40,7 +40,7 @@ void pilot2_molecular_reader::load() {
   // support for data store functionality: when not using data store, all procs
   // load the data; when using data store, only one does so
   bool is_mine = true;
-  int rank = m_comm->get_rank_in_model();
+  int rank = m_comm->get_rank_in_trainer();
   // note: when support for merge_samples is in place, the condition
   //       "get_role() == "test" will go away. For now we need it, else
   //       merge_samples will break
@@ -135,7 +135,7 @@ void pilot2_molecular_reader::load() {
       tmp[6] = m_word_size;
       tmp[7] = m_neighbors_data_size;
     }
-    MPI_Bcast(tmp.data(), 8, MPI_INT, get_compound_rank(), m_comm->get_model_comm().comm);
+    MPI_Bcast(tmp.data(), 8, MPI_INT, get_compound_rank(), m_comm->get_trainer_comm().comm);
     m_num_samples = tmp[0];
     m_num_samples_per_frame = tmp[1];
     m_num_features = tmp[2];

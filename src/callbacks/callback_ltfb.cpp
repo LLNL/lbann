@@ -47,8 +47,8 @@ El::Int get_partner_trainer(lbann_comm& comm,
     // Note: The first trainer in 'trainers' is paired with the
     // second, the third with the fourth, and so on. If there are an
     // odd number of trainers, the last one is partnered with itself.
-    const El::Int num_trainers = comm.get_num_models();
-    const El::Int procs_per_trainer = comm.get_procs_per_model();
+    const El::Int num_trainers = comm.get_num_trainers();
+    const El::Int procs_per_trainer = comm.get_procs_per_trainer();
     std::vector<El::Int> trainers(num_trainers);
     std::iota(trainers.begin(), trainers.end(), 0);
     std::shuffle(trainers.begin(), trainers.end(), get_fast_generator());
@@ -99,8 +99,8 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
                                        std::vector<weights*>& recv_weights) {
 
   // Get partner process
-  const El::Int rank_in_trainer = comm.get_rank_in_model();
-  const El::Int procs_per_trainer = comm.get_procs_per_model();
+  const El::Int rank_in_trainer = comm.get_rank_in_trainer();
+  const El::Int procs_per_trainer = comm.get_procs_per_trainer();
   const El::Int partner_rank_in_world = (partner_trainer * procs_per_trainer
                                          + rank_in_trainer);
 
@@ -159,7 +159,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
                                       const std::vector<weights*>& local_weights) {
 
   // Checkpoint directories
-  const auto local_trainer = comm.get_model_rank();
+  const auto local_trainer = comm.get_trainer_rank();
   const auto step = m.get_cur_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
@@ -171,7 +171,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   // Save model checkpoint
   persist p;
   p.set_cb_type(callback_type::batch);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.open_checkpoint(send_dir.c_str());
   } else {
     std::strcpy(p.m_checkpoint_dir, send_dir.c_str());
@@ -181,7 +181,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Synchronize with partner trainer
   {
-    const auto rank_in_trainer = comm.get_rank_in_model();
+    const auto rank_in_trainer = comm.get_rank_in_trainer();
     DataType send = false, recv = false;
     comm.sendrecv(&send, 1, partner_trainer, rank_in_trainer,
                   &recv, 1, partner_trainer, rank_in_trainer,
@@ -190,13 +190,13 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Load model checkpoint from partner trainer
   p.set_cb_type(callback_type::batch);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.open_restart(recv_dir.c_str());
   } else {
     std::strcpy(p.m_checkpoint_dir, recv_dir.c_str());
   }
   m.load_from_checkpoint_shared(p);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.close_restart();
   }
 
@@ -218,7 +218,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
-  const auto local_trainer = comm.get_model_rank();
+  const auto local_trainer = comm.get_trainer_rank();
   const auto step = m.get_cur_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
@@ -227,13 +227,13 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
   // Load local model checkpoint
   persist p;
   p.set_cb_type(callback_type::batch);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.open_restart(checkpoint_dir.c_str());
   } else {
     std::strcpy(p.m_checkpoint_dir, checkpoint_dir.c_str());
   }
   m.load_from_checkpoint_shared(p);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     p.close_restart();
   }
 
@@ -358,7 +358,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   }
 
   // Determine partner model for tournament
-  const El::Int local_trainer = comm.get_model_rank();
+  const El::Int local_trainer = comm.get_trainer_rank();
   const El::Int partner_trainer
     = get_partner_trainer(comm, message_prefix);
 
@@ -426,7 +426,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
   }
 
   // Report tournament winner
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
     std::stringstream msg;
     msg << message_prefix
         << "trainer " << local_trainer << " "

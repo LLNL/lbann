@@ -20,6 +20,9 @@ Requirements:
   `pip3 install --user protobuf`.
 * A build of LBANN.
 
+Run `pip3 install --user -e .` on this directory to install this
+package.
+
 _Advanced users_: This requires the `lbann_pb2` Python module
 generated from `lbann.proto` using the `protoc` compiler. The LBANN
 build process should do this automatically, installing it to
@@ -28,8 +31,6 @@ heuristics to attempt to locate this if `lbann_pb2` is not in your
 default Python search path. If these fail, you should manually set
 your Python path to include the directory with `lbann_pb2` (e.g. by
 setting the `PYTHONPATH` environment variable).
-
-Run `pip3 install -e .` on this directory to install this package.
 
 # Use
 

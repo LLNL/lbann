@@ -4,8 +4,8 @@ model {
   block_size: 256
   num_epochs: 10
   num_parallel_readers: 1
-  #procs_per_model: 12
-  procs_per_model: 0
+  #procs_per_trainer: 12
+  procs_per_trainer: 0
   disable_cuda: true
 
   ###################################################

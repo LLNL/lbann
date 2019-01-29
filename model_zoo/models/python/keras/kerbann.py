@@ -14,7 +14,7 @@ def keras_to_lbann(model, num_classes,
         model_type='directed_acyclic_graph_model', data_layout="data_parallel",
         block_size=256, epochs=20,
         batch_size=64, num_parallel_readers=0,
-        procs_per_model=0, callbacks=['timer','print'], target='target'):
+        procs_per_trainer=0, callbacks=['timer','print'], target='target'):
     # set user passed parameters (currently set once for entire model
     pb.model.type = model_type
     pb.model.data_layout = data_layout
@@ -22,7 +22,7 @@ def keras_to_lbann(model, num_classes,
     pb.model.block_size = block_size
     pb.model.num_epochs = epochs
     pb.model.num_parallel_readers = num_parallel_readers
-    pb.model.procs_per_model = procs_per_model
+    pb.model.procs_per_trainer = procs_per_trainer
 
     if model.layers[0].name != 'input_1':
         l = pb.model.layer.add()

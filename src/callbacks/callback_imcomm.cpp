@@ -83,12 +83,12 @@ void lbann_callback_imcomm::setup(model *m) {
 
 void lbann_callback_imcomm::on_train_begin(model *m) {
   lbann_comm *comm = m->get_comm();
-  if (comm->get_num_models() == 1) {
+  if (comm->get_num_trainers() == 1) {
     return;  // No point with only one model.
   }
   for (weights *w : m->get_weights()) {
     AbsDistMat *values = w->get_values().Copy();
-    comm->intermodel_broadcast_matrix(*values, 0);
+    comm->intertrainer_broadcast_matrix(*values, 0);
     w->set_values(*values);
     delete values;
   }
@@ -96,7 +96,7 @@ void lbann_callback_imcomm::on_train_begin(model *m) {
 
 void lbann_callback_imcomm::on_backward_prop_end(model *m) {
   lbann_comm *comm = m->get_comm();
-  if (comm->get_num_models() == 1 ||
+  if (comm->get_num_trainers() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
@@ -111,7 +111,7 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
     Mat* local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
     switch (params.ct) {
     case NORMAL:
-      comm->intermodel_sum_matrix(*local_gradients);
+      comm->intertrainer_sum_matrix(*local_gradients);
       break;
     default:
       throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
