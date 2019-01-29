@@ -53,7 +53,7 @@ class ConvBNRelu(lm.Module):
         # Initialize ReLU
         self.relu = relu
 
-    def __call__(self, x):
+    def forward(self, x):
         self.instance += 1
         conv = self.conv(x)
         bn = lp.BatchNormalization(conv, weights=self.bn_weights,
