@@ -322,13 +322,12 @@ if (LBANN_WITH_CONDUIT)
   endif ()
 
   find_package(CONDUIT CONFIG
-    NAMES conduit
-    CONFIGS conduit.cmake
     HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
     NO_DEFAULT_PATH)
   if (NOT CONDUIT_FOUND)
-    find_package(CONDUIT CONFIG REQUIRED)
+    find_package(CONDUIT CONFIG REQUIRED
+      PATH_SUFFIXES lib64/cmake lib/cmake)
   endif ()
 
   # Ugh. I don't like that this requires intimate knowledge of
