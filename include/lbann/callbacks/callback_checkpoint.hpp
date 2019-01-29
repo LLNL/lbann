@@ -123,7 +123,7 @@ static inline std::string get_last_shared_checkpoint_filename(model *m, std::str
   std::stringstream ss;
   ss << dir << "/";
   ss << m->get_name().c_str() << ".";
-  ss << comm->get_model_rank() << ".last.shared.checkpoint";
+  ss << comm->get_trainer_rank() << ".last.shared.checkpoint";
   return ss.str();
 }
 
@@ -131,7 +131,7 @@ static inline std::string get_shared_checkpoint_dirname(model *m, std::string di
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
-  ss << "." << comm->get_model_rank();
+  ss << "." << comm->get_trainer_rank();
   ss << ".shared.epoch." << epoch;
   ss << ".step."<< step << "/";
   return ss.str();
@@ -142,7 +142,7 @@ static inline std::string get_last_distributed_checkpoint_filename(model *m, std
   std::stringstream ss;
   ss << dir << "/";
   ss << m->get_name().c_str() << ".";
-  ss << comm->get_model_rank() << ".last.distributed.checkpoint";
+  ss << comm->get_trainer_rank() << ".last.distributed.checkpoint";
   return ss.str();
 }
 
@@ -150,8 +150,8 @@ static inline std::string get_distributed_checkpoint_dirname(model *m, std::stri
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
-  ss << "." << comm->get_model_rank();
-  ss << ".rank." << comm->get_rank_in_model();
+  ss << "." << comm->get_trainer_rank();
+  ss << ".rank." << comm->get_rank_in_trainer();
   ss << ".epoch." << epoch;
   ss << ".step."<< step << "/";
   return ss.str();

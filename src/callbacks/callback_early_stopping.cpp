@@ -39,8 +39,8 @@ void lbann_callback_early_stopping::on_validation_end(model *m) {
   execution_mode mode = m->get_execution_mode();
   EvalType score = m->get_objective_function()->get_mean_value(mode);
   if (score < m_last_score) {
-    if (m->get_comm()->am_model_master()) {
-      std::cout << "Model " << m->get_comm()->get_model_rank() <<
+    if (m->get_comm()->am_trainer_master()) {
+      std::cout << "Model " << m->get_comm()->get_trainer_rank() <<
         " early stopping: score is improving " << m_last_score << " >> " <<
         score << std::endl;
     }
@@ -49,8 +49,8 @@ void lbann_callback_early_stopping::on_validation_end(model *m) {
   } else {
     if (m_wait >= m_patience) {
       m->set_terminate_training(true);
-      if (m->get_comm()->am_model_master()) {
-        std::cout << "Model " << m->get_comm()->get_model_rank() <<
+      if (m->get_comm()->am_trainer_master()) {
+        std::cout << "Model " << m->get_comm()->get_trainer_rank() <<
           " terminating training due to early stopping: " << score <<
           " score and " << m_last_score << " last score" << std::endl;
       }

@@ -1,5 +1,5 @@
-import lbann_proto as lp
-import lbann_modules as lm
+import lbann.lbann_proto as lp
+import lbann.lbann_modules as lm
 
 # ==============================================
 # Helper modules

@@ -4,7 +4,7 @@ model {
   block_size: 257
   num_epochs: 4
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
