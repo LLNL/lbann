@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 
+"""
+Convert an ONNX model to a LBANN model
+Run "./onnx2lbann.py --help" for more details.
+"""
+
 import argparse
 import onnx
 import google.protobuf.text_format as txtf
 
 import lbann.onnx.o2l
-import lbann_pb2 # TODO: use lbann.lbann_proto
+from lbann.lbann_proto import lbann_pb2
 
 dataLayerName = "image"
 labelLayerName = "label"
@@ -80,16 +85,15 @@ def convertAndSave(path, outputPath):
     with open(outputPath, "w") as f:
         f.write(txtf.MessageToString(lbann_pb2.LbannPB(model=model)))
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Convert an ONNX model to a LBANN model",
+                                     epilog="Usage: onnx2lbann.py model.onnx output.prototext")
+    parser.add_argument("onnx_path", type=str,
+                        help="Path to an ONNX model")
+    parser.add_argument("lbann_path", type=str,
+                        help="Path to a LBANN model in .prototext")
 
-
-parser = argparse.ArgumentParser(description="Convert an ONNX model to a LBANN model",
-                                 epilog="Usage: onnx2lbann.py model.onnx output.prototext")
-parser.add_argument("onnx_path", type=str,
-                    help="Path to an ONNX model")
-parser.add_argument("lbann_path", type=str,
-                    help="Path to a LBANN model in .prototext")
-
-args = parser.parse_args()
-onnxPath = args.onnx_path
-lbannPath = args.lbann_path
-convertAndSave(onnxPath, lbannPath)
+    args = parser.parse_args()
+    onnxPath = args.onnx_path
+    lbannPath = args.lbann_path
+    convertAndSave(onnxPath, lbannPath)

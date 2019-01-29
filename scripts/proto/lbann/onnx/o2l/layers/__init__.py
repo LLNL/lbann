@@ -3,7 +3,7 @@ import numpy as np
 
 import lbann.onnx.util
 from lbann.onnx.util import getNodeAttributeByName, list2LbannList
-import lbann_pb2
+from lbann.lbann_proto import lbann_pb2
 
 class OnnxLayerParser():
     def __init__(self, op, inputShapes, outputShapes, inits):

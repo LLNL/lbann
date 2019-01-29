@@ -1,4 +1,6 @@
 #!/bin/bash
+# Download .tar.gz ONNX models from ${urls} to ${dir} and decompress them.
+# Usage: ./download_onnx_model_zoo.sh
 
 dir=onnx_model_zoo
 urls=( \

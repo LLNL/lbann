@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 
+"""
+Generate a Markdown file that contains tables of the support status of LBANN-ONNX conversions from the scripts.
+
+This script checks:
+* existence of parser functions along with its parserDescriptor
+* existence of test functions
+
+This script outputs the following statuses for each LBANN/ONNX operators:
+* Supported: The conversion is supported. If this is not true, the conversion is explicitly disabled (for some reasons).
+* Tested:    There exists at least one test fucntion for the conversion.
+* Bijective: The operator is paired with an another operator, and the conversion is bijective.
+
+If an operator is not listed in the generated list, it is not supported.
+
+Usage: ./create_support_status.py
+"""
+
 import os
 import re
 import unittest

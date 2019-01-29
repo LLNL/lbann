@@ -1,7 +1,7 @@
 from lbann.onnx.o2l.layers import OnnxLayerParser, OnnxSpatialLayerParser
 from lbann.onnx.parserDescriptor import parserDescriptor
 from lbann.onnx.util import list2LbannList
-import lbann_pb2
+from lbann.lbann_proto import lbann_pb2
 
 @parserDescriptor(["relu"])
 class OnnxPoolingLayerParser(OnnxSpatialLayerParser):

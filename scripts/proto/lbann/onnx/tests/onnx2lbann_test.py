@@ -5,7 +5,7 @@ import onnx
 import google.protobuf.text_format as txtf
 
 import lbann.onnx.o2l
-import lbann_pb2
+from lbann.lbann_proto import lbann_pb2
 from lbann.onnx.util import parseBoolEnvVar, getLbannRoot
 from lbann.onnx.tests.util import isModelDumpEnabled, createAndGetDumpedModelsDir
 
@@ -16,8 +16,16 @@ DATA_LAYER_NAME = "image"
 LABEL_LAYER_NAME = "label"
 
 class TestOnnx2Lbann(unittest.TestCase):
+
     def _test(self, modelName):
-        o = onnx.load(os.path.join(ONNX_MODEL_ZOO_ROOT, modelName, "model.onnx"))
+        path = os.path.join(ONNX_MODEL_ZOO_ROOT, modelName, "model.onnx")
+        try:
+            o = onnx.load(path)
+        except FileNotFoundError:
+            self.skipTest("ONNX model is not found." \
+                          "You may want to download it by running scripts/onnx/download_onnx_model_zoo.py" \
+                          ": {}".format(modelName))
+
         onnxInputLayer, = set(map(lambda x: x.name, o.graph.input)) - set(map(lambda x: x.name, o.graph.initializer))
 
         layers = lbann.onnx.o2l.onnxToLbannLayers(
