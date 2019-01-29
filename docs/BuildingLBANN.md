@@ -90,6 +90,9 @@ The following LLNL-maintained packages are optional.
     files and remove the externals and compilers from the spack.yaml
     file. See [here](spack_environment.md) for details.
 
+  + Note that the initial build of all of the standard packages in spack 
+    will take a while.
+
   + Note that the spack module files set the LIBRARY_PATH environment
     variable. This behavior allows autotools based builds to pickup the
     correct libraries, but interferes with the way that CMake sets up
