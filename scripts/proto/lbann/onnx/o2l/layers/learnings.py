@@ -18,13 +18,13 @@ class parse_Conv(OnnxSpatialLayerParser):
 @parserDescriptor(["fully_connected"])
 class parse_Gemm(OnnxLayerParser):
     def parse(self):
-        # REVIEW: transpose?
-        assert self.getNodeAttribute("transA",0) == 0 and self.getNodeAttribute("transB",0) == 1
+        assert self.getNodeAttribute("transA",0) == 0
         assert self.getNodeAttribute("alpha",1.0) == 1.0
         assert (self.getNodeAttribute("beta",1.0) == 1.0 or len(self.inputShapes) < 3)
         fully_connected = lbann_pb2.FullyConnected(
             num_neurons = self.outputShapes[0][1],
-            has_bias = (len(self.inputShapes) == 3)
+            has_bias = (len(self.inputShapes) == 3),
+            transpose = self.getNodeAttribute("transB",0) == 1
         )
         return {"fully_connected": fully_connected}
 
