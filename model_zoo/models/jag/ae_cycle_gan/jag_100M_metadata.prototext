@@ -15,7 +15,11 @@ data_set_metadata {
     independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: [ JAG_Input ] } ]
     dependent: [ { pieces: [ JAG_Input ] } ]
 
-    jag_image_keys: ["(0.0, 0.0)/0.0", "(90.0, 0.0)/0.0", "(90.0, 78.0)/0.0"]
+    image_prefix: "/outputs/images/"
+
+    jag_image_keys: ["(0.0, 0.0)/0.0/emi", "(90.0, 0.0)/0.0/emi", "(90.0, 78.0)/0.0/emi"]
+
+    scalar_prefix: "/outputs/scalars/"
 
     # An empty list indicates to use all
     # The commented out variables are not on the Jim's original list but used in the numpy-based format
@@ -54,6 +58,8 @@ data_set_metadata {
 
     jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
     jag_scalar_filters: [ "iBT" ]
+
+    input_prefix: "/inputs/"
 
     jag_input_keys: ["shape_model_initial_modes:(4,3)",
                      "betti_prl15_trans_u",

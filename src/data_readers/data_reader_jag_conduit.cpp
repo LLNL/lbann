@@ -318,6 +318,10 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
+  m_output_scalar_prefix = rhs.m_output_scalar_prefix;
+  m_output_image_prefix = rhs.m_output_image_prefix;
+  m_input_prefix = rhs.m_input_prefix;
+
   m_scalar_filter = rhs.m_scalar_filter;
   m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
   m_input_filter = rhs.m_input_filter;
@@ -382,6 +386,9 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_keys.clear();
   m_input_keys.clear();
   m_uniform_input_type = false;
+  m_output_scalar_prefix = "";
+  m_output_image_prefix = "";
+  m_input_prefix = "";
   m_scalar_filter.clear();
   m_scalar_prefix_filter.clear();
   m_input_filter.clear();
@@ -589,7 +596,7 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
     return;
   }
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar);
+  load_conduit_node(0, m_output_scalar_prefix, n_scalar);
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -650,7 +657,7 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   conduit::Node n_imageset;
-  load_conduit_node(0, "/outputs/images", n_imageset);
+  load_conduit_node(0, m_output_image_prefix, n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
@@ -660,13 +667,13 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   for (const auto& emi_tag: m_emi_image_keys) {
-    if (!has_conduit_path(0, "/outputs/images/" + emi_tag + "/emi")) {
+    if (!has_conduit_path(0, m_output_image_prefix + emi_tag)) {
       _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
   conduit::Node n_image;
-  load_conduit_node(0, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image);
+  load_conduit_node(0, m_output_image_prefix + m_emi_image_keys[0], n_image);
   conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
@@ -720,7 +727,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
   std::set<std::string> keys_conduit;
 
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar);
+  load_conduit_node(0, m_output_scalar_prefix, n_scalar);
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -1378,7 +1385,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id) const {
 
   for (const auto& emi_tag : m_emi_image_keys) {
     conduit::Node n_image;
-    load_conduit_node(sample_id, "/outputs/images/" + emi_tag + "/emi", n_image);
+    load_conduit_node(sample_id, m_output_image_prefix + emi_tag, n_image);
     conduit_ch_t emi = n_image.value();
     const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
@@ -1493,7 +1500,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   #if !defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_)
   conduit::Node n_scalar;
-  load_conduit_node(sample_id, "/outputs/scalars", n_scalar);
+  load_conduit_node(sample_id, m_output_scalar_prefix, n_scalar);
   #endif // !_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_
 
   std::vector<scalar_t> scalars;
@@ -1505,7 +1512,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_)
     conduit::Node n_scalar;
     // TODO: optimize by loading the entire set of scalars of the samples
-    load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
+    load_conduit_node(sample_id, m_output_scalar_prefix + key, n_scalar);
     // All the scalar output currently seems to be scalar_t.
     // If not, use add_val(key, n_scalar, scalars);
 
@@ -1535,7 +1542,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   #if !defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
   // fetching the entire input parameters of a sample by a single file I/O
   conduit::Node n_input;
-  load_conduit_node(sample_id, "/inputs", n_input);
+  load_conduit_node(sample_id, m_input_prefix, n_input);
   #endif // !_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_
 
   std::vector<input_t> inputs;
@@ -1553,7 +1560,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
       // TODO: whether to fetch by individual I/O or not can be dynamically
       // determined based on how many of the variables are to be fetched.
       conduit::Node n_input;
-      load_conduit_node(sample_id, "/inputs/" + key, n_input);
+      load_conduit_node(sample_id, m_input_prefix + key, n_input);
       const input_t val_raw = static_cast<input_t>(n_input.value());
     #else
       conduit::Node n_input_var = get_conduit_node(n_input, key);
@@ -1567,7 +1574,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     for(const auto key: m_input_keys) {
     #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
       conduit::Node n_input;
-      load_conduit_node(sample_id, "/inputs/" + key, n_input);
+      load_conduit_node(sample_id, m_input_prefix + key, n_input);
       add_val(key, n_input, inputs); // more overhead but general
     #else
       conduit::Node n_input_var = get_conduit_node(n_input, key);

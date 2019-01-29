@@ -184,6 +184,10 @@ message GenericPreprocessor {
 //========================================================================
 message DataSetMetaData {
   message Schema {
+    string scalar_prefix = 1;
+    string image_prefix = 2;
+    string input_prefix = 3;
+
     //------------------ start of only for jag_conduit -----------------------
     bool split_jag_image_channels = 89;
     repeated string jag_image_keys = 90;

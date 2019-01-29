@@ -381,6 +381,12 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
       reader_jag->unset_split_image_channels();
     }
 
+    if(!pb_schema.image_prefix().empty()) {
+      reader_jag->set_output_image_prefix(pb_schema.image_prefix());
+    }else {
+      reader_jag->set_output_image_prefix("/");
+    }
+
     // declare the set of images to use
     std::vector<std::string> image_keys(pb_schema.jag_image_keys_size());
 
@@ -423,6 +429,12 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
     reader_jag->set_dependent_variable_type(dependent_type);
 
+    if(!pb_schema.scalar_prefix().empty()) {
+      reader_jag->set_output_scalar_prefix(pb_schema.scalar_prefix());
+    }else {
+      reader_jag->set_output_scalar_prefix("/");
+    }
+
     // keys of chosen scalar values in jag simulation output
     std::vector<std::string> scalar_keys(pb_schema.jag_scalar_keys_size());
 
@@ -432,6 +444,12 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
     if (scalar_keys.size() > 0u) {
       reader_jag->set_scalar_choices(scalar_keys);
+    }
+
+    if(!pb_schema.input_prefix().empty()) {
+      reader_jag->set_input_prefix(pb_schema.input_prefix());
+    }else {
+      reader_jag->set_input_prefix("/");
     }
 
     // keys of chosen values in jag simulation parameters
