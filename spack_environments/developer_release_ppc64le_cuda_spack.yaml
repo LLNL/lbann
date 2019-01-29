@@ -60,9 +60,8 @@ spack:
 
     cuda:
       buildable: False
-      version: [9.2.88, 10.0.130]
+      version: [9.2.88]
       paths:
-        cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
         cuda@9.2.88 arch=linux-rhel7-ppc64le: /usr/tce/packages/cuda/cuda-9.2.88/
 
     cudnn:
