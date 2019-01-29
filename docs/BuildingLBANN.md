@@ -67,7 +67,11 @@ The following LLNL-maintained packages are optional.
 + Setup your compiler environment. For example, on LLNL's LC machines,
   one might load the following modules:
 
-        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130
+        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
+
+        or
+
+        ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
 
 + Establish a spack environment and install software dependencies:
 
