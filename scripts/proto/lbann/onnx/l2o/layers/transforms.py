@@ -58,9 +58,7 @@ class LbannLayerParser_reshape(LbannLayerParser):
         shape = list(map(int, self.l.reshape.dims.split(" ")))
         h = self.createHiddenTensorName()
         self.appendOperator("Reshape", {}, 0, [self.getLbannInputNames()[0], h])
-        self.appendParamWithInit(h,
-                                 shape=np.array(shape).shape,
-                                 data=np.array(shape, dtype=np.int64))
+        self.appendParamWithInit(h, np.array(shape, dtype=np.int64))
 
 @parserDescriptor(["ReduceSum", "ReduceMean"])
 class LbannLayerParser_reduction(LbannLayerParser):

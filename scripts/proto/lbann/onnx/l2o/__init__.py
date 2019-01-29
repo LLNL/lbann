@@ -155,6 +155,6 @@ def parseLbannLayer(l, tensorShapes, knownNodes):
                            list(map(lambda x: tensorShapes[x], lbannInputs)),
                            knownNodes)
             p.parse()
-            return {"nodes": p.nodes, "inputs": p.inputs, "inits": p.inits}
+            return {"nodes": p.nodes, "inputs": p.paramValueInfos, "inits": p.paramInits}
 
     NotImplementedError("Unimplemented LBANN operator: {}".format(l))

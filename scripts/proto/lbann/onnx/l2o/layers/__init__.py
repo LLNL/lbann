@@ -10,27 +10,23 @@ class LbannLayerParser():
         self.knownNodes = knownNodes # necessary to get existing nodes' information for unpooling
 
         self.nodes = []
-
-        # TODO: rename
-        self.inputs = []
-        self.inits = []
+        self.paramValueInfos = []
+        self.paramInits = []
 
         self.hiddenTensorCount = 0
 
     def parse(self):
         raise NotImplementedError()
 
-    # TODO: to be static?
     def getLbannInputNames(self):
         return list(map(lambda x: "{}_0".format(x),
                         self.l.parents.split(" ") if self.l.parents != "" else []))
 
-    # TODO: to be static?
     def getLbannOutputNames(self):
         return self.l.children.split(" ") if len(self.l.children) > 0 else []
 
     def appendOperator(self, op, attrs={}, paramCount=0, inputNames=None, hiddenOutputCount=None):
-        paramNames = list(map(self.getParamName, range(len(self.inputs)+paramCount)))
+        paramNames = list(map(self.getParamName, range(len(self.paramValueInfos)+paramCount)))
 
         if inputNames is None:
             inputNames  = self.getLbannInputNames() + paramNames
@@ -57,14 +53,12 @@ class LbannLayerParser():
         i = onnx.helper.make_tensor_value_info(name=name,
                                                elem_type=lbann.onnx.ELEM_TYPE,
                                                shape=shape)
-        self.inputs.append(i)
+        self.paramValueInfos.append(i)
 
-    # TODO: remove dataType from arguments
-    def appendParamWithInit(self, name, shape, data):
-        self.appendParam(name, shape)
+    def appendParamWithInit(self, name, data):
+        self.appendParam(name, data.shape)
         init = onnx.numpy_helper.from_array(data, name=name)
-
-        self.inits.append(init)
+        self.paramInits.append(init)
 
     def getParamName(self, i):
         return "{}_p{}".format(self.l.name, i)
@@ -73,8 +67,6 @@ class LbannLayerParser():
         n = "{}_h{}".format(self.l.name, self.hiddenTensorCount)
         self.hiddenTensorCount += 1
         return n
-
-
 
 
 from lbann.onnx.l2o.layers.learnings    import *
