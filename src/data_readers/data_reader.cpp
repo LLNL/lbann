@@ -176,7 +176,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
   // all min_batches have the same number of indices;
   // this probably causes a few indices to be discarded,
   // but with 1B indices, who cares?
-  int mb_max = m_comm->model_allreduce<int>(mb_size, El::mpi::MAX);
+  int mb_max = m_comm->trainer_allreduce<int>(mb_size, El::mpi::MAX);
   m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
 
   m_last_mini_batch_size = m_mini_batch_size;
@@ -545,7 +545,7 @@ for j in range(40) :
 void generic_data_reader::select_subset_of_data() {
   // ensure that all readers have the same number of indices
   if (m_jag_partitioned) {
-    size_t n = m_comm->model_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
+    size_t n = m_comm->trainer_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
     m_shuffled_indices.resize(n);
   }
 
@@ -611,7 +611,7 @@ void generic_data_reader::use_unused_index_set() {
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name) {
   // rank 0 writes the training state file
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p,name);
   }
   return true;
@@ -621,16 +621,16 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const char *name) {
   // rank 0 reads the training state file
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p,&header,name);
   }
-  m_comm->model_broadcast(0, header);
+  m_comm->trainer_broadcast(0, header);
   unpack_header(header);
 
-  m_comm->model_broadcast(0, m_shuffled_indices);
+  m_comm->trainer_broadcast(0, m_shuffled_indices);
 
   // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
-  m_current_pos += m_comm->get_rank_in_model();
+  m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 
@@ -763,7 +763,7 @@ void generic_data_reader::init_minibatch() {
 }
 
 void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {
-  if (m_comm->get_num_models() == 1 || m_comm->get_procs_in_world() == 1) {
+  if (m_comm->get_num_trainers() == 1 || m_comm->get_procs_in_world() == 1) {
     m_is_partitioned  = false;
     return;
   }
@@ -771,9 +771,9 @@ void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, 
   //n.b. the following params have no affect if m_is_partitioned is false
   m_partition_overlap = overlap;
   m_partition_mode = mode;
-  m_procs_per_partition = m_comm->get_procs_per_model();
-  m_num_partitions = m_comm->get_num_models();
-  m_my_partition = m_comm->get_model_rank();
+  m_procs_per_partition = m_comm->get_procs_per_trainer();
+  m_num_partitions = m_comm->get_num_trainers();
+  m_my_partition = m_comm->get_trainer_rank();
 }
 
 }  // namespace lbann

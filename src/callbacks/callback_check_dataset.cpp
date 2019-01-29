@@ -76,7 +76,7 @@ void lbann_callback_check_dataset::on_evaluate_forward_prop_end(model *m, Layer 
 
 void lbann_callback_check_dataset::on_epoch_end(model *m) {
   lbann_comm* comm = m->get_comm();
-  std::cout << "Training [" << comm->get_rank_in_model() <<
+  std::cout << "Training [" << comm->get_rank_in_trainer() <<
     "] : I have processed " << training_set.size() << " elements" << std::endl;
 
   // Get first input layer in model
@@ -88,20 +88,20 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
 
   int num_samples = training_set.size();
-  std::vector<int> vec_num_samples(comm->get_procs_per_model());
-  if (comm->am_model_master()) {
-    comm->model_gather(num_samples, vec_num_samples.data());
+  std::vector<int> vec_num_samples(comm->get_procs_per_trainer());
+  if (comm->am_trainer_master()) {
+    comm->trainer_gather(num_samples, vec_num_samples.data());
   }else {
-    comm->model_gather(num_samples, comm->get_model_master());
+    comm->trainer_gather(num_samples, comm->get_trainer_master());
   }
-  std::vector<int> sample_offsets(comm->get_procs_per_model());
+  std::vector<int> sample_offsets(comm->get_procs_per_trainer());
   std::partial_sum(vec_num_samples.begin(), vec_num_samples.end(), sample_offsets.begin());
-  std::cout << "Training [" << comm->get_rank_in_model() << "] offsets";
+  std::cout << "Training [" << comm->get_rank_in_trainer() << "] offsets";
   for (const auto& idx : sample_offsets) {
     std::cout << idx << " ";
   }
   std::cout << std::endl;
-  std::cout << "Training [" << comm->get_rank_in_model() << "] counts";
+  std::cout << "Training [" << comm->get_rank_in_trainer() << "] counts";
   for (const auto& idx : vec_num_samples) {
     std::cout << idx << " ";
   }
@@ -118,22 +118,22 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   std::copy(training_set.begin(), training_set.end(), local_data.data());
 
   std::cout << "Training: my local vector has size " << local_data.size() << std::endl;
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     // Build a vector large enough to hold all indices for the model.
     std::vector<int> model_training_set(
       input->get_num_iterations_per_epoch(execution_mode::training) * m->get_max_mini_batch_size());
 
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
-    // comm->model_gatherv(local_data.data(), local_data.size(),
+    // comm->trainer_gatherv(local_data.data(), local_data.size(),
     //                     model_training_set.data(), vec_num_samples.data(), sample_offsets.data());
 
     std::cout << "Training: The entire model has processed " << model_training_set.size() << " elements" << std::endl;
   } else {
-    // comm->model_gatherv(local_data.data(), local_data.size(),
-    //                     m->get_comm()->get_model_master());
+    // comm->trainer_gatherv(local_data.data(), local_data.size(),
+    //                     m->get_comm()->get_trainer_master());
   }
 
-  std::cout << "Training [" << comm->get_rank_in_model() << "] ";
+  std::cout << "Training [" << comm->get_rank_in_trainer() << "] ";
   for (const auto& idx : training_set) {
     std::cout << idx << " ";
   }
@@ -143,9 +143,9 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
 }
 
 void lbann_callback_check_dataset::on_validation_end(model *m) {
-  std::cout << "Validation [" << m->get_comm()->get_rank_in_model() << "] : I have processed " << validation_set.size() << " elements" << std::endl;
+  std::cout << "Validation [" << m->get_comm()->get_rank_in_trainer() << "] : I have processed " << validation_set.size() << " elements" << std::endl;
 #if 0
-  std::cout << "Validation [" << m->get_comm()->get_rank_in_model() << "] ";
+  std::cout << "Validation [" << m->get_comm()->get_rank_in_trainer() << "] ";
   for(std::set<long>::iterator iter=validation_set.begin(); iter!=validation_set.end();++iter) {
     std::cout << *iter << " ";
   }
@@ -155,7 +155,7 @@ void lbann_callback_check_dataset::on_validation_end(model *m) {
 }
 
 void lbann_callback_check_dataset::on_test_end(model *m) {
-  std::cout << "Testing [" << m->get_comm()->get_rank_in_model() << "] : I have processed " << testing_set.size() << " elements" << std::endl;
+  std::cout << "Testing [" << m->get_comm()->get_rank_in_trainer() << "] : I have processed " << testing_set.size() << " elements" << std::endl;
   testing_set.clear();
 }
 

@@ -34,7 +34,7 @@ namespace lbann {
 
 namespace {
 
-/** Check whether a matrix contains a NaN. 
+/** Check whether a matrix contains a NaN.
  *  If a NaN entry is detected, return true and output the local entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
@@ -54,7 +54,7 @@ bool has_nan(const AbsDistMat& mat, El::Int& row, El::Int& col) {
   return false;
 }
 
-/** Check whether a matrix contains an inf. 
+/** Check whether a matrix contains an inf.
  *  If an inf entry is detected, return true and output the entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
@@ -81,8 +81,8 @@ bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
 void dump_network(model *m) {
   for (const auto* l : m->get_layers()) {
     std::stringstream ss;
-    ss << "model" << m->get_comm()->get_model_rank()
-       << "-rank" << m->get_comm()->get_rank_in_model()
+    ss << "model" << m->get_comm()->get_trainer_rank()
+       << "-rank" << m->get_comm()->get_rank_in_trainer()
        << "-epoch" << m->get_cur_epoch()
        << "-step" << m->get_cur_step()
        << "-" << l->get_name() << "-";
@@ -100,8 +100,8 @@ void dump_network(model *m) {
   }
   for (auto* w : m->get_weights()) {
     std::stringstream ss;
-    ss << "model" << m->get_comm()->get_model_rank()
-       << "-rank" << m->get_comm()->get_rank_in_model()
+    ss << "model" << m->get_comm()->get_trainer_rank()
+       << "-rank" << m->get_comm()->get_rank_in_trainer()
        << "-epoch" << m->get_cur_epoch()
        << "-step" << m->get_cur_step()
        << "-" << w->get_name() << "-";
