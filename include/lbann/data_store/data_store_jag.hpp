@@ -70,11 +70,6 @@ protected :
 
   data_reader_jag_conduit *m_jag_reader;
 
-  /// fills in m_owner: std::unordered_map<int, int> m_owner
-  /// which maps an index to the processor that owns the associated data;
-  /// m_owner is in generic_data_store.hpp
-  void build_index_owner();
-
   /// buffers for data that will be passed to the data reader's fetch_datum method
   /// std::unordered_map<int, std::vector<DataType>> m_my_minibatch_data;
 
@@ -113,6 +108,9 @@ protected :
   void testme();
 
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
+
+  // fills in m_owner, which maps an index to the owning processor
+  void exchange_ds_indices();
 };
 
 }  // namespace lbann

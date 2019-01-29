@@ -56,11 +56,12 @@ void data_store_jag::setup() {
   std::stringstream err;
 
   if (m_master) {
-    std::cout << "starting data_store_jag::setup() for role: " 
-              << m_reader->get_role() << "\n"
-              << "calling generic_data_store::setup()\n";
+    std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
   generic_data_store::setup();
+  if (m_master) {
+    std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
+  }
   m_jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
   if (m_jag_reader == nullptr) {
     LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
@@ -76,9 +77,6 @@ void data_store_jag::setup() {
   m_incoming_msg_sizes.resize(m_np);
   m_recv_buffer.resize(m_np);
 */
-
-  // builds map: shuffled_index subscript -> owning proc
-//  build_index_owner();
 
   if (! m_in_memory) {
     LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
@@ -99,19 +97,21 @@ void data_store_jag::setup() {
 #if 0
 void data_store_jag::get_indices(std::unordered_set<int> &indices, int p) {
   indices.clear();
-  std::vector<int> &v = m_all_minibatch_indices[p];
+    std::vector<int> &v = m_all_minibatch_indices[p];
   for (auto t : v) {
     indices.insert((*m_shuffled_indices)[t]);
   }
 }
 #endif
 
-
 void data_store_jag::exchange_data() {
+  exchange_ds_indices();
+
+  MPI_Barrier(MPI_COMM_WORLD);
+
   LBANN_ERROR("starting data_store_jag::exchange_data for epoch: " + std::to_string(m_epoch) + "; not yet implemented; m_data.size: " + std::to_string(m_data.size()));
 
-#if 0
-  double tm1 = get_time();
+  //double tm1 = get_time();
 
   //========================================================================
   //build map: proc -> global indices that P_x needs for this epoch, and
@@ -128,6 +128,7 @@ void data_store_jag::exchange_data() {
 
   if (m_master) std::cout << "exchange_data; built map\n";
 
+#if 0
   //========================================================================
   //part 1: exchange the sizes of the data
   
@@ -331,38 +332,68 @@ if (m_master && doit) {
 #endif
 }
 
-// fills in m_owner: std::unordered_map<int, int> m_owner
-// which maps an index to the processor that owns the associated data
-void data_store_jag::build_index_owner() {
-#if 0
-  //todo: should be performed by P_0 then bcast; for now we'll
-  //      have all procs do it
-  
-  std::stringstream err;
 
-  // get filename for sample list
-  m_base_dir = add_delimiter(m_data_reader->get_file_dir());
-  m_sample_list_fn = m_base_dir + m_data_reader->get_data_index_list();
+// fills in m_owner; this maps a sample index to the owning processor
+void data_store_jag::exchange_ds_indices() {
+  int my_num_indices = m_data.size();
+  std::vector<int> counts(m_np);
+  m_comm->model_all_gather<int>(my_num_indices, counts);
 
-  // get filename for mapping file
-  m_mapping_fn = m_base_dir + m_data_reader->get_local_file_dir();
-
-  //file_owners[i] contains the counduit filenames that P_i owns
-  std::vector<std::vector<std::string>> file_owners(m_np);
-
-  // sample_counts[i][j] contains the number of valid samples
-  // in the conduit file: file_owners[[i][j]
-  std::vector<std::vector<int>> sample_counts(m_np);
-
-  std::ifstream in(sample_list_file);
-  if (!in) {
-    err << "failed to open " << sample_list_file << " for reading";
-    LBANN_ERROR(err);
+  if (m_master) {
+    std::cerr << "\nDS Counts:\n";
+    for (auto t : counts) std::cerr << t << " ";
+    std::cerr << "\n";
   }
 
+  std::vector<int> displ(m_np);
+  displ[0] = 0;
+  for (size_t j=1; j<counts.size(); j++) {
+    displ[j] = displ[j-1] + counts[j-1];
+  }
 
-  in.close()
-#endif
+  //recv vector
+  int n = std::accumulate(counts.begin(), counts.end(), 0);
+  std::vector<int> all_indices(n);
+
+  std::vector<int> mine;
+  mine.reserve(m_data.size());
+  for (auto t : m_data) {
+    mine.push_back(t.first);
+  }
+
+  //receive the indices
+  m_comm->all_gather<int>(mine, all_indices, counts, displ, m_comm->get_model_comm());
+
+  //fill in the final data structure
+  m_owner.clear();
+  for (int proc=0; proc<m_np; proc++) {
+    for (int i=displ[proc]; i<displ[proc]+counts[proc]; i++) {
+      if (m_owner.find(all_indices[i]) != m_owner.end()) {
+        LBANN_ERROR("duplicate index in m_owner");
+      }
+      m_owner[all_indices[i]] = proc;
+    }
+  }
+
+  #ifdef DEBUG
+  if (m_master) {
+    std::map<int, std::set<int>> s;
+    for (auto t : m_owner) {
+      s[t.second].insert(t.first);
+    }
+    std::cerr << "\nwho owns what:\n";
+    int total = 0;
+    for (int proc=0; proc<m_np; proc++) {
+      std::cerr << proc << " :: ";
+      total += s[proc].size();
+      for (auto t : s[proc]) {
+        std::cerr << t << " ";
+      }
+      std::cerr << "\n";
+    }
+    std::cerr << "TOTAL: " << total << "\n";
+  }
+  #endif
 }
 
 
