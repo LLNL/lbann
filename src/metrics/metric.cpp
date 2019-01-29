@@ -171,7 +171,7 @@ void metric::set_layer_pointers(std::vector<Layer*> layers) {
 
 bool metric::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     m_statistics[execution_mode::training].pack_scalars(p);
     m_statistics[execution_mode::testing].pack_scalars(p);
     m_statistics[execution_mode::validation].pack_scalars(p);
@@ -181,15 +181,15 @@ bool metric::save_to_checkpoint_shared(persist& p) {
 
 bool metric::load_from_checkpoint_shared(persist& p) {
   struct metric_statistics::packing_header training_header, validation_header, testing_header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
     m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
     m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
   }
 
-  m_comm->model_broadcast(0, training_header);
-  m_comm->model_broadcast(0, validation_header);
-  m_comm->model_broadcast(0, testing_header);
+  m_comm->trainer_broadcast(0, training_header);
+  m_comm->trainer_broadcast(0, validation_header);
+  m_comm->trainer_broadcast(0, testing_header);
 
   m_statistics[execution_mode::training].unpack_header(training_header);
   m_statistics[execution_mode::validation].unpack_header(validation_header);

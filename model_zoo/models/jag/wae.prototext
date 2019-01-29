@@ -558,5 +558,5 @@ model {
 
  # }
   block_size: 256
-  procs_per_model:0 
+  procs_per_trainer:0
 }
