@@ -495,6 +495,15 @@ if __name__ == '__main__':
         action='store', default='local', type=str,
         help=('aggregation mode for batch normalization statistics '
               '(default: "local")'))
+    parser.add_argument(
+        '--mbsize', action='store', default=256, type=int,
+        help='mini-batch size (default: 256)')
+    parser.add_argument(
+        '--epochs', action='store', default=90, type=int,
+        help='number of epochs (default: 90)')
+    parser.add_argument(
+        '--warmup', action='store_true',
+        help='Use a linear warmup (default: false)')
     args = parser.parse_args()
 
     # Choose ResNet variant
@@ -529,8 +538,11 @@ if __name__ == '__main__':
                  lp.CallbackTimer(),
                  lp.CallbackDropFixedLearningRate(
                      drop_epoch=[30, 60, 80], amt=0.1)]
+    if args.warmup:
+        callbacks.append(lp.CallbackLinearGrowthLearningRate(
+            target=0.1*args.mbsize / 256, num_epochs=5))
 
     # Export model to file
-    lp.save_model(args.file, 256, 100,
+    lp.save_model(args.file, args.mbsize, args.epochs,
                   layers=layers, objective_function=obj,
                   metrics=metrics, callbacks=callbacks)
