@@ -308,7 +308,7 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
 }
 
 
-void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {
+void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_data::DataSetMetaData& pb_metadata, const bool master, generic_data_reader* &reader) {
   // data reader name
   const std::string& name = pb_readme.name();
   // whether to shuffle data
@@ -356,16 +356,18 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
 #ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit_hdf5") {
     data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
+    const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
     reader_jag->set_image_dims(width, height);
-    reader_jag->set_scalar_keys(pb_readme.scalar_keys());
-    reader_jag->set_input_keys(pb_readme.input_keys());
-    reader_jag->set_image_views(pb_readme.image_views());
-    reader_jag->set_image_channels(pb_readme.image_channels());
+    reader_jag->set_scalar_keys(pb_schema.scalar_keys());
+    reader_jag->set_input_keys(pb_schema.input_keys());
+    reader_jag->set_image_views(pb_schema.image_views());
+    reader_jag->set_image_channels(pb_schema.image_channels());
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
+    const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
 
     if (channels == 0) {
       channels = 1;
@@ -373,17 +375,17 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader_jag->set_image_dims(width, height, channels);
 
     // Whether to split channels of an image before preprocessing
-    if (pb_readme.split_jag_image_channels()) {
+    if (pb_schema.split_jag_image_channels()) {
       reader_jag->set_split_image_channels();
     } else {
       reader_jag->unset_split_image_channels();
     }
 
     // declare the set of images to use
-    std::vector<std::string> image_keys(pb_readme.jag_image_keys_size());
+    std::vector<std::string> image_keys(pb_schema.jag_image_keys_size());
 
-    for (int i=0; i < pb_readme.jag_image_keys_size(); ++i) {
-      image_keys[i] = pb_readme.jag_image_keys(i);
+    for (int i=0; i < pb_schema.jag_image_keys_size(); ++i) {
+      image_keys[i] = pb_schema.jag_image_keys(i);
     }
 
     reader_jag->set_image_choices(image_keys);
@@ -392,10 +394,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     using var_t = data_reader_jag_conduit::variable_t;
 
     // composite independent variable
-    std::vector< std::vector<var_t> > independent_type(pb_readme.independent_size());
+    std::vector< std::vector<var_t> > independent_type(pb_schema.independent_size());
 
-    for (int i=0; i < pb_readme.independent_size(); ++i) {
-      const lbann_data::Reader::JAGDataSlice& slice = pb_readme.independent(i);
+    for (int i=0; i < pb_schema.independent_size(); ++i) {
+      const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.independent(i);
       const int slice_size = slice.pieces_size();
       for (int j=0; j < slice_size; ++j) {
         // TODO: instead of using cast, use proper conversion function
@@ -407,10 +409,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader_jag->set_independent_variable_type(independent_type);
 
     // composite dependent variable
-    std::vector< std::vector<var_t> > dependent_type(pb_readme.dependent_size());
+    std::vector< std::vector<var_t> > dependent_type(pb_schema.dependent_size());
 
-    for (int i=0; i < pb_readme.dependent_size(); ++i) {
-      const lbann_data::Reader::JAGDataSlice& slice = pb_readme.dependent(i);
+    for (int i=0; i < pb_schema.dependent_size(); ++i) {
+      const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.dependent(i);
       const int slice_size = slice.pieces_size();
       for (int j=0; j < slice_size; ++j) {
         // TODO: instead of using cast, use proper conversion function
@@ -422,10 +424,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     reader_jag->set_dependent_variable_type(dependent_type);
 
     // keys of chosen scalar values in jag simulation output
-    std::vector<std::string> scalar_keys(pb_readme.jag_scalar_keys_size());
+    std::vector<std::string> scalar_keys(pb_schema.jag_scalar_keys_size());
 
-    for (int i=0; i < pb_readme.jag_scalar_keys_size(); ++i) {
-      scalar_keys[i] = pb_readme.jag_scalar_keys(i);
+    for (int i=0; i < pb_schema.jag_scalar_keys_size(); ++i) {
+      scalar_keys[i] = pb_schema.jag_scalar_keys(i);
     }
 
     if (scalar_keys.size() > 0u) {
@@ -433,10 +435,10 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     }
 
     // keys of chosen values in jag simulation parameters
-    std::vector<std::string> input_keys(pb_readme.jag_input_keys_size());
+    std::vector<std::string> input_keys(pb_schema.jag_input_keys_size());
 
-    for (int i=0; i < pb_readme.jag_input_keys_size(); ++i) {
-      input_keys[i] = pb_readme.jag_input_keys(i);
+    for (int i=0; i < pb_schema.jag_input_keys_size(); ++i) {
+      input_keys[i] = pb_schema.jag_input_keys(i);
     }
 
     if (input_keys.size() > 0u) {
@@ -444,59 +446,60 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const bool mast
     }
 
     // add scalar output keys to filter out
-    const int num_scalar_filters = pb_readme.jag_scalar_filters_size();
+    const int num_scalar_filters = pb_schema.jag_scalar_filters_size();
     for (int i=0; i < num_scalar_filters; ++i) {
-      reader_jag->add_scalar_filter(pb_readme.jag_scalar_filters(i));
+      reader_jag->add_scalar_filter(pb_schema.jag_scalar_filters(i));
     }
 
     // add scalar output key prefixes to filter out by
-    const int num_scalar_prefix_filters = pb_readme.jag_scalar_prefix_filters_size();
+    const int num_scalar_prefix_filters = pb_schema.jag_scalar_prefix_filters_size();
     for (int i=0; i < num_scalar_prefix_filters; ++i) {
       using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
-      const prefix_t pf = std::make_pair(pb_readme.jag_scalar_prefix_filters(i).key_prefix(),
-                                         pb_readme.jag_scalar_prefix_filters(i).min_len());
+      const prefix_t pf = std::make_pair(pb_schema.jag_scalar_prefix_filters(i).key_prefix(),
+                                         pb_schema.jag_scalar_prefix_filters(i).min_len());
       reader_jag->add_scalar_prefix_filter(pf);
     }
 
     // add input parameter keys to filter out
-    const int num_input_filters = pb_readme.jag_input_filters_size();
+    const int num_input_filters = pb_schema.jag_input_filters_size();
     for (int i=0; i < num_input_filters; ++i) {
-      reader_jag->add_input_filter(pb_readme.jag_input_filters(i));
+      reader_jag->add_input_filter(pb_schema.jag_input_filters(i));
     }
 
     // add scalar output key prefixes to filter out by
-    const int num_input_prefix_filters = pb_readme.jag_input_prefix_filters_size();
+    const int num_input_prefix_filters = pb_schema.jag_input_prefix_filters_size();
     for (int i=0; i < num_input_prefix_filters; ++i) {
       using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
-      const prefix_t pf = std::make_pair(pb_readme.jag_scalar_prefix_filters(i).key_prefix(),
-                                         pb_readme.jag_scalar_prefix_filters(i).min_len());
+      const prefix_t pf = std::make_pair(pb_schema.jag_scalar_prefix_filters(i).key_prefix(),
+                                         pb_schema.jag_scalar_prefix_filters(i).min_len());
       reader_jag->add_input_prefix_filter(pf);
     }
 
+    const lbann_data::DataSetMetaData::Normalization& pb_normalization = pb_metadata.normalization();
     // add image normalization parameters
-    const int num_image_normalization_params = pb_readme.jag_image_normalization_params_size();
+    const int num_image_normalization_params = pb_normalization.jag_image_normalization_params_size();
     for (int i=0; i <  num_image_normalization_params; ++i) {
       using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
-      const linear_transform_t np = std::make_pair(pb_readme.jag_image_normalization_params(i).scale(),
-                                                   pb_readme.jag_image_normalization_params(i).bias());
+      const linear_transform_t np = std::make_pair(pb_normalization.jag_image_normalization_params(i).scale(),
+                                                   pb_normalization.jag_image_normalization_params(i).bias());
       reader_jag->add_image_normalization_param(np);
     }
 
     // add scalar normalization parameters
-    const int num_scalar_normalization_params = pb_readme.jag_scalar_normalization_params_size();
+    const int num_scalar_normalization_params = pb_normalization.jag_scalar_normalization_params_size();
     for (int i=0; i <  num_scalar_normalization_params; ++i) {
       using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
-      const linear_transform_t np = std::make_pair(pb_readme.jag_scalar_normalization_params(i).scale(),
-                                                   pb_readme.jag_scalar_normalization_params(i).bias());
+      const linear_transform_t np = std::make_pair(pb_normalization.jag_scalar_normalization_params(i).scale(),
+                                                   pb_normalization.jag_scalar_normalization_params(i).bias());
       reader_jag->add_scalar_normalization_param(np);
     }
 
     // add input normalization parameters
-    const int num_input_normalization_params = pb_readme.jag_input_normalization_params_size();
+    const int num_input_normalization_params = pb_normalization.jag_input_normalization_params_size();
     for (int i=0; i <  num_input_normalization_params; ++i) {
       using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
-      const linear_transform_t np = std::make_pair(pb_readme.jag_input_normalization_params(i).scale(),
-                                                   pb_readme.jag_input_normalization_params(i).bias());
+      const linear_transform_t np = std::make_pair(pb_normalization.jag_input_normalization_params(i).scale(),
+                                                   pb_normalization.jag_input_normalization_params(i).bias());
       reader_jag->add_input_normalization_param(np);
     }
 
