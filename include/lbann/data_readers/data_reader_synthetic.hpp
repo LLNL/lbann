@@ -84,6 +84,7 @@ class data_reader_synthetic : public generic_data_reader {
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
   void pre_generate();
   DataType *get_next_pre_generated_datum();
+  DataType *get_next_pre_generated_response();
 
  private:
   /** Number of samples in the dataset. */
@@ -98,8 +99,12 @@ class data_reader_synthetic : public generic_data_reader {
   int m_num_pre_generated_data = 0;
   /** Index to the next pre-generated data */
   int m_pre_generated_data_idx = 0;
+  /** Index to the next pre-generated response */
+  int m_pre_generated_response_idx = 0;
   /** Buffer to hold pre-generated data */
   std::shared_ptr<DataType> m_pre_generated_data;
+  /** Buffer to hold pre-generated response */
+  std::shared_ptr<DataType> m_pre_generated_response;
 };
 
 }  // namespace lbann

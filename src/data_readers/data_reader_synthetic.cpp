@@ -57,7 +57,7 @@ void fill_buffer(DataType *buf, size_t len) {
   }
 }
 
-void fill_matrix(CPUMat& mat, DataType *pre_generated=nullptr) {
+void fill_matrix(CPUMat& mat, DataType * __restrict__ pre_generated=nullptr) {
   const El::Int height = mat.Height();  // Width is 1.
   DataType * __restrict__ buf = mat.Buffer();
   if (pre_generated) {
@@ -109,7 +109,7 @@ bool data_reader_synthetic::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
     LBANN_ERROR("Synthetic data reader does not have responses");
   }
   auto Y_v = El::View(Y, El::ALL, El::IR(mb_idx, mb_idx + 1));
-  fill_matrix(Y_v);
+  fill_matrix(Y_v, get_next_pre_generated_response());
   return true;
 }
 
@@ -123,13 +123,24 @@ void data_reader_synthetic::load() {
 void data_reader_synthetic::pre_generate() {
   m_num_pre_generated_data = dc::get_number_of_pre_generated_synthetic_data();
   if (m_num_pre_generated_data == 0) return;
+
   size_t len = get_linearized_data_size() * m_num_pre_generated_data;
   dc::MPIRootPrintStreamDebug()
-      << "Pre-generating " << m_num_pre_generated_data << " samples, which consumes "
-      << (len * sizeof(DataType) / float(1024 * 1024)) << " MB of memory";
-  m_pre_generated_data.reset(new DataType[len], std::default_delete<DataType[]>());
+      << "Pre-generating " << m_num_pre_generated_data
+      << " samples, which consumes "
+      << (len * sizeof(DataType) / float(1024 * 1024))
+      << " MB of memory";
+  m_pre_generated_data.reset(new DataType[len],
+                             std::default_delete<DataType[]>());
   fill_buffer(m_pre_generated_data.get(), len);
   m_pre_generated_data_idx = 0;
+
+  // generate response data
+  len = get_linearized_response_size() * m_num_pre_generated_data;
+  m_pre_generated_response.reset(new DataType[len],
+                                 std::default_delete<DataType[]>());
+  fill_buffer(m_pre_generated_response.get(), len);
+  m_pre_generated_response_idx = 0;
 }
 
 DataType *data_reader_synthetic::get_next_pre_generated_datum() {
@@ -140,6 +151,16 @@ DataType *data_reader_synthetic::get_next_pre_generated_datum() {
     m_pre_generated_data_idx = 0;
   }
   return m_pre_generated_data.get() + idx;
+}
+
+DataType *data_reader_synthetic::get_next_pre_generated_response() {
+  if (m_num_pre_generated_data == 0) return nullptr;
+  auto idx = m_pre_generated_response_idx * get_linearized_response_size();
+  ++m_pre_generated_response_idx;
+  if (m_pre_generated_response_idx == m_num_pre_generated_data) {
+    m_pre_generated_response_idx = 0;
+  }
+  return m_pre_generated_response.get() + idx;
 }
 
 }  // namespace lbann
