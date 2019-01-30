@@ -349,7 +349,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /** Load the conduit node with the data of the sample i identified by key
    *  from the file that contains the sample.
    */
-  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node, bool any_node = false) const;
+  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
   /// Check if a key exist for sample i
   bool has_conduit_path(const size_t i, const std::string& key) const;
 

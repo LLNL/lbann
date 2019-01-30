@@ -311,17 +311,10 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
   return n_base[key];
 }
 
-bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node, bool any_node) const {
+bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
   const sample_t& s = m_sample_list[i];
   const std::string& sample_name = s.second;
   const std::string path = sample_name + key;
-
-  if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
-    //@todo may want to change to a pointer, or something similar,
-    //      to avoid copying
-    node = m_jag_store->get_conduit_node(i, any_node);
-    return true;
-  }
 
   sample_id_t id = s.first;
   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
@@ -333,9 +326,6 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   }
 
   conduit::relay::io::hdf5_read(h, path, node);
-  if (m_jag_store != nullptr) {
-    m_jag_store->set_conduit_node(i, node);
-  }
 
   return true;
 }
@@ -479,7 +469,7 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
     return;
   }
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar, true);
+  load_conduit_node(0, "/outputs/scalars", n_scalar);
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -515,7 +505,7 @@ void data_reader_jag_conduit::set_all_input_choices() {
   }
 
   conduit::Node n_input;
-  load_conduit_node(0, "/inputs", n_input, true);
+  load_conduit_node(0, "/inputs", n_input);
   m_input_keys.reserve(n_input.number_of_children());
   const std::vector<std::string>& child_names = n_input.child_names();
   for (const auto& key: child_names) {
@@ -552,7 +542,7 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   conduit::Node n_imageset;
-  load_conduit_node(first_idx, "/outputs/images", n_imageset, true);
+  load_conduit_node(first_idx, "/outputs/images", n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
@@ -568,7 +558,7 @@ void data_reader_jag_conduit::check_image_data() {
     }
   }
   conduit::Node n_image;
-  load_conduit_node(first_idx, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image, true);
+  load_conduit_node(first_idx, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image);
   conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
@@ -628,7 +618,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
 
   conduit::Node n_scalar;
   size_t first_idx = m_sample_list.get_indexer().get_partition_offset();
-  load_conduit_node(first_idx, "/outputs/scalars", n_scalar, true);
+  load_conduit_node(first_idx, "/outputs/scalars", n_scalar);
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -694,7 +684,7 @@ void data_reader_jag_conduit::check_input_keys() {
 
   conduit::Node n_input;
   size_t first_idx = m_sample_list.get_indexer().get_partition_offset();
-  load_conduit_node(first_idx, "/inputs", n_input, true);
+  load_conduit_node(first_idx, "/inputs", n_input);
   conduit::NodeConstIterator itr = n_input.children();
 
   while (itr.has_next()) {
@@ -1151,12 +1141,15 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
-    conduit::Node n_image;
-    load_conduit_node(sample_id, "/outputs/images/" + emi_tag + "/emi", n_image);
-    sample.update(n_image);
-    conduit_ch_t emi = n_image.value();
+    const std::string conduit_obj = std::string("/outputs/images/") + emi_tag + "/emi";
+    if(!sample.has_path(conduit_obj)) {
+      conduit::Node n_image;
+      load_conduit_node(sample_id, conduit_obj, n_image);
+      sample[conduit_obj].set(n_image);
+    }
+    conduit_ch_t emi = sample[conduit_obj].value();
     const size_t num_vals = emi.number_of_elements();
-    const ch_t* emi_data = n_image.value();
+    const ch_t* emi_data = sample[conduit_obj].value();
     image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
@@ -1266,10 +1259,13 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   auto tr = m_scalar_normalization_params.cbegin();
 
   for(const auto key: m_scalar_keys) {
-    conduit::Node n_scalar;
-    load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
-    sample.update(n_scalar);
-    const scalar_t val_raw = static_cast<scalar_t>(n_scalar.to_value());
+    std::string conduit_obj = std::string("/outputs/scalars/") + key;
+    if(!sample.has_path(conduit_obj)) {
+      conduit::Node n_scalar;
+      load_conduit_node(sample_id, conduit_obj, n_scalar);
+      sample[conduit_obj].set(n_scalar);
+    }
+    const scalar_t val_raw = static_cast<scalar_t>(sample[conduit_obj].to_value());
     const scalar_t val = static_cast<scalar_t>(val_raw * tr->first + tr->second);
     scalars.push_back(val);
     tr ++;
@@ -1289,20 +1285,26 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
-      conduit::Node n_input;
-      load_conduit_node(sample_id, "/inputs/" + key, n_input);
-      sample.update(n_input);
-      const input_t val_raw = static_cast<input_t>(n_input.value());
+      const std::string conduit_obj = std::string("/inputs/") + key;
+      if(!sample.has_path(conduit_obj)) {
+        conduit::Node n_input;
+        load_conduit_node(sample_id, conduit_obj, n_input);
+        sample[conduit_obj].set(n_input);
+      }
+      const input_t val_raw = static_cast<input_t>(sample[conduit_obj].value());
       const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
       inputs.push_back(val);
       tr ++;
     }
   } else {
     for(const auto key: m_input_keys) {
-      conduit::Node n_input;
-      load_conduit_node(sample_id, "/inputs/" + key, n_input);
-      sample.update(n_input);
-      add_val(key, n_input, inputs); // more overhead but general
+      std::string conduit_obj = std::string("/inputs/") + key;
+      if(!sample.has_path(conduit_obj)) {
+        conduit::Node n_input;
+        load_conduit_node(sample_id, conduit_obj, n_input);
+        sample[conduit_obj].set(n_input);
+      }
+      add_val(key, sample[conduit_obj], inputs); // more overhead but general
       input_t& val = inputs.back();
       val = static_cast<input_t>(val * tr->first + tr->second);
       tr ++;
@@ -1418,11 +1420,23 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
+  if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
+    const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
+    node.set_external(ds_node);
+  }
+
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     // The third argument mb_idx below is 0 because it is for the view of X not X itself
     ok = fetch(X_v[i], data_id, node, 0, tid, m_independent[i], "datum");
   }
-  // Once the node has been populated save it in the data store
+
+  if (m_jag_store != nullptr && m_model->get_cur_epoch() == 0) {
+    // Once the node has been populated save it in the data store
+    if (m_jag_store != nullptr) {
+      m_jag_store->set_conduit_node(data_id, node);
+    }
+  }
+
   return ok;
 }
 
@@ -1433,10 +1447,19 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
+  if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
+    const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
+    node.set_external(ds_node);
+  }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  // Once the node has been populated save it in the data store
+  if (m_jag_store != nullptr && m_model->get_cur_epoch() == 0) {
+    // Once the node has been populated save it in the data store
+    if (m_jag_store != nullptr) {
+      m_jag_store->set_conduit_node(data_id, node);
+    }
+  }
   return ok;
 }
 
