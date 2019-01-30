@@ -60,7 +60,6 @@ class LbannLayerParser_weighted_sum(LbannLayerParser):
     def parse(self):
         params = self.l.weighted_sum
         factors = list(map(float, params.scaling_factors.split(" ")))
-        # TODO: support any weighted_sum
         if factors == [1, 1]:
             self.appendOperator("Add")
 
@@ -71,8 +70,7 @@ class LbannLayerParser_weighted_sum(LbannLayerParser):
             self.appendOperator("Mean")
 
         else:
-            # TODO: this is a dummy operation to perform correct infer_shape
-            self.appendOperator("Sum", attrs={"lbannWightedSumFactors": factors})
+            raise NotImplementedError()
 
 @parserDescriptor(["Constant"])
 class LbannLayerParser_constant(LbannLayerParser):
@@ -89,9 +87,9 @@ class LbannLayerParser_constant(LbannLayerParser):
 @parserDescriptor(stub=True)
 class LbannLayerParser_square(LbannLayerParser):
     def parse(self):
-        self.appendOperator("Identity") # TODO: this is a dummy operation to perform correct infer_shape
+        raise NotImplementedError()
 
 @parserDescriptor(stub=True)
 class LbannLayerParser_rsqrt(LbannLayerParser):
     def parse(self):
-        self.appendOperator("Identity") # TODO: this is a dummy operation to perform correct infer_shape
+        raise NotImplementedError()

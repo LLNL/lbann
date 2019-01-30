@@ -78,11 +78,10 @@ class LbannLayerParser_categorical_accuracy(LbannLossLayerParser):
         h2,_ = self.appendOperator("Mul", inputNames=[truth, h1], hiddenOutputCount=1)
         self.appendLossOperators(h2)
 
-# TODO: implement
 @parserDescriptor(stub=True)
 class LbannLayerParser_top_k_categorical_accuracy(LbannLayerParser):
     def parse(self):
-        self.appendOperator("LbannTopKCategoricalAccuracy")
+        raise NotImplementedError()
 
 class LbannMeanLossLayerParser(LbannLossLayerParser):
     def appendMeanLossOperators(self, square=False):
@@ -101,8 +100,7 @@ class LbannLayerParser_mean_squared_error(LbannMeanLossLayerParser):
     def parse(self):
         self.appendMeanLossOperators(True)
 
-# TODO: implement
 @parserDescriptor(stub=True)
 class LbannLayerParser_l2_norm2(LbannLayerParser):
     def parse(self):
-        self.appendOperator("LbannL2Norm2")
+        raise NotImplementedError()

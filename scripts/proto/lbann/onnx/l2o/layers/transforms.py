@@ -79,4 +79,4 @@ class LbannLayerParser_evaluation(LbannLayerParser):
 @parserDescriptor(stub=True)
 class LbannLayerParser_zero(LbannLayerParser):
     def parse(self):
-        self.appendOperator("Identity") # TODO: this is a dummy operation to perform correct infer_shape
+        raise NotImplementedError()

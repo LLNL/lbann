@@ -23,7 +23,6 @@ class parse_AveragePool(OnnxPoolingLayerParser):
     def parse(self):
         return self.parse_MaxAveragePool(average=True)
 
-# TODO: return identity if not necessary
 @parserDescriptor(["reshape"])
 class parse_Reshape(OnnxLayerParser):
     def parse(self):

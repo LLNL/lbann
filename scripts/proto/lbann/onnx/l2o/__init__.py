@@ -12,7 +12,23 @@ import sys
 
 import lbann.onnx
 from lbann.onnx.l2o.layers import PARSERS
-from lbann.onnx.util import list2LbannList, getStaticTensorShapes
+from lbann.onnx.util import list2LbannList, getStaticTensorShapes, printWarning
+
+def getLbannLayerType(l):
+    for f, p in PARSERS.items():
+        if l.HasField(f):
+            return f
+
+    return None
+
+def isLayerStub(l):
+    t = getLbannLayerType(l)
+
+    # Since some special parsers are hard-coded, this function returns False if it fails the layer type.
+    if t is None:
+        return False
+
+    return PARSERS[t].stub
 
 def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     with open(path, "r") as f:
@@ -31,8 +47,13 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     outputs = []
     inits = []
 
-    for l in pb.model.layer:
-        # OPTIMIZE: avoid performing infer_shapes in every iteration. value_info can be passed via make_graph
+    for i_l, l in enumerate(pb.model.layer):
+        if isLayerStub(l):
+            printWarning("Layer {} is skipped since the parser is not implemented.".format(i_l))
+            printWarning(l)
+            continue
+
+        # TODO: avoid performing infer_shapes in every iteration. value_info can be passed via make_graph
         inputShapes = getStaticTensorShapes(onnx.helper.make_model(onnx.helper.make_graph(nodes, "graph",
                                                                                           inputs, outputs, inits)))
         inputShapes.update(modelInputShapes)
@@ -40,17 +61,6 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
 
         tensorNames = set(reduce(lambda a,b: a+b, list(map(lambda x: list(x.input)+list(x.output), nodes)), []))
         unknownTensors = list(filter(lambda x: x not in inputShapes.keys(), tensorNames))
-        # if len(unknownTensors) > 0:
-        #     print(unknownTensors)
-        #     assert False
-
-        # iterative export for debugging
-        # onnx.save(onnx.shape_inference.infer_shapes(onnx.helper.make_model(onnx.helper.make_graph(nodes,
-        #                                                                                           "graph",
-        #                                                                                           inputs,
-        #                                                                                           outputs,
-        #                                                                                           inits))),
-        #           "out_{}.onnx".format(len(nodes)))
 
         if l.hint_layer:
             dims = None
