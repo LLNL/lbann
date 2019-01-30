@@ -58,16 +58,31 @@ void data_store_jag::setup() {
   if (m_master) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
+
+  // I suspect we'll never go out-of-memory ...
+  if (! m_in_memory) {
+    LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
+  } 
+
   generic_data_store::setup();
+
+  //sanity check
   if (m_master) {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
   }
+
+  //m_reader is *generic_data_store
   m_jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
   if (m_jag_reader == nullptr) {
     LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
   }
 
-/*
+  /// m_all_minibatch_indices[j] will contain all indices that
+  //  will be passed to data_reader::fetch_data in one epoch,
+  //  for processor P_j; these are NOT shuffled indices
+  build_all_minibatch_indices();
+
+  // allocate buffers that are used in exchange_data()
   m_send_buffer.resize(m_np);
   m_send_buffer_2.resize(m_np);
   m_send_requests.resize(m_np);
@@ -76,19 +91,16 @@ void data_store_jag::setup() {
   m_outgoing_msg_sizes.resize(m_np);
   m_incoming_msg_sizes.resize(m_np);
   m_recv_buffer.resize(m_np);
-*/
 
-  if (! m_in_memory) {
-    LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
-  } 
-  
-  else {
-    if (m_master) std::cout << "calling get_minibatch_index_vector\n";
-    get_minibatch_index_vector();
+  //This is broken/outdated due to recent changes in generic_data_store::fetch_data
+  //if (m_master) std::cout << "calling get_minibatch_index_vector\n";
+  //get_minibatch_index_vector();
     
-    if (m_master) std::cout << "calling exchange_mb_indices()\n";
-    exchange_mb_indices();
-  }
+  // This is needed if the data_store preloads all samples.
+  // but we're not doint that anymore
+  //if (m_master) std::cout << "calling exchange_mb_indices()\n";
+  //exchange_mb_indices();
+
   if (m_master) {
     std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
   }
@@ -105,64 +117,72 @@ void data_store_jag::get_indices(std::unordered_set<int> &indices, int p) {
 #endif
 
 void data_store_jag::exchange_data() {
-  exchange_ds_indices();
+// much of the following has not been tested; it compiles,
+// but is likely buggy
 
+  if (m_epoch == 1) {
+    if (m_master) std::cerr << "calling exchange_ds_indices()\n";
+      // fills in m_owner; this maps a sample index to the owning processor
+      // Also fill in m_my_datastore_indices, which is the set of indices 
+      // (and associated samples) that I own
+      exchange_ds_indices();
+  }  
+
+  #ifdef DEBUG
   MPI_Barrier(MPI_COMM_WORLD);
+  #endif
 
-  LBANN_ERROR("starting data_store_jag::exchange_data for epoch: " + std::to_string(m_epoch) + "; not yet implemented; m_data.size: " + std::to_string(m_data.size()));
+//  LBANN_ERROR("starting data_store_jag::exchange_data for epoch: " + std::to_string(m_epoch) + "; not yet implemented; m_data.size: " + std::to_string(m_data.size()));
 
-  //double tm1 = get_time();
+  double tm1 = get_time();
 
   //========================================================================
   //build map: proc -> global indices that P_x needs for this epoch, and
   //                   which I own
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  for (size_t p=0; p<m_all_minibatch_indices.size(); p++) {
-    for (auto idx : m_all_minibatch_indices[p]) {
+  for (size_t j=0; j<m_all_minibatch_indices.size(); j++) {
+    for (auto idx : m_all_minibatch_indices[j]) {
       int index = (*m_shuffled_indices)[idx];
+      // P_j needs the sample that corresponds to 'index' in order
+      // to complete the next epoch
       if (m_my_datastore_indices.find(index) != m_my_datastore_indices.end()) {
-        proc_to_indices[p].insert(index);
+        proc_to_indices[j].insert(index);
       }
     }
   }
 
   if (m_master) std::cout << "exchange_data; built map\n";
 
-#if 0
   //========================================================================
   //part 1: exchange the sizes of the data
   
-  for (size_t j=0; j<m_send_buffer.size(); j++) {
-    m_send_buffer[j].reset();
-  }
-  int my_first = m_sample_ownership[m_rank];
+  // m_send_buffer[j] is a conduit::Node that contains
+  // all samples that this proc will send to P_j
   for (int p=0; p<m_np; p++) {
+    m_send_buffer[p].reset();
     for (auto idx : proc_to_indices[p]) {
-      int local_idx = idx - my_first;
-      if (local_idx >= (int)m_data.size()) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: local index: " + std::to_string(local_idx) + " is >= m_data.size(): " + std::to_string(m_data.size()));
-      }
-      if (local_idx < 0) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: local index: " + std::to_string(local_idx) + " is < 0");
-      }
-
-      m_send_buffer[p][std::to_string(idx)] = m_data[local_idx];
+      m_send_buffer[p][std::to_string(idx)] = m_data[idx];
     }
+    #ifdef DEBUG
+    if (m_master && p == 1)  m_send_buffer[p].print();
+    #endif
 
+    // code in the following method is a modification of code from
+    // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
 
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
-  }
+   }
 
-  //start receives for sizes of the data
-  for (int p=0; p<m_np; p++) {
-    MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
-  }
+    //start receives for sizes of the data
+    for (int p=0; p<m_np; p++) {
+      MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
+    }
 
-  // wait for all msgs to complete
-  MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
-  MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
+    // wait for all msgs to complete
+    MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
+    MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
   //========================================================================
   //part 2: exchange the actual data
@@ -175,9 +195,11 @@ void data_store_jag::exchange_data() {
     MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
   }
 
+  #ifdef DEBUG
   m_comm->global_barrier();
   if (m_master) std::cout << "started sends for outgoing data\n";
   m_comm->global_barrier();
+  #endif
 
   // start recvs for incoming data
   for (int p=0; p<m_np; p++) {
@@ -185,18 +207,28 @@ void data_store_jag::exchange_data() {
     MPI_Irecv(m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_recv_requests[p]);
   }
 
+  #ifdef DEBUG
   m_comm->global_barrier();
   if (m_master) std::cout << "started recvs for incoming data\n";
   m_comm->global_barrier();
+  #endif
 
 
   // wait for all msgs to complete
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
-if (m_master) std::cout << "finished waiting!\n\n";
+
+  #ifdef DEBUG
+  m_comm->global_barrier();
+  if (m_master) std::cout << "finished waiting; all communications have completed.\n";
+  #endif
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
+
+#if 0
+// The following needs needs fixing. At the conclusion of this block,
+// m_minibatch_data[data_id] should contain a single JAG sample
 
   for (int p=0; p<m_np; p++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
@@ -211,9 +243,9 @@ if (m_master) std::cout << "finished waiting!\n\n";
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
     m_minibatch_data[p].update(n_msg["data"]);
   }
+#endif
 
   if (m_master) std::cout << "data_store_jag::exchange_data time: " << get_time() - tm1 << "\n";
-#endif
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
@@ -237,6 +269,9 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
 }
 
 #if 0
+// ARUGH! I have two versions of the following, and am unsure which is correct.
+//        Will have to re-study conduit_relay_mpi.cpp
+//
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
   node_out.reset();
   conduit::Schema s_data_compact;
@@ -281,8 +316,10 @@ if (m_master && doit) {
 }
 #endif
 
+// ARUGH! I have two versions of the following, and am unsure which is correct.
+//        Will have to re-study conduit_relay_mpi.cpp
+//
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
-#if 0
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
     s_data_compact = node_in.schema();
@@ -291,12 +328,13 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
   }
 
   std::string snd_schema_json = s_data_compact.to_json();
-/*
-if (m_master)  {
-  std::cout << "XXXX:\n";
-  std::cout << snd_schema_json << "\n";
+
+  #ifdef DEBUG
+  if (m_master) {
+    std::cout << "\nsnd_schema_json:\n";
+    std::cout << snd_schema_json << "\n";
   }
-*/
+  #endif
 
   conduit::Schema s_msg;
   s_msg["schema_len"].set(conduit::DataType::int64());
@@ -310,6 +348,7 @@ if (m_master)  {
   node_out.set(s_msg_compact);
   node_out["schema"].set(snd_schema_json);
   node_out["data"].update(node_in);
+
 /*
 static bool doit = true;
 if (m_master && doit) {
@@ -329,21 +368,24 @@ if (m_master && doit) {
   doit = false;
 }
 */
-#endif
 }
 
 
 // fills in m_owner; this maps a sample index to the owning processor
+// Also fill in m_my_datastore_indices, which is the set of indices that I own
 void data_store_jag::exchange_ds_indices() {
+  m_my_datastore_indices.clear();
   int my_num_indices = m_data.size();
   std::vector<int> counts(m_np);
   m_comm->model_all_gather<int>(my_num_indices, counts);
 
+  #ifdef DEBUG
   if (m_master) {
     std::cerr << "\nDS Counts:\n";
     for (auto t : counts) std::cerr << t << " ";
     std::cerr << "\n";
   }
+  #endif
 
   std::vector<int> displ(m_np);
   displ[0] = 0;
@@ -372,6 +414,9 @@ void data_store_jag::exchange_ds_indices() {
         LBANN_ERROR("duplicate index in m_owner");
       }
       m_owner[all_indices[i]] = proc;
+      if (proc == m_rank) {
+        m_my_datastore_indices.insert(all_indices[i]);
+      }
     }
   }
 
@@ -396,6 +441,14 @@ void data_store_jag::exchange_ds_indices() {
   #endif
 }
 
+void data_store_jag::build_all_minibatch_indices() {
+  m_all_minibatch_indices.clear();
+  m_all_minibatch_indices.resize(m_np);
+  for (size_t idx=0; idx<m_shuffled_indices->size(); ++idx) {
+    int owner = idx % m_np;
+    m_all_minibatch_indices[owner].push_back(idx);
+  }
+}
 
 }  // namespace lbann
 

@@ -98,11 +98,6 @@ protected :
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
-  /// m_sample_ownership[j] is the global index of the first sample that
-  /// P_j owns. m_sample_ownership[j+1] - m_sample_ownership[j] is the 
-  /// number of samples that P_j owns
-  std::vector<int> m_sample_ownership;
-
   int m_num_samples;
 
   void testme();
@@ -111,6 +106,8 @@ protected :
 
   // fills in m_owner, which maps an index to the owning processor
   void exchange_ds_indices();
+
+  void build_all_minibatch_indices();
 };
 
 }  // namespace lbann
