@@ -22,20 +22,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_checksmall .hpp .cpp - Check matrices for small values
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 
 void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
-  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
-    return;
-  }
   const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
     std::stringstream ss;
