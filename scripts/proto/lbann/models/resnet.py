@@ -206,10 +206,10 @@ class ResNet(lm.Module):
     assumed to be image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -270,15 +270,15 @@ class ResNet(lm.Module):
         return self.fc(x)
 
 class ResNet18(ResNet):
-    """ResNet-18.
+    """ResNet-18 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -310,15 +310,15 @@ class ResNet18(ResNet):
                          name)
 
 class ResNet34(ResNet):
-    """ResNet-34.
+    """ResNet-34 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -350,15 +350,15 @@ class ResNet34(ResNet):
                          name)
 
 class ResNet50(ResNet):
-    """ResNet-50.
+    """ResNet-50 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -390,15 +390,15 @@ class ResNet50(ResNet):
                          name)
 
 class ResNet101(ResNet):
-    """ResNet-101.
+    """ResNet-101 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -430,15 +430,15 @@ class ResNet101(ResNet):
                          name)
 
 class ResNet152(ResNet):
-    """ResNet-152.
+    """ResNet-152 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
