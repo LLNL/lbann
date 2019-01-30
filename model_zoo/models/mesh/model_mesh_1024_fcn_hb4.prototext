@@ -29,7 +29,7 @@ model {
   ###################################################
   callback { print {} }
   callback { timer {} }
-  #callback { profiler {} }
+  # callback { profiler { skip_init: true  } }
   callback { gpu_memory_usage {} }
 
   ###################################################
