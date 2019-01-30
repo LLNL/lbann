@@ -109,14 +109,13 @@ hypergradient_adam::~hypergradient_adam() {
   if(m_old_gradient != nullptr) { delete m_old_gradient; }
 }
 
-std::string hypergradient_adam::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "hyper_learning_rate=" << m_hyper_learning_rate << ", "
-     << "beta1=" << m_beta1 << ", "
-     << "beta2=" << m_beta2 << ", "
-     << "eps=" << m_eps;
-  return ss.str();
+description hypergradient_adam::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("Hypergradient learning rate", m_hyper_learning_rate);
+  desc.add("beta1", m_beta1);
+  desc.add("beta2", m_beta2);
+  desc.add("eps", m_eps);
+  return desc;
 }
 
 void hypergradient_adam::setup(weights& w) {
@@ -204,7 +203,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
 bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if(p.get_cb_type() == callback_type::batch)
     optimizer::save_to_checkpoint_shared(p,name_prefix);
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p);
   }
 
@@ -225,11 +224,11 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
   if(p.get_cb_type() == callback_type::batch)
     optimizer::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p, &header);
   }
 
-  m_comm->model_broadcast(0, header);
+  m_comm->trainer_broadcast(0, header);
 
   unpack_header(header);
 

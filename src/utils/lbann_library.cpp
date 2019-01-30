@@ -73,7 +73,7 @@ model *build_model_from_prototext(int argc, char **argv,
     lbann_data::Model *pb_model = pb.mutable_model();
 
     // Adjust the number of parallel readers; this may be adjusted
-    // after calling split_models()
+    // after calling split_trainers()
     set_num_parallel_readers(comm, pb);
 
     // Check to see if the model wants to reduce the I/O parallelism
@@ -105,7 +105,7 @@ model *build_model_from_prototext(int argc, char **argv,
     // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
     if (pb_model->random_init_models_differently()) {
-      random_seed = random_seed + comm->get_model_rank();
+      random_seed = random_seed + comm->get_trainer_rank();
       // Reseed here so that setup is done with this new seed.
       init_random(random_seed);
       init_data_seq_random(random_seed);
@@ -122,16 +122,16 @@ model *build_model_from_prototext(int argc, char **argv,
     // Set up the communicator and get the grid based on the first model's spec.
     // We do not currently support splitting different models in different ways,
     // as this implies different grids.
-    int procs_per_model = pb_model->procs_per_model();
-    if (procs_per_model == 0) {
-      procs_per_model = comm->get_procs_in_world();
+    int procs_per_trainer = pb_model->procs_per_trainer();
+    if (procs_per_trainer == 0) {
+      procs_per_trainer = comm->get_procs_in_world();
     }
     if (first_model) {
-      comm->split_models(procs_per_model);
-      if (pb_model->num_parallel_readers() > procs_per_model) {
-        pb_model->set_num_parallel_readers(procs_per_model);
+      comm->split_trainers(procs_per_trainer);
+      if (pb_model->num_parallel_readers() > procs_per_trainer) {
+        pb_model->set_num_parallel_readers(procs_per_trainer);
       }
-    } else if (procs_per_model != comm->get_procs_per_model()) {
+    } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
       LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
     }
 
@@ -179,6 +179,10 @@ model *build_model_from_prototext(int argc, char **argv,
                                    pb.model());
     model->setup(io_thread_pool);
 
+    if(opts->get_bool("disable_background_io_activity")) {
+      model->allow_background_io_activity(false);
+    }
+
     //under development; experimental
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
       if (master) {
@@ -201,7 +205,7 @@ model *build_model_from_prototext(int argc, char **argv,
 
     if (comm->am_world_master()) {
       std::cout << std::endl;
-      model->print_description(std::cout);
+      std::cout << model->get_description();
       std::cout << "Callbacks:" << std::endl;
       for (lbann_callback *cb : model->get_callbacks()) {
         std::cout << cb->name() << std::endl;
@@ -307,12 +311,12 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
 #endif // LBANN_HAS_ALUMINUM
 
   // Report model settings
-  const auto& grid = comm->get_model_grid();
-  int procs_per_model = pb_model->procs_per_model();
+  const auto& grid = comm->get_trainer_grid();
+  int procs_per_trainer = pb_model->procs_per_trainer();
   std::cout << "Model settings" << std::endl
-            << "  Models              : " << comm->get_num_models() << std::endl
-            << "  Processes per model : " << procs_per_model << std::endl
-            << "  Grid dimensions     : " << grid.Height() << " x " << grid.Width() << std::endl;
+            << "  Models                : " << comm->get_num_trainers() << std::endl
+            << "  Processes per trainer : " << procs_per_trainer << std::endl
+            << "  Grid dimensions       : " << grid.Height() << " x " << grid.Width() << std::endl;
   std::cout << std::endl;
 }
 

@@ -88,14 +88,10 @@ optimizer::~optimizer() {
   if (m_gradient_staging != nullptr)  { delete m_gradient_staging; }
 }
 
-std::string optimizer::get_description() const {
-  std::stringstream ss;
-  ss << get_type();
-  if (m_weights != nullptr) {
-    ss << " (optimizing " << m_weights->get_name() << ")";
-  }
-  ss << "; learning_rate=" << m_learning_rate;
-  return ss.str();
+description optimizer::get_description() const {
+  description desc(get_type() + " optimizer");
+  desc.add("Learning rate", m_learning_rate);
+  return desc;
 }
 
 weights& optimizer::get_weights() {
@@ -161,7 +157,7 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   if (!is_initialized()) {
     LBANN_ERROR("attempted to access gradients before they are set up");
   }
-  if (scale == DataType(0)) { return; } 
+  if (scale == DataType(0)) { return; }
 
   // Add to gradient
   const auto dist_data = m_gradient->DistData();
@@ -189,7 +185,7 @@ void optimizer::add_to_gradient_staging(const AbsDistMat& gradient,
   if (m_gradient_allreduce_started) {
     LBANN_ERROR("attempted to add to staging matrix after gradient accumulation has started");
   }
-  if (scale == DataType(0)) { return; } 
+  if (scale == DataType(0)) { return; }
 
   // Clear staging matrix if needed
   if (!m_gradient_allreduce_needed) {
@@ -298,7 +294,7 @@ bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
 
 bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
   p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
-  m_comm->model_broadcast(0, m_learning_rate);
+  m_comm->trainer_broadcast(0, m_learning_rate);
   return true;
 }
 

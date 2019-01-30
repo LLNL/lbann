@@ -453,7 +453,7 @@ model {
   }
   #callback {
   #  dump_outputs {
-  #    prefix: "/dir/to/save/imgs"
+  #    directory: "/dir/to/save/imgs"
   #    batch_interval: 10
   #    layers: "gen1fc4"
   #    execution_modes: "test"
@@ -470,5 +470,5 @@ model {
 
  # }
   block_size: 256
-  procs_per_model:0 
+  procs_per_trainer:0
 }

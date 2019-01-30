@@ -162,16 +162,13 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = transform_layer::get_description();
     std::stringstream ss;
 
     // Pool mode
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Pool mode: ";
     switch (m_pool_mode) {
     case pool_mode::max:            ss << "max";              break;
     case pool_mode::average:        ss << "average";          break;
@@ -180,39 +177,38 @@ protected:
     default:
       ss << "invalid";
     }
-    desc.push_back(ss.str());
+    desc.add("Pool mode", ss.str());
 
     // Pool dimensions
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Pool dimensions: ";
     for (size_t i = 0; i < m_pool_dims.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_pool_dims[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Pool dimensions", ss.str());
 
     // Strides
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Strides: ";
     for (size_t i = 0; i < m_strides.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_strides[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Strides", ss.str());
 
     // Pads
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Pads: ";
     for (size_t i = 0; i < m_pads.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_pads[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Pads", ss.str());
 
     // Result
     return desc;
 
   }
+
+protected:
 
   void setup_dims() override {
     transform_layer::setup_dims();

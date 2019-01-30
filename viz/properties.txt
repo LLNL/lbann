@@ -21,8 +21,6 @@ learning     convolution             shape=tripleoctagon   color=chartreuse3
 learning     fully_connected
 learning     deconvolution           shape=octogon
 io           input
-io           target
-io           reconstruction
 activations  elu
 activations  identity
 activations  leaky_relu

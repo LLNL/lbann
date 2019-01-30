@@ -237,7 +237,7 @@ void data_store_image::exchange_data() {
         int len = m_file_sizes[index];
         m_comm->nb_tagged_send<unsigned char>(
             m_data[index].data(), len, p, index,
-            send_req[p][jj++], m_comm->get_model_comm());
+            send_req[p][jj++], m_comm->get_trainer_comm());
 
       }
     }
@@ -273,7 +273,7 @@ void data_store_image::exchange_data() {
         m_my_minibatch_data[index].resize(len);
         m_comm->nb_tagged_recv<unsigned char>(
             m_my_minibatch_data[index].data(), len, owner,
-            index, recv_req[owner][jj++], m_comm->get_model_comm());
+            index, recv_req[owner][jj++], m_comm->get_trainer_comm());
       }
     }
   }
@@ -306,7 +306,7 @@ void data_store_image::exchange_file_sizes(
 
   std::vector<int> rcv_counts(m_np);
   int nbytes = my_global_indices.size();
-  m_comm->model_all_gather<int>(nbytes, rcv_counts);
+  m_comm->trainer_all_gather<int>(nbytes, rcv_counts);
   int num_global_indices = std::accumulate(rcv_counts.begin(), rcv_counts.end(), 0);
 
   std::vector<int> disp(m_np);   //@todo: fix for model
@@ -605,7 +605,7 @@ void data_store_image::fetch_data() {
           int len = m_file_sizes[index];
           m_comm->nb_tagged_send<unsigned char>(
                          m_data[index].data(), len, p, index,
-                         send_req[req_idx++], m_comm->get_model_comm());
+                         send_req[req_idx++], m_comm->get_trainer_comm());
         }
       }
     }
@@ -653,7 +653,7 @@ void data_store_image::fetch_data() {
         m_my_minibatch_data[index].resize(len);
         m_comm->nb_tagged_recv<unsigned char>(
             m_my_minibatch_data[index].data(), len, owner,
-            index, recv_req[req_idx++], m_comm->get_model_comm());
+            index, recv_req[req_idx++], m_comm->get_trainer_comm());
       }
     }
   }
@@ -809,7 +809,7 @@ void data_store_image::read_file_sizes() {
     }
   }
 
-  m_comm->broadcast(0, s2.data(), s2.size(), m_comm->get_model_comm());
+  m_comm->broadcast(0, s2.data(), s2.size(), m_comm->get_trainer_comm());
   for (size_t j=0; j<s2.size(); j+=2) {
     m_file_sizes[s2[j]] = s2[j+1];
   }

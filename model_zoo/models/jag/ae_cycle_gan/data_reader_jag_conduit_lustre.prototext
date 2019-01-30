@@ -13,7 +13,7 @@ data_reader {
     role: "train"
     shuffle: true
     # change to a lustre path
-    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG_balanced_1K/1M_A/"
+    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/"
     data_filename: "*/*.bundle"
 
     validation_percent: 0
@@ -162,7 +162,7 @@ data_reader {
     role: "test"
     shuffle: true
     # change to a lustre path
-    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG_balanced_1K/1M_B"
+    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_B"
     data_filename: "*/*.bundle"
 
     validation_percent: 0

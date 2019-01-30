@@ -49,13 +49,13 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = transform_layer::get_description();
-    desc.push_back("Value: " + std::to_string(m_value));
+    desc.add("Value", m_value);
     return desc;
   }
+
+protected:
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {

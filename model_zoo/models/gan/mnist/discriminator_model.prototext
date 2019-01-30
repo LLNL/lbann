@@ -6,7 +6,7 @@ model {
   super_steps: 100000
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -43,7 +43,7 @@ model {
 
   callback {
     dump_outputs {
-      prefix: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dismodel_dump_acts/"
+      directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dismodel_dump_acts/"
       #layers: "fc4_tanh data sum sigmoid2"
       layers: "fc4_tanh"
       #batch_interval: 844

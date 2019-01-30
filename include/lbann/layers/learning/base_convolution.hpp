@@ -113,8 +113,8 @@ public:
       m_dilations(dilations),
       m_num_groups(groups),
       m_bias_scaling_factor(has_bias ? DataType(1) : DataType(0)),
-      m_kernel_gradient(this->m_comm->get_model_grid()),
-      m_bias_gradient(this->m_comm->get_model_grid())
+      m_kernel_gradient(this->m_comm->get_trainer_grid()),
+      m_bias_gradient(this->m_comm->get_trainer_grid())
 #ifdef LBANN_HAS_CUDNN
     , m_kernel_cudnn_desc(nullptr),
       m_convolution_cudnn_desc(nullptr),
@@ -235,55 +235,51 @@ public:
 #endif // LBANN_HAS_CUDNN
   }
 
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = learning_layer::get_description();
     std::stringstream ss;
 
     // Convolution dimensions
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Convolution dimensions: ";
     for (size_t i = 2; i < m_kernel_dims.size(); ++i) {
       ss << (i > 2 ? ", " : "" ) << m_kernel_dims[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Convolution dimensions", ss.str());
 
     // Strides
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Strides: ";
     for (size_t i = 0; i < m_strides.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_strides[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Strides", ss.str());
 
     // Pads
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Pads: ";
     for (size_t i = 0; i < m_pads.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_pads[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Pads", ss.str());
 
     // Dilation
-    ss.str(std::string());
+    ss.str(std::string{});
     ss.clear();
-    ss << "Dilations: ";
     for (size_t i = 0; i < m_dilations.size(); ++i) {
       ss << (i > 0 ? ", " : "" ) << m_dilations[i];
     }
-    desc.push_back(ss.str());
+    desc.add("Dilations", ss.str());
 
     // Groups
-    desc.push_back("Groups: " + std::to_string(m_num_groups));
+    desc.add("Groups", m_num_groups);
 
     // Bias
-    if (m_bias_scaling_factor == DataType(0)) {
-      desc.push_back("Bias: disabled");
-    } else {
-      desc.push_back("Bias: enabled");
-    }
+    ss.str(std::string{});
+    ss.clear();
+    ss << (m_bias_scaling_factor == DataType(0) ?
+           "disabled" : "enabled");
+    desc.add("Bias", ss.str());
 
     // Result
     return desc;

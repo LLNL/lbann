@@ -128,9 +128,10 @@ class generic_input_layer : public io_layer {
 
   std::string get_type() const override { return "generic_input"; }
 
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = io_layer::get_description();
-    desc.push_back("Buffer: " + m_io_buffers[0]->get_type());
+    desc.add("Buffer", m_io_buffers[0]->get_type());
+    desc.add("Background I/O", this->m_model->background_io_activity_allowed());
     return desc;
   }
 
@@ -156,15 +157,15 @@ class generic_input_layer : public io_layer {
     // in case that target_layer gets initialized beforehand
     if(m_data_readers[execution_mode::training] != nullptr) {
       m_data_readers[execution_mode::training]->setup(num_io_threads, this->m_model->get_io_thread_pool());
-      m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_model());
+      m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
     if(m_data_readers[execution_mode::validation] != nullptr) {
       m_data_readers[execution_mode::validation]->setup(num_io_threads, this->m_model->get_io_thread_pool());
-      m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_model());
+      m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
     if(m_data_readers[execution_mode::testing] != nullptr) {
       m_data_readers[execution_mode::testing]->setup(num_io_threads, this->m_model->get_io_thread_pool());
-      m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_model());
+      m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
 
     if(io_layer::m_data_set_spans_models) {
@@ -276,11 +277,11 @@ class generic_input_layer : public io_layer {
     if(io_buffer->num_samples_ready(mode) > 0) {
       num_samples_in_batch = io_buffer->num_samples_ready(mode);
     }else {
-        std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "I/O buffer does not contain valid samples ("<< num_samples_in_batch
-            << ")";
-        throw lbann_exception(err.str());
+        if(!get_data_reader()->position_is_overrun()) {
+          std::stringstream err;
+          err << "I/O buffer does not contain valid samples ("<< num_samples_in_batch << ")";
+          LBANN_ERROR(err.str());
+        }
     }
 
     if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
@@ -303,7 +304,7 @@ class generic_input_layer : public io_layer {
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
-    if(!m_data_set_processed) {
+    if(!m_data_set_processed && this->m_model->background_io_activity_allowed()) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
@@ -720,7 +721,7 @@ class generic_input_layer : public io_layer {
       if ((it != this->m_data_readers.end()) && it->second) {
         (it->second)->save_to_checkpoint_shared(p, "data_reader_testing");
       }
-      if (m_comm->am_model_master()) {
+      if (m_comm->am_trainer_master()) {
         p.write_uint64(persist_type::train, "reader_train_processed",
                        (uint64_t) m_training_dataset.get_num_samples_processed());
         p.write_uint64(persist_type::train, "reader_train_total",
@@ -734,7 +735,7 @@ class generic_input_layer : public io_layer {
       }
     }
     if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
-      if (m_comm->am_model_master()) {
+      if (m_comm->am_trainer_master()) {
         p.write_uint64(persist_type::validate, "reader_validate_processed",
                        (uint64_t) m_validation_dataset.get_num_samples_processed());
         p.write_uint64(persist_type::validate, "reader_validate_total",
@@ -775,7 +776,7 @@ class generic_input_layer : public io_layer {
     // rank 0 reads the file
     dataset_header header;
     // Assume we are loading from a epoch end checkpoint
-    if (m_comm->am_model_master()) {
+    if (m_comm->am_trainer_master()) {
       p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
       p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
       p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);

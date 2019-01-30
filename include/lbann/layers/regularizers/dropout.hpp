@@ -58,7 +58,7 @@ public:
   {
 #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
+    if (Dev == El::Device::GPU && get_comm()->am_trainer_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
@@ -116,13 +116,13 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = regularizer_layer::get_description();
-    desc.push_back("Keep probability: " + std::to_string(m_keep_prob));
+    desc.add("Keep probability", m_keep_prob);
     return desc;
   }
+
+protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();

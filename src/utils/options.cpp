@@ -10,9 +10,13 @@
 #include <cstdlib>
 #include <stdexcept>
 
+namespace lbann {
+
 options * options::s_instance = new options;
 
 //============================================================================
+
+namespace {
 
 void m_parse_opt(std::string tmp, std::string &key, std::string &val)
 {
@@ -35,6 +39,8 @@ void m_parse_opt(std::string tmp, std::string &key, std::string &val)
     }
   }
 }
+
+} // namespace
 
 void options::init(int argc, char **argv)
 {
@@ -65,6 +71,8 @@ void options::init(int argc, char **argv)
 
 //============================================================================
 
+namespace {
+
 void lower(std::string &s)
 {
   for (char & j : s) {
@@ -74,16 +82,7 @@ void lower(std::string &s)
   }
 }
 
-void lower(char *s)
-{
-  size_t len = strlen(s);
-  for (size_t j=0; j<len; j++) {
-    if (isalpha(s[j])) {
-      char a = tolower(s[j]);
-      s[j] = a;
-    }
-  }
-}
+} // namespace
 
 //============================================================================
 
@@ -342,3 +341,5 @@ void options::print(std::ostream &out) {
   }
   out << std::endl;
 }
+
+} // namespace lbann

@@ -35,58 +35,47 @@ sgd::sgd(lbann_comm *comm,
          bool nesterov)
   : optimizer(comm, learning_rate),
     m_momentum(momentum),
-    m_nesterov(nesterov),
-    m_velocity(nullptr) {}
+    m_nesterov(nesterov) {}
 
 sgd::sgd(const sgd& other)
   : optimizer(other),
     m_momentum(other.m_momentum),
     m_nesterov(other.m_nesterov),
-    m_velocity(other.m_velocity) {
-  if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
-}
+    m_velocity(other.m_velocity ? other.m_velocity->Copy() : nullptr) {}
 
 sgd& sgd::operator=(const sgd& other) {
   optimizer::operator=(other);
   m_momentum = other.m_momentum;
   m_nesterov = other.m_nesterov;
-
-  // Copy velocity matrix
-  if (m_velocity != nullptr && other.m_velocity != nullptr
-      && m_velocity->DistData() == other.m_velocity->DistData()) {
-    El::Copy(*other.m_velocity, *m_velocity);
-  }
-  else {
-    if (m_velocity != nullptr) { delete m_velocity; }
-    m_velocity = other.m_velocity;
-    if (m_velocity != nullptr) { m_velocity = m_velocity->Copy(); }
-  }
-
+  m_velocity.reset(other.m_velocity ?
+                   other.m_velocity->Copy() : nullptr);
   return *this;
 }
 
-sgd::~sgd() {
-  if (m_velocity != nullptr) { delete m_velocity; }
+description sgd::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("Momentum", m_momentum);
+  desc.add("Nesterov acceleration", m_nesterov);
+  return desc;
 }
 
-std::string sgd::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "momentum=" << m_momentum << ", "
-     << "nesterov=" << m_nesterov;
-  return ss.str();
+const AbsDistMat& sgd::get_velocity() const {
+  if (m_velocity == nullptr) {
+    LBANN_ERROR(get_type() + " optimizer "
+                + "attempted to access velocity before it was setup");
+  }
+  return *m_velocity;
+}
+AbsDistMat& sgd::get_velocity() {
+  // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
+  return const_cast<AbsDistMat&>(static_cast<const sgd&>(*this).get_velocity());
 }
 
 void sgd::setup(weights& w) {
   optimizer::setup(w);
-
-  // Allocate matrices
-  const int height = m_gradient->Height();
-  const int width = m_gradient->Width();
-  m_velocity = m_gradient->Construct(m_gradient->Grid(),
-                                     m_gradient->Root());
-  El::Zeros(*m_velocity, height, width);
-
+  const auto& gradient = this->get_gradient();
+  m_velocity.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  El::Zeros(*m_velocity, gradient.Height(), gradient.Width());
 }
 
 void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
@@ -157,13 +146,13 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
 bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p);
   }
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-  p.write_distmat(persist_type::train, l_name, m_velocity);
+  p.write_distmat(persist_type::train, l_name, m_velocity.get());
 
   return true;
 }
@@ -171,16 +160,16 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p, &header);
   }
 
-  m_comm->model_broadcast(0, header);
+  m_comm->trainer_broadcast(0, header);
 
   unpack_header(header);
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
-  p.read_distmat(persist_type::train, l_name, m_velocity);
+  p.read_distmat(persist_type::train, l_name, m_velocity.get());
 
   return true;
 }
@@ -209,4 +198,4 @@ bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) 
   return true;
 }
 
-}  // namespace lbann
+} // namespace lbann

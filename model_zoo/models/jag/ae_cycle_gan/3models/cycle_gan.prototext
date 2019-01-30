@@ -2,7 +2,7 @@ model {
   name: "cycgan_model"
   shareable_training_data_reader:false
   serialize_background_io: true
-  procs_per_model:0
+  procs_per_trainer:0
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -889,8 +889,8 @@ model {
 
   callback {
     dump_outputs {
-      prefix:"fw_latent_loss/"
-      #prefix:"/p/gpfs1/jacobs32/EuroViz3/fw_latent_loss/"
+      directory:"fw_latent_loss/"
+      #directory:"/p/gpfs1/jacobs32/EuroViz3/fw_latent_loss/"
       #layer_names: "image_data_dummy gen1fc4 gsample_minus_y l_l2_y"
       layers: "fw_latent_loss"
       execution_modes: "test"

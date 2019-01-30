@@ -2,14 +2,14 @@
 #Streamlines inference to use of only 1 model checkpoint (saved by using this prototext in training). Weights are copied from autoencoder and cyclegan and saved after training.
 model {
   name: "ae_cycgan_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_background_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 256 
+  mini_batch_size: 256
   block_size: 256
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -159,7 +159,7 @@ model {
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "gen1relu3_1"
   }
-  
+
   weights {
     name: "gen1fc1linearity"
     he_normal_initializer {
@@ -304,7 +304,7 @@ model {
   #  sum {}
     identity {}
   }
-  ####output of encoder goes to decoder and cycGAN duplicates 
+  ####output of encoder goes to decoder and cycGAN duplicates
   ######################
   # Decoder for foward output loss
   ######################
@@ -674,7 +674,7 @@ model {
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "latent_gen1relu3_1"
   }
-  
+
   layer {
     name: "gsample_minus_latentsample"
     data_layout: "data_parallel"
@@ -702,9 +702,9 @@ model {
   }
   callback {
     dump_outputs {
-      #prefix:"/p/lscratchh/jacobs32/EuroViz/fw_out_loss/"
-      prefix:"ae_latent_out_losses/"
-      #prefix:"save_img_acts/"
+      #directory:"/p/lscratchh/jacobs32/EuroViz/fw_out_loss/"
+      directory:"ae_latent_out_losses/"
+      #directory:"save_img_acts/"
       #ae_reconstruction === autoencoder reconstrcution
       #reconstruction ==== cycgan+autoencoder reconstruction
       #layers: "ae_reconstruction image_data_id reconstruction"

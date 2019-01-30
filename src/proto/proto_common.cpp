@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <sys/stat.h>
 
-using namespace lbann;
+namespace lbann {
 
 bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
   bool master = comm->am_world_master();
@@ -38,9 +38,9 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   }
 }
 
-int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data::LbannPB& p);
 
-void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
+void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
                        bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader, bool is_shareable_validation_data_reader)
 {
 #ifdef LBANN_HAS_CONDUIT
@@ -526,14 +526,14 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lbann_data::Model& model)
+bool check_if_num_parallel_readers_set(const lbann_comm *comm, const lbann_data::Model& model)
 {
   const bool master = comm->am_world_master();
   const int parallel_io = model.num_parallel_readers();
 
   if (parallel_io == 0) {
     if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_trainer() <<
         " (Limited to # Processes)" << std::endl;
     }
     return false;
@@ -544,24 +544,24 @@ bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lban
   return true;
 }
 
-void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void set_num_parallel_readers(const lbann_comm *comm, lbann_data::LbannPB& p)
 {
   lbann_data::Model *model = p.mutable_model();
   const bool is_set = check_if_num_parallel_readers_set(comm, *model);
 
   if (!is_set) {
-    const int parallel_io = comm->get_procs_per_model();
+    const int parallel_io = comm->get_procs_per_trainer();
     model->set_num_parallel_readers(parallel_io); //adjust the prototext
   }
 }
 
-int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p)
+int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data::LbannPB& p)
 {
   const lbann_data::Model& model = p.model();
   const bool is_set = check_if_num_parallel_readers_set(comm, model);
 
   if (!is_set) {
-    return comm->get_procs_per_model();
+    return comm->get_procs_per_trainer();
   }
   return model.num_parallel_readers();
 }
@@ -620,7 +620,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   }
 }
 
-void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void get_cmdline_overrides(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
   std::stringstream err;
@@ -686,8 +686,8 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("block_size")) {
     model->set_block_size(opts->get_int("block_size"));
   }
-  if (opts->has_int("procs_per_model")) {
-    model->set_procs_per_model(opts->get_int("procs_per_model"));
+  if (opts->has_int("procs_per_trainer")) {
+    model->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
   }
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
@@ -760,7 +760,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
-void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void print_parameters(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   if (!comm->am_world_master()) {
     return;
@@ -775,54 +775,16 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
             << "  block_size:              " << m.block_size()  << std::endl
-            << "  procs_per_model:         " << m.procs_per_model()  << std::endl
+            << "  procs_per_trainer:       " << m.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
             << "  serialize_background_io: " << m.serialize_background_io()  << std::endl
             << "  disable_cuda:            " << m.disable_cuda()  << std::endl
             << "  random_seed:             " << m.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
-            << "     (only used for metrics)\n"
-            << "\n"
-            << " Optimizer:  ";
-
-  const lbann_data::Optimizer &o = p.optimizer();
-  if (o.has_adagrad()) {
-    const lbann_data::Adagrad &a = o.adagrad();
-    std::cout << "  Adagrad\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  eps:        " << a.eps()  << std::endl;
-  } else if (o.has_rmsprop()) {
-    const lbann_data::Rmsprop &a = o.rmsprop();
-    std::cout <<  "  Rmsprop\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  decay_rate: " << a.decay_rate()  << std::endl
-              << "  eps:        " << a.eps()  << std::endl;
-  } else if (o.has_adam()) {
-    const lbann_data::Adam &a = o.adam();
-    std::cout << "  Adam\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  beta1:      " << a.beta1()  << std::endl
-              << "  beta2:      " << a.beta2()  << std::endl
-              << "  eps:        " << a.eps()  << std::endl;
-  } else if (o.has_hypergradient_adam()) {
-    const lbann_data::HypergradientAdam &a = o.hypergradient_adam();
-    std::cout << "  HypergradientAdam\n"
-              << "  init_learning_rate:  " << a.init_learning_rate()  << std::endl
-              << "  hyper_learning_rate: " << a.hyper_learning_rate()  << std::endl
-              << "  beta1:               " << a.beta1()  << std::endl
-              << "  beta2:               " << a.beta2()  << std::endl
-              << "  eps:                 " << a.eps()  << std::endl;
-  } else if (o.has_sgd()) {
-    const lbann_data::Sgd &a = o.sgd();
-    std::cout << "  Sgd\n"
-              << "  learn_rate: " << a.learn_rate()  << std::endl
-              << "  momentum:   " << a.momentum()  << std::endl
-              << "  decay_rate: " << a.decay_rate()  << std::endl
-              << "  nesterov:   " << a.nesterov()  << std::endl;
-  }
+            << "     (only used for metrics)\n";
 }
 
-void print_help(lbann::lbann_comm *comm)
+void print_help(lbann_comm *comm)
 {
   if (!comm->am_world_master()) {
     return;
@@ -851,10 +813,11 @@ void print_help(lbann::lbann_comm *comm)
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
        "  --block_size=<int>\n"
-       "  --procs_per_model=<int>\n"
+       "  --procs_per_trainer=<int>\n"
        "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
+       "  --disable_background_io_activity=<bool>\n"
        "  --disable_cuda=<bool>\n"
        "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"
@@ -919,7 +882,7 @@ void copy_file(std::string fn, std::ofstream &out)
   out << s.str();
 }
 
-void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
+void save_session(lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
 {
   if (!comm->am_world_master()) {
     return;
@@ -992,3 +955,5 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   out << s;
   out.close();
 }
+
+} // namespace lbann

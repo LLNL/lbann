@@ -88,8 +88,8 @@ void data_reader_multi_images::set_input_params(const int width, const int heigh
   set_input_params(width, height, num_ch, num_labels, 1);
 }
 
-std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const int mb_idx) const {
-  std::vector<::Mat> X_v(m_num_img_srcs);
+std::vector<CPUMat> data_reader_multi_images::create_datum_views(CPUMat& X, const int mb_idx) const {
+  std::vector<CPUMat> X_v(m_num_img_srcs);
   El::Int h = 0;
   for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
@@ -100,7 +100,7 @@ std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const 
 
 bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
 
   const img_src_t& img_src = m_image_list[data_id].first;
   for(size_t i=0u; i < m_num_img_srcs; ++i) {

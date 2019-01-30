@@ -5,8 +5,10 @@ set_full_path(THIS_DIR_HEADERS
   cuda.hpp
   cudnn.hpp
   dataset.hpp
+  description.hpp
   entrywise_operator.hpp
   exception.hpp
+  file_utils.hpp
   glob.hpp
   im2col.hpp
   mild_exception.hpp
@@ -15,8 +17,6 @@ set_full_path(THIS_DIR_HEADERS
   options.hpp
   profiling.hpp
   prototext.hpp
-  quantizer.hpp
-  quantizer_impl.hpp
   random.hpp
   statistics.hpp
   summary.hpp
