@@ -15,6 +15,10 @@ class AlexNet(lm.Module):
         E. Hinton. "ImageNet classification with deep convolutional
         neural networks." In Advances in Neural Information Processing
         Systems, pp. 1097-1105. 2012.
+        
+    Note that there is very little consistency in the implementation of
+    AlexNet across frameworks. If a particular variant is needed, you should
+    implement it yourself.
 
     """
 
@@ -36,16 +40,16 @@ class AlexNet(lm.Module):
         self.conv1 = lm.Convolution2dModule(96, 11, stride=4,
                                             activation=lp.Relu,
                                             name=self.name+'_conv1')
-        self.conv2 = lm.Convolution2dModule(256, 5, padding=2, groups=2,
+        self.conv2 = lm.Convolution2dModule(256, 5, padding=2,
                                             activation=lp.Relu,
                                             name=self.name+'_conv2')
         self.conv3 = lm.Convolution2dModule(384, 3, padding=1,
                                             activation=lp.Relu,
                                             name=self.name+'_conv3')
-        self.conv4 = lm.Convolution2dModule(384, 3, padding=1, groups=2,
+        self.conv4 = lm.Convolution2dModule(384, 3, padding=1,
                                             activation=lp.Relu,
                                             name=self.name+'_conv4')
-        self.conv5 = lm.Convolution2dModule(256, 3, padding=1, groups=2,
+        self.conv5 = lm.Convolution2dModule(256, 3, padding=1,
                                             activation=lp.Relu,
                                             name=self.name+'_conv5')
         self.fc6 = lm.FullyConnectedModule(4096, activation=lp.Relu,
