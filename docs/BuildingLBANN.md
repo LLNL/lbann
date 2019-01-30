@@ -79,21 +79,24 @@ The following LLNL-maintained packages are optional.
 
 + Establish a spack environment and install software dependencies.
   Note that there are four environments to pick from along two axis:
-  1) developers or users and 2) x86_64 and ppc64le.  For example if
-  you are a developer and want to build the inside of the git repo use
-  the following instructions:
 
-```
-export LBANN_HOME=<path to lbann git repo>
-export LBANN_BUILD_DIR=<path to a directory>
-export LBANN_INSTALL_DIR=<path to a directory>
-cd ${LBANN_BUILD_DIR}
-spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
-spack install
-spack env loads # Spack creates a file named loads that has all of the correct modules
-source loads
-unset LIBRARY_PATH
-```
+  1. developers or users
+  2. x86_64 and ppc64le
+
+  For example if you are a developer and want to build the inside of
+  the git repo use the following instructions:
+
+  ```
+  export LBANN_HOME=<path to lbann git repo>
+  export LBANN_BUILD_DIR=<path to a directory>
+  export LBANN_INSTALL_DIR=<path to a directory>
+  cd ${LBANN_BUILD_DIR}
+  spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+  spack install
+  spack env loads # Spack creates a file named loads that has all of the correct modules
+  source loads
+  unset LIBRARY_PATH
+  ```
 
   + Note that the environments provided here have a set of external
     packages and compilers that are installed on an LLNL LC CZ sytem.
