@@ -31,11 +31,11 @@ setting the `PYTHONPATH` environment variable).
 
 # Use
 
-This consists of two components, `lbann_proto` and
-`lbann_modules`. `lbann_proto` is an automatically generated interface
+This consists of two components, `lbann.proto` and
+`lbann.modules`. `lbann.proto` is an automatically generated interface
 to (most of) the components of the LBANN prototext system, e.g. the
 layers, weights, objective functions, metrics, and
-callbacks. `lbann_modules` consists of manually-curated higher-level
+callbacks. `lbann.modules` consists of manually-curated higher-level
 building blocks that are commonly used in neural networks.
 
 _Possible points of confusion_: LBANN constructs a static graph of
@@ -47,7 +47,7 @@ a layer: a layer is a single instance of an operator, whereas a module
 creates multiple instances of a (set of) layers with the same
 parameters.
 
-## `lbann_proto`
+## `lbann.proto`
 
 Neural network model components:
 
@@ -85,7 +85,7 @@ A simple (and not very good) convolutional neural network for MNIST
 data:
 
 ```py
-import lbann_proto as lp
+import lbann.proto as lp
 
 # ----------------------------------------------------------
 # Construct layer graph.
@@ -166,7 +166,7 @@ components (layers, weights, etc.) is in `src/proto/lbann.proto`. All
 fields present in a message are supported as keyword arguments in this
 API.
 
-## `lbann_modules`
+## `lbann.modules`
 
 This presently consists of a small number of neural network modules,
 which are patterns of layers that take an input layer to produce an
@@ -177,7 +177,7 @@ convolution layer as above, we could instead create a convolution
 module:
 
 ```py
-import lbann_modules as lm
+import lbann.modules as lm
 conv_module = lm.Convolution2dModule(
     64,         # Number of output channels, i.e. number of filters.
     5,          # Convolution window size (64x3x5x5 kernel).
