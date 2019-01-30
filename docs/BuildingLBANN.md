@@ -64,14 +64,18 @@ The following LLNL-maintained packages are optional.
 
         . ${SPACK_ROOT}/share/spack/setup-env.sh
 
-+ Setup your compiler environment. For example, on LLNL's LC machines,
-  one might load the following modules:
++ Setup your compiler and external software environment. For example,
+  on LLNL's LC machines, one might load the following modules:
 
         ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
 
-        or
+  or
 
         ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
+
+  Note to remove unwanted modules you can execute:
+
+        ml purge
 
 + Establish a spack environment and install software dependencies.
   Note that there are four environments to pick from along two axis:
