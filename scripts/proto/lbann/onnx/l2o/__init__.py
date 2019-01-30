@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from lbann.lbann_proto import lbann_pb2
+from lbann.proto import lbann_pb2
 from lbann_pb2 import LbannPB, Model
 
 import google.protobuf.text_format as txtf

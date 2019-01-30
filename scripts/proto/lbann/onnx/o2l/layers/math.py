@@ -1,6 +1,6 @@
 from lbann.onnx.o2l.layers import OnnxLayerParser
 from lbann.onnx.parserDescriptor import parserDescriptor
-from lbann.lbann_proto import lbann_pb2
+from lbann.proto import lbann_pb2
 
 @parserDescriptor(["relu"])
 class parse_Relu(OnnxLayerParser):

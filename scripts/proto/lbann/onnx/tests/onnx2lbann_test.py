@@ -5,7 +5,7 @@ import onnx
 import google.protobuf.text_format as txtf
 
 import lbann.onnx.o2l
-from lbann.lbann_proto import lbann_pb2
+from lbann.proto import lbann_pb2
 from lbann.onnx.util import parseBoolEnvVar, getLbannRoot
 from lbann.onnx.tests.util import isModelDumpEnabled, createAndGetDumpedModelsDir
 

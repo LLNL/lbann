@@ -6,7 +6,7 @@ import lbann.onnx
 import lbann.onnx.o2l
 from lbann.onnx.util import lbannList2List
 from lbann.onnx.tests.util import getLbannVectorField
-import lbann.lbann_proto as lp
+import lbann.proto as lp
 
 def makeFloatTensorVI(name, shape):
     return onnx.helper.make_tensor_value_info(

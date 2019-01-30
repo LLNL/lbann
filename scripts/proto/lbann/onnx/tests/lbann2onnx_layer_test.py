@@ -3,8 +3,8 @@ import onnx
 
 from lbann.onnx.l2o import parseLbannLayer
 from lbann.onnx.util import list2LbannList, getNodeAttributeByName
-import lbann.lbann_proto as lp
-from lbann.lbann_proto import lbann_pb2
+import lbann.proto as lp
+from lbann.proto import lbann_pb2
 
 class TestLbann2OnnxLayer(unittest.TestCase):
     def _assertFields(self, l, o):
