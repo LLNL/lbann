@@ -34,56 +34,10 @@ objective_function* construct_objective_function(const lbann_data::ObjectiveFunc
   // Instantiate objective function
   objective_function* obj = new objective_function();
 
-  // Loss functions
-  for (int i=0; i<proto_obj.mean_squared_error_size(); ++i) {
-    const auto& params = proto_obj.mean_squared_error(i);
-    obj->add_term(new mean_squared_error_loss(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.mean_absolute_deviation_size(); ++i) {
-    const auto& params = proto_obj.mean_absolute_deviation(i);
-    obj->add_term(new mean_absolute_deviation_loss(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.mean_absolute_error_size(); ++i) {
-    const auto& params = proto_obj.mean_absolute_error(i);
-    obj->add_term(new mean_absolute_error_loss(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.cross_entropy_size(); ++i) {
-    const auto& params = proto_obj.cross_entropy(i);
-    obj->add_term(new cross_entropy(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.binary_cross_entropy_size(); ++i) {
-    const auto& params = proto_obj.binary_cross_entropy(i);
-    obj->add_term(new binary_cross_entropy(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.cross_entropy_with_uncertainty_size(); ++i) {
-    const auto& params = proto_obj.cross_entropy_with_uncertainty(i);
-    obj->add_term(new cross_entropy_with_uncertainty(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.geom_negloglike_size(); ++i) {
-    const auto& params = proto_obj.geom_negloglike(i);
-    obj->add_term(new geom_negloglike(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.poisson_negloglike_size(); ++i) {
-    const auto& params = proto_obj.poisson_negloglike(i);
-    obj->add_term(new poisson_negloglike(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.polya_negloglike_size(); ++i) {
-    const auto& params = proto_obj.polya_negloglike(i);
-    obj->add_term(new polya_negloglike(params.scale_factor()));
-  }
-
   // Weight regularization terms
-  for (int i=0; i<proto_obj.l1_weight_regularization_size(); ++i) {
-    const auto& params = proto_obj.l1_weight_regularization(i);
-    obj->add_term(new l1_weight_regularization(params.scale_factor()));
-  }
   for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {
     const auto& params = proto_obj.l2_weight_regularization(i);
     obj->add_term(new l2_weight_regularization(params.scale_factor()));
-  }
-  for (int i=0; i<proto_obj.group_lasso_weight_regularization_size(); ++i) {
-    const auto& params = proto_obj.group_lasso_weight_regularization(i);
-    obj->add_term(new group_lasso_weight_regularization(params.scale_factor()));
   }
 
   // Layer terms

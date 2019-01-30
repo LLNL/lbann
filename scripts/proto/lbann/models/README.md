@@ -1,7 +1,7 @@
 # Model zoo
 
 This directory contains common and influential neural network
-models. The models are implemented as `Modules` and each Python file
+models. The models are implemented as `Module`s and each Python file
 can be imported for use in other Python scripts. These networks can be
 used as components within more complicated models.
 

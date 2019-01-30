@@ -113,34 +113,6 @@ void setup_fc_num_neurons(
   }
 }
 
-/** Setup paired input layers for target layers. */
-void setup_target_pointers(lbann_comm* comm,
-                           std::vector<Layer*>& layers,
-                           std::unordered_map<std::string, Layer*>& names_to_layers,
-                           const lbann_data::Model& proto_model) {
-  std::stringstream err;
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    generic_target_layer* target = dynamic_cast<generic_target_layer*>(layers[i]);
-    if (target != nullptr) {
-      generic_input_layer* input = nullptr;
-      const auto& input_name = proto_model.layer(i).target().paired_input_layer();
-      if (!input_name.empty()) {
-        input = dynamic_cast<generic_input_layer*>(names_to_layers[input_name]);
-      } else {
-        for (auto&& other : layers) {
-          input = dynamic_cast<generic_input_layer*>(other);
-          if (input != nullptr) { break; }
-        }
-      }
-      if (input == nullptr) {
-        err << "could not find input layer " << input_name << " "
-            << "to pair with target layer " << target->get_name();
-        LBANN_ERROR(err.str());
-      }
-    }
-  }
-}
-
 /** Setup paired pooling layers for unpooling layers. */
 void setup_unpooling_pointers(lbann_comm* comm,
                               std::vector<Layer*>& layers,
@@ -230,11 +202,8 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
         device = El::Device::GPU;
       }
       if (device_str == "cpu") { device = El::Device::CPU; }
-      if (proto_layer.has_input()
-          || proto_layer.has_target()
-          || proto_layer.has_reconstruction()) {
-        // Input, Target, and Reconstruction layers are not allowed on
-        // the GPUs: force the default to be the CPU
+      if (proto_layer.has_input()) {
+        // Input layers must be on CPU
         device = El::Device::CPU;
       }
     }
@@ -293,7 +262,6 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
   // Setup pointers between layers
   setup_parents_and_children(comm, layers, names_to_layers, proto_model);
   setup_hints(layers, names_to_layers, proto_model);
-  setup_target_pointers(comm, layers, names_to_layers, proto_model);
   setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
 
   // Optionally Set num_neurons = num_labels
