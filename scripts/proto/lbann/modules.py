@@ -5,7 +5,7 @@ basic building blocks for larger models.
 
 """
 
-import lbann.lbann_proto as lp
+import lbann.proto as lp
 from collections.abc import Iterable
 import warnings
 
