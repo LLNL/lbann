@@ -134,7 +134,9 @@ void generic_data_store::setup() {
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
   if (m_master) {
-    std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
+    std::cerr << "data_reader type is: " << m_reader->get_type() 
+              << " num_readers: " << m_num_readers << " role: "
+              << m_reader->get_role() << "\n";
   }
 
   if (is_subsidiary_store()) {
@@ -162,6 +164,10 @@ void generic_data_store::setup() {
   }
   m_reader->set_save_minibatch_entries(false);
   m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
+  if (m_master) { 
+    std::cerr << "my num minibatch indices: " << m_my_minibatch_indices->size() << "\n";
+  }
+
 }
 
 void generic_data_store::print_partitioned_indices() {

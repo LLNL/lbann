@@ -66,7 +66,7 @@ class generic_data_store {
   virtual void setup();
 
   /// called by generic_data_reader::update;
-  /// this method call exchange_data if m_epoch > 1
+  /// this method calls exchange_data if m_epoch > 1
   virtual void set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices = true);
 
   /// called by various image data readers 
@@ -223,7 +223,7 @@ protected :
   std::unordered_map<int, int> m_owner;
 
   /// fills in m_owner
-  void build_index_owner();
+  virtual void build_index_owner();
 
   /// mostly for use during development and debugging
   virtual void extended_testing() {}
