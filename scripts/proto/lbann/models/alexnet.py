@@ -49,11 +49,11 @@ class AlexNet(lm.Module):
                                             activation=lp.Relu,
                                             name=self.name+'_conv5')
         self.fc6 = lm.FullyConnectedModule(4096, activation=lp.Relu,
-                                           name=self.name+'_fc1')
+                                           name=self.name+'_fc6')
         self.fc7 = lm.FullyConnectedModule(4096, activation=lp.Relu,
-                                           name=self.name+'_fc2')
+                                           name=self.name+'_fc7')
         self.fc8 = lm.FullyConnectedModule(output_size,
-                                           name=self.name+'_fc3')
+                                           name=self.name+'_fc8')
 
     def forward(self, x):
         self.instance += 1
