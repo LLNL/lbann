@@ -348,6 +348,29 @@ if (LBANN_WITH_CONDUIT)
 
   set(_conduit_interface_link_libs
     "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+
+  # Remove -pthread from linkage, if found
+  foreach (_lib IN LISTS _conduit_interface_link_libs)
+    if (TARGET ${_lib})
+      get_property(_tmp_interface_link_libs TARGET ${_lib}
+        PROPERTY INTERFACE_LINK_LIBRARIES)
+
+      list(FIND _tmp_interface_link_libs "-pthread" _pthread_idx)
+      if (_pthread_idx GREATER_EQUAL 0)
+        list(REMOVE_AT _tmp_interface_link_libs ${_pthread_idx})
+        
+        set_property(TARGET ${_lib} PROPERTY
+          INTERFACE_LINK_LIBRARIES ${_tmp_interface_link_libs})
+      endif ()
+
+      get_property(_tmp_interface_compile_opts TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS)
+      set_property(TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS
+          $<$<COMPILE_LANGUAGE:CXX>:${_tmp_interface_compile_opts}>)
+    endif ()
+  endforeach ()
+  
   if (HDF5_FOUND_WITH_MODULE)
     list(APPEND _conduit_interface_link_libs
       ${HDF5_LIBRARIES})
