@@ -537,7 +537,7 @@ bool check_if_num_parallel_readers_set(const lbann_comm *comm, const lbann_data:
 
   if (parallel_io == 0) {
     if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_trainer() <<
         " (Limited to # Processes)" << std::endl;
     }
     return false;
@@ -554,7 +554,7 @@ void set_num_parallel_readers(const lbann_comm *comm, lbann_data::LbannPB& p)
   const bool is_set = check_if_num_parallel_readers_set(comm, *model);
 
   if (!is_set) {
-    const int parallel_io = comm->get_procs_per_model();
+    const int parallel_io = comm->get_procs_per_trainer();
     model->set_num_parallel_readers(parallel_io); //adjust the prototext
   }
 }
@@ -565,7 +565,7 @@ int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data:
   const bool is_set = check_if_num_parallel_readers_set(comm, model);
 
   if (!is_set) {
-    return comm->get_procs_per_model();
+    return comm->get_procs_per_trainer();
   }
   return model.num_parallel_readers();
 }
@@ -690,8 +690,8 @@ void get_cmdline_overrides(lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("block_size")) {
     model->set_block_size(opts->get_int("block_size"));
   }
-  if (opts->has_int("procs_per_model")) {
-    model->set_procs_per_model(opts->get_int("procs_per_model"));
+  if (opts->has_int("procs_per_trainer")) {
+    model->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
   }
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
@@ -779,7 +779,7 @@ void print_parameters(lbann_comm *comm, lbann_data::LbannPB& p)
             << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
             << "  block_size:              " << m.block_size()  << std::endl
-            << "  procs_per_model:         " << m.procs_per_model()  << std::endl
+            << "  procs_per_trainer:       " << m.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
             << "  serialize_background_io: " << m.serialize_background_io()  << std::endl
             << "  disable_cuda:            " << m.disable_cuda()  << std::endl
@@ -817,7 +817,7 @@ void print_help(lbann_comm *comm)
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
        "  --block_size=<int>\n"
-       "  --procs_per_model=<int>\n"
+       "  --procs_per_trainer=<int>\n"
        "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"

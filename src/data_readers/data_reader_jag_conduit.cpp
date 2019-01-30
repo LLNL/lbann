@@ -131,7 +131,7 @@ bool data_reader_jag_conduit::position_valid() const {
   const bool ok = (static_cast<size_t>(m_shuffled_indices[m_current_pos]) < m_valid_samples.size())
     && (m_current_pos < (int)m_shuffled_indices.size());
   if (!ok) {
-    const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+    const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
     std::stringstream err;
     err << "rank " << my_rank << " position invalid: m_shuffled_indices["
         << m_current_pos << "] (" << m_shuffled_indices[m_current_pos]
@@ -870,7 +870,7 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
 void data_reader_jag_conduit::adjust_num_samples_to_use() {
   const size_t num_valid_samples = get_num_valid_local_samples();
 
-  const int my_rank = m_comm->get_rank_in_model();
+  const int my_rank = m_comm->get_rank_in_trainer();
   const int num_readers = get_num_parallel_readers();
 
   // Find the minimum of the number of valid samples locally available
@@ -882,12 +882,12 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
     n_min = std::numeric_limits<unsigned long long>::max();
   }
 
-  m_comm->model_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
+  m_comm->trainer_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
 
   // Find the first rank that has the minimum number of valid samples
   int rank_tmp_1st = (n_loc == n_min)? my_rank : num_readers;
   int rank_min_1st;
-  m_comm->model_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
+  m_comm->trainer_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
 
   // Determine the number of samples to use
   m_global_num_samples_to_use = static_cast<size_t>(n_min * num_readers + rank_min_1st);
@@ -904,7 +904,7 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
   // Compute data yield
   unsigned long long n_valid_local = num_valid_samples;
   unsigned long long n_valid_global = 0u;
-  m_comm->model_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
+  m_comm->trainer_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
 
   if (is_master()) {
     const double yield = static_cast<double>(m_global_num_samples_to_use)/n_valid_global;
@@ -974,7 +974,7 @@ void data_reader_jag_conduit::load() {
     std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
   const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
 
   // handle data partitioning among models (e.g., for LTFB)
@@ -1038,7 +1038,7 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
   }
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
   std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
 #else
   std::cerr << "loading: " << conduit_file_path << std::endl;

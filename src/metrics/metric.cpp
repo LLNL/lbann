@@ -26,7 +26,6 @@
 
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/layers/io/target/generic_target_layer.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
@@ -76,54 +75,7 @@ void metric_statistics::unpack_header(struct packing_header& header) {
   m_num_samples = header.num_samples;
 }
 
-metric::metric(lbann_comm *comm)
-  : m_comm(comm),
-    m_target_layer(nullptr) {}
-
-void metric::setup(model& m) {
-
-  // Set target layer if needed
-  if (m_target_layer == nullptr) {
-    const std::vector<Layer*> layers = m.get_layers();
-    for (int i = layers.size() - 1; i >= 0; --i) {
-      const generic_target_layer *target = dynamic_cast<const generic_target_layer*>(layers[i]);
-      if (target != nullptr) {
-        m_target_layer = target;
-        break;
-      }
-    }
-    if (m_target_layer == nullptr) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "could not setup metric with target layer";
-      throw lbann_exception(err.str());
-    }
-  }
-
-}
-
-EvalType metric::evaluate(execution_mode mode,
-                          int mini_batch_size) {
-
-  // Check if target layer pointer has been setup
-  if (m_target_layer == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to evaluate metric without setting a target layer";
-    throw lbann_exception(err.str());
-  }
-
-  // Evaluate objective function
-  const auto& start = get_time();
-  const EvalType total_value = evaluate_compute(m_target_layer->get_prediction(),
-                                                m_target_layer->get_ground_truth());
-  m_evaluate_time += get_time() - start;
-
-  // Record result in statistics and return
-  m_statistics[mode].add_value(total_value, mini_batch_size);
-  return total_value / mini_batch_size;
-
-}
+metric::metric(lbann_comm *comm) : m_comm(comm) {}
 
 EvalType metric::get_mean_value(execution_mode mode) const {
   if (m_statistics.count(mode) == 0
@@ -144,34 +96,24 @@ int metric::get_statistics_num_samples(execution_mode mode) const {
   }
 }
 
-const generic_target_layer& metric::get_target_layer() const {
-  if (m_target_layer == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to access target layer before it is set";
-    throw lbann_exception(err.str());
-  }
-  return *m_target_layer;
-}
-
 std::vector<Layer*> metric::get_layer_pointers() const {
-  return std::vector<Layer*>(1, const_cast<generic_target_layer *>(m_target_layer));
+  return {};
 }
 
 void metric::set_layer_pointers(std::vector<Layer*> layers) {
-  if (layers.size() != 1) {
+  if (!layers.empty()) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to set layer pointers with an invalid number of pointers "
-        << "(expected 1, found " << layers.size() << ")";
-    throw lbann_exception(err.str());
+    err << "attempted to set layer pointers for "
+        << "metric \"" << name() << "\" "
+        << "with an invalid number of pointers "
+        << "(expected 0, found " << layers.size() << ")";
+    LBANN_ERROR(err.str());
   }
-  m_target_layer = dynamic_cast<const generic_target_layer *>(layers[0]);
 }
 
 bool metric::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     m_statistics[execution_mode::training].pack_scalars(p);
     m_statistics[execution_mode::testing].pack_scalars(p);
     m_statistics[execution_mode::validation].pack_scalars(p);
@@ -181,15 +123,15 @@ bool metric::save_to_checkpoint_shared(persist& p) {
 
 bool metric::load_from_checkpoint_shared(persist& p) {
   struct metric_statistics::packing_header training_header, validation_header, testing_header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     m_statistics[execution_mode::training].unpack_scalars(p, &training_header);
     m_statistics[execution_mode::testing].unpack_scalars(p, &testing_header);
     m_statistics[execution_mode::validation].unpack_scalars(p, &validation_header);
   }
 
-  m_comm->model_broadcast(0, training_header);
-  m_comm->model_broadcast(0, validation_header);
-  m_comm->model_broadcast(0, testing_header);
+  m_comm->trainer_broadcast(0, training_header);
+  m_comm->trainer_broadcast(0, validation_header);
+  m_comm->trainer_broadcast(0, testing_header);
 
   m_statistics[execution_mode::training].unpack_header(training_header);
   m_statistics[execution_mode::validation].unpack_header(validation_header);

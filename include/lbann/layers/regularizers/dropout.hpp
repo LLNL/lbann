@@ -58,7 +58,7 @@ public:
   {
 #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
+    if (Dev == El::Device::GPU && get_comm()->am_trainer_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }

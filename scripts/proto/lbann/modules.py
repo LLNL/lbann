@@ -5,7 +5,7 @@ basic building blocks for larger models.
 
 """
 
-import lbann.lbann_proto as lp
+import lbann.proto as lp
 from collections.abc import Iterable
 import warnings
 
@@ -61,7 +61,7 @@ class FullyConnectedModule(Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, size, bias=True, weights=[], activation=None,
-                 name='', data_layout='data_parallel'):
+                 name=None, data_layout='data_parallel'):
         """Initialize fully-connected module.
 
         Args:
@@ -97,10 +97,12 @@ class FullyConnectedModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.HeNormalInitializer()))
+                lp.Weights(initializer=lp.HeNormalInitializer(),
+                           name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.ConstantInitializer(value=0.0)))
+                lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
+                           name=self.name+'_bias'))
 
         # Initialize activation layer
         self.activation = None
@@ -139,7 +141,7 @@ class Convolution2dModule(Module):
 
     def __init__(self, out_channels, kernel_size,
                  stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=''):
+                 weights=[], activation=None, name=None):
         """Initialize convolution module.
 
         Args:
@@ -185,10 +187,12 @@ class Convolution2dModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.HeNormalInitializer()))
+                lp.Weights(initializer=lp.HeNormalInitializer(),
+                           name=self.name+'_kernel'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.ConstantInitializer(value=0.0)))
+                lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
+                           name=self.name+'_bias'))
 
         # Initialize activation layer
         self.activation = None

@@ -3,10 +3,10 @@
 # color names: http://www.graphviz.org/doc/info/colors.html
 #
 # I found this tutorial useful: http://tonyballantyne.com/graphs.html
- 
+
 # default shapes, colors, and arrows
 #
-shapes_and_colors 
+shapes_and_colors
 learning rectangle chartreuse black
 activations rectangle orchid1 black
 io rectangle sienna2 black
@@ -18,12 +18,10 @@ transform rectangle antiquewhite1 black
 
 layer_names_and_overrides
 learning     convolution             shape=tripleoctagon   color=chartreuse3
-learning     fully_connected 
+learning     fully_connected
 learning     deconvolution           shape=octogon
-learning     fully_connected_cuda 
+learning     fully_connected_cuda
 io           input
-io           target
-io           reconstruction
 activations  softmax
 activations  elu
 activations  identity
@@ -49,4 +47,3 @@ transform    hadamard
 transform    gaussian
 transform    bernoulli
 transform    uniform
-
