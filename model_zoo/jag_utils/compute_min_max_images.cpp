@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
 
     //=======================================================================
 
-    hid_t hdf5_file_hnd;
+    hid_t hdf5_file_hnd{};
     std::string key;
     conduit::Node n_ok;
     conduit::Node tmp;
