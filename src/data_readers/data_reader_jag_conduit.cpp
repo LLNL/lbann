@@ -583,10 +583,10 @@ void data_reader_jag_conduit::check_image_data() {
 
   if (m_image_normalization_params.empty()) {
     m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 0.0));
-  } else if (m_image_normalization_params.size() != m_emi_image_keys.size()*m_image_num_channels) {
+  } else if (m_image_normalization_params.size() != static_cast<size_t>(m_image_num_channels)) {
     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of image normalization parameter sets!" \
                                 + std::to_string(m_image_normalization_params.size()) + " != " \
-                                + std::to_string(m_emi_image_keys.size()) + '*' + std::to_string(m_image_num_channels));
+                                + std::to_string(m_image_num_channels));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "image normalization parameters: " << std::endl;
@@ -1179,7 +1179,7 @@ cv::Mat data_reader_jag_conduit::cast_to_cvMat(
 
 /// Assumes the same parameters for the same channel from different views
 void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t ch) const {
-  const auto& tr = m_image_normalization_params.at(i*m_image_num_channels + ch);
+  const auto& tr = m_image_normalization_params.at(ch);
   img.convertTo(img, -1, tr.first, tr.second);
 }
 
@@ -1232,7 +1232,7 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
     for (const auto& img: img_data) {
       const ch_t * const ptr_end = img.data() + img.size();
       for (int c=0; c < m_image_num_channels; ++c) {
-        const auto& tr = m_image_normalization_params.at(j*m_image_num_channels + c);
+        const auto& tr = m_image_normalization_params.at(c);
         for (const ch_t* ptr = img.data() + c; ptr < ptr_end; ptr += m_image_num_channels) {
         #if 1 // with normalization
           images[i++] = cv::saturate_cast<ch_t>(*ptr * tr.first + tr.second);
