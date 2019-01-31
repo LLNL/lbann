@@ -772,15 +772,15 @@ void data_reader_jag_conduit::load() {
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
-    s << "r" << m_comm->get_rank_in_model() << basename << "." << ext;
+    s << "r" << m_comm->get_rank_in_trainer() << basename << "." << ext;
     m_sample_list.write(s.str());
   } else {
-    load_list_of_samples(sample_list_file, m_comm->get_procs_per_model(), m_comm->get_rank_in_model());
+    load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
     m_sample_list.all_gather_packed_lists(*m_comm);
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
-    s << "r" << m_comm->get_rank_in_model() << "_per_rank_" << basename << "." << ext;
+    s << "r" << m_comm->get_rank_in_trainer() << "_per_rank_" << basename << "." << ext;
     m_sample_list.write(s.str());
   }
 
@@ -1260,10 +1260,6 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
 }
 
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
-  if (sample_id >= m_valid_samples.size()) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "get_scalars() : invalid sample index");
-  }
-
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
@@ -1285,10 +1281,6 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 }
 
 std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id, conduit::Node& sample) const {
-  if (sample_id >= m_valid_samples.size()) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
-  }
-
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 

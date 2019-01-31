@@ -439,13 +439,13 @@ inline void sample_list_jag::get_sample_range_per_part(const size_t p, size_t& s
 
 inline void sample_list_jag::all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm) {
   int size_of_list_archive = archive.size();
-  std::vector<int> packed_sizes(comm.get_procs_per_model());
+  std::vector<int> packed_sizes(comm.get_procs_per_trainer());
 
   comm.model_all_gather(size_of_list_archive, packed_sizes);
 
   int total_packed_size = 0;
   std::vector<int> displ;
-  displ.assign(comm.get_procs_per_model()+1, 0);
+  displ.assign(comm.get_procs_per_trainer()+1, 0);
 
   for (size_t i = 0u; i < packed_sizes.size(); ++i) {
     const auto sz = packed_sizes[i];
@@ -487,11 +487,11 @@ inline size_t sample_list_jag::all_gather_field(T data, std::vector<T>& gathered
   oarchive(data);
   archive = ss.str();
 
-  std::vector<std::string> gathered_archive(comm.get_procs_per_model());
+  std::vector<std::string> gathered_archive(comm.get_procs_per_trainer());
 
   all_gather_archive(archive, gathered_archive, comm);
 
-  std::vector<T> per_rank_data(comm.get_procs_per_model());
+  std::vector<T> per_rank_data(comm.get_procs_per_trainer());
 
   size_t gathered_field_size = 0;
   for (size_t i = 0u; i < gathered_archive.size(); ++i) {
@@ -507,7 +507,7 @@ inline size_t sample_list_jag::all_gather_field(T data, std::vector<T>& gathered
 }
 
 inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
-  int num_ranks = comm.get_procs_per_model();
+  int num_ranks = comm.get_procs_per_trainer();
   std::vector<samples_t> per_rank_samples(num_ranks);
   std::vector<samples_id_map_v_t> per_rank_sample_id_map(num_ranks);
   std::vector<std::unordered_map<std::string, size_t>> per_rank_file_map(num_ranks);
@@ -810,7 +810,7 @@ inline void handle_mpi_error(int ierr) {
 inline void distribute_sample_list(const sample_list_jag& sn,
                             std::string& my_samples,
                             lbann_comm& _comm) {
-  MPI_Comm comm = _comm.get_model_comm().comm;
+  MPI_Comm comm = _comm.get_trainer_comm().comm;
 #else
 inline void distribute_sample_list(const sample_list_jag& sn,
                             std::string& my_samples,
