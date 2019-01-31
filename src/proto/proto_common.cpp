@@ -180,6 +180,12 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
+    } else if (name == "numpy_npz") {
+      auto* reader_numpy_npz = new numpy_npz_reader(shuffle);
+      reader_numpy_npz->set_has_labels(!readme.disable_labels());
+      reader_numpy_npz->set_has_responses(!readme.disable_responses());
+      reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
+      reader = reader_numpy_npz;
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
