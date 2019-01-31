@@ -106,7 +106,7 @@ void l2_weight_regularization::start_evaluation() {
       }
     }
     get_comm().nb_allreduce(static_cast<AbsMat&>(contribution),
-                            get_comm().get_model_comm(),
+                            get_comm().get_trainer_comm(),
                             m_allreduce_req);
   }
 
@@ -130,7 +130,7 @@ void l2_weight_regularization::start_evaluation() {
       }
     }
     get_comm().allreduce(static_cast<AbsMat&>(contribution),
-                         get_comm().get_model_comm());
+                         get_comm().get_trainer_comm());
     CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
                                contribution.LockedBuffer(),
                                sizeof(DataType),

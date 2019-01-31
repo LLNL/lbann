@@ -48,7 +48,7 @@ class data_buffer {
     m_input_buffers.clear();
     m_input_buffers.resize(num_child_layers);
     for(int i = 0; i < num_child_layers; i++) {
-      m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_model_grid()));
+      m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_trainer_grid()));
     }
   }
 

@@ -99,6 +99,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Tell which data to use for dependent variable
   std::vector<variable_t> get_dependent_variable_type() const;
 
+  /// Set the common prefix path for any output scalar fields stored
+  void set_output_scalar_prefix(const std::string& prefix) { m_output_scalar_prefix = prefix; }
+  /// Set the common prefix path for any output images stored
+  void set_output_image_prefix(const std::string& prefix) { m_output_image_prefix = prefix; }
+  /// Set the common prefix path for any input variables stored
+  void set_input_prefix(const std::string& prefix) { m_input_prefix = prefix; }
+
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
   /// Choose images to use. e.g. by measurement views and time indices
@@ -378,6 +385,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool m_is_data_loaded;
 
   int m_num_labels; ///< number of labels
+
+  /// Common prefix path to any output scalar fields in Conduit / HDF5
+  std::string m_output_scalar_prefix;
+  /// Common prefix path to any output image fields in Conduit / HDF5
+  std::string m_output_image_prefix;
+  /// Common prefix path to any input fields in Conduit / HDF5
+  std::string m_input_prefix;
 
   /// Allow image selection by the view and the time index
   std::vector<std::string> m_emi_image_keys;

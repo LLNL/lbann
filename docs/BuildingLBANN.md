@@ -60,10 +60,66 @@ The following LLNL-maintained packages are optional.
 
 ## Building with [Spack](https://github.com/llnl/spack)
 
-Some variation on the theme of `spack install lbann`. bvanessen should
-document the spack flags or whatever they call them that LBANN
-supports. I don't know the current state of spack with respect to its
-building LBANN correctly and/or successfully.
++ Download and install [Spack](https://github.com/llnl/spack).
+  Additionally setup shell support as discussed
+  [here][https://spack.readthedocs.io/en/latest/module_file_support.html#id2].
+
+        . ${SPACK_ROOT}/share/spack/setup-env.sh
+
++ Setup your compiler environment. For example, on LLNL's LC machines,
+  one might load the following modules:
+
+        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130
+
++ Establish a spack environment and install software dependencies:
+
+        mkdir <build_dir>
+        cd <build_dir>
+        spack env create -d . /path/to/lbann/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+        spack install
+        spack env loads
+        source loads
+        unset LIBRARY_PATH
+
+++ Note that the environments provided here have a set of external
+   packages and compilers that are installed on an LLNL LC CZ sytem.
+   Please update these for your system environment.  Alternatively,
+   you can create baseline versions of the user-level spack configuation
+   files and remove the externals and compilers from the spack.yaml
+   file. See [here](spack_environment.md) for details.
+
+++ Note that the spack module files set the LIBRARY_PATH environment
+   variable. This behavior allows autotools based builds to pickup the
+   correct libraries, but interferes with the way that CMake sets up
+   RPATHs.  To correctly establish the RPATH please unset the variable
+   as noted above, or you can explicity pass the RPATH fields to CMake
+   using a command such as:
+
+         cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
+
++ Build locally from source. See below for a list and descriptions of
+  all CMake flags known to LBANN's build system. An example build
+  might be:
+
+        cmake \
+          -G Ninja \
+          -D CMAKE_BUILD_TYPE:STRING=Release \
+          -D LBANN_WITH_CUDA:BOOL=ON \
+          -D LBANN_WITH_NVPROF:BOOL=ON \
+          -D LBANN_DATATYPE:STRING=float \
+          -D LBANN_WITH_TOPO_AWARE:BOOL=False \
+          -D LBANN_WITH_ALUMINUM:BOOL=ON \
+          -D LBANN_WITH_CONDUIT:BOOL=OFF \
+          -D LBANN_WITH_CUDA:BOOL=ON \
+          -D LBANN_WITH_CUDNN:BOOL=ON \
+          -D LBANN_WITH_NCCL:BOOL=OFF \
+          -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
+          -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
+          -D LBANN_WITH_TBINF=OFF \
+          -D LBANN_WITH_VTUNE:BOOL=OFF \
+          -D LBANN_DATATYPE=float \
+          -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
+          /path/to/lbann
 
 ## Buidling with [CMake](https://cmake.org)
 

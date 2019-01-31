@@ -102,8 +102,8 @@ void lbann_callback_timer::timing_end(model& m) {
 
   // Report timing results
   auto& comm = *m.get_comm();
-  const El::Int num_models = comm.get_num_models();
-  if (comm.am_model_master()) {
+  const El::Int num_models = comm.get_num_trainers();
+  if (comm.am_trainer_master()) {
 
     // Gather timing results in world master
     std::vector<EvalType> run_time_list(num_models);
@@ -112,18 +112,18 @@ void lbann_callback_timer::timing_end(model& m) {
     std::vector<EvalType> max_list(num_models);
     std::vector<EvalType> stdev_list(num_models);
     if (comm.am_world_master()) {
-      comm.intermodel_gather(run_time, run_time_list);
-      comm.intermodel_gather(batch_time_mean, mean_list);
-      comm.intermodel_gather(batch_time_min, min_list);
-      comm.intermodel_gather(batch_time_max, max_list);
-      comm.intermodel_gather(batch_time_stdev, stdev_list);
+      comm.intertrainer_gather(run_time, run_time_list);
+      comm.intertrainer_gather(batch_time_mean, mean_list);
+      comm.intertrainer_gather(batch_time_min, min_list);
+      comm.intertrainer_gather(batch_time_max, max_list);
+      comm.intertrainer_gather(batch_time_stdev, stdev_list);
     } else {
-      const auto& world_master = comm.get_intermodel_master();
-      comm.intermodel_gather(run_time, world_master);
-      comm.intermodel_gather(batch_time_mean, world_master);
-      comm.intermodel_gather(batch_time_min, world_master);
-      comm.intermodel_gather(batch_time_max, world_master);
-      comm.intermodel_gather(batch_time_stdev, world_master);
+      const auto& world_master = comm.get_intertrainer_master();
+      comm.intertrainer_gather(run_time, world_master);
+      comm.intertrainer_gather(batch_time_mean, world_master);
+      comm.intertrainer_gather(batch_time_min, world_master);
+      comm.intertrainer_gather(batch_time_max, world_master);
+      comm.intertrainer_gather(batch_time_stdev, world_master);
     }
 
     // Print results

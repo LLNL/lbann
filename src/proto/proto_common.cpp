@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <sys/stat.h>
 
-using namespace lbann;
+namespace lbann {
 
 bool has_motifs(lbann_comm *comm, const lbann_data::LbannPB& p) {
   bool master = comm->am_world_master();
@@ -38,9 +38,9 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb) {
   }
 }
 
-int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p);
+int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data::LbannPB& p);
 
-void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
+void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<execution_mode, generic_data_reader *>& data_readers,
                        bool is_shareable_training_data_reader, bool is_shareable_testing_data_reader, bool is_shareable_validation_data_reader)
 {
 #ifdef LBANN_HAS_CONDUIT
@@ -54,6 +54,8 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
 
   const lbann_data::DataReader & d_reader = p.data_reader();
   int size = d_reader.reader_size();
+
+  const lbann_data::DataSetMetaData& pb_metadata = p.data_set_metadata();
 
   // A separate explicit validation set is created only if a reader with role "validate"
   // is found in the list of data readers. Otherwise, a validation set is created as a
@@ -84,18 +86,20 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
     } else if ((name == "imagenet") || (name == "imagenet_patches") ||
                (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images")) {
-      init_image_data_reader(readme, master, reader);
+      init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
 
+      const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
+
       using var_t = data_reader_jag::variable_t;
 
       // composite independent variable
-      std::vector< std::vector<var_t> > independent_type(readme.independent_size());
+      std::vector< std::vector<var_t> > independent_type(pb_schema.independent_size());
 
-      for (int i=0; i < readme.independent_size(); ++i) {
-        const lbann_data::Reader::JAGDataSlice& slice = readme.independent(i);
+      for (int i=0; i < pb_schema.independent_size(); ++i) {
+        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.independent(i);
         const int slice_size = slice.pieces_size();
         for (int k=0; k < slice_size; ++k) {
           const auto var_type = static_cast<var_t>(slice.pieces(k));
@@ -106,10 +110,10 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       reader_jag->set_independent_variable_type(independent_type);
 
       // composite dependent variable
-      std::vector< std::vector<var_t> > dependent_type(readme.dependent_size());
+      std::vector< std::vector<var_t> > dependent_type(pb_schema.dependent_size());
 
-      for (int i=0; i < readme.dependent_size(); ++i) {
-        const lbann_data::Reader::JAGDataSlice& slice = readme.dependent(i);
+      for (int i=0; i < pb_schema.dependent_size(); ++i) {
+        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.dependent(i);
         const int slice_size = slice.pieces_size();
         for (int k=0; k < slice_size; ++k) {
           const auto var_type = static_cast<var_t>(slice.pieces(k));
@@ -126,7 +130,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       set_up_generic_preprocessor = false;
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
-      init_image_data_reader(readme, master, reader);
+      init_image_data_reader(readme, pb_metadata, master, reader);
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
@@ -163,7 +167,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
       }
       set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit_hdf5") {
-      init_image_data_reader(readme, master, reader);
+      init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
@@ -205,7 +209,7 @@ void init_data_readers(lbann::lbann_comm *comm, const lbann_data::LbannPB& p, st
           npy_readers.push_back(reader_numpy);
 #ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
-          init_image_data_reader(readme, master, reader);
+          init_image_data_reader(readme, pb_metadata, master, reader);
           set_up_generic_preprocessor = false;
           npy_readers.push_back(reader);
 #endif
@@ -530,14 +534,14 @@ bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lbann_data::Model& model)
+bool check_if_num_parallel_readers_set(const lbann_comm *comm, const lbann_data::Model& model)
 {
   const bool master = comm->am_world_master();
   const int parallel_io = model.num_parallel_readers();
 
   if (parallel_io == 0) {
     if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_model() <<
+      std::cout << "\tMax Parallel I/O Fetch: " << comm->get_procs_per_trainer() <<
         " (Limited to # Processes)" << std::endl;
     }
     return false;
@@ -548,24 +552,24 @@ bool check_if_num_parallel_readers_set(const lbann::lbann_comm *comm, const lban
   return true;
 }
 
-void set_num_parallel_readers(const lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void set_num_parallel_readers(const lbann_comm *comm, lbann_data::LbannPB& p)
 {
   lbann_data::Model *model = p.mutable_model();
   const bool is_set = check_if_num_parallel_readers_set(comm, *model);
 
   if (!is_set) {
-    const int parallel_io = comm->get_procs_per_model();
+    const int parallel_io = comm->get_procs_per_trainer();
     model->set_num_parallel_readers(parallel_io); //adjust the prototext
   }
 }
 
-int get_requested_num_parallel_readers(const lbann::lbann_comm *comm, const lbann_data::LbannPB& p)
+int get_requested_num_parallel_readers(const lbann_comm *comm, const lbann_data::LbannPB& p)
 {
   const lbann_data::Model& model = p.model();
   const bool is_set = check_if_num_parallel_readers_set(comm, model);
 
   if (!is_set) {
-    return comm->get_procs_per_model();
+    return comm->get_procs_per_trainer();
   }
   return model.num_parallel_readers();
 }
@@ -624,7 +628,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   }
 }
 
-void customize_data_readers_index_list(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void customize_data_readers_index_list(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   lbann_data::DataReader *readers = p.mutable_data_reader();
   const lbann_data::Model& pb_model = p.model();
@@ -649,7 +653,7 @@ void customize_data_readers_index_list(lbann::lbann_comm *comm, lbann_data::Lban
   }
 }
 
-void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void get_cmdline_overrides(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
   std::stringstream err;
@@ -715,8 +719,8 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   if (opts->has_int("block_size")) {
     model->set_block_size(opts->get_int("block_size"));
   }
-  if (opts->has_int("procs_per_model")) {
-    model->set_procs_per_model(opts->get_int("procs_per_model"));
+  if (opts->has_int("procs_per_trainer")) {
+    model->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
   }
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
@@ -789,7 +793,7 @@ void get_cmdline_overrides(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
   }
 }
 
-void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
+void print_parameters(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   if (!comm->am_world_master()) {
     return;
@@ -804,7 +808,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
             << "  block_size:              " << m.block_size()  << std::endl
-            << "  procs_per_model:         " << m.procs_per_model()  << std::endl
+            << "  procs_per_trainer:       " << m.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
             << "  serialize_background_io: " << m.serialize_background_io()  << std::endl
             << "  disable_cuda:            " << m.disable_cuda()  << std::endl
@@ -813,7 +817,7 @@ void print_parameters(lbann::lbann_comm *comm, lbann_data::LbannPB& p)
             << "     (only used for metrics)\n";
 }
 
-void print_help(lbann::lbann_comm *comm)
+void print_help(lbann_comm *comm)
 {
   if (!comm->am_world_master()) {
     return;
@@ -821,10 +825,10 @@ void print_help(lbann::lbann_comm *comm)
 
   std::cerr <<
        "General usage: you need to specify three prototext files, e.g:\n"
-       "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string>\n"
+       "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string> --metadata=<string>\n"
        "\n"
        "  However, if you are re-running an experiment from a previously saved\n"
-       "  file, you only need to specify --model=<string>\n"
+       "  file, you only need to specify --prototext=<string>\n"
        "  When proto is run, an output file containing the concatenated prototext\n"
        "  files, along with other data is written. The default name for this file\n"
        "  is 'data.prototext'  You can specify an alternative name via the option:\n"
@@ -842,7 +846,7 @@ void print_help(lbann::lbann_comm *comm)
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
        "  --block_size=<int>\n"
-       "  --procs_per_model=<int>\n"
+       "  --procs_per_trainer=<int>\n"
        "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
@@ -911,7 +915,7 @@ void copy_file(std::string fn, std::ofstream &out)
   out << s.str();
 }
 
-void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
+void save_session(lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& p)
 {
   if (!comm->am_world_master()) {
     return;
@@ -921,7 +925,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
 
   //do not write output file for a repeated experiment;
   //may want to revisit this decision later ...
-  if (opts->has_string("loadme")) {
+  if (opts->has_string("prototext")) {
     return;
   }
 
@@ -967,7 +971,7 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
       << "\n#\n#\n# Experiment was run with lbann version: "
       << lbann_version << "\n#\n#\n# To rerun the experiment: \n"
       << "#  $ srun -n" << comm->get_procs_in_world() << " " << argv[0]
-      << " --loadme=" << file_name << "\n#\n#\n";
+      << " --prototext=" << file_name << "\n#\n#\n";
 
   out << "# Selected SLURM Environment Variables:\n";
   std::vector<std::string> v = {"HOST", "SLURM_NODELIST", "SLURM_NNODES", "SLURM_NTASKS", "SLURM_TASKS_PER_NODE"};
@@ -984,3 +988,5 @@ void save_session(lbann::lbann_comm *comm, int argc, char **argv, lbann_data::Lb
   out << s;
   out.close();
 }
+
+} // namespace lbann

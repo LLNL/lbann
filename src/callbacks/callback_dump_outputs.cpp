@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_dump_outputs.hpp"
-#include "lbann/io/file_io.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
@@ -152,7 +152,7 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
       && m_layer_names.count(l.get_name()) == 0) { return; }
 
   // Create directory
-  lbann::makedir(m_directory.c_str());
+  file::make_directory(m_directory);
 
   // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {

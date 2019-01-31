@@ -24,8 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+/// @todo Remove this file.
+
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -39,30 +42,24 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <string>
 #include <sstream>
 
-#include "mpi.h"
 
-/* creates directory given in dir (absolute path),
- * returns 1 if dir was created, 0 otherwise */
+/// @todo Deprecated.
 int lbann::makedir(const char *dir) {
-  int mkdir_rc = mkdir(dir, S_IRWXU | S_IRWXG);
-  if (mkdir_rc == 0 || errno == EEXIST) {
-    return 1;
-  } else {
-    std::stringstream err;
-    err << "failed to create directory (" << dir << ") "
-        << "with error " << errno << " (" << strerror(errno) << ")";
-    LBANN_ERROR(err.str());
-    return 0;
-  }
+  std::string dir_(dir);
+  file::make_directory(dir_);
+  return 1;
 }
 
+/// @todo Deprecated.
 int lbann::exists(const char *file) {
-  struct stat buffer;
-  return (stat(file, &buffer) == 0) ? 1 : 0;
+  std::string file_(file);
+  return (file::file_exists(file_) ? 1 : 0);
 }
 
+/// @todo Deprecated.
 int lbann::openread(const char *file) {
   // open the file for writing
   int fd = open(file, O_RDONLY);
@@ -71,6 +68,7 @@ int lbann::openread(const char *file) {
   return fd;
 }
 
+/// @todo Deprecated.
 int lbann::closeread(int fd, const char *file) {
   // close file
   int close_rc = close(fd);
@@ -84,6 +82,7 @@ int lbann::closeread(int fd, const char *file) {
   return close_rc;
 }
 
+/// @todo Deprecated.
 int lbann::openwrite(const char *file) {
   // define mode (permissions) for new file
   mode_t mode_file = S_IWUSR | S_IRUSR | S_IWGRP | S_IRGRP;
@@ -98,6 +97,7 @@ int lbann::openwrite(const char *file) {
   return fd;
 }
 
+/// @todo Deprecated.
 int lbann::closewrite(int fd, const char *file) {
   // fsync file
   int fsync_rc = fsync(fd);

@@ -188,6 +188,10 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
+  m_output_scalar_prefix = rhs.m_output_scalar_prefix;
+  m_output_image_prefix = rhs.m_output_image_prefix;
+  m_input_prefix = rhs.m_input_prefix;
+
   m_scalar_filter = rhs.m_scalar_filter;
   m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
   m_input_filter = rhs.m_input_filter;
@@ -253,6 +257,9 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_keys.clear();
   m_input_keys.clear();
   m_uniform_input_type = false;
+  m_output_scalar_prefix = "";
+  m_output_image_prefix = "";
+  m_input_prefix = "";
   m_scalar_filter.clear();
   m_scalar_prefix_filter.clear();
   m_input_filter.clear();
@@ -469,7 +476,7 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
     return;
   }
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar);
+  load_conduit_node(0, m_output_scalar_prefix, n_scalar);
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -542,7 +549,7 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   conduit::Node n_imageset;
-  load_conduit_node(first_idx, "/outputs/images", n_imageset);
+  load_conduit_node(first_idx, m_output_image_prefix, n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
@@ -552,13 +559,13 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   for (const auto& emi_tag: m_emi_image_keys) {
-    if (!has_conduit_path(first_idx, "/outputs/images/" + emi_tag + "/emi")) {
+    if (!has_conduit_path(first_idx, m_output_image_prefix + emi_tag)) {
       _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
   conduit::Node n_image;
-  load_conduit_node(first_idx, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image);
+  load_conduit_node(first_idx, m_output_image_prefix + m_emi_image_keys[0], n_image);
   conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
@@ -618,7 +625,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
 
   conduit::Node n_scalar;
   size_t first_idx = m_sample_list.get_indexer().get_partition_offset();
-  load_conduit_node(first_idx, "/outputs/scalars", n_scalar);
+  load_conduit_node(first_idx, m_output_scalar_prefix, n_scalar);
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -833,7 +840,7 @@ hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file
   }
 #if defined(LBANN_DEBUG)
  #ifndef _JAG_OFFLINE_TOOL_MODE_
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
   std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
  #else
   std::cerr << "loading: " << conduit_file_path << std::endl;
@@ -1141,7 +1148,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
-    const std::string conduit_obj = std::string("/outputs/images/") + emi_tag + "/emi";
+    const std::string conduit_obj = m_output_image_prefix + emi_tag;
     if(!sample.has_path(conduit_obj)) {
       conduit::Node n_image;
       load_conduit_node(sample_id, conduit_obj, n_image);
@@ -1253,13 +1260,17 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
 }
 
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
+  if (sample_id >= m_valid_samples.size()) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_scalars() : invalid sample index");
+  }
+
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
   auto tr = m_scalar_normalization_params.cbegin();
 
   for(const auto key: m_scalar_keys) {
-    std::string conduit_obj = std::string("/outputs/scalars/") + key;
+    std::string conduit_obj = m_output_scalar_prefix + key;
     if(!sample.has_path(conduit_obj)) {
       conduit::Node n_scalar;
       load_conduit_node(sample_id, conduit_obj, n_scalar);
@@ -1274,6 +1285,10 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 }
 
 std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id, conduit::Node& sample) const {
+  if (sample_id >= m_valid_samples.size()) {
+    _THROW_LBANN_EXCEPTION_(_CN_, "get_inputs() : invalid sample index");
+  }
+
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
@@ -1285,7 +1300,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
-      const std::string conduit_obj = std::string("/inputs/") + key;
+      const std::string conduit_obj = m_input_prefix + key;
       if(!sample.has_path(conduit_obj)) {
         conduit::Node n_input;
         load_conduit_node(sample_id, conduit_obj, n_input);
@@ -1298,7 +1313,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     }
   } else {
     for(const auto key: m_input_keys) {
-      std::string conduit_obj = std::string("/inputs/") + key;
+      std::string conduit_obj = m_input_prefix + key;
       if(!sample.has_path(conduit_obj)) {
         conduit::Node n_input;
         load_conduit_node(sample_id, conduit_obj, n_input);

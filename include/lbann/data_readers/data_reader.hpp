@@ -362,7 +362,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
   virtual bool position_is_overrun() const {
     int end_pos = (int)m_shuffled_indices.size();
-    return (m_current_pos >= end_pos && (m_current_pos - end_pos) < m_comm->get_procs_per_model());
+    return (m_current_pos >= end_pos && (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
   }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
@@ -899,11 +899,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    int m_num_partitions;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_model_rank())
+   /// comm->get_trainer_rank())
    int m_my_partition;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_procs_per_model)
+   /// comm->get_procs_per_trainer)
    int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
