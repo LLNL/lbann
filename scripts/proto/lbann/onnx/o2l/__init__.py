@@ -21,6 +21,23 @@ def getNodeName(i_op):
     return "{}_{}".format(op.op_type, i)
 
 def onnxToLbannLayers(o, lbannInputNames, l2oInputMap, dataLayout="auto"):
+    """
+    Parses a given ONNX model and returns the equivalent LBANN model.
+
+    Args:
+        o (onnx.ModelProto): An ONNX model.
+        lbannInputNames (list): Names of input data.
+        l2oInputMap (dict): A map from the names of the input data to those of the ONNX tensors.
+                            This map is used to tie each input data tensor to ONNX input tensor,
+                            since the order and names of input tensors of the ONNX model might not be the same to
+                            those of the equivalent LBANN model.
+        dataLayout (str): If this is "auto", data_layout of the converted layers is set to "model_parallel" if
+                          the layer is fully_connected otherwise "data_parallel".
+
+    Returns:
+        list of lbann_pb2.Layer: The converted layers.
+    """
+
     graph = o.graph
     tensorShapes = getStaticTensorShapes(o)
     opNames = list(map(getNodeName, enumerate(graph.node)))

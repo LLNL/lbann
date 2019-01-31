@@ -1,3 +1,18 @@
+"""
+A test suite to check whether lbann.onnx can convert typical ONNX networks to LBANN networks correctly.
+
+For each test case, this script
+1. converts a given ONNX network into a LBANN network, and
+2. saves the network to DUMP_DIR (if LBANN_ONNX_DUMP_MODELS is set).
+
+This script does not check produced tensor shapes since the LBANN Python frontend is not capable of
+performing shape inference (while the ONNX Python frontend can perform it).
+
+This scirpt assumes that ONNX networks from the ONNX Model Zoo (https://github.com/onnx/models)
+are placed under ONNX_MDOEL_ZOO_ROOT.
+Run scripts/onnx/download_onnx_model_zoo.sh to download the models.
+"""
+
 import os
 import unittest
 

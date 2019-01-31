@@ -31,6 +31,21 @@ def isLayerStub(l):
     return PARSERS[t].stub
 
 def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
+    """
+    Parses a given LBANN model (in .prototext) and returns the equivalent ONNX model.
+
+    Args:
+        path (str): A path to the LBANN model.
+        modelInputShapes (dict): Shapes of named input tensors. The shapes should not contains the mini-batch dimension,
+                                 since it is automatically concatenated from the "mini_batch_size" field of the model.
+                                 Example: {"image": (3,224,224), "label": (1000)} for the ImageNet dataset
+        params (dict): NumPy arrays to initialize parameters of learnable layers.
+        addValueInfo (bool): If this is True, value_info (shapes of hidden tensors) of the graph will be set.
+
+    Returns:
+        onnx.ModelProto: The converted model.
+    """
+
     with open(path, "r") as f:
         s = f.read().strip()
 
@@ -107,7 +122,7 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     for l in params.keys():
         for i,p in enumerate(params[l]):
             name = "{}_p{}".format(l, i)
-            inits.append(onnx.math_helper.to_array(p, name=name))
+            inits.append(onnx.numpy_helper.from_array(p, name=name))
 
     for metric in pb.model.metric:
         assert metric.HasField("layer_metric")
@@ -128,6 +143,22 @@ def parseLbannModelPB(path, modelInputShapes, params={}, addValueInfo=True):
     return o, miniBatchSize
 
 def parseLbannLayer(l, tensorShapes, knownNodes=[]):
+    """
+    Parses a given LBANN layer and returns the equivalent ONNX expressions needed to be represent the layer.
+
+    Args:
+        l (lbann_pb2.Layer): A LBANN layer to be converted.
+        tensorShapes (dict): Shapes of known named tensors.
+        knownNodes (list): A list of known ONNX nodes in the same netowrk.
+                           This information is needed when the layer refers information of another layer, such as unpooling.
+
+    Returns:
+        dict: Generated ONNX expressions.
+            "nodes" (list of onnx.NodeProto): A list of ONNX operators.
+            "inputs" (list of onnx.ValueInfoProto): A list of ONNX value information.
+            "inits" (list of onnx.TensorProto): A list of ONNX tensors.
+     """
+
     if any(map(lambda x: l.HasField(x), ["input",
                                          "identity", # LBANN's "identity" does not have outputs
                                          "dummy"])):

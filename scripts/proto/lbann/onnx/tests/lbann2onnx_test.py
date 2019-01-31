@@ -1,3 +1,15 @@
+"""
+A test suite to check whether lbann.onnx can convert typical LBANN networks to ONNX networks correctly.
+
+For each test case, this script
+1. converts a given LBANN network into an ONNX network, and
+2. adds dummy (zero) parameters to the converted network (if ADD_DUMMY_PARAMS is set),
+3. saves the network to DUMP_DIR (if LBANN_ONNX_DUMP_MODELS is set),
+4. checks shapes of prepared hidden tensors are correct.
+
+The LBANN networks are borrowed from the LBANN model zoo.
+"""
+
 import re
 import unittest
 import os
@@ -47,11 +59,9 @@ class TestLbann2Onnx(unittest.TestCase):
             onnx.save(o, os.path.join(DUMP_DIR, "{}.onnx".format(modelName)))
 
         for nodeName, outputShape in testedOutputs:
-            node = list(filter(lambda x: x.name == nodeName, o.graph.node))
-            assert len(node) == 1, node
-            outputVI = list(filter(lambda x: x.name == node[0].output[0], o.graph.value_info))
-            assert len(outputVI) == 1, outputVI
-            outputShapeActual = lbann.onnx.util.getDimFromValueInfo(outputVI[0])
+            node, = list(filter(lambda x: x.name == nodeName, o.graph.node))
+            outputVI, = list(filter(lambda x: x.name == node.output[0], o.graph.value_info))
+            outputShapeActual = lbann.onnx.util.getDimFromValueInfo(outputVI)
             outputShapeWithMB = list(map(lambda x: miniBatchSize if x == MB_PLACEHOLDER else x, outputShape))
             assert outputShapeWithMB == outputShapeActual, (outputShapeWithMB, outputShapeActual)
 
@@ -61,6 +71,14 @@ class TestLbann2Onnx(unittest.TestCase):
         self._test("{}/simple_mnist/model_mnist_simple_1.prototext".format(LBANN_MODEL_ROOT),
                    {"image": [width*width], "label": [classes]},
                    [("relu1", [MB_PLACEHOLDER, 500]),
+                    ("prob", [MB_PLACEHOLDER, classes])])
+
+    def test_l2o_lenet_mnist(self):
+        width = 28
+        classes = 10
+        self._test("{}/lenet_mnist/model_lenet_mnist.prototext".format(LBANN_MODEL_ROOT),
+                   {"images": [1, width, width], "labels": [classes]},
+                   [("pool2", [MB_PLACEHOLDER, 50, 4, 4]),
                     ("prob", [MB_PLACEHOLDER, classes])])
 
     def test_l2o_autoencoder_mnist(self):
@@ -105,6 +123,15 @@ class TestLbann2Onnx(unittest.TestCase):
         width = 28
         classes = 2
         self._test("{}/gan/mnist/adversarial_model.prototext".format(LBANN_MODEL_ROOT),
+                   {"data": [width, width], "label": [classes]},
+                   [("fc4_tanh", [1, width*width]),
+                    ("prob", [MB_PLACEHOLDER, 2])])
+
+    @unittest.skip("This model contains a zero layer, which is not supported in l2o.")
+    def test_l2o_gan_mnist_discriminator(self):
+        width = 28
+        classes = 2
+        self._test("{}/gan/mnist/discriminator_model.prototext".format(LBANN_MODEL_ROOT),
                    {"data": [width, width], "label": [classes]},
                    [("fc4_tanh", [1, width*width]),
                     ("prob", [MB_PLACEHOLDER, 2])])
