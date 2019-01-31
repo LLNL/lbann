@@ -365,10 +365,10 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_per_rank_l
   }
 
   /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_model());
+  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_trainer());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
   if(num_parallel_readers_per_model == 0
-     || (num_parallel_readers_per_model != m_comm->get_procs_per_model() && num_parallel_readers_per_model != max_mini_batch_size)) {
+     || (num_parallel_readers_per_model != m_comm->get_procs_per_trainer() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: generic_data_distribution: number of parallel readers is zero");

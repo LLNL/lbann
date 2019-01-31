@@ -62,7 +62,7 @@ void data_store_jag::setup() {
   // I suspect we'll never go out-of-memory ...
   if (! m_in_memory) {
     LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
-  } 
+  }
 
   generic_data_store::setup();
 
@@ -95,7 +95,7 @@ void data_store_jag::setup() {
   //This is broken/outdated due to recent changes in generic_data_store::fetch_data
   //if (m_master) std::cout << "calling get_minibatch_index_vector\n";
   //get_minibatch_index_vector();
-    
+
   // This is needed if the data_store preloads all samples.
   // but we're not doint that anymore
   //if (m_master) std::cout << "calling exchange_mb_indices()\n";
@@ -123,10 +123,10 @@ void data_store_jag::exchange_data() {
   if (m_epoch == 1) {
     if (m_master) std::cerr << "calling exchange_ds_indices()\n";
       // fills in m_owner; this maps a sample index to the owning processor
-      // Also fill in m_my_datastore_indices, which is the set of indices 
+      // Also fill in m_my_datastore_indices, which is the set of indices
       // (and associated samples) that I own
       exchange_ds_indices();
-  }  
+  }
 
   #ifdef DEBUG
   MPI_Barrier(MPI_COMM_WORLD);
@@ -155,7 +155,7 @@ void data_store_jag::exchange_data() {
 
   //========================================================================
   //part 1: exchange the sizes of the data
-  
+
   // m_send_buffer[j] is a conduit::Node that contains
   // all samples that this proc will send to P_j
   for (int p=0; p<m_np; p++) {
@@ -186,7 +186,7 @@ void data_store_jag::exchange_data() {
 
   //========================================================================
   //part 2: exchange the actual data
-  
+
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
   if (m_master && p==0) {
@@ -254,12 +254,12 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   }
   m_data[data_id] = node;
 }
-  
+
 const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
   if (any_node) {
     LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
   }
-  
+
   std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
   if (t == m_minibatch_data.end()) {
     LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
@@ -377,7 +377,7 @@ void data_store_jag::exchange_ds_indices() {
   m_my_datastore_indices.clear();
   int my_num_indices = m_data.size();
   std::vector<int> counts(m_np);
-  m_comm->model_all_gather<int>(my_num_indices, counts);
+  m_comm->trainer_all_gather<int>(my_num_indices, counts);
 
   #ifdef DEBUG
   if (m_master) {
@@ -404,7 +404,7 @@ void data_store_jag::exchange_ds_indices() {
   }
 
   //receive the indices
-  m_comm->all_gather<int>(mine, all_indices, counts, displ, m_comm->get_model_comm());
+  m_comm->all_gather<int>(mine, all_indices, counts, displ, m_comm->get_trainer_comm());
 
   //fill in the final data structure
   m_owner.clear();

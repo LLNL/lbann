@@ -441,7 +441,7 @@ inline void sample_list_jag::all_gather_archive(const std::string &archive, std:
   int size_of_list_archive = archive.size();
   std::vector<int> packed_sizes(comm.get_procs_per_trainer());
 
-  comm.model_all_gather(size_of_list_archive, packed_sizes);
+  comm.trainer_all_gather(size_of_list_archive, packed_sizes);
 
   int total_packed_size = 0;
   std::vector<int> displ;
@@ -462,10 +462,10 @@ inline void sample_list_jag::all_gather_archive(const std::string &archive, std:
 
   std::vector<El::byte> local_data(archive.begin(), archive.end());
   std::vector<El::byte> packed_data(all_samples.begin(), all_samples.end());
-  comm.model_all_gather(local_data,
-                        packed_data,
-                        packed_sizes,
-                        displ);
+  comm.trainer_all_gather(local_data,
+                          packed_data,
+                          packed_sizes,
+                          displ);
 
   for (size_t i = 0u; i < packed_sizes.size(); ++i) {
     std::string& buf = gathered_archive[i];

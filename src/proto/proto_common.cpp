@@ -642,10 +642,10 @@ void customize_data_readers_index_list(lbann_comm *comm, lbann_data::LbannPB& p)
       s << pb_model.name() << "_";
     }
     if(r->index_list_per_trainer()) {
-      s << "t" << comm->get_model_rank() << "_";
+      s << "t" << comm->get_trainer_rank() << "_";
     }
     if(r->index_list_per_rank()) {
-      s << "r" << comm->get_rank_in_model() << "_";
+      s << "r" << comm->get_rank_in_trainer() << "_";
     }
     s << basename;
     s << "." << ext;
