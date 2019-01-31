@@ -204,6 +204,7 @@ class Layer:
             c.parents.append(self)
 
     def add_weights(self, w):
+        """Add w to this layer's weights."""
         self.weights.extend(_make_iterable(w))
 
     def __call__(self, parent):
