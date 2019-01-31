@@ -1063,7 +1063,6 @@ message Unpooling {
 
 
 message Concatenation {
-  string parents = 1; //TODO: this doesn't do anything and should be removed
   int64 concatenation_axis = 2;
 }
 

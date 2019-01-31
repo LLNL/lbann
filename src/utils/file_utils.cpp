@@ -76,7 +76,7 @@ std::vector<std::string> get_tokens(const std::string str, const std::string del
 /// @todo Deprecated.
 bool parse_path(const std::string& path, std::string& dir, std::string& basename) {
   dir = file::extract_parent_directory(path);
-  basename = file::extract_parent_directory(path);
+  basename = file::extract_base_name(path);
   return !basename.empty();
 }
 
