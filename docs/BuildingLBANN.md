@@ -60,66 +60,97 @@ The following LLNL-maintained packages are optional.
 
 + Download and install [Spack](https://github.com/llnl/spack).
   Additionally setup shell support as discussed
-  [here][https://spack.readthedocs.io/en/latest/module_file_support.html#id2].
+  [here](https://spack.readthedocs.io/en/latest/module_file_support.html#id2).
 
         . ${SPACK_ROOT}/share/spack/setup-env.sh
 
-+ Setup your compiler environment. For example, on LLNL's LC machines,
-  one might load the following modules:
++ Setup your compiler and external software environment. For example,
+  on LLNL's LC machines, one might load the following modules:
 
-        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130
+        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
 
-+ Establish a spack environment and install software dependencies:
+  or
 
-        mkdir <build_dir>
-        cd <build_dir>
-        spack env create -d . /path/to/lbann/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
-        spack install
-        spack env loads
-        source loads
-        unset LIBRARY_PATH
+        ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
 
-++ Note that the environments provided here have a set of external
-   packages and compilers that are installed on an LLNL LC CZ sytem.
-   Please update these for your system environment.  Alternatively,
-   you can create baseline versions of the user-level spack configuation
-   files and remove the externals and compilers from the spack.yaml
-   file. See [here](spack_environment.md) for details.
+  Note to remove unwanted modules you can execute:
 
-++ Note that the spack module files set the LIBRARY_PATH environment
-   variable. This behavior allows autotools based builds to pickup the
-   correct libraries, but interferes with the way that CMake sets up
-   RPATHs.  To correctly establish the RPATH please unset the variable
-   as noted above, or you can explicity pass the RPATH fields to CMake
-   using a command such as:
+        ml purge
+
++ Establish a spack environment and install software dependencies.
+  Note that there are four environments to pick from along two axis:
+
+  1. developers or users
+  2. x86_64 and ppc64le
+
+  For example if you are a developer and want to build the inside of
+  the git repo use the following instructions:
+
+  ```
+  export LBANN_HOME=<path to lbann git repo>
+  export LBANN_BUILD_DIR=<path to a directory>
+  export LBANN_INSTALL_DIR=<path to a directory>
+  cd ${LBANN_BUILD_DIR}
+  spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+  spack install
+  spack env loads # Spack creates a file named loads that has all of the correct modules
+  source loads
+  unset LIBRARY_PATH
+  ```
+
+  + Note that the environments provided here have a set of external
+    packages and compilers that are installed on an LLNL LC CZ sytem.
+    Please update these for your system environment.  Alternatively,
+    you can create baseline versions of the user-level spack configuation
+    files and remove the externals and compilers from the spack.yaml
+    file. See [here](spack_environment.md) for details.
+
+  + Note that the initial build of all of the standard packages in spack
+    will take a while.
+
+  + Note that the spack module files set the LIBRARY_PATH environment
+    variable. This behavior allows autotools based builds to pickup the
+    correct libraries, but interferes with the way that CMake sets up
+    RPATHs.  To correctly establish the RPATH please unset the variable
+    as noted above, or you can explicity pass the RPATH fields to CMake
+    using a command such as:
 
          cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
 
-+ Build locally from source. See below for a list and descriptions of
-  all CMake flags known to LBANN's build system. An example build
-  might be:
++ Build LBANN locally from source and build Hydrogen and Aluminum
+  using the superbuild.  See below for a list and descriptions of all
+  CMake flags known to LBANN's build system. An example build that
+  expects LBANN_HOME, LBANN_BUILD_DIR, LBANN_INSTALL_DIR environment
+  variables might be:
 
         cmake \
           -G Ninja \
+          -D LBANN_SB_BUILD_ALUMINUM=ON \
+          -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
+          -D ALUMINUM_ENABLE_NCCL=ON \
+          -D LBANN_SB_BUILD_HYDROGEN=ON \
+          -D Hydrogen_ENABLE_CUDA=ON \
+          -D LBANN_SB_BUILD_LBANN=ON \
           -D CMAKE_BUILD_TYPE:STRING=Release \
           -D LBANN_WITH_CUDA:BOOL=ON \
           -D LBANN_WITH_NVPROF:BOOL=ON \
           -D LBANN_DATATYPE:STRING=float \
-          -D LBANN_WITH_TOPO_AWARE:BOOL=False \
+          -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
           -D LBANN_WITH_ALUMINUM:BOOL=ON \
-          -D LBANN_WITH_CONDUIT:BOOL=OFF \
+          -D LBANN_WITH_CONDUIT:BOOL=ON \
           -D LBANN_WITH_CUDA:BOOL=ON \
           -D LBANN_WITH_CUDNN:BOOL=ON \
-          -D LBANN_WITH_NCCL:BOOL=OFF \
+          -D LBANN_WITH_NCCL:BOOL=ON \
           -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
           -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
           -D LBANN_WITH_TBINF=OFF \
           -D LBANN_WITH_VTUNE:BOOL=OFF \
           -D LBANN_DATATYPE=float \
-          -D CMAKE_INSTALL_PREFIX:PATH=/path/to/lbann/install/prefix \
-          /path/to/lbann
+          -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
+          ${LBANN_HOME}/superbuild
+        ninja
 
-## Buidling with [CMake](https://cmake.org)
+## Building with [CMake](https://cmake.org)
 
 LBANN uses [CMake](https://cmake.org) for its build system and a
 version newer than or equal to 3.9.0 is required. LBANN development is
