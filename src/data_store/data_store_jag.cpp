@@ -39,7 +39,7 @@
 #include <unordered_set>
 
 #undef DEBUG
-#define DEBUG
+//#define DEBUG
 
 namespace lbann {
 
@@ -169,46 +169,29 @@ void data_store_jag::exchange_data() {
     for (auto idx : proc_to_indices[p]) {
       m_send_buffer[p][std::to_string(idx)] = m_data[idx];
     }
-    #ifdef DEBUG
-    //if (m_master && p == 1)  m_send_buffer[p].print();
-    #endif
 
     // code in the following method is a modification of code from
     // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
 
-    if (m_master) {
-      std::cerr << "children: " << m_send_buffer[p].number_of_children() << "\n";
-    }
-
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
-   }
-
-    //start receives for sizes of the data
-    for (int p=0; p<m_np; p++) {
-      MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
-    }
-
-    // wait for all msgs to complete
-    MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
-    MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
-
-  #ifdef DEBUG
-  if (m_master) {
-    std::cout << "\nIncoming msg sizes:\n";
-    for (auto t : m_incoming_msg_sizes) std::cout << t << " ";
-    std::cout << "\n";
   }
-  #endif
-  
+
+  //start receives for sizes of the data
+  for (int p=0; p<m_np; p++) {
+    MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
+  }
+
+  // wait for all msgs to complete
+  MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
+  MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
+
   //========================================================================
   //part 2: exchange the actual data
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
-  if (m_master && p==0) {
-  }
     const void *s = m_send_buffer_2[p].data_ptr();
     MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
   }
@@ -231,7 +214,6 @@ void data_store_jag::exchange_data() {
   m_comm->global_barrier();
   #endif
 
-
   // wait for all msgs to complete
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
@@ -239,19 +221,16 @@ void data_store_jag::exchange_data() {
   #ifdef DEBUG
   m_comm->global_barrier();
   if (m_master) {
-    std::cout << "finished waiting; all communications have completed.\n"
-              << "numbers of children: ";
-    for (auto t : m_recv_buffer) std::cout << t.number_of_children() << " ";
-    std::cout << "\nXXXX\n\n";
+    std::cout << "finished waiting; all communications have completed"
+              << "for role: " << m_reader->get_role() << "\n";
   }  
   #endif
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-// The following needs needs fixing. At the conclusion of this block,
-// m_minibatch_data[data_id] should contain a single JAG sample
-
+  conduit::Node nd;
+  m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
     conduit::Node n_msg;
@@ -263,26 +242,36 @@ void data_store_jag::exchange_data() {
     gen.walk(rcv_schema);
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
-    conduit::Node nd;
+    nd.reset();
     nd.update(n_msg["data"]);
-if  (m_master) nd.print();
-    //m_minibatch_data[p].update(n_msg["data"]);
+    const std::vector<std::string> &names = nd.child_names();
+    for (auto t : names) {
+      conduit::Node n3 = nd[t];
+      m_minibatch_data[atoi(t.c_str())] = n3;
+    }
   }
+
+/*
+if  (m_master) {
+  int n = nd.number_of_children();
+  std::cerr << "XX n_ch: " << n << "\n";
+  std::cerr << "XX calling fetch_child\n";
+
+  const std::vector<std::string> &names = nd.child_names();
+  std::cerr << "THE CHILD: " << names[1] << "\n";
+  conduit::Node n3 = nd[names[1]];
+  n3.print();
+}
+*/
 
   if (m_master) std::cout << "data_store_jag::exchange_data time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
-static bool t = true;
   if (m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
   m_data[data_id] = node;
-  if (m_master && t) {
-    std::cerr << "DATA_ID: " << data_id << "\n";
-    node.print();
-  }
-  t = false;
 }
 
 const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
@@ -350,13 +339,6 @@ if (m_master && doit) {
 //        Will have to re-study conduit_relay_mpi.cpp
 //
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
-  #ifdef DEBUG
-  if (m_master) {
-    //std::cerr <<" starting data_store_jag::build_node_for_sending; calling node_in.print(): ";
-    //node_in.print();
-    std::cerr <<"\n";
-  }
-  #endif
 
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -366,13 +348,6 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
   }
 
   std::string snd_schema_json = s_data_compact.to_json();
-
-  #if 0
-  if (m_master) {
-    std::cout << "\nsnd_schema_json:\n";
-    std::cout << snd_schema_json << "\n";
-  }
-  #endif
 
   conduit::Schema s_msg;
   s_msg["schema_len"].set(conduit::DataType::int64());
@@ -386,26 +361,6 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
   node_out.set(s_msg_compact);
   node_out["schema"].set(snd_schema_json);
   node_out["data"].update(node_in);
-
-/*
-static bool doit = true;
-if (m_master && doit) {
-  std::cout << "1. RRRRRRRRRRRR\n";
-  conduit::Node n3 = node_out["schema"];
-  n3.print();
-  std::cout << "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW\n\n";
-}
-*/
-/*
-  node_in.compact_to(node_out);
-if (m_master && doit) {
-  std::cout << "2. RRRRRRRRRRRR\n";
-  conduit::Node n3 = node_out["schema"];
-  n3.print();
-  std::cout << "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW\n\n";
-  doit = false;
-}
-*/
 }
 
 

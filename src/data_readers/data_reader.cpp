@@ -303,10 +303,8 @@ bool generic_data_reader::update(bool is_active_reader) {
     }
 
     if (!m_save_minibatch_indices) {
-if (is_master())std::cerr <<"XX CALLING shuffle_indices; epuch: "<<m_model->get_cur_epoch() << "\n";
       shuffle_indices();
       if (m_data_store) {
-if (is_master())std::cerr <<"XX CALLING m_data_store->set_shuffled_indices; epuch: "<<m_model->get_cur_epoch() << "\n";
         m_data_store->set_shuffled_indices(&m_shuffled_indices);
       }
     }
