@@ -69,7 +69,7 @@ The following LLNL-maintained packages are optional.
     ```
 
 2.  Setup your compiler and external software environment.[^purge] For example,
-    on LLNL's LC machines, one might load the following modules:
+    on LLNL\'s LC machines, one might load the following modules:
     ```
     ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
     ```
@@ -79,22 +79,20 @@ The following LLNL-maintained packages are optional.
     ```
 
 [^purge]: Note to remove unwanted modules you can execute:
-    ```
-    ml purge
-    ```
+    `ml purge`
 
 ### Building & Installing LBANN as a user
 
 ### Building & Installing LBANN as a developer
 
-1.  Establish a spack environment and install software dependencies.[^spack]
+1.  Establish a spack environment and install software dependencies.[^timing]
     Note that there are four environments to pick from along two axis:
 
     1. developers or users
     2. x86_64 and ppc64le
 
     For example if you are a developer and want to build the inside of
-    the git repo use the following instructions:[^timing][^libarypath]
+    the git repo use the following instructions:[^libarypath]
 
     ```
     export LBANN_HOME=<path to lbann git repo>
@@ -108,12 +106,12 @@ The following LLNL-maintained packages are optional.
     unset LIBRARY_PATH
     ```
 
-[^spack]: Note that the environments provided here have a set of external
-    packages and compilers that are installed on an LLNL LC CZ sytem.
-    Please update these for your system environment.  Alternatively,
-    you can create baseline versions of the user-level spack configuation
-    files and remove the externals and compilers from the spack.yaml
-    file. See [here](spack_environment.md) for details.
+    + Note that the environments provided here have a set of external
+      packages and compilers that are installed on an LLNL LC CZ sytem.
+      Please update these for your system environment.  Alternatively,
+      you can create baseline versions of the user-level spack configuation
+      files and remove the externals and compilers from the spack.yaml
+      file. See [here](spack_environment.md) for details.
 
 [^timing]: Note that the initial build of all of the standard packages in spack
     will take a while.
@@ -124,10 +122,7 @@ The following LLNL-maintained packages are optional.
     RPATHs.  To correctly establish the RPATH please unset the variable
     as noted above, or you can explicity pass the RPATH fields to CMake
     using a command such as:
-    
-    ```
-    cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
-    ```
+    `cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...`
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
     using the superbuild.  See below for a list and descriptions of all
@@ -160,6 +155,7 @@ The following LLNL-maintained packages are optional.
       -D LBANN_DATATYPE=float \
       -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
       ${LBANN_HOME}/superbuild
+
     ninja
     ```
 
