@@ -68,7 +68,7 @@ The following LLNL-maintained packages are optional.
     . ${SPACK_ROOT}/share/spack/setup-env.sh
     ```
 
-2.  Setup your compiler and external software environment.[^purge] For example,
+2.  Setup your compiler and external software environment. For example,
     on LLNL\'s LC machines, one might load the following modules:
     ```
     ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
@@ -78,14 +78,13 @@ The following LLNL-maintained packages are optional.
     ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
     ```
 
-[^purge]: Note to remove unwanted modules you can execute:
-    `ml purge`
+    + Note to remove unwanted modules you can execute: `ml purge`
 
 ### Building & Installing LBANN as a user
 
 ### Building & Installing LBANN as a developer
 
-1.  Establish a spack environment and install software dependencies.[^timing]
+1.  Establish a spack environment and install software dependencies.
     Note that there are four environments to pick from along two axis:
 
     1. developers or users
@@ -113,16 +112,15 @@ The following LLNL-maintained packages are optional.
       files and remove the externals and compilers from the spack.yaml
       file. See [here](spack_environment.md) for details.
 
-[^timing]: Note that the initial build of all of the standard packages in spack
-    will take a while.
+    + Note that the initial build of all of the standard packages in spack
+      will take a while.
 
-[^libarypath]: Note that the spack module files set the LIBRARY_PATH environment
-    variable. This behavior allows autotools based builds to pickup the
-    correct libraries, but interferes with the way that CMake sets up
-    RPATHs.  To correctly establish the RPATH please unset the variable
-    as noted above, or you can explicity pass the RPATH fields to CMake
-    using a command such as:
-    `cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...`
+    + Note that the spack module files set the LIBRARY_PATH environment
+      variable. This behavior allows autotools based builds to pickup the
+      correct libraries, but interferes with the way that CMake sets up
+      RPATHs.  To correctly establish the RPATH please unset the variable
+      as noted above, or you can explicity pass the RPATH fields to CMake
+      using a command such as: `cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...`
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
     using the superbuild.  See below for a list and descriptions of all
