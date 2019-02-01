@@ -58,97 +58,110 @@ The following LLNL-maintained packages are optional.
 
 ## Building with [Spack](https://github.com/llnl/spack)
 
-+ Download and install [Spack](https://github.com/llnl/spack).
-  Additionally setup shell support as discussed
-  [here](https://spack.readthedocs.io/en/latest/module_file_support.html#id2).
+### Setup Spack and local base tools
 
-        . ${SPACK_ROOT}/share/spack/setup-env.sh
+1.  Download and install [Spack](https://github.com/llnl/spack).
+    Additionally setup shell support as discussed
+    [here](https://spack.readthedocs.io/en/latest/module_file_support.html#id2).
 
-+ Setup your compiler and external software environment. For example,
-  on LLNL's LC machines, one might load the following modules:
+    ``` 
+    . ${SPACK_ROOT}/share/spack/setup-env.sh
+    ```
 
-        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
+2.  Setup your compiler and external software environment.[^purge] For example,
+    on LLNL's LC machines, one might load the following modules:
+    ```
+    ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
+    ```
+    or
+    ```
+    ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
+    ```
 
-  or
+[^purge]: Note to remove unwanted modules you can execute:
+    ```
+    ml purge
+    ```
 
-        ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
+### Building & Installing LBANN as a user
 
-  Note to remove unwanted modules you can execute:
+### Building & Installing LBANN as a developer
 
-        ml purge
+1.  Establish a spack environment and install software dependencies.[^spack]
+    Note that there are four environments to pick from along two axis:
 
-+ Establish a spack environment and install software dependencies.
-  Note that there are four environments to pick from along two axis:
+    1. developers or users
+    2. x86_64 and ppc64le
 
-  1. developers or users
-  2. x86_64 and ppc64le
+    For example if you are a developer and want to build the inside of
+    the git repo use the following instructions:[^timing][^libarypath]
 
-  For example if you are a developer and want to build the inside of
-  the git repo use the following instructions:
+    ```
+    export LBANN_HOME=<path to lbann git repo>
+    export LBANN_BUILD_DIR=<path to a directory>
+    export LBANN_INSTALL_DIR=<path to a directory>
+    cd ${LBANN_BUILD_DIR}
+    spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+    spack install
+    spack env loads # Spack creates a file named loads that has all of the correct modules
+    source loads
+    unset LIBRARY_PATH
+    ```
 
-  ```
-  export LBANN_HOME=<path to lbann git repo>
-  export LBANN_BUILD_DIR=<path to a directory>
-  export LBANN_INSTALL_DIR=<path to a directory>
-  cd ${LBANN_BUILD_DIR}
-  spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
-  spack install
-  spack env loads # Spack creates a file named loads that has all of the correct modules
-  source loads
-  unset LIBRARY_PATH
-  ```
-
-  + Note that the environments provided here have a set of external
+[^spack]: Note that the environments provided here have a set of external
     packages and compilers that are installed on an LLNL LC CZ sytem.
     Please update these for your system environment.  Alternatively,
     you can create baseline versions of the user-level spack configuation
     files and remove the externals and compilers from the spack.yaml
     file. See [here](spack_environment.md) for details.
 
-  + Note that the initial build of all of the standard packages in spack
+[^timing]: Note that the initial build of all of the standard packages in spack
     will take a while.
 
-  + Note that the spack module files set the LIBRARY_PATH environment
+[^libarypath]: Note that the spack module files set the LIBRARY_PATH environment
     variable. This behavior allows autotools based builds to pickup the
     correct libraries, but interferes with the way that CMake sets up
     RPATHs.  To correctly establish the RPATH please unset the variable
     as noted above, or you can explicity pass the RPATH fields to CMake
     using a command such as:
+    
+    ```
+    cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
+    ```
 
-         cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
-
-+ Build LBANN locally from source and build Hydrogen and Aluminum
-  using the superbuild.  See below for a list and descriptions of all
-  CMake flags known to LBANN's build system. An example build that
-  expects LBANN_HOME, LBANN_BUILD_DIR, LBANN_INSTALL_DIR environment
-  variables might be:
-
-        cmake \
-          -G Ninja \
-          -D LBANN_SB_BUILD_ALUMINUM=ON \
-          -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
-          -D ALUMINUM_ENABLE_NCCL=ON \
-          -D LBANN_SB_BUILD_HYDROGEN=ON \
-          -D Hydrogen_ENABLE_CUDA=ON \
-          -D LBANN_SB_BUILD_LBANN=ON \
-          -D CMAKE_BUILD_TYPE:STRING=Release \
-          -D LBANN_WITH_CUDA:BOOL=ON \
-          -D LBANN_WITH_NVPROF:BOOL=ON \
-          -D LBANN_DATATYPE:STRING=float \
-          -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
-          -D LBANN_WITH_ALUMINUM:BOOL=ON \
-          -D LBANN_WITH_CONDUIT:BOOL=ON \
-          -D LBANN_WITH_CUDA:BOOL=ON \
-          -D LBANN_WITH_CUDNN:BOOL=ON \
-          -D LBANN_WITH_NCCL:BOOL=ON \
-          -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
-          -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
-          -D LBANN_WITH_TBINF=OFF \
-          -D LBANN_WITH_VTUNE:BOOL=OFF \
-          -D LBANN_DATATYPE=float \
-          -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
-          ${LBANN_HOME}/superbuild
-        ninja
+2.  Build LBANN locally from source and build Hydrogen and Aluminum
+    using the superbuild.  See below for a list and descriptions of all
+    CMake flags known to LBANN's build system. An example build that
+    expects LBANN_HOME, LBANN_BUILD_DIR, LBANN_INSTALL_DIR environment
+    variables might be:
+    ```
+    cmake \
+      -G Ninja \
+      -D LBANN_SB_BUILD_ALUMINUM=ON \
+      -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
+      -D ALUMINUM_ENABLE_NCCL=ON \
+      -D LBANN_SB_BUILD_HYDROGEN=ON \
+      -D Hydrogen_ENABLE_CUDA=ON \
+      -D LBANN_SB_BUILD_LBANN=ON \
+      -D CMAKE_BUILD_TYPE:STRING=Release \
+      -D LBANN_WITH_CUDA:BOOL=ON \
+      -D LBANN_WITH_NVPROF:BOOL=ON \
+      -D LBANN_DATATYPE:STRING=float \
+      -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
+      -D LBANN_WITH_ALUMINUM:BOOL=ON \
+      -D LBANN_WITH_CONDUIT:BOOL=ON \
+      -D LBANN_WITH_CUDA:BOOL=ON \
+      -D LBANN_WITH_CUDNN:BOOL=ON \
+      -D LBANN_WITH_NCCL:BOOL=ON \
+      -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
+      -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
+      -D LBANN_WITH_TBINF=OFF \
+      -D LBANN_WITH_VTUNE:BOOL=OFF \
+      -D LBANN_DATATYPE=float \
+      -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
+      ${LBANN_HOME}/superbuild
+    ninja
+    ```
 
 ## Building with [CMake](https://cmake.org)
 
