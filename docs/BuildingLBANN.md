@@ -64,11 +64,11 @@ The following LLNL-maintained packages are optional.
     Additionally setup shell support as discussed
     [here](https://spack.readthedocs.io/en/latest/module_file_support.html#id2).
 
-   ``` 
-   . ${SPACK_ROOT}/share/spack/setup-env.sh
-   ```
+    ``` 
+    . ${SPACK_ROOT}/share/spack/setup-env.sh
+    ```
 
-2.  Setup your compiler and external software environment[^purge]. For example,
+2.  Setup your compiler and external software environment.[^purge] For example,
     on LLNL's LC machines, one might load the following modules:
     ```
     ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
@@ -78,23 +78,23 @@ The following LLNL-maintained packages are optional.
     ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
     ```
 
-    [^purge]: Note to remove unwanted modules you can execute:
-        ```
-        ml purge
-        ```
+[^purge]: Note to remove unwanted modules you can execute:
+    ```
+    ml purge
+    ```
 
 ### Building & Installing LBANN as a user
 
 ### Building & Installing LBANN as a developer
 
-1.  Establish a spack environment and install software dependencies[^spack].
+1.  Establish a spack environment and install software dependencies.[^spack]
     Note that there are four environments to pick from along two axis:
 
     1. developers or users
     2. x86_64 and ppc64le
 
     For example if you are a developer and want to build the inside of
-    the git repo use the following instructions[^timing][^libarypath]:
+    the git repo use the following instructions:[^timing][^libarypath]
 
     ```
     export LBANN_HOME=<path to lbann git repo>
@@ -108,26 +108,26 @@ The following LLNL-maintained packages are optional.
     unset LIBRARY_PATH
     ```
 
-    [^spack]: Note that the environments provided here have a set of external
-        packages and compilers that are installed on an LLNL LC CZ sytem.
-        Please update these for your system environment.  Alternatively,
-        you can create baseline versions of the user-level spack configuation
-        files and remove the externals and compilers from the spack.yaml
-        file. See [here](spack_environment.md) for details.
+[^spack]: Note that the environments provided here have a set of external
+    packages and compilers that are installed on an LLNL LC CZ sytem.
+    Please update these for your system environment.  Alternatively,
+    you can create baseline versions of the user-level spack configuation
+    files and remove the externals and compilers from the spack.yaml
+    file. See [here](spack_environment.md) for details.
 
-    [^timing]: Note that the initial build of all of the standard packages in spack
-        will take a while.
+[^timing]: Note that the initial build of all of the standard packages in spack
+    will take a while.
 
-    [^libarypath] Note that the spack module files set the LIBRARY_PATH environment
-        variable. This behavior allows autotools based builds to pickup the
-        correct libraries, but interferes with the way that CMake sets up
-        RPATHs.  To correctly establish the RPATH please unset the variable
-        as noted above, or you can explicity pass the RPATH fields to CMake
-        using a command such as:
-        
-        ```
-        cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
-        ```
+[^libarypath] Note that the spack module files set the LIBRARY_PATH environment
+    variable. This behavior allows autotools based builds to pickup the
+    correct libraries, but interferes with the way that CMake sets up
+    RPATHs.  To correctly establish the RPATH please unset the variable
+    as noted above, or you can explicity pass the RPATH fields to CMake
+    using a command such as:
+    
+    ```
+    cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...
+    ```
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
     using the superbuild.  See below for a list and descriptions of all
