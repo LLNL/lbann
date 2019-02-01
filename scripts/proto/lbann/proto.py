@@ -154,6 +154,9 @@ def _generate_class(base_class, type_name, message_field_name,
                 else:  # Singular field.
                     setattr(message, field_name, v)
         return proto
+    # Define the method to return the names of all fields.
+    def get_field_names(self):
+        return field_names
     # Define a simple docstring consisting of the available fields.
     if field_names:
         doc = 'Fields:\n'
@@ -171,7 +174,8 @@ def _generate_class(base_class, type_name, message_field_name,
     # Create the sub-class.
     return type(type_name, (base_class,),
                 {'__init__': __init__, 'export_proto': export_proto,
-                 '__doc__': doc})
+                 '__doc__': doc,
+                 'get_field_names': get_field_names})
 
 def _generate_classes_from_message(base_class, message, skip_fields=None,
                                    base_kwargs=[], type_has_parent=True):
