@@ -106,10 +106,10 @@ data_set_metadata {
     ]
 
     jag_image_normalization_params: [
-      { scale: 0.0341781  bias: 0.0e+00 },
-      { scale: 0.00116514  bias: 0.0e+00 },
-      { scale: 9.99513e-06  bias: 0.0e+00 },
-      { scale: 2.08021e-07  bias: 0.0e+00 }
+      { scale: 2.9258502e+01 bias: 0.0e+00 },   # avg = 0.0341781
+      { scale: 8.5826596e+02 bias: 0.0e+00 },   # avg = 0.00116514
+      { scale: 1.0004872e+05 bias: 0.0e+00 },   # avg = 9.99513e-06
+      { scale: 4.8072070e+06 bias: 0.0e+00 }    # avg = 2.08021e-07
     ]
   }
 }
