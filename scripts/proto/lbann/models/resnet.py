@@ -206,10 +206,10 @@ class ResNet(lm.Module):
     assumed to be image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -270,15 +270,15 @@ class ResNet(lm.Module):
         return self.fc(x)
 
 class ResNet18(ResNet):
-    """ResNet-18.
+    """ResNet-18 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -310,15 +310,15 @@ class ResNet18(ResNet):
                          name)
 
 class ResNet34(ResNet):
-    """ResNet-34.
+    """ResNet-34 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -350,15 +350,15 @@ class ResNet34(ResNet):
                          name)
 
 class ResNet50(ResNet):
-    """ResNet-50.
+    """ResNet-50 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -390,15 +390,15 @@ class ResNet50(ResNet):
                          name)
 
 class ResNet101(ResNet):
-    """ResNet-101.
+    """ResNet-101 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -430,15 +430,15 @@ class ResNet101(ResNet):
                          name)
 
 class ResNet152(ResNet):
-    """ResNet-152.
+    """ResNet-152 neural network.
 
     Assumes image data in NCHW format.
 
     See:
-        K. He, X. Zhang, S. Ren, and J. Sun (2016). Deep residual
-        learning for image recognition. In Proceedings of the IEEE
-        Conference on Computer Vision and Pattern Recognition
-        (pp. 770-778).
+        Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun. "Deep
+        residual learning for image recognition." In Proceedings of
+        the IEEE Conference on Computer Vision and Pattern
+        Recognition, pp. 770-778. 2016.
 
     """
 
@@ -495,6 +495,15 @@ if __name__ == '__main__':
         action='store', default='local', type=str,
         help=('aggregation mode for batch normalization statistics '
               '(default: "local")'))
+    parser.add_argument(
+        '--mbsize', action='store', default=256, type=int,
+        help='mini-batch size (default: 256)')
+    parser.add_argument(
+        '--epochs', action='store', default=90, type=int,
+        help='number of epochs (default: 90)')
+    parser.add_argument(
+        '--warmup', action='store_true',
+        help='Use a linear warmup (default: false)')
     args = parser.parse_args()
 
     # Choose ResNet variant
@@ -529,8 +538,11 @@ if __name__ == '__main__':
                  lp.CallbackTimer(),
                  lp.CallbackDropFixedLearningRate(
                      drop_epoch=[30, 60, 80], amt=0.1)]
+    if args.warmup:
+        callbacks.append(lp.CallbackLinearGrowthLearningRate(
+            target=0.1*args.mbsize / 256, num_epochs=5))
 
     # Export model to file
-    lp.save_model(args.file, 256, 100,
+    lp.save_model(args.file, args.mbsize, args.epochs,
                   layers=layers, objective_function=obj,
                   metrics=metrics, callbacks=callbacks)
