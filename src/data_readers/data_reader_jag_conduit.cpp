@@ -1439,9 +1439,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   if (m_jag_store != nullptr && m_model->get_cur_epoch() == 0) {
     // Once the node has been populated save it in the data store
-    if (m_jag_store != nullptr) {
-      m_jag_store->set_conduit_node(data_id, node);
-    }
+    m_jag_store->set_conduit_node(data_id, node);
   }
 
   return ok;

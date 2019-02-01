@@ -67,6 +67,7 @@ class data_store_jag : public generic_data_store {
   void set_conduit_node(int data_id, conduit::Node &node);
 
 protected :
+  bool m_ds_indices_were_exchanged;
 
   data_reader_jag_conduit *m_jag_reader;
 

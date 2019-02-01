@@ -38,9 +38,9 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
+m_n(0),
     m_reader(reader),
     m_my_minibatch_indices(nullptr),
-    m_epoch(0),
     m_in_memory(true),
     m_model(m),
     m_extended_testing(false),
@@ -210,11 +210,13 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
+if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_cur_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
-  ++m_epoch;
-  if (m_epoch > 1 && exchange_indices && m_in_memory) {
+//  if (m_model->get_cur_epoch() > 0 && exchange_indices && m_in_memory) {
+  if (m_n == 1) {
     exchange_data();
   }
+  ++m_n;
 }
 
 void generic_data_store::exchange_mb_counts() {

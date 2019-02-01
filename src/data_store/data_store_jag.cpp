@@ -33,7 +33,8 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
-#include "lbann/utils/file_utils.hpp" // for add_delimiter()
+//#include "lbann/utils/file_utils.hpp" // for add_delimiter()
+#include "lbann/models/model.hpp"
 
 #include <unordered_set>
 
@@ -44,7 +45,8 @@ namespace lbann {
 
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
-  generic_data_store(reader, m) {
+  generic_data_store(reader, m), 
+  m_ds_indices_were_exchanged(false) {
   set_name("data_store_jag");
 }
 
@@ -120,19 +122,22 @@ void data_store_jag::exchange_data() {
 // much of the following has not been tested; it compiles,
 // but is likely buggy
 
-  if (m_epoch == 1) {
+  if (m_master) std::cerr << "starting exchange_data; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"\n";
+
+  if (! m_ds_indices_were_exchanged) {
     if (m_master) std::cerr << "calling exchange_ds_indices()\n";
       // fills in m_owner; this maps a sample index to the owning processor
       // Also fill in m_my_datastore_indices, which is the set of indices
       // (and associated samples) that I own
       exchange_ds_indices();
+      m_ds_indices_were_exchanged = true;
   }
 
   #ifdef DEBUG
   MPI_Barrier(MPI_COMM_WORLD);
   #endif
 
-//  LBANN_ERROR("starting data_store_jag::exchange_data for epoch: " + std::to_string(m_epoch) + "; not yet implemented; m_data.size: " + std::to_string(m_data.size()));
+//  LBANN_ERROR("starting data_store_jag::exchange_data for epoch: " + std::to_string(m_model->get_cur_epoch()) + "; not yet implemented; m_data.size: " + std::to_string(m_data.size()));
 
   double tm1 = get_time();
 
@@ -152,6 +157,7 @@ void data_store_jag::exchange_data() {
   }
 
   if (m_master) std::cout << "exchange_data; built map\n";
+  MPI_Barrier(MPI_COMM_WORLD);
 
   //========================================================================
   //part 1: exchange the sizes of the data
@@ -164,12 +170,16 @@ void data_store_jag::exchange_data() {
       m_send_buffer[p][std::to_string(idx)] = m_data[idx];
     }
     #ifdef DEBUG
-    if (m_master && p == 1)  m_send_buffer[p].print();
+    //if (m_master && p == 1)  m_send_buffer[p].print();
     #endif
 
     // code in the following method is a modification of code from
     // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
+
+    if (m_master) {
+      std::cerr << "children: " << m_send_buffer[p].number_of_children() << "\n";
+    }
 
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
@@ -184,6 +194,14 @@ void data_store_jag::exchange_data() {
     MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
     MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
+  #ifdef DEBUG
+  if (m_master) {
+    std::cout << "\nIncoming msg sizes:\n";
+    for (auto t : m_incoming_msg_sizes) std::cout << t << " ";
+    std::cout << "\n";
+  }
+  #endif
+  
   //========================================================================
   //part 2: exchange the actual data
 
@@ -220,13 +238,17 @@ void data_store_jag::exchange_data() {
 
   #ifdef DEBUG
   m_comm->global_barrier();
-  if (m_master) std::cout << "finished waiting; all communications have completed.\n";
+  if (m_master) {
+    std::cout << "finished waiting; all communications have completed.\n"
+              << "numbers of children: ";
+    for (auto t : m_recv_buffer) std::cout << t.number_of_children() << " ";
+    std::cout << "\nXXXX\n\n";
+  }  
   #endif
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-#if 0
 // The following needs needs fixing. At the conclusion of this block,
 // m_minibatch_data[data_id] should contain a single JAG sample
 
@@ -241,18 +263,26 @@ void data_store_jag::exchange_data() {
     gen.walk(rcv_schema);
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
-    m_minibatch_data[p].update(n_msg["data"]);
+    conduit::Node nd;
+    nd.update(n_msg["data"]);
+if  (m_master) nd.print();
+    //m_minibatch_data[p].update(n_msg["data"]);
   }
-#endif
 
   if (m_master) std::cout << "data_store_jag::exchange_data time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
+static bool t = true;
   if (m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
   m_data[data_id] = node;
+  if (m_master && t) {
+    std::cerr << "DATA_ID: " << data_id << "\n";
+    node.print();
+  }
+  t = false;
 }
 
 const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
@@ -262,7 +292,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
 
   std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
   if (t == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
   }
 
   return t->second;
@@ -320,6 +350,14 @@ if (m_master && doit) {
 //        Will have to re-study conduit_relay_mpi.cpp
 //
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
+  #ifdef DEBUG
+  if (m_master) {
+    //std::cerr <<" starting data_store_jag::build_node_for_sending; calling node_in.print(): ";
+    //node_in.print();
+    std::cerr <<"\n";
+  }
+  #endif
+
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
     s_data_compact = node_in.schema();
@@ -329,7 +367,7 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
 
   std::string snd_schema_json = s_data_compact.to_json();
 
-  #ifdef DEBUG
+  #if 0
   if (m_master) {
     std::cout << "\nsnd_schema_json:\n";
     std::cout << snd_schema_json << "\n";
@@ -420,7 +458,7 @@ void data_store_jag::exchange_ds_indices() {
     }
   }
 
-  #ifdef DEBUG
+  #if 0
   if (m_master) {
     std::map<int, std::set<int>> s;
     for (auto t : m_owner) {
