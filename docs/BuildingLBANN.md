@@ -118,7 +118,7 @@ The following LLNL-maintained packages are optional.
 [^timing]: Note that the initial build of all of the standard packages in spack
     will take a while.
 
-[^libarypath] Note that the spack module files set the LIBRARY_PATH environment
+[^libarypath]: Note that the spack module files set the LIBRARY_PATH environment
     variable. This behavior allows autotools based builds to pickup the
     correct libraries, but interferes with the way that CMake sets up
     RPATHs.  To correctly establish the RPATH please unset the variable
