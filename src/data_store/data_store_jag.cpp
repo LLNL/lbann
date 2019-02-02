@@ -69,10 +69,8 @@ void data_store_jag::setup() {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
   }
 
-  //m_reader is a *generic_data_store
-  // hmm ... doesn't seem like this is needed after all; can probably delete
-  m_jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
-  if (m_jag_reader == nullptr) {
+  data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
+  if (jag_reader == nullptr) {
     LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
   }
 
@@ -255,8 +253,6 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
 
 // fills in m_owner; this maps a sample index to the owning processor
 // Also fill in m_my_datastore_indices, which is the set of indices that I own
-// exchange data store indices. These are the indices (and associated samples)
-// that each processor owns
 void data_store_jag::exchange_ds_indices() {
   m_my_datastore_indices.clear();
   int my_num_indices = m_data.size();

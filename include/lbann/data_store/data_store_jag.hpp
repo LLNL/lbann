@@ -40,8 +40,6 @@
 
 namespace lbann {
 
-class data_reader_jag_conduit;
-
 class data_store_jag : public generic_data_store {
  public:
 
@@ -61,27 +59,25 @@ class data_store_jag : public generic_data_store {
 
   void setup() override;
 
-  /// return the conduit node 
+  /// returns the conduit node 
   const conduit::Node & get_conduit_node(int data_id, bool any_node = false) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
 
 protected :
+
+  /// switch used in exchange_data()                                            
   bool m_ds_indices_were_exchanged;
 
-  data_reader_jag_conduit *m_jag_reader;
-
-  /// buffers for data that will be passed to the data reader's fetch_datum method
-  /// std::unordered_map<int, std::vector<DataType>> m_my_minibatch_data;
+  /// used to map a shuffled index to the original subscript;
+  /// used in set_conduit_node()
+  std::unordered_map<int,int> m_unshuffle;
 
   /// retrive data needed for passing to the data reader for the next epoch
   void exchange_data() override;
 
-  /// returns, in "indices," the set of indices that processor "p"
-  /// needs for the next epoch. Called by exchange_data
-  //void get_indices(std::unordered_set<int> &indices, int p);
-
-  /// This vector contains the Nodes that this processor owns
+  /// contains the Nodes that this processor owns;
+  /// maps data_id to conduit::Node
   std::unordered_map<int, conduit::Node> m_data;
 
   /// This vector contains Nodes that this processor needs for
@@ -95,19 +91,19 @@ protected :
   std::vector<MPI_Request> m_recv_requests;
   std::vector<MPI_Status> m_status;
   std::vector<conduit::Node> m_recv_buffer;
-
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
-  int m_num_samples;
-
-  void testme();
-
+  /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-  // fills in m_owner, which maps an index to the owning processor
+  /// fills in m_owner, which maps an index to the owning processor;
+  /// fills in m_my_datastore_indices, which is the set of indices that I own
   void exchange_ds_indices();
 
+  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j] 
+  /// will contain all indices that will be passed to 
+  /// data_reader::fetch_datum in one epoch
   void build_all_minibatch_indices();
 };
 
