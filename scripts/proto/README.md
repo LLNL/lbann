@@ -23,6 +23,13 @@ Requirements:
 Run `pip3 install --user -e .` on this directory to install this
 package.
 
+If you do not already have the ONNX Python package
+installed, you will need to ensure the `protoc` compiler is in your
+path when you run this. Either load the appropriate Spack module or
+add `$LBANN_HOME/build/<your build>/install/bin` to `$PATH` before
+running. (See [here](https://github.com/onnx/onnx#source) for
+additional documentation on installing ONNX.)
+
 _Advanced users_: This requires the `lbann_pb2` Python module
 generated from `lbann.proto` using the `protoc` compiler. The LBANN
 build process should do this automatically, installing it to
