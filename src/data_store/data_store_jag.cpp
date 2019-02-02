@@ -41,8 +41,7 @@ namespace lbann {
 
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
-  generic_data_store(reader, m), 
-  m_ds_indices_were_exchanged(false) {
+  generic_data_store(reader, m) {
   set_name("data_store_jag");
 }
 
@@ -64,9 +63,12 @@ void data_store_jag::setup() {
 
   generic_data_store::setup();
 
-  //sanity check
   if (m_master) {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
+  }
+
+  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
+    m_unshuffle[(*m_shuffled_indices)[j]] = j;
   }
 
   data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
@@ -104,32 +106,34 @@ void data_store_jag::exchange_data() {
 
   if (m_master) std::cerr << "starting exchange_data; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"\n";
 
-  if (! m_ds_indices_were_exchanged) {
-    if (m_master) std::cerr << "calling exchange_ds_indices()\n";
-      // fills in m_owner; this maps a sample index to the owning processor
-      // Also fill in m_my_datastore_indices, which is the set of indices
-      // (and associated samples) that I own
-      exchange_ds_indices();
-      m_ds_indices_were_exchanged = true;
-  }
-
   //========================================================================
   //build map: proc -> global indices that P_x needs for this epoch, and
   //                   which I own
+
+  //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
+  //vector<unordered_set<int>>; then: 
+  //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
+  //
+  //  Hm ... I think m_all_minibatch_indices is identical to ds indices
+
+  std::unordered_set<int> my_ds_indices;
+  for (auto t : m_all_minibatch_indices[m_rank]) {
+    my_ds_indices.insert(t);
+  }
+
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
   for (size_t j=0; j<m_all_minibatch_indices.size(); j++) {
     for (auto idx : m_all_minibatch_indices[j]) {
       int index = (*m_shuffled_indices)[idx];
       // P_j needs the sample that corresponds to 'index' in order
       // to complete the next epoch
-      if (m_my_datastore_indices.find(index) != m_my_datastore_indices.end()) {
+      if (my_ds_indices.find(index) != my_ds_indices.end()) {
         proc_to_indices[j].insert(index);
       }
     }
   }
 
   if (m_master) std::cout << "exchange_data; built map\n";
-  MPI_Barrier(MPI_COMM_WORLD);
 
   //========================================================================
   //part 1: exchange the sizes of the data
@@ -207,10 +211,14 @@ void data_store_jag::exchange_data() {
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
-  if (m_data.find(data_id) != m_data.end()) {
-    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
+  if (m_unshuffle.find(data_id) == m_unshuffle.end()) {
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_unshuffle");
   }
-  m_data[data_id] = node;
+  int idx = m_unshuffle[data_id];
+  if (m_data.find(idx) != m_data.end()) {
+    LBANN_ERROR("duplicate data_id: " + std::to_string(idx) + " in data_store_jag::set_conduit_node");
+  }
+  m_data[idx] = node;
 }
 
 const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
@@ -251,53 +259,13 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
 }
 
 
-// fills in m_owner; this maps a sample index to the owning processor
-// Also fill in m_my_datastore_indices, which is the set of indices that I own
-void data_store_jag::exchange_ds_indices() {
-  m_my_datastore_indices.clear();
-  int my_num_indices = m_data.size();
-  std::vector<int> counts(m_np);
-  m_comm->trainer_all_gather<int>(my_num_indices, counts);
-
-  std::vector<int> displ(m_np);
-  displ[0] = 0;
-  for (size_t j=1; j<counts.size(); j++) {
-    displ[j] = displ[j-1] + counts[j-1];
-  }
-
-  //recv vector
-  int n = std::accumulate(counts.begin(), counts.end(), 0);
-  std::vector<int> all_indices(n);
-
-  std::vector<int> mine;
-  mine.reserve(m_data.size());
-  for (auto t : m_data) {
-    mine.push_back(t.first);
-  }
-
-  //receive the indices
-  m_comm->all_gather<int>(mine, all_indices, counts, displ, m_comm->get_trainer_comm());
-
-  //fill in the final data structure
-  m_owner.clear();
-  for (int proc=0; proc<m_np; proc++) {
-    for (int i=displ[proc]; i<displ[proc]+counts[proc]; i++) {
-      if (m_owner.find(all_indices[i]) != m_owner.end()) {
-        LBANN_ERROR("duplicate index in m_owner");
-      }
-      m_owner[all_indices[i]] = proc;
-      if (proc == m_rank) {
-        m_my_datastore_indices.insert(all_indices[i]);
-      }
-    }
-  }
-}
-
 void data_store_jag::build_all_minibatch_indices() {
   m_all_minibatch_indices.clear();
+  m_owner.clear();
   m_all_minibatch_indices.resize(m_np);
   for (size_t idx=0; idx<m_shuffled_indices->size(); ++idx) {
     int owner = idx % m_np;
+    m_owner[idx] = owner;
     m_all_minibatch_indices[owner].push_back(idx);
   }
 }

@@ -66,9 +66,6 @@ class data_store_jag : public generic_data_store {
 
 protected :
 
-  /// switch used in exchange_data()                                            
-  bool m_ds_indices_were_exchanged;
-
   /// used to map a shuffled index to the original subscript;
   /// used in set_conduit_node()
   std::unordered_map<int,int> m_unshuffle;
@@ -99,7 +96,7 @@ protected :
 
   /// fills in m_owner, which maps an index to the owning processor;
   /// fills in m_my_datastore_indices, which is the set of indices that I own
-  void exchange_ds_indices();
+//  void exchange_ds_indices();
 
   /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j] 
   /// will contain all indices that will be passed to 
