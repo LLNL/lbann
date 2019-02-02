@@ -205,6 +205,13 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+        } else if (readme.format() == "numpy_npz") {
+          auto* reader_numpy_npz = new numpy_npz_reader(false);
+          reader_numpy_npz->set_data_filename(path);
+          reader_numpy_npz->set_has_labels(!readme.disable_labels());
+          reader_numpy_npz->set_has_responses(!readme.disable_responses());
+          reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
+          npy_readers.push_back(reader_numpy_npz);
 #ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, master, reader);
