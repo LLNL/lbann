@@ -38,6 +38,7 @@ namespace lbann {
    * Data reader for data stored in numpy (.npz) files.
    * This assumes that the file contains "data", "labels" (optional),
    * and "responses" (optional) whose the zero'th axis is the sample axis.
+   * float, double, int16 data-types is accepted for "data".
    */
   class numpy_npz_reader : public generic_data_reader {
   public:

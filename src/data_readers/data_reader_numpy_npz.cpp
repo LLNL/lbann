@@ -88,9 +88,12 @@ namespace lbann {
     npyLoadList.push_back(std::forward_as_tuple(m_has_labels,    NPZ_KEY_LABELS,    m_labels));
     npyLoadList.push_back(std::forward_as_tuple(m_has_responses, NPZ_KEY_RESPONSES, m_responses));
     for(const auto npyLoad : npyLoadList) {
+      // Check whether the tensor have to be loaded.
       if(!std::get<0>(npyLoad)) {
         continue;
       }
+
+      // Load the tensor.
       const std::string key = std::get<1>(npyLoad);
       cnpy::NpyArray &ary = std::get<2>(npyLoad);
       const auto i = npz.find(key);
@@ -101,6 +104,7 @@ namespace lbann {
                               " numpy_npz_reader::load() - can't find npz key : " + key);
       }
 
+      // Check whether the labels/responses has the same number of samples.
       if(key == NPZ_KEY_DATA) {
         m_num_samples = m_data.shape[0];
       } else if(m_num_samples != (int) ary.shape[0]) {
@@ -110,11 +114,16 @@ namespace lbann {
       }
     }
 
-    m_num_features = std::accumulate(m_data.shape.begin() + 1, m_data.shape.end(), (unsigned) 1,
+    m_num_features = std::accumulate(m_data.shape.begin() + 1,
+                                     m_data.shape.end(),
+                                     (unsigned) 1,
                                      std::multiplies<unsigned>());
-    if(m_has_responses)
-      m_num_response_features = std::accumulate(m_responses.shape.begin() + 1, m_responses.shape.end(), (unsigned) 1,
+    if(m_has_responses) {
+      m_num_response_features = std::accumulate(m_responses.shape.begin() + 1,
+                                                m_responses.shape.end(),
+                                                (unsigned) 1,
                                                 std::multiplies<unsigned>());
+    }
 
     // Ensure we understand the word size.
     if (!(m_data.word_size == 2 || m_data.word_size == 4 || m_data.word_size == 8)) {
@@ -123,7 +132,6 @@ namespace lbann {
     }
 
     if (m_has_labels) {
-      // Shift feature count because the last becomes the label.
       // Determine number of label classes.
       std::unordered_set<int> label_classes;
       if (m_labels.word_size != 4) {
@@ -144,9 +152,6 @@ namespace lbann {
       }
       m_num_labels = label_classes.size();
     }
-    if (m_has_responses) {
-      // Last feature becomes the response.
-    }
 
     // Reset indices.
     m_shuffled_indices.clear();
@@ -159,12 +164,14 @@ namespace lbann {
     Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
 
     if (m_data.word_size == 2) {
+      // Convert int16 to DataType.
       const short *data = m_data.data<short>() + data_id * m_num_features;
       DataType *dest = X_v.Buffer();
 
+      // OPTIMIZE
       LBANN_OMP_PARALLEL_FOR
-      for(int j = 0; j < m_num_features; j++)
-        dest[j] = data[j] * m_scaling_factor_int16;
+        for(int j = 0; j < m_num_features; j++)
+          dest[j] = data[j] * m_scaling_factor_int16;
 
     } else {
       void *data = NULL;
@@ -188,6 +195,9 @@ namespace lbann {
   }
 
   bool numpy_npz_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+    if (!m_has_responses) {
+      throw lbann_exception("numpy_npz_reader: do not have responses");
+    }
     void *responses = NULL;
     if (m_responses.word_size == 4) {
       responses = (void *) (m_responses.data<float>()
