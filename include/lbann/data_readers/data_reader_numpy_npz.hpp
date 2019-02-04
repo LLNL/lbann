@@ -111,4 +111,4 @@ namespace lbann {
 
 }  // namespace lbann
 
-#endif  // LBANN_DATA_READER_NUMPY_HPP
+#endif  // LBANN_DATA_READER_NUMPY_NPZ_HPP
