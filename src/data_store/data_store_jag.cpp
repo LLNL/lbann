@@ -39,6 +39,9 @@
 
 namespace lbann {
 
+std::ofstream debug;
+char b[1024];
+
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m) {
@@ -46,6 +49,7 @@ data_store_jag::data_store_jag(
 }
 
 data_store_jag::~data_store_jag() {
+  debug.close();
 }
 
 void data_store_jag::setup() {
@@ -62,6 +66,9 @@ void data_store_jag::setup() {
   }
 
   generic_data_store::setup();
+
+  sprintf(b, "debug.%d", m_rank);
+  debug.open(b);
 
   if (m_master) {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
@@ -104,7 +111,8 @@ void data_store_jag::setup() {
 void data_store_jag::exchange_data() {
   double tm1 = get_time();
 
-  if (m_master) std::cerr << "starting exchange_data; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"\n";
+  debug << "\n============================================================\n"
+  <<"starting exchange_data; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"\n";
 
   //========================================================================
   //build map: proc -> global indices that P_x needs for this epoch, and
@@ -115,6 +123,8 @@ void data_store_jag::exchange_data() {
   //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
   //
   //  Hm ... I think m_all_minibatch_indices is identical to ds indices
+
+double tma = get_time();
 
   std::unordered_set<int> my_ds_indices;
   for (auto t : m_all_minibatch_indices[m_rank]) {
@@ -133,38 +143,65 @@ void data_store_jag::exchange_data() {
     }
   }
 
-  if (m_master) std::cout << "exchange_data; built map\n";
+  debug << "exchange_data; built map\n";
+
+debug << "exchange_data: Time to build map: " << get_time() -  tma << "\n";
 
   //========================================================================
   //part 1: exchange the sizes of the data
-
   // m_send_buffer[j] is a conduit::Node that contains
   // all samples that this proc will send to P_j
+
+tma = get_time();
+
   for (int p=0; p<m_np; p++) {
+
+double tmy = get_time();
+
     m_send_buffer[p].reset();
     for (auto idx : proc_to_indices[p]) {
       m_send_buffer[p][std::to_string(idx)] = m_data[idx];
     }
 
+debug << "\nassemble send_buffer -> P_" << p <<"; num samples: " << proc_to_indices[p].size() << " Time: " << get_time() -  tmy << "\n";
+tmy = get_time();
+
     // code in the following method is a modification of code from
     // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
 
+debug << "  build_node for sending; Time: " << get_time() -  tmy << "\n";
+tmy = get_time();
+
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
+
+debug << "  start Isend Time: " << get_time() -  tmy << "\n";
   }
+ double tmy = get_time();
 
   //start receives for sizes of the data
   for (int p=0; p<m_np; p++) {
     MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
+
   }
+
+debug << "\nTime to start Irecvs: " << get_time() -  tmy << "\n";
+  
+double tmz = get_time();
 
   // wait for all msgs to complete
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
+debug << "Time for waitalls" << get_time() -  tmz << "\n";
+
+debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
+
   //========================================================================
   //part 2: exchange the actual data
+
+tma = get_time();
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
@@ -182,12 +219,18 @@ void data_store_jag::exchange_data() {
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
+debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
+tma = get_time();
+
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
+
+double tmw = get_time();
 
   conduit::Node nd;
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
+double tmx = get_time();
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
     conduit::Node n_msg;
     n_msg["schema_len"].set_external((conduit::int64*)n_buff_ptr);
@@ -201,13 +244,20 @@ void data_store_jag::exchange_data() {
     nd.reset();
     nd.update(n_msg["data"]);
     const std::vector<std::string> &names = nd.child_names();
+debug << "exchange_data: Time to unpack data from P_"<<p<<" Time: " << get_time() - tmx << "\n";
+tmx = get_time();
     for (auto t : names) {
       conduit::Node n3 = nd[t];
       m_minibatch_data[atoi(t.c_str())] = n3;
     }
+debug << "exchange_data: Time break up  samples from P_" << p  << ": " << " num samples: " << m_minibatch_data.size() << "  Time: " << get_time() -  tmx << "\n";
   }
 
-  if (m_master) std::cout << "data_store_jag::exchange_data time: " << get_time() - tm1 << "\n";
+debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
+
+  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
+
+  debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
