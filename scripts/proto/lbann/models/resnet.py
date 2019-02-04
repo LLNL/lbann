@@ -222,7 +222,7 @@ class ResNet(lm.Module):
 
         Args:
             block (type): Residual block type, which should be a
-                `lbann_modules.Module`.
+                `lbann.modules.Module`.
             output_size (int): Size of output tensor.
             layer_sizes (`Iterable` containing `int`s): Number of
                 blocks in each ResNet layer.
