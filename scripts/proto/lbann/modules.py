@@ -130,8 +130,8 @@ class FullyConnectedModule(Module):
         else:
             return y
 
-class Convolution2dModule(Module):
-    """Basic block for 2D convolutional neural networks.
+class ConvolutionNdModule(Module):
+    """Basic block for ND convolutional neural networks.
 
     Applies a convolution and a nonlinear activation function.
 
@@ -139,12 +139,14 @@ class Convolution2dModule(Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, out_channels, kernel_size,
+    def __init__(self, num_dims,
+                 out_channels, kernel_size,
                  stride=1, padding=0, dilation=1, groups=1, bias=True,
                  weights=[], activation=None, name=None):
         """Initialize convolution module.
 
         Args:
+            num_dims (int): Number of dimensions.
             out_channels (int): Number of output channels, i.e. number
                 of filters.
             kernel_size (int): Size of convolution kernel.
@@ -162,8 +164,9 @@ class Convolution2dModule(Module):
 
         """
         super().__init__()
-        Convolution2dModule.global_count += 1
+        ConvolutionNdModule.global_count += 1
         self.instance = 0
+        self.num_dims = num_dims
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
@@ -174,7 +177,7 @@ class Convolution2dModule(Module):
         self.weights = list(_make_iterable(weights))
         self.name = (name
                      if name
-                     else 'convmodule{0}'.format(Convolution2dModule.global_count))
+                     else 'convmodule{0}'.format(ConvolutionNdModule.global_count))
 
         # Initialize weights
         # Note: If weights are not provided, kernel weights are
@@ -182,7 +185,7 @@ class Convolution2dModule(Module):
         # initialized with zeros.
         self.weights = list(_make_iterable(weights))
         if len(self.weights) > 2:
-            raise ValueError('`Convolution2dModule` has '
+            raise ValueError('`ConvolutionNdModule` has '
                              'at most two weights, '
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
@@ -210,7 +213,7 @@ class Convolution2dModule(Module):
         y = lp.Convolution(x,
                            weights=self.weights,
                            name=(name+'_conv' if self.activation else name),
-                           num_dims=2,
+                           num_dims=self.num_dims,
                            num_output_channels=self.out_channels,
                            has_vectors=False,
                            conv_dims_i=self.kernel_size,
@@ -223,3 +226,23 @@ class Convolution2dModule(Module):
             return self.activation(y, name=name+'_activation')
         else:
             return y
+
+class Convolution2dModule(ConvolutionNdModule):
+    """Basic block for 2D convolutional neural networks.
+
+    Applies a convolution and a nonlinear activation function.
+    This is a wrapper class for ConvolutionNdModule.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(2, *args, **kwargs)
+
+class Convolution3dModule(ConvolutionNdModule):
+    """Basic block for 3D convolutional neural networks.
+
+    Applies a convolution and a nonlinear activation function.
+    This is a wrapper class for ConvolutionNdModule.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(3, *args, **kwargs)

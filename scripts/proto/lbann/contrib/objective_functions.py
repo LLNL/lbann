@@ -4,8 +4,8 @@ These are mostly unsupported.
 
 """
 
-import lbann.lbann_proto as lp
-import lbann.lbann_modules as lm
+import lbann.proto as lp
+import lbann.modules as lm
 from collections.abc import Iterable
 
 class CrossEntropyWithUncertainty(lm.Module):
