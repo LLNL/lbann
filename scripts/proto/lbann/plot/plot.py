@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Global imports
 import os
 import sys
@@ -18,9 +16,9 @@ def _get_time_axis(time_list, units='hours'):
         if units == 'seconds':
             pass
         elif units == 'minutes':
-            time_sum /= 60.0 
+            time_sum /= 60.0
         elif units == 'hours':
-            time_sum /= 3600.0 
+            time_sum /= 3600.0
         time_axis.append(time_sum)
     return time_axis
 
@@ -32,7 +30,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours'):
     if stat_name_list is None:
         print('WARNING: No trial names provided, using file names by default.')
         run_name_list = [os.path.splitext(os.path.basename(stat_path))[0] for stat_path in stat_path_list]
-    elif len(stat_name_list) != len(stat_path_list): 
+    elif len(stat_name_list) != len(stat_path_list):
         print('WARNING: # stat paths ({}) does not match # stat names ({}). Using file names by default.'.format(
             len(stat_path_list), len(stat_name_list)))
         run_name_list = [os.path.splitext(os.path.basename(stat_path))[0] for stat_path in stat_path_list]
@@ -88,7 +86,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours'):
 
         # Add row to stats table for current trial
         stat_table.add_row([run_name, total_epochs, avg_train_time, avg_val_time, peak_train_acc, peak_val_acc])
-        
+
     # Print the stats table
     print()
     table_str = stat_table.draw()

@@ -22,7 +22,7 @@ setup(
     author="Lawrence Livermore National Security, LLC.",
     license="Apache 2.0",
     packages=["lbann"],
-    scripts=["lbann/plot/script/lbplot"],
+    scripts=["scripts/plot/lbplot"],
     install_requires=["protobuf>=3.6.1",
                       "onnx>=1.3.0",
                       "numpy>=1.16.0",
