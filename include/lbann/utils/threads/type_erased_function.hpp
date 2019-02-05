@@ -3,7 +3,7 @@
 
 #include <type_traits>
 
-#include "memory.hpp"
+#include <lbann/utils/memory.hpp>
 
 namespace lbann {
 
