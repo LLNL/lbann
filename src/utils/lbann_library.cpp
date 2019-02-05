@@ -188,7 +188,7 @@ model *build_model_from_prototext(int argc, char **argv,
     //under development; experimental
     if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
       if (master) {
-        std::cerr << "\nUSING DATA STORE!\n\n";
+        std::cout << "\nUSING DATA STORE!\n\n";
       }
       for (auto r : data_readers) {
         if (!r.second) continue;

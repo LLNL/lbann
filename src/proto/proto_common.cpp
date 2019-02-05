@@ -862,6 +862,8 @@ void print_help(lbann_comm *comm)
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
        "  --print_affinity\n"
        "      display information on how OpenMP threads are provisioned\n"
+       "  --use_data_store \n"
+       "      Enables the data store in-memory structure\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

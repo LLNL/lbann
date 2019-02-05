@@ -1148,10 +1148,11 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
-    const std::string conduit_obj = m_output_image_prefix + emi_tag;
+    const std::string conduit_field = m_output_image_prefix + emi_tag;
+    const std::string conduit_obj = '/' + std::to_string(sample_id) + '/' + conduit_field;
     if(!sample.has_path(conduit_obj)) {
       conduit::Node n_image;
-      load_conduit_node(sample_id, conduit_obj, n_image);
+      load_conduit_node(sample_id, conduit_field, n_image);
       sample[conduit_obj].set(n_image);
     }
     conduit_ch_t emi = sample[conduit_obj].value();
@@ -1266,10 +1267,11 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   auto tr = m_scalar_normalization_params.cbegin();
 
   for(const auto key: m_scalar_keys) {
-    std::string conduit_obj = m_output_scalar_prefix + key;
+    std::string conduit_field = m_output_scalar_prefix + key;
+    std::string conduit_obj = '/' + std::to_string(sample_id) + '/' + conduit_field;
     if(!sample.has_path(conduit_obj)) {
       conduit::Node n_scalar;
-      load_conduit_node(sample_id, conduit_obj, n_scalar);
+      load_conduit_node(sample_id, conduit_field, n_scalar);
       sample[conduit_obj].set(n_scalar);
     }
     const scalar_t val_raw = static_cast<scalar_t>(sample[conduit_obj].to_value());
@@ -1292,10 +1294,11 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
-      const std::string conduit_obj = m_input_prefix + key;
+      const std::string conduit_field = m_input_prefix + key;
+      const std::string conduit_obj = '/' + std::to_string(sample_id) + '/' + conduit_field;
       if(!sample.has_path(conduit_obj)) {
         conduit::Node n_input;
-        load_conduit_node(sample_id, conduit_obj, n_input);
+        load_conduit_node(sample_id, conduit_field, n_input);
         sample[conduit_obj].set(n_input);
       }
       const input_t val_raw = static_cast<input_t>(sample[conduit_obj].value());
@@ -1305,10 +1308,11 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     }
   } else {
     for(const auto key: m_input_keys) {
-      std::string conduit_obj = m_input_prefix + key;
+      const std::string conduit_field = m_input_prefix + key;
+      const std::string conduit_obj = '/' + std::to_string(sample_id) + '/' + conduit_field;
       if(!sample.has_path(conduit_obj)) {
         conduit::Node n_input;
-        load_conduit_node(sample_id, conduit_obj, n_input);
+        load_conduit_node(sample_id, conduit_field, n_input);
         sample[conduit_obj].set(n_input);
       }
       add_val(key, sample[conduit_obj], inputs); // more overhead but general
