@@ -20,3 +20,4 @@ lbplot --ind_var=time \
        'PyTorch, pre-processed data, GPUs=1' \
        'LBANN, pre-processed data, GPUs=2' \
        'PyTorch, pre-processed data, GPUs=2' \
+       $@
