@@ -32,7 +32,7 @@ namespace lbann
  *  @tparam ErrorPolicy  The policy for handling key errors.
  */
 template <class BaseT, typename KeyT,
-          typename BuilderType = std::function<std::unique_ptr<BaseT>()>,
+          typename BuilderT = std::function<std::unique_ptr<BaseT>()>,
           template <typename, class> class KeyErrorPolicy
           = default_key_error_policy>
 class generic_factory : private KeyErrorPolicy<KeyT,BaseT>
