@@ -42,6 +42,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
     if plot_accuracy:
         headings += ['Peak Train Acc', 'Peak Val Acc']
 
+    headings += ['Min. Train Loss', 'Min. Val Loss']
+
     stat_table.header(headings)
     # Loop through each trial
     for run_name, stat_path in zip(run_name_list, stat_path_list):
@@ -52,6 +54,9 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
                 d = json.load(fp)
         elif stat_ext == '.out' or stat_ext == '.txt':
             d = parser.parse(stat_path)
+            if d is None:
+                print('WARNING: Failed to parse outputs from {}'.format(stat_path))
+                continue
         else:
             print('ERROR: Invalid file extension: {} from {}\nPlease provide either an LBANN output file with .out or .txt extension or a PyTorch output file with .json extension.'.format(stat_ext, stat_path))
             sys.exit(1)
@@ -92,9 +97,9 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
         stat_dict_list.append((run_name, d))
 
         # Add row to stats table for current trial
-        # stat_table.add_row([run_name, total_epochs, avg_train_time, avg_val_time, peak_train_acc, peak_val_acc]) # FIXME
         stat_table.add_row([run_name, total_epochs, avg_train_time, avg_val_time] \
-                           + ([peak_train_acc, peak_val_acc] if plot_accuracy else []))
+                           + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
+                           + [min_train_loss, min_val_loss])
 
     # Print the stats table
     print()
