@@ -526,6 +526,7 @@ message CallbackPolyLearningRate {
   double power = 2;
   uint64 num_epochs = 3;
   uint64 max_iter = 4;
+  double end_lr = 5;
 }
 
 message CallbackStepMinibatch {
