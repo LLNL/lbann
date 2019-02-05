@@ -8,9 +8,13 @@ set_full_path(THIS_DIR_HEADERS
   description.hpp
   entrywise_operator.hpp
   exception.hpp
+  factory.hpp
+  factory_error_policies.hpp
   file_utils.hpp
   glob.hpp
   im2col.hpp
+  jag_utils.hpp
+  lbann_library.hpp
   mild_exception.hpp
   number_theory.hpp
   omp_diagnostics.hpp
@@ -21,8 +25,6 @@ set_full_path(THIS_DIR_HEADERS
   statistics.hpp
   summary.hpp
   timer.hpp
-  lbann_library.hpp
-  jag_utils.hpp
   )
 
 # Add the subdirectories
