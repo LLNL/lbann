@@ -70,8 +70,21 @@ protected :
   /// used in set_conduit_node()
   std::unordered_map<int,int> m_unshuffle;
 
+  bool m_super_node;
+
   /// retrive data needed for passing to the data reader for the next epoch
-  void exchange_data() override;
+  void exchange_data() override {
+    if (m_super_node) {
+      exchange_data_by_super_node();
+    } else {
+      exchange_data_by_sample();
+    }
+  }
+  void exchange_data_by_super_node();
+  void exchange_data_by_sample();
+
+  // when m_super_node = false
+  std::unordered_map<int,int> m_index_to_data_id;
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
@@ -101,7 +114,12 @@ protected :
   /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j] 
   /// will contain all indices that will be passed to 
   /// data_reader::fetch_datum in one epoch
-  void build_all_minibatch_indices();
+  //void build_all_minibatch_indices();
+
+  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j] 
+  /// will contain all indices that will be passed to data_reader::fetch_datum
+  /// in one epoch. Also fills in m_owner
+  void exchange_ds_indices();
 };
 
 }  // namespace lbann
