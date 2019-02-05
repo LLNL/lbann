@@ -47,10 +47,10 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours'):
         if stat_ext == '.json':
             with open(stat_path, 'r') as fp:
                 d = json.load(fp)
-        elif stat_ext == '.out':
+        elif stat_ext == '.out' or stat_ext == '.txt':
             d = parser.parse(stat_path)
         else:
-            print('ERROR: Invalid file extension: {} from {}\nPlease provide either an LBANN output file with .out extension or a PyTorch output file with .json extension.'.format(stat_ext, stat_path))
+            print('ERROR: Invalid file extension: {} from {}\nPlease provide either an LBANN output file with .out or .txt extension or a PyTorch output file with .json extension.'.format(stat_ext, stat_path))
             sys.exit(1)
 
         # Total epochs of training
