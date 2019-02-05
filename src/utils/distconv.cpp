@@ -188,7 +188,6 @@ MPI_Comm get_strided_mpi_comm(MPI_Comm comm) {
   MPI_Comm_size(comm, &num_ranks);
   int num_local_ranks = get_number_of_local_ranks(comm);
   assert_always(stride >= 1);
-  assert0(num_local_ranks % stride);
   assert0(num_ranks % num_local_ranks);
   assert0(num_ranks % stride);
   int new_rank = rank / stride + (rank % stride) * (num_ranks / stride);
