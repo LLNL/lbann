@@ -4,7 +4,7 @@
 import argparse
 
 # Import from this package
-from lbann.plot.plot import plot
+from lbann.plot.plot import plot, PRETTY_YLIM_LOSS
 
 def main():
     # Parse user arguments
@@ -20,12 +20,16 @@ def main():
     parser.add_argument("--merge-train-val", dest="merge_train_val", action="store_const",
                         const=True, default=False,
                         help="Plot training/validation curves in the same figure")
+    parser.add_argument("--pretty-ylim", dest="pretty_ylim", action="store_const",
+                        const=True, default=False,
+                        help="Set ylim to [0,1] for accuracy plots and [0,{}] for loss plots".format(PRETTY_YLIM_LOSS))
     args = parser.parse_args()
 
     # Tabulate and plot stats from user input files
     plot(args.stat_path, args.stat_name, ind_var=args.ind_var, time_units=args.time_units,
          plot_accuracy=(not args.no_accuracy),
-         merge_train_val=args.merge_train_val)
+         merge_train_val=args.merge_train_val,
+         pretty_ylim=args.pretty_ylim)
 
 
 if __name__=='__main__':

@@ -8,6 +8,8 @@ import texttable as tt
 # Local imports
 from . import parser
 
+PRETTY_YLIM_LOSS = 5
+
 def _get_time_axis(time_list, units='hours'):
     """Convert time to sequential format and convert time units."""
     time_axis = []
@@ -22,7 +24,8 @@ def _get_time_axis(time_list, units='hours'):
         time_axis.append(time_sum)
     return time_axis
 
-def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plot_accuracy=True, merge_train_val=False):
+def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
+         plot_accuracy=True, merge_train_val=False, pretty_ylim=True):
     """Tabulate and plot stats from LBANN or PyTorch training in common format."""
     ### Load stat dicts and print stat summary
     stat_dict_list = []
@@ -122,6 +125,9 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
             plt.title('Train Accuracy vs. {}'.format(ind_var.title()))
             plt.xlabel(xlabel)
             plt.ylabel('Train Accuracy')
+            if pretty_ylim:
+                plt.ylim(0, 1)
+
             plt.plot(stat_dict['train_axis'], stat_dict['train_acc'], label=run_name_train)
 
         # Val acc
@@ -130,6 +136,9 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
             plt.title('Val Accuracy vs. {}'.format(ind_var.title()))
             plt.xlabel(xlabel)
             plt.ylabel('Val Accuracy')
+            if pretty_ylim:
+                plt.ylim(0, 1)
+
             plt.plot(stat_dict['val_axis'], stat_dict['val_acc'], label=run_name_val)
 
         loss_subplot = 1 + ((2 if not merge_train_val else 1) if plot_accuracy else 0)
@@ -139,6 +148,9 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
         plt.title('Train Loss vs. {}'.format(ind_var.title()))
         plt.xlabel(xlabel)
         plt.ylabel('Train Loss')
+        if pretty_ylim:
+            plt.ylim(0, PRETTY_YLIM_LOSS)
+
         p, = plt.plot(stat_dict['train_axis'], stat_dict['train_loss'], label=run_name_train)
 
         # Val loss
@@ -146,6 +158,9 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours', plo
         plt.title('Val Loss vs. {}'.format(ind_var.title()))
         plt.xlabel(xlabel)
         plt.ylabel('Val Loss')
+        if pretty_ylim:
+            plt.ylim(0, PRETTY_YLIM_LOSS)
+
         kwargs = {} if not merge_train_val else {"color": p.get_color(), "linestyle": "dashed"}
         plt.plot(stat_dict['val_axis'], stat_dict['val_loss'], label=run_name_val, **kwargs)
 
