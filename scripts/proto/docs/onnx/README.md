@@ -4,7 +4,7 @@ This sub-package provides a way to convert [LBANN](https://github.com/LLNL/lbann
    * Otherwise, `git rev-parse --show-toplevel` is used.
 
 ## How to Test
-Run `python3 setup.py test` to verify generated Protobuf/ONNX files.
+Run `./setup.py test` to verify generated Protobuf/ONNX files.
 * You may need to run `scripts/download_onnx_model_zoo.sh` to get pre-trained ONNX models.
 * Converted Protobuf/ONNX models will be generated if `LBANN_ONNX_DUMP_MODELS=1` is set.
 
