@@ -181,8 +181,11 @@ double tmy = get_time();
 
     m_send_buffer[p].reset();
     for (auto idx : proc_to_indices[p]) {
-      m_send_buffer[p][std::to_string(idx)].set_external(m_data[idx]);
+      //m_send_buffer[p][std::to_string(idx)].set_external(m_data[idx]);
+      m_send_buffer[p].update_external(m_data[idx]);
+      //m_send_buffer[p][std::to_string(idx)].set_external(m_data[idx]);
     }
+      //if (m_master) m_send_buffer[p].print();
 
 debug << "\nassemble send_buffer -> P_" << p <<"; num samples: " << proc_to_indices[p].size() << " Time: " << get_time() -  tmy << "\n";
 tmy = get_time();
@@ -302,10 +305,20 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   } 
   
   else {
-    conduit::Node n2;
-    n2[std::to_string(idx)] = node;
-    m_data[idx] = n2;
-    //m_data[idx] = node;
+    //conduit::Node n2;
+    //n2[std::to_string(idx)] = node;
+    //m_data[idx] = n2;
+    m_data[idx] = node;
+    /* debug block, to test if idx matches the id in the conduit node;
+     * if these don't match up exceptions will be thrown in get_conduit_node
+     * 
+    if (m_master) {
+      std::cerr<<"idx:" <<idx<< "\n";
+      node.print();
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Abort(MPI_COMM_WORLD, -1);
+    */
   }  
 }
 
@@ -318,7 +331,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
   if (t == m_minibatch_data.end()) {
 
 debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
-debug << "data IDs that we know about: ";
+debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
 std::set<int> s3;
 for (auto t3 :  m_minibatch_data) {
   s3.insert(t3.first);
@@ -617,6 +630,10 @@ void data_store_jag::exchange_ds_indices() {
       m_all_minibatch_indices[p].push_back(all_indices[i]);
       m_owner[all_indices[i]] = p;
     }
+  }
+
+  for (auto t : m_all_minibatch_indices[m_rank]) {
+    m_data[t];
   }
 }
 

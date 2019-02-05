@@ -92,6 +92,7 @@ protected :
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
+//  std::unordered_map<int, conduit::Node*> m_minibatch_data;
   std::unordered_map<int, conduit::Node> m_minibatch_data;
 
   /// work space; used in exchange_data
