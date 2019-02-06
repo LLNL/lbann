@@ -59,7 +59,7 @@ make install
 
 ## Verifying LBANN on LC
 1. Allocate compute resources using SLURM: `salloc -N1 -t 60`
-2. Run a test experiment for the MNIST data set; from the main lbann directory run the following command:
+2. Run a test experiment for the MNIST data set; from the main LBANN directory run the following command:
  ```shell
   srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann \
 --model=model_zoo/models/lenet_mnist/model_lenet_mnist.prototext \
@@ -67,7 +67,7 @@ make install
 --optimizer=model_zoo/optimizers/opt_adagrad.prototext \
 --num_epochs=5
 ```
-Note: `srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann` assumes you are running on the LLNL catalyst platform;
+Note: `srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann` assumes you are running on the LLNL Catalyst platform;
 if running on some other platform, and/or have installed lbann in a different directory, you will need to adjust this command.
 
 This should produce roughly the following final results on Catalyst:
@@ -103,7 +103,7 @@ and etc.
 Each of these directories should have a script called `runme.py`.
 Run this script with no command line parameters for complete usage.
 Basically, these scripts generate command lines similar to the one above
-(in the *Verifying LBANN on LC* section).
+(in the [*Verifying LBANN on LC*](#verifying-lbann-on-lc) section).
 The scripts take two required arguments: `--nodes=<int> and --tasks=<int>`.
 The `tasks` option is used to specify the number of tasks per node, hence,
 the total number of tasks (cores) is: `nodes`\*`tasks`.
