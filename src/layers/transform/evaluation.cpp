@@ -86,8 +86,7 @@ void fp_gpu(lbann_comm& comm,
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
 #ifdef LBANN_HAS_DISTCONV  
-  if (mode == execution_mode::training &&
-      dc::skip_metrics_while_training()) {
+  if (dc::evaluate_performance()) {
     El::Zero(sum_d);
     copy_event.record(stream);    
     return;
@@ -150,6 +149,11 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 EvalType abstract_evaluation_layer::get_value(bool scaled) {
+#ifdef LBANN_HAS_DISTCONV
+  if (dc::evaluate_performance()) {
+    return m_value(0, 0);
+  }
+#endif
   switch (get_device_allocation()) {
   case El::Device::CPU: get_comm()->wait(m_allreduce_req); break;
 #ifdef LBANN_HAS_GPU

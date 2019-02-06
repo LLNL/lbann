@@ -137,9 +137,9 @@ int get_rank_stride();
  */
 bool is_profiling_enabled();
 
-/** Query if metric skipping is enabled
+/** Query if the execution is for performance evaluation
  */
-bool skip_metrics_while_training();
+bool evaluate_performance();
 
 /** Query if partial aggregation of batch normalization statistics is
  * enabled

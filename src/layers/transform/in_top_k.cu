@@ -161,9 +161,7 @@ void fp_gpu(lbann_comm& comm,
                 "distributed matrices");
   }
 #ifdef LBANN_HAS_DISTCONV
-  if (mode == execution_mode::training &&
-      dc::skip_metrics_while_training()) {
-    std::cerr << "Mode is in training\n";
+  if (dc::evaluate_performance()) {
     El::Zero(output);
     return;
   }

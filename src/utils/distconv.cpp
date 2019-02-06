@@ -47,7 +47,7 @@ std::string opt_halo_exchange = "P2P";
 std::string opt_tensor_shuffler = "P2P";
 int opt_rank_stride = 1;
 bool opt_enable_profile = false;
-bool opt_skip_metrics_while_training = false;
+bool opt_evaluate_performance = false;
 bool opt_use_partial_aggregation_in_bn = false;
 std::string opt_convolution_fwd_algorithm("DEFAULT");
 std::string opt_convolution_bwd_data_algorithm("DEFAULT");
@@ -74,8 +74,8 @@ void set_options() {
   if (std::getenv("LBANN_DISTCONV_PROFILE")) {
     opt_enable_profile = true;
   }
-  if (std::getenv("LBANN_DISTCONV_SKIP_METRICS_WHILE_TRAINING")) {
-    opt_skip_metrics_while_training = true;
+  if (std::getenv("LBANN_DISTCONV_EVALUATE_PERFORMANCE")) {
+    opt_evaluate_performance = true;
   }
   if (std::getenv("LBANN_DISTCONV_USE_PARTIAL_AGGREGATION_IN_BN")) {
     opt_use_partial_aggregation_in_bn = true;
@@ -111,8 +111,8 @@ void print_options(std::ostream &os) {
     ss << "  tensor_shuffler:" << opt_tensor_shuffler << "\n";
     ss << "  rank_stride:" << opt_rank_stride << "\n";
     ss << "  enable_profile: " << opt_enable_profile << "\n";
-    ss << "  skip_metrics_while_training: "
-       << opt_skip_metrics_while_training << "\n";
+    ss << "  evaluate_performance: "
+       << opt_evaluate_performance << "\n";
     ss << "  use_partial_aggregation_in_bn: "
        << opt_use_partial_aggregation_in_bn
        << std::endl;
@@ -258,8 +258,8 @@ bool is_profiling_enabled() {
   return opt_enable_profile;
 }
 
-bool skip_metrics_while_training() {
-  return opt_skip_metrics_while_training;
+bool evaluate_performance() {
+  return opt_evaluate_performance;
 }
 
 bool use_partial_aggregation_in_bn() {

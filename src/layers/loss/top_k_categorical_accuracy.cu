@@ -180,8 +180,7 @@ void fp_gpu(lbann_comm& comm,
                 "assumes elemental distributed matrices");
   }
 #ifdef LBANN_HAS_DISTCONV
-  if (mode == execution_mode::training &&
-      dc::skip_metrics_while_training()) {
+  if (dc::evaluate_performance()) {
     El::Zero(loss);
     return;
   }
