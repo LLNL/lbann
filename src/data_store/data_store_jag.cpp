@@ -89,15 +89,6 @@ void data_store_jag::setup() {
     LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
   }
 
-  /// m_all_minibatch_indices[j] will contain all indices that
-  //  will be passed to data_reader::fetch_datum in one epoch
-  #if 0
-  build_all_minibatch_indices();
-  if (!m_super_node) {
-    m_send_buffer.reserve(m_all_minibatch_indices[m_rank].size());
-  }
-  #endif
-
   if (m_master) {
     std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
   }
@@ -112,10 +103,6 @@ void data_store_jag::setup() {
 void data_store_jag::exchange_data_by_super_node() {
   double tm1 = get_time();
 
-  debug << "\n============================================================\n"
-  <<"starting exchange_data; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<" m_n: " << m_n << "\n";
-debug.close(); debug.open(b, std::ios::app);
-
   if (m_n == 1) {
     // allocate buffers that are used in exchange_data()
     m_send_buffer.resize(m_np);
@@ -126,6 +113,8 @@ debug.close(); debug.open(b, std::ios::app);
     m_outgoing_msg_sizes.resize(m_np);
     m_incoming_msg_sizes.resize(m_np);
     m_recv_buffer.resize(m_np);
+
+    m_reconstituted.resize(m_data.size());
 
     exchange_ds_indices();
   }
@@ -140,7 +129,7 @@ debug.close(); debug.open(b, std::ios::app);
   //
   //  Hm ... I think m_all_minibatch_indices is identical to ds indices
 
-double tma = get_time();
+  double tma = get_time();
 
   std::unordered_set<int> my_ds_indices;
   for (auto t : m_all_minibatch_indices[m_rank]) {
@@ -159,44 +148,30 @@ double tma = get_time();
     j = (j + 1) % m_np;
   }
 
-  debug << "exchange_data; built map\n";
-
-debug << "exchange_data: Time to build map: " << get_time() -  tma << "\n";
-debug.close(); debug.open(b, std::ios::app);
-
   //========================================================================
   //part 1: exchange the sizes of the data
   // m_send_buffer[j] is a conduit::Node that contains
   // all samples that this proc will send to P_j
 
 tma = get_time();
+double t1 = 0;
+double t2 = 0;
 
   for (int p=0; p<m_np; p++) {
-
-double tmy = get_time();
-
+tmb = get_time;
     m_send_buffer[p].reset();
     for (auto idx : proc_to_indices[p]) {
       m_send_buffer[p].update_external(m_data[idx]);
     }
       //if (m_master) m_send_buffer[p].print();
 
-debug << "\nassemble send_buffer -> P_" << p <<"; num samples: " << proc_to_indices[p].size() << " Time: " << get_time() -  tmy << "\n";
-tmy = get_time();
-
     // code in the following method is a modification of code from
     // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
 
-debug << "  build_node for sending; Time: " << get_time() -  tmy << "\n";
-tmy = get_time();
-
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
-
-debug << "  start Isend Time: " << get_time() -  tmy << "\n";
   }
- double tmy = get_time();
 
   //start receives for sizes of the data
   for (int p=0; p<m_np; p++) {
@@ -204,15 +179,9 @@ debug << "  start Isend Time: " << get_time() -  tmy << "\n";
 
   }
 
-debug << "\nTime to start Irecvs: " << get_time() -  tmy << "\n";
-
-double tmz = get_time();
-
   // wait for all msgs to complete
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
-
-debug << "Time for waitalls " << get_time() -  tmz << "\n";
 
 debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
 
@@ -245,10 +214,8 @@ tma = get_time();
 
 double tmw = get_time();
 
-  conduit::Node nd;
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
-double tmx = get_time();
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
     conduit::Node n_msg;
     n_msg["schema_len"].set_external((conduit::int64*)n_buff_ptr);
@@ -259,20 +226,15 @@ double tmx = get_time();
     gen.walk(rcv_schema);
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
-    nd.reset();
-    nd.update_external(n_msg["data"]);
-    const std::vector<std::string> &names = nd.child_names();
-
-debug << "exchange_data: Time to unpack data from P_"<<p<<" Time: " << get_time() - tmx << "\n";
-debug.close();
-debug.open(b, std::ios::app);
-tmx = get_time();
+    //nd.reset();
+    //nd.update_external(n_msg["data"]);
+    m_reconstituted[p].reset();
+    m_reconstituted[p].update_external(n_msg["data"]);
+    const std::vector<std::string> &names = m_reconstituted[p].child_names();
 
     for (auto t : names) {
-      const conduit::Node &n3 = nd[t];
-      m_minibatch_data[atoi(t.c_str())][t] = n3;
+      m_minibatch_data[atoi(t.c_str())] = &(m_reconstituted[p][t]);
     }
-debug << "exchange_data: Time break up  samples from P_" << p  << ": " << " num samples: " << m_minibatch_data.size() << "  Time: " << get_time() -  tmx << "\n";
   }
 
 debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
@@ -314,7 +276,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
     LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
   }
 
-  std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
+  std::unordered_map<int, const conduit::Node*>::const_iterator t = m_minibatch_data.find(data_id);
   if (t == m_minibatch_data.end()) {
     debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
     debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
@@ -330,13 +292,11 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
     LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
   }
 
-// debug << "getting: " << data_id << "\n";
-// debug.close();
-// debug.open(b, std::ios::app);
-
-  return t->second;
+  return *(t->second);
 }
 
+// code in the following method is a modification of code from
+// conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -375,6 +335,7 @@ void data_store_jag::build_all_minibatch_indices() {
 #endif
 
 void data_store_jag::exchange_data_by_sample() {
+#if 0
   double tm1 = get_time();
 
   debug << "\n============================================================\n"
@@ -548,6 +509,7 @@ double tmw = get_time();
 
   conduit::Node nd;
   m_minibatch_data.clear();
+  m_mininatch_data.clear();
   for (size_t j=0; j < m_recv_buffer.size(); j++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[j].data_ptr();
     conduit::Node n_msg;
@@ -579,6 +541,7 @@ debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
 
   debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 debug.close(); debug.open(b, std::ios::app);
+#endif
 }
 
 void data_store_jag::exchange_ds_indices() {

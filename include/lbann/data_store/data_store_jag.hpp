@@ -88,8 +88,7 @@ protected :
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
-//  std::unordered_map<int, conduit::Node*> m_minibatch_data;
-  std::unordered_map<int, conduit::Node> m_minibatch_data;
+  std::unordered_map<int, const conduit::Node*> m_minibatch_data;
 
   /// work space; used in exchange_data
   std::vector<conduit::Node> m_send_buffer;
@@ -100,6 +99,8 @@ protected :
   std::vector<conduit::Node> m_recv_buffer;
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
+
+  std::vector<conduit::Node> m_reconstituted;
 
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
