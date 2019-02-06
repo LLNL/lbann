@@ -154,11 +154,11 @@ void data_store_jag::exchange_data_by_super_node() {
   // all samples that this proc will send to P_j
 
 tma = get_time();
-double t1 = 0;
-double t2 = 0;
+//double t1 = 0;
+//double t2 = 0;
 
   for (int p=0; p<m_np; p++) {
-tmb = get_time;
+//tmb = get_time;
     m_send_buffer[p].reset();
     for (auto idx : proc_to_indices[p]) {
       m_send_buffer[p].update_external(m_data[idx]);
@@ -233,7 +233,7 @@ double tmw = get_time();
     const std::vector<std::string> &names = m_reconstituted[p].child_names();
 
     for (auto t : names) {
-      m_minibatch_data[atoi(t.c_str())] = &(m_reconstituted[p][t]);
+      m_minibatch_data[atoi(t.c_str())] = m_reconstituted[p][t].parent();
     }
   }
 
