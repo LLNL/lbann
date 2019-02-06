@@ -1,10 +1,9 @@
 # LBANN: Livermore Big Artificial Neural Network Toolkit
-
 The Livermore Big Artificial Neural Network toolkit (LBANN) is an
 open-source, HPC-centric, deep learning training software stack that
 is optimized to compose multiple levels of parallelism.  LBANN is
 built upon a distributed linear algebra library
-(https://github.com/LLNL/Elemental) and provides model parallel
+[Elemental](https://github.com/LLNL/Elemental) and provides model parallel
 acceleration through domain decomposition to optimize for strong
 scaling of network training.  LBANN is also able to compose model
 parallelism with both data parallelism and ensemble training methods
@@ -13,8 +12,8 @@ LBANN is a C++ code that composes MPI+OpenMP with CUDA (plus cuDNN and
 cuBLAS), taking advantage of tightly coupled accelerators, low-latency
 high bandwidth networking, node-local NVRAM storage, and high
 bandwidth parallel file systems.  We have also developed an open
-source asynchronous all-reduce library called Aluminum
-(https://github.com/LLNL/Aluminum), that provides efficient MPI
+source asynchronous all-reduce library called
+[Aluminum](https://github.com/LLNL/Aluminum), that provides efficient MPI
 implementations of communication algorithms that are optimized for
 deep learning training patterns, provide GPU-accelerated reduction
 kernels, and compose with OpenMP threaded code bases.  Aluminum also
@@ -29,40 +28,38 @@ recurrent neural networks via back propagation through time (BPTT)
 training, transfer learning, and multi-model training methods such as
 the Livermore Tournament Fast Batch (LTFB) ensemble algorithm.
 
-
 ## Building LBANN
 The LBANN build system is documented [here](docs/BuildingLBANN.md#top).
 
 ## LBANN Container Builds
-
 We provide basic container defintion files, and instructions for their
 use, in the containers subdirectory. We currently support Docker and
 Singularity.
 
 ## Cmake (Non LC or OSX Systems/Script alternative)
-   1. Ensure the following dependencies are installed
-       * [CMake](https://software.llnl.gov/lbann/cmake.html)
-       * [MPI](https://software.llnl.gov/lbann/mpi.html)
-       * [Elemental](https://software.llnl.gov/lbann/elemental.html)
-       * [OpenCV](https://software.llnl.gov/lbann/opencv.html)
-       * CUDA (optional)
-       * cuDNN (optional)
-       * [Protocol Buffers](https://software.llnl.gov/lbann/protobuf.html) (optional)
-       * [Doxygen](https://software.llnl.gov/lbann/doxygen.html) (optional)
-       * *Note: LBANN also requires a C++ compiler with OpenMP support. The GCC 5.0 and Intel 16.0 C++ compilers are recommended*
-    2. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
-    3. In the main LBANN directory create a build directory using `mkdir build`
-    4. `cd` into this directory and run the following commands
-       ```shell
-       cmake ../..
-       make
-       make install
-       ```
-       * *Note: It may be necessary to manually set CMake variables to control the build configuration*
+1. Ensure the following dependencies are installed
+   * [CMake](https://software.llnl.gov/lbann/cmake.html)
+   * [MPI](https://software.llnl.gov/lbann/mpi.html)
+   * [Elemental](https://software.llnl.gov/lbann/elemental.html)
+   * [OpenCV](https://software.llnl.gov/lbann/opencv.html)
+   * CUDA (optional)
+   * cuDNN (optional)
+   * [Protocol Buffers](https://software.llnl.gov/lbann/protobuf.html) (optional)
+   * [Doxygen](https://software.llnl.gov/lbann/doxygen.html) (optional)
+   * *Note: LBANN also requires a C++ compiler with OpenMP support. The GCC 5.0 and Intel 16.0 C++ compilers are recommended*
+2. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
+3. In the main LBANN directory create a build directory using `mkdir build`
+4. `cd` into this directory and run the following commands
+   * *Note: It may be necessary to manually set CMake variables to control the build configuration*
+```shell
+cmake ../..
+make
+make install
+```
 
 ## Verifying LBANN on LC
-   1. Allocate compute resources using SLURM: `salloc -N1 -t 60`
-   2. Run a test experiment for the MNIST data set; from the main lbann directory run the following command:
+1. Allocate compute resources using SLURM: `salloc -N1 -t 60`
+2. Run a test experiment for the MNIST data set; from the main lbann directory run the following command:
  ```shell
   srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann \
 --model=model_zoo/models/lenet_mnist/model_lenet_mnist.prototext \
@@ -71,10 +68,9 @@ Singularity.
 --num_epochs=5
 ```
 Note: `srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann` assumes you are running on the LLNL catalyst platform;
-  if running on some other platform, and/or have installed lbann in a different directory, you
-  will need to adjust this command.
+if running on some other platform, and/or have installed lbann in a different directory, you will need to adjust this command.
 
-  This should produce roughly the following final results on Catalyst:
+This should produce roughly the following final results on Catalyst:
 ```
 --------------------------------------------------------------------------------
 [4] Epoch : stats formated [tr/v/te] iter/epoch = [844/94/157]
@@ -94,7 +90,7 @@ Model 0 test categorical accuracy : 99.02%
 Model 0 test run time : 0.421912s
 Model 0 test mini-batch time statistics : 0.00268631s mean, 0.00278771s max, 0.00131827s min, 0.00011085s stdev
 ```
-  Note: LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly.
+Note: LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly.
 
 ## Running other models
 There are various prototext models under the `lbann/model_zoo/models/` directory:
