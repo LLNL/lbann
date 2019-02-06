@@ -121,7 +121,7 @@ void lbann_comm::split_trainers(int ppm) {
   if (grid != nullptr) {
     delete grid;
   }
-  grid = new Grid(trainer_comm);
+  grid = new Grid(trainer_comm.GetMPIComm());
 }
 
 void lbann_comm::intertrainer_sum_matrix(AbsMat& mat) {
@@ -135,7 +135,7 @@ void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat) {
 }
 
 void lbann_comm::allreduce(AbsMat& m,
-                           El::mpi::Comm c,
+                           const El::mpi::Comm& c,
                            El::mpi::Op op) {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
     return;
@@ -182,7 +182,7 @@ void lbann_comm::allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      c.template GetComm<::Al::MPIBackend>());
+      c.template GetComm<::Al::MPIBackend>(El::SyncInfo<El::Device::CPU>{}));
   }
 #ifdef AL_HAS_NCCL
   if (t == std::type_index(typeid(::Al::NCCLBackend))) {
@@ -215,13 +215,13 @@ void lbann_comm::allreduce(AbsMat& m,
 }
 
 void lbann_comm::allreduce(AbsDistMat& m,
-                           El::mpi::Comm c,
+                           const El::mpi::Comm& c,
                            El::mpi::Op op) {
   allreduce(m.Matrix(), std::move(c), op);
 }
 
 void lbann_comm::nb_allreduce(AbsMat& m,
-                              El::mpi::Comm c,
+                              const El::mpi::Comm& c,
                               Al::request& req,
                               El::mpi::Op op) {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
@@ -269,7 +269,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      c.template GetComm<::Al::MPIBackend>(),
+      c.template GetComm<::Al::MPIBackend>(El::SyncInfo<El::Device::CPU>{}),
       req.mpi_req);
   }
   /// @todo MPI-CUDA backend
@@ -306,7 +306,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
 }
 
 void lbann_comm::nb_allreduce(AbsDistMat& m,
-                              El::mpi::Comm c,
+                              const El::mpi::Comm& c,
                               Al::request& req,
                               El::mpi::Op op) {
   nb_allreduce(m.Matrix(), std::move(c), req, op);
@@ -361,7 +361,7 @@ void lbann_comm::intertrainer_broadcast_matrix(AbsDistMat& mat, int root) {
 }
 
 template<>
-void lbann_comm::broadcast<std::string>(const int root, std::string& str, El::mpi::Comm c) {
+void lbann_comm::broadcast<std::string>(const int root, std::string& str, const El::mpi::Comm& c) {
   std::vector<char> data(str.begin(), str.end());
   broadcast(root, data, std::move(c));
   str.assign(data.begin(), data.end());
@@ -382,7 +382,7 @@ void lbann_comm::global_barrier() {
   barrier(get_world_comm());
 }
 
-void lbann_comm::barrier(const El::mpi::Comm c) {
+void lbann_comm::barrier(const El::mpi::Comm& c) {
   El::mpi::Barrier(c);
 }
 
