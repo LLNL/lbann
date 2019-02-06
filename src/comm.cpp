@@ -190,7 +190,9 @@ void lbann_comm::allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      c.template GetComm<::Al::NCCLBackend>());
+      c.template GetComm<::Al::NCCLBackend>(
+          SyncInfoFromMatrix(
+              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))));
   }
 #endif // AL_HAS_NCCL
 #ifdef AL_HAS_MPI_CUDA
@@ -200,7 +202,9 @@ void lbann_comm::allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      c.template GetComm<::Al::MPICUDABackend>(),
+      c.template GetComm<::Al::MPICUDABackend>(
+          SyncInfoFromMatrix(
+              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))),
       ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
   }
 #endif  // AL_HAS_MPI_CUDA
@@ -275,7 +279,9 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      c.template GetComm<::Al::NCCLBackend>(),
+      c.template GetComm<::Al::NCCLBackend>(
+          SyncInfoFromMatrix(
+              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))),
       req.nccl_req);
   }
 #endif // AL_HAS_NCCL
@@ -286,7 +292,9 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       m.Buffer(),
       local_size,
       mpi_op_to_al_op(op),
-      c.template GetComm<::Al::MPICUDABackend>(),
+      c.template GetComm<::Al::MPICUDABackend>(
+          SyncInfoFromMatrix(
+              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))),
       req.mpicuda_req,
       ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
   }
@@ -451,7 +459,7 @@ void lbann_comm::setup_node_comm() {
   auto *node_name_list = new char[hash_comm_size*MPI_MAX_PROCESSOR_NAME];
   checkMPI(MPI_Allgather(node_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
                          node_name_list, MPI_MAX_PROCESSOR_NAME, MPI_CHAR,
-                         hash_comm.comm));
+                         hash_comm.GetMPIComm()));
   int node_num = El::mpi::Rank(hash_comm);
   for(int i=0; i<hash_comm_size; ++i) {
     const std::string other_node_string(node_name_list + i*MPI_MAX_PROCESSOR_NAME);
