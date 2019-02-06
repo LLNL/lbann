@@ -304,7 +304,7 @@ bool generic_data_reader::update(bool is_active_reader) {
 
     if (!m_save_minibatch_indices) {
       shuffle_indices();
-      if (m_data_store) {
+      if (m_data_store && (m_model->get_execution_mode() == execution_mode::training)) {
         m_data_store->set_shuffled_indices(&m_shuffled_indices);
       }
     }
