@@ -270,7 +270,7 @@ tmx = get_time();
 
     for (auto t : names) {
       const conduit::Node &n3 = nd[t];
-      m_minibatch_data[atoi(t.c_str())] = n3;
+      m_minibatch_data[atoi(t.c_str())][t] = n3;
     }
 debug << "exchange_data: Time break up  samples from P_" << p  << ": " << " num samples: " << m_minibatch_data.size() << "  Time: " << get_time() -  tmx << "\n";
   }
@@ -316,24 +316,23 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
 
   std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
   if (t == m_minibatch_data.end()) {
-
-debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
-debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
-std::set<int> s3;
-for (auto t3 :  m_minibatch_data) {
-  s3.insert(t3.first);
-}
-for (auto t3 : s3) debug << t3 << " ";
-debug << "\n";
-debug.close();
-debug.open(b, std::ios::app);
+    debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
+    debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
+    std::set<int> s3;
+    for (auto t3 :  m_minibatch_data) {
+      s3.insert(t3.first);
+    }
+    for (auto t3 : s3) debug << t3 << " ";
+    debug << "\n";
+    debug.close();
+    debug.open(b, std::ios::app);
 
     LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
   }
 
-debug << "getting: " << data_id << "\n";
-debug.close();
-debug.open(b, std::ios::app);
+// debug << "getting: " << data_id << "\n";
+// debug.close();
+// debug.open(b, std::ios::app);
 
   return t->second;
 }
