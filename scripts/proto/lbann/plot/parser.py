@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import re
 
 _parse_list = [
@@ -15,6 +13,7 @@ def parse(file_path):
     """Simple regex parsing function based on LBANN outputs at current time."""
     # Store results in dict to return to user
     data_dict = dict([(p[0], []) for p in _parse_list])
+    match_any = False
     with open(file_path, 'r') as fp:
         for line in fp:
             # Check all regex expressions against current line
@@ -22,5 +21,6 @@ def parse(file_path):
                 match = re.search(regex, line)
                 # Apply processing function to needed expression if match
                 if match:
+                    match_any = True
                     data_dict[field].append(func(match))
-    return data_dict
+    return data_dict if match_any else None
