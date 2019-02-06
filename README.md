@@ -41,27 +41,29 @@ Singularity.
 
 ## Cmake (Non LC or OSX Systems/Script alternative)
    1. Ensure the following dependencies are installed
-    [CMake](https://software.llnl.gov/lbann/cmake.html)
-    [MPI](https://software.llnl.gov/lbann/mpi.html)
-    [Elemental](https://software.llnl.gov/lbann/elemental.html)
-    [OpenCV](https://software.llnl.gov/lbann/opencv.html)
-    CUDA (optional)
-    cuDNN (optional)
-    [Protocol Buffers](https://software.llnl.gov/lbann/protobuf.html) (optional)
-    [Doxygen](https://software.llnl.gov/lbann/doxygen.html) (optional)
-    *Note: LBANN also requires a C++ compiler with OpenMP support. The GCC 5.0 and Intel 16.0 C++ compilers are recommended*
+       * [CMake](https://software.llnl.gov/lbann/cmake.html)
+       * [MPI](https://software.llnl.gov/lbann/mpi.html)
+       * [Elemental](https://software.llnl.gov/lbann/elemental.html)
+       * [OpenCV](https://software.llnl.gov/lbann/opencv.html)
+       * CUDA (optional)
+       * cuDNN (optional)
+       * [Protocol Buffers](https://software.llnl.gov/lbann/protobuf.html) (optional)
+       * [Doxygen](https://software.llnl.gov/lbann/doxygen.html) (optional)
+       * *Note: LBANN also requires a C++ compiler with OpenMP support. The GCC 5.0 and Intel 16.0 C++ compilers are recommended*
     2. Clone this repo using `git clone https://github.com/LLNL/lbann.git`
     3. In the main LBANN directory create a build directory using `mkdir build`
     4. `cd` into this directory and run the following commands
-    `cmake ../..`
-    `make`
-    `make install`
-    *Note: It may be necessary to manually set CMake variables to control the build configuration*
+       ```shell
+       cmake ../..
+       make
+       make install
+       ```
+       * *Note: It may be necessary to manually set CMake variables to control the build configuration*
 
 ## Verifying LBANN on LC
    1. Allocate compute resources using SLURM: `salloc -N1 -t 60`
    2. Run a test experiment for the MNIST data set; from the main lbann directory run the following command:
- ```
+ ```shell
   srun -n12 build/gnu.catalyst.llnl.gov/install/bin/lbann \
 --model=model_zoo/models/lenet_mnist/model_lenet_mnist.prototext \
 --reader=model_zoo/data_readers/data_reader_mnist.prototext \
@@ -91,10 +93,29 @@ Model 0 test objective function : 0.0600125
 Model 0 test categorical accuracy : 99.02%
 Model 0 test run time : 0.421912s
 Model 0 test mini-batch time statistics : 0.00268631s mean, 0.00278771s max, 0.00131827s min, 0.00011085s stdev
-``` 
-  Note: LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly. 
+```
+  Note: LBANN performance will vary on a machine to machine basis. Results will also vary, but should not do so significantly.
 
 ## Running other models
-There are various prototext models under the lbann/model_zoo/models/ directory: alexnet, autoencoder_mnist, lenet_mnist, etc. Each of these directories should have a script called *runme.py*. Run this script with no command line parameters for complete usage. Basically, these scripts generate command lines similar to the one above (in the *Verifying LBANN on LC* section). The scripts take two required arguments: --nodes=`<int>` and --tasks=`<int>`. The "tasks" option is used to specify the number of tasks per node, hence, the total number of tasks (cores) is: nodes\*tasks. The generated command lines are designed to be executed using *srun* on LC systems, so you may need to modify, e.g, substitute mpirun, depending on your specific system.
+There are various prototext models under the `lbann/model_zoo/models/` directory:
+* `alexnet`
+* `autoencoder_mnist`
+* `lenet_mnist`
 
-Note: some directories contain multiple models, e.g, as of this writing, the autoencoder_cifar10 directory contains both *model_autoencoder_cifar10.prototext* and *model_conv_autoencoder_cifar10.prototext*. In these cases there may be multiple python scripts, e.g, *runme_conv.py*.
+and etc.
+
+Each of these directories should have a script called `runme.py`.
+Run this script with no command line parameters for complete usage.
+Basically, these scripts generate command lines similar to the one above
+(in the *Verifying LBANN on LC* section).
+The scripts take two required arguments: `--nodes=<int> and --tasks=<int>`.
+The `tasks` option is used to specify the number of tasks per node, hence,
+the total number of tasks (cores) is: `nodes`\*`tasks`.
+The generated command lines are designed to be executed using `srun`
+on LC systems, so you may need to modify, e.g, substitute mpirun,
+depending on your specific system.
+
+Note: some directories contain multiple models, e.g, as of this writing,
+the `autoencoder_cifar10` directory contains both `model_autoencoder_cifar10.prototext`
+and `model_conv_autoencoder_cifar10.prototext`.
+In these cases there may be multiple python scripts, e.g, `runme_conv.py`.
