@@ -119,7 +119,7 @@ bool image_utils::saveIMG(const std::string& Imagefile, int Width, int Height, b
 
 
 #ifdef LBANN_HAS_OPENCV
-bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process& pp, ::Mat& out) {
+bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process& pp, CPUMat& out) {
   bool ok1 = !image.empty() && pp.preprocess(image);
   bool ok2 = ok1 && cv_utils::copy_cvMat_to_buf(image, out, pp);
   // Disabling normalizer is needed because normalizer is not necessarily
@@ -160,7 +160,7 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
   return ok2;
 }
 
-bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& out) {
+bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& out) {
   std::vector<cv::Mat> patches;
   bool ok1 = !image.empty() && pp.preprocess(image, patches);
   bool ok2 = ok1 && (patches.size() != 0u) && (patches.size() == out.size());
@@ -199,7 +199,7 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
  *  @param buf      A thread safe buffer for local, temporary, image decoding
  */
 bool image_utils::load_image(const std::string& filename,
-                             int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data, std::vector<char>& buf, cv::Mat* cv_buf) {
+                             int& Width, int& Height, int& Type, cv_process& pp, CPUMat& data, std::vector<char>& buf, cv::Mat* cv_buf) {
 #ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, buf, cv_buf);
 
@@ -220,7 +220,7 @@ bool image_utils::load_image(const std::string& filename,
  *  @param buf      A thread safe buffer for local, temporary, image decoding
  */
 bool image_utils::load_image(const std::string& filename,
-                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data, std::vector<char>& buf, cv::Mat* cv_buf) {
+                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& data, std::vector<char>& buf, cv::Mat* cv_buf) {
 #ifdef LBANN_HAS_OPENCV
   cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, buf, cv_buf);
 
@@ -241,7 +241,7 @@ bool image_utils::load_image(const std::string& filename,
  *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
  */
 bool image_utils::load_image(std::vector<unsigned char>& image_buf,
-                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data, cv::Mat* cv_buf) {
+                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& data, cv::Mat* cv_buf) {
 
   return import_image(image_buf, Width, Height, Type, pp, data, cv_buf);
 }
@@ -255,7 +255,7 @@ bool image_utils::load_image(std::vector<unsigned char>& image_buf,
  *  @param data     The image data in El::Matrix<DataType> format to post-process and write
  */
 bool image_utils::save_image(const std::string& filename,
-                                    const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
+                                    const int Width, const int Height, const int Type, cv_process& pp, const CPUMat& data) {
 #ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
@@ -281,7 +281,7 @@ bool image_utils::save_image(const std::string& filename,
  *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
  */
 bool image_utils::import_image(cv::InputArray inbuf,
-                                      int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data, cv::Mat* cv_buf) {
+                                      int& Width, int& Height, int& Type, cv_process& pp, CPUMat& data, cv::Mat* cv_buf) {
 #ifdef LBANN_HAS_OPENCV
   cv::Mat image;
   if(cv_buf != nullptr) {
@@ -308,7 +308,7 @@ bool image_utils::import_image(cv::InputArray inbuf,
  *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
  */
 bool image_utils::import_image(cv::InputArray inbuf,
-                                      int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<::Mat>& data, cv::Mat* cv_buf) {
+                                      int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& data, cv::Mat* cv_buf) {
 #ifdef LBANN_HAS_OPENCV
   cv::Mat image;
   if(cv_buf != nullptr) {
@@ -334,7 +334,7 @@ bool image_utils::import_image(cv::InputArray inbuf,
  *  @param data    The image data. A sub-matrix View can be passed instead of the entire matrix.
  */
 bool image_utils::export_image(const std::string& fileExt, std::vector<uchar>& outbuf,
-                                      const int Width, const int Height, const int Type, cv_process& pp, const ::Mat& data) {
+                                      const int Width, const int Height, const int Type, cv_process& pp, const CPUMat& data) {
 #ifdef LBANN_HAS_OPENCV
   pp.determine_inverse_lazy_normalization();
   cv::Mat image = cv_utils::copy_buf_to_cvMat(data, Width, Height, Type, pp);
@@ -363,7 +363,7 @@ bool image_utils::export_image(const std::string& fileExt, std::vector<uchar>& o
 
 
 bool image_utils::load_image(std::vector<unsigned char>& image_buf,
-                                    int& Width, int& Height, int& Type, cv_process& pp, ::Mat& data, cv::Mat* cv_buf) {
+                                    int& Width, int& Height, int& Type, cv_process& pp, CPUMat& data, cv::Mat* cv_buf) {
   return import_image(image_buf, Width, Height, Type, pp, data, cv_buf);
 }
 

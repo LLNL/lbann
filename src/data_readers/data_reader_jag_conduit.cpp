@@ -131,7 +131,7 @@ bool data_reader_jag_conduit::position_valid() const {
   const bool ok = (static_cast<size_t>(m_shuffled_indices[m_current_pos]) < m_valid_samples.size())
     && (m_current_pos < (int)m_shuffled_indices.size());
   if (!ok) {
-    const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+    const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
     std::stringstream err;
     err << "rank " << my_rank << " position invalid: m_shuffled_indices["
         << m_current_pos << "] (" << m_shuffled_indices[m_current_pos]
@@ -318,6 +318,10 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
+  m_output_scalar_prefix = rhs.m_output_scalar_prefix;
+  m_output_image_prefix = rhs.m_output_image_prefix;
+  m_input_prefix = rhs.m_input_prefix;
+
   m_scalar_filter = rhs.m_scalar_filter;
   m_scalar_prefix_filter = rhs.m_scalar_prefix_filter;
   m_input_filter = rhs.m_input_filter;
@@ -382,6 +386,9 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_keys.clear();
   m_input_keys.clear();
   m_uniform_input_type = false;
+  m_output_scalar_prefix = "";
+  m_output_image_prefix = "";
+  m_input_prefix = "";
   m_scalar_filter.clear();
   m_scalar_prefix_filter.clear();
   m_input_filter.clear();
@@ -589,7 +596,7 @@ void data_reader_jag_conduit::set_all_scalar_choices() {
     return;
   }
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar);
+  load_conduit_node(0, m_output_scalar_prefix, n_scalar);
   m_scalar_keys.reserve(n_scalar.number_of_children());
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
@@ -650,7 +657,7 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   conduit::Node n_imageset;
-  load_conduit_node(0, "/outputs/images", n_imageset);
+  load_conduit_node(0, m_output_image_prefix, n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
     _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
@@ -660,13 +667,13 @@ void data_reader_jag_conduit::check_image_data() {
     return;
   }
   for (const auto& emi_tag: m_emi_image_keys) {
-    if (!has_conduit_path(0, "/outputs/images/" + emi_tag + "/emi")) {
+    if (!has_conduit_path(0, m_output_image_prefix + emi_tag)) {
       _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
   conduit::Node n_image;
-  load_conduit_node(0, "/outputs/images/" + m_emi_image_keys[0] + "/emi", n_image);
+  load_conduit_node(0, m_output_image_prefix + m_emi_image_keys[0], n_image);
   conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
@@ -720,7 +727,7 @@ void data_reader_jag_conduit::check_scalar_keys() {
   std::set<std::string> keys_conduit;
 
   conduit::Node n_scalar;
-  load_conduit_node(0, "/outputs/scalars", n_scalar);
+  load_conduit_node(0, m_output_scalar_prefix, n_scalar);
   const std::vector<std::string>& child_names = n_scalar.child_names();
   for (const auto& key: child_names) {
     keys_conduit.insert(key);
@@ -863,7 +870,7 @@ void data_reader_jag_conduit::determine_num_samples_to_use() {
 void data_reader_jag_conduit::adjust_num_samples_to_use() {
   const size_t num_valid_samples = get_num_valid_local_samples();
 
-  const int my_rank = m_comm->get_rank_in_model();
+  const int my_rank = m_comm->get_rank_in_trainer();
   const int num_readers = get_num_parallel_readers();
 
   // Find the minimum of the number of valid samples locally available
@@ -875,12 +882,12 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
     n_min = std::numeric_limits<unsigned long long>::max();
   }
 
-  m_comm->model_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
+  m_comm->trainer_allreduce(&n_loc, 1, &n_min, El::mpi::MIN);
 
   // Find the first rank that has the minimum number of valid samples
   int rank_tmp_1st = (n_loc == n_min)? my_rank : num_readers;
   int rank_min_1st;
-  m_comm->model_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
+  m_comm->trainer_allreduce(&rank_tmp_1st, 1, &rank_min_1st, El::mpi::MIN);
 
   // Determine the number of samples to use
   m_global_num_samples_to_use = static_cast<size_t>(n_min * num_readers + rank_min_1st);
@@ -897,7 +904,7 @@ void data_reader_jag_conduit::adjust_num_samples_to_use() {
   // Compute data yield
   unsigned long long n_valid_local = num_valid_samples;
   unsigned long long n_valid_global = 0u;
-  m_comm->model_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
+  m_comm->trainer_allreduce(&n_valid_local, 1, &n_valid_global, El::mpi::SUM);
 
   if (is_master()) {
     const double yield = static_cast<double>(m_global_num_samples_to_use)/n_valid_global;
@@ -967,7 +974,7 @@ void data_reader_jag_conduit::load() {
     std::shuffle(filenames.begin(), filenames.end(), get_data_seq_generator());
   }
 
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
   const size_t num_readers = static_cast<size_t>(compute_max_num_parallel_readers());
 
   // handle data partitioning among models (e.g., for LTFB)
@@ -1031,7 +1038,7 @@ void data_reader_jag_conduit::load_conduit(const std::string conduit_file_path, 
     _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
   }
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_model());
+  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
   std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
 #else
   std::cerr << "loading: " << conduit_file_path << std::endl;
@@ -1378,7 +1385,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id) const {
 
   for (const auto& emi_tag : m_emi_image_keys) {
     conduit::Node n_image;
-    load_conduit_node(sample_id, "/outputs/images/" + emi_tag + "/emi", n_image);
+    load_conduit_node(sample_id, m_output_image_prefix + emi_tag, n_image);
     conduit_ch_t emi = n_image.value();
     const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = n_image.value();
@@ -1493,7 +1500,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   #if !defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_)
   conduit::Node n_scalar;
-  load_conduit_node(sample_id, "/outputs/scalars", n_scalar);
+  load_conduit_node(sample_id, m_output_scalar_prefix, n_scalar);
   #endif // !_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_
 
   std::vector<scalar_t> scalars;
@@ -1505,7 +1512,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_SCALAR_KEY_)
     conduit::Node n_scalar;
     // TODO: optimize by loading the entire set of scalars of the samples
-    load_conduit_node(sample_id, "/outputs/scalars/" + key, n_scalar);
+    load_conduit_node(sample_id, m_output_scalar_prefix + key, n_scalar);
     // All the scalar output currently seems to be scalar_t.
     // If not, use add_val(key, n_scalar, scalars);
 
@@ -1535,7 +1542,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   #if !defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
   // fetching the entire input parameters of a sample by a single file I/O
   conduit::Node n_input;
-  load_conduit_node(sample_id, "/inputs", n_input);
+  load_conduit_node(sample_id, m_input_prefix, n_input);
   #endif // !_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_
 
   std::vector<input_t> inputs;
@@ -1553,7 +1560,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
       // TODO: whether to fetch by individual I/O or not can be dynamically
       // determined based on how many of the variables are to be fetched.
       conduit::Node n_input;
-      load_conduit_node(sample_id, "/inputs/" + key, n_input);
+      load_conduit_node(sample_id, m_input_prefix + key, n_input);
       const input_t val_raw = static_cast<input_t>(n_input.value());
     #else
       conduit::Node n_input_var = get_conduit_node(n_input, key);
@@ -1567,7 +1574,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     for(const auto key: m_input_keys) {
     #if defined(_LBANN_DATA_READER_JAG_CONDUIT_IO_PER_INPUT_KEY_)
       conduit::Node n_input;
-      load_conduit_node(sample_id, "/inputs/" + key, n_input);
+      load_conduit_node(sample_id, m_input_prefix + key, n_input);
       add_val(key, n_input, inputs); // more overhead but general
     #else
       conduit::Node n_input_var = get_conduit_node(n_input, key);

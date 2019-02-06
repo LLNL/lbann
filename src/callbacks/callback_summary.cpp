@@ -54,16 +54,16 @@ void lbann_callback_summary::on_batch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   size_t bytes_sent = comm->get_bytes_sent();
   size_t bytes_received = comm->get_bytes_received();
-  size_t model_barriers = comm->get_num_model_barriers();
-  size_t intermodel_barriers = comm->get_num_intermodel_barriers();
+  size_t trainer_barriers = comm->get_num_trainer_barriers();
+  size_t intertrainer_barriers = comm->get_num_intertrainer_barriers();
   size_t global_barriers = comm->get_num_global_barriers();
   comm->reset_stats_counters();
   m_summarizer->sum_reduce_scalar("bytes_sent", bytes_sent, m->get_cur_step());
   m_summarizer->sum_reduce_scalar("bytes_received", bytes_received,
                                   m->get_cur_step());
-  m_summarizer->reduce_scalar("model_barriers", model_barriers,
+  m_summarizer->reduce_scalar("trainer_barriers", trainer_barriers,
                               m->get_cur_step());
-  m_summarizer->reduce_scalar("intermodel_barriers", intermodel_barriers,
+  m_summarizer->reduce_scalar("intertrainer_barriers", intertrainer_barriers,
                               m->get_cur_step());
   m_summarizer->reduce_scalar("global_barriers", global_barriers,
                               m->get_cur_step());

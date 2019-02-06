@@ -1,12 +1,12 @@
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 64 
+  mini_batch_size: 64
   block_size: 256
   super_steps: 10000
   num_batches: 1
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -56,8 +56,8 @@ model {
     }
   }
   #callback { timer {} }
-  
- 
+
+
 
   ###################################################
   # start of layers

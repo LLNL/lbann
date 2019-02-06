@@ -22,18 +22,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
 
+/// @todo Rename this file to file.cpp.
+
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/exception.hpp"
+
 #include <algorithm>
 #include <fstream>
-//#include <iostream> // std::cerr
+#include <sstream>
+#include <cstdlib>
+#include <sys/stat.h>
+#include <errno.h>
+#include <libgen.h>
 
 namespace lbann {
 
 const std::string path_delimiter::characters = "/";
-
 
 std::vector<int> get_tokens(std::string str, const std::vector<char> delims) {
   std::vector<int> tokens;
@@ -67,19 +73,12 @@ std::vector<std::string> get_tokens(const std::string str, const std::string del
   return parsed;
 }
 
-/// Divide a given path into dir and basename.
+/// @todo Deprecated.
 bool parse_path(const std::string& path, std::string& dir, std::string& basename) {
-  std::string::const_iterator nb =
-    std::find_if(path.rbegin(), path.rend(), path_delimiter()).base();
-  dir =  std::string(path.begin(), nb);
-  basename = std::string(nb, path.end());
-  if (basename.empty()) {
-    return false;
-  }
-
-  return true;
+  dir = file::extract_parent_directory(path);
+  basename = file::extract_base_name(path);
+  return !basename.empty();
 }
-
 
 /// Return file extention name.
 std::string get_ext_name(const std::string file_name) {
@@ -150,70 +149,19 @@ std::string modify_file_name(const std::string file_name, const std::string tag,
   return (dir + name + '.' + ext);
 }
 
-
-/// Return true if a file with the given name exists.
+/// @todo Deprecated.
 bool check_if_file_exists(const std::string& filename) {
-  std::ifstream ifile(filename);
-  return static_cast<bool>(ifile);
+  return file::file_exists(filename);
 }
 
-
-#ifdef _POSIX_SOURCE
-#include <sys/stat.h>
-#include <errno.h>
-/// Return true if a directory with the given name exists.
+/// @todo Deprecated.
 bool check_if_dir_exists(const std::string& dirname) {
-  struct stat sb;
-
-  return (stat(dirname.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode));
+  return file::directory_exists(dirname);
 }
-#else
-bool check_if_dir_exists(const std::string& dirname) {
-  return check_if_file_exists(dirname);
-}
-#endif
 
-
-#include <cstdlib>
-/**
- * Create a directory, and return true if successful.
- * If a directory with the same name already exists, simply return true.
- */
+/// @todo Deprecated.
 bool create_dir(const std::string dirname) {
-  std::string dir = dirname;
-  if (!dir.empty() && path_delimiter::check(dir.back())) {
-    dir.pop_back();
-  }
-
-  if (dir.empty()) {
-    return true;
-  }
-
-  const bool file_exists = check_if_file_exists(dir);
-
-  if (file_exists) {
-    if (!check_if_dir_exists(dir)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-  std::string cmd = std::string("mkdir -p ") + dir;
-#if 1 // for ray
-  char cmdstr[cmd.size()+1];
-  std::copy(cmd.begin(), cmd.end(), &cmdstr[0]);
-  cmdstr[cmd.size()] = '\0';
-  const int r = ::system(&cmdstr[0]);
-#else
-  const int r = ::system(cmd.c_str());
-#endif
-
-  if (WEXITSTATUS(r) == 0x10) {
-    return true;
-  } else if (!check_if_dir_exists(dir)) {
-    return false;
-  }
+  file::make_directory(dirname);
   return true;
 }
 
@@ -238,4 +186,59 @@ bool load_file(const std::string filename, std::vector<char>& buf) {
   return true;
 }
 
-} // end of namespace lbann
+namespace file {
+
+std::string extract_parent_directory(const std::string& path) {
+  std::vector<char> buffer(path.size()+1);
+  path.copy(buffer.data(), path.size());
+  buffer.back() = '\0';
+  return ::dirname(buffer.data());
+}
+
+std::string extract_base_name(const std::string& path) {
+  std::vector<char> buffer(path.size()+1);
+  path.copy(buffer.data(), path.size());
+  buffer.back() = '\0';
+  return ::basename(buffer.data());
+}
+
+bool file_exists(const std::string& path) {
+  if (path.empty() || path == "." || path == "/") {
+    return true;
+  }
+  struct ::stat buffer;
+  return (::stat(path.c_str(), &buffer) == 0);
+}
+
+bool directory_exists(const std::string& path) {
+  if (path.empty() || path == "." || path == "/") {
+    return true;
+  }
+  struct ::stat buffer;
+  return (::stat(path.c_str(), &buffer) == 0
+          && S_ISDIR(buffer.st_mode));
+}
+
+void make_directory(const std::string& path) {
+  if (directory_exists(path)) { return; }
+
+  // Create parent directory if needed
+  const auto& parent = extract_parent_directory(path);
+  make_directory(parent);
+
+  // Create directory
+  // Note: Don't complain if the directory already exists.
+  auto status = ::mkdir(path.c_str(), S_IRWXU | S_IRWXG); // chmod 770
+  if (status != 0 && errno != EEXIST) {
+    std::stringstream err;
+    err << "failed to create directory (" << path << ") "
+        << "with error " << errno << " "
+        << "(" << strerror(errno) << ")";
+    LBANN_ERROR(err.str());
+  }
+
+}
+
+} // namespace file
+
+} // namespace lbann

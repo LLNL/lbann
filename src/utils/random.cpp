@@ -176,7 +176,7 @@ void init_random(int seed, lbann_comm *comm) {
 #endif
 #ifdef LBANN_SET_EL_RNG
     if (comm != nullptr) {
-      El::Generator().seed(seed ^ comm->get_rank_in_model());
+      El::Generator().seed(seed ^ comm->get_rank_in_trainer());
     } else {
       El::Generator().seed(seed ^ El::mpi::Rank(El::mpi::COMM_WORLD));
     }

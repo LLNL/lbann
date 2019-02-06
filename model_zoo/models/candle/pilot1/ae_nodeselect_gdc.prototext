@@ -4,7 +4,7 @@ model {
   block_size: 256
   num_epochs: 20
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -119,7 +119,7 @@ model {
     }
   }
 
-  #pearson_r: A Tensor representing the current Pearson product-moment correlation coefficient, 
+  #pearson_r: A Tensor representing the current Pearson product-moment correlation coefficient,
   #the value of cov(predictions, labels) / sqrt(var(predictions) * var(labels))
   layer {
     parents: "sigmoid2 recon_data"
@@ -151,15 +151,15 @@ model {
     multiply { }
     data_layout: "model_parallel"
    }
-   
+
   layer {
     parents: "mult"
     name: "sqrt"
     sqrt { }
     data_layout: "model_parallel"
    }
-   
-   
+
+
   layer {
     parents: "unbiased_covariance sqrt"
     name: "pearson_r"

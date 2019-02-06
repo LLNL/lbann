@@ -95,8 +95,6 @@ void finalize(lbann_comm* comm) {
   El::Finalize();
 }
 
-}  // namespace lbann
-
 /** hack to avoid long switch/case statement; users should ignore; of interest to developers */
 static std::vector<std::string> pool_mode_names = { "invalid", "max", "average", "average_no_pad" };
 
@@ -108,3 +106,5 @@ std::string get_pool_mode_name(pool_mode m) {
   }
   return pool_mode_names[(int)m];
 }
+
+} // namespace lbann

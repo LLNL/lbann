@@ -179,7 +179,7 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
 
 bool data_reader_mnist_siamese::fetch_datum(CPUMat& X, std::pair<int, int> data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
 
   using raw_data_t = std::vector<unsigned char>;
   using local_sample_t = std::array<raw_data_t*, 2>;
