@@ -33,8 +33,8 @@ The LBANN build system is documented [here](docs/BuildingLBANN.md#top).
 
 ## LBANN Container Builds
 We provide basic container defintion files, and instructions for their
-use, in the containers subdirectory. We currently support Docker and
-Singularity.
+use, in the [`containers`](containers) subdirectory.
+We currently support Docker and Singularity.
 
 ## Cmake (Non LC or OSX Systems/Script alternative)
 1. Ensure the following dependencies are installed
