@@ -84,10 +84,6 @@ void data_store_jag::setup() {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
   }
 
-  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
-    m_unshuffle[(*m_shuffled_indices)[j]] = j;
-  }
-
   data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
   if (jag_reader == nullptr) {
     LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
@@ -139,7 +135,7 @@ debug.close(); debug.open(b, std::ios::app);
   //                   which I own
 
   //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
-  //vector<unordered_set<int>>; then: 
+  //vector<unordered_set<int>>; then:
   //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
   //
   //  Hm ... I think m_all_minibatch_indices is identical to ds indices
@@ -152,15 +148,15 @@ double tma = get_time();
   }
 
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  for (size_t j=0; j<m_all_minibatch_indices.size(); j++) {
-    for (auto idx : m_all_minibatch_indices[j]) {
-      int index = (*m_shuffled_indices)[idx];
-      // P_j needs the sample that corresponds to 'index' in order
-      // to complete the next epoch
-      if (my_ds_indices.find(index) != my_ds_indices.end()) {
-        proc_to_indices[j].insert(index);
-      }
+  /// Within a trainer the shuffled indices are distributed round
+  /// robin across ranks
+  size_t j = 0;
+  for (auto index : (*m_shuffled_indices)) {
+    /// If this rank owns the index send it to the j'th rank
+    if (my_ds_indices.find(index) != my_ds_indices.end()) {
+      proc_to_indices[j].insert(index);
     }
+    j = (j + 1) % m_np;
   }
 
   debug << "exchange_data; built map\n";
@@ -181,9 +177,7 @@ double tmy = get_time();
 
     m_send_buffer[p].reset();
     for (auto idx : proc_to_indices[p]) {
-      //m_send_buffer[p][std::to_string(idx)].set_external(m_data[idx]);
       m_send_buffer[p].update_external(m_data[idx]);
-      //m_send_buffer[p][std::to_string(idx)].set_external(m_data[idx]);
     }
       //if (m_master) m_send_buffer[p].print();
 
@@ -211,7 +205,7 @@ debug << "  start Isend Time: " << get_time() -  tmy << "\n";
   }
 
 debug << "\nTime to start Irecvs: " << get_time() -  tmy << "\n";
-  
+
 double tmz = get_time();
 
   // wait for all msgs to complete
@@ -289,37 +283,30 @@ debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() -
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
-  if (m_unshuffle.find(data_id) == m_unshuffle.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_unshuffle");
-  }
-  int idx = m_unshuffle[data_id];
-  if (m_data.find(idx) != m_data.end()) {
-    LBANN_ERROR("duplicate data_id: " + std::to_string(idx) + " in data_store_jag::set_conduit_node");
+  if (m_data.find(data_id) != m_data.end()) {
+    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
 
   if (! m_super_node) {
     node["id"] = data_id;
     conduit::Node n2;
     build_node_for_sending(node, n2);
-    m_data[idx] = n2;
-  } 
-  
+    m_data[data_id] = n2;
+  }
+
   else {
-    //conduit::Node n2;
-    //n2[std::to_string(idx)] = node;
-    //m_data[idx] = n2;
-    m_data[idx] = node;
+    m_data[data_id] = node;
     /* debug block, to test if idx matches the id in the conduit node;
      * if these don't match up exceptions will be thrown in get_conduit_node
-     * 
+     *
     if (m_master) {
-      std::cerr<<"idx:" <<idx<< "\n";
+      std::cerr<<"data id:" <<data_id<< "\n";
       node.print();
     }
     MPI_Barrier(MPI_COMM_WORLD);
     MPI_Abort(MPI_COMM_WORLD, -1);
     */
-  }  
+  }
 }
 
 const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
@@ -420,7 +407,7 @@ void data_store_jag::exchange_data_by_sample() {
   // build map: owner -> set of indices I need that owner has
 
   //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
-  //vector<unordered_set<int>>; then: 
+  //vector<unordered_set<int>>; then:
   //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
   //
   //  Hm ... I think m_all_minibatch_indices is identical to ds indices
@@ -581,7 +568,7 @@ double tmw = get_time();
 //    m_data[data_id] = nd;
     m_minibatch_data[nd["id"].value()] = nd;
 
-  }  
+  }
 for (auto t : m_minibatch_data) {
   debug << t.first << " ";
 }
@@ -630,10 +617,6 @@ void data_store_jag::exchange_ds_indices() {
       m_all_minibatch_indices[p].push_back(all_indices[i]);
       m_owner[all_indices[i]] = p;
     }
-  }
-
-  for (auto t : m_all_minibatch_indices[m_rank]) {
-    m_data[t];
   }
 }
 

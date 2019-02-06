@@ -59,16 +59,12 @@ class data_store_jag : public generic_data_store {
 
   void setup() override;
 
-  /// returns the conduit node 
+  /// returns the conduit node
   const conduit::Node & get_conduit_node(int data_id, bool any_node = false) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
 
 protected :
-
-  /// used to map a shuffled index to the original subscript;
-  /// used in set_conduit_node()
-  std::unordered_map<int,int> m_unshuffle;
 
   bool m_super_node;
 
@@ -112,12 +108,12 @@ protected :
   /// fills in m_my_datastore_indices, which is the set of indices that I own
 //  void exchange_ds_indices();
 
-  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j] 
-  /// will contain all indices that will be passed to 
+  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j]
+  /// will contain all indices that will be passed to
   /// data_reader::fetch_datum in one epoch
   //void build_all_minibatch_indices();
 
-  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j] 
+  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j]
   /// will contain all indices that will be passed to data_reader::fetch_datum
   /// in one epoch. Also fills in m_owner
   void exchange_ds_indices();
