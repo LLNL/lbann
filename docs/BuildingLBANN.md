@@ -98,6 +98,13 @@ instructions below. We are working to simplify this process.
 
 ### Building & Installing LBANN as a developer
 
+Developers of LBANN will often need to interact with the source code
+and/or advanced configuration options for Aluminum, Hydrogen, and
+LBANN while the other dependencies remain constant. The Spack
+installation instructions below set up a Spack environment with the
+remaining dependencies, requiring the developer to build Aluminum,
+Hydrogen, and LBANN separately, by whatever means they choose.
+
 1.  Establish a Spack environment and install software dependencies.
     Note that there are four environments to pick from along two axis:
 
@@ -122,16 +129,16 @@ instructions below. We are working to simplify this process.
       packages and compilers that are installed on an LLNL LC CZ sytem.
       Please update these for your system environment.  Alternatively,
       you can create baseline versions of the user-level Spack configuation
-      files and remove the externals and compilers from the spack.yaml
+      files and remove the externals and compilers from the `spack.yaml`
       file. More details are provided [here](spack_environment.md).
 
     + Note that the initial build of all of the standard packages in Spack
       will take a while.
 
-    + Note that the Spack module files set the LIBRARY_PATH environment
-      variable. This behavior allows autotools based builds to pickup the
-      correct libraries, but interferes with the way that CMake sets up
-      RPATHs.  To correctly establish the RPATH please unset the variable
+    + Note that the Spack module files set the `LIBRARY_PATH` environment
+      variable. This behavior allows autotools-based builds to pickup the
+      correct libraries but interferes with the way that CMake sets up
+      RPATHs.  To correctly establish the RPATH, please unset the variable
       as noted above, or you can explicity pass the RPATH fields to CMake
       using a command such as: 
       ```bash
@@ -141,11 +148,14 @@ instructions below. We are working to simplify this process.
       ```
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
-    using the superbuild.  See below for a list and descriptions of all
-    CMake flags known to LBANN's build system. An example build that
-    expects LBANN_HOME, LBANN_BUILD_DIR, LBANN_INSTALL_DIR environment
-    variables might be:
+    using the superbuild.  See 
+    [below](#building-an-entire-ecosystem-with-the-superbuild)
+    for a list and descriptions of all CMake flags known to LBANN's
+    "Superbuild" build system. An example build that expects `LBANN_HOME`,
+    `LBANN_BUILD_DIR`, `LBANN_INSTALL_DIR` environment variables might
+    be:
     ```bash
+    cd ${LBANN_BUILD_DIR}
     cmake \
       -G Ninja \
       -D LBANN_SB_BUILD_ALUMINUM=ON \
