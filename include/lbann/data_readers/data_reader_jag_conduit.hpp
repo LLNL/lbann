@@ -363,6 +363,16 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Obtain image data
   std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
 
+  bool data_store_active() const {
+    bool flag = generic_data_reader::data_store_active();
+    return (m_jag_store != nullptr && flag);
+  }
+
+  bool priming_data_store() const {
+    bool flag = generic_data_reader::priming_data_store();
+    return (m_jag_store != nullptr && flag);
+  }
+
  protected:
   /// The flat list of independent variable types
   std::vector<variable_t> m_independent;

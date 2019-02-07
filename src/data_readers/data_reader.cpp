@@ -753,6 +753,16 @@ void generic_data_reader::setup_data_store(model *m) {
   m_data_store = nullptr;
 }
 
+bool generic_data_reader::data_store_active() const {
+  return ((m_model->get_execution_mode() == execution_mode::training)
+          && m_model->get_cur_epoch() > 0);
+}
+
+bool generic_data_reader::priming_data_store() const {
+  return ((m_model->get_execution_mode() == execution_mode::training)
+          && m_model->get_cur_epoch() == 0);
+}
+
 void generic_data_reader::set_save_minibatch_entries(bool b) {
   m_save_minibatch_indices = b;
   if (b) {

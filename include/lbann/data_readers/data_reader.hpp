@@ -729,6 +729,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// support of data store functionality
   void set_data_store(generic_data_store *g);
 
+  virtual bool data_store_active() const;
+
+  virtual bool priming_data_store() const;
+
   void set_model(model *m) { m_model = m; }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
