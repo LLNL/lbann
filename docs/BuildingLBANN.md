@@ -87,7 +87,9 @@ The following third-party packages are **optional**.
     ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
     ```
 
-    + Note to remove unwanted modules you can execute: `ml purge`
+    + Note to unload unwanted modules you can execute `ml` with
+      package names prepended with a dash, e.g.: `ml -intel`. To
+      unload all currently loaded modules, use `ml purge`.
 
 ### Building & Installing LBANN as a user
 
