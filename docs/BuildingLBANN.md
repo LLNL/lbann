@@ -283,15 +283,16 @@ resolving.
 
 ### Example CMake invocation
 A sample CMake build for LBANN might look like the following.
-    ```bash
-    cmake \
-      -D LBANN_WITH_CUDA:BOOL=ON \
-      -D LBANN_WITH_NVPROF:BOOL=ON \
-      -D LBANN_DATATYPE:STRING=float \
-      -D Hydrogen_DIR:PATH=/path/to/hydrogen \
-      -D HWLOC_DIR:PATH=/path/to/hwloc \
-      /path/to/lbann
-    ```
+```bash
+cmake \
+  -D LBANN_WITH_CUDA:BOOL=ON \
+  -D LBANN_WITH_NVPROF:BOOL=ON \
+  -D LBANN_DATATYPE:STRING=float \
+  -D Hydrogen_DIR:PATH=/path/to/hydrogen \
+  -D HWLOC_DIR:PATH=/path/to/hwloc \
+  /path/to/lbann
+```
+
 ## Building an entire ecosystem with the "Superbuild"
 
 __WARNING__: This is primarily for developer convenience and is not
