@@ -1,7 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+
 from sys import *
 import os
 import pprint
+from graphviz import Digraph
 
 from lbann.viz.properties import *
 from lbann.viz.layer import *
@@ -135,15 +137,12 @@ def getLinkedLayers(layers) :
 #load properties database
 props = properties(prop_fn)
 
-
 #parse the prototext file; 'layers' is a list of Layer objects
 layers = parsePrototext(argv[1])
-
 fixSequentialParents(layers)
 
 #get list of linked layer sets
 linked = getLinkedLayers(layers)
-
 
 #build a couple of maps
 edges = {}
@@ -160,17 +159,13 @@ for layer in layers :
   for p in parents :
     if p not in edges :
       edges[p] = set()
-    edges[p].add(name)
+      edges[p].add(name)
 
 #write the dot file
-out = open('graph.dot', 'w')
-out.write('digraph xyz {\n')
-if ranksep > 0 :
-  out.write('graph[ranksep="' + str(ranksep) + '"]\n')
+g = Digraph(format="pdf")
+g.attr("graph", ranksep=str(ranksep))
 
-#write vertices
-for parent in list(edges.keys()) :
- try :
+for parent in edges.keys():
   type = name_to_type[parent]
   label = ''
   if brief:
@@ -183,12 +178,15 @@ for parent in list(edges.keys()) :
       label += '<br/>'
       for x in attr :
         label += x + '<br align="left"/>'
-  label += '> '
- except :
-   print('\n\ncaught exception; parent:', parent)
-   exit(9)
 
- out.write('  ' + parent + '[label=' + label + ' shape=' + props.shape(type) + ', style=filled, fillcolor=' + props.color(type) + ']\n')
+  label += ' >'
+
+  g.node(
+    parent,
+    label=label,
+    shape=props.shape(type),
+    style="filled",
+    fillcolor=props.color(type))
 
 #write edges
 for parent in list(edges.keys()) :
@@ -196,31 +194,22 @@ for parent in list(edges.keys()) :
   for child in edges[parent] :
     child_type = name_to_type[child]
     if type == 'slice' :
-      out.write(parent + ' -> ' + child + '[color=red, penwidth=2.0];')
+      g.edge(parent, child,
+             color="red", penwidth="2.0")
     elif type == 'split' :
-      out.write(parent + ' -> ' + child + '[color=darkorange, penwidth=2.0];')
+      g.edge(parent, child,
+             color="darkorange", penwidth="2.0")
     elif child_type == 'sum' :
-      out.write(parent + ' -> ' + child + '[color=deepskyblue, penwidth=2.0];')
+      g.edge(parent, child,
+             color="deepskyblue", penwidth="2.0")
     else :
-      out.write(parent + ' -> ' + child + '[];\n')
-
+      g.edge(parent, child)
 
 #alternatove to above: use subgraphs
 #write linked layer subgraphs
-n = 0
-for x in linked :
-  out.write('subgraph cluster_' + str(n) + ' {\n')
-  out.write('   style=dashed;\n')
-  n += 1
-  for node in x :
-    out.write('   '+ node + ';\n')
-  out.write('}\n')
+for n, x in enumerate(linked):
+  with g.subgraph(name="cluster_"+str(n), style="dashed") as sg:
+    for node in x:
+      sg.node(node)
 
-out.write('}\n')
-out.close()
-
-#run graphviz
-cmd = 'dot -T' + output_format + ' graph.dot -o' + output_fn + '.' + output_format
-print()
-print('about to run:', cmd)
-os.system(cmd)
+g.render("out")
