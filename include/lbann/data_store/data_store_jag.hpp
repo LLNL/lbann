@@ -69,13 +69,10 @@ protected :
   bool m_super_node;
 
   /// retrive data needed for passing to the data reader for the next epoch
-  void exchange_data() override {
-    if (m_super_node) {
-      //      exchange_data_by_super_node();
-    } else {
-      exchange_data_by_sample();
-    }
-  }
+  /// this is pure virtual in generic_data_reader, so must include it for
+  /// now. May go away when we refactore/revise all of data_store
+  void exchange_data() override {}
+
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) override {
     if (m_super_node) {
       exchange_data_by_super_node(current_pos, mb_size);
@@ -112,20 +109,6 @@ protected :
 
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
-
-  /// fills in m_owner, which maps an index to the owning processor;
-  /// fills in m_my_datastore_indices, which is the set of indices that I own
-//  void exchange_ds_indices();
-
-  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j]
-  /// will contain all indices that will be passed to
-  /// data_reader::fetch_datum in one epoch
-  //void build_all_minibatch_indices();
-
-  /// fills in m_all_minibatch_indices; m_all_minibatch_indices[j]
-  /// will contain all indices that will be passed to data_reader::fetch_datum
-  /// in one epoch. Also fills in m_owner
-  void exchange_ds_indices();
 };
 
 }  // namespace lbann

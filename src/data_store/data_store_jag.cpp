@@ -107,8 +107,6 @@ void data_store_jag::setup_data_store_buffers() {
     m_recv_buffer.resize(m_np);
 
     m_reconstituted.resize(m_data.size());
-
-    exchange_ds_indices();
     //  }
 }
 
@@ -573,44 +571,6 @@ debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
   debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 debug.close(); debug.open(b, std::ios::app);
 #endif
-}
-
-void data_store_jag::exchange_ds_indices() {
-  std::vector<int> counts(m_np);
-  int my_num_indices = m_data.size();
-  m_comm->trainer_all_gather<int>(my_num_indices, counts);
-
-  //setup data structures to exchange minibatch indices with all processors
-  //displacement vector
-  std::vector<int> displ(m_np);
-  displ[0] = 0;
-  for (size_t j=1; j<counts.size(); j++) {
-    displ[j] = displ[j-1] + counts[j-1];
-  }
-
-  //recv vector
-  int n = std::accumulate(counts.begin(), counts.end(), 0);
-  std::vector<int> all_indices(n);
-
-  //receive the indices
-  std::vector<int> v;
-  v.reserve(m_data.size());
-  for (auto t : m_data) {
-    v.push_back(t.first);
-  }
-  m_comm->all_gather<int>(v, all_indices, counts, displ, m_comm->get_trainer_comm());
-
-  //fill in the final data structure
-  m_all_minibatch_indices.clear();
-  m_owner.clear();
-  m_all_minibatch_indices.resize(m_np);
-  for (int p=0; p<m_np; p++) {
-    m_all_minibatch_indices[p].reserve(counts[p]);
-    for (int i=displ[p]; i<displ[p]+counts[p]; i++) {
-      m_all_minibatch_indices[p].push_back(all_indices[i]);
-      m_owner[all_indices[i]] = p;
-    }
-  }
 }
 
 }  // namespace lbann
