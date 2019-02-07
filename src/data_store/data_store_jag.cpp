@@ -233,7 +233,7 @@ double tmw = get_time();
     const std::vector<std::string> &names = m_reconstituted[p].child_names();
 
     for (auto t : names) {
-      m_minibatch_data[atoi(t.c_str())] = m_reconstituted[p][t].parent();
+      m_minibatch_data[atoi(t.c_str())][t].update_external(m_reconstituted[p][t]);
     }
   }
 
@@ -276,7 +276,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
     LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
   }
 
-  std::unordered_map<int, const conduit::Node*>::const_iterator t = m_minibatch_data.find(data_id);
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
   if (t == m_minibatch_data.end()) {
     debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
     debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
@@ -292,7 +292,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
     LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
   }
 
-  return *(t->second);
+  return t->second;
 }
 
 // code in the following method is a modification of code from
