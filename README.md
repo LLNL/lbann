@@ -26,3 +26,8 @@ A few options for building LBANN are documented [here](docs/BuildingLBANN.md#top
 ## Running LBANN
 Methods for running LBANN are documented
 [here](docs/RunningLBANN.md#top).
+
+
+## Reporting issues
+Issues, questions, and bugs can be raised on the [Github issue
+tracker](https://github.com/llnl/lbann/issues).
