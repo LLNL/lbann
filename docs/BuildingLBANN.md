@@ -105,8 +105,7 @@ instructions below. We are working to simplify this process.
     2. x86_64 and ppc64le
 
     For example if you are a developer and want to build the inside of
-    the git repo use the following instructions:[^libarypath]
-
+    the git repo use the following instructions:
     ```bash
     export LBANN_HOME=/path/to/lbann/git/repo
     export LBANN_BUILD_DIR=/path/to/a/build/directory
