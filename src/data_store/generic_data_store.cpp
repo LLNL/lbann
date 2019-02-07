@@ -213,9 +213,14 @@ void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, b
 if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_cur_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
 //  if (m_model->get_cur_epoch() > 0 && exchange_indices && m_in_memory) {
-  if (m_n > 0) {
-    exchange_data();
+  // if (m_n > 0) {
+  //   exchange_data();
+  // }
+
+  if(m_n > 0) {
+    setup_data_store_buffers();
   }
+
   ++m_n;
 }
 

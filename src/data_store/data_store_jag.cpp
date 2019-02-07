@@ -94,17 +94,9 @@ void data_store_jag::setup() {
   }
 }
 
-// this gets called at the beginning of each epoch (except for epoch 0)
-//
-// Note: conduit has a very nice interface for communicating nodes
-//       in non-blocking scenarios. Unf, for blocking we need to
-//       handle things ourselves. TODO: possible modify conduit to
-//       handle non-blocking comms
-void data_store_jag::exchange_data_by_super_node() {
-  double tm1 = get_time();
-
-  if (m_n == 1) {
-    // allocate buffers that are used in exchange_data()
+void data_store_jag::setup_data_store_buffers() {
+  // allocate buffers that are used in exchange_data()
+  //  if (m_n == 1) {
     m_send_buffer.resize(m_np);
     m_send_buffer_2.resize(m_np);
     m_send_requests.resize(m_np);
@@ -117,7 +109,17 @@ void data_store_jag::exchange_data_by_super_node() {
     m_reconstituted.resize(m_data.size());
 
     exchange_ds_indices();
-  }
+    //  }
+}
+
+// this gets called at the beginning of each epoch (except for epoch 0)
+//
+// Note: conduit has a very nice interface for communicating nodes
+//       in non-blocking scenarios. Unf, for blocking we need to
+//       handle things ourselves. TODO: possible modify conduit to
+//       handle non-blocking comms
+void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
+  // double tm1 = get_time();
 
   //========================================================================
   //build map: proc -> global indices that P_x needs for this epoch, and
@@ -131,18 +133,14 @@ void data_store_jag::exchange_data_by_super_node() {
 
   double tma = get_time();
 
-  std::unordered_set<int> my_ds_indices;
-  for (auto t : m_all_minibatch_indices[m_rank]) {
-    my_ds_indices.insert(t);
-  }
-
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
   /// Within a trainer the shuffled indices are distributed round
   /// robin across ranks
   size_t j = 0;
-  for (auto index : (*m_shuffled_indices)) {
+  for (auto i = current_pos; i < current_pos + mb_size; i++) {
+    auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the j'th rank
-    if (my_ds_indices.find(index) != my_ds_indices.end()) {
+    if (m_data.find(index) != m_data.end()) {
       proc_to_indices[j].insert(index);
     }
     j = (j + 1) % m_np;
@@ -160,9 +158,12 @@ tma = get_time();
   for (int p=0; p<m_np; p++) {
 //tmb = get_time;
     m_send_buffer[p].reset();
+    //    std::cout << "For rank "<< p << " I am packing indices ";
     for (auto idx : proc_to_indices[p]) {
+      //std::cout << " " << idx;
       m_send_buffer[p].update_external(m_data[idx]);
     }
+    //                  std::cout << std::endl;
       //if (m_master) m_send_buffer[p].print();
 
     // code in the following method is a modification of code from
@@ -188,7 +189,7 @@ debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
   //========================================================================
   //part 2: exchange the actual data
 
-tma = get_time();
+  //tma = get_time();
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
@@ -206,13 +207,13 @@ tma = get_time();
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
-debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-tma = get_time();
+// debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
+//tma = get_time();
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-double tmw = get_time();
+//double tmw = get_time();
 
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
@@ -237,11 +238,11 @@ double tmw = get_time();
     }
   }
 
-debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
+// debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
 
-  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
+//  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
 
-  debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
+  // debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
@@ -276,6 +277,14 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
     LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
   }
 
+  {
+    std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+    if (t != m_data.end()) {
+      return t->second;
+    }
+  }
+
+  /// check the main m_data as well
   std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
   if (t == m_minibatch_data.end()) {
     debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
@@ -286,6 +295,8 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_nod
     }
     for (auto t3 : s3) debug << t3 << " ";
     debug << "\n";
+    int owner = m_owner.at(data_id);
+    debug << "I believe that the owner is " << std::to_string(owner) << "\n";
     debug.close();
     debug.open(b, std::ios::app);
 
@@ -350,6 +361,7 @@ void data_store_jag::exchange_data_by_sample() {
     m_recv_buffer.resize(sz);
     m_status.resize(sz);
 
+    exchange_ds_indices();
     // sanity check
     /*
     int n = 0;
@@ -380,6 +392,17 @@ double tma = get_time();
   }
 
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
+  {
+  size_t j = 0;
+  for (auto index : (*m_shuffled_indices)) {
+    /// If this rank owns the index send it to the j'th rank
+    if (my_ds_indices.find(index) != my_ds_indices.end()) {
+      proc_to_indices[j].insert(index);
+    }
+    j = (j + 1) % m_np;
+  }
+  }
+#if 0
   for (size_t j=0; j<m_all_minibatch_indices.size(); j++) {
     for (auto idx : m_all_minibatch_indices[j]) {
       int index = (*m_shuffled_indices)[idx];
@@ -390,15 +413,23 @@ double tma = get_time();
       }
     }
   }
-
+#endif
   // get indices that I need for this epoch; these correspond to
   // samples that this proc receives from others
   std::unordered_map<int, std::unordered_set<int>> needed;
+#if 0
+  for (auto t = my_rank; t < (*m_shuffled_indices).size(); t+=m_np) {
+    int index = (*m_shuffled_indices)[t];
+    int owner = m_owner[index];
+    needed[owner].insert(index);
+  }
+#else
   for (auto t :  my_ds_indices) {
     int index = (*m_shuffled_indices)[t];
     int owner = index % m_np;
     needed[owner].insert(index);
   }
+#endif
 
   //debug block
   int tot = 0;

@@ -71,13 +71,21 @@ protected :
   /// retrive data needed for passing to the data reader for the next epoch
   void exchange_data() override {
     if (m_super_node) {
-      exchange_data_by_super_node();
+      //      exchange_data_by_super_node();
     } else {
       exchange_data_by_sample();
     }
   }
-  void exchange_data_by_super_node();
+  void exchange_mini_batch_data(size_t current_pos, size_t mb_size) override {
+    if (m_super_node) {
+      exchange_data_by_super_node(current_pos, mb_size);
+      //    } else {
+      //exchange_data_by_sample();
+    }
+  }
+  void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample();
+  void setup_data_store_buffers();
 
   // when m_super_node = false
   std::unordered_map<int,int> m_index_to_data_id;

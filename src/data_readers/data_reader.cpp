@@ -123,6 +123,10 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     }
   }
 
+  if (data_store_active()) {
+    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+  }
+
   if (!m_save_minibatch_indices) {
     /// Allow each thread to perform any preprocessing necessary on the
     /// data source prior to fetching data
@@ -304,7 +308,7 @@ bool generic_data_reader::update(bool is_active_reader) {
 
     if (!m_save_minibatch_indices) {
       shuffle_indices();
-      if (m_data_store && (m_model->get_execution_mode() == execution_mode::training)) {
+      if (priming_data_store()) {
         m_data_store->set_shuffled_indices(&m_shuffled_indices);
       }
     }
@@ -754,12 +758,14 @@ void generic_data_reader::setup_data_store(model *m) {
 }
 
 bool generic_data_reader::data_store_active() const {
-  return ((m_model->get_execution_mode() == execution_mode::training)
+  return (m_data_store != nullptr
+          && (m_model->get_execution_mode() == execution_mode::training)
           && m_model->get_cur_epoch() > 0);
 }
 
 bool generic_data_reader::priming_data_store() const {
-  return ((m_model->get_execution_mode() == execution_mode::training)
+  return (m_data_store != nullptr
+          && (m_model->get_execution_mode() == execution_mode::training)
           && m_model->get_cur_epoch() == 0);
 }
 
