@@ -30,4 +30,3 @@ $ viz.py ../model_zoo/models/char_rnn/model_char_rnn.prototext ranksep=.7 output
 
   output: rnn_3.pdf
   notes: didn't specify properties file, so uses the default 'properties.txt'
-
