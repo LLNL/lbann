@@ -9,8 +9,9 @@ repo](https://github.com/LLNL/lbann).
 The following packages and tools are required to build LBANN. All
 packages listed below may be installed using
 [Spack](https://github.com/llnl/spack). See
-[below](#building-with-spack) for more details on using Spack to build
-a complete LBANN environment.
+<a href="#building-with-spack">below</a>
+for more details on using Spack to build a complete LBANN
+environment.
 
 The following basic tools are **required**.
 
@@ -148,8 +149,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
       ```
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
-    using the superbuild.  See 
-    [below](#building-an-entire-ecosystem-with-the-superbuild)
+    using the superbuild. See 
+    <a href=#building-an-entire-ecosystem-with-the-superbuild>below</a>
     for a list and descriptions of all CMake flags known to LBANN's
     "Superbuild" build system. An example build that expects `LBANN_HOME`,
     `LBANN_BUILD_DIR`, `LBANN_INSTALL_DIR` environment variables might
