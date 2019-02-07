@@ -34,7 +34,7 @@ class properties :
           k += 1
 
   def shape(self, name) :
-    if not self._layers.has_key(name) :
+    if name not in self._layers :
       return 'rect'
       '''
       print 'shape(): Nothing known about this layer:', name
@@ -45,7 +45,7 @@ class properties :
     return self._layers[name][0]
 
   def color(self, name) :
-    if not self._layers.has_key(name) :
+    if name not in self._layers :
       return 'grey'
       '''
       print 'color(): Nothing known about this layer:', name
@@ -56,7 +56,7 @@ class properties :
     return self._layers[name][1]
 
   def arrow(self, name) :
-    if not self._layers.has_key(name) :
+    if name not in self._layers :
       return 'grey'
       '''
       print 'arrow(): Nothing known about this layer:', name

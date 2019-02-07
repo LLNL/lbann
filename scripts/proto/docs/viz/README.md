@@ -1,6 +1,6 @@
 # How to run
 ```
-viz.py
+lbviz
 ```
 
 with no arguments for usage.

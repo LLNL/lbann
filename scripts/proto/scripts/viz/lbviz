@@ -3,8 +3,8 @@ from sys import *
 import os
 import pprint
 
-from properties import *
-from layer import *
+from lbann.viz.properties import *
+from lbann.viz.layer import *
 
 usage = '''
 usage: %s model_fn.prototext [output=<string>] [format=<string>] [prop=<string>] [full=1] [brief=1] [ranksep=<double>]
@@ -18,6 +18,7 @@ where: "output" is the output file basename; default is "graph"
        Note: some formats may take a while to render, so be patient.
 
        "prop" is the name of the properties file; default is "properties.txt"
+       in the same directory of lbviz.
        The properties file is a simple text file that lists colors and
        shapes for the various layer types
 
@@ -57,7 +58,7 @@ if len(argv) < 2 :
 #parse cmd line
 output_fn = "graph"
 output_format = "pdf"
-prop_fn = "properties.txt"
+prop_fn = os.path.join(os.path.dirname(os.path.abspath(__file__)), "properties.txt")
 full = False
 brief = False
 ranksep=0
