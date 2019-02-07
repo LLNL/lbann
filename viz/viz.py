@@ -50,7 +50,7 @@ def parsePrototext(fn) :
 #=====================================================================
 
 if len(argv) < 2 :
-  print usage
+  print(usage)
   exit(9)
 
 #parse cmd line
@@ -75,10 +75,10 @@ for j in range(2, len(argv)) :
   elif t[0] == 'ranksep' :
     ranksep = float(t[1])
   else :
-    print 'badly formed or unknown cmd line option:', argv[j]
-    print '================================================================'
-    print
-    print usage
+    print('badly formed or unknown cmd line option:', argv[j])
+    print('================================================================')
+    print()
+    print(usage)
     exit(9)
 
 #=====================================================================
@@ -90,10 +90,10 @@ def fixSequentialParents(layers) :
     if len(layer.parents()) != 0 : num_layers_with_parents += 1
     if len(layer.children()) != 0 : num_layers_with_children += 1
   if num_layers_with_parents == 0 :
-    print
-    print 'NOTE: this model does not appear to have any parent fields;'
-    print '      dealing with that ...'
-    print
+    print()
+    print('NOTE: this model does not appear to have any parent fields;')
+    print('      dealing with that ...')
+    print()
     assert(num_layers_with_children == 0)
     for j in range(1, len(layers)) :
       layers[j].setParents(layers[j-1])
@@ -115,15 +115,15 @@ def getLinkedLayers(layers) :
     my_name = layer.name()
     for x in links :
       if my_name != x :
-        if w.has_key(my_name) : 
+        if my_name in w :
           w[my_name].add(x)
-        elif w.has_key(x) : 
+        elif x in w :
           w[x].add(my_name)
         else :
-          print 'error'
+          print('error')
           exit(9)
 
-  for x in w.keys() :
+  for x in list(w.keys()) :
     if len(w[x]) > 1 :
       r.append(w[x])
   return r
@@ -156,7 +156,7 @@ for layer in layers :
   type = layer.type()
   name_to_type[name] = type
   for p in parents :
-    if not edges.has_key(p) :
+    if p not in edges :
       edges[p] = set()
     edges[p].add(name)
 
@@ -167,14 +167,14 @@ if ranksep > 0 :
   out.write('graph[ranksep="' + str(ranksep) + '"]\n')
 
 #write vertices
-for parent in edges.keys() :
+for parent in list(edges.keys()) :
  try :
   type = name_to_type[parent]
   label = ''
   if brief:
     label = '<<font point-size="18">' + type + '</font>'
   else :
-    label = '<<font point-size="18">' + type + '</font><br/>name: ' + parent 
+    label = '<<font point-size="18">' + type + '</font><br/>name: ' + parent
   if full :
     attr = attributes[parent]
     if len(attr) :
@@ -183,28 +183,28 @@ for parent in edges.keys() :
         label += x + '<br align="left"/>'
   label += '> '
  except :
-   print '\n\ncaught exception; parent:', parent
+   print('\n\ncaught exception; parent:', parent)
    exit(9)
 
  out.write('  ' + parent + '[label=' + label + ' shape=' + props.shape(type) + ', style=filled, fillcolor=' + props.color(type) + ']\n')
 
 #write edges
-for parent in edges.keys() :
+for parent in list(edges.keys()) :
   type = name_to_type[parent]
   for child in edges[parent] :
     child_type = name_to_type[child]
-    if type == 'slice' : 
+    if type == 'slice' :
       out.write(parent + ' -> ' + child + '[color=red, penwidth=2.0];')
-    elif type == 'split' : 
+    elif type == 'split' :
       out.write(parent + ' -> ' + child + '[color=darkorange, penwidth=2.0];')
-    elif child_type == 'sum' : 
+    elif child_type == 'sum' :
       out.write(parent + ' -> ' + child + '[color=deepskyblue, penwidth=2.0];')
     else :
       out.write(parent + ' -> ' + child + '[];\n')
 
 
 #alternatove to above: use subgraphs
-#write linked layer subgraphs    
+#write linked layer subgraphs
 n = 0
 for x in linked :
   out.write('subgraph cluster_' + str(n) + ' {\n')
@@ -219,6 +219,6 @@ out.close()
 
 #run graphviz
 cmd = 'dot -T' + output_format + ' graph.dot -o' + output_fn + '.' + output_format
-print 
-print 'about to run:', cmd
+print()
+print('about to run:', cmd)
 os.system(cmd)
