@@ -6,16 +6,30 @@ repo](https://github.com/LLNL/lbann).
 
 ## Dependencies
 
-The following third-party packages are currently required to build
-LBANN. All may be installed using
+The following packages and tools are required to build LBANN. All
+packages listed below may be installed using
 [Spack](https://github.com/llnl/spack). See
 [below](#building-with-spack) for more details on using Spack to build
 a complete LBANN environment.
+
+The following basic tools are **required**.
 
 + A C++11-compliant compiler.
 + OpenMP, version 3.0 or newer.
 + An MPI-3.0 implementation.
 + [CMake](https://cmake.org), version 3.9 or newer.
+
+The following LLNL-maintained packages are **required**.
+
++ [Hydrogen](https://github.com/llnl/elemental) is a fork of the
+  [Elemental](https://github.com/elemental/elemental) distributed
+  dense linear-algebra library and it may be installed via
+  [Spack](https://github.com/llnl/spack) using the package name
+  "hydrogen". If CUDA support is enabled in Hydrogen, LBANN will
+  inherit this support.
+
+The following third-party packages are **required**.
+
 + [CNPY](https://github.com/rogersce/cnpy.git) is used to ingest data
   in NumPy format. In principle this should be optional, but at time
   of writing, LBANN will not build without it.
@@ -26,7 +40,16 @@ a complete LBANN environment.
 + [ProtoBuf](https://github.com/protocolbuffers/protobuf) is used to
   express models in a portable format.
 
-The following third-party packages are optional.
+The following LLNL-maintained packages are **optional**.
+
++ [Aluminum](https://github.com/llnl/aluminum) is a
+  communication library optimized for machine learning and interaction
+  with GPUs. We cannot recommend its use strongly enough. It can be
+  built using [Spack](https://github.com/llnl/spack).
++ [CONDUIT](https://github.com/llnl/conduit) is used to ingest
+  structured data produced by scientific simulations.
+
+The following third-party packages are **optional**.
 
 + [CUDA](https://developer.nvidia.com/cuda-toolkit). The development
   team currently uses CUDA version 9.2. Building with CUDA support
@@ -40,24 +63,6 @@ The following third-party packages are optional.
 + NVTX. LBANN supports some improved annotations for NVPROF using
   NVTX. NVTX is provided as part of the CUDA toolkit.
 + VTune. LBANN supports some improved annotations for VTune.
-
-The following LLNL-maintained packages are required.
-
-+ [Hydrogen](https://github.com/llnl/elemental) is a fork of the
-  [Elemental](https://github.com/elemental/elemental) distributed
-  dense linear-algebra library and it may be installed via
-  [Spack](https://github.com/llnl/spack) using the package name
-  "hydrogen". If CUDA support is enabled in Hydrogen, LBANN will
-  inherit this support.
-
-The following LLNL-maintained packages are optional.
-
-+ [Aluminum](https://github.com/llnl/aluminum) is a
-  communication library optimized for machine learning and interaction
-  with GPUs. We cannot recommend its use strongly enough. It can be
-  built using [Spack](https://github.com/llnl/spack).
-+ [CONDUIT](https://github.com/llnl/conduit) is used to ingest
-  structured data produced by scientific simulations.
 
 
 ## Building with [Spack](https://github.com/llnl/spack)
