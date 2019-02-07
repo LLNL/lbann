@@ -68,17 +68,17 @@ The following LLNL-maintained packages are optional.
     Additionally setup shell support as discussed
     [here](https://spack.readthedocs.io/en/latest/module_file_support.html#id2).
 
-    ``` 
+    ```bash
     . ${SPACK_ROOT}/share/spack/setup-env.sh
     ```
 
 2.  Setup your compiler and external software environment. For example,
     on LLNL\'s LC machines, one might load the following modules:
-    ```
+    ```bash
     ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
     ```
     or
-    ```
+    ```bash
     ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
     ```
 
@@ -371,7 +371,9 @@ superbuild system may need to control. These are exposed as regular
 CMake options in the individual projects' CMakeLists and can be viewed
 by running, e.g.,
 
-    cmake -L superbuild/<pkg>/CMakeLists.txt
+```bash
+cmake -L superbuild/<pkg>/CMakeLists.txt
+```
 
 Several significant CMake flags are automatically forwarded from the
 superbuild CMake to subprojects. These are generally "typical" CMake
@@ -389,7 +391,9 @@ using the following syntax:
 `LBANN_SB_FWD_<PKG>_<OPTION>=<VALUE>`. This will result in a cache
 variable being sent to the CMake command for `<PKG>` with the form
 
-    -D<OPTION>=<VALUE>
+```bash
+-D<OPTION>=<VALUE>
+```
 
 The `<OPTION>` may be something specific to `<PKG>` or it may
 be a CMake flag that is not automatically forwarded. For example, the
@@ -412,7 +416,9 @@ all of the subprojects; these match the `<PKG>` values noted
 above. For example, after a successful CMake configuration of the
 superbuild using the Ninja generator, the command
 
-    ninja HYDROGEN
+```bash
+ninja HYDROGEN
+```
 
 will build the sub-DAG ending with Hydrogen. If
 `LBANN_SB_BUILD_LBANN=ON`, `ninja LBANN` is equivalent to `ninja`
