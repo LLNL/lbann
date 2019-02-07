@@ -1,13 +1,16 @@
 # Building LBANN
 ## Download
 
-LBANN can be cloned from the [Github repo](https://github.com/LLNL/lbann).
+LBANN source code can be obtained from the [Github
+repo](https://github.com/LLNL/lbann).
 
 ## Dependencies
 
 The following third-party packages are currently required to build
 LBANN. All may be installed using
-[spack](https://github.com/llnl/spack).
+[Spack](https://github.com/llnl/spack). See
+[below](#building-with-spack) for more details on using Spack to build
+a complete LBANN environment.
 
 + A C++11-compliant compiler.
 + OpenMP, version 3.0 or newer.
@@ -41,17 +44,18 @@ The following third-party packages are optional.
 The following LLNL-maintained packages are required.
 
 + [Hydrogen](https://github.com/llnl/elemental) is a fork of the
-  Elemental distributed dense linear-algebra library and it may be
-  installed via [spack](https://github.com/llnl/spack) using the
-  package name "hydrogen". If CUDA support is enabled in Hydrogen,
-  LBANN will inherit this support.
+  [Elemental](https://github.com/elemental/elemental) distributed
+  dense linear-algebra library and it may be installed via
+  [Spack](https://github.com/llnl/spack) using the package name
+  "hydrogen". If CUDA support is enabled in Hydrogen, LBANN will
+  inherit this support.
 
 The following LLNL-maintained packages are optional.
 
 + [Aluminum](https://github.com/llnl/aluminum) is a
   communication library optimized for machine learning and interaction
   with GPUs. We cannot recommend its use strongly enough. It can be
-  built using [spack](https://github.com/llnl/spack).
+  built using [Spack](https://github.com/llnl/spack).
 + [CONDUIT](https://github.com/llnl/conduit) is used to ingest
   structured data produced by scientific simulations.
 
@@ -82,9 +86,12 @@ The following LLNL-maintained packages are optional.
 
 ### Building & Installing LBANN as a user
 
+This section is work in progress. For now, follow the developer
+instructions below. We are working to simplify this process.
+
 ### Building & Installing LBANN as a developer
 
-1.  Establish a spack environment and install software dependencies.
+1.  Establish a Spack environment and install software dependencies.
     Note that there are four environments to pick from along two axis:
 
     1. developers or users
@@ -93,10 +100,10 @@ The following LLNL-maintained packages are optional.
     For example if you are a developer and want to build the inside of
     the git repo use the following instructions:[^libarypath]
 
-    ```
-    export LBANN_HOME=<path to lbann git repo>
-    export LBANN_BUILD_DIR=<path to a directory>
-    export LBANN_INSTALL_DIR=<path to a directory>
+    ```bash
+    export LBANN_HOME=/path/to/lbann/git/repo
+    export LBANN_BUILD_DIR=/path/to/a/build/directory
+    export LBANN_INSTALL_DIR=/path/to/an/install/directory
     cd ${LBANN_BUILD_DIR}
     spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
     spack install
@@ -108,26 +115,31 @@ The following LLNL-maintained packages are optional.
     + Note that the environments provided here have a set of external
       packages and compilers that are installed on an LLNL LC CZ sytem.
       Please update these for your system environment.  Alternatively,
-      you can create baseline versions of the user-level spack configuation
+      you can create baseline versions of the user-level Spack configuation
       files and remove the externals and compilers from the spack.yaml
-      file. See [here](spack_environment.md) for details.
+      file. More details are provided [here](spack_environment.md).
 
-    + Note that the initial build of all of the standard packages in spack
+    + Note that the initial build of all of the standard packages in Spack
       will take a while.
 
-    + Note that the spack module files set the LIBRARY_PATH environment
+    + Note that the Spack module files set the LIBRARY_PATH environment
       variable. This behavior allows autotools based builds to pickup the
       correct libraries, but interferes with the way that CMake sets up
       RPATHs.  To correctly establish the RPATH please unset the variable
       as noted above, or you can explicity pass the RPATH fields to CMake
-      using a command such as: `cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") ...`
+      using a command such as: 
+      ```bash
+      cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") \
+            -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") \
+            ...
+      ```
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
     using the superbuild.  See below for a list and descriptions of all
     CMake flags known to LBANN's build system. An example build that
     expects LBANN_HOME, LBANN_BUILD_DIR, LBANN_INSTALL_DIR environment
     variables might be:
-    ```
+    ```bash
     cmake \
       -G Ninja \
       -D LBANN_SB_BUILD_ALUMINUM=ON \
@@ -271,7 +283,7 @@ resolving.
 
 ### Example CMake invocation
 A sample CMake build for LBANN might look like the following.
-
+    ```bash
     cmake \
       -D LBANN_WITH_CUDA:BOOL=ON \
       -D LBANN_WITH_NVPROF:BOOL=ON \
@@ -279,7 +291,7 @@ A sample CMake build for LBANN might look like the following.
       -D Hydrogen_DIR:PATH=/path/to/hydrogen \
       -D HWLOC_DIR:PATH=/path/to/hwloc \
       /path/to/lbann
-
+    ```
 ## Building an entire ecosystem with the "Superbuild"
 
 __WARNING__: This is primarily for developer convenience and is not
@@ -339,13 +351,13 @@ system HDF5.
 Packages are included in a superbuild by passing
 `LBANN_SB_BUILD_<PKG>` options to CMake _for each package_ that it
 should build, including LBANN itself. E.g.,
-
-    cmake \
-      -DLBANN_SB_BUILD_ALUMINUM=ON \
-      -DLBANN_SB_BUILD_HYDROGEN=ON \
-      -DLBANN_SB_BUILD_LBANN=ON \
-      /path/to/lbann/superbuild
-
+```bash
+cmake \
+  -DLBANN_SB_BUILD_ALUMINUM=ON \
+  -DLBANN_SB_BUILD_HYDROGEN=ON \
+  -DLBANN_SB_BUILD_LBANN=ON \
+  /path/to/lbann/superbuild
+```
 will invoke the superbuild to build Aluminum, Hydrogen, and LBANN
 _only_. Acceptable values for `<PKG>` are `ALUMINUM`, `CNPY`,
 `CONDUIT`, `CUB`, `HDF5`, `HYDROGEN`, `JPEG_TURBO`, `OPENCV`,
@@ -383,13 +395,14 @@ be a CMake flag that is not automatically forwarded. For example, the
 following CMake invocation would send
 `CMAKE_INTERPROCEDURAL_OPTIMIZATION` to the `HYDROGEN` package and
 `SPHINX_DIR` to `LBANN`:
-
-    cmake -D LBANN_SB_BUILD_HYDROGEN=ON \
-      -D LBANN_SB_BUILD_LBANN=ON \
-      -D LBANN_SB_FWD_HYDROGEN_CMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
-      -D LBANN_SB_FWD_LBANN_SPHINX_DIR=/path/to/sphinx \
-      /path/to/superbuild
-
+```bash
+cmake -D LBANN_SB_BUILD_HYDROGEN=ON \
+  -D LBANN_SB_BUILD_LBANN=ON \
+  -D LBANN_SB_FWD_HYDROGEN_CMAKE_INTERPROCEDURAL_OPTIMIZATION=ON \
+  -D LBANN_SB_FWD_LBANN_SPHINX_DIR=/path/to/sphinx \
+  /path/to/superbuild
+```
+    
 ### Special targets in the Superbuild
 Modern shells should be able to tab-complete the names of targets in
 Makefiles or Ninja files, and IDEs should display all targets
@@ -421,50 +434,52 @@ with Aluminum and CONDUIT support using the currently-load GCC
 toolset. It assumes that desired flags are stored in `<LANG>_FLAGS` in
 the environment.
 
-    cmake -GNinja \
-        -D CMAKE_BUILD_TYPE=Release \
-        -D CMAKE_INSTALL_PREFIX=${PWD}/install \
-        -D CMAKE_C_COMPILER=$(which gcc) \
-        -D CMAKE_C_FLAGS="${C_FLAGS}" \
-        -D CMAKE_CXX_COMPILER=$(which g++) \
-        -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
-        -D CMAKE_Fortran_COMPILER=$(which gfortran) \
-        -D CMAKE_Fortran_FLAGS="${Fortran_FLAGS}" \
-        -D CMAKE_CUDA_COMPILER=$(which nvcc) \
-        -D CMAKE_CUDA_FLAGS="${CUDA_FLAGS}" \
-        \
-        -D LBANN_SB_BUILD_CNPY=ON \
-        -D LBANN_SB_BUILD_CONDUIT=ON \
-        -D LBANN_SB_BUILD_CUB=ON \
-        -D LBANN_SB_BUILD_HDF5=ON \
-        -D LBANN_SB_BUILD_JPEG_TURBO=ON \
-        -D LBANN_SB_BUILD_OPENBLAS=ON \
-        -D LBANN_SB_BUILD_OPENCV=ON \
-        -D LBANN_SB_BUILD_PROTOBUF=ON \
-        \
-        -D LBANN_SB_BUILD_ALUMINUM=ON \
-        -D ALUMINUM_ENABLE_MPI_CUDA=ON \
-        -D ALUMINUM_ENABLE_NCCL=ON \
-        \
-        -D LBANN_SB_BUILD_HYDROGEN=ON \
-        -D Hydrogen_ENABLE_CUDA=ON \
-        -D Hydrogen_ENABLE_CUB=ON \
-        -D Hydrogen_ENABLE_ALUMINUM=ON \
-        \
-        -D LBANN_SB_BUILD_LBANN=ON \
-        -D LBANN_WITH_ALUMINUM=ON \
-        -D LBANN_WITH_CONDUIT=ON \
-        -D LBANN_WITH_CUDA=ON \
-        -D LBANN_WITH_NVPROF=ON \
-        -D LBANN_WITH_TBINF=ON \
-        -D LBANN_WITH_TOPO_AWARE=ON \
-        -D LBANN_SEQUENTIAL_INITIALIZATION=OFF \
-        -D LBANN_WARNINGS_AS_ERRORS=OFF \
-        \
-        /path/to/superbuild
+```bash
+cmake -GNinja \
+    -D CMAKE_BUILD_TYPE=Release \
+    -D CMAKE_INSTALL_PREFIX=${PWD}/install \
+    -D CMAKE_C_COMPILER=$(which gcc) \
+    -D CMAKE_C_FLAGS="${C_FLAGS}" \
+    -D CMAKE_CXX_COMPILER=$(which g++) \
+    -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
+    -D CMAKE_Fortran_COMPILER=$(which gfortran) \
+    -D CMAKE_Fortran_FLAGS="${Fortran_FLAGS}" \
+    -D CMAKE_CUDA_COMPILER=$(which nvcc) \
+    -D CMAKE_CUDA_FLAGS="${CUDA_FLAGS}" \
+    \
+    -D LBANN_SB_BUILD_CNPY=ON \
+    -D LBANN_SB_BUILD_CONDUIT=ON \
+    -D LBANN_SB_BUILD_CUB=ON \
+    -D LBANN_SB_BUILD_HDF5=ON \
+    -D LBANN_SB_BUILD_JPEG_TURBO=ON \
+    -D LBANN_SB_BUILD_OPENBLAS=ON \
+    -D LBANN_SB_BUILD_OPENCV=ON \
+    -D LBANN_SB_BUILD_PROTOBUF=ON \
+    \
+    -D LBANN_SB_BUILD_ALUMINUM=ON \
+    -D ALUMINUM_ENABLE_MPI_CUDA=ON \
+    -D ALUMINUM_ENABLE_NCCL=ON \
+    \
+    -D LBANN_SB_BUILD_HYDROGEN=ON \
+    -D Hydrogen_ENABLE_CUDA=ON \
+    -D Hydrogen_ENABLE_CUB=ON \
+    -D Hydrogen_ENABLE_ALUMINUM=ON \
+    \
+    -D LBANN_SB_BUILD_LBANN=ON \
+    -D LBANN_WITH_ALUMINUM=ON \
+    -D LBANN_WITH_CONDUIT=ON \
+    -D LBANN_WITH_CUDA=ON \
+    -D LBANN_WITH_NVPROF=ON \
+    -D LBANN_WITH_TBINF=ON \
+    -D LBANN_WITH_TOPO_AWARE=ON \
+    -D LBANN_SEQUENTIAL_INITIALIZATION=OFF \
+    -D LBANN_WARNINGS_AS_ERRORS=OFF \
+    \
+    /path/to/superbuild
+```
 
 As a final disclaimer: Please do report any issues with the superbuild
-on [github](https://github.com/llnl/lbann/issues), but note that they
+on [Github](https://github.com/llnl/lbann/issues), but note that they
 will be evaluated on a case-by-case basis and may not be fixed in a
 timely manner or at all if they do not affect the development team. To
 repeat, the superbuild exists for developer convenience and is not
@@ -478,3 +493,13 @@ to a certain linux group on the Livermore Computing machines (LC) and
 the script may not work for those without that access. Please consult
 the preceding sections for alternative and preferred methods for
 building LBANN.
+
+### LBANN Container Builds
+
+We provide basic container defintion files, and
+[instructions](../containers/README.md) for their use, in the
+containers subdirectory. We currently support Docker and Singularity.
+
+The container builds are not regularly
+tested. [Issues](https://github.com/llnl/lbann/issues) are welcome.
+
