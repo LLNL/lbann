@@ -586,8 +586,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
 
-  /// Does the data reader have a unqiue index list per rank
-  virtual bool has_list_per_rank() const { return false; }
   /// Does the data reader have a unqiue index list per model
   virtual bool has_list_per_model() const { return false; }
   /// Does the data reader have a unqiue index list per trainer
