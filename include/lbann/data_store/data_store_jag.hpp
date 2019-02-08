@@ -76,12 +76,12 @@ protected :
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) override {
     if (m_super_node) {
       exchange_data_by_super_node(current_pos, mb_size);
-      //    } else {
-      //exchange_data_by_sample();
+    } else {
+      exchange_data_by_sample(current_pos, mb_size);
     }
   }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
-  void exchange_data_by_sample();
+  void exchange_data_by_sample(size_t current_pos, size_t mb_size);
   void setup_data_store_buffers();
 
   // when m_super_node = false
@@ -109,6 +109,9 @@ protected :
 
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
+
+  /// fills in m_owner, which maps an index to the owning processor;
+  void exchange_ds_indices();
 };
 
 }  // namespace lbann
