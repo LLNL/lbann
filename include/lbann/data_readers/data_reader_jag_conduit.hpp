@@ -163,10 +163,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   void set_list_per_trainer(bool flag) { m_list_per_trainer = flag; };
   /// Set every reader instances in a model to have an independent index list
   void set_list_per_model(bool flag) { m_list_per_model = flag; };
-  /// Set every rank to have an independent index list
-  void set_list_per_rank(bool flag) { m_list_per_rank = flag; };
 
-  bool has_list_per_rank() const { return m_list_per_rank; }
   bool has_list_per_model() const { return m_list_per_model; }
   bool has_list_per_trainer() const { return m_list_per_trainer; }
 
@@ -470,7 +467,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   sample_list_jag m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
-  bool m_list_per_rank;
 
   /** temporary image normalization
    * The inputs are the image to normalize, the image source id and the channel id.

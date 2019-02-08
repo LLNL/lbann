@@ -137,7 +137,6 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       reader->set_data_index_list(readme.index_list());
       reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
       reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
-      reader_jag_conduit->set_list_per_rank(readme.index_list_per_rank());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing
@@ -643,9 +642,6 @@ void customize_data_readers_index_list(lbann_comm *comm, lbann_data::LbannPB& p)
     }
     if(r->index_list_per_trainer()) {
       s << "t" << comm->get_trainer_rank() << "_";
-    }
-    if(r->index_list_per_rank()) {
-      s << "r" << comm->get_rank_in_trainer() << "_";
     }
     s << basename;
     s << "." << ext;

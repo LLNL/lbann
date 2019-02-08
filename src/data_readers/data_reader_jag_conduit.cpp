@@ -136,11 +136,7 @@ int data_reader_jag_conduit::compute_max_num_parallel_readers() {
     set_num_parallel_readers(partitioned_io_buffer::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
-    if (m_list_per_rank) {
-      set_sample_stride(1);
-    } else {
-      set_sample_stride(get_num_parallel_readers());
-    }
+    set_sample_stride(get_num_parallel_readers());
     set_iteration_stride(1);
   } else {
     _THROW_LBANN_EXCEPTION_(get_type(), " unknown io_buffer type: " + m_io_buffer_type);
@@ -215,7 +211,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_sample_list = rhs.m_sample_list;
   m_list_per_trainer = rhs.m_list_per_trainer;
   m_list_per_model = rhs.m_list_per_model;
-  m_list_per_rank = rhs.m_list_per_rank;
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -278,7 +273,6 @@ void data_reader_jag_conduit::set_defaults() {
   m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
-  m_list_per_rank = false;
 }
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
@@ -762,27 +756,15 @@ void data_reader_jag_conduit::load() {
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   /// The use of these flags need to be updated to properly separate
-  /// how index lists are used between trainers, models, and ranks
+  /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
-  if (m_list_per_rank) {
-    if (m_data_store != nullptr) {
-      LBANN_ERROR("m_list_per_rank > 0 and  m_data_store != nullptr; don't know how to handle this; please contact Dave Hysom");
-    }
-    load_list_of_samples(sample_list_file, 1, 0);
-    std::stringstream s;
-    std::string basename = get_basename_without_ext(sample_list_file);
-    std::string ext = get_ext_name(sample_list_file);
-    s << "r" << m_comm->get_rank_in_trainer() << basename << "." << ext;
-    m_sample_list.write(s.str());
-  } else {
-    load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-    m_sample_list.all_gather_packed_lists(*m_comm);
-    std::stringstream s;
-    std::string basename = get_basename_without_ext(sample_list_file);
-    std::string ext = get_ext_name(sample_list_file);
-    s << "r" << m_comm->get_rank_in_trainer() << "_per_rank_" << basename << "." << ext;
-    m_sample_list.write(s.str());
-  }
+  load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+  m_sample_list.all_gather_packed_lists(*m_comm);
+  std::stringstream s;
+  std::string basename = get_basename_without_ext(sample_list_file);
+  std::string ext = get_ext_name(sample_list_file);
+  s << "r" << m_comm->get_rank_in_trainer() << "_per_rank_" << basename << "." << ext;
+  m_sample_list.write(s.str());
 
   if (!m_is_data_loaded) {
     m_is_data_loaded = true;
@@ -1008,12 +990,7 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const
 
 int data_reader_jag_conduit::get_num_data() const {
 
-  if (m_list_per_rank) {
-    /// @todo this only works if all of the lists are of the same size
-    return (int)m_shuffled_indices.size() * get_num_parallel_readers();
-  }else {
-    return (int)m_shuffled_indices.size();
-  }
+  return (int)m_shuffled_indices.size();
 }
 
 int data_reader_jag_conduit::get_num_labels() const {

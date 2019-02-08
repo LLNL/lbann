@@ -19,7 +19,6 @@ data_reader {
     index_list: "index.txt"
     index_list_per_trainer: false
     index_list_per_model: false
-    index_list_per_rank: false
 
     validation_percent: 0
     absolute_sample_count: 0
@@ -70,7 +69,6 @@ data_reader {
     index_list: "index.txt"
     index_list_per_trainer: false
     index_list_per_model: false
-    index_list_per_rank: false
 
     validation_percent: 0
     absolute_sample_count: 0

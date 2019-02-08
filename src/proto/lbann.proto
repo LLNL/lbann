@@ -69,7 +69,6 @@ message Reader {
   //------------- start of only for index lists ------------------
   bool index_list_per_trainer = 400;
   bool index_list_per_model   = 401;
-  bool index_list_per_rank    = 402;
   //------------- end of only for index lists ------------------
 }
 
