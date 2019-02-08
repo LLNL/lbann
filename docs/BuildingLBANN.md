@@ -18,6 +18,8 @@ The following basic tools are **required**.
 + A C++11-compliant compiler.
 + OpenMP, version 3.0 or newer.
 + An MPI-3.0 implementation.
++ [CEREAL](https://github.com/USCiLab/cereal) is used to handle
+  complex serialization tasks.
 + [CMake](https://cmake.org), version 3.9 or newer.
 
 The following LLNL-maintained packages are **required**.
@@ -263,6 +265,8 @@ The latter option is recommended.
   the Aluminum installation prefix _or_ the AluminumConfig.cmake
   file. If Hydrogen has not been built with Aluminum support, set
   `LBANN_WITH_ALUMINUM=ON` to enable Aluminum support.
++ `CEREAL_DIR`: The path to _either_ the CEREAL installation prefix
+  _or_ the cereal-config.cmake file.
 + `CNPY_DIR`: The path to the CNPY installation prefix. Must set
   `LBANN_WITH_CNPY=ON` to enable CNPY support.
 + `CONDUIT_DIR` or `CONDUIT_DIR`: The path to _either_ the

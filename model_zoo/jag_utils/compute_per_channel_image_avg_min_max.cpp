@@ -55,20 +55,9 @@ int main(int argc, char *argv[]) {
     options *opts = options::get();
     opts->init(argc, argv);
 
-    if (!(opts->has_string("filelist") && opts->has_string("output_dir"))) {
+    if (!(opts->has_string("filelist"))) {
       if (master) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_dir=<string>");
-      }
-    }
-
-    const std::string dir = opts->get_string("output_dir");
-
-    if (master) {
-      std::stringstream s;
-      s << "mkdir -p " << opts->get_string("output_dir");
-      int r = system(s.str().c_str());
-      if (r != 0) {
-        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s.str());
+        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
     }
 
@@ -107,7 +96,7 @@ int main(int argc, char *argv[]) {
 
     //=======================================================================
 
-    hid_t hdf5_file_hnd{};
+    hid_t hdf5_file_hnd;
     std::string key;
     conduit::Node n_ok;
     conduit::Node tmp;
@@ -116,8 +105,10 @@ int main(int argc, char *argv[]) {
 
     int num_samples = 0;
 
-    std::vector<float> v_max(12, FLT_MIN);
-    std::vector<float> v_min(12, FLT_MAX);
+    std::vector<float> v_max(4, FLT_MIN);
+    std::vector<float> v_min(4, FLT_MAX);
+    std::vector<double> v_sum(4, 0.0);
+    std::vector<long>  v_num_pixels(4, 0);
 
     size_t h = 0;
     for (size_t j=rank; j<files.size(); j+= np) {
@@ -165,6 +156,8 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
                   float val = emi[hh];
                   if (val < v_min[channel]) v_min[channel] = val;
                   if (val > v_max[channel]) v_max[channel] = val;
+                  v_sum[channel] += val;
+                  v_num_pixels[channel]++;
                 }
               }
             } catch (...) {
@@ -181,12 +174,14 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
               for (int channel = 0; channel<4; channel++) {
                 for (size_t hh=channel; hh<image_size; hh += 4) {
                   float val = emi[hh];
-                  if (val < v_min[channel+4]) v_min[channel+4] = val;
-                  if (val > v_max[channel+4]) v_max[channel+4] = val;
+                  if (val < v_min[channel]) v_min[channel] = val;
+                  if (val > v_max[channel]) v_max[channel] = val;
+                  v_sum[channel] += val;
+                  v_num_pixels[channel]++;
                 }
               }
             } catch (...) {
-              std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              std::cerr << rank << " :: " << "exception reading image: (90.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
 
@@ -199,12 +194,14 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
               for (int channel = 0; channel<4; channel++) {
                 for (size_t hh=channel; hh<image_size; hh += 4) {
                   float val = emi[hh];
-                  if (val < v_min[channel+8]) v_min[channel+8] = val;
-                  if (val > v_max[channel+8]) v_max[channel+8] = val;
+                  if (val < v_min[channel]) v_min[channel] = val;
+                  if (val > v_max[channel]) v_max[channel] = val;
+                  v_sum[channel] += val;
+                  v_num_pixels[channel]++;
                 }
               }
             } catch (...) {
-              std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
+              std::cerr << rank << " :: " << "exception reading image: (90.0, 78.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
 
@@ -214,14 +211,23 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
     }
 
 
-    std::vector<float> global_v_min(12);
-    std::vector<float> global_v_max(12);
-    MPI_Reduce(v_min.data(), global_v_min.data(), 12, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
-    MPI_Reduce(v_max.data(), global_v_max.data(), 12, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
+    std::vector<float> global_v_min(4);
+    std::vector<float> global_v_max(4);
+    std::vector<double> global_v_sum(4);
+    std::vector<long>  global_v_num_pixels(4);
+    MPI_Reduce(v_min.data(), global_v_min.data(), 4, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(v_max.data(), global_v_max.data(), 4, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(v_sum.data(), global_v_sum.data(), 4, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(v_num_pixels.data(), global_v_num_pixels.data(), 4, MPI_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+
+    std::vector<double> global_v_avg(4);
+    for (int j=0; j<4; j++) {
+      global_v_avg[j] = global_v_sum[j] / global_v_num_pixels[j];
+    }
 
     if (master) {
-      for (int j=0; j<12; j++) {
-        std::cout << global_v_min[j] << " " << global_v_max[j] << "\n";
+      for (int j=0; j<4; j++) {
+        std::cout << global_v_min[j] << " " << global_v_max[j] << " " << global_v_avg[j] << " " << global_v_sum[j] << " " << global_v_num_pixels[j] << "\n";
       }
     }
 

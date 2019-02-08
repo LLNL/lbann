@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -44,9 +44,9 @@
 using namespace lbann;
 
 
-void get_scalar_names(std::vector<std::string> &s); 
+void get_scalar_names(std::vector<std::string> &s);
 
-void get_input_names(std::vector<std::string> &s); 
+void get_input_names(std::vector<std::string> &s);
 
 //==========================================================================
 int main(int argc, char *argv[]) {
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     }
 
     std::vector<std::string> files;
-    const std::string fn = opts->get_string("filelist"); 
+    const std::string fn = opts->get_string("filelist");
     read_filelist(comm, fn, files);
 
     std::vector<std::string> scalar_names;
@@ -129,9 +129,9 @@ int main(int argc, char *argv[]) {
 std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
       } catch (...) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n"; 
+        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
-      }  
+      }
       out2 << ">" << files[j] << "\n";
 
       std::vector<std::string> cnames;
@@ -148,10 +148,10 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (...) {  
+        } catch (...) {
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
-        }  
+        }
 
         int success = n_ok.to_int64();
         if (success == 1) {
@@ -161,7 +161,7 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             double d = tmp.value();
             out.write((char*)&d, sizeof(double));
-          }  
+          }
 
           for (auto t : input_names) {
             key = cnames[i] + "/inputs/" + t;
@@ -196,7 +196,7 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
     int global_num_samples;
     //int global_num_samples = comm->reduce<int>(num_samples, comm->get_world_comm());
-    MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); 
+    MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (master) {
       out2.open(dir + "/index.txt");
@@ -227,11 +227,11 @@ std::cerr << rank << " :: num samples: " << cnames.size() << "\n";
 
 
 void get_input_names(std::vector<std::string> &s) {
-  s.push_back("shape_model_initial_modes:(4,3)"); 
-  s.push_back("betti_prl15_trans_u"); 
-  s.push_back("betti_prl15_trans_v"); 
-  s.push_back("shape_model_initial_modes:(2,1)"); 
-  s.push_back("shape_model_initial_modes:(1,0)"); 
+  s.push_back("shape_model_initial_modes:(4,3)");
+  s.push_back("betti_prl15_trans_u");
+  s.push_back("betti_prl15_trans_v");
+  s.push_back("shape_model_initial_modes:(2,1)");
+  s.push_back("shape_model_initial_modes:(1,0)");
 }
 
 void get_scalar_names(std::vector<std::string> &s) {

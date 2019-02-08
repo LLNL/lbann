@@ -156,6 +156,15 @@ include(SetupCXX)
 ################################################################
 
 # Required dependencies
+find_package(CEREAL NO_MODULE
+  HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
+  PATH_SUFFIXES share/cmake/cereal
+  NO_DEFAULT_PATH)
+if (NOT CEREAL_FOUND)
+  find_package(CEREAL NO_MODULE REQUIRED)
+endif ()
+set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
+# The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
 find_package(Hydrogen 1.1.0 NO_MODULE QUIET
@@ -423,6 +432,7 @@ target_include_directories(lbann PUBLIC
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
@@ -610,6 +620,7 @@ append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_HYDROGEN
   LBANN_HAS_OPENCV
+  LBANN_HAS_CEREAL
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
   LBANN_HAS_NCCL2
