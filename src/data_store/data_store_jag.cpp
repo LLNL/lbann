@@ -36,7 +36,6 @@
 #include "lbann/models/model.hpp"
 #include <unordered_set>
 
-
 namespace lbann {
 
 std::ofstream debug;
