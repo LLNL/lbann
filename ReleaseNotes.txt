@@ -25,6 +25,14 @@ I/O & data readers:
  - Added support for data set metadata file that provides both schema
    and normalization values unique to a given data set.  Demonstrated
    use in JAG Conduit data reader.
+ - Added support for an index list based approach for describing the
+   samples to use in the training and testing.  Note that this is
+   currently only supported in the JAG Conduit data reader
+ - Create a general-purpose data store that operates on generic
+   Conduit node data structures.  This should provide an extensible
+   and generic approach for holding and exchanging data between
+   epochs.  Note that this is currently only supported in the JAG
+   Conduit data reader.
 
 Build system:
 

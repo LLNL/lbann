@@ -860,6 +860,8 @@ void print_help(lbann_comm *comm)
        "      display information on how OpenMP threads are provisioned\n"
        "  --use_data_store \n"
        "      Enables the data store in-memory structure\n"
+       "  --super_node \n"
+       "      Enables the data store in-memory structure to use the supernode exchange structure\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"
