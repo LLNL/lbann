@@ -591,7 +591,7 @@ void generic_data_reader::select_subset_of_data() {
     m_shuffled_indices.resize(get_use_percent()*get_num_data());
   }
 
-  long unused = get_validation_percent()*m_shuffled_indices.size(); //get_num_data() = m_shuffled_indices.size()
+  long unused = get_validation_percent()*get_num_data(); //get_num_data() = m_shuffled_indices.size()
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
