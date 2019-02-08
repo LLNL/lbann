@@ -452,8 +452,8 @@ void generic_data_reader::select_subset_of_data_partitioned() {
 
   //pull out validation set; note that we pull the validation set from
   //the end of the index vector
-  long unused = get_validation_percent()*m_shuffled_indices.size();
-  long use_me = m_shuffled_indices.size() - unused;
+  long unused = get_validation_percent()*get_num_data();
+  long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
@@ -577,22 +577,22 @@ void generic_data_reader::select_subset_of_data() {
   }
 
   if (count != 0) {
-    if(count > static_cast<size_t>(m_shuffled_indices.size())) {
+    if(count > static_cast<size_t>(get_num_data())) {
       throw lbann_exception(
         std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
         " :: generic_data_reader::select_subset_of_data() - absolute_sample_count=" +
         std::to_string(count) + " is > get_num_data=" +
-        std::to_string(m_shuffled_indices.size()));
+        std::to_string(get_num_data()));
     }
     m_shuffled_indices.resize(get_absolute_sample_count());
   }
 
   if (use_percent) {
-    m_shuffled_indices.resize(get_use_percent()*m_shuffled_indices.size());
+    m_shuffled_indices.resize(get_use_percent()*get_num_data());
   }
 
   long unused = get_validation_percent()*m_shuffled_indices.size(); //get_num_data() = m_shuffled_indices.size()
-  long use_me = m_shuffled_indices.size() - unused;
+  long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
       m_shuffled_indices.resize(use_me);
