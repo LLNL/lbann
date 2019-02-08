@@ -121,12 +121,6 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //build map: proc -> global indices that P_x needs for this epoch, and
   //                   which I own
 
-  //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
-  //vector<unordered_set<int>>; then:
-  //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
-  //
-  //  Hm ... I think m_all_minibatch_indices is identical to ds indices
-
   double tma = get_time();
 
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
@@ -342,19 +336,6 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
 }
 
 
-#if 0
-void data_store_jag::build_all_minibatch_indices() {
-  m_all_minibatch_indices.clear();
-  m_owner.clear();
-  m_all_minibatch_indices.resize(m_np);
-  for (size_t idx=0; idx<m_shuffled_indices->size(); ++idx) {
-    int owner = idx % m_np;
-    m_owner[idx] = owner;
-    m_all_minibatch_indices[owner].push_back(idx);
-  }
-}
-#endif
-
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
   double tm1 = get_time();
 
@@ -388,18 +369,7 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   //                    which I own
   // build map: owner -> set of indices I need that owner has
 
-  //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
-  //vector<unordered_set<int>>; then:
-  //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
-  //
-  //  Hm ... I think m_all_minibatch_indices is identical to ds indices
-
 double tma = get_time();
-
-  // std::unordered_set<int> my_ds_indices;
-  // for (auto t : m_all_minibatch_indices[m_rank]) {
-  //   my_ds_indices.insert(t);
-  // }
 
   std::vector<std::unordered_set<int>> proc_to_indices(m_np);
   // get indices that I need for this epoch; these correspond to
