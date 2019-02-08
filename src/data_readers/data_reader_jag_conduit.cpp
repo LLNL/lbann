@@ -815,48 +815,6 @@ void data_reader_jag_conduit::load_list_of_samples_from_archive(const std::strin
 }
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
-#if 0
-hid_t data_reader_jag_conduit::open_conduit_file(const std::string& conduit_file_path) {
-  if (!check_if_file_exists(conduit_file_path)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " failed to open " + conduit_file_path);
-  }
-#if defined(LBANN_DEBUG)
- #ifndef _JAG_OFFLINE_TOOL_MODE_
-  const size_t my_rank = static_cast<size_t>(m_comm->get_rank_in_trainer());
-  std::cerr << ("rank "  + std::to_string(my_rank) + " loading: " + conduit_file_path) << std::endl;
- #else
-  std::cerr << "loading: " << conduit_file_path << std::endl;
- #endif
-#endif
-
-  hid_t hdf5_file_hnd;
-  try {
-    hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-  } catch (std::exception e) {
-    std::string msg = get_type() + std::string(" :: skipping a file unable to read: ")
-                    + conduit_file_path;
-    std::cerr << __FILE__<< ' '  << __LINE__ << " :: " << msg << std::endl;
-    return static_cast<hid_t>(0);
-  }
-  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), std::string(" Invalid file handle for ") + conduit_file_path);
-  }
-
-  return hdf5_file_hnd;
-}
-
-void data_reader_jag_conduit::open_all_conduit_files() {
-  const auto& sl = m_sample_list.get_list();
-  const std::string data_dir = add_delimiter((m_sample_list.get_header()).get_file_dir());
-  for (const auto s: sl) {
-    sample_id_t id = s.first;
-    const std::string& filename = m_sample_list.get_samples_filename(id);
-    hid_t h = open_conduit_file(data_dir + filename);
-    m_sample_list.set_samples_hdf5_handle(id, h);
-  }
-}
-#endif
-
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
   return m_num_img_srcs;
 }
