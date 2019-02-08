@@ -16,7 +16,7 @@ LBANN supports state-of-the-art training algorithms such as
 unsupervised, self-supervised, and adversarial (GAN) training methods
 in addition to traditional supervised learning.  It also supports
 recurrent neural networks via back propagation through time (BPTT)
-training, transfer learning, and multi-model and ensenble training
+training, transfer learning, and multi-model and ensemble training
 methods.
 
 
