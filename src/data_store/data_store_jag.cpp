@@ -66,6 +66,7 @@ void data_store_jag::setup() {
   }
 
   generic_data_store::setup();
+  build_ds_indices();
 
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
@@ -105,8 +106,6 @@ void data_store_jag::setup_data_store_buffers() {
   m_recv_buffer.resize(m_np);
 
   m_reconstituted.resize(m_data.size());
-
-  exchange_ds_indices();
 }
 
 // this gets called at the beginning of each epoch (except for epoch 0)
@@ -373,7 +372,6 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
     m_recv_buffer.resize(sz);
     m_status.resize(sz);
 
-    exchange_ds_indices();
     // sanity check
     /*
     int n = 0;
@@ -585,37 +583,19 @@ debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
 debug.close(); debug.open(b, std::ios::app);
 }
 
-void data_store_jag::exchange_ds_indices() {
-  std::vector<int> counts(m_np);
-  int my_num_indices = m_data.size();
-  m_comm->trainer_all_gather<int>(my_num_indices, counts);
-
-  //setup data structures to exchange minibatch indices with all processors
-  //displacement vector
-  std::vector<int> displ(m_np);
-  displ[0] = 0;
-  for (size_t j=1; j<counts.size(); j++) {
-    displ[j] = displ[j-1] + counts[j-1];
-  }
-
-  //recv vector
-  int n = std::accumulate(counts.begin(), counts.end(), 0);
-  std::vector<int> all_indices(n);
-
-  //receive the indices
-  std::vector<int> v;
-  v.reserve(m_data.size());
-  for (auto t : m_data) {
-    v.push_back(t.first);
-  }
-  m_comm->all_gather<int>(v, all_indices, counts, displ, m_comm->get_trainer_comm());
-
-  //fill in the final data structure
+// fills in m_ds_indices and m_owner
+void data_store_jag::build_ds_indices() {
   m_owner.clear();
-  for (int p=0; p<m_np; p++) {
-    for (int i=displ[p]; i<displ[p]+counts[p]; i++) {
-      m_owner[all_indices[i]] = p;
-    }
+  m_ds_indices.clear();
+  m_ds_indices.resize(m_np);
+
+  std::vector<std::unordered_set<int>> proc_to_indices(m_np);
+  size_t j = 0;
+  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+    auto index = (*m_shuffled_indices)[i];
+    m_ds_indices[j].insert(index);
+    m_owner[index] = j;
+    j = (j + 1) % m_np;
   }
 }
 

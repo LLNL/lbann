@@ -110,8 +110,12 @@ protected :
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-  /// fills in m_owner, which maps an index to the owning processor;
-  void exchange_ds_indices();
+  /// m_ds_indices[j] contains the sample indices (data store (ds) indices)
+  // for the samples that P_j owns
+  std::vector<std::unordered_set<int>> m_ds_indices;
+
+  /// fills in m_ds_indices and m_owner
+  void build_ds_indices();
 };
 
 }  // namespace lbann
