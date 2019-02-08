@@ -15,10 +15,9 @@ void expand_motifs(lbann_comm *comm, lbann_data::LbannPB& pb);
 /** Customize the name of the index list with the following options:
  *   - trainer ID
  *   - model name
- *   - rank in model
  * The format for the naming convention if the provided name is <index list> is:
  *   <index list> == <basename>.<extension>
- *   <model name>_t<ID>_r<#>_<basename>.<extension>
+ *   <model name>_t<ID>_<basename>.<extension>
  */
 void customize_data_readers_index_list(lbann::lbann_comm *comm, lbann_data::LbannPB& p);
 
