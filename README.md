@@ -13,18 +13,35 @@ tightly-coupled accelerators, low-latency high-bandwidth networking,
 and high-bandwidth parallel file systems.
 
 LBANN supports state-of-the-art training algorithms such as
-unsupervised, self-supervised, and generative (GAN) training methods
+unsupervised, self-supervised, and adversarial (GAN) training methods
 in addition to traditional supervised learning.  It also supports
 recurrent neural networks via back propagation through time (BPTT)
-training, transfer learning, and multi-model and ensenble training methods.
+training, transfer learning, and multi-model and ensenble training
+methods.
 
 
 ## Building LBANN
-A few options for building LBANN are documented [here](docs/BuildingLBANN.md#top).
+A few options for building LBANN are documented
+[here](docs/BuildingLBANN.md#top).
 
 
 ## Running LBANN
-Methods for running LBANN are documented
+The basic template for running LBANN is
+
+```bash
+<mpi-launcher> <mpi-options> \
+    lbann <lbann-options> \
+    --model=model.prototext \
+    --optimizer=opt.prototext \
+    --reader=data_reader.prototext
+```
+
+When using GPGPU accelerators, users should be aware that LBANN is
+optimized for the case in which one assigns one GPU per MPI
+*rank*. This should be borne in mind when choosing the parameters for
+the MPI launcher.
+
+More details about running LBANN are documented
 [here](docs/RunningLBANN.md#top).
 
 
