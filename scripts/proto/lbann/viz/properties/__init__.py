@@ -1,6 +1,6 @@
 import pprint
 
-class properties :
+class Properties :
   def __init__(self, fn) :
     a = open(fn).readlines()
     shapes = {}

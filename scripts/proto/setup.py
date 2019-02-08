@@ -35,4 +35,5 @@ setup(
                       "nose>=1.3.7"],
     test_suite="nose.collector",
     tests_require=["nose"],
+    include_package_data=True
 )
