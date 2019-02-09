@@ -244,70 +244,26 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
     node["id"] = data_id;
     conduit::Node n2;
     build_node_for_sending(node, n2);
-
-    // if(n2.total_bytes_compact() != 201624) {
-
-    // //    debug.open(b, std::ios::app);
-    // std::cout << "set_conduit_node sample size node " << data_id << " node : " << node.total_bytes_compact() << "\n";
-    // //    node.print();
-    // std::cout << "set_conduit_node sample size node " << data_id << " node n2 : " << n2.total_bytes_compact() << "\n";
-    //   n2.print();
-    //   MPI_Barrier(MPI_COMM_WORLD);
-    //   MPI_Abort(MPI_COMM_WORLD, -1);
-    // }
-    // debug.close();
-    // debug.open(b, std::ios::app);
-
     m_data[data_id] = n2;
   }
 
   else {
     m_data[data_id] = node;
-    /* debug block, to test if idx matches the id in the conduit node;
-     * if these don't match up exceptions will be thrown in get_conduit_node
-     *
-    if (m_master) {
-      std::cerr<<"data id:" <<data_id<< "\n";
-      node.print();
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Abort(MPI_COMM_WORLD, -1);
-    */
   }
 }
 
-const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
-  if (any_node) {
-    LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
+const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+  if (t != m_data.end()) {
+    return t->second;
   }
 
-  {
-    std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
-    if (t != m_data.end()) {
-      return t->second;
-    }
-  }
-
-  /// check the main m_data as well
-  std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
-  if (t == m_minibatch_data.end()) {
-    debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
-    debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
-    std::set<int> s3;
-    for (auto t3 :  m_minibatch_data) {
-      s3.insert(t3.first);
-    }
-    for (auto t3 : s3) debug << t3 << " ";
-    debug << "\n";
-    int owner = m_owner.at(data_id);
-    debug << "I believe that the owner is " << std::to_string(owner) << "\n";
-    debug.close();
-    debug.open(b, std::ios::app);
-
+  std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  if (t2 == m_minibatch_data.end()) {
     LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
   }
 
-  return t->second;
+  return t2->second;
 }
 
 // code in the following method is a modification of code from
@@ -390,38 +346,12 @@ double tma = get_time();
     j = (j + 1) % m_np;
   }
   }
-  {
-  debug.open(b, std::ios::app);
-  debug << "preparing to send the following indices: "  << "\n";
-  for (int p=0; p<m_np; p++) {
-    debug << p << ": ";
-    for (auto idx : proc_to_indices[p]) {
-      debug << idx << " ";
-    }
-    debug << "\n";
-  }
-  debug.close();
-  debug.open(b, std::ios::app);
-  }
-
-  //debug block
-  int tot = 0;
-  for (auto t : needed) {
-    debug << "I need " << t.second.size() << " samples from P_" << t.first << " :: ";
-    for (auto tt : t.second) debug << tt << " ";
-    debug << "\n";
-    tot += t.second.size();
-  }
-  debug << "total incoming samples: " << tot << "\n";
-  debug << "exchange_data: Time to build maps: " << get_time() -  tma << "\n";
-  debug.close();
-  debug.open(b, std::ios::app);
 
   int sample_size = 0;
   for (auto t : m_data) {
     if(sample_size == 0) {
       sample_size = t.second.total_bytes_compact();
-    }else {
+    } else {
       if(sample_size != t.second.total_bytes_compact()) {
         debug << "bad sample size: " << t.second.total_bytes_compact() << " num samples: " << m_data.size() << "\n";
       }
@@ -446,19 +376,10 @@ tma = get_time();
         LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
       }
 
-  debug << "sending " << index << " to " << p << " &m_send_requests size: " << m_send_requests.size() <<  " bytes: " << m_data[index].total_bytes_compact() << " ss: " << ss << "\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-
       //const void *s = m_send_buffer[ss].data_ptr();
       const void *s = m_data[index].data_ptr();
       MPI_Isend(s, sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests[ss++]);
       //MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
-
-  debug << "    DONE!\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-
     }
   }
   LBANN_ERROR("Stopping");
@@ -485,15 +406,7 @@ debug << "starting " << indices.size() << " recvs from " << p << "\n";
       m_index_to_data_id[index] = ss;
       ++ss;
     }
-
-debug << "FINISHED! starting " << indices.size() << " recvs from " << p << "\n";
-debug.close();
-debug.open(b, std::ios::app);
-
   }
-  debug << "\nALL RECVS STARTED\n\n";
-debug.close();
-debug.open(b, std::ios::app);
 
   // sanity checks
   if (ss != m_recv_buffer.size()) {
@@ -535,10 +448,7 @@ double tmw = get_time();
     // this is inefficent @TODO
     nd.reset();
     nd.update(n_msg["data"]);
-//    int data_id = m_index_to_data_id[j];
-//    m_data[data_id] = nd;
     m_minibatch_data[nd["id"].value()] = nd;
-
   }
 for (auto t : m_minibatch_data) {
   debug << t.first << " ";
