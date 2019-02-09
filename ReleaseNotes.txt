@@ -1,4 +1,22 @@
-============================== (Pending) Release Notes: v0.98 ==============================
+============================== (Pending) Release Notes: v0.99 ==============================
+Support for new training algorithms:
+
+Support for new network structures:
+
+Support for new layers:
+
+Performance optimizations:
+
+Model portability & usability:
+
+Internal features:
+
+I/O & data readers:
+
+Build system:
+
+Retired features:
+============================== Release Notes: v0.98 ==============================
 Support for new training algorithms:
  - Hyperparameter exploration with Adam optimizers
  - LTFB can perform inter-trainer communication via checkpoint files
