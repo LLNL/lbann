@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** Channel-wise mean layer. */
+/** @todo Replace with more general reduction layer. */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class channelwise_mean_layer : public Layer {
 public:
@@ -41,7 +41,7 @@ public:
     static_assert(Layout == data_layout::DATA_PARALLEL,
                   "channelwise_mean_layer only supports "
                   "data-parallel data layout");
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       LBANN_WARNING("channelwise_mean_layer is experimental "
                     "and may be deprecated at any time");
     }

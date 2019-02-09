@@ -24,53 +24,61 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_ADAM_HPP
-#define LBANN_OPTIMIZER_ADAM_HPP
+#ifndef LBANN_OPTIMIZERS_ADAM_HPP
+#define LBANN_OPTIMIZERS_ADAM_HPP
 
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
-/** Adam optimizer.
+/** @brief Adam optimizer.
+ *
  *  Reference:
- *  Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
+ *
+ *  Diederik P. Kingma and Jimmy Ba. "Adam: A method for stochastic
+ *  optimization." arXiv preprint arXiv:1412.6980 (2014).
  */
 class adam : public optimizer {
- public:
+public:
 
   /** Constructor. */
   adam(lbann_comm *comm,
        DataType learning_rate,
-       DataType beta1 = DataType(0.9),
-       DataType beta2 = DataType(0.99),
-       DataType eps = DataType(1e-8));
+       DataType beta1 = 0.9,
+       DataType beta2 = 0.99,
+       DataType eps = 1e-8);
 
-
-  /** Copy constructor. */
   adam(const adam& other);
-  /** Copy assignment operator. */
   adam& operator=(const adam& other);
-  /** Destructor. */
-  ~adam() override;
-  /** Create a copy. */
+  ~adam() = default;
   adam* copy() const override { return new adam(*this); }
 
-  /** Returns the optimizer name. */
+  /** Human-readable type name. */
   std::string get_type() const override { return "Adam"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
-  /** Setup optimizer. */
+  /** First moment estimates. */
+  const AbsDistMat& get_moment1() const;
+  /** First moment estimates. */
+  AbsDistMat& get_moment1();
+  /** Second moment estimates. */
+  const AbsDistMat& get_moment2() const;
+  /** Second moment estimates. */
+  AbsDistMat& get_moment2();
+
   void setup(weights& w) override;
 
   /** Perform the computation in an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute(AbsDistMat& values,
+                    const AbsDistMat& gradient) override;
 #ifdef LBANN_HAS_CUDNN
   /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute_gpu(AbsDistMat& values,
+                        const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
- private:
+private:
 
   /** Update factor for first moment estimate. */
   DataType m_beta1;
@@ -79,18 +87,21 @@ class adam : public optimizer {
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** beta1 ^ iteration. */
-  DataType m_current_beta1;
+  DataType m_current_beta1 = 1;
   /** beta2 ^ iteration. */
-  DataType m_current_beta2;
+  DataType m_current_beta2 = 1;
   /** First moment estimates. */
-  AbsDistMat *m_moment1;
+  std::unique_ptr<AbsDistMat> m_moment1;
   /** Second moment estimates. */
-  AbsDistMat *m_moment2;
+  std::unique_ptr<AbsDistMat> m_moment2;
 
-//************************************************************************
-// Checkpointing
-//************************************************************************
- private:
+  /** Hyperparameter exploration. */
+  friend class lbann_callback_perturb_adam;
+
+  // ===========================================
+  // Checkpointing
+  // ===========================================
+
   /* struct used to serialize mode fields in file and MPI transfer */
   struct packing_header {
     DataType beta1;
@@ -138,8 +149,9 @@ class adam : public optimizer {
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
+
 };
 
 } // namespace lbann
 
-#endif  // LBANN_OPTIMIZER_ADAM_HPP
+#endif // LBANN_OPTIMIZERS_ADAM_HPP

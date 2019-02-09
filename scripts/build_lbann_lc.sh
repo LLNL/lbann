@@ -15,6 +15,8 @@ if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
     # NVCC in CUDA 9.1 does not support GCC versions later than 6
     COMPILER=gnu
     module load gcc/4.9.3
+elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
+    module load gcc/7.3.1
 fi
 if [ "${ARCH}" == "x86_64" ]; then
     MPI=mvapich2
@@ -145,7 +147,7 @@ while :; do
         --build)
             # Change default build directory
             if [ -n "${2}" ]; then
-                ALTERNATE_BUILD_DIR=${2}
+                BUILD_DIR=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -312,7 +314,12 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
+    if [ "${WITH_CONDUIT}" = "ON" ] ; then
+        module load cmake/3.12.1
+        HDF5_CMAKE_EXE=$(which cmake)
+    fi
     module load cmake/3.9.2
+    
     CMAKE_PATH=$(dirname $(which cmake))
 else
     use git
@@ -436,9 +443,9 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
 			# no power9 option shown in the manual
-            C_FLAGS="${C_FLAGS} -mcpu=power8 -mtune=power8"
-            CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
-            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
+            C_FLAGS="${C_FLAGS} -mcpu=power9 -mtune=power9"
+            CXX_FLAGS="${CXX_FLAGS} -mcpu=power9 -mtune=power9"
+            Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power9 -mtune=power9"
         fi
     fi
 else
@@ -464,7 +471,7 @@ CXX=${CXX_COMPILER}
 ################################################################
 
 # Get LBANN root directory
-ROOT_DIR=$(git rev-parse --show-toplevel)
+ROOT_DIR=$(realpath $(dirname $0)/..)
 
 # Initialize build directory
 if [ -z "${BUILD_DIR}" ]; then
@@ -500,14 +507,6 @@ fi
 
 if [ "${MPI}" == "spectrum" ]; then
     MPI=spectrum-mpi
-fi
-
-# Use CUDA-aware MVAPICH2 on Surface and Pascal
-if [ "${WITH_CUDA_2}" == "ON" ]; then
-  if [ "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "surface" ]; then
-    MPI_HOME=/usr/workspace/wsb/brain/utils/toss3/mvapich2-2.3rc2-gcc-4.9.3-cuda-9.1-install/
-    export MV2_USE_CUDA=1
-  fi
 fi
 
 if [ -z "${MPI_HOME}" ]; then
@@ -595,13 +594,13 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     # Hack for surface
 	case $CLUSTER in
 		surface)
-			. /usr/share/[mM]odules/init/bash
-			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-			;;
+		    . /usr/share/[mM]odules/init/bash
+		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    ;;
 		pascal)
-      module use /opt/modules/modulefiles
-			CUDA_TOOLKIT_MODULE=cudatoolkit/9.1
-			;;
+                    module load opt
+		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    ;;
 	esac
 fi
 
@@ -657,23 +656,6 @@ else
 	OPENBLAS_ARCH=
 fi
 
-if [ "${WITH_CONDUIT}" = "ON" ] ; then
-echo $COMPILER_VERSION
-  if [ -z ${CONDUIT_DIR} ] || [ ! -d ${CONDUIT_DIR} ] ; then
-      echo "CONDUIT_DIR not available."
-      if [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
-          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-blueos-dev
-      elif [ "${CLUSTER}" = "catalyst" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.1.0" ]; then
-          export CONDUIT_DIR=/p/lscratchh/brainusr/conduit/install-catalyst-gcc7.1
-      elif [ "${CLUSTER}" = "catalyst" -o "${CLUSTER}" = "pascal" ] && [ "${COMPILER}" == "gnu" ] && [ "${COMPILER_VERSION}" = "7.3.0" ]; then
-          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-7.3.0
-      else
-          # This installation has been built by using gcc 4.9.3 on a TOSS3 platform (quartz)
-          export CONDUIT_DIR=/usr/workspace/wsb/icfsi/conduit/install-toss3-dev
-      fi
-      echo "Set to the default CONDUIT_DIR="$CONDUIT_DIR
-  fi
-fi
 ################################################################
 # Setup Ninja, if using
 ################################################################
@@ -796,6 +778,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+-D LBANN_SB_BUILD_CEREAL=ON \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
@@ -807,6 +790,9 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_SB_BUILD_ALUMINUM=${WITH_ALUMINUM} \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
+-D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
+-D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \
+-D HDF5_CMAKE_COMMAND=${HDF5_CMAKE_EXE} \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
@@ -821,7 +807,6 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_DATATYPE=${DATATYPE} \
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
--D LBANN_WITH_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \

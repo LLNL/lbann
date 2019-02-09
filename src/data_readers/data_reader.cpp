@@ -31,6 +31,7 @@
 #include "lbann/utils/omp_pragma.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
+#include <future>
 
 namespace lbann {
 
@@ -38,14 +39,18 @@ namespace lbann {
 //#define DEBUG
 
 void generic_data_reader::shuffle_indices() {
+  shuffle_indices(get_data_seq_generator());
+}
+
+void generic_data_reader::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
     std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
-                 get_data_seq_generator());
+                 gen);
   }
 }
 
-void generic_data_reader::setup() {
+  void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
   m_stride_to_next_mini_batch = 0;
@@ -56,26 +61,38 @@ void generic_data_reader::setup() {
   m_global_last_mini_batch_size = 0;
   m_world_master_mini_batch_adjustment = 0;
 
-  /// The amount of space needed will vary based on input layer type,
-  /// but the batch size is the maximum space necessary
-  El::Zeros(m_indices_fetched_per_mb, m_mini_batch_size, 1);
-
   set_initial_position();
 
   shuffle_indices();
 
-  m_thread_buffer.resize(omp_get_max_threads(), std::vector<char>());
-  for(int tid = 0; tid < omp_get_max_threads(); ++tid) {
+  m_thread_buffer.resize(num_io_threads, std::vector<char>());
+  for(int tid = 0; tid < num_io_threads; ++tid) {
     m_thread_buffer[tid].resize(get_linearized_data_size());
   }
+  m_io_thread_pool = io_thread_pool;
 }
 
 
-int lbann::generic_data_reader::fetch_data(CPUMat& X) {
+bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
+  std::string error_message;
+  for (int s = thread_id; s < mb_size; s+=m_io_thread_pool->get_num_threads()) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_datum(X, index, s);
+    if (!valid) {
+      error_message = "invalid datum (index " + std::to_string(index) + ")";
+    }
+    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    indices_fetched.Set(s, 0, index);
+  }
+  return true;
+}
+
+int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) {
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_model->get_model_id()
+      std::cout << "role: " << get_role() << " model: " << m_model->get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
@@ -85,39 +102,43 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
   #endif
 
-  int nthreads = omp_get_max_threads();
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-      + " :: generic data reader load error: !position_valid"
-      + " -- current pos = " + std::to_string(m_current_pos)
-      + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
-  }
-
-  if (!m_save_minibatch_indices) {
-    /// Allow each thread to perform any preprocessing necessary on the
-    /// data source prior to fetching data
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
-    for (int t = 0; t < nthreads; t++) {
-      preprocess_data_source(LBANN_OMP_THREAD_NUM);
-    }
-  }
-
   int loaded_batch_size = get_loaded_mini_batch_size();
 
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
+  if (!m_save_minibatch_indices) {
+    El::Zeros_seq(X, X.Height(), X.Width());
+    El::Zeros_seq(indices_fetched, mb_size, 1);
+  }
+
+  if(!position_valid()) {
+    if(position_is_overrun()) {
+      return 0;
+    }else {
+      LBANN_ERROR(std::string{} + "generic data reader load error: !position_valid"
+                  + " -- current pos = " + std::to_string(m_current_pos)
+                  + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+    }
+  }
+
+  if (data_store_active()) {
+    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+  }
+
+  if (!m_save_minibatch_indices) {
+    /// Allow each thread to perform any preprocessing necessary on the
+    /// data source prior to fetching data
+    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+      preprocess_data_source(t);
+    }
+  }
+
   static bool fix_jag = true;
   if (m_jag_partitioned && fix_jag) {
     fix_jag = false;
     set_jag_variables(mb_size);
-  }
-
-  if (!m_save_minibatch_indices) {
-    El::Zeros(X, X.Height(), X.Width());
-    El::Zeros(m_indices_fetched_per_mb, mb_size, 1);
   }
 
   if (m_save_minibatch_indices) {
@@ -129,25 +150,26 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X) {
   }
 
   else {
-    std::string error_message;
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-      bool valid = fetch_datum(X, index, s, LBANN_OMP_THREAD_NUM);
-      if (!valid) {
-        LBANN_DATA_FETCH_OMP_CRITICAL
-        error_message = "invalid datum (index " + std::to_string(index) + ")";
+    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+      // Queue up work into other threads and then finish off the
+      // mini-batch in the active thread
+      if(t == m_io_thread_pool->get_local_thread_id()) {
+        continue;
+      }else {
+        m_io_thread_pool->submit_job_to_work_group(
+          std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                    mb_size, std::ref(indices_fetched)));
       }
-      m_indices_fetched_per_mb.Set(s, 0, index);
     }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
+    fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
+
+    // Wait for all of the threads to finish
+    m_io_thread_pool->finish_work_group();
 
     /// Allow each thread to perform any postprocessing necessary on the
     /// data source prior to fetching data
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR_ARGS(schedule(static, 1))
-    for (int t = 0; t < nthreads; t++) {
-      postprocess_data_source(LBANN_OMP_THREAD_NUM);
+    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+      postprocess_data_source(t);
     }
   }
 
@@ -158,7 +180,7 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
   // all min_batches have the same number of indices;
   // this probably causes a few indices to be discarded,
   // but with 1B indices, who cares?
-  int mb_max = m_comm->model_allreduce<int>(mb_size, El::mpi::MAX);
+  int mb_max = m_comm->trainer_allreduce<int>(mb_size, El::mpi::MAX);
   m_num_iterations_per_epoch = m_shuffled_indices.size() / mb_max;
 
   m_last_mini_batch_size = m_mini_batch_size;
@@ -181,12 +203,6 @@ void lbann::generic_data_reader::set_jag_variables(int mb_size) {
 }
 
 int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic data reader load error: !position_valid");
-  }
-
   int loaded_batch_size = get_loaded_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
@@ -194,22 +210,29 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
-  El::Zeros(Y, Y.Height(), Y.Width());
+  El::Zeros_seq(Y, Y.Height(), Y.Width());
+
+  if(!position_valid()) {
+    if(position_is_overrun()) {
+      return 0;
+    }else {
+      LBANN_ERROR(std::string{} + "generic data reader load error: !position_valid"
+                  + " -- current pos = " + std::to_string(m_current_pos)
+                  + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+    }
+  }
 
 //  if (m_data_store != nullptr) {
     //@todo: get it to work, then add omp support
     //m_data_store->fetch_labels(...);
  // }
-
 //  else {
     std::string error_message;
-    LBANN_DATA_FETCH_OMP_PARALLEL_FOR
     for (int s = 0; s < mb_size; s++) {
       int n = m_current_pos + (s * m_sample_stride);
       int index = m_shuffled_indices[n];
-      bool valid = fetch_label(Y, index, s, LBANN_OMP_THREAD_NUM);
+      bool valid = fetch_label(Y, index, s);
       if (!valid) {
-        LBANN_DATA_FETCH_OMP_CRITICAL
         error_message = "invalid label (index " + std::to_string(index) + ")";
       }
     }
@@ -219,12 +242,6 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
 }
 
 int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
-  if(!position_valid()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic data reader load error: !position_valid");
-  }
-
   int loaded_batch_size = get_loaded_mini_batch_size();
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size),
                                m_shuffled_indices.size());
@@ -232,15 +249,24 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
     El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
     Y.Width());
 
-  El::Zeros(Y, Y.Height(), Y.Width());
+  El::Zeros_seq(Y, Y.Height(), Y.Width());
+
+  if(!position_valid()) {
+    if(position_is_overrun()) {
+      return 0;
+    }else {
+      LBANN_ERROR(std::string{} + "generic data reader load error: !position_valid"
+                  + " -- current pos = " + std::to_string(m_current_pos)
+                  + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
+    }
+  }
+
   std::string error_message;
-  LBANN_DATA_FETCH_OMP_PARALLEL_FOR
   for (int s = 0; s < mb_size; s++) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
-    bool valid = fetch_response(Y, index, s, LBANN_OMP_THREAD_NUM);
+    bool valid = fetch_response(Y, index, s);
     if (!valid) {
-      LBANN_DATA_FETCH_OMP_CRITICAL
       error_message = "invalid response (index " + std::to_string(index) + ")";
     }
   }
@@ -248,25 +274,12 @@ int lbann::generic_data_reader::fetch_responses(CPUMat& Y) {
   return mb_size;
 }
 
-#if 0
-bool generic_data_reader::is_data_reader_done(bool is_active_reader) {
-  bool reader_not_done = true;
-  if(is_active_reader) {
-    reader_not_done = !((m_loaded_mini_batch_idx + m_iteration_stride) >= m_num_iterations_per_epoch);
-  }else {
-    reader_not_done = !(m_loaded_mini_batch_idx >= m_num_iterations_per_epoch);
-  }
-  return reader_not_done;
-}
-#endif
-
 bool generic_data_reader::update(bool is_active_reader) {
   bool reader_not_done = true; // BVE The sense of this should be fixed
   m_current_mini_batch_idx++;
 
   if(is_active_reader) {
     m_current_pos = get_next_position();
-
     m_loaded_mini_batch_idx += m_iteration_stride;
   }
   if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
@@ -295,15 +308,13 @@ bool generic_data_reader::update(bool is_active_reader) {
 
     if (!m_save_minibatch_indices) {
       shuffle_indices();
+      if (priming_data_store()) {
+        m_data_store->set_shuffled_indices(&m_shuffled_indices);
+      }
     }
 
     set_initial_position();
 
-    if (!m_save_minibatch_indices) {
-      if (m_data_store) {
-        m_data_store->set_shuffled_indices(&m_shuffled_indices);
-      }
-    }
   }
 
   post_update();
@@ -441,7 +452,7 @@ void generic_data_reader::select_subset_of_data_partitioned() {
 
   //pull out validation set; note that we pull the validation set from
   //the end of the index vector
-  long unused = get_validation_percent()*m_shuffled_indices.size();
+  long unused = get_validation_percent()*get_num_data();
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
@@ -500,43 +511,12 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       std::cout << "Actual overlap percentage: " << s << "%\n";
     }
   }
-
-  #if 0
-  NOTE: the following block will eventually go away, but please
-        leave it alone for now; I need it to explore alternative
-        overlap algorithms in the future
-
-  char b[80];
-  sprintf(b, "indices.%d", m_comm->get_rank_in_world());
-  std::ofstream out(b);
-  for (auto t : m_shuffled_indices) out << t << " ";
-  out << "\n";
-  out.close();
-
-  script for examining overlap:
-
-r = {}
-for j in range(5) :
-  a = open('indices.' + str(j)).readlines()
-  t = a[0].split()
-  for x in t :
-    if not r.has_key(x) : r[x] = 0
-    r[x] += 1
-
-for j in range(40) :
-  n = 0;
-  for k in r.keys() :
-    if r[k] == j :
-      n += 1
-  if n :
-    print j, n
-  #endif
 }
 
 void generic_data_reader::select_subset_of_data() {
   // ensure that all readers have the same number of indices
   if (m_jag_partitioned) {
-    size_t n = m_comm->model_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
+    size_t n = m_comm->trainer_allreduce<size_t>(m_shuffled_indices.size(), El::mpi::MIN);
     m_shuffled_indices.resize(n);
   }
 
@@ -602,7 +582,7 @@ void generic_data_reader::use_unused_index_set() {
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
 bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name) {
   // rank 0 writes the training state file
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     pack_scalars(p,name);
   }
   return true;
@@ -612,16 +592,16 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const char *name) {
   // rank 0 reads the training state file
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     unpack_scalars(p,&header,name);
   }
-  m_comm->model_broadcast(0, header);
+  m_comm->trainer_broadcast(0, header);
   unpack_header(header);
 
-  m_comm->model_broadcast(0, m_shuffled_indices);
+  m_comm->trainer_broadcast(0, m_shuffled_indices);
 
   // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
-  m_current_pos += m_comm->get_rank_in_model();
+  m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 
@@ -658,6 +638,19 @@ std::string generic_data_reader::get_file_dir() const {
 
 std::string generic_data_reader::get_local_file_dir() const {
   return m_local_file_dir;
+}
+
+void generic_data_reader::set_data_index_list(std::string s) {
+  m_data_index_list = s;
+}
+
+std::string generic_data_reader::get_data_index_list() const {
+  if (m_data_index_list == "") {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you apparently did not call set_data_index_list; error!");
+  }
+  return m_data_index_list;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {
@@ -733,6 +726,18 @@ void generic_data_reader::setup_data_store(model *m) {
   m_data_store = nullptr;
 }
 
+bool generic_data_reader::data_store_active() const {
+  return (m_data_store != nullptr
+          && (m_model->get_execution_mode() == execution_mode::training)
+          && m_model->get_cur_epoch() > 0);
+}
+
+bool generic_data_reader::priming_data_store() const {
+  return (m_data_store != nullptr
+          && (m_model->get_execution_mode() == execution_mode::training)
+          && m_model->get_cur_epoch() == 0);
+}
+
 void generic_data_reader::set_save_minibatch_entries(bool b) {
   m_save_minibatch_indices = b;
   if (b) {
@@ -754,7 +759,7 @@ void generic_data_reader::init_minibatch() {
 }
 
 void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {
-  if (m_comm->get_num_models() == 1 || m_comm->get_procs_in_world() == 1) {
+  if (m_comm->get_num_trainers() == 1 || m_comm->get_procs_in_world() == 1) {
     m_is_partitioned  = false;
     return;
   }
@@ -762,9 +767,9 @@ void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, 
   //n.b. the following params have no affect if m_is_partitioned is false
   m_partition_overlap = overlap;
   m_partition_mode = mode;
-  m_procs_per_partition = m_comm->get_procs_per_model();
-  m_num_partitions = m_comm->get_num_models();
-  m_my_partition = m_comm->get_model_rank();
+  m_procs_per_partition = m_comm->get_procs_per_trainer();
+  m_num_partitions = m_comm->get_num_trainers();
+  m_my_partition = m_comm->get_trainer_rank();
 }
 
 }  // namespace lbann

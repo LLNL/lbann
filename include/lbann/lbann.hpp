@@ -24,17 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-/**
- * Top level LBANN header
- *  - includes everything needed for the models in the model zoo
- */
-#ifndef LBANN_HPP_INCLUDED
-#define LBANN_HPP_INCLUDED
+#ifndef LBANN_LBANN_HPP_INCLUDED
+#define LBANN_LBANN_HPP_INCLUDED
 
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"
 
-/// Activation Layers
+/// Activation layers
 #include "lbann/layers/activations/activations.hpp"
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
@@ -42,15 +38,15 @@
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 
-/// Image Layers
+/// Image layers
 #include "lbann/layers/image/bilinear_resize.hpp"
 
-/// Learning Layers
+/// Learning layers
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
 
-/// Loss Layers
+/// Loss layers
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/layers/loss/entrywise.hpp"
@@ -63,8 +59,9 @@
 /// Math layers
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/math/clamp.hpp"
 
-/// Transform Layers
+/// Transform layers
 #include "lbann/layers/transform/reshape.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
@@ -89,26 +86,23 @@
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
+#include "lbann/layers/transform/tessellate.hpp"
 
-/// Regularization layers.
+/// Regularization layers
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
-/// I/O Layers
+/// Input layer
 #include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
 
-/// Reconstruction Layer
-#include "lbann/layers/io/target/reconstruction.hpp"
-
-/// Miscellaneous Layers
+/// Miscellaneous layers
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 
-/// Data Readers
+/// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
@@ -130,10 +124,9 @@
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_moving_mnist.hpp"
 
-/// Data Store
+/// Data stores
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_store/data_store_imagenet.hpp"
-//#include "lbann/data_store/data_store_merge_samples.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
@@ -149,13 +142,14 @@
 #include "lbann/callbacks/callback_debug_io.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_dump_activations.hpp"
+#include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/callbacks/callback_dump_error_signals.hpp"
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/callbacks/callback_early_stopping.hpp"
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
+#include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
@@ -169,6 +163,7 @@
 #include "lbann/callbacks/callback_confusion_matrix.hpp"
 #include "lbann/callbacks/callback_check_gradients.hpp"
 #include "lbann/callbacks/callback_check_metric.hpp"
+#include "lbann/callbacks/callback_perturb_adam.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"
@@ -184,24 +179,14 @@
 
 /// Objective functions
 #include "lbann/objective_functions/objective_function.hpp"
-#include "lbann/objective_functions/loss_functions/cross_entropy.hpp"
-#include "lbann/objective_functions/loss_functions/mean_squared_error.hpp"
-#include "lbann/objective_functions/loss_functions/binary_cross_entropy.hpp"
-#include "lbann/objective_functions/loss_functions/cross_entropy_with_uncertainty.hpp"
-#include "lbann/objective_functions/loss_functions/geom_negloglike.hpp"
-#include "lbann/objective_functions/loss_functions/mean_absolute_deviation.hpp"
-#include "lbann/objective_functions/loss_functions/mean_absolute_error.hpp"
-#include "lbann/objective_functions/loss_functions/poisson_negloglike.hpp"
-#include "lbann/objective_functions/loss_functions/polya_negloglike.hpp"
-#include "lbann/objective_functions/weight_regularization/l1.hpp"
-#include "lbann/objective_functions/weight_regularization/l2.hpp"
-#include "lbann/objective_functions/weight_regularization/group_lasso.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
 
 /// Metrics
 #include "lbann/metrics/layer_metric.hpp"
 
-/// Utilities, exceptions, etc.
+/// Utilities, exceptions, library interface, etc.
+#include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/options.hpp"
@@ -211,5 +196,9 @@
 #include "lbann/utils/compiler_control.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/peek_map.hpp"
+#include "lbann/utils/stack_trace.hpp"
+#include "lbann/utils/stack_profiler.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
 
-#endif // LBANN_HPP_INCLUDED
+#endif // LBANN_LBANN_HPP_INCLUDED

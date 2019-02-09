@@ -5,7 +5,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/utils/glob.hpp"
 #include <cmath>
@@ -68,6 +68,9 @@ void jag_store::load_image_channels_to_use(const std::string &keys) {
 
 void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   options *opts = options::get();
+  if (!opts->has_string("base_dir")) {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: you must pass --base_dir=<string> on the cmd line");
+  }
   const std::string base_dir = opts->get_string("base_dir");
   const std::string output_fn = opts->get_string("build_conduit_index");
   std::stringstream ss;
@@ -80,15 +83,14 @@ void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   if (m_rank_in_world == 0) {
     out << base_dir << "\n";
   }
+  if (m_master) std::cerr << "base dir: " << base_dir << "\n";
 
   int global_num_samples = 0;
   for (size_t j=m_rank_in_world; j<filenames.size(); j+=m_num_procs_in_world) {
-    std::stringstream s2;
-    filenames[j];
+    out << filenames[j] << " ";
     std::string fn(base_dir);
     fn += '/';
     fn += filenames[j];
-    out << filenames[j] << " ";
     hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( fn );
     std::vector<std::string> cnames;
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
@@ -117,29 +119,33 @@ void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
   int num_samples;
   MPI_Reduce(&global_num_samples, &num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   //m_comm->reduce<int>(&global_num_samples, 1, 0, m_comm->get_world_comm(), El::mpi::SUM);
+  //
 
-  std::stringstream s3;
-  s3 << "echo " << global_num_samples << " " << filenames.size() << " >  num_samples_tmp";
-  system(s3.str().c_str());
-  s3.clear();
-  s3.str("");
-  s3 << "cat num_samples_tmp ";
-  for (int k=0; k<m_num_procs_in_world; k++) {
-    s3 << output_fn << "." << k << " ";
+  if (m_master) {
+    std::stringstream s3;
+    s3 << "echo " << num_samples << " " << filenames.size() << " >  num_samples_tmp";
+    system(s3.str().c_str());
+    s3.clear();
+    s3.str("");
+    s3 << "cat num_samples_tmp ";
+    for (int k=0; k<m_num_procs_in_world; k++) {
+      s3 << output_fn << "." << k << " ";
+    }
+    s3 << "> " << output_fn;
+    system(s3.str().c_str());
+    s3.clear();
+    s3.str("");
+    s3 << "chmod 660 " << output_fn;
+    system(s3.str().c_str());
+    s3.clear();
+    s3.str("");
+    s3 << "rm -f num_samples_tmp ";
+    for (int k=0; k<m_num_procs_in_world; k++) {
+      s3 << output_fn << "." << k << " ";
+    }
+    system(s3.str().c_str());
   }
-  s3 << "> " << output_fn;
-  system(s3.str().c_str());
-  s3.clear();
-  s3.str("");
-  s3 << "chmod 660 " << output_fn;
-  system(s3.str().c_str());
-  s3.clear();
-  s3.str("");
-  s3 << "rm -f num_samples_tmp ";
-  for (int k=0; k<m_num_procs_in_world; k++) {
-    s3 << output_fn << "." << k << " ";
-  }
-  system(s3.str().c_str());
+  m_comm->global_barrier();
 }
 
 void jag_store::setup_testing() {

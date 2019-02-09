@@ -36,6 +36,7 @@
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/description.hpp"
 #include <lbann.pb.h>
 
 namespace lbann {
@@ -64,7 +65,7 @@ public:
   weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
-  
+
   /** Set weights name.
    *  Each set of weights in a model should have a unique,
    *  human-readable name.
@@ -79,6 +80,9 @@ public:
    *  deallocating the instance.
    */
   weights* copy() const { return new weights(*this); }
+
+  /** Human-readable description. */
+  description get_description() const;
 
   // -----------------------------------------------
   // Dimension accessors
@@ -191,7 +195,7 @@ public:
    *  are set to the average across the processes.
    */
   void reconcile_values(Al::request& req);
-  
+
   // -----------------------------------------------
   // Freezing
   // -----------------------------------------------
@@ -207,7 +211,7 @@ public:
   // -----------------------------------------------
   bool save_to_checkpoint_shared(persist& p);
   bool load_from_checkpoint_shared(persist& p);
-  bool load_from_save(std::string ckpt_dir, std::vector<std::string> weight_list);
+  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list);
   bool save_to_checkpoint_distributed(persist& p);
   bool load_from_checkpoint_distributed(persist& p);
 
@@ -235,7 +239,7 @@ private:
   std::vector<int> m_matrix_width_dims;
   /** Distribution of weights matrix. */
   El::DistData m_matrix_dist;
-  
+
   /** Whether weight optimization is disabled. */
   bool m_frozen;
 

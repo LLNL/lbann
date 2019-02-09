@@ -1,4 +1,4 @@
-============================== (Pending) Release Notes: v0.98 ==============================
+============================== (Pending) Release Notes: v0.99 ==============================
 Support for new training algorithms:
 
 Support for new network structures:
@@ -16,6 +16,62 @@ I/O & data readers:
 Build system:
 
 Retired features:
+============================== Release Notes: v0.98 ==============================
+Support for new training algorithms:
+ - Hyperparameter exploration with Adam optimizers
+ - LTFB can perform inter-trainer communication via checkpoint files
+
+Support for new network structures:
+ - Wassertein autoencoder
+
+Support for new layers:
+ - Squared difference
+ - Tessellate
+ - Clamp
+
+Performance optimizations:
+ - Added support for node-local batch normalization
+
+Model portability & usability:
+ - Added prototype Python front end for generating model prototext files
+   that is inspired by PyTorch's interface
+ - Created Python library of networks and modules used for prototext
+   generation
+ - Support for exporting and importing models in ONNX format
+ - Output dumping callback exports in CSV, TSV, .npy, or .npz formats
+ - Added dedicated inference front end
+
+Internal features:
+ - Expanded layer documentation
+ - Utility class for nicely formatted descriptions
+ - Switched to using ReadTheDocs for documentation which uses a
+   combination of doxygen, breathe, and sphinx
+ - Provided distinction between trainer and model objects
+ - Added a generic factory template
+ - Refactored front-end functionality into library class
+
+I/O & data readers:
+ - Overhauled the I/O system to use an independent background thread
+   pool for fetching data
+ - Added support for data set metadata file that provides both schema
+   and normalization values unique to a given data set.  Demonstrated
+   use in JAG Conduit data reader.
+ - Added support for an index list based approach for describing the
+   samples to use in the training and testing.  Note that this is
+   currently only supported in the JAG Conduit data reader
+ - Create a general-purpose data store that operates on generic
+   Conduit node data structures.  This should provide an extensible
+   and generic approach for holding and exchanging data between
+   epochs.  Note that this is currently only supported in the JAG
+   Conduit data reader.
+
+Build system:
+ - Support for using Spack environments feature when building
+
+Retired features:
+ - Removed deprecated objective functions and target layer
+ - Removed distributed I/O buffer layer it has been deprecated by the
+   background I/O threads
 
 ============================== Release Notes: v0.97.1 ==============================
 Bug Fixes:

@@ -31,18 +31,20 @@
 
 namespace lbann {
 
-/** Leaky rectified linear unit layer.
- *  \f[
- *    \text{LeakyReLU}(x) =
+/** @brief
+ *
+ *  @f[
+ *    \text{LeakyReLU}(x; \alpha) =
  *      \begin{cases}
- *        x        & x > 0
+ *        x        & x > 0 \\
  *        \alpha x & x \leq 0
  *      \end{cases}
- *  \f]
+ *  @f]
  *  See:
- *    Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
- *    nonlinearities improve neural network acoustic models." In
- *    Proc. ICML, vol. 30, no. 1, p. 3. 2013.
+ *
+ *  Andrew L. Maas, Awni Y. Hannun, and Andrew Y. Ng. "Rectifier
+ *  nonlinearities improve neural network acoustic models." In
+ *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
 template <data_layout Layout, El::Device Device>
 class leaky_relu_layer : public Layer {
@@ -53,6 +55,12 @@ public:
   std::string get_type() const override { return "leaky ReLU"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  description get_description() const override {
+    auto&& desc = Layer::get_description();
+    desc.add("Negative slope", m_negative_slope);
+    return desc;
+  }
 
 protected:
   void setup_dims() override {

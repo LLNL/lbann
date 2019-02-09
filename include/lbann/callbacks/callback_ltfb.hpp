@@ -24,74 +24,142 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
-#define __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
+#include <memory>
+#include <set>
+#include <vector>
 
 namespace lbann {
 
-/**
- * Manage LTFB training.
- * LTFB works in rounds, which are made up of some number of mini-batches (that
- * evenly divide the number of minibatches in an epoch). In each round, the
- * model trains as usual, and at the end it is randomly paired with another
- * model. The pairs exchange their models and evaluate both their local and the
- * received model on their validation data. The model achieving the highest
- * accuracy is retained and training continues.
- * Extension to GAN list of weights to send are specified
- * For example, a trainer will evaluate on its generator and partner's generator
- * using its holdout tournament data and local discriminator
- * Current limitations:
- * - Does not transfer optimizer state, so it's best to stick to SGD without
- * momentum.
- * - Uses the validation data for the tournament (we may not want this).
- * - Requires a manually-created model duplicate.
+/** @brief Tournament training.
+ *
+ *  This is intended to support research into the LTFB algorithm. An
+ *  outline:
+ *    - Divide the computational resources into multiple "trainers"
+ *      that can operate in parallel.
+ *    - Setup a model on each trainer and begin training independently.
+ *    - Periodically launch tournaments to select "good" models. More
+ *      specifically, trainers partner up and exchange their models.
+ *      Each trainer evaluates a metric for its local and partner
+ *      models, using its validation data set. The model with the better
+ *      score is retained and the other one is discarded.
+ *
+ *  There are many algorithmic variations to be explored:
+ *    - How is data is divvied up amongst the trainers. Is it strictly
+ *      partitioned, partially shared, or completely replicated?
+ *    - What model components are exchanged? Just the trainable weights,
+ *      or a subset of the weights? Hyperparameters?
+ *    - Can this be used to explore model architectures?
+ *
+ *  @todo Exchange optimizer state.
+ *  @todo Support heterogeneous models.
  */
 class lbann_callback_ltfb : public lbann_callback {
- public:
+public:
 
-  /** Constructor.
-   *  @param round_size The number of minibatches in each round.
-   *  @param increasing_metric_mode  The expectation for a good tournament metric, 
-   *  default, increasing trend is good  
-   *  @todo pair metric_mode with eval_metric
-   *  @param eval_metric Tournament evaluation metrics
-   *  @param selected_weights set of weights to exchange
+  /** Inter-trainer communication scheme for LTFB.
+   *
+   *  The specifics of these algorithms are experimental and will be
+   *  in flux.
    */
-  lbann_callback_ltfb(int round_size, 
-                      std::unordered_set<std::string> eval_metrics,
-                      bool increasing_metric_mode = true,
-                      std::unordered_set<std::string> weights_tosend = std::unordered_set<std::string>(),
-                      lbann_summary* summarizer = nullptr);
+  enum class communication_algorithm {
+    /** Directly exchange weights values with sendrecv.
+     *
+     *  Corresponding ranks in partner trainers will iterate through
+     *  their weights and exchange values with sendrecvs.
+     *
+     *  Notes:
+     *    - Requires all models to be identical aside from their
+     *      weights values, so this is not suitable for hyperparameter
+     *      or model architecture exploration.
+     *    - Optimizer state is not exchanged, so there may be wonky
+     *      learning behavior immediately after a tournament.
+     *    - Optimal if communication performance between ranks is
+     *      uniform and independent. If intra-trainer communication is
+     *      fast or if communication performance is sensitive to
+     *      network traffic, it may be advantageous to gather model
+     *      data on the trainer master ranks and only perform
+     *      inter-trainer communication between them.
+     */
+    sendrecv_weights,
+
+    /** Save and load model data with checkpoint files.
+     *
+     *  @todo Implement.
+     *
+     *  Notes:
+     *    - Supports hyperparameter exploration.
+     *    - Checkpoint files currently do not store model architecture
+     *      information, so this is not suitable for model
+     *      architecture exploraiton.
+     *    - This approach is temporary and experimental, since going
+     *      through the file system is very suboptimal. When a wire
+     *      format for model checkpoints is developed, it should be
+     *      used instead.
+     */
+    checkpoint_file
+  };
+
+  /** @brief
+   *  @param batch_interval Number of training mini-batch steps between
+   *                        tournaments.
+   *  @param metric_name    Metric for tournament evaluation.
+   *  @param weights_names  List of weights to exchange with partner.
+   *                        If empty, then all weights are exchanged.
+   *  @param low_score_wins Whether low-scoring or high-scoring models
+   *                        survive a tournament.
+   *  @param comm_algo      Inter-trainer communication scheme.
+   */
+  lbann_callback_ltfb(El::Int batch_interval,
+                      std::string metric_name,
+                      std::set<std::string> weights_names = {},
+                      bool low_score_wins = false,
+                      communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
+                      lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
-  ~lbann_callback_ltfb() override;
   lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
-  std::string name() const override { return "ltfb"; }
+  std::string name() const override { return "LTFB"; }
 
-  /** Set up LTFB. */
   void setup(model *m) override;
-  /** Potentially run an LTFB round. */
   void on_batch_begin(model *m) override;
 
- private:
+  /** Convert string to LTFB communication algorithm.
+   *
+   *  If an empty string is provided, returns @c
+   *  communication_algorithm::sendrecv_weights.
+   */
+  static communication_algorithm string_to_comm_algo(const std::string& str);
 
-  /** LBANN communicator. */
-  lbann_comm *m_comm;
-  /** Number of minibatches in a round. */
-  int m_round_size;
-  /** Evaluation metrics. */
-  std::unordered_set<std::string> m_eval_metrics;
-  /** Flag to determine expectation for a good tournament metric: default is increasing */
-  bool m_increasing_metric_mode;
-  /** List of weights to send. */
-  std::unordered_set<std::string> m_weights_tosend;
-  /** Weights from local model. */
-  std::vector<weights*> m_local_weights;
+private:
+
+  /** Metric for tournament evaluation. */
+  std::string m_metric_name;
+
+  /** List of weights to exchange with partner.
+   *
+   *  If empty, then all weights are exchanged.
+   */
+  std::set<std::string> m_weights_names;
+
+  /** Whether low-scoring or high-scoring models survive a
+   *  tournament. */
+  bool m_low_score_wins;
+
+  /** Inter-trainer communication scheme. */
+  communication_algorithm m_comm_algo;
+
+  /** Workspace weights.
+   *
+   *  Used to temporarily store local weights during a tournament.
+   */
+  std::vector<std::unique_ptr<weights>> m_workspace_weights;
 
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // __LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
+#endif // LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED

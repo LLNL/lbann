@@ -1,11 +1,11 @@
 model {
-  name: "directed_acyclic_graph_model"
+  type: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 64
   block_size: 256
   num_epochs: 18
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   objective_function {
     layer_term { layer: "mean_absolute_error" }

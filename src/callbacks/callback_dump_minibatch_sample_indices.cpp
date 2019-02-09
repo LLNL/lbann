@@ -31,6 +31,7 @@
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include <iomanip>
+#include <cstdlib>
 
 namespace lbann {
 
@@ -55,8 +56,8 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
     const std::string file
       = (m_basename
          + _to_string(m->get_execution_mode())
-         + "-model" + std::to_string(m->get_comm()->get_model_rank())
-         + "-rank" + std::to_string(m->get_comm()->get_rank_in_model())
+         + "-model" + std::to_string(m->get_comm()->get_trainer_rank())
+         + "-rank" + std::to_string(m->get_comm()->get_rank_in_trainer())
          + "-epoch" + std::to_string(m->get_cur_epoch())
          + "-step" + std::to_string(m->get_cur_step())
          + "-" + l->get_name()

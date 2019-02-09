@@ -10,9 +10,13 @@
 #include <cstdlib>
 #include <stdexcept>
 
+namespace lbann {
+
 options * options::s_instance = new options;
 
 //============================================================================
+
+namespace {
 
 void m_parse_opt(std::string tmp, std::string &key, std::string &val)
 {
@@ -36,14 +40,13 @@ void m_parse_opt(std::string tmp, std::string &key, std::string &val)
   }
 }
 
+} // namespace
+
 void options::init(int argc, char **argv)
 {
   MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
   m_argc = argc;
   m_argv = argv;
-
-  //the_default fileBaseName for saving
-  m_opts["saveme"] = "data.prototext";
 
   //save cmd line
   std::string key;
@@ -68,6 +71,8 @@ void options::init(int argc, char **argv)
 
 //============================================================================
 
+namespace {
+
 void lower(std::string &s)
 {
   for (char & j : s) {
@@ -77,16 +82,7 @@ void lower(std::string &s)
   }
 }
 
-void lower(char *s)
-{
-  size_t len = strlen(s);
-  for (size_t j=0; j<len; j++) {
-    if (isalpha(s[j])) {
-      char a = tolower(s[j]);
-      s[j] = a;
-    }
-  }
-}
+} // namespace
 
 //============================================================================
 
@@ -108,7 +104,7 @@ bool options::get_bool(std::string option, bool the_default)
   return result;
 }
 
-bool options::get_bool(std::string option) 
+bool options::get_bool(std::string option)
 {
   int result;
   if (!m_test_int(option, result)) {
@@ -175,7 +171,7 @@ std::string options::get_string(std::string option, std::string the_default)
   std::string result;
   if (!m_test_string(option, result)) {
     return the_default;
-  }  
+  }
   return the_default;
 }
 
@@ -292,7 +288,7 @@ void options::set_option(std::string name, double value) {
 
 //====================================================================
 
-void options::m_parse_file(std::string fn) 
+void options::m_parse_file(std::string fn)
 {
   std::ifstream in(fn.c_str());
   if (!in.is_open()) {
@@ -346,3 +342,4 @@ void options::print(std::ostream &out) {
   out << std::endl;
 }
 
+} // namespace lbann

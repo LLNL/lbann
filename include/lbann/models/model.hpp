@@ -40,6 +40,7 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <lbann.pb.h>
 #include <vector>
 #include <string>
@@ -52,7 +53,7 @@ class lbann_callback;
 
 /** Base class for LBANN models. */
 class model {
- public:
+public:
 
   /** Constructor. */
   model(lbann_comm *comm,
@@ -72,23 +73,25 @@ class model {
   /** Return the model's type. */
   virtual std::string get_type() const = 0;
 
+  /** Set the model's name; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
   void set_name(std::string name);
-  
+
+  /** Return the model's name; this is an arbitrary string
+   *  that may be useful in multi-model scenarios, e.g,
+   *  LTFB, jag
+   */
   std::string get_name() const {
     return m_name;
   }
 
-  /** Return the model's id; this is an arbitrary string
-   *  that may be useful in multi-model scenarios, e.g,
-   *  LTFB, jag
-   */
-  std::string get_model_id() { return m_model_id; }
-
-  /** Set the model's arbitrary identifying string */
-  void set_model_id(std::string s) { m_model_id = s; }
+  /** Human-readable description. */
+  virtual description get_description() const;
 
   /** Set up the model. */
-  virtual void setup();
+  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Add layer to model. */
   virtual void add_layer(Layer *layer);
@@ -128,16 +131,20 @@ class model {
   /** Return the model's layers. */
   virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
 
+  const std::vector<weights*> get_weights() const;
+
+  std::vector<weights*> get_weights();
+
   /** Replace the model's weights. */
   void replace_weights(std::vector<weights *>& w);
 
-  /** Copy trained weights from input parameter w. 
+  /** Copy trained weights from input parameter w.
  *  Only weight values are placed, pointers and layer structure are in place.
  *  Weights to be copied are of the same name */
   void copy_trained_weights_from(std::vector<weights *>& w);
 
-  /** Return the model's weights. */
-  const std::vector<weights *>& get_weights() const { return m_weights; }
+  /** Return the I/O thread pool */
+  std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
 
   /** Get the model's comm. */
   inline lbann_comm *get_comm() const {
@@ -219,12 +226,22 @@ class model {
   /** Train model. */
   virtual void train(int num_epochs, int num_batches=0);
   /** Evaluate model. */
-  virtual void evaluate(execution_mode mode);
+  virtual void evaluate(execution_mode mode, int num_batches=0);
 
   /** Run one epoch using only the input layer; this supports
    *  data_store functionality
    */
   void collect_indices(execution_mode mode);
+
+  /** Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
+
+  /** Set a flag that can be used to enable / disable the background I/O activities */
+  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
+
+  /** Are background I/O activities enabled by the input layers */
+  bool background_io_activity_allowed() { return m_background_io_allowed; }
 
   /** Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
@@ -234,10 +251,20 @@ class model {
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
 
+  /** Save the model's weight to file */
+  virtual bool save_weights(persist& p);
+
+  /** Reload the model's weights from a file */
+  virtual bool reload_weights(const std::string latest,
+                              const std::vector<std::string>& weight_list);
+
+  /** Saves the model explicitly if the save_model callback is present */
+  virtual bool save_model();
+
   /** Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
- protected:
+protected:
 
   /** The objective function used to train the model. */
   objective_function *m_objective_function;
@@ -293,13 +320,15 @@ class model {
   /** List of weights in model. */
   std::vector<weights *> m_weights;
 
+  /** Threads available for I/O */
+  std::shared_ptr<thread_pool> m_io_thread_pool;
+
+  /** Flag that allows input layers to fetch data in the background */
+  bool m_background_io_allowed;
+
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
-  /** Print out the description of a layer set up. */
-  virtual std::string print_layer_description(const Layer* layer) const;
-  /** Construct a layer graph. */
-  virtual void construct_layer_graph(std::set<int>& nodes,
-                                     std::map<int,std::set<int>>& edges) const;
+
   /** Reorder layers. */
   virtual void permute_layers(const std::vector<int>& permutation);
 
@@ -352,7 +381,7 @@ class model {
   virtual void forward_prop(execution_mode mode);
   /** Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each optimizer's gradient. 
+  /** Clear each optimizer's gradient.
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */
@@ -412,7 +441,8 @@ class model {
   /** Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
- private:
+private:
+
   /** Search layer graph and add all connected layers. */
   void add_connected_layers();
   /** Insert evaluation layers where needed.
@@ -434,8 +464,6 @@ class model {
    *  the split layer's children will be the original children.
    */
   void add_split_layers();
-
-  std::string m_model_id;
 };
 
 }  // namespace lbann

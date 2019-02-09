@@ -88,8 +88,8 @@ void data_reader_multi_images::set_input_params(const int width, const int heigh
   set_input_params(width, height, num_ch, num_labels, 1);
 }
 
-std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const int mb_idx) const {
-  std::vector<::Mat> X_v(m_num_img_srcs);
+std::vector<CPUMat> data_reader_multi_images::create_datum_views(CPUMat& X, const int mb_idx) const {
+  std::vector<CPUMat> X_v(m_num_img_srcs);
   El::Int h = 0;
   for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
@@ -98,9 +98,9 @@ std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const 
   return X_v;
 }
 
-bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
 
   const img_src_t& img_src = m_image_list[data_id].first;
   for(size_t i=0u; i < m_num_img_srcs; ++i) {
@@ -130,7 +130,7 @@ bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, i
   return true;
 }
 
-bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
@@ -140,10 +140,10 @@ std::vector<data_reader_multi_images::sample_t> data_reader_multi_images::get_im
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-    ret.push_back(m_image_list[index]);
-  }
+  // for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+  //   El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  //   ret.push_back(m_image_list[index]);
+  // }
   return ret;
 }
 

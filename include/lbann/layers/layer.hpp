@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_HPP_INCLUDED
-#define LBANN_LAYER_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LAYER_HPP_INCLUDED
+#define LBANN_LAYERS_LAYER_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -33,6 +33,7 @@
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
 #include <lbann.pb.h>
 #include <string>
@@ -45,26 +46,29 @@ class model;
 class weights;
 class lbann_callback_sync_layers;
 
-/** Abstract base class for neural network layers.
- *  A layer takes input tensors ("previous activations") and applies a
- *  mathematical operation to obtain output tensors
- *  ("activations"). This operation often has trainable parameters
- *  called "weights." The previous activations are recieved from
- *  "parent layers" and the activations are sent to "child layers,"
- *  making each layer a node in a directed graph. The layer graph and
- *  the weights are managed by a neural network model class. A layer
- *  should also be able to take objective function gradients
- *  w.r.t. the activations ("previous error signals") and compute the
- *  objective function gradients w.r.t. the previous activations
- *  ("error signals") and w.r.t. the weights. This allows the model to
- *  perform automatic differentiation and to apply first-order
- *  optimization methods to the weights.
+/**
+ * @brief Neural network tensor operation.
+ *
+ * A layer takes input tensors ("previous activations") and applies a
+ * mathematical operation to obtain output tensors
+ * ("activations"). This operation often has trainable parameters
+ * called "weights." The previous activations are recieved from
+ * "parent layers" and the activations are sent to "child layers,"
+ * making each layer a node in a directed graph. The layer graph and
+ * the weights are managed by a neural network model class. A layer
+ * should also be able to take objective function gradients w.r.t. the
+ * outputs ("previous error signals") and compute the objective
+ * function gradients w.r.t. the inputs ("error signals") and
+ * w.r.t. the weights. This allows the model to perform automatic
+ * differentiation and to apply first-order optimization methods to
+ * the weights.
  */
 class Layer {
   friend class lbann_callback_sync_layers;
   friend class lbann_callback_sync_selected;
 
- public:
+public:
+
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
@@ -93,16 +97,8 @@ class Layer {
    */
   inline void set_name(const std::string name) { m_name = name; }
 
-  /** Get a human-readable description of the layer parameters. */
-  virtual std::string get_description() const;
-  /** Get a human-readable description of the activation tensors.
-   *  Activation tensors are stored in distributed matrices where each
-   *  column corresponds to a mini-batch sample. Within each column,
-   *  the data is packed w.r.t. the last tensor dimension, then
-   *  w.r.t. the penultimate dimension, and so on. 3D tensors are
-   *  assumed to be 2D images in NCHW format.
-   */
-  virtual std::string get_topo_description() const;
+  /** Human-readable description. */
+  virtual description get_description() const;
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
@@ -314,7 +310,7 @@ class Layer {
   void set_hint_layer(const Layer* l) { m_hint_layer = l; }
 
   /** Get hint layer. */
-  const Layer* set_hint_layer() const { return m_hint_layer; }
+  const Layer* get_hint_layer() const { return m_hint_layer; }
 
   // ===========================================================
   // Freeze management functions
@@ -324,7 +320,7 @@ class Layer {
   void unfreeze();
   bool is_frozen() const;
 
- protected:
+protected:
 
   // ===========================================================
   // Setup helper functions
@@ -467,7 +463,7 @@ class Layer {
    */
   std::string m_name;
 
- private:
+private:
 
   // ===========================================================
   // Private access functions
@@ -513,4 +509,4 @@ class Layer {
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_HPP_INCLUDED
+#endif // LBANN_LAYERS_LAYER_HPP_INCLUDED

@@ -139,42 +139,110 @@ Layer& Layer::operator=(const Layer& other) {
   return *this;
 }
 
-std::string Layer::get_description() const {
-  std::stringstream ss;
-  ss << get_name() << " (" << get_type() << "): ";
-  return ss.str();
-}
+description Layer::get_description() const {
 
-std::string Layer::get_topo_description() const {
+  // Construct description object
   std::stringstream ss;
-  const size_t num_children = get_num_children();
-  for (size_t i = 0; i < num_children; ++i) {
-    const auto& dims = get_output_dims(i);
-    if (i > 0) { ss << ", "; }
-    ss << "activations";
-    if (num_children > 1) { ss << "[" << i << "]"; }
-    ss << " = [";
-    switch (dims.size()) {
-    case 0:
-      ss << "0"; break;
-    case 2:
-      ss << dims[0] << "c x "
-         << dims[1] << "w";
-      break;
-    case 3:
-      ss << dims[0] << "c x "
-         << dims[1] << "w x "
-         << dims[2] << "h";
-      break;
-    default:
-      ss << dims[0];
-      for (size_t j = 1; j < dims.size(); ++j) {
-        ss << " x " << dims[j];
+  ss << get_name() << " (" << get_type() << ")";
+  description desc(ss.str());
+
+  // Input dimensions
+  const auto& parents = get_parent_layers();
+  if (!parents.empty()) {
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < parents.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      const auto& dims = get_input_dims(i);
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j == 0 ? "" : "x") << dims[j];
+      }
+      ss << " (from ";
+      if (parents[i] == nullptr) {
+        ss << "unknown layer";
+      } else {
+        ss << parents[i]->get_type() << " layer "
+           << "\"" << parents[i]->get_name() << "\"";
+      }
+      ss << ")";
+    }
+    desc.add("Input dimensions", ss.str());
+  }
+
+  // Output dimensions
+  const auto& children = get_child_layers();
+  if (!children.empty()) {
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < children.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      const auto& dims = get_output_dims(i);
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j == 0 ? "" : "x") << dims[j];
+      }
+      ss << " (to ";
+      if (children[i] == nullptr) {
+        ss << "unknown layer";
+      } else {
+        ss << children[i]->get_type() << " layer "
+           << "\"" << children[i]->get_name() << "\"";
+      }
+      ss << ")";
+    }
+    desc.add("Output dimensions", ss.str());
+  }
+
+  // Weights
+  const auto& weights_list = get_weights();
+  if (!weights_list.empty()) {
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < weights_list.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      if (weights_list[i] == nullptr) {
+        ss << "unknown weights";
+      } else {
+        const auto& dims = weights_list[i]->get_dims();
+        ss << weights_list[i]->get_name() << " (";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          ss << (j > 0 ? "x" : "") << dims[j];
+        }
+        ss << ")";
       }
     }
-    ss << ", " << get_activations(i).Width() << "s]";
+    desc.add("Weights", ss.str());
   }
-  return ss.str();
+
+  // Data layout
+  ss.str(std::string{});
+  ss.clear();
+  switch (get_data_layout()) {
+  case data_layout::DATA_PARALLEL:  ss << "data-parallel";  break;
+  case data_layout::MODEL_PARALLEL: ss << "model-parallel"; break;
+  case data_layout::invalid:
+  default:
+    ss << "invalid";
+  }
+  desc.add("Data layout", ss.str());
+
+  // Device
+  ss.str(std::string{});
+  ss.clear();
+  switch (get_device_allocation()) {
+  case El::Device::CPU: ss << "CPU";     break;
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU: ss << "GPU";     break;
+#endif // LBANN_HAS_GPU
+  default:              ss << "unknown";
+  }
+  desc.add("Device", ss.str());
+
+  // Freeze state
+  if (is_frozen()) {
+    desc.add("Frozen");
+  }
+
+  return desc;
 }
 
 void Layer::forward_prop() {
@@ -540,7 +608,7 @@ bool Layer::is_frozen() const {
 void Layer::setup() {
   setup_pointers();
   setup_dims();
-  setup_matrices(m_comm->get_model_grid());
+  setup_matrices(m_comm->get_trainer_grid());
   setup_data();
   if (using_gpus()) { setup_gpu(); }
 }
@@ -1054,23 +1122,23 @@ std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
 }
 
 void Layer::add_parent_layer(const Layer* parent) {
-  auto parent_pos = std::find(m_parent_layers.begin(),
-                              m_parent_layers.end(),
-                              parent);
-  if(parent != nullptr
-     && parent != this
-     && parent_pos == m_parent_layers.end()) {
+  const auto parent_pos = std::find(m_parent_layers.begin(),
+                                    m_parent_layers.end(),
+                                    parent);
+  if (parent != nullptr
+      && parent != this
+      && parent_pos == m_parent_layers.end()) {
     m_parent_layers.push_back(parent);
   }
 }
 
 void Layer::add_child_layer(const Layer* child) {
-  auto child_pos = std::find(m_child_layers.begin(),
-                             m_child_layers.end(),
-                             child);
-  if(child != nullptr
-     && child != this
-     && child_pos == m_child_layers.end()) {
+  const auto child_pos = std::find(m_child_layers.begin(),
+                                   m_child_layers.end(),
+                                   child);
+  if (child != nullptr
+      && child != this
+      && child_pos == m_child_layers.end()) {
     m_child_layers.push_back(child);
   }
 }

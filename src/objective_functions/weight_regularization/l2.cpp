@@ -71,11 +71,7 @@ void l2_weight_regularization::setup(model& m) {
 
   // Add all weights in model if no weights pointers are provided
   if (m_weights.empty()) {
-    for (auto* w : m.get_weights()) {
-      if (w->get_optimizer() != nullptr) {
-        m_weights.push_back(w);
-      }
-    }
+    m_weights = m.get_weights();
   }
 
   // Construct accumulation variables for each device
@@ -110,7 +106,7 @@ void l2_weight_regularization::start_evaluation() {
       }
     }
     get_comm().nb_allreduce(static_cast<AbsMat&>(contribution),
-                            get_comm().get_model_comm(),
+                            get_comm().get_trainer_comm(),
                             m_allreduce_req);
   }
 
@@ -134,7 +130,7 @@ void l2_weight_regularization::start_evaluation() {
       }
     }
     get_comm().allreduce(static_cast<AbsMat&>(contribution),
-                         get_comm().get_model_comm());
+                         get_comm().get_trainer_comm());
     CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
                                contribution.LockedBuffer(),
                                sizeof(DataType),
@@ -164,12 +160,12 @@ EvalType l2_weight_regularization::finish_evaluation() {
 
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-
-  // Compute gradient of L2 regularization term for weights
   for (auto&& w : m_weights) {
-    w->get_optimizer()->add_to_gradient(w->get_values(), m_scale_factor);
+    auto&& opt = w->get_optimizer();
+    if (opt != nullptr) {
+      opt->add_to_gradient(w->get_values(), m_scale_factor);
+    }
   }
-
 }
 
 } // namespace lbann

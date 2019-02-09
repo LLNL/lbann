@@ -97,31 +97,23 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
 
   if (proto_cb.has_ltfb()) {
-    auto&& m = parse_list<>(proto_cb.ltfb().eval_metrics());
-    auto&& w = parse_list<>(proto_cb.ltfb().weights_tosend());
-    std::unordered_set<std::string> metric_names(m.begin(), m.end());
-    std::unordered_set<std::string> weight_names(w.begin(), w.end());
-    return new lbann_callback_ltfb(proto_cb.ltfb().round_size(),
-                                   metric_names,
-                                   proto_cb.ltfb().increasing_metric_mode(),
-                                   weight_names,
+    const auto& params = proto_cb.ltfb();
+    return new lbann_callback_ltfb(params.batch_interval(),
+                                   params.metric(),
+                                   parse_set<std::string>(params.weights()),
+                                   params.low_score_wins(),
+                                   lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
                                    summarizer);
   }
   /// @todo
   if (proto_cb.has_imcomm()) {
     const auto& params = proto_cb.imcomm();
-    const auto& type_str = params.intermodel_comm_method();
+    const auto& type_str = params.intertrainer_comm_method();
     lbann_callback_imcomm::comm_type type = lbann_callback_imcomm::comm_type::NONE;
     if (type_str == "none") {
       type = lbann_callback_imcomm::comm_type::NONE;
     } else if (type_str == "normal") {
       type = lbann_callback_imcomm::comm_type::NORMAL;
-    } else if (type_str == "onebit_quantization") {
-      type = lbann_callback_imcomm::comm_type::ONEBIT_QUANTIZATION;
-    } else if (type_str == "thresh_quantization") {
-      type = lbann_callback_imcomm::comm_type::THRESH_QUANTIZATION;
-    } else if (type_str == "adaptive_quantization") {
-      type = lbann_callback_imcomm::comm_type::ADAPTIVE_QUANTIZATION;
     } else {
       err << "invalid inter-model communication type (" << type_str << ")";
       LBANN_ERROR(err.str());
@@ -234,8 +226,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_save_model()) {
     const auto& params = proto_cb.save_model();
-    return new lbann_callback_save_model(params.dir(),
-                                         params.extension());
+    if(params.extension().size() != 0) {
+      return new lbann_callback_save_model(params.dir(),
+                                           params.disable_save_after_training(),
+                                           params.extension());
+    }else {
+      return new lbann_callback_save_model(params.dir(),
+                                           params.disable_save_after_training());
+    }
   }
 
   //////////////////////////////////////////////////////////////
@@ -314,18 +312,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
 
   if (proto_cb.has_debug()) {
     const auto& params = proto_cb.debug();
-    std::set<execution_mode> modes;
-    for (const auto& mode : parse_list<>(params.phase())) {
-      if (mode == "train" || mode == "training") {
-        modes.insert(execution_mode::training);
-      } else if (mode == "validate" || mode == "validation") {
-        modes.insert(execution_mode::validation);
-      } else if (mode == "test" || mode == "testing") {
-        modes.insert(execution_mode::testing);
-      } else {
-        LBANN_ERROR("invalid execution mode (" + mode + ")");
-      }
-    }
+    const auto& modes = parse_set<execution_mode>(params.phase());
     return new lbann_callback_debug(modes, summarizer);
   }
   if (proto_cb.has_debug_io()) {
@@ -346,12 +333,15 @@ lbann_callback* construct_callback(lbann_comm* comm,
     const auto& params = proto_cb.dump_weights();
     return new lbann_callback_dump_weights(params.basename());
   }
-  if (proto_cb.has_dump_activations()) {
-    const auto& params = proto_cb.dump_activations();
-    const auto& layer_names = parse_list<>(params.layer_names());
-    return new lbann_callback_dump_activations(params.basename(),
-                                               params.interval(),
-                                               layer_names);
+  if (proto_cb.has_dump_outputs()) {
+    const auto& params = proto_cb.dump_outputs();
+    const auto& layer_names = parse_set<>(params.layers());
+    const auto& modes = parse_set<execution_mode>(params.execution_modes());
+    return new lbann_callback_dump_outputs(layer_names,
+                                           modes,
+                                           params.batch_interval(),
+                                           params.directory(),
+                                           params.format());
   }
   if (proto_cb.has_dump_error_signals()) {
     const auto& params = proto_cb.dump_error_signals();
@@ -397,16 +387,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   }
   if (proto_cb.has_check_metric()) {
     const auto& params = proto_cb.check_metric();
-    std::set<execution_mode> modes;
-    for (const auto& str : parse_list<>(params.execution_modes())) {
-      if (str == "train" || str == "training") {
-        modes.insert(execution_mode::training);
-      } else if (str == "validation") {
-        modes.insert(execution_mode::validation);
-      } else if (str == "test" || str == "testing") {
-        modes.insert(execution_mode::testing);
-      }
-    }
+    const auto& modes = parse_set<execution_mode>(params.execution_modes());
     return new lbann_callback_check_metric(params.metric(),
                                            modes,
                                            params.lower_bound(),
@@ -419,6 +400,21 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
   if (proto_cb.has_gpu_memory_usage()) {
     return new lbann_callback_gpu_memory_usage();
+  }
+
+  //////////////////////////////////////////////////////////////
+  // Hyperparameter exploration
+  //////////////////////////////////////////////////////////////
+  if (proto_cb.has_perturb_adam()) {
+    const auto& params = proto_cb.perturb_adam();
+    return new lbann_callback_perturb_adam(
+                 params.learning_rate_factor(),
+                 params.beta1_factor(),
+                 params.beta2_factor(),
+                 params.eps_factor(),
+                 params.perturb_during_training(),
+                 params.batch_interval(),
+                 parse_set<std::string>(params.weights()));
   }
 
   return nullptr;

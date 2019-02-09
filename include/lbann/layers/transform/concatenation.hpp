@@ -32,9 +32,7 @@
 
 namespace lbann {
 
-/** Concatenation layer.
- *  This layer concatenates input tensors along a specified dimension.
- */
+/** @brief Concatenate tensors along specified dimension. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class concatenation_layer : public transform_layer {
 public:
@@ -65,20 +63,10 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " concatenation; concat_dim: "
-      << m_concat_dim << " parents: ";
-    for (size_t h=0; h<this->m_parent_layers.size(); h++) {
-      s << this->m_parent_layers[h]->get_name() << " " << this->m_parent_layers[h]->get_type() << " ";
-    }
-    s << " concat_points: ";
-    for (size_t h=0; h<this->m_concat_points.size(); h++) {
-      s << this->m_concat_points[h] << " ";
-    }
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    return s.str();
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Concatenation dimension", m_concat_dim);
+    return desc;
   }
 
 protected:

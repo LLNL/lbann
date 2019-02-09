@@ -37,6 +37,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/threads/thread_pool.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -64,7 +65,7 @@ class generic_data_reader : public lbann_image_preprocessor {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
- #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; } 
+ #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
 
   /**
    * ctor
@@ -85,7 +86,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
-    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_file_dir(""), m_data_index_list(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
@@ -97,6 +98,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_partition_overlap(0),
     m_partition_mode(0),
     m_procs_per_partition(1),
+    m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
     m_model(nullptr)
   {}
@@ -149,6 +151,18 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If set_local_file_dir was not called, returns the empty string
    */
   std::string get_local_file_dir() const;
+
+  /**
+   * Set the index list for your data (images, etc).
+   * The index lists contains an enumeration of all samples in the
+   * data set.
+   */
+  void set_data_index_list(std::string s);
+
+  /**
+   * Returns the complete index list for your data set.
+   */
+  std::string get_data_index_list() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -268,13 +282,13 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  virtual void setup();
+  virtual void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
 
   /// Fetch this mini-batch's samples into X.
-  virtual int fetch_data(CPUMat& X);
+  virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's labels into Y.
   virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
@@ -289,7 +303,6 @@ class generic_data_reader : public lbann_image_preprocessor {
                           bool do_scale = true) override {
     NOT_IMPLEMENTED("save_image");
   }
-  bool is_data_reader_done(bool is_active_reader);
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
@@ -343,7 +356,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
-    return (m_current_pos < (int)m_shuffled_indices.size());
+    return (m_current_pos < get_num_data());
+  }
+  /// True if the data reader's current position is not valid but within # ranks per model
+  /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
+  virtual bool position_is_overrun() const {
+    int end_pos = (int)m_shuffled_indices.size();
+    return (m_current_pos >= end_pos && (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
   }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
@@ -513,10 +532,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   int *get_unused_data() {
     return &m_unused_indices[0];
   }
-  /// Get a pointer to the fetched indices matrix.
-  El::Matrix<El::Int>* get_indices_fetched_per_mb() {
-    return &m_indices_fetched_per_mb;
-  }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
@@ -570,6 +585,12 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
+
+  /// Does the data reader have a unqiue index list per model
+  virtual bool has_list_per_model() const { return false; }
+  /// Does the data reader have a unqiue index list per trainer
+  virtual bool has_list_per_trainer() const { return false; }
+
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
@@ -666,9 +687,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns the data store
   generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
-      std::stringstream err;
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_data_store is nullptr";
+      LBANN_ERROR("m_data_store is nullptr");
     }
     return m_data_store;
   }
@@ -708,6 +727,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// support of data store functionality
   void set_data_store(generic_data_store *g);
 
+  virtual bool data_store_active() const;
+
+  virtual bool priming_data_store() const;
+
   void set_model(model *m) { m_model = m; }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
@@ -740,13 +763,15 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   lbann_comm *m_comm;
 
+  bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+
   /**
    * Fetch a single sample into a matrix.
    * @param X The matrix to load data into.
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
   }
@@ -757,7 +782,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_label");
     return false;
   }
@@ -768,7 +793,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
+  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx) {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
@@ -782,8 +807,10 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   virtual void postprocess_data_source(int tid) {};
 
-  /// Shuffle indices
+  /// Shuffle indices (uses the data_seq_generator)
   virtual void shuffle_indices();
+  /// Shuffle indices and profide a random number generator
+  virtual void shuffle_indices(rng_gen& gen);
 
   int m_mini_batch_size;
   int m_current_pos;
@@ -826,6 +853,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
+  std::string m_data_index_list;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;
@@ -836,9 +864,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   std::string m_role;
 
   bool m_master;
-
-  /// 1-D Matrix of which indices were fetched in this mini-batch
-  El::Matrix<El::Int> m_indices_fetched_per_mb;
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
@@ -876,14 +901,16 @@ class generic_data_reader : public lbann_image_preprocessor {
    int m_num_partitions;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_model_rank())
+   /// comm->get_trainer_rank())
    int m_my_partition;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_procs_per_model)
+   /// comm->get_procs_per_trainer)
    int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
+
+  std::shared_ptr<thread_pool> m_io_thread_pool;
 
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data

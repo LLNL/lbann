@@ -1,24 +1,24 @@
 enable_language(CXX)
 
-option(Aluminum_CLONE_VIA_SSH
+option(ALUMINUM_CLONE_VIA_SSH
   "Clone Aluminum using SSH instead of HTTPS" ${LBANN_SB_CLONE_VIA_SSH})
 
-if (Aluminum_CLONE_VIA_SSH)
-  set(Aluminum_URL git@github.com:llnl/Aluminum.git
+if (ALUMINUM_CLONE_VIA_SSH)
+  set(ALUMINUM_URL git@github.com:llnl/Aluminum.git
     CACHE STRING "The URL from which to clone Aluminum")
 else ()
-  set(Aluminum_URL https://github.com/llnl/Aluminum
+  set(ALUMINUM_URL https://github.com/llnl/Aluminum
     CACHE STRING "The URL from which to clone Aluminum")
 endif ()
 
-set(Aluminum_TAG "master"
+set(ALUMINUM_TAG "master"
   CACHE STRING "The git tag to checkout for Aluminum")
 
-set(Aluminum_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
+set(ALUMINUM_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for Aluminum.")
 
 # Where to install Aluminum
-set (Aluminum_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+set (ALUMINUM_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of Aluminum.")
 
 # Configuration options explicitly exposed
@@ -34,25 +34,26 @@ endif ()
 get_property(ALUMINUM_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER ALUMINUM_VARIABLES INCLUDE REGEX
   "^ALUMINUM_.*\|^Aluminum_.*\|^LBANN_SB_FWD_ALUMINUM_.*\|^LBANN_SB_FWD_Aluminum_.*")
-list(FILTER ALUMINUM_VARIABLES EXCLUDE REGEX "Aluminum_URL\|Aluminum_TAG")
+list(FILTER ALUMINUM_VARIABLES EXCLUDE REGEX
+  "ALUMINUM_URL\|ALUMINUM_TAG\|ALUMINUM_CLONE_VIA_SSH")
 
 create_cmake_arguments(
   OUTPUT_VARIABLE ALUMINUM_CMAKE_ARGS
-  PACKAGE_NAME Aluminum
+  PACKAGE_NAME ALUMINUM
   SKIP_VARS_WITH_PREFIXES "LBANN_SB"
   EXTRA_REMOVE_PREFIXES "LBANN_SB_FWD_ALUMINUM" "LBANN_SB_FWD_Aluminum"
   VARIABLES ${ALUMINUM_VARIABLES})
 
 include(ExternalProject)
-ExternalProject_Add(Aluminum
+ExternalProject_Add(ALUMINUM
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${Aluminum_URL}
-  GIT_TAG ${Aluminum_TAG}
+  GIT_REPOSITORY ${ALUMINUM_URL}
+  GIT_TAG ${ALUMINUM_TAG}
   SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
-  INSTALL_DIR ${Aluminum_CMAKE_INSTALL_PREFIX}
+  INSTALL_DIR ${ALUMINUM_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
   LOG_DOWNLOAD 1
   LOG_UPDATE 1
@@ -70,5 +71,5 @@ ExternalProject_Add(Aluminum
   ${ALUMINUM_CMAKE_ARGS}
   )
 
-set(ALUMINUM_DIR ${Aluminum_CMAKE_INSTALL_PREFIX}
+set(ALUMINUM_DIR ${ALUMINUM_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of Aluminum.")

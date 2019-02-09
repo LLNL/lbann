@@ -31,33 +31,23 @@
 
 namespace lbann {
 
-/** Dummy layer with no output. */
+/** @brief Placeholder layer.
+ *
+ *  Does no computation and is primarily intended as a placeholder for
+ *  unused layer outputs.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class dummy_layer : public transform_layer {
-
- public:
-
-  dummy_layer(lbann_comm *comm)
-    : transform_layer(comm) {
-    this->m_expected_num_child_layers = 0; // No children
+public:
+  dummy_layer(lbann_comm *comm) : transform_layer(comm) {
+    this->m_expected_num_child_layers = 0;
   }
-
   dummy_layer* copy() const override { return new dummy_layer(*this); }
   std::string get_type() const override { return "dummy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
-
-  /** Returns description. */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "dummy_layer  dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
-  }
-
- protected:
-
+protected:
   void fp_compute() override {}
-
 };
 
 } // namespace lbann

@@ -59,7 +59,7 @@ void lbann_summary::reduce_mean(const std::string tag,
   El::DistData mat_format(mat);
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sum on master process if matrix is Star,Star
-    if(m_comm->am_model_master()) {
+    if(m_comm->am_trainer_master()) {
       sum = local_sum(mat.LockedMatrix());
     }
   } else {
@@ -99,7 +99,7 @@ void lbann_summary::reduce_stdev(const std::string tag,
   El::DistData mat_format(mat);
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
-    if(m_comm->am_model_master()) {
+    if(m_comm->am_trainer_master()) {
       local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   } else {
@@ -117,7 +117,7 @@ void lbann_summary::reduce_stdev(const std::string tag,
 void lbann_summary::reduce_scalar(const std::string tag,
                                   DataType s,
                                   int step) {
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     m_pending_scalars.emplace_back(tag, step, s);
   }
 }
@@ -146,7 +146,7 @@ void lbann_summary::reduce_histogram(const std::string tag,
   El::DistData mat_format(mat);
   if(mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
-    if(m_comm->am_model_master()) {
+    if(m_comm->am_trainer_master()) {
       local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   } else {
@@ -207,9 +207,9 @@ void lbann_summary::flush_means() {
   for (const auto& op : m_pending_means) {
     local_sums.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_sums(local_sums.size());
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     // Compute the means in-place.
     for (unsigned i = 0; i < global_sums.size(); ++i) {
@@ -217,8 +217,8 @@ void lbann_summary::flush_means() {
     }
     gather_scalar_summary(m_pending_means, global_sums);
   } else {
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
+                         m_comm->get_trainer_master());
   }
   m_pending_means.clear();
 }
@@ -231,14 +231,14 @@ void lbann_summary::flush_mins() {
   for (const auto& op : m_pending_mins) {
     local_mins.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_mins(local_mins.size());
-    m_comm->model_reduce(local_mins.data(), local_mins.size(),
+    m_comm->trainer_reduce(local_mins.data(), local_mins.size(),
                          global_mins.data(), El::mpi::MIN);
     gather_scalar_summary(m_pending_mins, global_mins);
   } else {
-    m_comm->model_reduce(local_mins.data(), local_mins.size(),
-                         m_comm->get_model_master(), El::mpi::MIN);
+    m_comm->trainer_reduce(local_mins.data(), local_mins.size(),
+                         m_comm->get_trainer_master(), El::mpi::MIN);
   }
   m_pending_mins.clear();
 }
@@ -251,14 +251,14 @@ void lbann_summary::flush_maxes() {
   for (const auto& op : m_pending_maxes) {
     local_maxes.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_maxes(local_maxes.size());
-    m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
+    m_comm->trainer_reduce(local_maxes.data(), local_maxes.size(),
                          global_maxes.data(), El::mpi::MAX);
     gather_scalar_summary(m_pending_maxes, global_maxes);
   } else {
-    m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
-                         m_comm->get_model_master(), El::mpi::MAX);
+    m_comm->trainer_reduce(local_maxes.data(), local_maxes.size(),
+                         m_comm->get_trainer_master(), El::mpi::MAX);
   }
   m_pending_maxes.clear();
 }
@@ -273,7 +273,7 @@ void lbann_summary::flush_stdevs() {
     local_sums.push_back(op.local);
     local_sqsums.push_back(op.local2);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     // Compute the model sample standard deviation as:
     // sqrt[1/(n-1) (sqsum - (1/n)*sum^2)]
     // The n-1 is to use an unbiased variance estimate.
@@ -281,9 +281,9 @@ void lbann_summary::flush_stdevs() {
     // global operations when pushing the operation.
     std::vector<DataType> global_sums(local_sums.size());
     std::vector<DataType> global_sqsums(local_sqsums.size());
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
-    m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
+    m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
                          global_sqsums.data());
     // Re-use the global_sums vector for the standard deviation.
     for (unsigned i = 0; i < global_sums.size(); ++i) {
@@ -294,10 +294,10 @@ void lbann_summary::flush_stdevs() {
     }
     gather_scalar_summary(m_pending_stdevs, global_sums);
   } else {
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
-    m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
-                         m_comm->get_model_master());
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
+                         m_comm->get_trainer_master());
+    m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
+                         m_comm->get_trainer_master());
   }
   m_pending_stdevs.clear();
 }
@@ -306,7 +306,7 @@ void lbann_summary::flush_scalars() {
   if (m_pending_scalars.empty()) {
     return;
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> local_scalars;
     for (const auto& op : m_pending_scalars) {
       local_scalars.push_back(op.local);
@@ -324,14 +324,14 @@ void lbann_summary::flush_sum_scalars() {
   for (const auto& op : m_pending_sum_scalars) {
     local_sums.push_back(op.local);
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> global_sums(local_sums.size());
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
                          global_sums.data());
     gather_scalar_summary(m_pending_sum_scalars, global_sums);
   } else {
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
+                         m_comm->get_trainer_master());
   }
   m_pending_sum_scalars.clear();
 }
@@ -352,7 +352,7 @@ void lbann_summary::flush_scalar_alls() {
                    scalars.data(), m_comm->get_world_comm());
     for (size_t i = 0; i < scalars.size(); ++i) {
       int rank = i / local_scalars.size();
-      int model = rank / m_comm->get_procs_per_model();
+      int model = rank / m_comm->get_procs_per_trainer();
       int pos = i % local_scalars.size();
       m_sw->add_scalar(
         prepend_model("rank" + std::to_string(rank) + "/" +
@@ -382,43 +382,43 @@ void lbann_summary::flush_histograms() {
     local_sqsums.push_back(op.sqsum);
     buckets.insert(buckets.end(), op.buckets.begin(), op.buckets.end());
   }
-  if (m_comm->am_model_master()) {
+  if (m_comm->am_trainer_master()) {
     std::vector<DataType> model_mins(local_mins.size());
     std::vector<DataType> model_maxes(local_maxes.size());
     std::vector<DataType> model_sums(local_sums.size());
     std::vector<DataType> model_sqsums(local_sqsums.size());
     std::vector<float> model_buckets(buckets.size());
-    m_comm->model_reduce(local_mins.data(), local_mins.size(),
+    m_comm->trainer_reduce(local_mins.data(), local_mins.size(),
                          model_mins.data(), El::mpi::MIN);
-    m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
+    m_comm->trainer_reduce(local_maxes.data(), local_maxes.size(),
                          model_maxes.data(), El::mpi::MAX);
-    m_comm->model_reduce(local_sums.data(), model_sums.size(),
+    m_comm->trainer_reduce(local_sums.data(), model_sums.size(),
                          model_sums.data());
-    m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
+    m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
                          model_sqsums.data());
-    m_comm->model_reduce(buckets.data(), buckets.size(),
+    m_comm->trainer_reduce(buckets.data(), buckets.size(),
                          model_buckets.data());
     // Gather to the world master for writing out.
     if (m_comm->am_world_master()) {
       std::vector<DataType> global_mins(
-        m_comm->get_num_models() * model_mins.size());
+        m_comm->get_num_trainers() * model_mins.size());
       std::vector<DataType> global_maxes(
-        m_comm->get_num_models() * model_maxes.size());
+        m_comm->get_num_trainers() * model_maxes.size());
       std::vector<DataType> global_sums(
-        m_comm->get_num_models() * model_sums.size());
+        m_comm->get_num_trainers() * model_sums.size());
       std::vector<DataType> global_sqsums(
-        m_comm->get_num_models() * model_sqsums.size());
+        m_comm->get_num_trainers() * model_sqsums.size());
       std::vector<float> global_buckets(
-        m_comm->get_num_models() * model_buckets.size());
-      m_comm->intermodel_gather(model_mins.data(), model_mins.size(),
+        m_comm->get_num_trainers() * model_buckets.size());
+      m_comm->intertrainer_gather(model_mins.data(), model_mins.size(),
                                 global_mins.data());
-      m_comm->intermodel_gather(model_maxes.data(), model_maxes.size(),
+      m_comm->intertrainer_gather(model_maxes.data(), model_maxes.size(),
                                 global_maxes.data());
-      m_comm->intermodel_gather(model_sums.data(), model_sums.size(),
+      m_comm->intertrainer_gather(model_sums.data(), model_sums.size(),
                                 global_sums.data());
-      m_comm->intermodel_gather(model_sqsums.data(), model_sqsums.size(),
+      m_comm->intertrainer_gather(model_sqsums.data(), model_sqsums.size(),
                                 global_sqsums.data());
-      m_comm->intermodel_gather(model_buckets.data(), model_buckets.size(),
+      m_comm->intertrainer_gather(model_buckets.data(), model_buckets.size(),
                                 global_buckets.data());
       for (unsigned i = 0; i < global_mins.size(); ++i) {
         int model = i / m_pending_histograms.size();
@@ -433,28 +433,28 @@ void lbann_summary::flush_histograms() {
                             m_pending_histograms[ops_pos].step);
       }
     } else {
-      m_comm->intermodel_gather(model_mins.data(), model_mins.size(),
-                                m_comm->get_intermodel_master());
-      m_comm->intermodel_gather(model_maxes.data(), model_maxes.size(),
-                                m_comm->get_intermodel_master());
-      m_comm->intermodel_gather(model_sums.data(), model_sums.size(),
-                                m_comm->get_intermodel_master());
-      m_comm->intermodel_gather(model_sqsums.data(), model_sqsums.size(),
-                                m_comm->get_intermodel_master());
-      m_comm->intermodel_gather(model_buckets.data(), model_buckets.size(),
-                                m_comm->get_intermodel_master());
+      m_comm->intertrainer_gather(model_mins.data(), model_mins.size(),
+                                m_comm->get_intertrainer_master());
+      m_comm->intertrainer_gather(model_maxes.data(), model_maxes.size(),
+                                m_comm->get_intertrainer_master());
+      m_comm->intertrainer_gather(model_sums.data(), model_sums.size(),
+                                m_comm->get_intertrainer_master());
+      m_comm->intertrainer_gather(model_sqsums.data(), model_sqsums.size(),
+                                m_comm->get_intertrainer_master());
+      m_comm->intertrainer_gather(model_buckets.data(), model_buckets.size(),
+                                m_comm->get_intertrainer_master());
     }
   } else {
-    m_comm->model_reduce(local_mins.data(), local_mins.size(),
-                         m_comm->get_model_master(), El::mpi::MIN);
-    m_comm->model_reduce(local_maxes.data(), local_maxes.size(),
-                         m_comm->get_model_master(), El::mpi::MAX);
-    m_comm->model_reduce(local_sums.data(), local_sums.size(),
-                         m_comm->get_model_master());
-    m_comm->model_reduce(local_sqsums.data(), local_sqsums.size(),
-                         m_comm->get_model_master());
-    m_comm->model_reduce(buckets.data(), buckets.size(),
-                         m_comm->get_model_master());
+    m_comm->trainer_reduce(local_mins.data(), local_mins.size(),
+                         m_comm->get_trainer_master(), El::mpi::MIN);
+    m_comm->trainer_reduce(local_maxes.data(), local_maxes.size(),
+                         m_comm->get_trainer_master(), El::mpi::MAX);
+    m_comm->trainer_reduce(local_sums.data(), local_sums.size(),
+                         m_comm->get_trainer_master());
+    m_comm->trainer_reduce(local_sqsums.data(), local_sqsums.size(),
+                         m_comm->get_trainer_master());
+    m_comm->trainer_reduce(buckets.data(), buckets.size(),
+                         m_comm->get_trainer_master());
   }
   m_pending_histograms.clear();
 }
@@ -470,14 +470,12 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
     const El::Int size = height*width;
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum))
     for (El::Int i = 0; i < size; ++i) {
-      const int tid = omp_get_thread_num();
       sum += mat_buf[i];
     }
   } else {
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        const int tid = omp_get_thread_num();
         sum += mat_buf[row + col * ldim];
       }
     }
@@ -499,7 +497,6 @@ void lbann_summary::local_sum_sqsum(
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:sum,sqsum))
     for (El::Int i = 0; i < size; ++i) {
       const DataType val = mat_buf[i];
-      const int tid = omp_get_thread_num();
       sum += val;
       sqsum += val*val;
     }
@@ -508,7 +505,6 @@ void lbann_summary::local_sum_sqsum(
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
         const DataType val = mat_buf[row + col*ldim];
-        const int tid = omp_get_thread_num();
         sum += val;
         sqsum += val * val;
       }
@@ -594,8 +590,8 @@ std::string lbann_summary::prepend_model(const std::string tag,
 void lbann_summary::gather_scalar_summary(
   const std::vector<pending_op>& ops, std::vector<DataType>& scalars) {
   if (m_comm->am_world_master()) {
-    std::vector<DataType> data(m_comm->get_num_models() * scalars.size());
-    m_comm->intermodel_gather(scalars.data(), scalars.size(), data.data());
+    std::vector<DataType> data(m_comm->get_num_trainers() * scalars.size());
+    m_comm->intertrainer_gather(scalars.data(), scalars.size(), data.data());
     for (unsigned i = 0; i < data.size(); ++i) {
       int model = i / ops.size();
       unsigned ops_pos = i % ops.size();
@@ -603,8 +599,8 @@ void lbann_summary::gather_scalar_summary(
                        data[i], ops[ops_pos].step);
     }
   } else {
-    m_comm->intermodel_gather(scalars.data(), scalars.size(),
-                              m_comm->get_intermodel_master());
+    m_comm->intertrainer_gather(scalars.data(), scalars.size(),
+                              m_comm->get_intertrainer_master());
   }
 }
 
@@ -612,13 +608,13 @@ void lbann_summary::gather_scalar_summary(const std::string tag,
                                           DataType s,
                                           int step) {
   if (m_comm->am_world_master()) {
-    std::vector<DataType> data(m_comm->get_num_models());
-    m_comm->intermodel_gather(s, data);
+    std::vector<DataType> data(m_comm->get_num_trainers());
+    m_comm->intertrainer_gather(s, data);
     for (size_t model = 0; model < data.size(); ++model) {
       m_sw->add_scalar(prepend_model(tag, model), data[model], step);
     }
   } else {
-    m_comm->intermodel_gather(s, m_comm->get_intermodel_master());
+    m_comm->intertrainer_gather(s, m_comm->get_intertrainer_master());
   }
 }
 

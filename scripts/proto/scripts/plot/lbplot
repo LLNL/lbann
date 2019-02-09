@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+# Global imports
+import argparse
+
+# Import from this package
+from lbann.plot.plot import plot, PRETTY_YLIM_LOSS
+
+def main():
+    # Parse user arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('stat_path', nargs='+', help='Path to LBANN/PyTorch output files.')
+    parser.add_argument('-n', '--stat_name', nargs='+', help='Labels for the output files.', required=False)
+    parser.add_argument('--ind_var', type=str, choices=['epoch', 'time'], default='time',
+                        help='Independent variable for plotting.')
+    parser.add_argument('--time_units', type=str, choices=['seconds', 'minutes', 'hours'], default='hours')
+    parser.add_argument("--no-accuracy", dest="no_accuracy", action="store_const",
+                        const=True, default=False,
+                        help="Do not plot accuracy")
+    parser.add_argument("--merge-train-val", dest="merge_train_val", action="store_const",
+                        const=True, default=False,
+                        help="Plot training/validation curves in the same figure")
+    parser.add_argument("--pretty-ylim", dest="pretty_ylim", action="store_const",
+                        const=True, default=False,
+                        help="Set ylim to [0,1] for accuracy plots and [0,{}] for loss plots".format(PRETTY_YLIM_LOSS))
+    args = parser.parse_args()
+
+    # Tabulate and plot stats from user input files
+    plot(args.stat_path, args.stat_name, ind_var=args.ind_var, time_units=args.time_units,
+         plot_accuracy=(not args.no_accuracy),
+         merge_train_val=args.merge_train_val,
+         pretty_ylim=args.pretty_ylim)
+
+
+if __name__=='__main__':
+    main()

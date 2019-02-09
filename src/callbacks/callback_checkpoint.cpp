@@ -43,7 +43,7 @@ void lbann_callback_checkpoint::on_epoch_end(model *m) {
   }
   p.set_cb_type(callback_type::invalid);
 }
- // Interval defined with checkpoint_epochs or ckpt_dist_epochs
+// Interval defined with checkpoint_epochs or ckpt_dist_epochs
 void lbann_callback_checkpoint::on_validation_end(model *m) {
   p.set_cb_type(callback_type::validation);
   if(need_checkpoint(m)){
@@ -99,7 +99,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   if (!m_checkpoint_shared && m_checkpoint_secs != 0.0) {
     // have rank 0 determine whether we should checkpoint
     // to avoid issues with clock skew, we rely on rank 0 to make decision
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       // get the current time
       EvalType current = MPI_Wtime();
       // compute time next checkpoint is due
@@ -107,49 +107,12 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
       // determine whether it's time for a checkpoint
       m_checkpoint_shared = (current >= next);
     }
-    comm->model_broadcast(0, m_checkpoint_shared);
+    comm->trainer_broadcast(0, m_checkpoint_shared);
   }
   // If either checkpoint version is triggered, return true, otherwise false.
   return (m_checkpoint_shared || m_checkpoint_dist);
 }
 
-// Print last checkpoint to file, used to determine which checkpoint to load from.
-static bool write_latest(const char *dir, const char *name, int epoch, int train) {
-  // define filename
-  char filename[1024];
-  sprintf(filename, "%s/%s", dir, name);
-  // open the file for writing
-  int fd = openwrite(filename);
-  if (fd != -1) {
-    char field[256];
-    sprintf(field, "epoch=%d step=%d\n", epoch, train);
-    write_string(fd, "last_checkpoint", field, strlen(field));
-    // close our file
-    closewrite(fd, filename);
-  }
-  return true;
-}
-/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
-static bool read_latest(const char *dir, const char *name, int *epochLast, int *trainLast) {
-  // assume we don't have a file, we'll return -1 in that case
-  *epochLast = -1;
-  *trainLast = -1;
-  // define filename
-  char filename[1024];
-  sprintf(filename, "%s/%s", dir, name);
-  // open the file for reading
-  int fd = openread(filename);
-  if (fd != -1) {
-    // read epoch from file
-    char field[256];
-    read_string(fd, "last_checkpoint", field, sizeof(field));
-    int ret = sscanf(field, "epoch=%d step=%d\n", epochLast, trainLast);
-    // close our file
-    closeread(fd, filename);
-    if(ret != 2) { return false; }
-  }
-  return true;
-}
 // Checkpoint Shared/Distributed
 bool lbann_callback_checkpoint::checkpoint(model *m) {
   // if the checkpoint directory is not defined, bail
@@ -159,26 +122,27 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   // time how long this takes
   // read current epoch and step counters from model
   El::Timer timer;
-  char epochdir[1024];
   char dir[1024];
+  std::string epochdir;
+  std::string latest_file;
   int epoch = -1;
   int step = -1 ;
   lbann_comm *comm = m->get_comm();
   // TODO: we would want to prepend dir with the model name and model rank:
-  // m->get_name() + '.' + std::to_string(comm->get_model_rank()) + '.'
+  // m->get_name() + '.' + std::to_string(comm->get_trainer_rank()) + '.'
   // However, rng state is not part of model state but that of the world.
   // So, it needs to be in the root folder.
-  comm->model_barrier();
+  comm->trainer_barrier();
   // let user know we're saving a checkpoint
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     epoch = m->get_cur_epoch();
     step = m->get_cur_step();
     timer.Start();
     printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
     fflush(stdout);
   }
-  comm->model_broadcast(0, epoch);
-  comm->model_broadcast(0, step);
+  comm->trainer_broadcast(0, epoch);
+  comm->trainer_broadcast(0, step);
 
   // Distributed ckpt
   if(m_checkpoint_dist){
@@ -191,44 +155,46 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     }
     makedir(dir);
     // create directories per ranks
-    snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, comm->get_rank_in_model(), epoch, step);
-    p.open_checkpoint(epochdir);
+    epochdir = get_distributed_checkpoint_dirname(m, dir, epoch, step);
+    p.open_checkpoint(epochdir.c_str());
     // Call top level save to checkpoint function in model, in turn calls save to checkpoint functions for other model classes (weights, layers)
     m->save_to_checkpoint_distributed(p);
     p.close_checkpoint();
     // Print latest checkpoint to file
-    if (comm->am_model_master()) {
-      write_latest(dir, "last.distributed.checkpoint", epoch, step);
+    if (comm->am_trainer_master()) {
+      latest_file = get_last_distributed_checkpoint_filename(m, dir);
+      write_latest(latest_file, epoch, step);
     }
   }
   // Shared checkpoint, logic identical to Distributed.i
   if(m_checkpoint_shared){
     strcpy(dir, m_checkpoint_dir.c_str());
     makedir(dir);
-    snprintf(epochdir, sizeof(epochdir), "%s/shared.model.%d.epoch.%d.step.%d", dir, comm->get_model_rank(), epoch, step);
-    if (comm->am_model_master()) {
-      p.open_checkpoint(epochdir);
+    epochdir = get_shared_checkpoint_dirname(m, dir, epoch, step);
+    if (comm->am_trainer_master()) {
+      p.open_checkpoint(epochdir.c_str());
     }
     // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-    comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+    comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->save_to_checkpoint_shared(p);
     // close our checkpoint
     p.close_checkpoint();
-    if (comm->am_model_master()) {
-      write_latest(dir, "last.shared.checkpoint", epoch, step);
+    if (comm->am_trainer_master()) {
+      latest_file = get_last_shared_checkpoint_filename(m, dir);
+      write_latest(latest_file, epoch, step);
     }
   }
 
   uint64_t bytes_count = p.get_bytes();
 
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     EvalType secs = timer.Stop();
     EvalType bw = 0;
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw);
+    printf("[%s.%d] Checkpoint complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+           m->get_name().c_str(), comm->get_trainer_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
     fflush(stdout);
   }
   // record last checkpoint time in case checkpoint_secs interval defined.
@@ -246,6 +212,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   constexpr unsigned int max_len_dirname = 1024;
   // get top level directory
   char dir[max_len_dirname];
+  std::string latest_file;
   int epoch = -1;
   int step = -1;
   int epoch_dist = -1;
@@ -253,14 +220,16 @@ bool lbann_callback_checkpoint::restart(model *m) {
   lbann_comm *comm = m->get_comm();
   int shared = 1;
   // Grab latest checkpoint information, checks for latest in dist and shared, restarts from most recent between the two.
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     if(m_per_rank_dir.length()){
       snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), m_checkpoint_dir.c_str());
-      read_latest(dir, "last.distributed.checkpoint", &epoch_dist, &step_dist);
+      latest_file = get_last_distributed_checkpoint_filename(m, dir);
+      read_latest(latest_file, &epoch, &step);
     }
     if(m_checkpoint_dir.length()){
       strcpy(dir, m_checkpoint_dir.c_str());
-      read_latest(dir, "last.shared.checkpoint", &epoch, &step);
+      latest_file = get_last_shared_checkpoint_filename(m, dir);
+      read_latest(latest_file, &epoch, &step);
     }
 
     if(epoch > epoch_dist){
@@ -280,7 +249,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   }
   // Update other ranks on where we are loading from.
   // TODO: we would want to prepend dir with the model name and model rank:
-  // m->get_name() + '.' + std::to_string(comm->get_model_rank()) + '.'
+  // m->get_name() + '.' + std::to_string(comm->get_trainer_rank()) + '.'
 #if 1
   header_t<max_len_dirname> header;
 
@@ -289,17 +258,17 @@ bool lbann_callback_checkpoint::restart(model *m) {
   header.shared = shared;
   memcpy(header.dirname, dir, sizeof(dir));
 
-  comm->model_broadcast(0, header);
+  comm->trainer_broadcast(0, header);
 
   epoch = header.epoch;
   step = header.step;
   shared = header.shared;
   memcpy(dir, header.dirname, sizeof(dir));
 #else
-  comm->model_broadcast(0, epoch);
-  comm->model_broadcast(0, step);
-  comm->model_broadcast(0, shared);
-  comm->model_broadcast(0, &(dir[0]), sizeof(dir));
+  comm->trainer_broadcast(0, epoch);
+  comm->trainer_broadcast(0, step);
+  comm->trainer_broadcast(0, shared);
+  comm->trainer_broadcast(0, &(dir[0]), sizeof(dir));
 #endif
 
   // if we couldn't find the latest epoch, just return
@@ -309,43 +278,43 @@ bool lbann_callback_checkpoint::restart(model *m) {
   // time how long this takes
   El::Timer timer;
   // let user know we're restarting from a checkpoint
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     timer.Start();
     printf("Restart: epoch %d ...\n", epoch);
     fflush(stdout);
   }
 
-  char epochdir[1024];
+  std::string epochdir;
   // Create dir to restart from based off last recorded checkpoint (or overriden values in last.shared[distributed].checkpoint
   if(!shared){
-    snprintf(epochdir, sizeof(epochdir), "%s/rank.%d.epoch.%d.step.%d", dir, comm->get_rank_in_model(), epoch, step);
-    p.open_restart(epochdir);
+    epochdir = get_distributed_checkpoint_dirname(m, dir, epoch, step);
+    p.open_restart(epochdir.c_str());
     m->load_from_checkpoint_distributed(p);
     p.close_restart();
   }
   else {
-    sprintf(epochdir, "%s/shared.model.%d.epoch.%d.step.%d", dir, comm->get_model_rank(), epoch, step);
-    if (comm->am_model_master()) {
-      p.open_restart(epochdir);
+    epochdir = get_shared_checkpoint_dirname(m, dir, epoch, step);
+    if (comm->am_trainer_master()) {
+      p.open_restart(epochdir.c_str());
     }
     // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
-    comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+    comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->load_from_checkpoint_shared(p);
-    if(comm->am_model_master())
+    if(comm->am_trainer_master())
       p.close_restart();
   }
 
   // close our checkpoint
   uint64_t bytes_count = p.get_bytes();
   // let user know we've completed reading our restart
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     EvalType secs = timer.Stop();
     EvalType bw = 0.0;
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           epoch, step, secs, (unsigned long long) bytes_count, bw
+    printf("[%s.%d] Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+           m->get_name().c_str(), comm->get_trainer_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw
           );
     fflush(stdout);
   }

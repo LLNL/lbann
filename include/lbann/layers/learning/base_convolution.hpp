@@ -41,13 +41,12 @@
 
 namespace lbann {
 
-/** Base convolution layer.
- *  Parent class for convolution and deconvolution layers.
+/** @brief Computation kernels for convolution and deconvolution layers.
  */
 template <El::Device Dev>
 class base_convolution_layer : public learning_layer {
 
- protected:
+protected:
 
   /** Convolution kernel dimensions. */
   std::vector<int> m_kernel_dims;
@@ -95,7 +94,7 @@ class base_convolution_layer : public learning_layer {
 
 #endif // LBANN_HAS_CUDNN
 
-  public:
+public:
 
   base_convolution_layer(lbann_comm *comm,
                          int num_data_dims,
@@ -114,8 +113,8 @@ class base_convolution_layer : public learning_layer {
       m_dilations(dilations),
       m_num_groups(groups),
       m_bias_scaling_factor(has_bias ? DataType(1) : DataType(0)),
-      m_kernel_gradient(this->m_comm->get_model_grid()),
-      m_bias_gradient(this->m_comm->get_model_grid())
+      m_kernel_gradient(this->m_comm->get_trainer_grid()),
+      m_bias_gradient(this->m_comm->get_trainer_grid())
 #ifdef LBANN_HAS_CUDNN
     , m_kernel_cudnn_desc(nullptr),
       m_convolution_cudnn_desc(nullptr),
@@ -234,6 +233,57 @@ class base_convolution_layer : public learning_layer {
       CHECK_CUDNN_DTOR(cudnnDestroyTensorDescriptor(m_bias_cudnn_desc));
     }
 #endif // LBANN_HAS_CUDNN
+  }
+
+  description get_description() const override {
+    auto&& desc = learning_layer::get_description();
+    std::stringstream ss;
+
+    // Convolution dimensions
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 2; i < m_kernel_dims.size(); ++i) {
+      ss << (i > 2 ? ", " : "" ) << m_kernel_dims[i];
+    }
+    desc.add("Convolution dimensions", ss.str());
+
+    // Strides
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < m_strides.size(); ++i) {
+      ss << (i > 0 ? ", " : "" ) << m_strides[i];
+    }
+    desc.add("Strides", ss.str());
+
+    // Pads
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < m_pads.size(); ++i) {
+      ss << (i > 0 ? ", " : "" ) << m_pads[i];
+    }
+    desc.add("Pads", ss.str());
+
+    // Dilation
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < m_dilations.size(); ++i) {
+      ss << (i > 0 ? ", " : "" ) << m_dilations[i];
+    }
+    desc.add("Dilations", ss.str());
+
+    // Groups
+    desc.add("Groups", m_num_groups);
+
+    // Bias
+    ss.str(std::string{});
+    ss.clear();
+    ss << (m_bias_scaling_factor == DataType(0) ?
+           "disabled" : "enabled");
+    desc.add("Bias", ss.str());
+
+    // Result
+    return desc;
+
   }
 
   /** Setup layer data.
@@ -358,7 +408,7 @@ class base_convolution_layer : public learning_layer {
 #endif // LBANN_HAS_CUDNN
   }
 
- protected:
+protected:
 
   /** Convolution with cuDNN. */
   void apply_convolution_cudnn(bool during_forward_prop) {
@@ -925,7 +975,7 @@ class base_convolution_layer : public learning_layer {
 
   }
 
- private:
+private:
 
 #ifdef LBANN_HAS_CUDNN
 

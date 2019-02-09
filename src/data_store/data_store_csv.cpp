@@ -48,7 +48,7 @@ void data_store_csv::setup() {
   std::stringstream err;
 
   if (m_master) {
-    std::cerr << "starting data_store_csv::setup() for role: " 
+    std::cerr << "starting data_store_csv::setup() for role: "
               << m_reader->get_role() << "\n"
               << "calling generic_data_store::setup()\n";
   }
@@ -59,8 +59,8 @@ void data_store_csv::setup() {
     err << __FILE__ << " " << __LINE__ << " :: "
         << "not yet implemented";
     throw lbann_exception(err.str());
-  } 
-  
+  }
+
   else {
     //sanity check
     csv_reader *reader = dynamic_cast<csv_reader*>(m_reader);
@@ -73,8 +73,8 @@ void data_store_csv::setup() {
 
     if (m_np != reader->get_num_parallel_readers() && ! is_subsidiary_store()) {
       err << __FILE__ << " " << __LINE__ << " :: "
-          << "num_parallel_readers(): " << reader->get_num_parallel_readers() 
-          << " m_np: " << m_np 
+          << "num_parallel_readers(): " << reader->get_num_parallel_readers()
+          << " m_np: " << m_np
           << "; for this data_store num_readers must be the same as procs per model;\n"
           << " if this isn't acceptable, please notify Dave Hysom so he can fix.\n"
           << "reader role: " << m_reader->get_role();
@@ -93,7 +93,7 @@ void data_store_csv::setup() {
 
     if (m_master) std::cerr << "calling get_minibatch_index_vector\n";
     get_minibatch_index_vector();
-    
+
     if (m_master) std::cerr << "calling exchange_mb_indices()\n";
     exchange_mb_indices();
 
@@ -101,7 +101,7 @@ void data_store_csv::setup() {
     get_my_datastore_indices();
 
     if (m_master) std::cerr << "calling populate_datastore()\n";
-    populate_datastore(); 
+    populate_datastore();
 
     if (m_master) std::cerr << "calling exchange_data()\n";
     exchange_data();
@@ -165,7 +165,7 @@ void data_store_csv::exchange_data() {
           << " ERROR: bad rank for owner in nb_recv; owner: " << owner << " data_id: " << data_id << " jj: " << jj+1 << " of " << indices.size();
       throw lbann_exception(err.str());
     }
-    m_comm->nb_tagged_recv<DataType>(m_my_minibatch_data[data_id].data(), m_vector_size, owner, data_id, recv_req[jj++], m_comm->get_model_comm());
+    m_comm->nb_tagged_recv<DataType>(m_my_minibatch_data[data_id].data(), m_vector_size, owner, data_id, recv_req[jj++], m_comm->get_trainer_comm());
   }
 
   //start sends to all processors
@@ -188,7 +188,7 @@ void data_store_csv::exchange_data() {
             << " m_reader->get_role: " << m_reader->get_role();
         throw lbann_exception(err.str());
       }
-      m_comm->nb_tagged_send<DataType>(m_data[data_id].data(), m_vector_size, p, data_id, send_req[p][jj++], m_comm->get_model_comm());
+      m_comm->nb_tagged_send<DataType>(m_data[data_id].data(), m_vector_size, p, data_id, send_req[p][jj++], m_comm->get_trainer_comm());
     }
   }
 
@@ -203,7 +203,7 @@ void data_store_csv::exchange_data() {
   m_comm->wait_all(recv_req);
 
   if (m_master) {
-    std::cerr << "TIME for data_store_csv::exchange_data(): " 
+    std::cerr << "TIME for data_store_csv::exchange_data(): "
              << get_time() - tm1 << "; role: " << m_reader->get_role() << "\n";
   }
 }

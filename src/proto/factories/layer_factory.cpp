@@ -30,6 +30,28 @@
 namespace lbann {
 namespace proto {
 
+#define LAYOUT_ERR(layer_name, layer_type) \
+  { \
+    std::stringstream s;  \
+    s << "\nlayer type: " << layer_type << " layer name: " << layer_name << " -- is only supported for data_layout::DATA_PARALLEL";                  \
+    LBANN_ERROR(s.str()); \
+  }
+
+#define DEVICE_ERR(layer_name, layer_type, layout, Dev) \
+  { \
+    if (layout != data_layout::DATA_PARALLEL) { \
+      LAYOUT_ERR(layer_name, layer_type)  \
+    } else if (Dev != El::Device::CPU) { \
+      std::stringstream s;  \
+      s << "\nlayer type: " << layer_type " layer name: " << layer_name << " -- is only supported for El::Device::CPU; it looks like you're attempting to run with a cuda build. You should be able to run by adding --disable_cuda to your command line (in which case you won't be using GPUs, which may not be what you want)";\
+      LBANN_ERROR(s.str()); \
+    } else {     \
+      std::stringstream s;  \
+      s << "\nsomething is weird with data_layout and/or El::Device but we can't determine what."; \
+      LBANN_ERROR(s.str()); \
+    } \
+  }
+
 std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
                                                   const std::string& var_category,
                                                   bool& is_supported);
@@ -59,13 +81,6 @@ Layer* construct_layer(lbann_comm* comm,
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
-    if (io_buffer == "distributed") {
-      return new input_layer<distributed_io_buffer, layout, Dev>(comm,
-                                                                 num_parallel_readers,
-                                                                 data_readers,
-                                                                 !params.data_set_per_model(),
-                                                                 target_mode);
-    }
     if (io_buffer == "partitioned") {
       return new input_layer<partitioned_io_buffer, layout, Dev>(comm,
                                                                  num_parallel_readers,
@@ -73,14 +88,6 @@ Layer* construct_layer(lbann_comm* comm,
                                                                  !params.data_set_per_model(),
                                                                  target_mode);
     }
-  }
-
-  // Target layers
-  if (proto_layer.has_target()) {
-    return new target_layer<layout, Dev>(comm);
-  }
-  if (proto_layer.has_reconstruction()) {
-    return new reconstruction_layer<layout, Dev>(comm);
   }
 
   // Fully connected layer
@@ -178,6 +185,7 @@ Layer* construct_layer(lbann_comm* comm,
                      dims, pads, strides, dilations, num_groups, bias
                    );
       }
+      LAYOUT_ERR(proto_layer.name(), "convolution");
     } else {
       const auto& num_dims = params.num_dims();
       const auto& dim = params.conv_dims_i();
@@ -193,6 +201,7 @@ Layer* construct_layer(lbann_comm* comm,
                      dim, pad, stride, dilation, num_groups, bias
                    );
       }
+      LAYOUT_ERR(proto_layer.name(), "convolution");
     }
   }
   if (proto_layer.has_deconvolution()) {
@@ -224,6 +233,7 @@ Layer* construct_layer(lbann_comm* comm,
                      dims, pads, strides, dilations, num_groups, bias
                    );
       }
+      LAYOUT_ERR(proto_layer.name(), "deconvolution");
     } else {
       const auto& num_dims = params.num_dims();
       const auto& dim = params.conv_dims_i();
@@ -239,6 +249,7 @@ Layer* construct_layer(lbann_comm* comm,
                      dim, pad, stride, dilation, num_groups, bias
                    );
       }
+      LAYOUT_ERR(proto_layer.name(), "deconvolution");
     }
   }
 
@@ -378,6 +389,7 @@ Layer* construct_layer(lbann_comm* comm,
                      comm, dims.size(), dims, pads, strides, mode
                    );
       }
+      LAYOUT_ERR(proto_layer.name(), "pooling");
     } else {
       const auto& num_dims = params.num_dims();
       const auto& dim = params.pool_dims_i();
@@ -388,12 +400,14 @@ Layer* construct_layer(lbann_comm* comm,
                      comm, num_dims, dim, pad, stride, mode
                    );
       }
+      LAYOUT_ERR(proto_layer.name(), "pooling");
     }
   }
   if (proto_layer.has_unpooling()) {
     if (layout == data_layout::DATA_PARALLEL && Dev == El::Device::CPU) {
       return new unpooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm);
     }
+    DEVICE_ERR(proto_layer.name(), "unpooling", layout, Dev);
   }
   if (proto_layer.has_reduction()) {
     const auto& params = proto_layer.reduction();
@@ -404,6 +418,7 @@ Layer* construct_layer(lbann_comm* comm,
     if (layout == data_layout::DATA_PARALLEL) {
       return new reduction_layer<data_layout::DATA_PARALLEL, Dev>(comm, mode);
     }
+    LAYOUT_ERR(proto_layer.name(), "reduction");
   }
   if (proto_layer.has_evaluation()) {
     return new evaluation_layer<layout, Dev>(comm);
@@ -414,12 +429,14 @@ Layer* construct_layer(lbann_comm* comm,
     if (layout == data_layout::DATA_PARALLEL) {
       return new crop_layer<data_layout::DATA_PARALLEL, Dev>(comm, dims);
     }
+    LAYOUT_ERR(proto_layer.name(), "crop");
   }
   if (proto_layer.has_categorical_random()) {
     if (layout == data_layout::DATA_PARALLEL
         && Dev == El::Device::CPU) {
       return new categorical_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(comm);
     }
+    DEVICE_ERR(proto_layer.name(), "categorical_random", layout, Dev);
   }
   if (proto_layer.has_discrete_random()) {
     const auto& params = proto_layer.discrete_random();
@@ -430,6 +447,7 @@ Layer* construct_layer(lbann_comm* comm,
       return new discrete_random_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(
                    comm, values, dims);
     }
+    DEVICE_ERR(proto_layer.name(), "discrete_random", layout, Dev);
   }
   if (proto_layer.has_dummy()) {
     return new dummy_layer<layout, Dev>(comm);
@@ -446,24 +464,53 @@ Layer* construct_layer(lbann_comm* comm,
     if (layout == data_layout::DATA_PARALLEL) {
       return new sort_layer<data_layout::DATA_PARALLEL, Dev>(comm, params.descending());
     }
+    LAYOUT_ERR(proto_layer.name(), "sort");
   }
   if (proto_layer.has_weights_layer()) {
     const auto& params = proto_layer.weights_layer();
     const auto& dims = parse_list<El::Int>(params.dims());
     return new weights_layer<layout, Dev>(comm, dims);
   }
+  if (proto_layer.has_tessellate()) {
+    const auto& params = proto_layer.tessellate();
+    const auto& dims = parse_list<int>(params.dims());
+    return new tessellate_layer<layout, Dev>(comm, dims);
+  }
 
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new batch_normalization_layer<data_layout::DATA_PARALLEL, Dev>(comm,
-                                                                            params.decay(),
-                                                                            params.epsilon(),
-                                                                            params.global_stats());
-    } else {
-      LBANN_ERROR("batch normalization is only supported in a data-parallel layout");
+      const auto& aggr_str = params.stats_aggregation();
+      batch_normalization_stats_aggregation aggr =
+        batch_normalization_stats_aggregation::local;
+      if (aggr_str == "local" || aggr_str.empty()) {
+        aggr = batch_normalization_stats_aggregation::local;
+      } else if (aggr_str == "node_local") {
+        aggr = batch_normalization_stats_aggregation::node_local;
+      } else if (aggr_str == "global") {
+        aggr = batch_normalization_stats_aggregation::global;
+      } else {
+        err << "Invalid batch normalization stats aggregation " << aggr_str;
+        LBANN_ERROR(err.str());
+        return nullptr;
+      }
+      // Set defaults if not given.
+      auto decay = params.decay();
+      if (decay == 0.0) {
+        decay = 0.9;
+      }
+      auto epsilon = params.epsilon();
+      if (epsilon == 0.0) {
+        epsilon = 1e-5;
+      }
+      return new batch_normalization_layer<data_layout::DATA_PARALLEL, Dev>(
+        comm,
+        decay,
+        epsilon,
+        aggr);
     }
+    LAYOUT_ERR(proto_layer.name(), "batch_normalization");
   }
   if (proto_layer.has_dropout()) {
     const auto& params = proto_layer.dropout();
@@ -472,12 +519,14 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_local_response_normalization()) {
  const auto& params = proto_layer.local_response_normalization();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new local_response_normalization_layer<data_layout::DATA_PARALLEL, Dev>(comm,
-                                                                                     params.window_width(),
-                                                                                     params.lrn_alpha(),
-                                                                                     params.lrn_beta(),
-                                                                                     params.lrn_k());
+      return new local_response_normalization_layer<data_layout::DATA_PARALLEL, Dev>(
+             comm,
+             params.window_width(),
+             params.lrn_alpha(),
+             params.lrn_beta(),
+             params.lrn_k());
     }
+    LAYOUT_ERR(proto_layer.name(), "local_response_normalization");
   }
   if (proto_layer.has_selu_dropout()) {
     const auto& params = proto_layer.selu_dropout();
@@ -527,6 +576,7 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(mod);
   CONSTRUCT_LAYER(pow);
   CONSTRUCT_LAYER(safe_divide);
+  CONSTRUCT_LAYER(squared_difference);
   CONSTRUCT_LAYER(max);
   CONSTRUCT_LAYER(min);
   CONSTRUCT_LAYER(equal);
@@ -538,6 +588,10 @@ Layer* construct_layer(lbann_comm* comm,
   CONSTRUCT_LAYER(logical_and);
   CONSTRUCT_LAYER(logical_or);
   CONSTRUCT_LAYER(logical_xor);
+  if (proto_layer.has_clamp()) {
+    const auto& params = proto_layer.clamp();
+    return new clamp_layer<layout, Dev>(comm, params.min(), params.max());
+  }
 
   // Activation layers
   if (proto_layer.has_elu()) {
@@ -589,10 +643,12 @@ Layer* construct_layer(lbann_comm* comm,
   if (proto_layer.has_bilinear_resize()) {
     const auto& params = proto_layer.bilinear_resize();
     if (layout == data_layout::DATA_PARALLEL) {
-      return new bilinear_resize_layer<data_layout::DATA_PARALLEL, Dev>(comm,
-                                                                        params.height(),
-                                                                        params.width());
+      return new bilinear_resize_layer<data_layout::DATA_PARALLEL, Dev>(
+                         comm,
+                         params.height(),
+                         params.width());
     }
+    LAYOUT_ERR(proto_layer.name(), "bilinear_resize");
   }
 
   // Miscellaneous layers
@@ -608,6 +664,7 @@ Layer* construct_layer(lbann_comm* comm,
     if (layout == data_layout::DATA_PARALLEL) {
       return new channelwise_mean_layer<data_layout::DATA_PARALLEL, Dev>(comm);
     }
+    LAYOUT_ERR(proto_layer.name(), "channelwise_mean");
   }
 
   // Throw exception if layer has not been constructed

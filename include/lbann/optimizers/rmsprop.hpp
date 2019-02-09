@@ -50,11 +50,11 @@ class rmsprop : public optimizer {
   ~rmsprop() override;
   /** Create a copy. */
   rmsprop* copy() const override { return new rmsprop(*this); }
-  
+
   /** Get the optimizer name. */
   std::string get_type() const override { return "RMSprop"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
   /** Setup optimizer. */
   void setup(weights& w) override;
@@ -87,18 +87,18 @@ class rmsprop : public optimizer {
 
   bool unpack_scalars(persist& p, struct packing_header *header){
     p.read_datatype(persist_type::train, "momentum",  &m_decay_rate);
-    
+
     if(header != nullptr){
       header->decay_rate = m_decay_rate;
     }
-   
+
   return true;
   }
-  
+
   void unpack_header(struct packing_header& header){
     m_decay_rate = header.decay_rate;
   }
-  
+
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;

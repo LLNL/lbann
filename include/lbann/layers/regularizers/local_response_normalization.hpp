@@ -34,28 +34,19 @@
 
 namespace lbann {
 
-/** Local response normalization layer. */
+/** @brief
+ *
+ *  See:
+ *
+ *  Alex Krizhevsky, Ilya Sutskever, and Geoffrey E. Hinton. "ImageNet
+ *  classification with deep convolutional neural networks." In
+ *  Advances in Neural Information Processing Systems,
+ *  pp. 1097-1105. 2012.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
- private:
+public:
 
-  /** Normalization window width. */
-  int m_window_width;
-  /** LRN alpha scaling parameter. */
-  DataType m_alpha;
-  /** LRN beta power parameter. */
-  DataType m_beta;
-  /** LRN k parameter. */
-  DataType m_k;
-
-#ifdef LBANN_HAS_CUDNN
-  /** LRN cuDNN descriptor. */
-  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
-  /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
-#endif // LBANN_HAS_CUDNN
-
- public:
   local_response_normalization_layer(lbann_comm *comm,
                                      int window_width,
                                      DataType alpha,
@@ -132,19 +123,19 @@ class local_response_normalization_layer : public regularizer_layer {
   local_response_normalization_layer* copy() const override {
     return new local_response_normalization_layer(*this);
   }
-
-  /// Use LRN rather than local response normalization for better formatting
   std::string get_type() const override { return "LRN"; }
-
-  std::string get_description() const override {
-    return " LRN window width: " + std::to_string(m_window_width) + " alpha: " +
-      std::to_string(m_alpha) + " beta: " + std::to_string(m_beta)
-      + " k: " + std::to_string(m_k)
-      + " dataLayout: " + get_data_layout_string(get_data_layout());
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  description get_description() const override {
+    auto&& desc = regularizer_layer::get_description();
+    desc.add("alpha", m_alpha);
+    desc.add("beta", m_beta);
+    desc.add("k", m_k);
+    return desc;
+  }
+
+protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();
@@ -182,7 +173,24 @@ class local_response_normalization_layer : public regularizer_layer {
     }
   }
 
- private:
+private:
+
+  /** Normalization window width. */
+  int m_window_width;
+  /** LRN alpha scaling parameter. */
+  DataType m_alpha;
+  /** LRN beta power parameter. */
+  DataType m_beta;
+  /** LRN k parameter. */
+  DataType m_k;
+
+#ifdef LBANN_HAS_CUDNN
+  /** LRN cuDNN descriptor. */
+  cudnnLRNDescriptor_t m_lrn_cudnn_desc;
+  /** Tensor cuDNN descriptors. */
+  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+#endif // LBANN_HAS_CUDNN
+
   /// GPU implementation of forward propagation
   void fp_compute_cudnn() {
 #ifndef LBANN_HAS_CUDNN

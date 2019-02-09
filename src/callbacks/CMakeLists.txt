@@ -10,7 +10,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_confusion_matrix.cpp
   callback_debug.cpp
   callback_debug_io.cpp
-  callback_dump_activations.cpp
+  callback_dump_outputs.cpp
   callback_dump_error_signals.cpp
   callback_dump_gradients.cpp
   callback_dump_minibatch_sample_indices.cpp
@@ -20,6 +20,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_io.cpp
   callback_learning_rate.cpp
   callback_ltfb.cpp
+  callback_perturb_adam.cpp
   callback_print.cpp
   callback_save_images.cpp
   callback_save_model.cpp

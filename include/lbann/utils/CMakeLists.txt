@@ -5,18 +5,22 @@ set_full_path(THIS_DIR_HEADERS
   cuda.hpp
   cudnn.hpp
   dataset.hpp
+  description.hpp
   entrywise_operator.hpp
   exception.hpp
+  factory.hpp
+  factory_error_policies.hpp
+  file_utils.hpp
   glob.hpp
   im2col.hpp
+  jag_utils.hpp
+  lbann_library.hpp
   mild_exception.hpp
   number_theory.hpp
   omp_diagnostics.hpp
   options.hpp
   profiling.hpp
   prototext.hpp
-  quantizer.hpp
-  quantizer_impl.hpp
   random.hpp
   statistics.hpp
   summary.hpp
@@ -24,6 +28,7 @@ set_full_path(THIS_DIR_HEADERS
   )
 
 # Add the subdirectories
+add_subdirectory(threads)
 add_subdirectory(impl)
 
 # Propagate the files up the tree

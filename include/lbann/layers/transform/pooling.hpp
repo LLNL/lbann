@@ -40,10 +40,9 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-/** Pooling layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class pooling_layer : public transform_layer {
- private:
+private:
 
   /** Pooling mode. */
   const pool_mode m_pool_mode;
@@ -150,34 +149,6 @@ public:
     return *this;
   }
 
-  pooling_layer* copy() const override { return new pooling_layer(*this); }
-  std::string get_type() const override { return "pooling"; }
-  data_layout get_data_layout() const override { return T_layout; }
-  El::Device get_device_allocation() const override { return Dev; }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " pooling; num_data_dims: "
-    + std::to_string(m_pool_dims.size()) + " pool_dims: ";
-    for (size_t h=0; h<this->m_pool_dims.size(); h++) {
-      s << this->m_pool_dims[h] << " ";
-    }
-    s << " pads: ";
-    for (size_t h=0; h<this->m_pads.size(); h++) {
-      s << this->m_pads[h] << " ";
-    }
-    s << " strides: ";
-    for (size_t h=0; h<this->m_strides.size(); h++) {
-      s << this->m_strides[h] << " ";
-    }
-    s << " pool_mode: " << get_pool_mode_name(this->m_pool_mode);
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    s << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
-
-    return s.str();
-  }
-
   ~pooling_layer() {
 #ifdef LBANN_HAS_CUDNN
     if (m_pooling_cudnn_desc != nullptr) {
@@ -185,6 +156,59 @@ public:
     }
 #endif // LBANN_HAS_CUDNN
   }
+
+  pooling_layer* copy() const override { return new pooling_layer(*this); }
+  std::string get_type() const override { return "pooling"; }
+  data_layout get_data_layout() const override { return T_layout; }
+  El::Device get_device_allocation() const override { return Dev; }
+
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    std::stringstream ss;
+
+    // Pool mode
+    ss.str(std::string{});
+    ss.clear();
+    switch (m_pool_mode) {
+    case pool_mode::max:            ss << "max";              break;
+    case pool_mode::average:        ss << "average";          break;
+    case pool_mode::average_no_pad: ss << "average (no pad)"; break;
+    case pool_mode::invalid:
+    default:
+      ss << "invalid";
+    }
+    desc.add("Pool mode", ss.str());
+
+    // Pool dimensions
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < m_pool_dims.size(); ++i) {
+      ss << (i > 0 ? ", " : "" ) << m_pool_dims[i];
+    }
+    desc.add("Pool dimensions", ss.str());
+
+    // Strides
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < m_strides.size(); ++i) {
+      ss << (i > 0 ? ", " : "" ) << m_strides[i];
+    }
+    desc.add("Strides", ss.str());
+
+    // Pads
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < m_pads.size(); ++i) {
+      ss << (i > 0 ? ", " : "" ) << m_pads[i];
+    }
+    desc.add("Pads", ss.str());
+
+    // Result
+    return desc;
+
+  }
+
+protected:
 
   void setup_dims() override {
     transform_layer::setup_dims();
@@ -236,8 +260,6 @@ public:
 #endif // #ifndef LBANN_HAS_CUDNN
   }
 
-  protected:
-
   void fp_compute() override {
     if(this->using_gpus()) {
       fp_compute_cudnn();
@@ -254,7 +276,7 @@ public:
     }
   }
 
- private:
+private:
 
   /// Pooling forward propagation with cuDNN
   void fp_compute_cudnn() {

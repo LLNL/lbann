@@ -41,6 +41,8 @@
 #include <cstdio>
 
 namespace lbann {
+
+/** @todo Move functionality to input_layer. */
 class io_layer : public Layer {
  protected:
   bool m_data_set_spans_models;
@@ -92,8 +94,6 @@ class io_layer : public Layer {
    * Get the dimensions of the underlying data.
    */
   virtual const std::vector<int> get_data_dims(int child_index = 0) const = 0;
-
-  std::string get_topo_description() const override = 0;
 
   /**
    * Get the linearized size of the underlying data.

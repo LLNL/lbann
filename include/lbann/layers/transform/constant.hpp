@@ -31,12 +31,11 @@
 
 namespace lbann {
 
-/** Layer with constant output. */
+/** @brief Constant output. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class constant_layer : public transform_layer {
+public:
 
- public:
-  /** Constructor. */
   constant_layer(lbann_comm *comm,
                  DataType value,
                  std::vector<int> dims)
@@ -50,15 +49,13 @@ class constant_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description. */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << "constant_layer  value: " << m_value
-       << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Value", m_value);
+    return desc;
   }
 
- protected:
+protected:
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {
@@ -68,7 +65,7 @@ class constant_layer : public transform_layer {
     }
   }
 
- private:
+private:
 
   /** Constant value. */
   DataType m_value;

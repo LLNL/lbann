@@ -32,19 +32,20 @@
 
 namespace lbann {
 
-/** Activations are drawn from Gaussian distribution.
- *  During validation and testing, the layer outputs the distribution
- *  mean.
+/** @brief Random values with Gaussian distribution.
+ *
+ *  During validation and testing, outputs are all equal to the
+ *  distribution mean.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer {
- private:
+private:
   /** Gaussian distribution mean. */
   DataType m_mean;
   /** Gaussian distribution standard deviation. */
   DataType m_stdev;
 
- public:
+public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
                  DataType mean = DataType(0),
@@ -58,17 +59,14 @@ class gaussian_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream ss;
-    ss << "gaussian_layer" << "  "
-       << "mean: " << m_mean << " "
-       << "stdev: " << m_stdev << " "
-       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return ss.str();
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Mean", m_mean);
+    desc.add("Standard deviation", m_stdev);
+    return desc;
   }
 
- protected:
+protected:
 
   void fp_compute() override {
     auto& output = get_activations();

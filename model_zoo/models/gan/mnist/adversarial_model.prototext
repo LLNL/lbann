@@ -6,7 +6,7 @@ model {
   super_steps: 100000
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -42,11 +42,12 @@ model {
   callback { timer {} }
 
   callback {
-      dump_activations{
-      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_acts_32mb/"
-      layer_names: "fc4_tanh sum"
-      #layer_names: "fc4_tanh data sum"
-      #interval: 844
+    dump_outputs {
+      directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/fcgan_dump_acts_32mb/"
+      layers: "fc4_tanh sum"
+      #layers: "fc4_tanh data sum"
+      #batch_interval: 844
+      execution_modes: "test"
     }
   }
   callback {
@@ -75,13 +76,13 @@ model {
     parents: "input"
     name: "data"
     data_layout: "data_parallel"
-    split {}    
+    split {}
   }
   layer {
     parents: "input"
     name: "label"
     data_layout: "data_parallel"
-    split {}    
+    split {}
   }
 
   #ZERO

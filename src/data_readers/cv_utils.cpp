@@ -63,7 +63,7 @@ cv::Mat cv_utils::copy_buf_to_cvMat(const std::vector<uint8_t>& buf,
 }
 
 
-bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_process& pp) {
+bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, CPUMat& buf, const cv_process& pp) {
   _LBANN_SILENT_EXCEPTION(image.empty(), "", false)
 
   _SWITCH_CV_FUNC_3PARAMS(image.depth(), \
@@ -73,7 +73,7 @@ bool cv_utils::copy_cvMat_to_buf(const cv::Mat& image, ::Mat& buf, const cv_proc
 }
 
 
-cv::Mat cv_utils::copy_buf_to_cvMat(const ::Mat& buf,
+cv::Mat cv_utils::copy_buf_to_cvMat(const CPUMat& buf,
                                     const int Width, const int Height, const int Type, const cv_process& pp) {
   _SWITCH_CV_FUNC_4PARAMS(CV_MAT_DEPTH(Type), \
                           copy_buf_to_cvMat_with_known_type, \

@@ -48,8 +48,8 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 97)
-set(LBANN_VERSION_PATCH 1)
+set(LBANN_VERSION_MINOR 98)
+set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
 
@@ -96,81 +96,50 @@ endif ()
 # Options
 #
 
-# This option is off by default because non-developers should not use
-# this option under normal circumstances.
-option(LBANN_WARNINGS_AS_ERRORS
-  "Build with warnings promoted to errors." OFF)
-
-option(LBANN_WITH_CUDA "Include Nvidia CUDA" OFF)
-
-option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
+option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
 
 option(LBANN_WITH_CNPY "Include cnpy" ON)
 
-option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
+option(LBANN_WITH_CONDUIT "Enable Conduit library" OFF)
 
-option(LBANN_WITH_VTUNE
-  "Link the Intel VTune profiling library" OFF)
+option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
+
+option(LBANN_WITH_HWLOC
+  "Enable topology-aware optimizations" ON)
 
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
-option(LBANN_WITH_TOPO_AWARE
-  "Enable topology-aware profiling (HWLOC)" ON)
+option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
-option(LBANN_WITH_ALUMINUM
-  "Enable Aluminum all-reduce library" OFF)
 
-option(LBANN_WITH_CONDUIT
-  "Enable Conduit library" OFF)
+option(LBANN_WITH_VTUNE
+  "Link the Intel VTune profiling library" OFF)
 
-option(LBANN_VERBOSE "Enable verbose output" OFF)
+# Enable parallel random matrix generation, if possible
+option(LBANN_DETERMINISTIC
+  "Use deterministic algorithms as much as possible." OFF)
 
 option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
+mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
+
+# This option is off by default because non-developers should not use
+# this option under normal circumstances.
+option(LBANN_WARNINGS_AS_ERRORS
+  "Build with warnings promoted to errors." OFF)
+mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
+
+#
+# The datatype option is not binary
+#
 
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
-
-# Enable CUDA if necessary
-if (LBANN_WITH_CUDA)
-  include(CheckLanguage)
-  check_language(CUDA)
-  if (CMAKE_CUDA_COMPILER)
-    enable_language(CUDA)
-
-    # Handle C++11-ness of CUDA
-    if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
-      set(CMAKE_CUDA_STANDARD 11)
-      set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
-    endif ()
-
-    # This enables all the CUDA-specific macros...
-    find_package(CUDA)
-  endif ()
-
-  set(LBANN_HAS_CUDA ${CUDA_FOUND})
-
-  if (LBANN_HAS_CUDA)
-  else ()
-    message(FATAL_ERROR "CUDA support not found. Disabling.")
-    set(LBANN_WITH_CUDA OFF)
-  endif ()
-endif ()
-
-# Handle a few of the easy ones straight-away
-set(LBANN_TOPO_AWARE ${LBANN_WITH_TOPO_AWARE})
-
-# Enable parallel random matrix generation, if possible
-if (LBANN_DETERMINISTIC)
-  set(LBANN_DETERMINISTIC TRUE)
-else()
-  set(LBANN_DETERMINISTIC FALSE)
-endif ()
 
 #
 # Initialize build
@@ -187,15 +156,25 @@ include(SetupCXX)
 ################################################################
 
 # Required dependencies
+find_package(CEREAL NO_MODULE
+  HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
+  PATH_SUFFIXES share/cmake/cereal
+  NO_DEFAULT_PATH)
+if (NOT CEREAL_FOUND)
+  find_package(CEREAL NO_MODULE REQUIRED)
+endif ()
+set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
+# The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.1.0 NO_MODULE
+find_package(Hydrogen 1.1.0 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.1.0 NO_MODULE REQUIRED)
+  find_package(Hydrogen 1.1.0 NO_MODULE QUIET REQUIRED)
 endif ()
+message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 include(SetupOpenMP)
@@ -203,25 +182,40 @@ include(SetupMPI)
 include(SetupProtobuf)
 
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV NO_MODULE
+find_package(OpenCV NO_MODULE QUIET
   HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
   PATH_SUFFIXES share/OpenCV
   NO_DEFAULT_PATH)
 if (NOT OpenCV_FOUND)
-  find_package(OpenCV NO_MODULE REQUIRED)
+  find_package(OpenCV NO_MODULE QUIET REQUIRED)
 endif ()
+message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
+
+# CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA, LBANN gets CUDA.
+set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
+set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
+
+if (LBANN_HAS_CUDA)
+  enable_language(CUDA)
+
+  if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
+    set(CMAKE_CUDA_STANDARD 11)
+  endif ()
+
+  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+endif ()
 
 if (LBANN_WITH_ALUMINUM)
   # Aluminum may have already been found by Hydrogen
   if (NOT Aluminum_FOUND)
-    find_package(Aluminum NO_MODULE
+    find_package(Aluminum NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum NO_MODULE)
+      find_package(Aluminum NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
@@ -238,10 +232,11 @@ if (LBANN_WITH_ALUMINUM)
 
   else ()
 
-    if (AL_HAS_CUDA AND NOT LBANN_WITH_CUDA)
+    message(STATUS "Found Aluminum: ${Aluminum_DIR}")
+
+    if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
       message(WARNING
-        "Aluminum has CUDA support but LBANN has been configured "
-        "with LBANN_WITH_CUDA=OFF.")
+        "Aluminum has CUDA support but CUDA support has not been found.")
     endif ()
 
     option(LBANN_BUILT_WITH_SPECTRUM "LBANN was built with Spectrum MPI" OFF)
@@ -315,42 +310,99 @@ if (LBANN_WITH_NVPROF)
 endif ()
 
 if (LBANN_WITH_CNPY)
-  find_package(CNPY)
+  find_package(CNPY REQUIRED)
   set(LBANN_HAS_CNPY ${CNPY_FOUND})
-  if (NOT LBANN_HAS_CNPY)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_CNPY but CNPY not found. "
-      "CNPY is now disabled. "
-      "Try specifying CNPY_DIR as the root of a CNPY install. "
-      "Alternatively, build with LBANN_WITH_CNPY=OFF.")
-    set(LBANN_WITH_CNPY OFF)
-  endif (NOT LBANN_HAS_CNPY)
 endif (LBANN_WITH_CNPY)
 
-if (LBANN_TOPO_AWARE)
-  # LBANN also requires HWLOC. This seems sufficient for now.
-  find_package(HWLOC)
-
-  if (NOT HWLOC_FOUND)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_TOPO_AWARE but HWLOC not found. "
-      "HWLOC is now disabled. "
-      "Try specifying HWLOC_DIR as the root of an HWLOC install. "
-      "Alternatively, build with LBANN_WITH_TOPO_AWARE=OFF.")
-    set(LBANN_TOPO_AWARE OFF)
-  endif (NOT HWLOC_FOUND)
-endif (LBANN_TOPO_AWARE)
+if (LBANN_WITH_HWLOC)
+  find_package(HWLOC REQUIRED)
+  set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
+endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
-  find_package(CONDUIT)
+  # Apparently we have to find HDF5, too.
+  find_package(HDF5 CONFIG QUIET
+    HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
+    PATH_SUFFIXES share/cmake/hdf5
+    NO_DEFAULT_PATH)
+  if (NOT HDF5_FOUND)
+    find_package(HDF5 CONFIG QUIET)
+  endif ()
+  if (NOT HDF5_FOUND)
+    enable_language(C) # WHY??????????????
+    find_package(HDF5 REQUIRED)
+    set(HDF5_FOUND_WITH_MODULE TRUE)
+  else ()
+    message(STATUS "Found HDF5: ${HDF5_DIR}")
+  endif ()
+
+  find_package(CONDUIT CONFIG QUIET
+    HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+    PATH_SUFFIXES lib64/cmake lib/cmake
+    NO_DEFAULT_PATH)
+  if (NOT CONDUIT_FOUND)
+    find_package(CONDUIT CONFIG QUIET REQUIRED
+      PATH_SUFFIXES lib64/cmake lib/cmake)
+  endif ()
+  message(STATUS "Found CONDUIT: ${CONDUIT_DIR}")
+
+  # Ugh. I don't like that this requires intimate knowledge of
+  # specific targets that CONDUIT exports. It should support
+  # components.
+  if (NOT TARGET conduit_relay_mpi)
+    message(FATAL_ERROR "CONDUIT does not have proper MPI support.")
+  endif ()
+
+  if (NOT TARGET conduit OR NOT TARGET conduit_relay
+      OR NOT TARGET conduit_blueprint)
+    message(FATAL_ERROR "Missing some CONDUIT required library.")
+  endif ()
+
+  if (NOT TARGET conduit::conduit)
+    add_library(conduit::conduit INTERFACE IMPORTED)
+  endif ()
+
+  set(_conduit_interface_link_libs
+    "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+
+  # Remove -pthread from linkage, if found
+  foreach (_lib IN LISTS _conduit_interface_link_libs)
+    if (TARGET ${_lib})
+      get_property(_tmp_interface_link_libs TARGET ${_lib}
+        PROPERTY INTERFACE_LINK_LIBRARIES)
+
+      list(FIND _tmp_interface_link_libs "-pthread" _pthread_idx)
+      if (_pthread_idx GREATER_EQUAL 0)
+        list(REMOVE_AT _tmp_interface_link_libs ${_pthread_idx})
+
+        set_property(TARGET ${_lib} PROPERTY
+          INTERFACE_LINK_LIBRARIES ${_tmp_interface_link_libs})
+      endif ()
+
+      get_property(_tmp_interface_compile_opts TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS)
+      set_property(TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS
+          $<$<COMPILE_LANGUAGE:CXX>:${_tmp_interface_compile_opts}>)
+    endif ()
+  endforeach ()
+
+  if (HDF5_FOUND_WITH_MODULE)
+    list(APPEND _conduit_interface_link_libs
+      ${HDF5_LIBRARIES})
+
+    set_target_properties(conduit::conduit
+      PROPERTIES
+      INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
+  endif ()
+
+  set_target_properties(conduit::conduit
+    PROPERTIES
+    INTERFACE_LINK_LIBRARIES
+    "${_conduit_interface_link_libs}")
+
+  set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
-  if (NOT LBANN_HAS_CONDUIT)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_CONDUIT but Conduit not found. "
-      "Conduit is now disabled. "
-      "Try specifying CONDUIT_DIR as the root of an CONDUIT install. "
-      "Alternatively, build with LBANN_WITH_CONDUIT=OFF.")
-  endif(NOT LBANN_HAS_CONDUIT)
 endif (LBANN_WITH_CONDUIT)
 
 # Handle the documentation
@@ -380,11 +432,13 @@ target_include_directories(lbann PUBLIC
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
 target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
+target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
@@ -402,25 +456,6 @@ if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
 endif ()
 
-if (LBANN_HAS_CONDUIT)
-  target_link_libraries(lbann PUBLIC CONDUIT::CONDUIT)
-endif ()
-
-if (LBANN_HAS_CUDA)
-  target_link_libraries(lbann PUBLIC ${CUDA_LIBRARIES})
-  target_link_libraries(lbann PUBLIC cuda::toolkit)
-  if (LBANN_WITH_NVPROF)
-    target_link_libraries(lbann PUBLIC ${NVTX_LIBRARIES})
-  endif ()
-  target_link_libraries(lbann PUBLIC ${cuBLAS_LIBRARIES})
-
-  if(LBANN_HAS_NCCL2)
-    target_link_libraries(lbann PUBLIC cuda::nccl)
-  endif()
-endif()
-if(LBANN_HAS_CUDNN)
-  target_link_libraries(lbann PUBLIC ${cuDNN_LIBRARIES})
-endif ()
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
 endif ()
@@ -448,7 +483,9 @@ endif ()
 # Add the rest of the things
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
+add_subdirectory(model_zoo/jag_utils)
 add_subdirectory(tests)
+add_subdirectory(scripts)
 
 ################################################################
 # Install LBANN
@@ -583,6 +620,7 @@ append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_HYDROGEN
   LBANN_HAS_OPENCV
+  LBANN_HAS_CEREAL
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
   LBANN_HAS_NCCL2
@@ -594,8 +632,7 @@ append_str_tf(_str
   LBANN_HAS_DOXYGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_ALUMINUM
-  LBANN_HAS_CONDUIT
-  LBANN_NO_OMP_FOR_DATA_READERS)
+  LBANN_HAS_CONDUIT)
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 

@@ -24,41 +24,41 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_SGD_HPP
-#define LBANN_OPTIMIZER_SGD_HPP
+#ifndef LBANN_OPTIMIZERS_SGD_HPP
+#define LBANN_OPTIMIZERS_SGD_HPP
 
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
 /** Stochastic gradient descent optimizer.
+ *
  *  Supports momentum and Nesterov acceleration.
  */
 class sgd : public optimizer {
 
  public:
 
-  /** Constructor. */
   sgd(lbann_comm *comm,
       DataType learning_rate,
-      DataType momentum = DataType(0),
+      DataType momentum = 0,
       bool nesterov = false);
 
-  /** Copy constructor. */
   sgd(const sgd& other);
-  /** Copy assignment operator. */
   sgd& operator=(const sgd& other);
-  /** Destructor. */
-  ~sgd() override;
-  /** Create a copy. */
+  ~sgd() override = default;
   sgd* copy() const override { return new sgd(*this); }
 
-  /** Get the optimizer name. */
+  /** Human-readable type name. */
   std::string get_type() const override { return "SGD"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
-  /** Setup optimizer. */
+  /** Velocity for momentum optimizer. */
+  const AbsDistMat& get_velocity() const;
+  /** Velocity for momentum optimizer. */
+  AbsDistMat& get_velocity();
+
   void setup(weights& w) override;
 
   /** Perform the computation in an optimization step. */
@@ -68,15 +68,14 @@ class sgd : public optimizer {
   void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
 #endif // LBANN_HAS_CUDNN
 
- private:
+private:
 
   /** Momentum. */
   DataType m_momentum;
   /** Nesterov acceleration. */
   bool m_nesterov;
-  /** Velocity term for momentum SGD. */
-  AbsDistMat* m_velocity;
-
+  /** Velocity for momentum optimizer. */
+  std::unique_ptr<AbsDistMat> m_velocity;
 
 //************************************************************************
 // Checkpointing
@@ -111,13 +110,8 @@ class sgd : public optimizer {
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
-#ifdef LBANN_HAS_CUDNN
-  /** GPU memory for velocity. */
-  std::vector<DataType*> m_velocity_d;
-#endif // LBANN_HAS_CUDNN
-
 };
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZER_SGD_HPP
+#endif // LBANN_OPTIMIZERS_SGD_HPP

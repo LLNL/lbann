@@ -31,19 +31,20 @@
 
 namespace lbann {
 
-/** Exponential linear unit layer.
- *  \f[
- *    \text{ELU}(x) =
+/** @brief Exponential linear unit.
+ *
+ *  @f[
+ *    \text{ELU}(x; \alpha) =
  *      \begin{cases}
- *        x                & x > 0
+ *        x                & x > 0 \\
  *        \alpha (e^x - 1) & x \leq 0
  *      \end{cases}
- *  \f]
- *  \f$\alpha\f$ should be non-negative. See:
- *    Djork-Arne Clevert, Thomas Unterthiner, and Sepp
- *    Hochreiter. "Fast and accurate deep network learning by
- *    exponential linear units (ELUs)." arXiv preprint
- *    arXiv:1511.07289 (2015).
+ *  @f]
+ *  @f$\alpha@f$ should be non-negative. See:
+ *
+ *  Djork-Arne Clevert, Thomas Unterthiner, and Sepp Hochreiter. "Fast
+ *  and accurate deep network learning by exponential linear units
+ *  (ELUs)." arXiv preprint arXiv:1511.07289 (2015).
  */
 template <data_layout Layout, El::Device Device>
 class elu_layer : public Layer {
@@ -54,6 +55,12 @@ public:
   std::string get_type() const override { return "ELU"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  description get_description() const override {
+    auto&& desc = Layer::get_description();
+    desc.add("alpha", m_alpha);
+    return desc;
+  }
 
 protected:
   void setup_dims() override {
