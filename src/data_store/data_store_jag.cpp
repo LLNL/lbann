@@ -44,7 +44,8 @@ char b[1024];
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
-  m_super_node(false) {
+  m_super_node(false),
+  m_super_node_overhead(0) {
   set_name("data_store_jag");
 }
 
@@ -124,6 +125,7 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   // all samples that this proc will send to P_j
 
   double tma = get_time();
+  compute_super_node_overhead();
   build_indices_i_will_send(current_pos, mb_size);
 
   // construct a super node for each processor; the super node
@@ -199,14 +201,12 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
     m_reconstituted[p].update_external(n_msg["data"]);
     const std::vector<std::string> &names = m_reconstituted[p].child_names();
 
-    for (auto t : names) {
+    for (auto &t : names) {
       m_minibatch_data[atoi(t.c_str())][t].update_external(m_reconstituted[p][t]);
     }
   }
 
   debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
-
-  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
 
   debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
@@ -249,6 +249,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
+  node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
     s_data_compact = node_in.schema();
@@ -293,7 +294,7 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
     // sanity check
     /*
     int n = 0;
-    for (auto t : m_data) {
+    for (auto &t : m_data) {
       if (t.second.total_bytes_compact() != n) {
         LBANN_ERROR("t.total_bytes_compact() != n; " + std::to_string(n) + " " + std::to_string(t.second.total_bytes_compact()));
       }
@@ -329,7 +330,7 @@ double tma = get_time();
   }
 
   int sample_size = 0;
-  for (auto t : m_data) {
+  for (auto &t : m_data) {
     if(sample_size == 0) {
       sample_size = t.second.total_bytes_compact();
     } else {
@@ -431,7 +432,7 @@ double tmw = get_time();
     nd.update(n_msg["data"]);
     m_minibatch_data[nd["id"].value()] = nd;
   }
-for (auto t : m_minibatch_data) {
+for (auto &t : m_minibatch_data) {
   debug << t.first << " ";
 }
 debug << "\n";
@@ -493,6 +494,29 @@ void data_store_jag::build_owner_map() {
     auto index = (*m_shuffled_indices)[i];
     m_owner[index] = j;
     j = (j + 1) % m_np;
+  }
+}
+
+void data_store_jag::compute_super_node_overhead() {
+  if (m_super_node_overhead != 0) {
+    return;
+  }
+  if (m_data.size() < 2) {
+    LBANN_ERROR("m_data must contain at least two sample nodes");
+  }
+  conduit::Node n2;
+  conduit::Node n3;
+  int first = 0;
+  for (auto &t : m_data) {
+    n2.update_external(t.second);
+    build_node_for_sending(n2, n3);
+    if (first == 0) {
+      first = n3.total_bytes_compact();
+    } else {
+      m_super_node_overhead = 2*first - n3.total_bytes_compact();
+      if (m_master) std::cerr << "m_super_node_overhead: " << m_super_node_overhead << "\n";
+      return;
+    }
   }
 }
 

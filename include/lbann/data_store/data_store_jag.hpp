@@ -104,6 +104,14 @@ protected :
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
+  /// overhead incurred by the super_node; this is constant,
+  /// regardless of the number of samples contained in the super_node;
+  /// assumes the super_node contains at least two samples
+  int m_super_node_overhead;
+
+  /// assignes a value to m_super_node_overhead
+  void compute_super_node_overhead();
+
   /// ??? as our code currently stands (sun, 10 feb) this isn't necessary
   /// -- but it's being used. @TODO: revisit
   std::vector<conduit::Node> m_reconstituted;
