@@ -68,7 +68,6 @@ protected :
 
   bool m_super_node;
 
-  /// retrive data needed for passing to the data reader for the next epoch
   /// this is pure virtual in generic_data_reader, so must include it for
   /// now. May go away when we refactore/revise all of data_store
   void exchange_data() override {}
@@ -82,7 +81,7 @@ protected :
   }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
-  void setup_data_store_buffers();
+
 
   // when m_super_node = false
   std::unordered_map<int,int> m_index_to_data_id;
@@ -105,17 +104,32 @@ protected :
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
+  /// ??? as our code currently stands (sun, 10 feb) this isn't necessary
+  /// -- but it's being used. @TODO: revisit
   std::vector<conduit::Node> m_reconstituted;
+
+  void setup_data_store_buffers();
 
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-  /// m_ds_indices[j] contains the sample indices (data store (ds) indices)
-  // for the samples that P_j owns
-  std::vector<std::unordered_set<int>> m_ds_indices;
+  /// fills in mowner, which maps index -> owning processor
+  void build_owner_map();
 
-  /// fills in m_ds_indices and m_owner
-  void build_ds_indices();
+  /// maps processor id -> set of indices (whose associated samples)
+  /// this proc needs to send. (formerly called "proc_to_indices)
+  std::vector<std::unordered_set<int>> m_indices_to_send;
+
+  /// fills in m_indices_to_send
+  void build_indices_i_will_send(int current_pos, int mb_size);
+
+  /// maps processor id -> set of indices (whose associated samples)
+  /// this proc needs to recv from others. (formerly called "needed")
+  std::vector<std::unordered_set<int>> m_indices_to_recv;
+
+  /// fills in m_indices_to_recv
+  void build_indices_i_will_recv(int current_pos, int mb_size);
+
 };
 
 }  // namespace lbann

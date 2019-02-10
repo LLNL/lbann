@@ -66,7 +66,7 @@ void data_store_jag::setup() {
   }
 
   generic_data_store::setup();
-  build_ds_indices();
+  build_owner_map();
 
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
@@ -115,56 +115,34 @@ void data_store_jag::setup_data_store_buffers() {
 //       handle things ourselves. TODO: possible modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
-  // double tm1 = get_time();
+  double tm1 = get_time();
 
-  //========================================================================
-  //build map: proc -> global indices that P_x needs for this epoch, and
-  //                   which I own
-
-  double tma = get_time();
-
-  std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  /// Within a trainer the shuffled indices are distributed round
-  /// robin across ranks
-  size_t j = 0;
-  for (auto i = current_pos; i < current_pos + mb_size; i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// If this rank owns the index send it to the j'th rank
-    if (m_data.find(index) != m_data.end()) {
-      proc_to_indices[j].insert(index);
-    }
-    j = (j + 1) % m_np;
-  }
 
   //========================================================================
   //part 1: exchange the sizes of the data
   // m_send_buffer[j] is a conduit::Node that contains
   // all samples that this proc will send to P_j
 
-tma = get_time();
-//double t1 = 0;
-//double t2 = 0;
+  double tma = get_time();
+  build_indices_i_will_send(current_pos, mb_size);
 
+  // construct a super node for each processor; the super node
+  // contains all samples this proc owns that other procs need
   for (int p=0; p<m_np; p++) {
-//tmb = get_time;
     m_send_buffer[p].reset();
-    //    std::cout << "For rank "<< p << " I am packing indices ";
-    for (auto idx : proc_to_indices[p]) {
-      //std::cout << " " << idx;
+    for (auto idx : m_indices_to_send[p]) {
       m_send_buffer[p].update_external(m_data[idx]);
     }
-    //                  std::cout << std::endl;
-      //if (m_master) m_send_buffer[p].print();
-
-    // code in the following method is a modification of code from
-    // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
 
+    // start sends for sizes of the data (sizes of the super_node)
+    // @TODO: if all sample nodes are the same size, this may not be
+    // necessary: revisit
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
   }
 
-  //start receives for sizes of the data
+  //start receives for sizes of the data (sizes of the super_nodes)
   for (int p=0; p<m_np; p++) {
     MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
 
@@ -174,12 +152,11 @@ tma = get_time();
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
-debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
+  debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
 
   //========================================================================
   //part 2: exchange the actual data
-
-  //tma = get_time();
+  tma = get_time();
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
@@ -197,13 +174,12 @@ debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
-// debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-//tma = get_time();
+   debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-//double tmw = get_time();
+  double tmw = get_time();
 
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
@@ -228,11 +204,11 @@ debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
     }
   }
 
-// debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
+  debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
 
-//  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
+  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
 
-  // debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
+  debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
@@ -241,7 +217,7 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   }
 
   if (! m_super_node) {
-    node["id"] = data_id;
+    //@TODO fix, so we don't need to do a deep copy
     conduit::Node n2;
     build_node_for_sending(node, n2);
     m_data[data_id] = n2;
@@ -249,6 +225,10 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 
   else {
     m_data[data_id] = node;
+    // @TODO would like to do: m_data[data_id].set_external(node); but since
+    // (as of now) 'node' is a local variable in a data_reader+jag_conduit,
+    // we need to do a deep copy. If the data_store furnishes a node to the
+    // data_reader during the first epoch, this copy can be avoided
   }
 }
 
@@ -293,6 +273,7 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
 
 
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
+#if 0
   double tm1 = get_time();
 
   debug.open(b, std::ios::app);
@@ -461,8 +442,10 @@ debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
 
   debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 debug.close(); debug.open(b, std::ios::app);
+#endif
 }
 
+#if 0
 // fills in m_ds_indices and m_owner
 void data_store_jag::build_ds_indices() {
   m_owner.clear();
@@ -474,6 +457,40 @@ void data_store_jag::build_ds_indices() {
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
     auto index = (*m_shuffled_indices)[i];
     m_ds_indices[j].insert(index);
+    m_owner[index] = j;
+    j = (j + 1) % m_np;
+  }
+}
+#endif
+
+void data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
+  for (size_t j=m_rank; j<m_shuffled_indices->size(); j += m_np) {
+    auto index = (*m_shuffled_indices)[j];
+    int owner = m_owner[index];
+    m_indices_to_recv[owner].insert(index);
+    j = (j + 1) % m_np;
+  }
+}
+
+void data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
+  m_indices_to_send.clear();
+  m_indices_to_send.resize(m_np);
+  size_t j = 0;
+  for (auto i = current_pos; i < current_pos + mb_size; i++) {
+    auto index = (*m_shuffled_indices)[i];
+    /// If this rank owns the index send it to the j'th rank
+    if (m_data.find(index) != m_data.end()) {
+      m_indices_to_send[j].insert(index);
+    }
+    j = (j + 1) % m_np;
+  }
+}
+
+void data_store_jag::build_owner_map() {
+  m_owner.clear();
+  size_t j = 0;
+  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+    auto index = (*m_shuffled_indices)[i];
     m_owner[index] = j;
     j = (j + 1) % m_np;
   }
