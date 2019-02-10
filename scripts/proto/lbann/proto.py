@@ -38,6 +38,8 @@ except ImportError:
     else:
         raise  # Give up.
 
+from lbann.viz import getGraphFromModel
+
 def _add_to_module_namespace(stuff):
     """Add stuff to the module namespace.
 
@@ -543,6 +545,15 @@ class Model:
         model.callback.extend([c.export_proto() for c in self.callbacks])
 
         return model
+
+    def render(self, filename, format="pdf", **kwargs):
+        """
+        Save a vizualized graph of the network to `filename`.`format`.
+        This function passes `kwargs` to `lbann.viz.getGraphFromModel`.
+        """
+        g = getGraphFromModel(self, format=format,
+                              **kwargs)
+        g.render(filename)
 
 # ==============================================
 # Export models
