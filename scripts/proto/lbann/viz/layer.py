@@ -2,11 +2,16 @@ import pprint
 
 class Layer :
   def __init__(self, a) :
-    self._layer = self.__getLayer(a)
+    # Since the protobuf parser is somehow hard-corded in this script,
+    # __getLayer does not match to prototexts generated from lbann.proto.
+    # self._layer = self.__getLayer(a)
+    self._layer = a
+
     self._parents = []
     self._children = []
     self._linked_layers = []
     self._attr = []
+
     for line in self._layer :
       if line.find('name:') != -1 :
         t = line.split()

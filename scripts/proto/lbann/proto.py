@@ -38,6 +38,8 @@ except ImportError:
     else:
         raise  # Give up.
 
+from lbann.viz import getGraphFromModel
+
 def _add_to_module_namespace(stuff):
     """Add stuff to the module namespace.
 
@@ -496,40 +498,84 @@ class Callback:
 _generate_classes_from_message(Callback, lbann_pb2.Callback)
 
 # ==============================================
+# Model
+# ==============================================
+
+class Model:
+    """Base class for models."""
+
+    def __init__(self, mini_batch_size, epochs,
+                 layers, weights=[], objective_function=None,
+                 metrics=[], callbacks=[]):
+        self.mini_batch_size = mini_batch_size
+        self.epochs = epochs
+        self.layers = layers
+        self.weights = weights
+        self.objective_function = objective_function
+        self.metrics = metrics
+        self.callbacks = callbacks
+
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        # Initialize protobuf message
+        model = lbann_pb2.Model()
+        model.mini_batch_size = self.mini_batch_size
+        model.num_epochs = self.epochs
+        model.block_size = 256           # TODO: Make configurable.
+        model.num_parallel_readers = 0   # TODO: Make configurable
+        model.procs_per_trainer = 0      # TODO: Make configurable
+
+        # Add layers
+        layers = list(traverse_layer_graph(self.layers))
+        model.layer.extend([l.export_proto() for l in layers])
+
+        # Add weights
+        weights = set(self.weights)
+        for l in layers:
+            weights.update(l.weights)
+        model.weights.extend([w.export_proto() for w in weights])
+
+        # Add objective function
+        objective_function = self.objective_function \
+            if self.objective_function else ObjectiveFunction()
+        model.objective_function.CopyFrom(objective_function.export_proto())
+
+        # Add metrics and callbacks
+        model.metric.extend([m.export_proto() for m in self.metrics])
+        model.callback.extend([c.export_proto() for c in self.callbacks])
+
+        return model
+
+    def render(self, filename, format="pdf", **kwargs):
+        """
+        Save a vizualized graph of the network to `filename`.`format`.
+        This function passes `kwargs` to `lbann.viz.getGraphFromModel`.
+        """
+        g = getGraphFromModel(self, format=format,
+                              **kwargs)
+        g.render(filename)
+
+# ==============================================
 # Export models
 # ==============================================
 
-def save_model(filename, mini_batch_size, epochs,
-               layers, weights=[], objective_function=None,
-               metrics=[], callbacks=[]):
-    """Save a model to file."""
+def save_model(filename, *args, **kwargs):
+    """Create a model and save to a file.
+    This function delegates all the arguments to `lp.Model` except
+    for `filename`.
+    """
+
+    save_prototext(filename,
+                   model=Model(*args, **kwargs).export_proto())
+
+def save_prototext(filename, **kwargs):
+    """Save a prototext.
+    This function accepts the LbannPB objects via `kwargs`, such as
+    `model`, `data_reader`, and `optimizer`.
+    """
 
     # Initialize protobuf message
-    pb = lbann_pb2.LbannPB()
-    pb.model.mini_batch_size = mini_batch_size
-    pb.model.num_epochs = epochs
-    pb.model.block_size = 256           # TODO: Make configurable.
-    pb.model.num_parallel_readers = 0   # TODO: Make configurable
-    pb.model.procs_per_trainer = 0      # TODO: Make configurable
-
-    # Add layers
-    layers = list(traverse_layer_graph(layers))
-    pb.model.layer.extend([l.export_proto() for l in layers])
-
-    # Add weights
-    weights = set(weights)
-    for l in layers:
-        weights.update(l.weights)
-    pb.model.weights.extend([w.export_proto() for w in weights])
-
-    # Add objective function
-    if not objective_function:
-        objective_function = ObjectiveFunction()
-    pb.model.objective_function.CopyFrom(objective_function.export_proto())
-
-    # Add metrics and callbacks
-    pb.model.metric.extend([m.export_proto() for m in metrics])
-    pb.model.callback.extend([c.export_proto() for c in callbacks])
+    pb = lbann_pb2.LbannPB(**kwargs)
 
     # Write to file
     with open(filename, 'wb') as f:

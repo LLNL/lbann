@@ -86,7 +86,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
-    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_file_dir(""), m_data_index_list(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
@@ -151,6 +151,18 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If set_local_file_dir was not called, returns the empty string
    */
   std::string get_local_file_dir() const;
+
+  /**
+   * Set the index list for your data (images, etc).
+   * The index lists contains an enumeration of all samples in the
+   * data set.
+   */
+  void set_data_index_list(std::string s);
+
+  /**
+   * Returns the complete index list for your data set.
+   */
+  std::string get_data_index_list() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -344,7 +356,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
-    return (m_current_pos < (int)m_shuffled_indices.size());
+    return (m_current_pos < get_num_data());
   }
   /// True if the data reader's current position is not valid but within # ranks per model
   /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
@@ -574,6 +586,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
 
+  /// Does the data reader have a unqiue index list per model
+  virtual bool has_list_per_model() const { return false; }
+  /// Does the data reader have a unqiue index list per trainer
+  virtual bool has_list_per_trainer() const { return false; }
+
+
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
 
@@ -669,9 +687,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns the data store
   generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
-      std::stringstream err;
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_data_store is nullptr";
+      LBANN_ERROR("m_data_store is nullptr");
     }
     return m_data_store;
   }
@@ -710,6 +726,10 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// support of data store functionality
   void set_data_store(generic_data_store *g);
+
+  virtual bool data_store_active() const;
+
+  virtual bool priming_data_store() const;
 
   void set_model(model *m) { m_model = m; }
 
@@ -833,6 +853,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
+  std::string m_data_index_list;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;

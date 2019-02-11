@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     conduit::Node n_ok;
     conduit::Node tmp;
 
-    if (master) std::cout << np << hdf5_file_hnd << "\n";
+    //    if (master) std::cout << np << hdf5_file_hnd << "\n";
 
     int num_samples = 0;
 

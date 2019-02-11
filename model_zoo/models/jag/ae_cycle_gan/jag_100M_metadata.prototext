@@ -1,6 +1,9 @@
 ########################################################################
 # The JAG normalization values were computed over the 10M + 1MA + 1MB random
-# pulls from the 100M data set.  They are valid for the directories:
+# pulls from the 100M data set.  The image normalization values were updated
+# on 1/30/2019 using the per-channel average of the pixel values
+# across all views.
+# They are valid for the directories:
 # /p/lustre2/brainusr/datasets/10MJAG/ (10M | 1M_A | 1M_B)
 # /p/lustre2/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
 # /p/gpfs1/brainusr/datasets/10MJAG/10M | 1M_A | 1M_B
@@ -103,18 +106,10 @@ data_set_metadata {
     ]
 
     jag_image_normalization_params: [
-      { scale: 9.743581e-01  bias: 1.624460e-05 },
-      { scale: 1.689631e+01  bias: 1.740742e-05 },
-      { scale: 7.872094e+02  bias: -0.000000e+00 },
-      { scale: 1.705611e+04  bias: -0.000000e+00 },
-      { scale: 8.517343e-01  bias: 1.279279e-05 },
-      { scale: 1.424436e+01  bias: 2.859300e-05 },
-      { scale: 6.457821e+02  bias: -0.000000e+00 },
-      { scale: 1.372162e+04  bias: -0.000000e+00 },
-      { scale: 8.457383e-01  bias: 1.589667e-05 },
-      { scale: 1.431208e+01  bias: 3.069526e-05 },
-      { scale: 6.526946e+02  bias: -0.000000e+00 },
-      { scale: 1.421113e+04  bias: -0.000000e+00 }
+      { scale: 2.9258502e+01 bias: 0.0e+00 },   # avg = 0.0341781
+      { scale: 8.5826596e+02 bias: 0.0e+00 },   # avg = 0.00116514
+      { scale: 1.0004872e+05 bias: 0.0e+00 },   # avg = 9.99513e-06
+      { scale: 4.8072070e+06 bias: 0.0e+00 }    # avg = 2.08021e-07
     ]
   }
-  }
+}

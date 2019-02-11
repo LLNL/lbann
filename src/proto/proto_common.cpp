@@ -4,6 +4,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/proto/init_image_data_readers.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -134,6 +135,9 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+      reader->set_data_index_list(readme.index_list());
+      reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
+      reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing
@@ -624,6 +628,28 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   }
 }
 
+void customize_data_readers_index_list(lbann_comm *comm, lbann_data::LbannPB& p)
+{
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  const lbann_data::Model& pb_model = p.model();
+  int size = readers->reader_size();
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    std::stringstream s;
+    std::string basename = get_basename_without_ext(r->index_list());
+    std::string ext = get_ext_name(r->index_list());
+    if(r->index_list_per_model()) {
+      s << pb_model.name() << "_";
+    }
+    if(r->index_list_per_trainer()) {
+      s << "t" << comm->get_trainer_rank() << "_";
+    }
+    s << basename;
+    s << "." << ext;
+    r->set_index_list(s.str());
+  }
+}
+
 void get_cmdline_overrides(lbann_comm *comm, lbann_data::LbannPB& p)
 {
   bool master = comm->am_world_master();
@@ -833,6 +859,10 @@ void print_help(lbann_comm *comm)
        "            that take DATA_PARALLEL or MODEL_PARALLEL as a template parameter\n"
        "  --print_affinity\n"
        "      display information on how OpenMP threads are provisioned\n"
+       "  --use_data_store \n"
+       "      Enables the data store in-memory structure\n"
+       "  --super_node \n"
+       "      Enables the data store in-memory structure to use the supernode exchange structure\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"
