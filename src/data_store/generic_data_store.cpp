@@ -65,7 +65,7 @@ m_n(0),
   m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_trainer();
   m_np = m_comm->get_procs_per_trainer();
-  m_mpi_comm = m_comm->get_trainer_comm().comm;
+  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
 
   m_dir = m_reader->get_file_dir();
 

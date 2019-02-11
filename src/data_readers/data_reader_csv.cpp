@@ -101,7 +101,7 @@ void csv_reader::load() {
   bool master = m_comm->am_world_master();
   setup_ifstreams();
   std::ifstream& ifs = *m_ifstreams[0];
-  const El::mpi::Comm world_comm = m_comm->get_world_comm();
+  const El::mpi::Comm& world_comm = m_comm->get_world_comm();
   // Parse the header to determine how many columns there are.
   // Skip rows if needed.
   if (master) {
