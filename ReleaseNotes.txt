@@ -16,6 +16,11 @@ I/O & data readers:
 Build system:
 
 Retired features:
+
+============================== Release Notes: v0.98.1 ==============================
+Bug Fixes:
+ - Added missing header
+
 ============================== Release Notes: v0.98 ==============================
 Support for new training algorithms:
  - Hyperparameter exploration with Adam optimizers
