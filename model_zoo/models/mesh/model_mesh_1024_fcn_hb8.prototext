@@ -12,7 +12,7 @@ model {
   ###################################################
 
   objective_function {
-  #  layer_term { layer: "mean_squared_error" }
+    layer_term { layer: "mean_squared_error" }
   }
 
   ###################################################
