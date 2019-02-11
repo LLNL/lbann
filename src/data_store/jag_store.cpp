@@ -5,7 +5,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/utils/glob.hpp"
 #include <cmath>
@@ -144,7 +144,7 @@ void jag_store::build_conduit_index(const std::vector<std::string> &filenames) {
       s3 << output_fn << "." << k << " ";
     }
     system(s3.str().c_str());
-  }  
+  }
   m_comm->global_barrier();
 }
 

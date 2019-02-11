@@ -76,7 +76,7 @@ std::vector<std::string> get_tokens(const std::string str, const std::string del
 /// @todo Deprecated.
 bool parse_path(const std::string& path, std::string& dir, std::string& basename) {
   dir = file::extract_parent_directory(path);
-  basename = file::extract_parent_directory(path);
+  basename = file::extract_base_name(path);
   return !basename.empty();
 }
 
@@ -87,7 +87,7 @@ std::string get_ext_name(const std::string file_name) {
   parse_path(file_name, dir, basename);
 
   size_t pos = basename.find_last_of('.');
-  if (pos == 0u) {
+  if (pos >= basename.size()) {
     return "";  // hidden file
   }
   return basename.substr(pos+1, basename.size());
@@ -129,7 +129,7 @@ std::string add_delimiter(const std::string dir) {
 
 /**
  * Add tag to a file name and/or change the extension.
- * i.e., given a file_name as "name.ext", a new name "name.tag.new_ext" is returned
+ * i.e., given a file_name as "name.ext", a new name "name_tag.new_ext" is returned
  * If a new extension is not specified, it assumes the same.
  * To change the extension without adding a tag, set tag to a null string.
  */
@@ -144,9 +144,14 @@ std::string modify_file_name(const std::string file_name, const std::string tag,
   name = get_basename_without_ext(name);
 
   if (!tag.empty()) {
-    name = name + '.' + tag;
+    name = name + '_' + tag;
   }
-  return (dir + name + '.' + ext);
+
+  if(!ext.empty()) {
+    return (dir + name + '.' + ext);
+  }else {
+    return (dir + name);
+  }
 }
 
 /// @todo Deprecated.

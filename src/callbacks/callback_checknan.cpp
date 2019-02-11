@@ -22,12 +22,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_checknan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_checknan.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {

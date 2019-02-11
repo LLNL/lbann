@@ -70,14 +70,6 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
 
-  // Target layers
-  if (proto_layer.has_target()) {
-    return lbann::make_unique<target_layer<Layout, Device>>(comm);
-  }
-  if (proto_layer.has_reconstruction()) {
-    return lbann::make_unique<reconstruction_layer<Layout, Device>>(comm);
-  }
-
   // Fully connected layer
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();

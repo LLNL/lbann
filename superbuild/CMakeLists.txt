@@ -35,6 +35,8 @@ option(LBANN_SB_CLONE_VIA_SSH
 
 option(LBANN_SB_BUILD_ALUMINUM "Pull and build Aluminum from Github" OFF)
 
+option(LBANN_SB_BUILD_CEREAL "Pull and install CEREAL library from Github" OFF)
+
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)
 
 option(LBANN_SB_BUILD_CONDUIT "Pull and build CONDUIT from Github" OFF)
@@ -61,6 +63,11 @@ include(LBANNSuperBuildCreateCMakeArguments)
 if (LBANN_SB_BUILD_ALUMINUM)
   add_subdirectory(aluminum)
   list(APPEND _BUILD_PKGS ALUMINUM)
+endif ()
+
+if (LBANN_SB_BUILD_CEREAL)
+  add_subdirectory(cereal)
+  list(APPEND _BUILD_PKGS CEREAL)
 endif ()
 
 if (LBANN_SB_BUILD_CNPY)

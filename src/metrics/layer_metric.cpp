@@ -71,8 +71,9 @@ void layer_metric::set_layer_pointers(std::vector<Layer*> layers) {
                                                  layers.end() - 1));
   m_layer = layers.back();
 }
-  
+
 void layer_metric::setup(model& m) {
+  metric::setup(m);
   get_evaluation_layer();
 }
 

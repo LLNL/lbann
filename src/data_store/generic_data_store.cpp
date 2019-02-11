@@ -38,9 +38,9 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
+m_n(0),
     m_reader(reader),
     m_my_minibatch_indices(nullptr),
-    m_epoch(0),
     m_in_memory(true),
     m_model(m),
     m_extended_testing(false),
@@ -50,36 +50,29 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_verbose(false)
 {
   if (m_reader == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_reader is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_reader is nullptr");
   }
 
   if (m_model == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_model is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_model is nullptr");
   }
 
   m_comm = m_model->get_comm();
   if (m_comm == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_comm is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_comm is nullptr");
   }
+
   m_master = m_comm->am_world_master();
   m_rank = m_comm->get_rank_in_trainer();
   m_np = m_comm->get_procs_per_trainer();
-  m_mpi_comm = m_comm->get_trainer_comm().comm;
+  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
 
   m_dir = m_reader->get_file_dir();
 
   set_name("generic_data_store");
-  options *opts = options::get();
+
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
+  options *opts = options::get();
   if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
     m_extended_testing = true;
   }
@@ -142,7 +135,9 @@ void generic_data_store::setup() {
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
   if (m_master) {
-    std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
+    std::cerr << "data_reader type is: " << m_reader->get_type()
+              << " num_readers: " << m_num_readers << " role: "
+              << m_reader->get_role() << "\n";
   }
 
   if (is_subsidiary_store()) {
@@ -170,6 +165,10 @@ void generic_data_store::setup() {
   }
   m_reader->set_save_minibatch_entries(false);
   m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
+  if (m_master) {
+    std::cerr << "my num minibatch indices: " << m_my_minibatch_indices->size() << "\n";
+  }
+
 }
 
 void generic_data_store::print_partitioned_indices() {
@@ -211,11 +210,18 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
+if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_cur_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
-  ++m_epoch;
-  if (m_epoch > 1 && exchange_indices && m_in_memory) {
-    exchange_data();
+//  if (m_model->get_cur_epoch() > 0 && exchange_indices && m_in_memory) {
+  // if (m_n > 0) {
+  //   exchange_data();
+  // }
+
+  if(m_n > 0) {
+    setup_data_store_buffers();
   }
+
+  ++m_n;
 }
 
 void generic_data_store::exchange_mb_counts() {

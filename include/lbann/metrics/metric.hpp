@@ -37,7 +37,6 @@ namespace lbann {
 // Forward declarations
 class model;
 class Layer;
-class generic_target_layer;
 
 /** Metric statistics. */
 struct metric_statistics {
@@ -112,7 +111,7 @@ class metric {
   virtual std::string get_unit() const { return ""; }
 
   /** Setup metric. */
-  virtual void setup(model& m);
+  virtual void setup(model& m) {}
 
   /** Evaluate the metric value.
    *  This function takes the model's current mini-batch size. If
@@ -120,8 +119,7 @@ class metric {
    *  may be different from the effective mini-batch size. The result
    *  is stored in history.
    */
-  virtual EvalType evaluate(execution_mode mode,
-                            int mini_batch_size);
+  virtual EvalType evaluate(execution_mode mode, int mini_batch_size) = 0;
 
   /** Clear all statistics. */
   void reset_statistics() { m_statistics.clear(); }
@@ -135,11 +133,6 @@ class metric {
   EvalType get_mean_value(execution_mode mode) const;
   /** Get number of samples for statistics. */
   int get_statistics_num_samples(execution_mode mode) const;
-
-  /** Set pointer to target layer. */
-  void set_target_layer(const generic_target_layer *target) { m_target_layer = target; }
-  /** Get target layer. */
-  const generic_target_layer& get_target_layer() const;
 
   /** Get list of pointers to layers. */
   virtual std::vector<Layer*> get_layer_pointers() const;
@@ -183,9 +176,6 @@ class metric {
 
   /** LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** Pointer to target layer. */
-  const generic_target_layer *m_target_layer;
 
   /** Metric statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;
