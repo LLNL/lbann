@@ -294,7 +294,7 @@ bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
 
 bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
   p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
-  m_comm->model_broadcast(0, m_learning_rate);
+  m_comm->trainer_broadcast(0, m_learning_rate);
   return true;
 }
 

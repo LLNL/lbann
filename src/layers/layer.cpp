@@ -608,7 +608,7 @@ bool Layer::is_frozen() const {
 void Layer::setup() {
   setup_pointers();
   setup_dims();
-  setup_matrices(m_comm->get_model_grid());
+  setup_matrices(m_comm->get_trainer_grid());
   setup_data();
   if (using_gpus()) { setup_gpu(); }
 }
