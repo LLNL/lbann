@@ -3110,8 +3110,16 @@ model {
     }
   }
   layer {
+    parents: "prob"
+    name: "prob_reshape"
+    data_layout: "data_parallel"
+    reshape {
+      dims: "1000"
+    }
+  }
+  layer {
     name: "cross_entropy"
-    parents: "prob labels"
+    parents: "prob_reshape labels"
     data_layout: "data_parallel"
     cross_entropy {}
   }
