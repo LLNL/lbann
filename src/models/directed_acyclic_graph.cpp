@@ -30,7 +30,7 @@
 namespace lbann {
 
 directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
-                                                           int mini_batch_size,
+                                                           El::Int mini_batch_size,
                                                            objective_function *obj_fn,
                                                            optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
@@ -39,16 +39,17 @@ void directed_acyclic_graph_model::setup_layer_execution_order() {
 
   // Construct layer graph
   // Note: Each layer depends on its parent layers and its hint layer.
-  std::set<int> nodes;
-  std::map<int,std::set<int>> edges;
-  const int num_layers = m_layers.size();
-  std::unordered_map<const Layer *,int> layer_indices;
-  for (int node = 0; node < num_layers; ++node) {
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  std::set<El::Int> nodes;
+  std::map<El::Int,std::set<El::Int>> edges;
+  std::unordered_map<const Layer*,El::Int> layer_indices;
+  for (El::Int node = 0; node < num_layers; ++node) {
     nodes.insert(node);
-    layer_indices[m_layers[node]] = node;
+    layer_indices[layers[node]] = node;
   }
-  for (int node = 0; node < num_layers; ++node) {
-    const auto& l = m_layers[node];
+  for (El::Int node = 0; node < num_layers; ++node) {
+    const auto& l = layers[node];
     for (const auto& child : l->get_child_layers()) {
       edges[node].insert(layer_indices[child]);
     }
@@ -59,9 +60,9 @@ void directed_acyclic_graph_model::setup_layer_execution_order() {
 
   // Topologically sort layers
   const auto& sorted_order = graph::topological_sort(nodes, edges);
-  permute_layers(sorted_order);
+  reorder_layers(sorted_order);
   model::setup_layer_execution_order();
 
 }
 
-}  // namespace lbann
+} // namespace lbann

@@ -22,12 +22,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_model .hpp .cpp - Abstract class for neural network training models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_HPP
-#define LBANN_MODEL_HPP
+#ifndef LBANN_MODELS_MODEL_HPP_INCLUDED
+#define LBANN_MODELS_MODEL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -48,44 +46,38 @@
 
 namespace lbann {
 
-// Forward-declare this.
+// Forward declarations
 class lbann_callback;
 
-/** Base class for LBANN models. */
+/** Base class for neural network models. */
 class model {
 public:
 
-  /** Constructor. */
   model(lbann_comm *comm,
-        int mini_batch_size,
+        El::Int mini_batch_size,
         objective_function *obj_fn,
         optimizer* default_optimizer = nullptr);
-
-  /** Copy constructor. */
   model(const model& other);
-  /** Copy assignment operator. */
   model& operator=(const model& other);
-  /** Destructor. */
   virtual ~model();
-  /** Copy model. */
   virtual model* copy() const = 0;
 
-  /** Return the model's type. */
+  /** Return model type's name.
+   *
+   *  The model type name should be a brief, human-readable
+   *  description.
+   */
   virtual std::string get_type() const = 0;
 
-  /** Set the model's name; this is an arbitrary string
-   *  that may be useful in multi-model scenarios, e.g,
-   *  LTFB, jag
+  /** Set model instance's name.
+   *
+   *  Each model should have a unique, preferably human-readable,
+   *  name.
    */
   void set_name(std::string name);
 
-  /** Return the model's name; this is an arbitrary string
-   *  that may be useful in multi-model scenarios, e.g,
-   *  LTFB, jag
-   */
-  std::string get_name() const {
-    return m_name;
-  }
+  /** Return model instance's name. */
+  std::string get_name() const { return m_name; }
 
   /** Human-readable description. */
   virtual description get_description() const;
@@ -94,7 +86,7 @@ public:
   virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
 
   /** Add layer to model. */
-  virtual void add_layer(Layer *layer);
+  virtual void add_layer(std::unique_ptr<Layer> l);
 
   /** Add weights to model. */
   void add_weights(weights *w);
@@ -125,11 +117,20 @@ public:
     return m_metrics;
   }
 
-  /** Set the model's layers. */
-  void set_layers(std::vector<Layer *>& layers);
-
-  /** Return the model's layers. */
-  virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
+  /** Size of model's list of layers. */
+  El::Int get_num_layers() const noexcept;
+  /** @param pos Position in model's list of layers. */
+  Layer& get_layer(El::Int pos);
+  /** @param pos Position in model's list of layers. */
+  const Layer& get_layer(El::Int pos) const;
+  /** @brief Return list of layers in model.
+   *  @details The list is in execution order for forward propagation.
+   */
+  std::vector<Layer*> get_layers();
+  /** @brief Return list of layers in model.
+   *  @details The list is in execution order for forward propagation.
+   */
+  const std::vector<Layer*> get_layers() const;
 
   const std::vector<weights*> get_weights() const;
 
@@ -280,18 +281,17 @@ protected:
   int m_current_step;
   int m_current_validation_step;
   int m_current_testing_step;
-  /**
-   * Maximum possible minibatch size supported by layers in this model.
-   * Note that this is local to the particular model, not across multiple
-   * models.
+  /** @details Maximum possible minibatch size supported by layers in
+   *  this model.  Note that this is local to the particular model,
+   *  not across multiple models.
    */
   int m_max_mini_batch_size;
   /** Size of the current mini-batch in the model. */
   int m_current_mini_batch_size;
-  /**
-   * The "effective" size of a minibatch.
-   * This is the size of the minibatch across all models and used for e.g.
-   * correctly averaging gradients from multiple models.
+  /** The "effective" size of a minibatch.
+   *
+   *  This is the size of the minibatch across all models and used for
+   *  e.g.  correctly averaging gradients from multiple models.
    */
   int m_effective_mini_batch_size;
   /** current phase (multiple of epoch counts) in training a model */
@@ -302,21 +302,19 @@ protected:
   std::vector<lbann_callback *> m_callbacks;
 
   /** Default optimizer.
+   *
    *  If a layer needs to construct an optimizer during setup, it will
    *  make a copy of the default optimizer.
    */
   optimizer *m_default_optimizer;
 
   /** List of model metrics.
+   *
    *  A metric can be used to evaluate the performance of the model
    *  without affecting the training process.
    */
   std::vector<metric *> m_metrics;
 
-  /** List of layers in model.
-   *  The list is in execution order for forward propagation.
-   */
-  std::vector<Layer *> m_layers;
   /** List of weights in model. */
   std::vector<weights *> m_weights;
 
@@ -329,39 +327,58 @@ protected:
   /** Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
 
-  /** Reorder layers. */
-  virtual void permute_layers(const std::vector<int>& permutation);
+  /** Reorder layer list with a gather.
+   *
+   *  The new layer list is the same length as @c gather_indices and
+   *  its entries are given by
+   *  @f[ \text{new\_list}[i] = \text{old\_list}[\text{gather\_indices}[i]] @f]
+   *
+   *  Since entries in the layer list must be unique, this will fail
+   *  if @c gather_indices has any repeated entries.
+   */
+  void reorder_layers(const std::vector<El::Int>& gather_indices);
 
   /** Remap pointers.
+   *
    *  Layer and weights pointers are remapped using the provided
    *  maps. If a pointer is not a key in the corresponding map, the
    *  pointer is not changed.
    */
-  virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
-                              const std::unordered_map<weights *,weights *>& weights_map);
+  virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
+                              const std::unordered_map<weights*,weights*>& weights_map);
 
-  /** In case that a layer is frozen, also freeze layers that precede it if that
-   *  makes senses for the particular model, such as sequential or siamese.
-   *  For othe models, users can manually control the behaivor by indicating
-   *  whether to freeze each layer in the model description prototext.
+  /** @brief
+   *
+   *  In case that a layer is frozen, also freeze layers that precede
+   *  it if that makes senses for the particular model, such as
+   *  sequential or siamese.  For othe models, users can manually
+   *  control the behaivor by indicating whether to freeze each layer
+   *  in the model description prototext.
+   *
+   *  For general DAG models, users need to manually specify each
+   *  layer to freeze in the model description prototext.
    */
-  virtual void freeze_layers_under_frozen_surface();
+  virtual void freeze_layers_under_frozen_surface() {}
 
   /** Set up topology of layer graph.
+   *
    *  Called in setup function. All layers in connected component of
    *  layer graph are added to the model and all parent/child
    *  relationships between layers are reciprocated.
    */
   virtual void setup_layer_topology();
   /** Set up layer execution order.
+   *
    *  Called in setup function.
    */
   virtual void setup_layer_execution_order();
   /** Set up layers.
+   *
    *  Called in setup function.
    */
   virtual void setup_layers();
   /** Set up weights.
+   *
    *  Called in setup function. All weights being used by layers or
    *  the objective function are added to the model and all unused
    *  weights are deleted.
@@ -382,6 +399,7 @@ protected:
   /** Backward propagation step. */
   virtual void backward_prop();
   /** Clear each optimizer's gradient.
+   *
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */
@@ -391,14 +409,15 @@ protected:
   /** Update layers step. */
   virtual bool update_layers();
   /** Reconcile weight values.
+   *
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
   virtual void reconcile_weight_values();
 
-  ////////////////////////////////////////////////////////////
+  // ===========================================
   // Callbacks
-  ////////////////////////////////////////////////////////////
+  // ===========================================
 
   /** Execute callbacks at start of training. */
   virtual void do_train_begin_cbs();
@@ -443,29 +462,52 @@ protected:
 
 private:
 
-  /** Search layer graph and add all connected layers. */
-  void add_connected_layers();
-  /** Insert evaluation layers where needed.
-   *  If an objective function layer term or a layer metric
-   *  corresponds to a layer that is not an evaluation layer, an
-   *  evaluation layer is added as a child of the original layer and
-   *  set as the corresponding layer to the layer term or layer
-   *  metric.
+  /** @brief List of layers in model.
+   *  @details The list is in execution order for forward propagation.
    */
-  void add_evaluation_layers();
+  std::vector<std::unique_ptr<Layer>> m_layers;
+
+  // ===========================================
+  // Functions to add utility layers
+  // ===========================================
+
+  /** Insert evaluation layers where needed.
+   *
+   *  If a @c lbann::layer_term or @c lbann::layer_metric corresponds
+   *  to a layer that is not an evaluation_layer, an evaluation layer
+   *  is created and added to the model.
+   *
+   *  @param layer_set      Layers in model. Updated with any newly
+   *                        created layers.
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
+   */
+  void add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
+                             std::unordered_set<std::string>& layer_names);
+
   /** Insert dummy layers after layers with too few children.
+   *
    *  If a layer expects more child layers than it has, add dummy
    *  layers until it has enough children.
+   *
+   *  @param layer_set      Layers in model. Updated with any newly
+   *                        created layers.
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_dummy_layers();
+  void add_dummy_layers(std::unordered_set<std::string>& layer_names);
   /** Insert split layers after layers with too many children.
+   *
    *  If a layer expects one child layer but has multiple, add a split
-   *  layer. The split layer will be the original layer's child and
-   *  the split layer's children will be the original children.
+   *  layer to the model.
+   *
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_split_layers();
+  void add_split_layers(std::unordered_set<std::string>& layer_names);
+
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_MODEL_HPP
+#endif // LBANN_MODELS_MODEL_HPP_INCLUDED
