@@ -592,7 +592,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda9.2_ppc64le
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_ppc64le
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 	else
@@ -826,6 +826,8 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_WITH_P2P=${WITH_DISTCONV} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
 -D LBANN_SB_FWD_ALUMINUM_ALUMINUM_ENABLE_STREAM_MEM_OPS=ON \
+-D
+ LBANN_SB_FWD_ALUMINUM_ALUMINUM_HT_USE_PASSTHROUGH=OFF \
 ${SUPERBUILD_DIR}
 EOF
 )
