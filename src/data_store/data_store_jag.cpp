@@ -112,12 +112,11 @@ void data_store_jag::setup_data_store_buffers() {
 // this gets called at the beginning of each epoch (except for epoch 0)
 //
 // Note: conduit has a very nice interface for communicating nodes
-//       in non-blocking scenarios. Unf, for blocking we need to
+//       in blocking scenarios. Unf, for non-blocking we need to
 //       handle things ourselves. TODO: possible modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
   double tm1 = get_time();
-
 
   //========================================================================
   //part 1: exchange the sizes of the data
@@ -125,8 +124,22 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   // all samples that this proc will send to P_j
 
   double tma = get_time();
+
   compute_super_node_overhead();
   build_indices_i_will_send(current_pos, mb_size);
+  build_indices_i_will_recv(current_pos, mb_size);
+
+  // debug block
+  debug << "supernode overhead: " << m_super_node_overhead << " compacted sample size: " << m_compacted_sample_size << "\n";
+  for (int p=0; p<m_np; p++) {
+    debug << "sending to P_"<< p<<": "<<m_indices_to_send[p].size()<<" samples\n";
+  }
+  debug << "\n";
+  for (int p=0; p<m_np; p++) {
+    debug << "recv from P_"<< p<<": "<<m_indices_to_recv[p].size()<<" samples\n";
+  }
+  debug << "\n";
+  debug.close(); debug.open(b, std::ios::app);
 
   // construct a super node for each processor; the super node
   // contains all samples this proc owns that other procs need
@@ -136,6 +149,8 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
       m_send_buffer[p].update_external(m_data[idx]);
     }
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
+  }
+#if 0
 
     // start sends for sizes of the data (sizes of the super_node)
     // @TODO: if all sample nodes are the same size, this may not be
@@ -155,29 +170,54 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
   debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
-
+#endif
   //========================================================================
   //part 2: exchange the actual data
+
   tma = get_time();
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
     const void *s = m_send_buffer_2[p].data_ptr();
-    MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
+    int sz = m_indices_to_send[p].size() * m_compacted_sample_size + m_super_node_overhead;
+
+debug << "starting send of " << sz << " bytes to " << p << "\n";
+debug.close(); debug.open(b, std::ios::app);
+
+    MPI_Isend(s, sz, MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
+    //MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
   }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (m_master) std::cerr << "\nSENDS STARTED\n\n";
+  debug << "\nSENDS STARTED\n\n";
+  debug.close(); debug.open(b, std::ios::app);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // start recvs for incoming data
   for (int p=0; p<m_np; p++) {
-    m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
-    MPI_Irecv(m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_recv_requests[p]);
+    void *s = m_send_buffer_2[p].data_ptr();
+    int sz = m_indices_to_recv[p].size() * m_compacted_sample_size + m_super_node_overhead;
+
+debug << "starting recv of " << sz << " bytes from " << p << "\n";
+debug.close(); debug.open(b, std::ios::app);
+
+    m_recv_buffer[p].set(conduit::DataType::uint8(sz));
+    MPI_Irecv(s, sz, MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_recv_requests[p]);
+    //MPI_Irecv(m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_recv_requests[p]);
   }
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (m_master) std::cerr << "\nRECEIVES STARTED\n\n";
+  debug << "\nRECEIVES STARTED\n\n";
+  debug.close(); debug.open(b, std::ios::app);
+  MPI_Barrier(MPI_COMM_WORLD);
 
   // wait for all msgs to complete
   MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
   MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
 
    debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
@@ -303,32 +343,14 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   }
 
   //========================================================================
-  // build map: proc -> global indices that P_x needs for this epoch, and
-  //                    which I own
-  // build map: owner -> set of indices I need that owner has
 
 double tma = get_time();
 
-  std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  // get indices that I need for this epoch; these correspond to
-  // samples that this proc receives from others
-  std::unordered_map<int, std::unordered_set<int>> needed;
-  {
-  size_t j = 0;
-  for (auto i = current_pos; i < current_pos + mb_size; i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// If this rank owns the index send it to the j'th rank
-    if (m_data.find(index) != m_data.end()) {
-      proc_to_indices[j].insert(index);
-    }
-    if(j == static_cast<size_t>(m_rank)) {
-      int owner = m_owner[index];
-      needed[owner].insert(index);
-    }
-    j = (j + 1) % m_np;
-  }
-  }
+  build_indices_i_will_send(current_pos, mb_size);
+  build_indices_i_will_recv(current_pos, mb_size);
 
+  // debug block
+   #if 0
   int sample_size = 0;
   for (auto &t : m_data) {
     if(sample_size == 0) {
@@ -342,6 +364,7 @@ double tma = get_time();
   debug << "sample size: " << sample_size << " num samples: " << m_data.size() << "\n";
   debug.close();
   debug.open(b, std::ios::app);
+  #endif
 
 
   //========================================================================
@@ -352,7 +375,7 @@ tma = get_time();
   // start sends for outgoing data
   size_t ss = 0;
   for (int p=0; p<m_np; p++) {
-    const std::unordered_set<int> &indices = proc_to_indices[p];
+    const std::unordered_set<int> &indices = indices_i_will_send[p];
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
         LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
@@ -360,7 +383,7 @@ tma = get_time();
 
       //const void *s = m_send_buffer[ss].data_ptr();
       const void *s = m_data[index].data_ptr();
-      MPI_Isend(s, sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests[ss++]);
+      MPI_Isend(s, m_compacted_sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests[ss++]);
       //MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
     }
   }
@@ -384,7 +407,7 @@ tma = get_time();
 debug << "starting " << indices.size() << " recvs from " << p << "\n";
     for (auto index : indices) {
       m_recv_buffer[ss].set(conduit::DataType::uint8(sample_size));
-      MPI_Irecv(m_recv_buffer[ss].data_ptr(), sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_recv_requests[ss]);
+      MPI_Irecv(m_recv_buffer[ss].data_ptr(), m_compacted_sample_size,, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_recv_requests[ss]);
       m_index_to_data_id[index] = ss;
       ++ss;
     }
@@ -446,6 +469,36 @@ debug.close(); debug.open(b, std::ios::app);
 #endif
 }
 
+void data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
+  m_indices_to_recv.clear();
+  m_indices_to_recv.resize(m_np);
+  size_t j = 0;
+  for (int i=current_pos; i< current_pos + mb_size; ++i) {
+    auto index = (*m_shuffled_indices)[i];
+ //   if (m_data.find(index) != m_data.end()) {
+    if (index % m_np == m_rank) {
+      int owner = m_owner[index];
+      m_indices_to_recv[owner].insert(index);
+    }
+    j = (j + 1) % m_np;
+  }
+
+}
+
+void data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
+  m_indices_to_send.clear();
+  m_indices_to_send.resize(m_np);
+  size_t j = 0;
+  for (int i = current_pos; i < current_pos + mb_size; i++) {
+    auto index = (*m_shuffled_indices)[i];
+    /// If this rank owns the index send it to the j'th rank
+    if (m_data.find(index) != m_data.end()) {
+      m_indices_to_send[j].insert(index);
+    }
+    j = (j + 1) % m_np;
+  }
+}
+
 #if 0
 // fills in m_ds_indices and m_owner
 void data_store_jag::build_ds_indices() {
@@ -463,29 +516,6 @@ void data_store_jag::build_ds_indices() {
   }
 }
 #endif
-
-void data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
-  for (size_t j=m_rank; j<m_shuffled_indices->size(); j += m_np) {
-    auto index = (*m_shuffled_indices)[j];
-    int owner = m_owner[index];
-    m_indices_to_recv[owner].insert(index);
-    j = (j + 1) % m_np;
-  }
-}
-
-void data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
-  m_indices_to_send.clear();
-  m_indices_to_send.resize(m_np);
-  size_t j = 0;
-  for (auto i = current_pos; i < current_pos + mb_size; i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// If this rank owns the index send it to the j'th rank
-    if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[j].insert(index);
-    }
-    j = (j + 1) % m_np;
-  }
-}
 
 void data_store_jag::build_owner_map() {
   m_owner.clear();
@@ -514,7 +544,11 @@ void data_store_jag::compute_super_node_overhead() {
       first = n3.total_bytes_compact();
     } else {
       m_super_node_overhead = 2*first - n3.total_bytes_compact();
-      if (m_master) std::cerr << "m_super_node_overhead: " << m_super_node_overhead << "\n";
+      m_compacted_sample_size = first - m_super_node_overhead;
+      if (m_master) {
+        std::cerr << "m_super_node_overhead: " << m_super_node_overhead 
+                  << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
+      }
       return;
     }
   }

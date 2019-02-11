@@ -109,7 +109,10 @@ protected :
   /// assumes the super_node contains at least two samples
   int m_super_node_overhead;
 
-  /// assignes a value to m_super_node_overhead
+  /// size of a compacted conduit::Node that contains a single sample
+  int m_compacted_sample_size;
+
+  /// assignes values to m_super_node_overhead and m_compacted_sample_size
   void compute_super_node_overhead();
 
   /// ??? as our code currently stands (sun, 10 feb) this isn't necessary
