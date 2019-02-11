@@ -135,7 +135,7 @@ void pilot2_molecular_reader::load() {
       tmp[6] = m_word_size;
       tmp[7] = m_neighbors_data_size;
     }
-    MPI_Bcast(tmp.data(), 8, MPI_INT, get_compound_rank(), m_comm->get_trainer_comm().comm);
+    MPI_Bcast(tmp.data(), 8, MPI_INT, get_compound_rank(), m_comm->get_trainer_comm().GetMPIComm());
     m_num_samples = tmp[0];
     m_num_samples_per_frame = tmp[1];
     m_num_features = tmp[2];
