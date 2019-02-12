@@ -101,14 +101,29 @@ to install the LBANN executables.  This approach is appropriate for
 users that just want to train new or existing models using the python
 front end.  Note that if your model requires custom layers or data
 readers you may need to install LBANN as a developer, which would
-allow you to modify and recompile the source code.
+allow you to modify and recompile the source code.  Here are three
+easy ways to install LBANN:
 
 - Building with the latest released versions and GPU support:
-  `spack install lbann +gpu`
+  ```bash
+  spack install lbann +gpu +nccl
+  ml load spack
+  ```
 
 - Building with the head of develop branch for lbann, hydrogen and
   aluminum with GPU support:
-  `spack install lbann@develop +gpu ^hydrogen@develop ^aluminum@master`
+  ```bash
+  spack install lbann@develop +gpu +nccl ^hydrogen@develop ^aluminum@master
+  ml load spack
+  ```
+
+- Using the Spack environment method, (e.g. for an x86_64 LLNL LC system with GPU support):
+  ```bash
+  cd <path to spack repo>/spack_environments/users/llnl_lc/x86_64_gpu/
+  spack install
+  spack env loads
+  source loads
+  ```
 
 Note that there are a number of options for all of these packages and
 can be viewed via commands such as `spack info lbann`.  To specify the
