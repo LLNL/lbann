@@ -24,13 +24,16 @@ setup(
     author="Lawrence Livermore National Security, LLC.",
     license="Apache 2.0",
     packages=["lbann"],
-    scripts=["scripts/plot/lbplot"],
+    scripts=["scripts/plot/lbplot",
+             "scripts/viz/lbviz"],
     install_requires=["protobuf>=3.6.1",
                       "onnx>=1.3.0",
                       "numpy>=1.16.0",
                       "matplotlib>=2.0.2",
-                      "texttable==1.4.0",
+                      "graphviz>=0.10.1",
+                      "texttable>=1.4.0",
                       "nose>=1.3.7"],
     test_suite="nose.collector",
     tests_require=["nose"],
+    include_package_data=True
 )

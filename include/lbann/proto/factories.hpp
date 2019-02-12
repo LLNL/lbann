@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_PROTO_FACTORIES_HPP
-#define LBANN_PROTO_FACTORIES_HPP
+#ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
+#define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/data_readers/data_reader.hpp"
@@ -40,16 +40,18 @@ model* construct_model(lbann_comm* comm,
                        const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
-std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          const lbann_data::Model& proto_model);
+std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <data_layout layout, El::Device Dev>
-Layer* construct_layer(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       int num_parallel_readers,
-                       const lbann_data::Layer& proto_layer);
+std::unique_ptr<Layer> construct_layer(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int num_parallel_readers,
+  const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
 weights* construct_weights(lbann_comm* comm,
@@ -104,4 +106,4 @@ std::set<T> parse_set(std::string str) {
 } // namespace proto
 } // namespace lbann
 
-#endif // LBANN_PROTO_FACTORIES_HPP
+#endif // LBANN_PROTO_FACTORIES_HPP_INCLUDED

@@ -10,8 +10,10 @@ any problems or have feature suggestions.
 
 * For more details about the LBANN/ONNX converter,
 see [here](docs/onnx/README.md).
-* For more details about the visualization script
+* For more details about the *accuracy/loss* visualization script
 (also known as `lbplot`), see [here](docs/plot/README.md).
+* For more details about the *model* visualization script
+(also known as `lbviz`, )see [here](docs/viz/README.md).
 
 # Setup
 
