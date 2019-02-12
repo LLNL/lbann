@@ -96,8 +96,25 @@ The following third-party packages are **optional**.
 
 ### Building & Installing LBANN as a user
 
-This section is work in progress. For now, follow the developer
-instructions below. We are working to simplify this process.
+Now that spack is setup and installed into your path, it can be used
+to install the LBANN executables.  This approach is appropriate for
+users that just want to train new or existing models using the python
+front end.  Note that if your model requires custom layers or data
+readers you may need to install LBANN as a developer, which would
+allow you to modify and recompile the source code.
+
+- Building with the latest released versions and GPU support:
+  `spack install lbann +gpu`
+
+- Building with the head of develop branch for lbann, hydrogen and
+  aluminum with GPU support:
+  `spack install lbann@develop +gpu ^hydrogen@develop ^aluminum@master`
+
+Note that there are a number of options for all of these packages and
+can be viewed via commands such as `spack info lbann`.  To specify the
+compiler you can add options such as `%gcc@7.3.0`.  For further
+information about specifying dependencies like the MPI library please
+consult the [Spack documentation](https://spack.readthedocs.io/).
 
 ### Building & Installing LBANN as a developer
 
