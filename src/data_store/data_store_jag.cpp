@@ -163,10 +163,9 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   }
 
   // start recvs for incoming data
-  std::vector<El::mpi::Request<El::byte>> recv_requests_2(m_np);
   for (int p=0; p<m_np; p++) {
     m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
-    m_comm->nb_recv<El::byte>((El::byte*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, recv_requests_2[p]);
+    m_comm->nb_recv<El::byte>((El::byte*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, m_recv_requests[p]);
   }
 
   // wait for all msgs to complete
