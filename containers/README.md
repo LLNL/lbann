@@ -17,7 +17,7 @@ Singularity is designed to take advantage of underlying HPC resources. The lbann
  To run LBANN use mpirun and singularity's execute command:
  ```
  salloc -N2
- mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity_optimizied_test/model_zoo/lbann  mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity/model_zoo/lbann  --model=/lbann/model_zoo/tests/model_mnist_partitioned_io.prototext --reader=/lbann/model_zoo/data_readers/data_reader_mnist.prototext --optimizer=/lbann/   model_zoo/optimizers/opt_adagrad.prototext
+mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity_optimizied_test/model_zoo/lbann  mpirun -np 4 singularity exec -B /p:/p lbann.img /lbann/spack_builds/singularity/model_zoo/lbann --model=/lbann/model_zoo/models/lenet_mnist/model_lenet_mnist.prototext --reader=/lbann/model_zoo/data_readers/data_reader_mnist.prototext --optimizer=/lbann/   model_zoo/optimizers/opt_adagrad.prototext
  ```
 *Note: The -B singularity command, binds directories from the surrounding filesystem to the container. Be sure to include any necessary files using this command (i.e model prototext files, datasets, etc). Alternatively, system admins are capable of allowing a singularity container to utilize the host's filesystem. This is done by changing MOUNT HOSTFS in the singularity config file.*
 
