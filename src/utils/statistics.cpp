@@ -412,8 +412,8 @@ void columnwise_covariance(const AbsDistMat& data1,
     }
     local_covs(0, col) = sum;
   }
-  AllReduce(covs, covs.RedundantComm(), El::mpi::SUM);
-  local_covs *= DataType(1) / height;
+  El::AllReduce(covs, covs.RedundantComm(), El::mpi::SUM);
+  El::Scale(DataType(1) / height, local_covs);
 
 }
 
