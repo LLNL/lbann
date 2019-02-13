@@ -29,6 +29,7 @@
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/profiling.hpp"
 #include <cstdio>
 #include <string>
 #include <algorithm>
@@ -60,11 +61,13 @@ void fill_buffer(DataType *buf, size_t len) {
 void fill_matrix(CPUMat& mat, DataType * __restrict__ pre_generated=nullptr) {
   const El::Int height = mat.Height();  // Width is 1.
   DataType * __restrict__ buf = mat.Buffer();
+  prof_region_begin("synthetic fill matrix", prof_colors[0], false);
   if (pre_generated) {
     std::copy(pre_generated, pre_generated + height, buf);
   } else {
     fill_buffer(buf, height);
   }
+  prof_region_end("synthetic fill matrix", false);
 }
 
 }  // anonymous namespace
