@@ -334,7 +334,7 @@ model {
     parents: "relu6"
     name: "decode1"
     data_layout: "data_parallel"
-    num_neurons_from_data_reader: true
+    hint_layer: "image"
     fully_connected {
       has_bias: true
     }
