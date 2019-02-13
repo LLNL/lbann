@@ -96,7 +96,6 @@ void data_store_jag::setup() {
 }
 
 void data_store_jag::setup_data_store_buffers() {
-  debug << "\nstarting data_store_jag::setup_data_store_buffers\n";
   // allocate buffers that are used in exchange_data()
   m_send_buffer.resize(m_np);
   m_send_buffer_2.resize(m_np);
@@ -106,15 +105,14 @@ void data_store_jag::setup_data_store_buffers() {
   m_outgoing_msg_sizes.resize(m_np);
   m_incoming_msg_sizes.resize(m_np);
   m_recv_buffer.resize(m_np);
-
-  m_reconstituted.resize(m_data.size());
+  m_reconstituted.resize(m_np);
 }
 
 // this gets called at the beginning of each epoch (except for epoch 0)
 //
 // Note: conduit has a very nice interface for communicating nodes
 //       in blocking scenarios. Unf, for non-blocking we need to
-//       handle things ourselves. TODO: possible modify conduit to
+//       handle things ourselves. TODO: possibly modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
   double tm1 = get_time();
@@ -191,8 +189,6 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
     gen.walk(rcv_schema);
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
-    //nd.reset();
-    //nd.update_external(n_msg["data"]);
     m_reconstituted[p].reset();
     m_reconstituted[p].update_external(n_msg["data"]);
     const std::vector<std::string> &names = m_reconstituted[p].child_names();
