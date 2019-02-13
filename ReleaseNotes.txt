@@ -14,6 +14,8 @@ Internal features:
 I/O & data readers:
 
 Build system:
+ - Added documentation for how users can use Spack to install LBANN
+ either directly or via environments
 
 Retired features:
 
