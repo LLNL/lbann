@@ -373,7 +373,7 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
     LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests.size: " + std::to_string(m_send_requests.size()));
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  //  MPI_Barrier(MPI_COMM_WORLD);
   // if (m_master) std::cerr << "\nSENDS STARTED\n\n";
   // debug << "\nSENDS STARTED\n\n";
   // MPI_Barrier(MPI_COMM_WORLD);
