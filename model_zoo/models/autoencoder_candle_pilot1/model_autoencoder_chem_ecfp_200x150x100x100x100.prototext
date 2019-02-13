@@ -53,7 +53,6 @@ model {
     children: "data dummy"
     data_layout: "model_parallel"
     input {
-      io_buffer: "distributed"
       target_mode: "reconstruction"
     }
   }

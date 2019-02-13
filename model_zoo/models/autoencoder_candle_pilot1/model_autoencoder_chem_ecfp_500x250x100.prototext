@@ -52,9 +52,7 @@ model {
     name: "input"
     children: "data dummy"
     data_layout: "model_parallel"
-    input {
-      io_buffer: "distributed"
-    }
+    input {}
   }
   layer {
     parents: "input"

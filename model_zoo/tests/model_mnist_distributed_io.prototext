@@ -94,9 +94,7 @@ model {
     name: "1"
     children: "1a 1b"
     data_layout: "model_parallel"
-    input {
-      io_buffer: "distributed"
-    }
+    input {}
   }
   layer {
     parents: "1"

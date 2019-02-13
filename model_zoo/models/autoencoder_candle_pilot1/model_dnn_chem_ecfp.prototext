@@ -56,9 +56,7 @@ model {
     name: "data"
     children: "finetunedata label"
     data_layout: "model_parallel"
-    input {
-      io_buffer: "distributed"
-    }
+    input {}
   }
   layer {
     parents: "data"

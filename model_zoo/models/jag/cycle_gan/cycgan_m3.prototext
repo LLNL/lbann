@@ -16,7 +16,6 @@ model {
   data_layout: "data_parallel"
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"
