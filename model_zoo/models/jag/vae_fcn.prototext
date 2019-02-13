@@ -66,7 +66,7 @@ model {
   layer {
     name: "input"
     children: "data dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     input {
       target_mode: "reconstruction"
     }
@@ -74,13 +74,13 @@ model {
   layer {
     parents: "input"
     name: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
   layer {
     parents: "input"
     name: "dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     dummy {}
   }
 

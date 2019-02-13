@@ -48,7 +48,7 @@ model {
   layer {
     name: "data"
     #children: "encode1 recon_data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     input {
       target_mode: "N/A"
     }
@@ -57,7 +57,7 @@ model {
   layer {
     name: "recon_data"
     parents: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     identity { }
   }
 

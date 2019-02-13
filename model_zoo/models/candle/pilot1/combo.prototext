@@ -51,7 +51,7 @@ model {
   layer {
     name: "input"
     children: "data response"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     input {
       target_mode: "regression"
     }
@@ -59,13 +59,13 @@ model {
   layer {
     parents: "input"
     name: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
   layer {
     parents: "input"
     name: "response"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
 
