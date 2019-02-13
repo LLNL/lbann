@@ -83,8 +83,8 @@ protected :
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
 
-  // when m_super_node = false
-  std::unordered_map<int,int> m_index_to_data_id;
+  /// Contains the list of data IDs that will be received
+  std::vector<int> m_recv_data_ids;
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
@@ -131,15 +131,17 @@ protected :
   /// this proc needs to send. (formerly called "proc_to_indices)
   std::vector<std::unordered_set<int>> m_indices_to_send;
 
-  /// fills in m_indices_to_send
-  void build_indices_i_will_send(int current_pos, int mb_size);
+  /// fills in m_indices_to_send and returns the number of samples
+  /// that will be sent
+  int build_indices_i_will_send(int current_pos, int mb_size);
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to recv from others. (formerly called "needed")
   std::vector<std::unordered_set<int>> m_indices_to_recv;
 
-  /// fills in m_indices_to_recv
-  void build_indices_i_will_recv(int current_pos, int mb_size);
+  /// fills in m_indices_to_recv and returns the number of samples
+  /// that will be received
+  int build_indices_i_will_recv(int current_pos, int mb_size);
 
 };
 

@@ -55,6 +55,8 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
+#define SAMPLE_ID_PAD 7
+
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream _err; \
@@ -1084,7 +1086,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
 
   for (const auto& emi_tag : m_emi_image_keys) {
     const std::string conduit_field = m_output_image_prefix + emi_tag;
-    const std::string conduit_obj = '/' + pad(std::to_string(sample_id), 5, '0') + '/' + conduit_field;
+    const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1207,7 +1209,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   for(const auto key: m_scalar_keys) {
     std::string conduit_field = m_output_scalar_prefix + key;
-    std::string conduit_obj = '/' + pad(std::to_string(sample_id), 5, '0') + '/' + conduit_field;
+    std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1238,7 +1240,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
-      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), 5, '0') + '/' + conduit_field;
+      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
         if (data_store_active()) {
           LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1256,7 +1258,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   } else {
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
-      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), 5, '0') + '/' + conduit_field;
+      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
         if (data_store_active()) {
           LBANN_ERROR("Unable to find field " + conduit_obj

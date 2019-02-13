@@ -45,7 +45,8 @@ data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
   m_super_node(false),
-  m_super_node_overhead(0) {
+  m_super_node_overhead(0),
+  m_compacted_sample_size(0) {
   set_name("data_store_jag");
 }
 
@@ -216,10 +217,25 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   }
 
   if (! m_super_node) {
-    //@TODO fix, so we don't need to do a deep copy
-    conduit::Node n2;
-    build_node_for_sending(node, n2);
-    m_data[data_id] = n2;
+    build_node_for_sending(node, m_data[data_id]);
+    const conduit::Node& n2 = m_data[data_id];
+    if(m_compacted_sample_size == 0) {
+      m_compacted_sample_size = n2.total_bytes_compact();
+    }else if(m_compacted_sample_size != n2.total_bytes_compact()) {
+      LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
+                  + " is not the same size as existing nodes in the data_store "
+                  + std::to_string(m_compacted_sample_size) + " != "
+                  + std::to_string(n2.total_bytes_compact()));
+    }
+    if(!m_data[data_id].is_contiguous()) {
+      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
+    }
+    if(m_data[data_id].data_ptr() == nullptr) {
+      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid data pointer");
+    }
+    if(m_data[data_id].contiguous_data_ptr() == nullptr) {
+      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid contiguous data pointer");
+    }
   }
 
   else {
@@ -234,7 +250,11 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
   std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
   if (t != m_data.end()) {
-    return t->second;
+    if(m_super_node) {
+      return t->second;
+    }else {
+      return t->second["data"];
+    }
   }
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
@@ -287,109 +307,99 @@ while (t.has_next()) {
   node_out.set(s_msg_compact);
   node_out["schema"].set(snd_schema_json);
   node_out["data"].update(node_in);
+
+  if(!node_out.is_contiguous()) {
+    LBANN_ERROR("node_out does not have a contiguous layout");
+  }
+  if(node_out.data_ptr() == nullptr) {
+    LBANN_ERROR("node_out does not have a valid data pointer");
+  }
+  if(node_out.contiguous_data_ptr() == nullptr) {
+    LBANN_ERROR("node_out does not have a valid contiguous data pointer");
+  }
 }
 
 
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
-#if 0
-  double tm1 = get_time();
+  // double tm1 = get_time();
 
-  debug.open(b, std::ios::app);
-  debug << "\n============================================================\n"
-  <<"starting exchange_data_by_sample; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"  m_n: " << m_n << "  send_buffer size: " << m_send_buffer.size() << "\n";
-  debug.close();
-
-  if (m_n == 1) {
-    if (m_master) std::cerr << "allocating storage\n";
-    int sz = m_data.size();
-    m_send_buffer.resize(sz);
-    m_send_requests.resize(sz);
-    m_recv_requests.resize(sz);
-    m_recv_buffer.resize(sz);
-    m_status.resize(sz);
-
-    // sanity check
-    /*
-    int n = 0;
-    for (auto &t : m_data) {
-      if (t.second.total_bytes_compact() != n) {
-        LBANN_ERROR("t.total_bytes_compact() != n; " + std::to_string(n) + " " + std::to_string(t.second.total_bytes_compact()));
-      }
-    }
-    */
-  }
+  // debug.open(b, std::ios::app);
+  // debug << "\n============================================================\n"
+  // <<"starting exchange_data_by_sample; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"  m_n: " << m_n << "  send_buffer size: " << m_send_buffer.size() << "\n";
+  // debug.close();
+  // debug.open(b, std::ios::app);
+  // std::cout << "\n============================================================\n"
+  //           <<"starting exchange_data_by_sample; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"  m_n: " << m_n << "  send_buffer size: " << m_send_buffer.size() << "\n" << std::endl;
 
   //========================================================================
 
-double tma = get_time();
+  // double tma = get_time();
 
-  build_indices_i_will_send(current_pos, mb_size);
-  build_indices_i_will_recv(current_pos, mb_size);
+  int num_send_req = build_indices_i_will_send(current_pos, mb_size);
+  int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
 
-  // debug block
-   #if 0
-  int sample_size = 0;
-  for (auto &t : m_data) {
-    if(sample_size == 0) {
-      sample_size = t.second.total_bytes_compact();
-    } else {
-      if(sample_size != t.second.total_bytes_compact()) {
-        debug << "bad sample size: " << t.second.total_bytes_compact() << " num samples: " << m_data.size() << "\n";
-      }
-    }
-  }
-  debug << "sample size: " << sample_size << " num samples: " << m_data.size() << "\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-  #endif
-
+  //m_send_buffer.resize(sz);
+  m_send_requests.resize(num_send_req);
+  m_recv_requests.resize(num_recv_req);
+  m_recv_buffer.resize(num_recv_req);
+  m_recv_data_ids.resize(num_recv_req);
+  m_status.resize(std::max(num_send_req, num_recv_req));
 
   //========================================================================
   //part 2: exchange the actual data
 
-tma = get_time();
+// tma = get_time();
 
   // start sends for outgoing data
   size_t ss = 0;
   for (int p=0; p<m_np; p++) {
-    const std::unordered_set<int> &indices = indices_i_will_send[p];
+    const std::unordered_set<int> &indices = m_indices_to_send[p];
+    //    std::cout << "I am going to be sending data for p " << p << std::endl;
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
         LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
       }
-
-      //const void *s = m_send_buffer[ss].data_ptr();
-      const void *s = m_data[index].data_ptr();
-      MPI_Isend(s, m_compacted_sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests[ss++]);
-      //MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
+      const conduit::Node& n = m_data[index];
+      const void *s = n.data_ptr();
+      if(!n.is_contiguous()) {
+        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a contiguous layout");
+      }
+      if(n.data_ptr() == nullptr) {
+        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid data pointer");
+      }
+      if(n.contiguous_data_ptr() == nullptr) {
+        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid contiguous data pointer");
+      }
+      //      MPI_Isend(s, m_compacted_sample_size, MPI_BYTE, p, index, comm->get_world_comm(), &m_send_requests[ss++]);
+      MPI_Isend(s, m_compacted_sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests.at(ss++));
     }
   }
-  LBANN_ERROR("Stopping");
 
   // sanity checks
   if (ss != m_send_requests.size()) {
-    LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests`.size: " + std::to_string(m_send_requests.size()));
+    LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests.size: " + std::to_string(m_send_requests.size()));
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (m_master) std::cerr << "\nSENDS STARTED\n\n";
-  debug << "\nSENDS STARTED\n\n";
-  MPI_Barrier(MPI_COMM_WORLD);
+  //  MPI_Barrier(MPI_COMM_WORLD);
+  // if (m_master) std::cerr << "\nSENDS STARTED\n\n";
+  // debug << "\nSENDS STARTED\n\n";
+  // MPI_Barrier(MPI_COMM_WORLD);
 
 
   // start recvs for incoming data
   ss = 0;
   for (int p=0; p<m_np; p++) {
-    const std::unordered_set<int> &indices = needed[p];
-debug << "starting " << indices.size() << " recvs from " << p << "\n";
+    const std::unordered_set<int> &indices = m_indices_to_recv[p];
+// debug << "starting " << indices.size() << " recvs from " << p << "\n";
     for (auto index : indices) {
-      m_recv_buffer[ss].set(conduit::DataType::uint8(sample_size));
-      MPI_Irecv(m_recv_buffer[ss].data_ptr(), m_compacted_sample_size,, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_recv_requests[ss]);
-      m_index_to_data_id[index] = ss;
+      m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
+      MPI_Irecv(m_recv_buffer[ss].data_ptr(), m_compacted_sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_recv_requests[ss]);
+      m_recv_data_ids[ss] = index;
       ++ss;
     }
   }
 
+  // if(m_master) std::cout << "\nRECV COMPLETE\n\n";
   // sanity checks
   if (ss != m_recv_buffer.size()) {
     LBANN_ERROR("ss != m_recv_buffer.size; ss: " + std::to_string(ss) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
@@ -400,18 +410,19 @@ debug << "starting " << indices.size() << " recvs from " << p << "\n";
 
   // wait for all msgs to complete
   MPI_Waitall(m_send_requests.size(), m_send_requests.data(), m_status.data());
+  m_status.clear();
   MPI_Waitall(m_recv_requests.size(), m_recv_requests.data(), m_status.data());
 
-debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-debug.close();
-debug.open(b, std::ios::app);
+// debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
+// debug.close();
+// debug.open(b, std::ios::app);
 
-tma = get_time();
+// tma = get_time();
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-double tmw = get_time();
+// double tmw = get_time();
 
   conduit::Node nd;
   m_minibatch_data.clear();
@@ -427,46 +438,43 @@ double tmw = get_time();
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
 
-    // this is inefficent @TODO
-    nd.reset();
-    nd.update(n_msg["data"]);
-    m_minibatch_data[nd["id"].value()] = nd;
+    int data_id = m_recv_data_ids[j];
+    //    m_minibatch_data[data_id].set(n_msg["data"]);
+    m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
-for (auto &t : m_minibatch_data) {
-  debug << t.first << " ";
+// for (auto &t : m_minibatch_data) {
+//   debug << t.first << " ";
+// }
+// debug << "\n";
+
+// debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
+
+//   if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
+
+//   debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
+// debug.close(); debug.open(b, std::ios::app);
 }
-debug << "\n";
 
-debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
-
-  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
-
-  debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
-debug.close(); debug.open(b, std::ios::app);
-#endif
-}
-
-void data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
+int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   m_indices_to_recv.clear();
   m_indices_to_recv.resize(m_np);
- // size_t j = 0;
+  int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
- //   if (m_data.find(index) != m_data.end()) {
     if (i % m_np == m_rank) {
-    //if (index % m_np == m_rank) {
       int owner = m_owner[index];
       m_indices_to_recv[owner].insert(index);
+      k++;
     }
-//    j = (j + 1) % m_np;
   }
-
+  return k;
 }
 
-void data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
+int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   m_indices_to_send.clear();
   m_indices_to_send.resize(m_np);
   size_t j = 0;
+  int k = 0;
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the j'th rank
@@ -479,9 +487,11 @@ void data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
         s << "error for i: "<<i<<" index: "<<index<< " m_owner: " << m_owner[index] << " me: " << m_rank;
         LBANN_ERROR(s.str());
       }
+      k++;
     }
     j = (j + 1) % m_np;
   }
+  return k;
 }
 
 #if 0
@@ -531,7 +541,7 @@ void data_store_jag::compute_super_node_overhead() {
       m_super_node_overhead = 2*first - n3.total_bytes_compact();
       m_compacted_sample_size = first - m_super_node_overhead;
       if (m_master) {
-        std::cerr << "m_super_node_overhead: " << m_super_node_overhead 
+        std::cerr << "m_super_node_overhead: " << m_super_node_overhead
                   << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
       }
       return;
