@@ -139,17 +139,23 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //========================================================================
   //part 1.5: exchange super_node sizes
 
+  // these can eventually be in data_store_jag.hpp
+  std::vector<El::mpi::Request<unsigned char>> send_requests(m_np);
+  std::vector<El::mpi::Request<unsigned char>> recv_requests(m_np);
+
   for (int p=0; p<m_np; p++) {
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
-    MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
+    unsigned char *s = reinterpret_cast<unsigned char*>(&m_outgoing_msg_sizes[p]);
+    m_comm->nb_send<unsigned char>(s, sizeof(int), m_comm->get_trainer_rank(), p, send_requests[p]);
   }
 
   for (int p=0; p<m_np; p++) {
-      MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
-  }
+    unsigned char *s = reinterpret_cast<unsigned char*>(&m_incoming_msg_sizes[p]);
+    m_comm->nb_recv<unsigned char>(s, sizeof(int), m_comm->get_trainer_rank(), p, recv_requests[p]);
+      //MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
 
-  MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
-  MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
+  m_comm->wait_all<unsigned char>(send_requests);
+  m_comm->wait_all<unsigned char>(recv_requests);
 
   //========================================================================
   //part 2: exchange the actual data
@@ -158,19 +164,20 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
-    const void *s = m_send_buffer_2[p].data_ptr();
-    MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
+    const unsigned char *s = reinterpret_cast<unsigned char*>(m_send_buffer_2[p].data_ptr());
+    m_comm->nb_send<unsigned char>(s, m_outgoing_msg_sizes[p], m_comm->get_trainer_rank(), p, send_requests[p]);
   }
 
   // start recvs for incoming data
+  std::vector<El::mpi::Request<unsigned char>> recv_requests_2(m_np);
   for (int p=0; p<m_np; p++) {
     m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
-    MPI_Irecv(m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_recv_requests[p]);
+    m_comm->nb_recv<unsigned char>((unsigned char*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, recv_requests_2[p]);
   }
 
   // wait for all msgs to complete
-  MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
-  MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
+  m_comm->wait_all<unsigned char>(send_requests);
+  m_comm->wait_all<unsigned char>(recv_requests);
 
   debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
   //========================================================================
