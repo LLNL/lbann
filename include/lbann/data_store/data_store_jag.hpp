@@ -97,9 +97,8 @@ protected :
   /// work space; used in exchange_data
   std::vector<conduit::Node> m_send_buffer;
   std::vector<conduit::Node> m_send_buffer_2;
-  std::vector<MPI_Request> m_send_requests;
-  std::vector<MPI_Request> m_recv_requests;
-  std::vector<MPI_Status> m_status;
+  std::vector<El::mpi::Request<El::byte>> m_send_requests;
+  std::vector<El::mpi::Request<El::byte>> m_recv_requests;
   std::vector<conduit::Node> m_recv_buffer;
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;

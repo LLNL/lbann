@@ -102,7 +102,6 @@ void data_store_jag::setup_data_store_buffers() {
   m_send_buffer_2.resize(m_np);
   m_send_requests.resize(m_np);
   m_recv_requests.resize(m_np);
-  m_status.resize(m_np);
   m_outgoing_msg_sizes.resize(m_np);
   m_incoming_msg_sizes.resize(m_np);
   m_recv_buffer.resize(m_np);
@@ -139,23 +138,18 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //========================================================================
   //part 1.5: exchange super_node sizes
 
-  // these can eventually be in data_store_jag.hpp
-  std::vector<El::mpi::Request<unsigned char>> send_requests(m_np);
-  std::vector<El::mpi::Request<unsigned char>> recv_requests(m_np);
-
   for (int p=0; p<m_np; p++) {
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
-    unsigned char *s = reinterpret_cast<unsigned char*>(&m_outgoing_msg_sizes[p]);
-    m_comm->nb_send<unsigned char>(s, sizeof(int), m_comm->get_trainer_rank(), p, send_requests[p]);
+    El::byte *s = reinterpret_cast<El::byte*>(&m_outgoing_msg_sizes[p]);
+    m_comm->nb_send<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_send_requests[p]);
   }
 
   for (int p=0; p<m_np; p++) {
-    unsigned char *s = reinterpret_cast<unsigned char*>(&m_incoming_msg_sizes[p]);
-    m_comm->nb_recv<unsigned char>(s, sizeof(int), m_comm->get_trainer_rank(), p, recv_requests[p]);
-      //MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
-
-  m_comm->wait_all<unsigned char>(send_requests);
-  m_comm->wait_all<unsigned char>(recv_requests);
+    El::byte *s = reinterpret_cast<El::byte*>(&m_incoming_msg_sizes[p]);
+    m_comm->nb_recv<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_recv_requests[p]);
+  }
+  m_comm->wait_all<El::byte>(m_send_requests);
+  m_comm->wait_all<El::byte>(m_recv_requests);
 
   //========================================================================
   //part 2: exchange the actual data
@@ -164,20 +158,20 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
-    const unsigned char *s = reinterpret_cast<unsigned char*>(m_send_buffer_2[p].data_ptr());
-    m_comm->nb_send<unsigned char>(s, m_outgoing_msg_sizes[p], m_comm->get_trainer_rank(), p, send_requests[p]);
+    const El::byte *s = reinterpret_cast<El::byte*>(m_send_buffer_2[p].data_ptr());
+    m_comm->nb_send<El::byte>(s, m_outgoing_msg_sizes[p], m_comm->get_trainer_rank(), p, m_send_requests[p]);
   }
 
   // start recvs for incoming data
-  std::vector<El::mpi::Request<unsigned char>> recv_requests_2(m_np);
+  std::vector<El::mpi::Request<El::byte>> recv_requests_2(m_np);
   for (int p=0; p<m_np; p++) {
     m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
-    m_comm->nb_recv<unsigned char>((unsigned char*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, recv_requests_2[p]);
+    m_comm->nb_recv<El::byte>((El::byte*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, recv_requests_2[p]);
   }
 
   // wait for all msgs to complete
-  m_comm->wait_all<unsigned char>(send_requests);
-  m_comm->wait_all<unsigned char>(recv_requests);
+  m_comm->wait_all<El::byte>(m_send_requests);
+  m_comm->wait_all<El::byte>(m_recv_requests);
 
   debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
   //========================================================================
@@ -269,14 +263,6 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
 
-#if 0
-if (m_master) {
-  std::cout << "  \"======================================\n";
-  node_in.print();
-}
-
-  MPI_Barrier(MPI_COMM_WORLD);
-#endif
 /*
 size_t i = node_in.number_of_children();
 debug << "num children: " << i  << "\n";
@@ -338,12 +324,10 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   int num_send_req = build_indices_i_will_send(current_pos, mb_size);
   int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
 
-  //m_send_buffer.resize(sz);
   m_send_requests.resize(num_send_req);
   m_recv_requests.resize(num_recv_req);
   m_recv_buffer.resize(num_recv_req);
   m_recv_data_ids.resize(num_recv_req);
-  m_status.resize(std::max(num_send_req, num_recv_req));
 
   //========================================================================
   //part 2: exchange the actual data
@@ -354,13 +338,12 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   size_t ss = 0;
   for (int p=0; p<m_np; p++) {
     const std::unordered_set<int> &indices = m_indices_to_send[p];
-    //    std::cout << "I am going to be sending data for p " << p << std::endl;
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
         LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
       }
       const conduit::Node& n = m_data[index];
-      const void *s = n.data_ptr();
+      const El::byte *s = reinterpret_cast<const El::byte*>(n.data_ptr());
       if(!n.is_contiguous()) {
         LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a contiguous layout");
       }
@@ -370,8 +353,7 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
       if(n.contiguous_data_ptr() == nullptr) {
         LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid contiguous data pointer");
       }
-      //      MPI_Isend(s, m_compacted_sample_size, MPI_BYTE, p, index, comm->get_world_comm(), &m_send_requests[ss++]);
-      MPI_Isend(s, m_compacted_sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests.at(ss++));
+      m_comm->nb_tagged_send(s, m_compacted_sample_size, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
     }
   }
 
@@ -379,11 +361,6 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   if (ss != m_send_requests.size()) {
     LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests.size: " + std::to_string(m_send_requests.size()));
   }
-
-  //  MPI_Barrier(MPI_COMM_WORLD);
-  // if (m_master) std::cerr << "\nSENDS STARTED\n\n";
-  // debug << "\nSENDS STARTED\n\n";
-  // MPI_Barrier(MPI_COMM_WORLD);
 
 
   // start recvs for incoming data
@@ -393,7 +370,8 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
 // debug << "starting " << indices.size() << " recvs from " << p << "\n";
     for (auto index : indices) {
       m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
-      MPI_Irecv(m_recv_buffer[ss].data_ptr(), m_compacted_sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_recv_requests[ss]);
+      El::byte *r = reinterpret_cast<El::byte*>(m_recv_buffer[ss].data_ptr());
+      m_comm->nb_tagged_recv<El::byte>(r, m_compacted_sample_size, p, index, m_recv_requests[ss], m_comm->get_trainer_comm());
       m_recv_data_ids[ss] = index;
       ++ss;
     }
@@ -409,9 +387,8 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   }
 
   // wait for all msgs to complete
-  MPI_Waitall(m_send_requests.size(), m_send_requests.data(), m_status.data());
-  m_status.clear();
-  MPI_Waitall(m_recv_requests.size(), m_recv_requests.data(), m_status.data());
+  m_comm->wait_all(m_send_requests);
+  m_comm->wait_all(m_recv_requests);
 
 // debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
 // debug.close();
