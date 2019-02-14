@@ -60,7 +60,7 @@ class data_store_jag : public generic_data_store {
   void setup() override;
 
   /// returns the conduit node
-  const conduit::Node & get_conduit_node(int data_id, bool any_node = false) const;
+  const conduit::Node & get_conduit_node(int data_id) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
 
@@ -68,7 +68,6 @@ protected :
 
   bool m_super_node;
 
-  /// retrive data needed for passing to the data reader for the next epoch
   /// this is pure virtual in generic_data_reader, so must include it for
   /// now. May go away when we refactore/revise all of data_store
   void exchange_data() override {}
@@ -82,7 +81,7 @@ protected :
   }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
-  void setup_data_store_buffers();
+
 
   // when m_super_node = false
   std::unordered_map<int,int> m_index_to_data_id;
@@ -105,13 +104,43 @@ protected :
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
+  /// overhead incurred by the super_node; this is constant,
+  /// regardless of the number of samples contained in the super_node;
+  /// assumes the super_node contains at least two samples
+  int m_super_node_overhead;
+
+  /// size of a compacted conduit::Node that contains a single sample
+  int m_compacted_sample_size;
+
+  /// assignes values to m_super_node_overhead and m_compacted_sample_size
+  void compute_super_node_overhead();
+
+  /// ??? as our code currently stands (sun, 10 feb) this isn't necessary
+  /// -- but it's being used. @TODO: revisit
   std::vector<conduit::Node> m_reconstituted;
+
+  void setup_data_store_buffers();
 
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-  /// fills in m_owner, which maps an index to the owning processor;
-  void exchange_ds_indices();
+  /// fills in mowner, which maps index -> owning processor
+  void build_owner_map();
+
+  /// maps processor id -> set of indices (whose associated samples)
+  /// this proc needs to send. (formerly called "proc_to_indices)
+  std::vector<std::unordered_set<int>> m_indices_to_send;
+
+  /// fills in m_indices_to_send
+  void build_indices_i_will_send(int current_pos, int mb_size);
+
+  /// maps processor id -> set of indices (whose associated samples)
+  /// this proc needs to recv from others. (formerly called "needed")
+  std::vector<std::unordered_set<int>> m_indices_to_recv;
+
+  /// fills in m_indices_to_recv
+  void build_indices_i_will_recv(int current_pos, int mb_size);
+
 };
 
 }  // namespace lbann
