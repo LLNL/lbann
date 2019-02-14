@@ -38,9 +38,6 @@
 
 namespace lbann {
 
-std::ofstream debug;
-char b[1024];
-
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
@@ -50,9 +47,7 @@ data_store_jag::data_store_jag(
   set_name("data_store_jag");
 }
 
-data_store_jag::~data_store_jag() {
-  debug.close();
-}
+data_store_jag::~data_store_jag() {}
 
 void data_store_jag::setup() {
   double tm1 = get_time();
@@ -78,9 +73,6 @@ void data_store_jag::setup() {
       std::cerr << "mode: exchange_data via individual samples\n";
     }
   }
-
-  sprintf(b, "debug.%d", m_rank);
-  debug.open(b);
 
   if (m_master) {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
@@ -172,7 +164,6 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   m_comm->wait_all<El::byte>(m_send_requests);
   m_comm->wait_all<El::byte>(m_recv_requests);
 
-  // debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
@@ -198,10 +189,6 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
       m_minibatch_data[atoi(t.c_str())][t].update_external(m_reconstituted[p][t]);
     }
   }
-
-  // debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
-
-  // debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
@@ -261,16 +248,6 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
-
-/*
-size_t i = node_in.number_of_children();
-debug << "num children: " << i  << "\n";
-conduit::NodeConstIterator t = node_in.children();
-while (t.has_next()) {
-  debug << ">"<<  t.name() <<"<\n";
-}
-*/
-
   node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -306,20 +283,6 @@ while (t.has_next()) {
 
 
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
-  // double tm1 = get_time();
-
-  // debug.open(b, std::ios::app);
-  // debug << "\n============================================================\n"
-  // <<"starting exchange_data_by_sample; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"  m_n: " << m_n << "  send_buffer size: " << m_send_buffer.size() << "\n";
-  // debug.close();
-  // debug.open(b, std::ios::app);
-  // std::cout << "\n============================================================\n"
-  //           <<"starting exchange_data_by_sample; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"  m_n: " << m_n << "  send_buffer size: " << m_send_buffer.size() << "\n" << std::endl;
-
-  //========================================================================
-
-  // double tma = get_time();
-
   int num_send_req = build_indices_i_will_send(current_pos, mb_size);
   int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
 
@@ -330,8 +293,6 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
 
   //========================================================================
   //part 2: exchange the actual data
-
-// tma = get_time();
 
   // start sends for outgoing data
   size_t ss = 0;
@@ -366,7 +327,6 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   ss = 0;
   for (int p=0; p<m_np; p++) {
     const std::unordered_set<int> &indices = m_indices_to_recv[p];
-// debug << "starting " << indices.size() << " recvs from " << p << "\n";
     for (auto index : indices) {
       m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
       El::byte *r = reinterpret_cast<El::byte*>(m_recv_buffer[ss].data_ptr());
@@ -376,7 +336,6 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
     }
   }
 
-  // if(m_master) std::cout << "\nRECV COMPLETE\n\n";
   // sanity checks
   if (ss != m_recv_buffer.size()) {
     LBANN_ERROR("ss != m_recv_buffer.size; ss: " + std::to_string(ss) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
@@ -389,16 +348,8 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   m_comm->wait_all(m_send_requests);
   m_comm->wait_all(m_recv_requests);
 
-// debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-// debug.close();
-// debug.open(b, std::ios::app);
-
-// tma = get_time();
-
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
-
-// double tmw = get_time();
 
   conduit::Node nd;
   m_minibatch_data.clear();
@@ -415,20 +366,8 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
 
     int data_id = m_recv_data_ids[j];
-    //    m_minibatch_data[data_id].set(n_msg["data"]);
     m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
-// for (auto &t : m_minibatch_data) {
-//   debug << t.first << " ";
-// }
-// debug << "\n";
-
-// debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
-
-//   if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
-
-//   debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
-// debug.close(); debug.open(b, std::ios::app);
 }
 
 int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
