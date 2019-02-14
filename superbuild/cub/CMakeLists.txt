@@ -9,7 +9,7 @@ else ()
     CACHE STRING "The URL from which to clone CUB.")
 endif ()
 
-set(CUB_TAG "1.5.2" CACHE STRING "The git tag or hash to checkout for CUB")
+set(CUB_TAG "1.8.0" CACHE STRING "The git tag or hash to checkout for CUB")
 
 # Where to install CUB
 set(CUB_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
