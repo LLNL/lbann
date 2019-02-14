@@ -115,12 +115,12 @@ void data_store_jag::setup_data_store_buffers() {
 //       handle things ourselves. TODO: possibly modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
-  double tm1 = get_time();
+  // double tm1 = get_time();
 
   //========================================================================
   //part 1: construct the super_nodes
 
-  double tma = get_time();
+  // double tma = get_time();
 
   build_indices_i_will_send(current_pos, mb_size);
   build_indices_i_will_recv(current_pos, mb_size);
@@ -154,7 +154,7 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //========================================================================
   //part 2: exchange the actual data
 
-  tma = get_time();
+  // tma = get_time();
 
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
@@ -172,11 +172,11 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   m_comm->wait_all<El::byte>(m_send_requests);
   m_comm->wait_all<El::byte>(m_recv_requests);
 
-  debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
+  // debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-  double tmw = get_time();
+  // double tmw = get_time();
 
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
@@ -199,9 +199,9 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
     }
   }
 
-  debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
+  // debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
 
-  debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
+  // debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
@@ -469,24 +469,6 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   }
   return k;
 }
-
-#if 0
-// fills in m_ds_indices and m_owner
-void data_store_jag::build_ds_indices() {
-  m_owner.clear();
-  m_ds_indices.clear();
-  m_ds_indices.resize(m_np);
-
-  std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  size_t j = 0;
-  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
-    auto index = (*m_shuffled_indices)[i];
-    m_ds_indices[j].insert(index);
-    m_owner[index] = j;
-    j = (j + 1) % m_np;
-  }
-}
-#endif
 
 void data_store_jag::build_owner_map() {
   m_owner.clear();
