@@ -41,7 +41,7 @@ else ()
   if(NOT Protobuf_FOUND)
     find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG QUIET REQUIRED)
   endif ()
-  message("Found Protobuf: ${Protobuf_DIR}")
+  message(STATUS "Found Protobuf: ${Protobuf_DIR}")
 endif ()
 
 if (NOT Protobuf_FOUND)
