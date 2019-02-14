@@ -62,7 +62,7 @@ def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, t
   l.weights = w1 + 'linearity'
 
   l = new_layer(model, relu1, fc1,'relu')
-  
+
 
   l = new_layer(model, fc2, relu1,'fully_connected')
   l.fully_connected.num_neurons = 16
@@ -71,7 +71,7 @@ def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, t
   if(add_weight) :
     w = new_weights(model, w2 + 'linearity', 'he_normal_initializer')
   l.weights = w2 + 'linearity'
-  
+
   l = new_layer(model, relu2, fc2,'relu')
 
   l = new_layer(model, fc3, relu2, 'fully_connected')
@@ -81,14 +81,14 @@ def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, t
   if(add_weight) :
     w = new_weights(model, w3 + 'linearity', 'he_normal_initializer')
   l.weights = w3 + 'linearity'
-  return fc3 
+  return fc3
 
 
 #Generator
 #Weight frozen, no weight sharing
 #todo, handle weight sharing
 def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropout=True, tag=''):
-  #different weights  
+  #different weights
   fc1 = prefix+'fc1'+tag
   fc2 = prefix+'fc2'+tag
   fc3 = prefix+'fc3'+tag
@@ -115,7 +115,7 @@ def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropou
   l.freeze = freeze
   w = new_weights(model, fc2 + 'linearity', 'he_normal_initializer')
   l.weights = fc2 + 'linearity'
-  
+
   l = new_layer(model, relu2, fc2,'relu')
   next_parent = relu2
   if(add_dropout):
@@ -129,7 +129,7 @@ def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropou
   l.freeze = freeze
   w = new_weights(model, fc3 + 'linearity', 'he_normal_initializer')
   l.weights = fc3 + 'linearity'
-  
+
   l = new_layer(model, relu3, fc3, 'relu')
 
   l = new_layer(model, fc4, relu3, 'fully_connected')
@@ -148,8 +148,7 @@ def configure_model(model):
     #####INPUT DATA (including Slices)
     ### Input data comes from merge features of image (Y) and param (X)
     l = new_layer(model,'data',' ', 'input')
-    l.input.io_buffer = 'partitioned'
-    
+
     slice_points = [0,2500,2511]
     l = new_layer(model, 'slice_data','data', 'slice')
     l.children = 'image_data_dummy param_data_id'
@@ -168,20 +167,20 @@ def configure_model(model):
 
     #ID parameter data (X)
     l = new_layer(model,'param_data_id','slice_data','identity')
-    
+
     #D_Loss1 branch
     #Fake path
     #def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropout=True, tag=''):
     #freeze generator = False
     #g_sample=generator1(x)
     g_sample = add_generator(model, 'param_data_id','gen1', 2500, False,True)
-    
+
     #True path (share weights with fake path discriminator)
     #discriminator(y,x)
     #data = y + x
     #def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, tag=''):
     D_real = add_discriminator(model, 'data','d1',False, True, '_real')
-    #CONCAT 
+    #CONCAT
     # Gsample + x
     #
     l = new_layer(model, 'concat_gsample_n_param','','concatenation')
@@ -191,7 +190,7 @@ def configure_model(model):
     #question: how to deal with weight sharing?
     #discriminator(g_sample,x)
     #add stop gradient, so gradient doesnt go to generator on this path
-    l = new_layer(model, 'd1_stop_gradient','concat_gsample_n_param', 'stop_gradient') 
+    l = new_layer(model, 'd1_stop_gradient','concat_gsample_n_param', 'stop_gradient')
     #D_fake = add_discriminator(model,'concat_gsample_n_param','disc1',False, False, '_fake')
     D_fake = add_discriminator(model,'d1_stop_gradient','d1',False, False, '_fake')
 
@@ -212,7 +211,7 @@ def configure_model(model):
     #fake as real
     l = new_layer(model, 'g_adv1_bce', [D_real2, one.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'g_adv1_eval','g_adv1_bce', 'evaluation')
-    
+
 
 if __name__ == "__main__":
 
@@ -247,4 +246,3 @@ if __name__ == "__main__":
     # Export prototext
     with open(output_proto, 'w') as f:
         f.write(txtf.MessageToString(pb))
-    

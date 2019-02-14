@@ -60,13 +60,15 @@ std::unique_ptr<Layer> construct_layer(
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
-    if (io_buffer == "partitioned") {
+    if (io_buffer == "partitioned" || io_buffer.empty()) {
       return lbann::make_unique<input_layer<partitioned_io_buffer,Layout,Device>>(
                comm,
                num_parallel_readers,
                data_readers,
                !params.data_set_per_model(),
                target_mode);
+    } else {
+      LBANN_ERROR("invalid IO buffer type (" + io_buffer + ")");
     }
   }
 

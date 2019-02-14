@@ -54,9 +54,7 @@ model {
     name: "data"
     children: "image dummy"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "distributed"
-    }
+    input {}
   }
   layer {
     parents: "data"
@@ -93,7 +91,7 @@ model {
   # RELU 1
   ######
   layer {
-    image: "conv1"
+    parents: "conv1"
     name: "relu1"
     data_layout: "data_parallel"
     relu {
@@ -343,7 +341,7 @@ model {
     parents: "relu6"
     name: "decode1"
     data_layout: "data_parallel"
-    num_neurons_from_data_reader: true
+    hint_layer: "image"
     fully_connected {
       num_neurons: 784
       has_bias: true
