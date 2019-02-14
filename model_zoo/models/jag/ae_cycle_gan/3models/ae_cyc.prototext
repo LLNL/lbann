@@ -58,7 +58,6 @@ model {
   #Layer from cycle GAN
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"

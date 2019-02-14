@@ -514,7 +514,7 @@ if __name__ == '__main__':
         bn_stats_aggregation=args.bn_stats_aggregation)
 
     # Construct layer graph.
-    input = lp.Input(io_buffer='partitioned')
+    input = lp.Input()
     images = lp.Identity(input)
     labels = lp.Identity(input)
     softmax = lp.Softmax(resnet(images))

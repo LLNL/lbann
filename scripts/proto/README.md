@@ -109,9 +109,9 @@ import lbann.proto as lp
 
 # Input data.
 # Note: Order matters for the children of the input layer!
-input = lp.Input(io_buffer='partitioned') # Interacts with data reader.
-images = lp.Identity(input)     # NCHW image tensor.
-labels = lp.Identity(input)     # One-hot vector.
+input = lp.Input()          # Interacts with data reader.
+images = lp.Identity(input) # NCHW image tensor.
+labels = lp.Identity(input) # One-hot vector.
 
 # Simple convolutional network.
 conv = lp.Convolution(
