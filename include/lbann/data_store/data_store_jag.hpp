@@ -78,13 +78,14 @@ protected :
     } else {
       exchange_data_by_sample(current_pos, mb_size);
     }
+    ++m_n;
   }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
 
-  // when m_super_node = false
-  std::unordered_map<int,int> m_index_to_data_id;
+  /// Contains the list of data IDs that will be received
+  std::vector<int> m_recv_data_ids;
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
@@ -97,9 +98,8 @@ protected :
   /// work space; used in exchange_data
   std::vector<conduit::Node> m_send_buffer;
   std::vector<conduit::Node> m_send_buffer_2;
-  std::vector<MPI_Request> m_send_requests;
-  std::vector<MPI_Request> m_recv_requests;
-  std::vector<MPI_Status> m_status;
+  std::vector<El::mpi::Request<El::byte>> m_send_requests;
+  std::vector<El::mpi::Request<El::byte>> m_recv_requests;
   std::vector<conduit::Node> m_recv_buffer;
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
@@ -112,11 +112,11 @@ protected :
   /// size of a compacted conduit::Node that contains a single sample
   int m_compacted_sample_size;
 
-  /// assignes values to m_super_node_overhead and m_compacted_sample_size
+  /// assigns values to m_super_node_overhead and m_compacted_sample_size
   void compute_super_node_overhead();
 
-  /// ??? as our code currently stands (sun, 10 feb) this isn't necessary
-  /// -- but it's being used. @TODO: revisit
+  /// used in exchange_data_by_super_node(); contains the super_nodes,
+  /// after they have been converted from compacted format
   std::vector<conduit::Node> m_reconstituted;
 
   void setup_data_store_buffers();
@@ -124,22 +124,24 @@ protected :
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-  /// fills in mowner, which maps index -> owning processor
+  /// fills in m_owner, which maps index -> owning processor
   void build_owner_map();
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to send. (formerly called "proc_to_indices)
   std::vector<std::unordered_set<int>> m_indices_to_send;
 
-  /// fills in m_indices_to_send
-  void build_indices_i_will_send(int current_pos, int mb_size);
+  /// fills in m_indices_to_send and returns the number of samples
+  /// that will be sent
+  int build_indices_i_will_send(int current_pos, int mb_size);
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to recv from others. (formerly called "needed")
   std::vector<std::unordered_set<int>> m_indices_to_recv;
 
-  /// fills in m_indices_to_recv
-  void build_indices_i_will_recv(int current_pos, int mb_size);
+  /// fills in m_indices_to_recv and returns the number of samples
+  /// that will be received
+  int build_indices_i_will_recv(int current_pos, int mb_size);
 
 };
 
