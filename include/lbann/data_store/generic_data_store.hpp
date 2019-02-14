@@ -141,8 +141,7 @@ class generic_data_store {
   virtual void setup_data_store_buffers() {};
 protected :
 
-  // number of times set_shuffled_indices was called. This is
-  // a hack to get data_store_jag working correctly
+  // number of times exchange_data is called
   int m_n;
 
   virtual void exchange_data() = 0;

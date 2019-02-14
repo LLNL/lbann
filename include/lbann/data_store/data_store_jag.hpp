@@ -78,6 +78,7 @@ protected :
     } else {
       exchange_data_by_sample(current_pos, mb_size);
     }
+    ++m_n;
   }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
@@ -111,11 +112,11 @@ protected :
   /// size of a compacted conduit::Node that contains a single sample
   int m_compacted_sample_size;
 
-  /// assignes values to m_super_node_overhead and m_compacted_sample_size
+  /// assigns values to m_super_node_overhead and m_compacted_sample_size
   void compute_super_node_overhead();
 
-  /// ??? as our code currently stands (sun, 10 feb) this isn't necessary
-  /// -- but it's being used. @TODO: revisit
+  /// used in exchange_data_by_super_node(); contains the super_nodes,
+  /// after they have been converted from compacted format
   std::vector<conduit::Node> m_reconstituted;
 
   void setup_data_store_buffers();
@@ -123,7 +124,7 @@ protected :
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-  /// fills in mowner, which maps index -> owning processor
+  /// fills in m_owner, which maps index -> owning processor
   void build_owner_map();
 
   /// maps processor id -> set of indices (whose associated samples)

@@ -100,19 +100,18 @@ void data_store_jag::setup_data_store_buffers() {
   m_reconstituted.resize(m_np);
 }
 
-// this gets called at the beginning of each epoch (except for epoch 0)
-//
 // Note: conduit has a very nice interface for communicating nodes
 //       in blocking scenarios. Unf, for non-blocking we need to
 //       handle things ourselves. TODO: possibly modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
-  // double tm1 = get_time();
+
+  if (m_n == 0) {
+    setup_data_store_buffers();
+  }
 
   //========================================================================
   //part 1: construct the super_nodes
-
-  // double tma = get_time();
 
   build_indices_i_will_send(current_pos, mb_size);
   build_indices_i_will_recv(current_pos, mb_size);
@@ -146,8 +145,6 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //========================================================================
   //part 2: exchange the actual data
 
-  // tma = get_time();
-
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
     const El::byte *s = reinterpret_cast<El::byte*>(m_send_buffer_2[p].data_ptr());
@@ -167,8 +164,6 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
 
-  // double tmw = get_time();
-
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
@@ -182,6 +177,11 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
     m_reconstituted[p].reset();
+
+    // I'm unsure what happens here: m_reconstituted is persistent, but
+    // we're updating from n_msg, which is transitory. Best guess,
+    // when n_msg goes out of scope a deep copy is made. Possibly
+    // there's room for optimization here.
     m_reconstituted[p].update_external(n_msg["data"]);
     const std::vector<std::string> &names = m_reconstituted[p].child_names();
 
@@ -232,7 +232,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
   if (t != m_data.end()) {
     if(m_super_node) {
       return t->second;
-    }else {
+    } else {
       return t->second["data"];
     }
   }
@@ -281,7 +281,6 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
   }
 }
 
-
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
   int num_send_req = build_indices_i_will_send(current_pos, mb_size);
   int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
@@ -321,7 +320,6 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   if (ss != m_send_requests.size()) {
     LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests.size: " + std::to_string(m_send_requests.size()));
   }
-
 
   // start recvs for incoming data
   ss = 0;
