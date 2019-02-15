@@ -42,6 +42,8 @@ namespace lbann {
 // Forward-declaration.
 class lbann_comm;
 
+using lbann_comm_ptr = std::unique_ptr<lbann_comm, void(*)(lbann_comm*)>;
+
 /** Create LBANN communicator.
  *
  *  Initializes Elemental, which in turn initializes MPI, Aluminum,
@@ -54,7 +56,8 @@ class lbann_comm;
  *  @param seed RNG seed.
  *  @return     LBANN communicator.
  */
-lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
+lbann_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
+
 /** Destroy LBANN communicator.
  *
  *  Finalizes Elemental, which in turn finalizes MPI, Aluminum, and
