@@ -37,7 +37,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  lbann_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
   if (master) {
@@ -49,18 +49,13 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
   }
 
-#ifdef EL_USE_CUBLAS
-  El::GemmUseGPU(32,32,32);
-#endif
-
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm);
-      finalize(comm);
-      return 0;
+      print_help(comm.get());
+      return EXIT_SUCCESS;
     }
 
     //this must be called after call to opts->init();
@@ -74,16 +69,19 @@ int main(int argc, char *argv[]) {
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
     // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
 
-    std::vector<lbann_data::LbannPB *> pbs;
-    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
     lbann_data::LbannPB pb = *(pbs[0]);
 
     lbann_data::Model *pb_model = pb.mutable_model();
 
-    model *model = build_model_from_prototext(argc, argv, pb,
-                                              comm, io_thread_pool, true);
+    auto model = build_model_from_prototext(argc, argv, pb,
+                                            comm.get(), io_thread_pool, true);
+
+    if (opts->has_string("create_tarball")) {
+      return EXIT_SUCCESS;
+    }
 
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
@@ -109,10 +107,6 @@ int main(int argc, char *argv[]) {
       stack_profiler::get()->print();
     }
 
-    // @todo: figure out and implement coherent strategy
-    // for freeing dynamically allocated memory
-    delete model;
-
   } catch (exception& e) {
     if (options::get()->has_bool("stack_trace_to_file")) {
       std::stringstream ss("stack_trace");
@@ -123,16 +117,11 @@ int main(int argc, char *argv[]) {
       e.print_report(fs);
     }
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   } catch (std::exception& e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
-  // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
-
 }

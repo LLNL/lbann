@@ -35,7 +35,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  lbann_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
   if (master) {
@@ -47,18 +47,13 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
   }
 
-#ifdef EL_USE_CUBLAS
-  El::GemmUseGPU(32,32,32);
-#endif
-
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm);
-      finalize(comm);
-      return 0;
+      print_help(comm.get());
+      return EXIT_SUCCESS;
     }
 
     //this must be called after call to opts->init();
@@ -74,39 +69,38 @@ int main(int argc, char *argv[]) {
     std::stringstream err;
 
     // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
 
-    std::vector<lbann_data::LbannPB *> pbs;
-    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
 
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, io_thread_pool, true); //D1 solver
+    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
+                                              comm.get(), io_thread_pool, true); //D1 solver
     //hack, overide model name to make reporting easy, what can break?"
-    model *model_2 = nullptr; //G1 solver
-    model *model_3 = nullptr; //G2 solver
+    std::unique_ptr<model> model_2, //G1 solver
+      model_3, //G2 solver
 
-    //Support for autoencoder models
-    model *ae_model = nullptr;
-    model *ae_cycgan_model = nullptr; //contain layer(s) from (cyc)GAN
+      //Support for autoencoder models
+      ae_model,
+      ae_cycgan_model; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
 
     if (pbs.size() > 3) {
       ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
 
     if (pbs.size() > 4) {
       ae_cycgan_model = build_model_from_prototext(argc, argv, *(pbs[4]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -178,30 +172,10 @@ int main(int argc, char *argv[]) {
     //has no affect unless option: --st_on was given
     stack_profiler::get()->print();
 
-    delete model_1;
-    if (model_2 != nullptr) {
-      delete model_2;
-    }
-    if (model_3 != nullptr) {
-      delete model_3;
-    }
-    if (ae_model != nullptr) {
-      delete ae_model;
-    }
-    if (ae_cycgan_model != nullptr) {
-      delete ae_cycgan_model;
-    }
-    for (auto t : pbs) {
-      delete t;
-    }
-
   } catch (std::exception& e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
-  // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }
