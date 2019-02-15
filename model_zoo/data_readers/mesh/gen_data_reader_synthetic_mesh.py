@@ -23,7 +23,7 @@ data_reader {{
     name: "synthetic"
     role: "test"
     shuffle: true
-    num_samples: 100
+    num_samples: 0
     synth_dimensions: "18 {SPATIAL_DIM} {SPATIAL_DIM}"
     synth_response_dimensions: "1 {SPATIAL_DIM} {SPATIAL_DIM}"
     absolute_sample_count: 0
