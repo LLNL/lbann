@@ -50,6 +50,7 @@
 #include "distconv/tensor/shuffle.hpp"
 #include "distconv/tensor/shuffle_p2p.hpp"
 #include "distconv/tensor/shuffle_al.hpp"
+#include "distconv/tensor/shuffle_hybrid.hpp"
 #include "distconv/tensor/algorithms.hpp"
 #include "p2p/p2p.hpp"
 
@@ -74,6 +75,8 @@ using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<
 using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<
   4, DataType>;
 using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
+  4, DataType>;
+using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
   4, DataType>;
 
 using Dist = ::distconv::tensor::Distribution<4>;

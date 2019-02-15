@@ -322,6 +322,8 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
                                     const TensorDev &dst) {
   if (opt_tensor_shuffler == "AL") {
     return new TensorShufflerAL(src, dst, get_mpicuda());
+  } else if (opt_tensor_shuffler == "HYBRID") {
+    return new TensorShufflerHybrid(src, dst, get_p2p(), get_mpicuda());
   } else if (opt_tensor_shuffler == "P2P") {
     bool src_feasible = is_p2p_shuffle_feasible(src);
     bool dst_feasible = is_p2p_shuffle_feasible(dst);
