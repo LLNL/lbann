@@ -34,12 +34,13 @@
  */
 
 namespace lbann {
+namespace protobuf_utils {
 
-void protobuf_utils::parse_prototext_filenames_from_command_line(
-               bool master,
-               int argc,
-               char **argv,
-               std::vector<prototext_fn_triple> &names) {
+std::vector<prototext_fn_triple>
+parse_prototext_filenames_from_command_line(
+               const bool master,
+               const int argc,
+               char * const argv[]) {
   std::vector<std::string> models;
   std::vector<std::string> optimizers;
   std::vector<std::string> readers;
@@ -111,7 +112,7 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
     }
   }
 
-  names.clear();
+  std::vector<prototext_fn_triple> names;
   for (size_t i=0; i<models.size(); i++) {
     prototext_fn_triple t;
     t.model = models[i];
@@ -138,16 +139,17 @@ void protobuf_utils::parse_prototext_filenames_from_command_line(
     }
     names.push_back(t);
   }
+  return names;
 }
 
-
-void protobuf_utils::read_in_prototext_files(
-                bool master,
-                std::vector<prototext_fn_triple> &names,
-                std::vector<lbann_data::LbannPB*> &models_out) {
-  models_out.clear();
-  for (auto t : names) {
-    lbann_data::LbannPB *pb = new lbann_data::LbannPB;
+std::vector<std::unique_ptr<lbann_data::LbannPB>>
+read_in_prototext_files(
+  const bool master,
+  const std::vector<prototext_fn_triple> &names)
+{
+  std::vector<std::unique_ptr<lbann_data::LbannPB>> models_out;
+  for (auto const& t : names) {
+    auto pb = make_unique<lbann_data::LbannPB>();
     if (t.model != "none")
       read_prototext_file(t.model.c_str(), *pb, master);
     if (t.reader != "none") {
@@ -165,36 +167,35 @@ void protobuf_utils::read_in_prototext_files(
       read_prototext_file(t.optimizer.c_str(), p, master);
       pb->MergeFrom(p);
     }
-    models_out.push_back(pb);
+    models_out.emplace_back(std::move(pb));
   }
+  return models_out;
 }
 
-void protobuf_utils::load_prototext(
-                const bool master,
-                const int argc,
-                char **argv,
-                std::vector<lbann_data::LbannPB *> &models_out) {
-    std::vector<prototext_fn_triple> names;
-    parse_prototext_filenames_from_command_line(master, argc, argv, names);
-    read_in_prototext_files(master, names, models_out);
-    if (models_out.size() == 0) {
-      if (master) {
-        std::stringstream err;
-        err << __FILE__ << __LINE__ << " :: "
-            << " failed to load any prototext files";
-        throw lbann_exception(err.str());
-      }
-    }
-    verify_prototext(master, models_out);
+std::vector<std::unique_ptr<lbann_data::LbannPB>>
+load_prototext(
+  const bool master,
+  const int argc,
+  char* const argv[])
+{
+  auto names = parse_prototext_filenames_from_command_line(master, argc, argv);
+  auto models_out = read_in_prototext_files(master, names);
+  if (models_out.size() == 0 && master) {
+    LBANN_ERROR("Failed to load any prototext files");
+  }
+  verify_prototext(master, models_out);
+  return models_out;
 }
 
-void protobuf_utils::verify_prototext(bool master, const std::vector<lbann_data::LbannPB *> &models) {
+void verify_prototext(
+  const bool master,
+  const std::vector<std::unique_ptr<lbann_data::LbannPB>> &models) {
   if (master) {
     std::cout << "protobuf_utils::verify_prototext; starting verify for " << models.size() << " models\n";
   }
   for (size_t j=0; j<models.size(); j++) {
     bool is_good = true;
-    lbann_data::LbannPB *t = models[j];
+    lbann_data::LbannPB *t = models[j].get();
     if (! t->has_data_reader()) {
       is_good = false;
       if (master) {
@@ -242,5 +243,5 @@ void protobuf_utils::verify_prototext(bool master, const std::vector<lbann_data:
   }
 }
 
-
-}  // namespace lbann
+}// namespace protobuf_utils
+}// namespace lbann
