@@ -111,9 +111,11 @@ int main(int argc, char *argv[]) {
     if (options::get()->has_bool("stack_trace_to_file")) {
       std::stringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
-      if (rank >= 0) { ss << "_rank" << rank; }
+      if (rank >= 0) {
+        ss << "_rank" << rank;
+      }
       ss << ".txt";
-      std::ofstream fs(ss.str().c_str());
+      std::ofstream fs(ss.str());
       e.print_report(fs);
     }
     El::ReportException(e);
