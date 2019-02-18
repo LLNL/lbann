@@ -46,13 +46,13 @@ void save_session(lbann_comm *comm, int argc, char **argv, lbann_data::LbannPB& 
 
 ///
 void read_prototext_file(
-  std::string fn,
+  const std::string& fn,
   lbann_data::LbannPB& pb,
   bool master);
 
 ///
-void write_prototext_file(
-  std::string fn,
+bool write_prototext_file(
+  const std::string& fn,
   lbann_data::LbannPB& pb);
 
 } // namespace lbann

@@ -151,20 +151,20 @@ read_in_prototext_files(
   for (auto const& t : names) {
     auto pb = make_unique<lbann_data::LbannPB>();
     if (t.model != "none")
-      read_prototext_file(t.model.c_str(), *pb, master);
+      read_prototext_file(t.model, *pb, master);
     if (t.reader != "none") {
       lbann_data::LbannPB p;
-      read_prototext_file(t.reader.c_str(), p, master);
+      read_prototext_file(t.reader, p, master);
       pb->MergeFrom(p);
     }
     if (t.data_set_metadata != "none") {
       lbann_data::LbannPB p;
-      read_prototext_file(t.data_set_metadata.c_str(), p, master);
+      read_prototext_file(t.data_set_metadata, p, master);
       pb->MergeFrom(p);
     }
     if (t.optimizer != "none") {
       lbann_data::LbannPB p;
-      read_prototext_file(t.optimizer.c_str(), p, master);
+      read_prototext_file(t.optimizer, p, master);
       pb->MergeFrom(p);
     }
     models_out.emplace_back(std::move(pb));

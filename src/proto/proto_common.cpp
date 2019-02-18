@@ -10,6 +10,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
 
+#include <memory>
 #include <unordered_map>
 #include <unordered_set>
 #include <sys/stat.h>
@@ -495,7 +496,7 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
   }
 }
 
-void read_prototext_file(std::string fn, lbann_data::LbannPB& pb, bool master)
+void read_prototext_file(const std::string& fn, lbann_data::LbannPB& pb, bool master)
 {
   std::stringstream err;
   int fd = open(fn.c_str(), O_RDONLY);
@@ -505,21 +506,25 @@ void read_prototext_file(std::string fn, lbann_data::LbannPB& pb, bool master)
       throw lbann_exception(err.str());
     }
   }
-  auto *input = new google::protobuf::io::FileInputStream(fd);
-  bool success = google::protobuf::TextFormat::Parse(input, &pb);
+  using FIS=google::protobuf::io::FileInputStream;
+  auto input = std::unique_ptr<FIS, std::function<void(FIS*)>>(
+    new google::protobuf::io::FileInputStream(fd),
+    [](FIS* x) {
+      x->Close();
+      delete x;
+    });
+  bool success = google::protobuf::TextFormat::Parse(input.get(), &pb);
   if (!success) {
     if (master) {
       err <<  __FILE__ << " " << __LINE__ << " :: failed to read or parse prototext file: " << fn << std::endl;
       throw lbann_exception(err.str());
     }
   }
-  input->Close();
-  delete input;
 }
 
-bool write_prototext_file(const char *fn, lbann_data::LbannPB& pb)
+bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
 {
-  int fd = open(fn, O_APPEND | O_CREAT | O_TRUNC, 0644);
+  int fd = open(fn.c_str(), O_APPEND | O_CREAT | O_TRUNC, 0644);
   if (fd == -1) {
     return false;
   }
