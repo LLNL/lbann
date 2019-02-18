@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm.get());
+      print_help(*comm);
       return EXIT_SUCCESS;
     }
 
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
-    std::stringstream err;
+    std::ostringstream err;
 
     // Initalize a global I/O thread pool
     std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());

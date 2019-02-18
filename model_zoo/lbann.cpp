@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm.get());
+      print_help(*comm);
       return EXIT_SUCCESS;
     }
 
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   } catch (exception& e) {
     if (options::get()->has_bool("stack_trace_to_file")) {
-      std::stringstream ss("stack_trace");
+      std::ostringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
       if (rank >= 0) {
         ss << "_rank" << rank;

@@ -67,19 +67,19 @@ std::unique_ptr<model> build_model_from_prototext(
     std::cerr << "starting build_model_from_prototext" << std::endl;
   }
 
-  std::stringstream err;
+  std::ostringstream err;
   options *opts = options::get();
 
   // Optionally over-ride some values in prototext
-  get_cmdline_overrides(comm, pb);
+  get_cmdline_overrides(*comm, pb);
 
-  customize_data_readers_index_list(comm, pb);
+  customize_data_readers_index_list(*comm, pb);
 
   lbann_data::Model *pb_model = pb.mutable_model();
 
   // Adjust the number of parallel readers; this may be adjusted
   // after calling split_trainers()
-  set_num_parallel_readers(comm, pb);
+  set_num_parallel_readers(*comm, pb);
 
   // Check to see if the model wants to reduce the I/O parallelism
   if(pb_model->serialize_background_io() && io_thread_pool->get_num_threads() != 1) {
@@ -142,7 +142,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
-  save_session(comm, argc, argv, pb);
+  save_session(*comm, argc, argv, pb);
 
   // Report useful information
   if (master) {
@@ -175,7 +175,7 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 
   // User feedback
-  print_parameters(comm, pb);
+  print_parameters(*comm, pb);
 
   // Initalize model
   std::unique_ptr<model> ret_model{
