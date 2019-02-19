@@ -96,9 +96,6 @@ class data_reader_multi_images : public imagenet_reader {
     return m_num_img_srcs;
   }
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
-
  protected:
   void set_defaults() override;
   virtual std::vector<CPUMat> create_datum_views(CPUMat& X, const int mb_idx) const;
