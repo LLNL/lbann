@@ -16,6 +16,7 @@
 
 namespace lbann {
 
+
 jag_io::~jag_io() {
   if (m_data_stream != nullptr && m_data_stream->is_open()) {
     m_data_stream->close();
