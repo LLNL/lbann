@@ -29,7 +29,6 @@
 
 #include "lbann/data_readers/data_reader_mnist_siamese.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_multi_images.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -156,23 +155,17 @@ int data_reader_mnist_siamese::fetch_labels(CPUMat& Y) {
 
   El::Zeros(Y, Y.Height(), Y.Width());
 
-//  if (m_data_store != nullptr) {
-    //@todo: get it to work, then add omp support
-    //m_data_store->fetch_labels(...);
- // }
-
-//  else {
-    std::string error_message;
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
-      bool valid = fetch_label(Y, index, s);
-      if (!valid) {
-        error_message = "invalid label";
-      }
+  std::string error_message;
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    sample_t index = std::make_pair(m_shuffled_indices[n], m_shuffled_indices2[n]);
+    bool valid = fetch_label(Y, index, s);
+    if (!valid) {
+      error_message = "invalid label";
     }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
-  //}
+  }
+  if (!error_message.empty()) { LBANN_ERROR(error_message); }
+
   return mb_size;
 }
 
@@ -299,12 +292,5 @@ void data_reader_mnist_siamese::shuffle_indices() {
   }
 }
 
-
-void data_reader_mnist_siamese::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = nullptr;
-}
 
 }  // namespace lbann
