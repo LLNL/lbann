@@ -35,7 +35,13 @@
 #include "nvToolsExtCuda.h"
 #include "nvToolsExtCudaRt.h"
 #include "cuda_runtime.h"
+#include "cuda_profiler_api.h"
+#include "lbann/utils/cuda.hpp"
 #endif
+
+namespace {
+bool profiling_started = false;
+}
 
 namespace lbann {
 
@@ -49,23 +55,33 @@ void prof_region_end(const char *s, bool) {
   return;
 }
 #elif defined(LBANN_NVPROF)
+void prof_start() {
+  CHECK_CUDA(cudaProfilerStart());
+  profiling_started = true;
+}
+void prof_stop() {
+  CHECK_CUDA(cudaProfilerStop());
+  profiling_started = false;
+}
 void prof_region_begin(const char *s, int c, bool sync) {
+  if (!profiling_started) return;
   if (sync) {
     El::GPUManager::SynchronizeDevice();
   }
   // Doesn't work with gcc 4.9
   // nvtxEventAttributes_t ev = {0};
-  nvtxEventAttributes_t ev;  
+  nvtxEventAttributes_t ev;
   memset(&ev, 0, sizeof(nvtxEventAttributes_t));
-  ev.version = NVTX_VERSION;   
+  ev.version = NVTX_VERSION;
   ev.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
   ev.colorType = NVTX_COLOR_ARGB;
   ev.color = c;
-  ev.messageType = NVTX_MESSAGE_TYPE_ASCII;     
-  ev.message.ascii = s; 
+  ev.messageType = NVTX_MESSAGE_TYPE_ASCII;
+  ev.message.ascii = s;
   nvtxRangePushEx(&ev);
 }
 void prof_region_end(const char *, bool sync) {
+  if (!profiling_started) return;
   if (sync) {
     El::GPUManager::SynchronizeDevice();
   }

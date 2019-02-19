@@ -445,6 +445,7 @@ message CallbackPrint {
 
 message CallbackProfiler {
   bool sync = 1;
+  bool skip_init = 2;
 }
 
 message CallbackTimer {
