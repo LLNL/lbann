@@ -415,9 +415,9 @@ protected:
     setup_error_signals_tensor(dists);
     setup_error_signals_copyout_tensor(dists);
 
-    dc::tensor::Array<4, bool> reduced_dims(false);
+    std::vector<bool> reduced_dims(4, false);
     if (m_use_global_stats) {
-      reduced_dims = true;
+      reduced_dims = std::vector<bool>(4, true);
     } else if (dc::use_partial_aggregation_in_bn()) {
       for (int i = 0; i < dc::TensorDev::num_spatial_dims; ++i) {
         reduced_dims[i] = true;

@@ -311,8 +311,6 @@ HaloExchangeMethod get_halo_exchange_method() {
     return HaloExchangeMethod::AL;
   } else if (opt_halo_exchange == "HYBRID") {
     return HaloExchangeMethod::HYBRID;
-  } else if (opt_halo_exchange == "MPI_DERIVED_TYPE") {
-    return HaloExchangeMethod::MPI_DERIVED_TYPE;
   } else {
     LBANN_ERROR("Unknown value of option opt_halo_exchange");
   }
