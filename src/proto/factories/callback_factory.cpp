@@ -96,6 +96,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   // Inter-model communication
   //////////////////////////////////////////////////////////////
 
+#if 0
   if (proto_cb.has_ltfb()) {
     const auto& params = proto_cb.ltfb();
     return new lbann_callback_ltfb(params.batch_interval(),
@@ -105,6 +106,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
                                    summarizer);
   }
+#endif // 0
   /// @todo
   if (proto_cb.has_imcomm()) {
     const auto& params = proto_cb.imcomm();
@@ -405,6 +407,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
   // Hyperparameter exploration
   //////////////////////////////////////////////////////////////
+#if 0
   if (proto_cb.has_perturb_adam()) {
     const auto& params = proto_cb.perturb_adam();
     return new lbann_callback_perturb_adam(
@@ -416,6 +419,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                  params.batch_interval(),
                  parse_set<std::string>(params.weights()));
   }
+#endif // 0
 
   return nullptr;
 }

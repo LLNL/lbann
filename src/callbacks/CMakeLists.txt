@@ -19,8 +19,8 @@ set_full_path(THIS_DIR_SOURCES
   callback_imcomm.cpp
   callback_io.cpp
   callback_learning_rate.cpp
-  callback_ltfb.cpp
-  callback_perturb_adam.cpp
+#  callback_ltfb.cpp
+#  callback_perturb_adam.cpp
   callback_print.cpp
   callback_save_images.cpp
   callback_save_model.cpp

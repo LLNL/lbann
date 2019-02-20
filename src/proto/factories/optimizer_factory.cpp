@@ -32,6 +32,7 @@ namespace proto {
 optimizer* construct_optimizer(lbann_comm* comm,
                                const lbann_data::Optimizer& proto_opt) {
 
+#if 0
   // Stochastic gradient descent
   if (proto_opt.has_sgd()) {
     const auto& params = proto_opt.sgd();
@@ -76,6 +77,7 @@ optimizer* construct_optimizer(lbann_comm* comm,
                                   params.beta2(),
                                   params.eps());
   }
+#endif
 
   // Return null pointer if no optimizer is specified
   return nullptr;

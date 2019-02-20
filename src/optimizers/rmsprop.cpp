@@ -145,4 +145,4 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
    return true;
  }
 
-}  // namespace lbann
+} // namespace lbann
