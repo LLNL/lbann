@@ -308,7 +308,7 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
   return n_base[key];
 }
 
-bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
+bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) {
   const sample_t& s = m_sample_list[i];
   const std::string& sample_name = s.second;
   const std::string path = sample_name + key;
@@ -316,8 +316,20 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   sample_id_t id = s.first;
   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
   const std::string& file_name = m_sample_list.get_samples_filename(id);
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
-    LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
+  if (h <= static_cast<hid_t>(0)) {
+    const std::string conduit_file_path = add_delimiter(m_sample_list.get_samples_dirname()) + file_name;
+    if (file_name.empty() || !check_if_file_exists(conduit_file_path)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
+    }
+    h = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+    if (h <= static_cast<hid_t>(0)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
+    }
+    m_sample_list.set_samples_hdf5_handle(id, h);
+  }
+
+  if (!conduit::relay::io::hdf5_has_path(h, path)) {
+    LBANN_ERROR(get_type() + ":: Cannot open HDF5 path in file " + file_name + \
                 " for sample "+ sample_name);
     return false;
   }
@@ -325,6 +337,17 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   conduit::relay::io::hdf5_read(h, path, node);
 
   return true;
+}
+
+void data_reader_jag_conduit::close_conduit_node(const size_t i) {
+  const sample_t& s = m_sample_list[i];
+
+  sample_id_t id = s.first;
+  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  if (h > static_cast<hid_t>(0)) {
+    conduit::relay::io::hdf5_close_file(h);
+    m_sample_list.set_samples_hdf5_handle(id, 0);
+  }
 }
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
@@ -754,14 +777,10 @@ void data_reader_jag_conduit::load() {
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-  m_sample_list.all_gather_packed_lists(*m_comm);
-  std::stringstream s;
-  std::string basename = get_basename_without_ext(sample_list_file);
-  std::string ext = get_ext_name(sample_list_file);
-  s << "r" << m_comm->get_rank_in_trainer() << "_per_rank_" << basename << "." << ext;
-  m_sample_list.write(s.str());
 
+  /// Check the data that each rank loaded
   if (!m_is_data_loaded) {
+    std::cout << "Checking local data" << std::endl;
     m_is_data_loaded = true;
 
     if (m_scalar_keys.size() == 0u) {
@@ -776,6 +795,15 @@ void data_reader_jag_conduit::load() {
 
     check_image_data();
   }
+
+  /// Merge all of the sample lists
+  m_sample_list.all_gather_packed_lists(*m_comm);
+  std::stringstream s;
+  std::string basename = get_basename_without_ext(sample_list_file);
+  std::string ext = get_ext_name(sample_list_file);
+  s << "r" << m_comm->get_rank_in_trainer() << "_per_rank_" << basename << "." << ext;
+  m_sample_list.write(s.str());
+
   m_shuffled_indices.resize(m_sample_list.size());
 
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
@@ -1072,7 +1100,7 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 
 
 std::vector< std::vector<data_reader_jag_conduit::ch_t> >
-data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& sample) const {
+data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& sample) {
   std::vector< std::vector<ch_t> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
@@ -1117,7 +1145,7 @@ void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t
   img.convertTo(img, -1, tr.first, tr.second);
 }
 
-std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
+std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) {
   const std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
   std::vector<cv::Mat> images;
 
@@ -1155,7 +1183,7 @@ std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_
   return images;
 }
 
-std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) const {
+std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) {
   std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
   std::vector<ch_t> images;
 
@@ -1193,7 +1221,7 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
   return images;
 }
 
-std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
+std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) {
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
@@ -1219,7 +1247,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
   return scalars;
 }
 
-std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id, conduit::Node& sample) const {
+std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id, conduit::Node& sample) {
   std::vector<input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
@@ -1391,6 +1419,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_jag_store->set_conduit_node(data_id, node);
   }
 
+  //  close_conduit_node(data_id);
   return ok;
 }
 
@@ -1440,7 +1469,7 @@ void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 }
 
-void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
+void data_reader_jag_conduit::print_schema(const size_t sample_id) {
   //@TODO revisit later -- don't know how to handle this yet
   if (m_data_store != nullptr) {
     return;

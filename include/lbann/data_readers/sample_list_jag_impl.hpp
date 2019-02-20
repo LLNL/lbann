@@ -20,6 +20,8 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
+#define LBANN_MAX_OPEN_DATA_FILES 100
+
 namespace lbann {
 
 inline sample_list_header::sample_list_header()
@@ -282,7 +284,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
     }
 
     sample_id_t index = m_sample_id_map.size();
-    m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+    m_sample_id_map.emplace_back(filename);
 
     size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
@@ -300,6 +302,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
                   + std::string(" samples, but found ")
                   + std::to_string(valid_sample_count));
     }
+
+    conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
 
   if (m_header.get_num_files() != cnt_files) {
@@ -369,7 +373,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
     sample_id_t index = m_sample_id_map.size();
-    m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+    m_sample_id_map.emplace_back(filename);
 
     size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
@@ -388,6 +392,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
                   + std::string(" samples, but found ")
                   + std::to_string(valid_sample_count));
     }
+
+    conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
 
   if (m_header.get_num_files() != cnt_files) {
@@ -517,15 +523,23 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
 
   // Close the existing open files
-  for(auto f : m_sample_id_map) {
+  for(auto f : m_open_fd_map) {
     conduit::relay::io::hdf5_close_file(f.second);
   }
 
   m_sample_list.clear();
   m_sample_id_map.clear();
+  m_open_fd_map.clear();
+
   m_sample_list.reserve(num_samples);
   m_sample_id_map.reserve(num_ids);
   m_file_map.reserve(num_files);
+  /// Create an unordered map that will not rehash and has a fixed
+  /// number of buckets.  This allows the sample list to easily select
+  /// a file descriptor for closing
+  m_open_fd_map.reserve(num_files);
+  m_open_fd_map.rehash(LBANN_MAX_OPEN_DATA_FILES);
+  m_open_fd_map.max_load_factor(std::numeric_limits<float>::max());
 
   for(int r = 0; r < num_ranks; r++) {
     const samples_t& sample_list = per_rank_samples[r];
@@ -533,28 +547,18 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
     const std::unordered_map<std::string, size_t>& file_map = per_rank_file_map[r];
     for (const auto& s : sample_list) {
       sample_id_t index = s.first;
-      const std::string& filename = sample_id_map[index].first;
+      const std::string& filename = sample_id_map[index];
       if(index >= m_sample_id_map.size()
-         || (m_sample_id_map.back()/*[m_sample_id_map.size()-1]*/.first != filename)) {
+         || (m_sample_id_map.back() != filename)) {
         index = m_sample_id_map.size();
-
-        // Open the file on this rank
-        const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
-        if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
-          LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
-        }
-        hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-        if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
-          LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
-        }
-        m_sample_id_map.emplace_back(std::make_pair(filename, hdf5_file_hnd));
+        m_sample_id_map.emplace_back(filename);
         // Update the file map structure
         if(m_file_map.count(filename) == 0) {
           m_file_map[filename] = file_map.at(filename);
         }
       }else {
         for(size_t i = 0; i < m_sample_id_map.size(); i++) {
-          if(filename == m_sample_id_map[i].first) {
+          if(filename == m_sample_id_map[i]) {
             index = i;
             break;
           }
@@ -608,7 +612,7 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
 
   std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
   for (const auto& s : m_sample_list) {
-    std::string filename = (m_sample_id_map[s.first]).first;
+    std::string filename = m_sample_id_map[s.first];
     tmp_file_map[filename].emplace_back(s.second);
   }
 
