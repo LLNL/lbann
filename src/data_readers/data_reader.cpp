@@ -111,6 +111,13 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   El::Zeros_seq(X, X.Height(), X.Width());
   El::Zeros_seq(indices_fetched, mb_size, 1);
 
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+  }
+
   if(!position_valid()) {
     if(position_is_overrun()) {
       return 0;
@@ -119,10 +126,6 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
                   + " -- current pos = " + std::to_string(m_current_pos)
                   + " and there are " + std::to_string(m_shuffled_indices.size()) + " indices");
     }
-  }
-
-  if (data_store_active()) {
-    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
   }
 
   /// Allow each thread to perform any preprocessing necessary on the
