@@ -108,9 +108,14 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
-  if (!m_save_minibatch_indices) {
-    El::Zeros_seq(X, X.Height(), X.Width());
-    El::Zeros_seq(indices_fetched, mb_size, 1);
+  El::Zeros_seq(X, X.Height(), X.Width());
+  El::Zeros_seq(indices_fetched, mb_size, 1);
+
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
   }
 
   if(!position_valid()) {
@@ -123,16 +128,10 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     }
   }
 
-  if (data_store_active()) {
-    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
-  }
-
-  if (!m_save_minibatch_indices) {
-    /// Allow each thread to perform any preprocessing necessary on the
-    /// data source prior to fetching data
-    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
-      preprocess_data_source(t);
-    }
+  /// Allow each thread to perform any preprocessing necessary on the
+  /// data source prior to fetching data
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    preprocess_data_source(t);
   }
 
   static bool fix_jag = true;
@@ -141,36 +140,26 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     set_jag_variables(mb_size);
   }
 
-  if (m_save_minibatch_indices) {
-    m_my_minibatch_indices.resize(m_my_minibatch_indices.size() + 1);
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      m_my_minibatch_indices.back().push_back(n);
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    // Queue up work into other threads and then finish off the
+    // mini-batch in the active thread
+    if(t == m_io_thread_pool->get_local_thread_id()) {
+      continue;
+    }else {
+      m_io_thread_pool->submit_job_to_work_group(
+        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                  mb_size, std::ref(indices_fetched)));
     }
   }
+  fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
 
-  else {
-    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
-      // Queue up work into other threads and then finish off the
-      // mini-batch in the active thread
-      if(t == m_io_thread_pool->get_local_thread_id()) {
-        continue;
-      }else {
-        m_io_thread_pool->submit_job_to_work_group(
-          std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
-                    mb_size, std::ref(indices_fetched)));
-      }
-    }
-    fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
+  // Wait for all of the threads to finish
+  m_io_thread_pool->finish_work_group();
 
-    // Wait for all of the threads to finish
-    m_io_thread_pool->finish_work_group();
-
-    /// Allow each thread to perform any postprocessing necessary on the
-    /// data source prior to fetching data
-    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
-      postprocess_data_source(t);
-    }
+  /// Allow each thread to perform any postprocessing necessary on the
+  /// data source prior to fetching data
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    postprocess_data_source(t);
   }
 
   return mb_size;
@@ -222,22 +211,17 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
     }
   }
 
-//  if (m_data_store != nullptr) {
-    //@todo: get it to work, then add omp support
-    //m_data_store->fetch_labels(...);
- // }
-//  else {
-    std::string error_message;
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-      bool valid = fetch_label(Y, index, s);
-      if (!valid) {
-        error_message = "invalid label (index " + std::to_string(index) + ")";
-      }
+  std::string error_message;
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_label(Y, index, s);
+    if (!valid) {
+      error_message = "invalid label (index " + std::to_string(index) + ")";
     }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
-  //}
+  }
+  if (!error_message.empty()) { LBANN_ERROR(error_message); }
+
   return mb_size;
 }
 
@@ -306,11 +290,9 @@ bool generic_data_reader::update(bool is_active_reader) {
         + std::to_string(m_stride_to_last_mini_batch));
     }
 
-    if (!m_save_minibatch_indices) {
-      shuffle_indices();
-      if (priming_data_store()) {
-        m_data_store->set_shuffled_indices(&m_shuffled_indices);
-      }
+    shuffle_indices();
+    if (priming_data_store()) {
+      m_data_store->set_shuffled_indices(&m_shuffled_indices);
     }
 
     set_initial_position();
@@ -738,24 +720,11 @@ bool generic_data_reader::priming_data_store() const {
           && m_model->get_cur_epoch() == 0);
 }
 
-void generic_data_reader::set_save_minibatch_entries(bool b) {
-  m_save_minibatch_indices = b;
-  if (b) {
-    m_my_minibatch_indices.reserve(get_num_iterations_per_epoch());
-  }
-}
-
 void generic_data_reader::set_data_store(generic_data_store *g) {
     if (m_data_store != nullptr) {
       delete m_data_store;
     }
     m_data_store = g;
-}
-
-void generic_data_reader::init_minibatch() {
-  if (m_data_store != nullptr) {
-    m_data_store->init_minibatch();
-  }
 }
 
 void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {

@@ -219,12 +219,6 @@ message DataSetMetaData {
     }
     repeated JAGDataSlice independent = 97;
     repeated JAGDataSlice dependent = 98;
-
-    // for jag_conduit_hdf5
-    string scalar_keys = 1004;
-    string input_keys = 1005;
-    string image_views = 1006;
-    string image_channels = 1007;
     //------------------  end of only for jag_conduit  -----------------------
   }
 
@@ -445,6 +439,7 @@ message CallbackPrint {
 
 message CallbackProfiler {
   bool sync = 1;
+  bool skip_init = 2;
 }
 
 message CallbackTimer {

@@ -38,14 +38,21 @@
 
 namespace lbann {
 
-lbann_callback_profiler::lbann_callback_profiler(bool sync) :
-  lbann_callback(), m_sync(sync) {
+lbann_callback_profiler::lbann_callback_profiler(bool sync, bool skip_init) :
+    lbann_callback(), m_sync(sync), m_skip_init(skip_init) {
 #ifdef LBANN_NVPROF
   nvtxNameCudaStreamA(El::GPUManager::Stream(), "Hydrogen");
-#endif  
+#endif
+  if (!m_skip_init) {
+    prof_start();
+  }
 }
 
 void lbann_callback_profiler::on_epoch_begin(model *m) {
+  // Skip the first epoch
+  if (m_skip_init && m->get_cur_epoch() == 1) {
+    prof_start();
+  }
   prof_region_begin(("epoch " + std::to_string(m->get_cur_epoch())).c_str(),
                     prof_colors[0], m_sync);
 }
