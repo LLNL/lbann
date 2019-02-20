@@ -12,10 +12,12 @@
 #include <mpi.h>
 #endif
 
+#include "lbann/utils/file_utils.hpp"
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/utility.hpp>
+#include "conduit/conduit_relay_io_hdf5.hpp"
 
 namespace lbann {
 
@@ -73,7 +75,7 @@ class sample_list_jag {
   /// To describe a sample as a pair of the file to which it belongs and its name
   //  using sample_t = std::pair<std::string, sample_name_t>;
   using sample_t = std::pair<sample_id_t, sample_name_t>;
-  using sample_id_map_t = std::pair<std::string, hid_t>;
+  using sample_id_map_t = std::string;
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
   using samples_id_map_v_t = std::vector< sample_id_map_t >;
@@ -140,19 +142,57 @@ class sample_list_jag {
   const sample_t& operator[](size_t idx) const;
 
   const std::string& get_samples_filename(sample_id_t id) const {
-    return (m_sample_id_map[id]).first;
+    return m_sample_id_map[id];
+  }
+
+  const std::string& get_samples_dirname() const {
+    return m_header.get_file_dir();
   }
 
   hid_t get_samples_hdf5_handle(sample_id_t id) const {
-    return (m_sample_id_map[id]).second;
+    const std::string& filename = m_sample_id_map[id];
+    hid_t h = 0;
+    if(m_open_fd_map.count(filename) != 0) {
+      h = m_open_fd_map.at(filename);
+    }
+    return h;
   }
 
   void set_samples_filename(sample_id_t id, const std::string& filename) {
-    m_sample_id_map[id].first = filename;
+    m_sample_id_map[id] = filename;
   }
 
   void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
-    m_sample_id_map[id].second = h;
+    const std::string& filename = m_sample_id_map[id];
+
+    int bucket = m_open_fd_map.bucket(filename);
+    if(m_open_fd_map.bucket_size(bucket) > 0) {
+      if(m_open_fd_map.bucket_size(bucket) != 1) {
+        LBANN_ERROR(std::string{} + " :: unexpected number of open file descriptors for bucket "
+                    + std::to_string(bucket));
+      }
+      // std::cout << "I am adding a file handle for " << filename << " at bucket " << std::to_string(m_open_fd_map.bucket(filename)) << " and there are " << std::to_string(m_open_fd_map.bucket_size(m_open_fd_map.bucket(filename))) << " entries in the bucket." << std::endl;
+      // std::cout << "Inside of the bucket I have ";
+      for ( auto local_it = m_open_fd_map.begin(bucket); local_it!= m_open_fd_map.end(bucket); ++local_it ) {
+        // std::cout << " " << local_it->first << ":" << local_it->second;
+        const std::string& old_filename = local_it->first;
+        hid_t old_h = local_it->second;
+        if (old_h <= static_cast<hid_t>(0)) {
+          LBANN_ERROR(std::string{} + " :: data file '" + old_filename
+                      + "' has a corrupt file descriptor = " + std::to_string(old_h));
+        }
+        conduit::relay::io::hdf5_close_file(old_h);
+        int num_erased = m_open_fd_map.erase(old_filename);
+        if(num_erased != 1) {
+          LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
+                      + "' that had a file descriptor = " + std::to_string(old_h));
+        }
+      }
+      // std::cout << std::endl;
+    }
+
+
+    m_open_fd_map.emplace(filename, h);
   }
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
@@ -202,7 +242,12 @@ class sample_list_jag {
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;
 
+  /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;
+
+  /// Track the number of open file descriptors
+  std::unordered_map<std::string, hid_t> m_open_fd_map;
+
 };
 
 void handle_mpi_error(int ierr);
