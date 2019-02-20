@@ -1552,7 +1552,6 @@ model {
   layer {
     parents: "fc9"
     name: "prob"
-    children: "target"
     data_layout: "data_parallel"
     softmax {}
   }
