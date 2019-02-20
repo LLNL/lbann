@@ -1412,7 +1412,7 @@ void Layer::setup_tensor_distribution_init(
   int f = ps.filter_groups;
   int h = ps.height_groups;
   int w = ps.width_groups;
-  int np = m_comm->get_procs_per_model();
+  int np = m_comm->get_procs_per_trainer();
   // if only one process is used, do not parallelize
   if (np == 1) {
     n = c = f = h = w = 1;

@@ -5,7 +5,7 @@ model {
   block_size: 256
   num_epochs: 72
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   objective_function {
     layer_term { layer: "cross_entropy" }

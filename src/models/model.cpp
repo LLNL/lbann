@@ -1037,7 +1037,7 @@ void model::train(int num_epochs, int num_batches) {
 
 #ifdef LBANN_HAS_DISTCONV
     if (dc::is_profiling_enabled()) {
-      if (m_comm->am_model_master()) {
+      if (m_comm->am_trainer_master()) {
         std::cout << "Distconv elapsed time: " << m_elapsed
                   << ", average: " << (m_elapsed / m_num_iterations)
                   << std::endl;
