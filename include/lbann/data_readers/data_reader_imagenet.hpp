@@ -55,9 +55,6 @@ class imagenet_reader : public image_data_reader {
   virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
-
  protected:
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
