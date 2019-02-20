@@ -84,7 +84,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
   layer {
@@ -128,7 +128,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
   layer {
@@ -172,7 +172,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
   layer {
@@ -204,7 +204,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
   layer {
