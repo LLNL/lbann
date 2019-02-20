@@ -45,13 +45,13 @@ int main(int argc, char *argv[]) {
   exit(9);
 #else
 
-  lbann_comm *comm = initialize(argc, argv, 42);
+  world_comm_ptr comm = initialize(argc, argv, 42);
   std::cerr << "num ranks: " << comm->get_procs_in_world() << "\n";
 
   try {
     options *opts = options::get();
     opts->init(argc, argv);
-  
+
     std::stringstream err;
 
     std::string bundle_fn;
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
       throw lbann_exception(err.str());
     }
     mode = opts->get_string("mode");
-    
+
     if (!opts->has_string("bundle")) {
       err << __FILE__ << " " << __LINE__ << " :: "
           << "you must pass the option: --bundle=<pathname>,\n"
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
 
   } catch (lbann_exception& e) {
     e.print_report();
-  }  
+  }
 
 #endif //ifdef LBANN_HAS_CONDUIT
 
@@ -146,7 +146,7 @@ void test(std::string bundle_fn, std::string dir) {
   size_t total = 0;
 
   //=========================================================================\n;
-  // test #1: 
+  // test #1:
   //   loop over all keys; test that what we get from the jag_io is identical
   //   to what we get directly from the conduit node
   //
@@ -218,7 +218,7 @@ void test(std::string bundle_fn, std::string dir) {
             << "sanity:             " << sanity << " (should be same as total keys tested)\n";
 
   //=========================================================================\n;
-  // test #2: 
+  // test #2:
   //   test, for each key, that type, num elts, num_bytes identical
   //=========================================================================\n;
   for (auto key : keys) {
