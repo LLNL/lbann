@@ -46,6 +46,13 @@ bool profiling_started = false;
 namespace lbann {
 
 #if defined(LBANN_SCOREP)
+void prof_start() {
+  profiling_started = true;
+  return;
+}
+void prof_stop() {
+  return;
+}
 void prof_region_begin(const char *s, int, bool) {
   SCOREP_USER_REGION_BY_NAME_BEGIN(s, SCOREP_USER_REGION_TYPE_COMMON);
   return;
@@ -88,6 +95,13 @@ void prof_region_end(const char *, bool sync) {
   nvtxRangePop();
 }
 #else
+void prof_start() {
+  profiling_started = true;
+  return;
+}
+void prof_stop() {
+  return;
+}
 void prof_region_begin(const char *, int, bool) {
   return;
 }
