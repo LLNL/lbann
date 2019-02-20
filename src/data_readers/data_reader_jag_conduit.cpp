@@ -541,11 +541,9 @@ void data_reader_jag_conduit::check_image_data() {
   conduit::Node n_imageset;
   load_conduit_node(first_idx, m_output_image_prefix, n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
   }
   if (m_emi_image_keys.size() == 0u) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image is selected");
     return;
   }
   for (const auto& emi_tag: m_emi_image_keys) {
