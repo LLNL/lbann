@@ -323,16 +323,19 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
                        m_var_t,
                        is_training, false);
 
-  if (m_use_global_stats) {
-    m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-    m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
-  } else if (dc::use_partial_aggregation_in_bn()) {
-    m_comm->allreduce(*m_mean,
-                      *dc::get_spatial_el_comm(m_spatial_loc),
-                      El::mpi::SUM);
-    m_comm->allreduce(*m_var,
-                      *dc::get_spatial_el_comm(m_spatial_loc),
-                      El::mpi::SUM);
+  switch (m_stats_aggregation) {
+    case batch_normalization_stats_aggregation::global:
+      m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
+      m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+      break;
+    case batch_normalization_stats_aggregation::spatial:
+      m_comm->allreduce(*m_mean,
+                        *dc::get_spatial_el_comm(m_spatial_loc),
+                        El::mpi::SUM);
+      m_comm->allreduce(*m_var,
+                        *dc::get_spatial_el_comm(m_spatial_loc),
+                        El::mpi::SUM);
+      break;
   }
 
   m_bn->forward_stage2(m_prev_activations_t,
@@ -371,16 +374,21 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   // Verbatim copy from bp_compute_gpu
   // Accumulate gradients
   if (is_training) {
-    if (m_use_global_stats) {
-      m_comm->allreduce(*m_mean_gradient, m_mean_gradient->RedundantComm(),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient, m_var_gradient->RedundantComm(),
-                        El::mpi::SUM);
-    } else if (dc::use_partial_aggregation_in_bn()) {
+    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
       m_comm->allreduce(*m_mean_gradient,
-                        *dc::get_spatial_el_comm(m_spatial_loc), El::mpi::SUM);
+                        m_mean_gradient->RedundantComm(),
+                        El::mpi::SUM);
       m_comm->allreduce(*m_var_gradient,
-                        *dc::get_spatial_el_comm(m_spatial_loc), El::mpi::SUM);
+                        m_var_gradient->RedundantComm(),
+                        El::mpi::SUM);
+    } else if (m_stats_aggregation ==
+               batch_normalization_stats_aggregation::spatial) {
+      m_comm->allreduce(*m_mean_gradient,
+                        *dc::get_spatial_el_comm(m_spatial_loc),
+                        El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient,
+                        *dc::get_spatial_el_comm(m_spatial_loc),
+                        El::mpi::SUM);
     }
   } else {
     Zero(*m_mean_gradient);

@@ -43,7 +43,9 @@ enum class batch_normalization_stats_aggregation {
   /** Statistics are aggregated among every rank in a single node. */
   node_local,
   /** Statistics are aggregated among every rank in the model. */
-  global
+  global,
+  /** Statistics are aggregated among every rank in the spatial domain. */
+  spatial
 };
 
 /** @brief
@@ -172,6 +174,9 @@ public:
       break;
     case batch_normalization_stats_aggregation::global:
       desc.add("Statistics aggregation", "global");
+      break;
+    case batch_normalization_stats_aggregation::spatial:
+      desc.add("Statistics aggregation", "spatial");
       break;
     }
     return desc;
@@ -399,12 +404,6 @@ protected:
     m_var_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
         m_var_gradient_t, this->m_var_gradient->Buffer()));
-
-    // spatial decomposition requires global communication
-    // m_use_global_stats = true;
-    if (dc::use_partial_aggregation_in_bn()) {
-      m_spatial_loc = m_mean_t.get_spatial_locale();
-    }
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
@@ -415,13 +414,24 @@ protected:
     setup_error_signals_tensor(dists);
     setup_error_signals_copyout_tensor(dists);
 
-    std::vector<bool> reduced_dims(4, false);
-    if (m_use_global_stats) {
+    std::vector<bool> reduced_dims;
+    switch (m_stats_aggregation) {
+    case batch_normalization_stats_aggregation::local:
+      reduced_dims = std::vector<bool>(4, false);
+      break;
+    case batch_normalization_stats_aggregation::node_local:
+      // Not supproted
+      LBANN_ERROR("Node-local aggregation is not supported in Distconv");
+    case batch_normalization_stats_aggregation::global:
       reduced_dims = std::vector<bool>(4, true);
-    } else if (dc::use_partial_aggregation_in_bn()) {
+      break;
+    case batch_normalization_stats_aggregation::spatial:
+      reduced_dims = std::vector<bool>(4, false);
       for (int i = 0; i < dc::TensorDev::num_spatial_dims; ++i) {
         reduced_dims[i] = true;
       }
+      m_spatial_loc = m_mean_t.get_spatial_locale();
+      break;
     }
 
     m_bn = new dc::BatchNormalization(

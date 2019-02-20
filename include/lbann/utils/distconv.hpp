@@ -144,11 +144,6 @@ bool is_profiling_enabled();
  */
 bool evaluate_performance();
 
-/** Query if partial aggregation of batch normalization statistics is
- * enabled
- */
-bool use_partial_aggregation_in_bn();
-
 /** Query convolution forward algorithm name.
  */
 std::string get_convolution_fwd_algorithm();

@@ -48,7 +48,6 @@ std::string opt_tensor_shuffler = "P2P";
 int opt_rank_stride = 1;
 bool opt_enable_profile = false;
 bool opt_evaluate_performance = false;
-bool opt_use_partial_aggregation_in_bn = false;
 std::string opt_convolution_fwd_algorithm("DEFAULT");
 std::string opt_convolution_bwd_data_algorithm("DEFAULT");
 std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
@@ -76,9 +75,6 @@ void set_options() {
   }
   if (std::getenv("LBANN_DISTCONV_EVALUATE_PERFORMANCE")) {
     opt_evaluate_performance = true;
-  }
-  if (std::getenv("LBANN_DISTCONV_USE_PARTIAL_AGGREGATION_IN_BN")) {
-    opt_use_partial_aggregation_in_bn = true;
   }
   env = getenv("LBANN_DISTCONV_CONVOLUTION_FWD_ALGORITHM");
   if (env) {
@@ -113,9 +109,6 @@ void print_options(std::ostream &os) {
     ss << "  enable_profile: " << opt_enable_profile << "\n";
     ss << "  evaluate_performance: "
        << opt_evaluate_performance << "\n";
-    ss << "  use_partial_aggregation_in_bn: "
-       << opt_use_partial_aggregation_in_bn
-       << std::endl;
     ss << "  convolution_fwd_algorithm: "
        << opt_convolution_fwd_algorithm
        << std::endl;
@@ -260,10 +253,6 @@ bool is_profiling_enabled() {
 
 bool evaluate_performance() {
   return opt_evaluate_performance;
-}
-
-bool use_partial_aggregation_in_bn() {
-  return opt_use_partial_aggregation_in_bn;
 }
 
 std::string get_convolution_fwd_algorithm() {
