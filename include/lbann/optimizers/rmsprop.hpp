@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_RMSPROP_HPP
-#define LBANN_OPTIMIZER_RMSPROP_HPP
+#ifndef LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 #include <sys/stat.h>
@@ -34,24 +34,18 @@ namespace lbann {
 
 /** RMSprop optimizer. */
 class rmsprop : public optimizer {
- public:
+public:
 
-  /** Constructor. */
   rmsprop(lbann_comm *comm,
           DataType learning_rate,
           DataType decay_rate,
           DataType eps = DataType(1e-8));
-
-  /** Copy constructor. */
   rmsprop(const rmsprop& other);
-  /** Copy assignment operator. */
   rmsprop& operator=(const rmsprop& other);
-  /** Destructor. */
-  ~rmsprop() override;
-  /** Create a copy. */
+  ~rmsprop() override = default;
   rmsprop* copy() const override { return new rmsprop(*this); }
 
-  /** Get the optimizer name. */
+  /** Human-readable type name. */
   std::string get_type() const override { return "RMSprop"; }
   /** Human-readable description. */
   description get_description() const override;
@@ -61,16 +55,19 @@ class rmsprop : public optimizer {
 
   /** Perform the computation in an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+#ifdef LBANN_HAS_CUDA
+  /** Perform the computation in an optimization step on GPU. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
+#endif // LBANN_HAS_CUDA
 
- private:
+private:
 
   /** Decay rate. */
   DataType m_decay_rate;
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** RMSprop cache. */
-  AbsDistMat *m_cache;
-
+  std::unique_ptr<AbsDistMat> m_cache;
 
 //************************************************************************
 // Checkpointing
@@ -108,4 +105,4 @@ class rmsprop : public optimizer {
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZER_RMSPROP_HPP
+#endif // LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
