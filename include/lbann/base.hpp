@@ -37,6 +37,8 @@
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
 
+#include <functional>
+
 namespace lbann {
 
 // Forward-declaration.
@@ -45,7 +47,8 @@ class lbann_comm;
 // Note that this should only be used to wrap the thing coming out of
 // initialize()! This will be removed when we have proper RAII around
 // these things.
-using world_comm_ptr = std::unique_ptr<lbann_comm, void(*)(lbann_comm*)>;
+using world_comm_ptr =
+    std::unique_ptr<lbann_comm, std::function<void(lbann_comm*)>>;
 
 /** Create LBANN communicator.
  *
