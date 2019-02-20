@@ -86,12 +86,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
-    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_file_dir(""), m_data_index_list(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_save_minibatch_indices(false),
-    m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
     m_is_partitioned(false),
@@ -151,6 +149,18 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If set_local_file_dir was not called, returns the empty string
    */
   std::string get_local_file_dir() const;
+
+  /**
+   * Set the index list for your data (images, etc).
+   * The index lists contains an enumeration of all samples in the
+   * data set.
+   */
+  void set_data_index_list(std::string s);
+
+  /**
+   * Returns the complete index list for your data set.
+   */
+  std::string get_data_index_list() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -344,7 +354,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
-    return (m_current_pos < (int)m_shuffled_indices.size());
+    return (m_current_pos < get_num_data());
   }
   /// True if the data reader's current position is not valid but within # ranks per model
   /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
@@ -574,6 +584,12 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
 
+  /// Does the data reader have a unqiue index list per model
+  virtual bool has_list_per_model() const { return false; }
+  /// Does the data reader have a unqiue index list per trainer
+  virtual bool has_list_per_trainer() const { return false; }
+
+
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
 
@@ -669,39 +685,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns the data store
   generic_data_store * get_data_store() const {
     if (m_data_store == nullptr) {
-      std::stringstream err;
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_data_store is nullptr";
+      LBANN_ERROR("m_data_store is nullptr");
     }
     return m_data_store;
   }
 
   /// sets up a data_store.
   virtual void setup_data_store(model *m);
-
-  /** This call changes the functionality of fetch_data(); when set,
-    * indices are added to m_my_minibatch_indices, but fetch_datum()
-    * is not called. This method is added to support data store functionality.
-    */
-  void set_save_minibatch_entries(bool b);
-
-  /// support of data store functionality
-  void init_minibatch();
-
-  /// support of data store functionality
-  const std::vector<std::vector<int> > & get_minibatch_indices() const {
-    return m_my_minibatch_indices;
-  }
-
-  /// support of data store functionality
-  int get_compound_rank() {
-    return m_compound_rank;
-  }
-
-  /// support of data store functionality
-  void set_compound_rank(int r) {
-    m_compound_rank = r;
-  }
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -710,6 +700,10 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// support of data store functionality
   void set_data_store(generic_data_store *g);
+
+  virtual bool data_store_active() const;
+
+  virtual bool priming_data_store() const;
 
   void set_model(model *m) { m_model = m; }
 
@@ -833,6 +827,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
+  std::string m_data_index_list;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;
@@ -848,16 +843,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_samples;
 
  protected :
-   /// added to support data store functionality
-   bool m_save_minibatch_indices;
-
-   /// added to support data store functionality
-   std::vector<std::vector<int> > m_my_minibatch_indices;
-
-   /// added to support data store functionality
-   int m_compound_rank;
-
-
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0

@@ -7,6 +7,7 @@ message LbannPB {
   Model model = 2;
   Optimizer optimizer = 3;
   MotifDefinitions motif_definitions = 4;
+  DataSetMetaData data_set_metadata = 5;
 }
 
 //========================================================================
@@ -15,6 +16,7 @@ message LbannPB {
 message DataReader {
   int64 max_par_io_size = 1;
   repeated Reader reader = 2;
+  bool requires_data_set_metadata = 3;
 }
 
 message Reader {
@@ -25,6 +27,7 @@ message Reader {
   string data_local_filedir = 50; //to support data_store
   string data_filename = 6;
   string label_filename = 7;
+  string index_list = 8;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
@@ -33,50 +36,6 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-
-  //------------------ start of only for jag_conduit -----------------------
-  message JagLinearNormalizationParams {
-    double scale = 1;
-    double bias = 2;
-  }
-
-  repeated JagLinearNormalizationParams jag_image_normalization_params = 86;
-  repeated JagLinearNormalizationParams jag_scalar_normalization_params = 87;
-  repeated JagLinearNormalizationParams jag_input_normalization_params = 88;
-
-  bool split_jag_image_channels = 89;
-  repeated string jag_image_keys = 90;
-  repeated string jag_scalar_keys = 91;
-  repeated string jag_input_keys = 92;
-  message JagKeyPrefixFilter {
-    string key_prefix = 1;
-    uint32 min_len = 2;
-  }
-  repeated string jag_scalar_filters = 93;
-  repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
-  repeated string jag_input_filters = 95;
-  repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
-
-  enum JAG_Data {
-    Undefined  = 0;
-    JAG_Image  = 1;
-    JAG_Scalar = 2;
-    JAG_Input  = 3;
-  }
-  message JAGDataSlice {
-    repeated JAG_Data pieces = 1;
-  }
-  repeated JAGDataSlice independent = 97;
-  repeated JAGDataSlice dependent = 98;
-
-  int32 max_files_to_load = 1000;
-
-  // for jag_conduit_hdf5
-  string scalar_keys = 1004;
-  string input_keys = 1005;
-  string image_views = 1006;
-  string image_channels = 1007;
-  //------------------  end of only for jag_conduit  -----------------------
 
   int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
@@ -99,6 +58,8 @@ message Reader {
   float scaling_factor_int16 = 116; // for numpy_npz_reader with int16 data
   bool merge_skip_overlapped = 117; // for data_reader_merge_samples
 
+  int32 max_files_to_load = 1000;
+
   //------------- start of only for partitioned data sets ------------------
   bool is_partitioned = 300;
   double partition_overlap = 301;
@@ -106,6 +67,11 @@ message Reader {
        // 1 - share a portion of your data with two neighbors;
        // 2 - there's a set of overlap indices that are common to all models
   //------------- end of only for partitioned data sets ------------------
+
+  //------------- start of only for index lists ------------------
+  bool index_list_per_trainer = 400;
+  bool index_list_per_model   = 401;
+  //------------- end of only for index lists ------------------
 }
 
 message ImagePreprocessor {
@@ -222,6 +188,60 @@ message GenericPreprocessor {
 }
 
 //========================================================================
+// Metadata for a Data set
+//========================================================================
+message DataSetMetaData {
+  message Schema {
+    string scalar_prefix = 1;
+    string image_prefix = 2;
+    string input_prefix = 3;
+
+    //------------------ start of only for jag_conduit -----------------------
+    bool split_jag_image_channels = 89;
+    repeated string jag_image_keys = 90;
+    repeated string jag_scalar_keys = 91;
+    repeated string jag_input_keys = 92;
+    message JagKeyPrefixFilter {
+      string key_prefix = 1;
+      uint32 min_len = 2;
+    }
+    repeated string jag_scalar_filters = 93;
+    repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
+    repeated string jag_input_filters = 95;
+    repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
+
+    enum JAG_Data {
+      Undefined  = 0;
+      JAG_Image  = 1;
+      JAG_Scalar = 2;
+      JAG_Input  = 3;
+    }
+    message JAGDataSlice {
+      repeated JAG_Data pieces = 1;
+    }
+    repeated JAGDataSlice independent = 97;
+    repeated JAGDataSlice dependent = 98;
+    //------------------  end of only for jag_conduit  -----------------------
+  }
+
+  message Normalization {
+    //------------------ start of only for jag_conduit -----------------------
+    message JagLinearNormalizationParams {
+      double scale = 1;
+      double bias = 2;
+    }
+
+    repeated JagLinearNormalizationParams jag_image_normalization_params = 86;
+    repeated JagLinearNormalizationParams jag_scalar_normalization_params = 87;
+    repeated JagLinearNormalizationParams jag_input_normalization_params = 88;
+
+    //------------------  end of only for jag_conduit  -----------------------
+  }
+    Schema schema = 1;
+  Normalization normalization = 2;
+}
+
+//========================================================================
 // Model
 //========================================================================
 
@@ -231,7 +251,7 @@ message Model {
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
-  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models (e.g. GAN)
+  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
   bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
   bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
 
@@ -265,74 +285,18 @@ message Model {
 //========================================================================
 
 message ObjectiveFunction {
-  repeated MeanSquaredError mean_squared_error = 10;
-  repeated MeanAbsoluteDeviation mean_absolute_deviation = 11;
-  repeated MeanAbsoluteError mean_absolute_error = 24;
-  repeated CrossEntropy cross_entropy = 12;
-  repeated BinaryCrossEntropy binary_cross_entropy = 13;
-  repeated CrossEntropyWithUncertainty cross_entropy_with_uncertainty = 14;
-  repeated GeomNegLogLike geom_negloglike = 15;
-  repeated PoissonNegLogLike poisson_negloglike = 16;
-  repeated PolyaNegLogLike polya_negloglike = 17;
-  repeated L1WeightRegularization l1_weight_regularization = 20;
-  repeated L2WeightRegularization l2_weight_regularization = 21;
-  repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
-  repeated LayerTerm layer_term = 25;
-}
-
-message MeanSquaredError {
-  double scale_factor = 1;
-}
-
-message MeanAbsoluteDeviation {
-  double scale_factor = 1;
-}
-
-message MeanAbsoluteError {
-  double scale_factor = 1;
-}
-
-message CrossEntropy {
-  double scale_factor = 1;
-}
-
-
-message BinaryCrossEntropy {
-  double scale_factor = 1;
-}
-
-message CrossEntropyWithUncertainty {
-  double scale_factor = 1;
-}
-
-message GeomNegLogLike {
-  double scale_factor = 1;
-}
-
-message PoissonNegLogLike {
-  double scale_factor = 1;
-}
-
-message PolyaNegLogLike {
-  double scale_factor = 1;
-}
-
-message L1WeightRegularization {
-  double scale_factor = 1;
-}
-
-message L2WeightRegularization {
-  double scale_factor = 1;
-  string weights = 2;   // If empty, L2 regularization is applied to all weights
-}
-
-message GroupLassoWeightRegularization {
-  double scale_factor = 1;
+  repeated LayerTerm layer_term = 1;
+  repeated L2WeightRegularization l2_weight_regularization = 2;
 }
 
 message LayerTerm {
   double scale_factor = 1;
   string layer = 2;
+}
+
+message L2WeightRegularization {
+  double scale_factor = 1;
+  string weights = 2;   // If empty, L2 regularization is applied to all weights
 }
 
 //========================================================================
@@ -477,6 +441,7 @@ message CallbackPrint {
 
 message CallbackProfiler {
   bool sync = 1;
+  bool skip_init = 2;
 }
 
 message CallbackTimer {
@@ -831,10 +796,10 @@ message Layer {
    Deconvolution deconvolution = 305;
 
    // Loss layers
-   CategoricalAccuracy categorical_accuracy = 60;
-   CrossEntropy cross_entropy = 61;
-   MeanSquaredError mean_squared_error = 62;
-   MeanAbsoluteError mean_absolute_error = 63;
+   CrossEntropy cross_entropy = 60;
+   MeanSquaredError mean_squared_error = 61;
+   MeanAbsoluteError mean_absolute_error = 62;
+   CategoricalAccuracy categorical_accuracy = 63;
    TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
    L2Norm2 l2_norm2 = 65;
    L1Norm l1_norm = 66;
@@ -893,10 +858,6 @@ message Layer {
    LogicalOr logical_or = 467;
    LogicalXor logical_xor = 468;
    Clamp clamp = 469;
-
-   // Target layers
-   Target target = 18;
-   TargetReconstruction reconstruction = 22;
 
    // Regularization layers
    BatchNormalization batch_normalization = 19;
@@ -1011,13 +972,17 @@ message Softsign {}
 ///////////////////////
 // Loss layers //
 ///////////////////////
-message L2Norm2 {}
-message L1Norm {}
-message SigmoidBinaryCrossEntropy {}
+message CrossEntropy {}
+message MeanSquaredError {}
+message MeanAbsoluteError {}
 message CategoricalAccuracy {}
 message TopKCategoricalAccuracy {
   int64 k = 1;
 }
+message L2Norm2 {}
+message L1Norm {}
+message BinaryCrossEntropy {}
+message SigmoidBinaryCrossEntropy {}
 message BooleanAccuracy {}
 message BooleanFalseNegative {}
 message BooleanFalsePositive {}
@@ -1054,16 +1019,9 @@ message Dropout {
 // Input layers //
 //////////////////
 message Input {
-  bool data_set_per_model = 1;  //default: false
-  string io_buffer = 2;
-  string target_mode = 3;
-}
-
-/// @todo Remove when possible
-message RepeatedInput {
-  bool data_set_per_model = 1;  //default: false
-  int64 num_steps = 2;
-  string target_mode = 3;
+  bool data_set_per_model = 1;  // Default: false
+  string io_buffer = 2;         // Options: "partitioned" (default)
+  string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
 }
 
 //////////////////////
@@ -1101,7 +1059,6 @@ message Unpooling {
 
 
 message Concatenation {
-  string parents = 1; //TODO: this doesn't do anything and should be removed
   int64 concatenation_axis = 2;
 }
 
@@ -1265,19 +1222,6 @@ message Deconvolution {
   bool has_bias = 10;                   //default: true
   double bias_initial_value = 11;       //default: 0
   double l2_regularization_factor = 12; //default: 0
-}
-
-///////////////////
-// Target layers //
-///////////////////
-message Target {
-  string paired_input_layer = 1;
-  bool shared_data_reader = 2;
-  bool for_regression = 3; //default: false
-  string io_buffer = 4;
-}
-
-message TargetReconstruction {
 }
 
 //////////////////

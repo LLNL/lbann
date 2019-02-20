@@ -533,9 +533,7 @@ model {
     name: "input_new"
     children: "data_new label_new"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     parents: "input_new"

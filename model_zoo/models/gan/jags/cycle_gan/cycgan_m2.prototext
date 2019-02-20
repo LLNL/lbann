@@ -23,9 +23,7 @@ model {
   num_epochs: 1
   data_layout: "data_parallel"
   layer {
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
     name: "data"
     data_layout: "data_parallel"
     parents: " "

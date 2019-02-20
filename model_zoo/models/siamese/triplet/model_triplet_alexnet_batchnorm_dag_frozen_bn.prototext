@@ -572,9 +572,7 @@ model {
     name: "input"
     children: "slice label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     parents: "input"

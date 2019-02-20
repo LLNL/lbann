@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -147,23 +147,23 @@ int main(int argc, char *argv[]) {
               for (auto t : input_names) {
                 key = cnames[i] + "/inputs/" + t;
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-              }  
+              }
             } catch (...) {
               std::cerr << rank << " :: " << "exception reading an input for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
-  
+
             try {
               for (auto t : scalar_names) {
                 key = cnames[i] + "/outputs/scalars/" + t;
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-              }  
+              }
             } catch (...) {
               std::cerr << rank << " :: " << "exception reading an scalar for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
 
-            try {  
+            try {
               key = cnames[i] + "/outputs/images/(0.0, 0.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             } catch (...) {
@@ -171,16 +171,16 @@ int main(int argc, char *argv[]) {
               continue;
             }
 
-            try { 
+            try {
               key = cnames[i] + "/outputs/images/(90.0, 0.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             } catch (...) {
               std::cerr << rank << " :: " << "exception reading image: (90.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               continue;
             }
-  
-           
-            try { 
+
+
+            try {
               key = cnames[i] + "/outputs/images/(90.0, 78.0)//0.0/emi";
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             } catch (...) {
@@ -206,11 +206,11 @@ int main(int argc, char *argv[]) {
 }
 
 void get_input_names(std::unordered_set<std::string> &s) {
-  s.insert("shape_model_initial_modes:(4,3)"); 
-  s.insert("betti_prl15_trans_u"); 
-  s.insert("betti_prl15_trans_v"); 
-  s.insert("shape_model_initial_modes:(2,1)"); 
-  s.insert("shape_model_initial_modes:(1,0)"); 
+  s.insert("shape_model_initial_modes:(4,3)");
+  s.insert("betti_prl15_trans_u");
+  s.insert("betti_prl15_trans_v");
+  s.insert("shape_model_initial_modes:(2,1)");
+  s.insert("shape_model_initial_modes:(1,0)");
 }
 
 void get_scalar_names(std::unordered_set<std::string> &s) {

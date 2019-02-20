@@ -76,6 +76,19 @@ inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
 }
 
+// The generic approach
+template<typename T>
+std::basic_string<T> pad(const std::basic_string<T>& s,
+         typename std::basic_string<T>::size_type n, T c) {
+  if (n > s.length()) {
+    std::string t = s;
+    t.insert(t.begin(), n - t.length(), c);
+    return t;
+  }else {
+    return s;
+  }
+}
+
 namespace file {
 
 /** @brief Wrapper around @c dirname.

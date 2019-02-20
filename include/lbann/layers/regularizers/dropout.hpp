@@ -184,7 +184,7 @@ protected:
     m_mask->Resize(height, width);
 #ifdef LBANN_DETERMINISTIC
     bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
-    *m_mask *= scale;
+    El::Scale(scale, *m_mask);
 #else
     El::EntrywiseMap(*m_mask,
                      (std::function<DataType(const DataType&)>)

@@ -37,7 +37,7 @@ namespace lbann {
  */
 class lbann_callback_profiler : public lbann_callback {
  public:
-  lbann_callback_profiler(bool sync = false);
+  lbann_callback_profiler(bool sync = false, bool skip_init = false);
   lbann_callback_profiler(const lbann_callback_profiler&) = default;
   lbann_callback_profiler& operator=(const lbann_callback_profiler&) = default;
   lbann_callback_profiler* copy() const override {
@@ -75,6 +75,8 @@ class lbann_callback_profiler : public lbann_callback {
   int get_color(Layer *l);
   /** Whether to synchronize the when setting up profile regions. */
   bool m_sync;
+  /** Whether to skip initial iterations. */
+  bool m_skip_init;
 };
 
 }  // namespace lbann

@@ -62,7 +62,7 @@ def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, t
   l.weights = w1 + 'linearity'
 
   l = new_layer(model, relu1, fc1,'relu')
-  
+
 
   l = new_layer(model, fc2, relu1,'fully_connected')
   l.fully_connected.num_neurons = 16
@@ -71,7 +71,7 @@ def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, t
   if(add_weight) :
     w = new_weights(model, w2 + 'linearity', 'he_normal_initializer')
   l.weights = w2 + 'linearity'
-  
+
   l = new_layer(model, relu2, fc2,'relu')
 
   l = new_layer(model, fc3, relu2, 'fully_connected')
@@ -81,14 +81,14 @@ def add_discriminator(model,disc_input, prefix, freeze=False, add_weight=True, t
   if(add_weight) :
     w = new_weights(model, w3 + 'linearity', 'he_normal_initializer')
   l.weights = w3 + 'linearity'
-  return fc3 
+  return fc3
 
 
 #Generator
 #Weight frozen, no weight sharing
 #todo, handle weight sharing
 def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropout=True, add_weight=True, tag=''):
-  
+
   w1 = prefix+'fc1'
   w2 = prefix+'fc2'
   w3 = prefix+'fc3'
@@ -122,7 +122,7 @@ def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropou
   if(add_weight):
     w = new_weights(model, w2 + 'linearity', 'he_normal_initializer')
   l.weights = w2 + 'linearity'
-  
+
   l = new_layer(model, relu2, fc2,'relu')
   next_parent = relu2
   if(add_dropout):
@@ -137,7 +137,7 @@ def add_generator(model, gen_input, prefix, output_dim, freeze=False, add_dropou
   if(add_weight) :
     w = new_weights(model, w3 + 'linearity', 'he_normal_initializer')
   l.weights = w3 + 'linearity'
-  
+
   l = new_layer(model, relu3, fc3, 'relu')
 
   l = new_layer(model, fc4, relu3, 'fully_connected')
@@ -157,8 +157,7 @@ def configure_model(model):
     #####INPUT DATA (including Slices)
     ### Input data comes from merge features of image (Y) and param (X)
     l = new_layer(model,'data',' ', 'input')
-    l.input.io_buffer = 'partitioned'
-    
+
     slice_points = [0,2500,2511]
     l = new_layer(model, 'slice_data','data', 'slice')
     l.children = 'image_data_dummy param_data_id'
@@ -169,13 +168,13 @@ def configure_model(model):
 
     #ID parameter data (X)
     l = new_layer(model,'param_data_id','slice_data','identity')
-    
+
     #********************************************
     #g_sample2=generator2(y)
     #do not freeze, train generator to confuse discriminator
     #_1 => first generator1 to be added, to solve problem of all generator2 having the same name
     g_sample2 = add_generator(model, 'image_data_dummy','gen2', 11, False,False,True,'_1')
-    # g_adv21 = discriminator2(g_sample2,y) 
+    # g_adv21 = discriminator2(g_sample2,y)
     l = new_layer(model, 'concat_gsample2_n_img',g_sample2+' image_data_dummy','concatenation')
     #freeze discriminator, fake it as real
     D_real = add_discriminator(model,'concat_gsample2_n_img','disc2',True, True, '_real')
@@ -185,7 +184,7 @@ def configure_model(model):
     one.constant.num_neurons = '1'
     l = new_layer(model, 'g_adv2_bce', [D_real, one.name], 'sigmoid_binary_cross_entropy')
     l = new_layer(model, 'g_adv2_eval','g_adv2_bce', 'evaluation')
-    
+
     #************************************************
     #g_sample2= generator2(y) //train
     g_sample2 = add_generator(model,'image_data_dummy','gen2', 11, False,False,False,'_y')
@@ -256,4 +255,3 @@ if __name__ == "__main__":
     # Export prototext
     with open(output_proto, 'w') as f:
         f.write(txtf.MessageToString(pb))
-    

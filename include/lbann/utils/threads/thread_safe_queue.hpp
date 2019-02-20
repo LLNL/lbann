@@ -4,7 +4,7 @@
 #include <condition_variable>
 #include <mutex>
 
-#include "memory.hpp"
+#include <lbann/utils/memory.hpp>
 
 namespace lbann {
 

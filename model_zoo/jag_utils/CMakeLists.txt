@@ -28,6 +28,10 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(compute_min_max_images-bin lbann )
   set_target_properties(compute_min_max_images-bin PROPERTIES OUTPUT_NAME compute_min_max_images)
 
+  add_executable( compute_per_channel_image_avg_min_max-bin compute_per_channel_image_avg_min_max.cpp )
+  target_link_libraries(compute_per_channel_image_avg_min_max-bin lbann )
+  set_target_properties(compute_per_channel_image_avg_min_max-bin PROPERTIES OUTPUT_NAME compute_per_channel_image_avg_min_max)
+
   add_executable( load_balance-bin load_balance.cpp )
   target_link_libraries(load_balance-bin lbann )
   set_target_properties(load_balance-bin PROPERTIES OUTPUT_NAME load_balance)

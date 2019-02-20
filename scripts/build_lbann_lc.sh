@@ -147,7 +147,7 @@ while :; do
         --build)
             # Change default build directory
             if [ -n "${2}" ]; then
-                ALTERNATE_BUILD_DIR=${2}
+                BUILD_DIR=${2}
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -471,7 +471,7 @@ CXX=${CXX_COMPILER}
 ################################################################
 
 # Get LBANN root directory
-ROOT_DIR=$(git rev-parse --show-toplevel)
+ROOT_DIR=$(realpath $(dirname $0)/..)
 
 # Initialize build directory
 if [ -z "${BUILD_DIR}" ]; then
@@ -778,6 +778,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+-D LBANN_SB_BUILD_CEREAL=ON \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
