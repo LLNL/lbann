@@ -42,7 +42,10 @@ namespace lbann {
 // Forward-declaration.
 class lbann_comm;
 
-using lbann_comm_ptr = std::unique_ptr<lbann_comm, void(*)(lbann_comm*)>;
+// Note that this should only be used to wrap the thing coming out of
+// initialize()! This will be removed when we have proper RAII around
+// these things.
+using world_comm_ptr = std::unique_ptr<lbann_comm, void(*)(lbann_comm*)>;
 
 /** Create LBANN communicator.
  *
@@ -54,9 +57,9 @@ using lbann_comm_ptr = std::unique_ptr<lbann_comm, void(*)(lbann_comm*)>;
  *  @param argc Command line arguments.
  *  @param argv Number of command line arguments.
  *  @param seed RNG seed.
- *  @return     LBANN communicator.
+ *  @return     LBANN communicator corresponding to MPI_COMM_WORLD.
  */
-lbann_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
+world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
 
 /** Destroy LBANN communicator.
  *

@@ -37,8 +37,8 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm_ptr comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  const bool master = comm->am_world_master();
 
   if (master) {
     std::cout << "\n\n==============================================================\n"

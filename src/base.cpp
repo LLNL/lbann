@@ -47,12 +47,12 @@
 
 namespace lbann {
 
-lbann_comm_ptr initialize(int& argc, char**& argv, int seed) {
+world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
   // Create a new comm object.
   // Initial creation with every process in one model.
-  auto comm = lbann_comm_ptr{new lbann_comm(0), &lbann::finalize };
+  auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
 
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
