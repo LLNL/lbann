@@ -35,38 +35,20 @@ rmsprop::rmsprop(lbann_comm *comm,
                  DataType eps)
   : optimizer(comm, learning_rate),
     m_decay_rate(decay_rate),
-    m_eps(eps),
-    m_cache(nullptr) {}
+    m_eps(eps) {}
 
 rmsprop::rmsprop(const rmsprop& other) :
   optimizer(other),
   m_decay_rate(other.m_decay_rate),
   m_eps(other.m_eps),
-  m_cache(other.m_cache) {
-  if (m_cache != nullptr) { m_cache = m_cache->Copy(); }
-}
+  m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
 rmsprop& rmsprop::operator=(const rmsprop& other) {
   optimizer::operator=(other);
   m_decay_rate = other.m_decay_rate;
   m_eps = other.m_eps;
-
-  // Copy cache matrix
-  if (m_cache != nullptr && other.m_cache != nullptr
-      && m_cache->DistData() == other.m_cache->DistData()) {
-    El::Copy(*other.m_cache, *m_cache);
-  }
-  else {
-    if (m_cache != nullptr) { delete m_cache; }
-    m_cache = other.m_cache;
-    if (m_cache != nullptr) { m_cache = m_cache->Copy(); }
-  }
-
+  m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
   return *this;
-}
-
-rmsprop::~rmsprop() {
-  if (m_cache != nullptr) { delete m_cache; }
 }
 
 description rmsprop::get_description() const {
@@ -78,8 +60,8 @@ description rmsprop::get_description() const {
 
 void rmsprop::setup(weights& w) {
   optimizer::setup(w);
-  m_cache = m_gradient->Construct(m_gradient->Grid(),
-                                  m_gradient->Root());
+  m_cache.reset(m_gradient->Construct(m_gradient->Grid(),
+                                      m_gradient->Root()));
   El::Zeros(*m_cache, m_gradient->Height(), m_gradient->Width());
 }
 
@@ -128,7 +110,7 @@ bool rmsprop::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.write_distmat(persist_type::train, l_name, m_cache);
+  p.write_distmat(persist_type::train, l_name, m_cache.get());
 
   return true;
 }
@@ -138,7 +120,7 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.read_distmat(persist_type::train, l_name, m_cache);
+  p.read_distmat(persist_type::train, l_name, m_cache.get());
 
   return true;
 }
