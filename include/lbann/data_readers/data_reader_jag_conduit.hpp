@@ -237,7 +237,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  void setup_data_store(model *m, int mini_batch_size) override;
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// A untiliy function to convert the pointer to image data into an opencv image

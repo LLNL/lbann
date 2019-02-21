@@ -49,7 +49,7 @@ data_store_jag::data_store_jag(
 
 data_store_jag::~data_store_jag() {}
 
-void data_store_jag::setup() {
+void data_store_jag::setup(int mini_batch_size) {
   double tm1 = get_time();
   std::stringstream err;
 
@@ -62,8 +62,8 @@ void data_store_jag::setup() {
     LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
   }
 
-  generic_data_store::setup();
-  build_owner_map();
+  generic_data_store::setup(mini_batch_size);
+  build_owner_map(mini_batch_size);
 
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
@@ -380,7 +380,7 @@ int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
-    if (i % m_np == m_rank) {
+    if ((i % mb_size) % m_np == m_rank) {
       int owner = m_owner[index];
       m_indices_to_recv[owner].insert(index);
       k++;
@@ -397,7 +397,7 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[i % m_np].insert(index);
+      m_indices_to_send[(i % mb_size) % m_np].insert(index);
 
       // Sanity check
       if (m_owner[index] != m_rank) {
@@ -411,11 +411,14 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   return k;
 }
 
-void data_store_jag::build_owner_map() {
+void data_store_jag::build_owner_map(int mini_batch_size) {
   m_owner.clear();
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
     auto index = (*m_shuffled_indices)[i];
-    m_owner[index] = i % m_np;
+    /// To compute the owner index first find its position inside of
+    /// the mini-batch (mod mini-batch size) and then find how it is
+    /// striped across the ranks in the trainer
+    m_owner[index] = (i % mini_batch_size) % m_np;
   }
 }
 
