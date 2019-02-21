@@ -926,7 +926,7 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 
       // Copy parallel strategy from parent.
       ParallelStrategy& ps = split->get_parallel_strategy();
-      ParallelStrategy& orig_ps = layer->get_parallel_strategy();
+      ParallelStrategy& orig_ps = l.get_parallel_strategy();
       ps = orig_ps;
 
       // Setup relationships between split layer and child layers
@@ -1779,11 +1779,11 @@ void model::setup_distconv() {
   std::map<dc::Dist*, std::set<dc::Dist*>> invariants;
   std::set<dc::Dist*> updated;
   std::set<dc::Dist*> fixed;
-  for (const auto& layer : m_layers) {
-    layer->setup_tensor_distribution_init(dists, invariants, updated, fixed);
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    get_layer(i).setup_tensor_distribution_init(dists, invariants, updated, fixed);
   }
-  for (const auto& layer : m_layers) {
-    layer->setup_tensor_distribution_add_adjacent_invariants(
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    get_layer(i).setup_tensor_distribution_add_adjacent_invariants(
         dists, invariants);
   }
   while (updated.size() > 0) {
@@ -1805,40 +1805,44 @@ void model::setup_distconv() {
     updated = std::move(updated_new);
   }
   // displays parent and child layer names for debugging
-  for (const auto& layer : m_layers) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    const auto& layer = get_layer(i);
     std::stringstream names;
     names << "parents:";
-    for (const auto &parent: layer->get_parent_layers()) {
+    for (const auto &parent: layer.get_parent_layers()) {
       names << " " << parent->get_name();
     }
     names << "; children:";
-    for (const auto &child: layer->get_child_layers()) {
+    for (const auto &child: layer.get_child_layers()) {
       names << " " << child->get_name();
     }
     dc::MPIRootPrintStreamDebug()
-        << layer->get_name() << "; " << names.str();
+        << layer.get_name() << "; " << names.str();
   }
-  for (const auto& layer : m_layers) {
-    if (layer->distconv_enabled()) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    const auto& layer = get_layer(i);
+    if (layer.distconv_enabled()) {
       dc::MPIRootPrintStreamInfo()
-          << layer->get_name()
-          << "; prev_activations_dist: " << dists[layer][0]
-          << ", activations_dist: " << dists[layer][1]
-          << ", error_signals_dist: " << dists[layer][2]
-          << ", prev_error_signals_dist: " << dists[layer][3];
+          << layer.get_name()
+          << "; prev_activations_dist: " << dists[&layer][0]
+          << ", activations_dist: " << dists[&layer][1]
+          << ", error_signals_dist: " << dists[&layer][2]
+          << ", prev_error_signals_dist: " << dists[&layer][3];
     } else {
       dc::MPIRootPrintStreamInfo()
-          << layer->get_name() << "; distconv disabled";
+          << layer.get_name() << "; distconv disabled";
     }
   }
-  for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {
-    (*it)->setup_tensor_distribution_block();
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
+    get_layer(i).setup_tensor_distribution_block();
   }
-  for (const auto& layer : m_layers) {
-    layer->setup_tensors_fwd(dists[layer]);
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    layer.setup_tensors_fwd(dists[&layer]);
   }
-  for (auto it = m_layers.rbegin(); it != m_layers.rend(); ++it) {
-    (*it)->setup_tensors_bwd(dists[*it]);
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
+    auto &layer = get_layer(i);
+    layer.setup_tensors_bwd(dists[&layer]);
   }
   size_t available = cuda::get_available_memory_capacity();
   size_t workspace_memory = available;
@@ -1849,8 +1853,8 @@ void model::setup_distconv() {
       << " MB), workspace: " << workspace_memory
       << " (" << int(workspace_memory / 1024.0 / 1024.0)
       << " MB)";
-  for (const auto& layer : m_layers) {
-    layer->setup_distconv_post(workspace_memory);
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    get_layer(i).setup_distconv_post(workspace_memory);
   }
 }
 
