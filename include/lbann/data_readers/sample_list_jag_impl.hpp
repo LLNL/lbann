@@ -20,7 +20,7 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-#define LBANN_MAX_OPEN_DATA_FILES 100
+#define LBANN_MAX_OPEN_DATA_FILES 768
 
 namespace lbann {
 
@@ -78,6 +78,12 @@ inline size_t sample_list_indexer::get_partition_offset() const {
 
 inline sample_list_jag::sample_list_jag()
 : m_num_partitions(1u) {
+  /// Create an unordered map that will not rehash and has a fixed
+  /// number of buckets.  This allows the sample list to easily select
+  /// a file descriptor for closing
+  m_open_fd_map.reserve(LBANN_MAX_OPEN_DATA_FILES);
+  m_open_fd_map.rehash(LBANN_MAX_OPEN_DATA_FILES);
+  m_open_fd_map.max_load_factor(std::numeric_limits<float>::max());
 }
 
 inline void sample_list_jag::set_num_partitions(size_t n) {
@@ -534,12 +540,6 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   m_sample_list.reserve(num_samples);
   m_sample_id_map.reserve(num_ids);
   m_file_map.reserve(num_files);
-  /// Create an unordered map that will not rehash and has a fixed
-  /// number of buckets.  This allows the sample list to easily select
-  /// a file descriptor for closing
-  m_open_fd_map.reserve(num_files);
-  m_open_fd_map.rehash(LBANN_MAX_OPEN_DATA_FILES);
-  m_open_fd_map.max_load_factor(std::numeric_limits<float>::max());
 
   for(int r = 0; r < num_ranks; r++) {
     const samples_t& sample_list = per_rank_samples[r];
