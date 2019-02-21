@@ -204,16 +204,9 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
         filedir = filedir + "/";
       }
       auto paths = glob(filedir + readme.data_file_pattern());
-      if(readme.merge_skip_overlapped()) {
-        assert((paths.size()%comm->get_num_trainers()) == 0);
-      }
       std::vector<generic_data_reader*> npy_readers;
       for(auto i = paths.begin(); i != paths.end(); i++) {
         const auto path = *i;
-        if(readme.merge_skip_overlapped()
-           && (std::distance(paths.begin(), i)%comm->get_procs_per_trainer()) != comm->get_rank_in_trainer()) {
-          continue;
-        }
         if(master) { std::cout << "Loading file: " << path << std::endl; }
         if (readme.format() == "numpy") {
           auto *reader_numpy = new numpy_reader(false);
