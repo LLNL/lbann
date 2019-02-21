@@ -165,34 +165,49 @@ class sample_list_jag {
   void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
     const std::string& filename = m_sample_id_map[id];
 
+    int bucket_count = m_open_fd_map.bucket_count();
     int bucket = m_open_fd_map.bucket(filename);
     if(m_open_fd_map.bucket_size(bucket) > 0) {
-      if(m_open_fd_map.bucket_size(bucket) != 1) {
-        LBANN_ERROR(std::string{} + " :: unexpected number of open file descriptors for bucket "
-                    + std::to_string(bucket));
+      // if(m_open_fd_map.bucket_size(bucket) != 1) {
+      //   LBANN_ERROR(std::string{} + " :: unexpected number of open file descriptors for bucket "
+      //               + std::to_string(bucket));
+      // }
+      auto local_it = m_open_fd_map.begin(bucket);
+      if(local_it == m_open_fd_map.end(bucket)) {
+        LBANN_ERROR(std::string{} + " :: bucket '" + std::to_string(bucket)
+                    + "' has an empty iterator");
       }
-      // std::cout << "I am adding a file handle for " << filename << " at bucket " << std::to_string(m_open_fd_map.bucket(filename)) << " and there are " << std::to_string(m_open_fd_map.bucket_size(m_open_fd_map.bucket(filename))) << " entries in the bucket." << std::endl;
-      // std::cout << "Inside of the bucket I have ";
-      for ( auto local_it = m_open_fd_map.begin(bucket); local_it!= m_open_fd_map.end(bucket); ++local_it ) {
-        // std::cout << " " << local_it->first << ":" << local_it->second;
-        const std::string& old_filename = local_it->first;
-        hid_t old_h = local_it->second;
-        if (old_h <= static_cast<hid_t>(0)) {
-          LBANN_ERROR(std::string{} + " :: data file '" + old_filename
-                      + "' has a corrupt file descriptor = " + std::to_string(old_h));
-        }
-        conduit::relay::io::hdf5_close_file(old_h);
-        int num_erased = m_open_fd_map.erase(old_filename);
-        if(num_erased != 1) {
-          LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
-                      + "' that had a file descriptor = " + std::to_string(old_h));
-        }
+      const std::string& old_filename = local_it->first;
+      hid_t old_h = local_it->second;
+      if (old_h <= static_cast<hid_t>(0)) {
+        LBANN_ERROR(std::string{} + " :: data file '" + old_filename
+                    + "' has a corrupt file descriptor = " + std::to_string(old_h));
       }
-      // std::cout << std::endl;
+
+      conduit::relay::io::hdf5_close_file(old_h);
+      int num_erased = m_open_fd_map.erase(old_filename);
+      if(num_erased != 1) {
+        LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
+                    + "' that had a file descriptor = " + std::to_string(old_h));
+      }
     }
 
 
-    m_open_fd_map.emplace(filename, h);
+    auto result = m_open_fd_map.emplace(filename, h);
+    int bucket2 = m_open_fd_map.bucket(filename);
+    int bucket_count2 = m_open_fd_map.bucket_count();
+    if(!result.second) {
+      LBANN_WARNING(std::string{} + " :: The key for " + filename + " already existed");
+    }
+    if(bucket2 != bucket) {
+        LBANN_ERROR(std::string{} + " :: the buckets don't match original bucket "
+                    + std::to_string(bucket) + " with a count of " + std::to_string(bucket_count) + " and new bucket " + std::to_string(bucket2) + " and a new count of " + std::to_string(bucket_count2));
+    }
+    if(m_open_fd_map.bucket_size(bucket) != 1) {
+        LBANN_WARNING(std::string{} + " :: there should be one entry with an open file descriptors for bucket "
+                      + std::to_string(bucket) + " not "
+                      + std::to_string(m_open_fd_map.bucket_size(bucket)) + " entries");
+    }
   }
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
@@ -225,7 +240,7 @@ class sample_list_jag {
   /// Add the header info to the given string
   void write_header(std::string& sstr, size_t num_files) const;
 
- protected:
+ private:
 
   /// The number of partitions to divide samples into
   size_t m_num_partitions;
