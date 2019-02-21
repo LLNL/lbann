@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZERS_SGD_HPP
-#define LBANN_OPTIMIZERS_SGD_HPP
+#ifndef LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 
@@ -34,6 +34,7 @@ namespace lbann {
 /** Stochastic gradient descent optimizer.
  *
  *  Supports momentum and Nesterov acceleration.
+ *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
 class sgd : public optimizer {
 
@@ -59,14 +60,12 @@ class sgd : public optimizer {
   /** Velocity for momentum optimizer. */
   AbsDistMat& get_velocity();
 
-  void setup(weights& w) override;
+  void setup(weights* w = nullptr) override;
 
-  /** Perform the computation in an optimization step. */
+protected:
+
+  /** Computation for an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
-#ifdef LBANN_HAS_CUDNN
-  /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
-#endif // LBANN_HAS_CUDNN
 
 private:
 
@@ -76,6 +75,13 @@ private:
   bool m_nesterov;
   /** Velocity for momentum optimizer. */
   std::unique_ptr<AbsDistMat> m_velocity;
+
+  /** CPU implementation of momentum or Nesterov step. */
+  void momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+#ifdef LBANN_HAS_CUDA
+  /** GPU implementation of momentum or Nesterov step. */
+  void momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+#endif // LBANN_HAS_CUDA
 
 //************************************************************************
 // Checkpointing
@@ -114,4 +120,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZERS_SGD_HPP
+#endif // LBANN_OPTIMIZERS_SGD_HPP_INCLUDED

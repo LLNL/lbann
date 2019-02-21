@@ -229,10 +229,10 @@ void optimizer::setup(weights* w) {
   const auto& height = m_weights->get_matrix_height();
   const auto& width = m_weights->get_matrix_width();
   const AbsDistMat& values = m_weights->get_values();
-  m_gradient.reset(values.Construct(values.Grid(), values.Root()));
+  m_gradient.reset(AbsDistMat::Instantiate(values.DistData()));
   m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
-  m_gradient_v.reset(values.Construct(values.Grid(), values.Root()));
+  m_gradient_v.reset(AbsDistMat::Instantiate(values.DistData()));
   m_gradient_v->AlignWith(values);
 #ifdef HYDROGEN_HAVE_CUB
   if (m_gradient_v->GetLocalDevice() == El::Device::GPU) {

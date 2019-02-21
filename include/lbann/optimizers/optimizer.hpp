@@ -106,7 +106,18 @@ public:
    */
   AbsDistMat& get_gradient();
 
-  /** Add to the objective function gradient w.r.t. the weights. */
+  /** Add to the objective function gradient w.r.t. the weights.
+   *  @param gradient           Contribution to gradient.
+   *  @param scale              Scaling factor for gradient
+   *                            contribution.
+   *  @param allreduce_needed   Whether the gradient contribution
+   *                            requires an allreduce over its redundant
+   *                            communicator. If false, duplicated data
+   *                            (over the redundant communicator) is
+   *                            assumed to be identical. If true, an
+   *                            allreduce is performed lazily when the
+   *                            gradient is accessed.
+   */
   void add_to_gradient(const AbsDistMat& gradient,
                        DataType scale = DataType(1),
                        bool allreduce_needed = false);

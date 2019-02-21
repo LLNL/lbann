@@ -44,7 +44,7 @@ __global__ void noncontiguous_kernel(size_t height,
                                      size_t moment1_ldim,
                                      DataType * __restrict__ moment2,
                                      size_t moment2_ldim) {
-  const auto& gid = blockIdx.x * blockDim.x + threadIdx.x;
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const auto& row = gid % height;
   const auto& col = gid / height;
   const auto& g = gradient[row + col * gradient_ldim] + eps;

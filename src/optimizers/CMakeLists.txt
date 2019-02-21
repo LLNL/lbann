@@ -5,7 +5,7 @@ set_full_path(THIS_DIR_SOURCES
 #  hypergradient_adam.cpp
   optimizer.cpp
 #  rmsprop.cpp
-#  sgd.cpp
+  sgd.cpp
   )
 
 if (LBANN_HAS_CUDA)
@@ -14,7 +14,7 @@ if (LBANN_HAS_CUDA)
 #    adagrad.cu
     adam.cu
 #    rmsprop.cu
-#    sgd.cu
+    sgd.cu
     )
 endif ()
 
