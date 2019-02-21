@@ -25,14 +25,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_jag.hpp"
 #include "lbann/models/model.hpp"
-#else
-#include "data_reader_jag_conduit.hpp"
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -104,7 +100,6 @@ const std::set<std::string> data_reader_jag_conduit::non_numeric_vars = {
   "solver_mode"
 };
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::set_io_buffer_type(const std::string io_buffer) {
   m_io_buffer_type = io_buffer;
 }
@@ -149,7 +144,6 @@ int data_reader_jag_conduit::compute_max_num_parallel_readers() {
 bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
   return true;
 }
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
 data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : generic_data_reader(shuffle) {
@@ -735,7 +729,6 @@ void data_reader_jag_conduit::check_input_keys() {
 }
 
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::load() {
   if(m_gan_labelling) {
     m_num_labels=2;
@@ -815,7 +808,6 @@ void data_reader_jag_conduit::load_list_of_samples_from_archive(const std::strin
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
 }
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
 unsigned int data_reader_jag_conduit::get_num_img_srcs() const {
   return m_num_img_srcs;
@@ -1435,7 +1427,6 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
 void data_reader_jag_conduit::setup_data_store(model *m) {
   if (m_data_store != nullptr) {
     delete m_data_store;
@@ -1444,12 +1435,9 @@ void data_reader_jag_conduit::setup_data_store(model *m) {
   m_data_store = m_jag_store;                 // *generic_data_store
   m_data_store->setup();
 }
-#endif // _JAG_OFFLINE_TOOL_MODE_
 
 void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-#ifndef _JAG_OFFLINE_TOOL_MODE_
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
-#endif // _JAG_OFFLINE_TOOL_MODE_
 }
 
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {

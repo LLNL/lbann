@@ -196,6 +196,12 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
 
+  if (m_owner[data_id] != m_rank) {
+    std::stringstream s;
+    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank;
+    LBANN_ERROR(s.str());
+  }
+
   if (! m_super_node) {
     build_node_for_sending(node, m_data[data_id]);
     const conduit::Node& n2 = m_data[data_id];
@@ -386,13 +392,12 @@ int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
 int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   m_indices_to_send.clear();
   m_indices_to_send.resize(m_np);
-  size_t j = 0;
   int k = 0;
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
-    /// If this rank owns the index send it to the j'th rank
+    /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[j].insert(index);
+      m_indices_to_send[i % m_np].insert(index);
 
       // Sanity check
       if (m_owner[index] != m_rank) {
@@ -402,18 +407,15 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
       }
       k++;
     }
-    j = (j + 1) % m_np;
   }
   return k;
 }
 
 void data_store_jag::build_owner_map() {
   m_owner.clear();
-  size_t j = 0;
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
     auto index = (*m_shuffled_indices)[i];
-    m_owner[index] = j;
-    j = (j + 1) % m_np;
+    m_owner[index] = i % m_np;
   }
 }
 
