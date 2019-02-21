@@ -172,7 +172,7 @@ class weights_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    constexpr DataType zero = 1;
+    constexpr DataType zero = 0;
     constexpr DataType one = 1;
 
     // Get optimizer

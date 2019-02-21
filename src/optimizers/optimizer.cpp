@@ -116,8 +116,11 @@ AbsDistMat& optimizer::get_gradient() {
     m_gradient_status = optimizer_gradient_status::ready;
   }
   if (m_gradient_status != optimizer_gradient_status::ready) {
-    LBANN_ERROR("expected gradient to be \"ready\", but its status is "
-                "\"" + to_string(m_gradient_status) + "\"");
+    std::ostringstream err;
+    err << "unexpected gradient status (expected "
+        << "\"" << to_string(optimizer_gradient_status::ready) << "\", "
+        << "but found \"" << to_string(m_gradient_status) << "\")";
+    LBANN_ERROR(err.str());
   }
 
   // Return gradient
@@ -150,6 +153,9 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   }
 
   // Add to gradient
+  if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
+    finish_gradient_allreduce();
+  }
   switch (m_gradient_status) {
   case optimizer_gradient_status::ready:
     if (allreduce_needed) {
@@ -174,9 +180,6 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
     }
     break;
   case optimizer_gradient_status::allreduce_started:
-    LBANN_ERROR("attempted to add to gradient "
-                "after a non-blocking allreduce has been launched");
-    break;
   default:
     LBANN_ERROR("unexpected gradient status "
                 "(" + to_string(m_gradient_status) + ")");

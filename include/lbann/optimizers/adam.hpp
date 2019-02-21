@@ -93,10 +93,10 @@ private:
   /** Hyperparameter exploration. */
   friend class lbann_callback_perturb_adam;
 
-  /** CPU optimization step. */
+  /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
 #ifdef LBANN_HAS_CUDA
-  /** GPU optimization step. */
+  /** GPU implementation of optimization step. */
   void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
 #endif // LBANN_HAS_CUDA
 
