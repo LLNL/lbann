@@ -227,8 +227,10 @@ void optimizer::setup(weights* w) {
   const auto& width = m_weights->get_matrix_width();
   const AbsDistMat& values = m_weights->get_values();
   m_gradient.reset(values.Construct(values.Grid(), values.Root()));
+  m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
   m_gradient_v.reset(values.Construct(values.Grid(), values.Root()));
+  m_gradient_v->AlignWith(values);
 #ifdef HYDROGEN_HAVE_CUB
   if (m_gradient_v->GetLocalDevice() == El::Device::GPU) {
     m_gradient_v->Matrix().SetMemoryMode(1); // CUB GPU memory pool
@@ -238,36 +240,13 @@ void optimizer::setup(weights* w) {
 }
 
 void optimizer::step() {
-  const auto start_time = get_time();
-
-  // Get matrices
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to perform optimization step without weights");
   }
-  auto& values = m_weights->get_values();
-  const auto& gradient = get_gradient();
-
-  // Apply optimization step
-  switch (values.GetLocalDevice()) {
-  case El::Device::CPU: step_compute(values, gradient);     break;
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU: step_compute_gpu(values, gradient); break;
-#endif // LBANN_HAS_GPU
-  default:
-    std::stringstream err;
-    err << "invalid device (" << (int) values.GetLocalDevice() << ")";
-    LBANN_ERROR(err.str());
-  }
-
+  const auto start_time = get_time();
+  step_compute(m_weights->get_values(), get_gradient());
   m_step_time += get_time() - start_time;
 }
-
-#ifdef LBANN_HAS_GPU
-void optimizer::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
-  /// @todo Automatically use CPU implementation
-  LBANN_ERROR(get_type() + " optimizer has no GPU implementation");
-}
-#endif // LBANN_HAS_GPU
 
 DataType optimizer::get_learning_rate() const {
   return m_learning_rate;

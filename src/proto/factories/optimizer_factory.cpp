@@ -56,6 +56,7 @@ optimizer* construct_optimizer(lbann_comm* comm,
                        params.decay_rate(),
                        params.eps());
   }
+#endif
 
   // Adam
   if (proto_opt.has_adam()) {
@@ -67,6 +68,7 @@ optimizer* construct_optimizer(lbann_comm* comm,
                     params.eps());
   }
 
+#if 0
   // Hypergradient Adam
   if (proto_opt.has_hypergradient_adam()) {
     const auto& params = proto_opt.hypergradient_adam();

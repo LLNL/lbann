@@ -407,7 +407,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
   // Hyperparameter exploration
   //////////////////////////////////////////////////////////////
-#if 0
   if (proto_cb.has_perturb_adam()) {
     const auto& params = proto_cb.perturb_adam();
     return new lbann_callback_perturb_adam(
@@ -419,7 +418,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
                  params.batch_interval(),
                  parse_set<std::string>(params.weights()));
   }
-#endif // 0
 
   return nullptr;
 }

@@ -159,22 +159,13 @@ public:
 
 protected:
 
-  /** Computation for an optimization step on CPU.
+  /** Computation for an optimization step.
    *
    *  @c values and @gradient can be assumed to have the same
    *  distribution.
    */
   virtual void step_compute(AbsDistMat& values,
                             const AbsDistMat& gradient) = 0;
-#ifdef LBANN_HAS_CUDA
-  /** Computation for an optimization step on GPU.
-   *
-   *  The default implementation is to throw an exception. @c values
-   *  and @gradient can be assumed to have the same distribution.
-   */
-  virtual void step_compute_gpu(AbsDistMat& values,
-                                const AbsDistMat& gradient);
-#endif // LBANN_HAS_CUDA
 
 private:
 
