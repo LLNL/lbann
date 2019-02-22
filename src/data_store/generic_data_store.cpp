@@ -130,7 +130,7 @@ void generic_data_store::get_my_datastore_indices() {
   }
 }
 
-void generic_data_store::setup() {
+void generic_data_store::setup(int mini_batch_size) {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
