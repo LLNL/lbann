@@ -162,9 +162,7 @@ class sample_list_jag {
     m_sample_id_map[id] = filename;
   }
 
-  void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
-    const std::string& filename = m_sample_id_map[id];
-
+  void set_files_hdf5_handle(const std::string& filename, hid_t h) {
     int bucket_count = m_open_fd_map.bucket_count();
     int bucket = m_open_fd_map.bucket(filename);
     if(m_open_fd_map.bucket_size(bucket) > 0) {
@@ -184,12 +182,12 @@ class sample_list_jag {
                     + "' has a corrupt file descriptor = " + std::to_string(old_h));
       }
 
-      conduit::relay::io::hdf5_close_file(old_h);
-      int num_erased = m_open_fd_map.erase(old_filename);
-      if(num_erased != 1) {
-        LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
-                    + "' that had a file descriptor = " + std::to_string(old_h));
-      }
+      // conduit::relay::io::hdf5_close_file(old_h);
+      // int num_erased = m_open_fd_map.erase(old_filename);
+      // if(num_erased != 1) {
+      //   LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
+      //               + "' that had a file descriptor = " + std::to_string(old_h));
+      // }
     }
 
 
@@ -203,11 +201,36 @@ class sample_list_jag {
         LBANN_ERROR(std::string{} + " :: the buckets don't match original bucket "
                     + std::to_string(bucket) + " with a count of " + std::to_string(bucket_count) + " and new bucket " + std::to_string(bucket2) + " and a new count of " + std::to_string(bucket_count2));
     }
-    if(m_open_fd_map.bucket_size(bucket) != 1) {
-        LBANN_WARNING(std::string{} + " :: there should be one entry with an open file descriptors for bucket "
-                      + std::to_string(bucket) + " not "
-                      + std::to_string(m_open_fd_map.bucket_size(bucket)) + " entries");
+    // if(m_open_fd_map.bucket_size(bucket) != 1) {
+    //     LBANN_WARNING(std::string{} + " :: there should be one entry with an open file descriptors for bucket "
+    //                   + std::to_string(bucket) + " not "
+    //                   + std::to_string(m_open_fd_map.bucket_size(bucket)) + " entries");
+    // }
+  }
+
+  void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
+    const std::string& filename = m_sample_id_map[id];
+    set_files_hdf5_handle(filename, h);
+  }
+
+  hid_t open_samples_hdf5_handle(const size_t i) {
+    const sample_t& s = m_sample_list[i];
+    sample_id_t id = s.first;
+    hid_t h = get_samples_hdf5_handle(id);
+    if (h <= static_cast<hid_t>(0)) {
+      const std::string& file_name = get_samples_filename(id);
+      const std::string conduit_file_path = add_delimiter(get_samples_dirname()) + file_name;
+      if (file_name.empty() || !check_if_file_exists(conduit_file_path)) {
+        LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
+      }
+      h = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+      if (h <= static_cast<hid_t>(0)) {
+        LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
+      }
+      set_samples_hdf5_handle(id, h);
     }
+
+    return h;
   }
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
