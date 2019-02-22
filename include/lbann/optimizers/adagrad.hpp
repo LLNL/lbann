@@ -42,9 +42,7 @@ namespace lbann {
 class adagrad : public optimizer {
 public:
 
-  adagrad(lbann_comm* comm,
-          DataType learning_rate,
-          DataType eps = DataType(1e-8));
+  adagrad(lbann_comm* comm, DataType learning_rate, DataType eps = 1e-8);
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   ~adagrad() override = default;

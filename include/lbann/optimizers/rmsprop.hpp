@@ -43,7 +43,7 @@ public:
   rmsprop(lbann_comm* comm,
           DataType learning_rate,
           DataType decay_rate,
-          DataType eps = DataType(1e-8));
+          DataType eps = 1e-8);
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   ~rmsprop() override = default;

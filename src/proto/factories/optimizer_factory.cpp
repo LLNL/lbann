@@ -66,7 +66,6 @@ optimizer* construct_optimizer(lbann_comm* comm,
                     params.eps());
   }
 
-#if 0
   // Hypergradient Adam
   if (proto_opt.has_hypergradient_adam()) {
     const auto& params = proto_opt.hypergradient_adam();
@@ -77,7 +76,6 @@ optimizer* construct_optimizer(lbann_comm* comm,
                                   params.beta2(),
                                   params.eps());
   }
-#endif
 
   // Return null pointer if no optimizer is specified
   return nullptr;
