@@ -45,15 +45,17 @@ __global__ void noncontiguous_kernel(size_t height,
                                      DataType * __restrict__ moment2,
                                      size_t moment2_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const auto& row = gid % height;
-  const auto& col = gid / height;
-  const auto& g = gradient[row + col * gradient_ldim] + eps;
-  auto& m1 = moment1[row + col * moment1_ldim];
-  auto& m2 = moment2[row + col * moment2_ldim];
-  auto& x = values[row + col * values_ldim];
-  m1 = beta1 * m1 + (DataType(1) - beta1) * g;
-  m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
-  x -= correction * m1 / (cuda::sqrt(m2) + eps);
+  if (gid < height * width) {
+    const auto& row = gid % height;
+    const auto& col = gid / height;
+    const auto& g = gradient[row + col * gradient_ldim] + eps;
+    auto& m1 = moment1[row + col * moment1_ldim];
+    auto& m2 = moment2[row + col * moment2_ldim];
+    auto& x = values[row + col * values_ldim];
+    m1 = beta1 * m1 + (DataType(1) - beta1) * g;
+    m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
+    x -= correction * m1 / (cuda::sqrt(m2) + eps);
+  }
 }
 
 __global__ void contiguous_kernel(size_t size,
@@ -65,14 +67,16 @@ __global__ void contiguous_kernel(size_t size,
                                   const DataType * __restrict__ gradient,
                                   DataType * __restrict__ moment1,
                                   DataType * __restrict__ moment2) {
-  const auto& gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const auto& g = gradient[gid] + eps;
-  auto& m1 = moment1[gid];
-  auto& m2 = moment2[gid];
-  auto& x = values[gid];
-  m1 = beta1 * m1 + (DataType(1) - beta1) * g;
-  m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
-  x -= correction * m1 / (cuda::sqrt(m2) + eps);
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if (gid < size) {
+    const auto& g = gradient[gid] + eps;
+    auto& m1 = moment1[gid];
+    auto& m2 = moment2[gid];
+    auto& x = values[gid];
+    m1 = beta1 * m1 + (DataType(1) - beta1) * g;
+    m2 = beta2 * m2 + (DataType(1) - beta2) * g * g;
+    x -= correction * m1 / (cuda::sqrt(m2) + eps);
+  }
 }
 
 } // namespace
