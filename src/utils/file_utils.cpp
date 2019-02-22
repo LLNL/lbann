@@ -147,6 +147,7 @@ std::string modify_file_name(const std::string file_name, const std::string tag,
     name = name + '_' + tag;
   }
 
+  dir = add_delimiter(dir);
   if(!ext.empty()) {
     return (dir + name + '.' + ext);
   }else {
