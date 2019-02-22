@@ -100,7 +100,7 @@ void adam::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   // Launch CUDA kernel
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  cudaStream_t stream = El::GPUManager::Stream();
+  auto&& stream = El::GPUManager::Stream();
   if (values.Contiguous() && gradient.Contiguous()
       && m_moment1->Contiguous() && m_moment2->Contiguous()) {
     contiguous_kernel<<<grid_size, block_size, 0, stream>>>(

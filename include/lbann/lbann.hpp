@@ -170,7 +170,7 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
 /// Optimizers
-// #include "lbann/optimizers/adagrad.hpp"
+#include "lbann/optimizers/adagrad.hpp"
 #include "lbann/optimizers/adam.hpp"
 // #include "lbann/optimizers/hypergradient_adam.hpp"
 // #include "lbann/optimizers/rmsprop.hpp"

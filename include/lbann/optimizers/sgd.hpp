@@ -83,9 +83,9 @@ private:
   void momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient);
 #endif // LBANN_HAS_CUDA
 
-//************************************************************************
-// Checkpointing
-//************************************************************************
+  // ===========================================
+  // Checkpointing
+  // ===========================================
 
   struct packing_header {
     DataType momentum;
@@ -112,7 +112,6 @@ private:
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 

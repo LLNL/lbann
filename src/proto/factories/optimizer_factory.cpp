@@ -41,13 +41,13 @@ optimizer* construct_optimizer(lbann_comm* comm,
                    params.nesterov());
   }
 
-#if 0
   // AdaGrad
   if (proto_opt.has_adagrad()) {
     const auto& params = proto_opt.adagrad();
     return new adagrad(comm, params.learn_rate(), params.eps());
   }
 
+#if 0
   // RMSProp
   if (proto_opt.has_rmsprop()) {
     const auto& params = proto_opt.rmsprop();

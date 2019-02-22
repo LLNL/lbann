@@ -159,9 +159,9 @@ void sgd::momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
 
 }
 
-////////////////////////////////////////////////////////////
+// =============================================
 // Checkpointing
-////////////////////////////////////////////////////////////
+// =============================================
 
 bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);

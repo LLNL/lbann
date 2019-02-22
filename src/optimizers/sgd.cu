@@ -89,7 +89,7 @@ void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   // Launch CUDA kernels for momentum SGD or NAG
   constexpr size_t block_size = 256;
   const size_t grid_size = (local_size + block_size - 1) / block_size;
-  cudaStream_t stream = El::GPUManager::Stream();
+  auto&& stream = El::GPUManager::Stream();
   if (m_nesterov) {
     nesterov_kernel<<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
