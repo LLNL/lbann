@@ -76,11 +76,11 @@ void adagrad::step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
-  DataType* __restrict__ values_buffer = values.Buffer();
+  auto* __restrict__ values_buffer = values.Buffer();
   const size_t values_ldim = values.LDim();
-  const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
+  const auto* __restrict__ gradient_buffer = gradient.LockedBuffer();
   const size_t gradient_ldim = gradient.LDim();
-  DataType* __restrict__ cache_buffer = m_cache->Buffer();
+  auto* __restrict__ cache_buffer = m_cache->Buffer();
   const size_t cache_ldim = m_cache->LDim();
 
   // Apply AdaGrad step

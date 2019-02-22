@@ -173,7 +173,7 @@
 #include "lbann/optimizers/adagrad.hpp"
 #include "lbann/optimizers/adam.hpp"
 // #include "lbann/optimizers/hypergradient_adam.hpp"
-// #include "lbann/optimizers/rmsprop.hpp"
+#include "lbann/optimizers/rmsprop.hpp"
 #include "lbann/optimizers/sgd.hpp"
 
 /// Objective functions

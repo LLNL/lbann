@@ -47,7 +47,6 @@ optimizer* construct_optimizer(lbann_comm* comm,
     return new adagrad(comm, params.learn_rate(), params.eps());
   }
 
-#if 0
   // RMSProp
   if (proto_opt.has_rmsprop()) {
     const auto& params = proto_opt.rmsprop();
@@ -56,7 +55,6 @@ optimizer* construct_optimizer(lbann_comm* comm,
                        params.decay_rate(),
                        params.eps());
   }
-#endif
 
   // Adam
   if (proto_opt.has_adam()) {

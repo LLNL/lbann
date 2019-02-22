@@ -31,20 +31,20 @@ namespace lbann {
 
 namespace {
 
-__global__ void rmsprop_kernel(El::Int height,
-                               El::Int width,
-                               DataType learning_rate,
-                               DataType decay_rate,
-                               DataType eps,
-                               DataType * __restrict__ values,
-                               El::Int values_ldim,
-                               const DataType * __restrict__ gradient,
-                               El::Int gradient_ldim,
-                               DataType * __restrict__ cache,
-                               El::Int cache_ldim) {
-  const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const El::Int nthreads = gridDim.x * blockDim.x;
-  for (El::Int pos = gid; pos < height * width; pos += nthreads) {
+__global__ void kernel(size_t height,
+                       size_t width,
+                       DataType learning_rate,
+                       DataType decay_rate,
+                       DataType eps,
+                       DataType * __restrict__ values,
+                       size_t values_ldim,
+                       const DataType * __restrict__ gradient,
+                       size_t gradient_ldim,
+                       DataType * __restrict__ cache,
+                       size_t cache_ldim) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t nthreads = gridDim.x * blockDim.x;
+  for (size_t pos = gid; pos < height * width; pos += nthreads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
     const auto& g = gradient[row + col * gradient_ldim];
@@ -58,14 +58,16 @@ __global__ void rmsprop_kernel(El::Int height,
 } // namespace
 
 void rmsprop::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
-  const El::Int local_height = values.LocalHeight();
-  const El::Int local_width = values.LocalWidth();
-  const El::Int size = local_height * local_width;
-  constexpr El::Int block_dim = 256;
-  const El::Int grid_dim = (size + block_dim - 1) / block_dim;
-  if (grid_dim > 0) {
-    rmsprop_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      local_height, local_width, m_learning_rate, m_decay_rate, m_eps,
+  const size_t local_height = values.LocalHeight();
+  const size_t local_width = values.LocalWidth();
+  const size_t local_size = local_height * local_width;
+  if (local_size > 0) {
+    constexpr size_t block_size = 256;
+    const size_t grid_size = (local_size + block_size - 1) / block_size;
+    auto&& stream = El::GPUManager::Stream();
+    kernel<<<grid_size, block_size, 0, stream>>>(
+      local_height, local_width,
+      this->get_learning_rate(), m_decay_rate, m_eps,
       values.Buffer(), values.LDim(),
       gradient.LockedBuffer(), gradient.LDim(),
       m_cache->Buffer(), m_cache->LDim());

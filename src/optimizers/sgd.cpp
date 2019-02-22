@@ -104,9 +104,9 @@ void sgd::momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
   const auto& learning_rate = this->get_learning_rate();
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
-  DataType* __restrict__ values_buffer = values.Buffer();
-  const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
-  DataType* __restrict__ velocity_buffer = m_velocity->Buffer();
+  auto* __restrict__ values_buffer = values.Buffer();
+  const auto* __restrict__ gradient_buffer = gradient.LockedBuffer();
+  auto* __restrict__ velocity_buffer = m_velocity->Buffer();
 
   if (values.Contiguous() && gradient.Contiguous()
       && m_velocity->Contiguous()) {
