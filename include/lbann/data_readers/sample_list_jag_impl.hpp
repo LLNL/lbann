@@ -276,6 +276,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
       continue; // skipping the file
     }
 
+    set_files_hdf5_handle(filename, hdf5_file_hnd);
+
     if(m_file_map.count(filename) > 0) {
       if(sample_names.size() != m_file_map[filename]) {
         LBANN_ERROR(std::string("The same file ")
@@ -308,8 +310,6 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
                   + std::string(" samples, but found ")
                   + std::to_string(valid_sample_count));
     }
-
-    conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
 
   if (m_header.get_num_files() != cnt_files) {
@@ -363,6 +363,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
       continue; // skipping the file
     }
 
+    set_files_hdf5_handle(filename, hdf5_file_hnd);
+
     if(m_file_map.count(filename) > 0) {
       if(sample_names.size() != m_file_map[filename]) {
         LBANN_ERROR(std::string("The same file ")
@@ -398,8 +400,6 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
                   + std::string(" samples, but found ")
                   + std::to_string(valid_sample_count));
     }
-
-    conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
   }
 
   if (m_header.get_num_files() != cnt_files) {

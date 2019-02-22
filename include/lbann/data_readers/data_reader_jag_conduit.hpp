@@ -216,19 +216,19 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::string get_description() const;
 
   /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i, conduit::Node& sample);
+  std::vector<cv::Mat> get_cv_images(const size_t i, conduit::Node& sample) const;
 
   /**
    * Return the images of the i-th sample as an 1-D vector of lbann::DataType
    * There is one image per view, each of which is taken at closest to the bang time.
    */
-  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample);
+  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample) const;
 
   /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample);
+  std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
 
   /// Return the simulation input parameters of the i-th sample
-  std::vector<input_t> get_inputs(const size_t i, conduit::Node& sample);
+  std::vector<input_t> get_inputs(const size_t i, conduit::Node& sample) const;
 
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
@@ -247,7 +247,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   static std::string to_string(const variable_t t);
 
   /// print the schema of the specific sample identified by a given id
-  void print_schema(const size_t i);
+  void print_schema(const size_t i) const;
 
   void clear_image_normalization_params();
   void clear_scalar_normalization_params();
@@ -353,13 +353,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /** Load the conduit node with the data of the sample i identified by key
    *  from the file that contains the sample.
    */
-  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node);
+  bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
   /// Check if a key exist for sample i
   bool has_conduit_path(const size_t i, const std::string& key) const;
   void close_conduit_node(const size_t i);
 
   /// Obtain image data
-  std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample);
+  std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
 
   bool data_store_active() const {
     bool flag = generic_data_reader::data_store_active();
