@@ -1463,13 +1463,13 @@ void Layer::setup_tensor_distribution_init(
   if (ps.height_splits == 0) ps.height_splits = h;
   if (ps.width_splits == 0) ps.width_splits = w;
 
-  Array4 input_locale_shape({w, h, c, n});
-  Array4 input_split_shape({ps.width_splits, ps.height_splits,
+  Shape input_locale_shape({w, h, c, n});
+  Shape input_split_shape({ps.width_splits, ps.height_splits,
           ps.channel_splits, ps.sample_splits});
   auto prev_activations_dist =  Dist::make_shared_distribution(
       input_locale_shape, input_split_shape);
-  Array4 output_locale_shape({w, h, f, n});
-  Array4 output_split_shape({ps.width_splits, ps.height_splits,
+  Shape output_locale_shape({w, h, f, n});
+  Shape output_split_shape({ps.width_splits, ps.height_splits,
           ps.filter_splits, ps.sample_splits});
   auto activations_dist = Dist::make_shared_distribution(
       output_locale_shape, output_split_shape);
@@ -1538,12 +1538,10 @@ Dist get_hydrogen_matrix_distribution() {
   // dimension. It is assumed that LBANN uses only the
   // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
   // training data.
-  Array4 sample_locale_shape =
-      {static_cast<index_t>(dc::get_rank_stride()),
-       index_t(1), index_t(1),
-       static_cast<index_t>(
-           dc::get_mpi_num_ranks() / dc::get_rank_stride())};
-  Array4 sample_split_shape = sample_locale_shape;
+  Shape sample_locale_shape({static_cast<index_t>(dc::get_rank_stride()),
+          index_t(1), index_t(1), static_cast<index_t>(
+              dc::get_mpi_num_ranks() / dc::get_rank_stride())});
+  auto sample_split_shape = sample_locale_shape;
   sample_split_shape[0] = 1;
   auto sample_dist = Dist::make_shared_distribution
       (sample_locale_shape, sample_split_shape);
@@ -1559,14 +1557,14 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, 4> &dists) {
   size_t usage = 0;
   // fp
   if (m_parent_copy_in_required || m_parent_shuffle_required) {
-    usage += get_input_size() * max_mb / dists[0].get_split_shape().get_size();
+    usage += get_input_size() * max_mb / dists[0].get_split_shape().size();
   }
-  usage += get_output_size() * max_mb / dists[1].get_split_shape().get_size();
+  usage += get_output_size() * max_mb / dists[1].get_split_shape().size();
   // bp
   if (m_child_copy_out_required || m_child_shuffle_required) {
-    usage += get_output_size() * max_mb / dists[3].get_split_shape().get_size();
+    usage += get_output_size() * max_mb / dists[3].get_split_shape().size();
   }
-  usage += get_input_size() * max_mb / dists[2].get_split_shape().get_size();
+  usage += get_input_size() * max_mb / dists[2].get_split_shape().size();
   return usage * sizeof(DataType);
 }
 void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {

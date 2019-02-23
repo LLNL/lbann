@@ -61,6 +61,10 @@ namespace dc {
 // Helper type aliases
 ////////////////////////////////////////////////////////////
 using Array4 = ::distconv::tensor::Array<4>;
+template <typename DataType>
+using Vector = ::distconv::Vector<DataType>;
+using IntVector = ::distconv::IntVector;
+using Shape = ::distconv::tensor::Shape;
 
 using TensorHost = ::distconv::tensor::Tensor<
   4, DataType, ::distconv::tensor::LocaleMPI,
@@ -79,7 +83,7 @@ using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
 using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
   4, DataType>;
 
-using Dist = ::distconv::tensor::Distribution<4>;
+using Dist = ::distconv::tensor::Distribution;
 
 using LocaleMPI = ::distconv::tensor::LocaleMPI;
 
