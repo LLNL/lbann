@@ -101,6 +101,8 @@
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/mini_batch_index.hpp"
+#include "lbann/layers/misc/mini_batch_size.hpp"
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"

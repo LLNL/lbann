@@ -608,6 +608,8 @@ std::unique_ptr<Layer> construct_layer(
                   "a data-parallel layout");
     }
   }
+  CONSTRUCT_LAYER(mini_batch_index);
+  CONSTRUCT_LAYER(mini_batch_size);
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
