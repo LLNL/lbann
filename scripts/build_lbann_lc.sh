@@ -665,7 +665,7 @@ else
 fi
 
 CMAKE_BLAS_OPTIONS=""
-if [[ $CLUSTER == ray ]]; then
+if [[ $CORAL == 1 ]]; then
 	CMAKE_BLAS_OPTIONS+=" -D LBANN_SB_BUILD_OPENBLAS=OFF"
 	CMAKE_BLAS_OPTIONS+=" -D LBANN_SB_FWD_HYDROGEN_BLAS_LIBRARIES=/usr/tcetmp/packages/essl/essl-6.1.0-1/lib64/libessl.so\;/usr/lib64/liblapack.so.3\;/usr/lib64/libblas.so.3"
 	CMAKE_BLAS_OPTIONS+=" -D LBANN_SB_FWD_LBANN_BLAS_LIBRARIES=/usr/tcetmp/packages/essl/essl-6.1.0-1/lib64/libessl.so\;/usr/lib64/liblapack.so.3\;/usr/lib64/libblas.so.3"
