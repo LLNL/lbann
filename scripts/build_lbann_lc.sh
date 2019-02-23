@@ -72,6 +72,8 @@ ALUMINUM_WITH_NCCL=ON
 AVOID_CUDA_AWARE_MPI=OFF
 WITH_CONDUIT=OFF
 WITH_DISTCONV=OFF
+DISTCONV_URL=ssh://git@cz-bitbucket.llnl.gov:7999/~maruyama/distconv.git
+DISTCONV_TAG=master
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
@@ -276,6 +278,14 @@ while :; do
             ;;
 		--with-distconv)
 			WITH_DISTCONV=ON
+			;;
+		--distconv-url)
+			DISTCONV_URL=$2
+			shift
+			;;
+		--distconv-tag)
+			DISTCONV_TAG=$2
+			shift
 			;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
@@ -830,6 +840,8 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D LBANN_SB_BUILD_DISTCONV=${WITH_DISTCONV} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
+-D DISTCONV_URL=${DISTCONV_URL} \
+-D DISTCONV_TAG=${DISTCONV_TAG} \
 -D LBANN_SB_BUILD_P2P=${WITH_DISTCONV} \
 -D LBANN_WITH_P2P=${WITH_DISTCONV} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
