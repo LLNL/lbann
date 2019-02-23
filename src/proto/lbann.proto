@@ -772,7 +772,6 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 315;
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -1086,12 +1085,6 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
-}
-
-
-message Zero {
-  bool first_half=1; //default: true
-  bool second_half=2; //default: true
 }
 
 message Reduction {
