@@ -99,6 +99,8 @@ using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;
 
+using ::distconv::get_sample_dim;
+
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm);
 
 /** Initialize Distconv

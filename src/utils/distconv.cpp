@@ -141,7 +141,7 @@ int get_number_of_local_ranks(MPI_Comm comm) {
 // P2P is only supported intra-node shuffling.
 bool is_p2p_shuffle_feasible(const TensorDev &tensor) {
   const auto &dist = tensor.get_distribution();
-  auto sample_proc_groups = dist.get_locale_shape().back();
+  auto sample_proc_groups = dist.get_locale_shape()[dc::get_sample_dim()];
   auto sample_size = tensor.get_shape().back();
   // Condition: The number of samples must be divisible by the size of
   // sample process groups

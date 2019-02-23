@@ -364,7 +364,7 @@ protected:
               num_channels);
 
     dc::Array4 per_channel_stat_shape = {1, 1, num_channels, 1};
-    dc::Dist shared_dist(dists[0].get_locale_shape());
+    auto shared_dist = dc::Dist::make_distribution(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();
     // set all dimensions to be 1 except for the channel dimension
     auto pc = split_shape[-2];

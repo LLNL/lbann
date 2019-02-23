@@ -429,7 +429,8 @@ protected:
 
     // assumes no partitioning on channel/filter dimensions
     assert_eq(dists[0].get_split_shape()[-2], 1);
-    dc::Dist shared_dist(dists[0].get_locale_shape(), 1, 0, 0);
+    auto shared_dist = dc::Dist::make_shared_distribution(
+        dists[0].get_locale_shape());
 
     std::vector<int> kernel_shape = this->m_kernel_dims;
     std::reverse(kernel_shape.begin(), kernel_shape.end());

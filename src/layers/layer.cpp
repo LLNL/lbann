@@ -1466,13 +1466,15 @@ void Layer::setup_tensor_distribution_init(
   Array4 input_locale_shape({w, h, c, n});
   Array4 input_split_shape({ps.width_splits, ps.height_splits,
           ps.channel_splits, ps.sample_splits});
-  Dist prev_activations_dist =  Dist(input_locale_shape, input_split_shape, 0, 0);
+  auto prev_activations_dist =  Dist::make_shared_distribution(
+      input_locale_shape, input_split_shape);
   Array4 output_locale_shape({w, h, f, n});
   Array4 output_split_shape({ps.width_splits, ps.height_splits,
           ps.filter_splits, ps.sample_splits});
-  Dist activations_dist =  Dist(output_locale_shape, output_split_shape, 0, 0);
-  Dist prev_error_signals_dist =  activations_dist;
-  Dist error_signals_dist =  prev_activations_dist;
+  auto activations_dist = Dist::make_shared_distribution(
+      output_locale_shape, output_split_shape);
+  auto prev_error_signals_dist = activations_dist;
+  auto error_signals_dist = prev_activations_dist;
   std::array<Dist, 4> layer_dists = {prev_activations_dist,
                                      activations_dist,
                                      error_signals_dist,
@@ -1543,8 +1545,8 @@ Dist get_hydrogen_matrix_distribution() {
            dc::get_mpi_num_ranks() / dc::get_rank_stride())};
   Array4 sample_split_shape = sample_locale_shape;
   sample_split_shape[0] = 1;
-  Dist sample_dist(sample_locale_shape, sample_split_shape,
-                   0, 0);
+  auto sample_dist = Dist::make_shared_distribution
+      (sample_locale_shape, sample_split_shape);
   return sample_dist;
 }
 } // namespace
