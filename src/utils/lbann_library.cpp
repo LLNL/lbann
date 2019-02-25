@@ -197,7 +197,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
     for (auto&& r : data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(model, pb_model->mini_batch_size());
+      r.second->setup_data_store(ret_model.get(), pb_model->mini_batch_size());
     }
   }
 
