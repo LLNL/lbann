@@ -138,7 +138,10 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   }
   if (scale == DataType(0)) { return; }
 
-  // Make a view or copy of input matrix in correct distribution
+  // Make sure input matrix is in correct distribution
+  // Note: If input matrix is already in correct distribution, just
+  // make a matrix view. Otherwise redistribute and possibly allreduce
+  // the matrix.
   m_gradient_v->Empty();
   m_gradient_v->AlignWith(*m_gradient);
   if (m_gradient_v->DistData() == gradient.DistData()) {

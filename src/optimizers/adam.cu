@@ -30,20 +30,20 @@ namespace lbann {
 
 namespace {
 
-__global__ void noncontiguous_kernel(size_t height,
-                                     size_t width,
-                                     DataType correction,
-                                     DataType eps,
-                                     DataType beta1,
-                                     DataType beta2,
-                                     DataType * __restrict__ values,
-                                     size_t values_ldim,
-                                     const DataType * __restrict__ gradient,
-                                     size_t gradient_ldim,
-                                     DataType * __restrict__ moment1,
-                                     size_t moment1_ldim,
-                                     DataType * __restrict__ moment2,
-                                     size_t moment2_ldim) {
+__global__ void adam_noncontiguous_kernel(size_t height,
+                                          size_t width,
+                                          DataType correction,
+                                          DataType eps,
+                                          DataType beta1,
+                                          DataType beta2,
+                                          DataType * __restrict__ values,
+                                          size_t values_ldim,
+                                          const DataType * __restrict__ gradient,
+                                          size_t gradient_ldim,
+                                          DataType * __restrict__ moment1,
+                                          size_t moment1_ldim,
+                                          DataType * __restrict__ moment2,
+                                          size_t moment2_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < height * width) {
     const auto& row = gid % height;
@@ -58,15 +58,15 @@ __global__ void noncontiguous_kernel(size_t height,
   }
 }
 
-__global__ void contiguous_kernel(size_t size,
-                                  DataType correction,
-                                  DataType eps,
-                                  DataType beta1,
-                                  DataType beta2,
-                                  DataType * __restrict__ values,
-                                  const DataType * __restrict__ gradient,
-                                  DataType * __restrict__ moment1,
-                                  DataType * __restrict__ moment2) {
+__global__ void adam_contiguous_kernel(size_t size,
+                                       DataType correction,
+                                       DataType eps,
+                                       DataType beta1,
+                                       DataType beta2,
+                                       DataType * __restrict__ values,
+                                       const DataType * __restrict__ gradient,
+                                       DataType * __restrict__ moment1,
+                                       DataType * __restrict__ moment2) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     const auto& g = gradient[gid] + eps;
@@ -103,12 +103,12 @@ void adam::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   auto&& stream = El::GPUManager::Stream();
   if (values.Contiguous() && gradient.Contiguous()
       && m_moment1->Contiguous() && m_moment2->Contiguous()) {
-    contiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+    adam_contiguous_kernel<<<grid_size, block_size, 0, stream>>>(
       local_size, correction, m_eps, m_beta1, m_beta2,
       values.Buffer(), gradient.LockedBuffer(),
       m_moment1->Buffer(), m_moment2->Buffer());
   } else {
-    noncontiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+    adam_noncontiguous_kernel<<<grid_size, block_size, 0, stream>>>(
       local_height, local_width, correction, m_eps, m_beta1, m_beta2,
       values.Buffer(), values.LDim(),
       gradient.LockedBuffer(), gradient.LDim(),

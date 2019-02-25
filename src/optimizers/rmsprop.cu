@@ -31,17 +31,17 @@ namespace lbann {
 
 namespace {
 
-__global__ void kernel(size_t height,
-                       size_t width,
-                       DataType learning_rate,
-                       DataType decay_rate,
-                       DataType eps,
-                       DataType * __restrict__ values,
-                       size_t values_ldim,
-                       const DataType * __restrict__ gradient,
-                       size_t gradient_ldim,
-                       DataType * __restrict__ cache,
-                       size_t cache_ldim) {
+__global__ void rmsprop_kernel(size_t height,
+                               size_t width,
+                               DataType learning_rate,
+                               DataType decay_rate,
+                               DataType eps,
+                               DataType * __restrict__ values,
+                               size_t values_ldim,
+                               const DataType * __restrict__ gradient,
+                               size_t gradient_ldim,
+                               DataType * __restrict__ cache,
+                               size_t cache_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = gridDim.x * blockDim.x;
   for (size_t pos = gid; pos < height * width; pos += nthreads) {
@@ -65,7 +65,7 @@ void rmsprop::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
     constexpr size_t block_size = 256;
     const size_t grid_size = (local_size + block_size - 1) / block_size;
     auto&& stream = El::GPUManager::Stream();
-    kernel<<<grid_size, block_size, 0, stream>>>(
+    rmsprop_kernel<<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       this->get_learning_rate(), m_decay_rate, m_eps,
       values.Buffer(), values.LDim(),
