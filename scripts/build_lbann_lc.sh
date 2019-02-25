@@ -583,7 +583,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda9.2_ppc64le
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_ppc64le
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 	else
