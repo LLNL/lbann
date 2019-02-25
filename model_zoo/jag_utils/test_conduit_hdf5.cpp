@@ -49,7 +49,7 @@ void get_image_names(std::unordered_set<std::string> &s);
 //==========================================================================
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   const int np = comm->get_procs_in_world();
 
@@ -119,7 +119,6 @@ int main(int argc, char *argv[]) {
       }
     }
 
-  finalize(comm);
   return 0;
 }
 
