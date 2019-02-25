@@ -38,7 +38,7 @@ namespace lbann {
  */
 class sgd : public optimizer {
 
- public:
+public:
 
   sgd(lbann_comm *comm,
       DataType learning_rate,
@@ -55,9 +55,9 @@ class sgd : public optimizer {
   /** Human-readable description. */
   description get_description() const override;
 
-  /** Velocity for momentum optimizer. */
+  /** Accumulated gradients for momentum optimizer. */
   const AbsDistMat& get_velocity() const;
-  /** Velocity for momentum optimizer. */
+  /** Accumulated gradients for momentum optimizer. */
   AbsDistMat& get_velocity();
 
   void setup(weights* w = nullptr) override;
@@ -69,11 +69,15 @@ protected:
 
 private:
 
-  /** Momentum. */
+  /** @brief Decay rate for gradient accumulation.
+   *  @detailed A momentum of zero corresponds to vanilla SGD.
+   */
   DataType m_momentum;
-  /** Nesterov acceleration. */
+  /** Whether to apply Nesterov acceleration. */
   bool m_nesterov;
-  /** Velocity for momentum optimizer. */
+  /** @brief Accumulated gradients.
+   *  @detailed Not used for vanilla SGD.
+   */
   std::unique_ptr<AbsDistMat> m_velocity;
 
   /** CPU implementation of momentum or Nesterov step. */

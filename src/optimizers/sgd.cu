@@ -30,24 +30,39 @@ namespace lbann {
 
 namespace {
 
-__global__ void momentum_kernel(size_t height,
-                                size_t width,
-                                DataType learning_rate,
-                                DataType momentum,
-                                DataType * __restrict__ values,
-                                size_t values_ldim,
-                                const DataType * __restrict__ gradient,
-                                size_t gradient_ldim,
-                                DataType * __restrict__ velocity,
-                                size_t velocity_ldim) {
+__global__ void momentum_noncontiguous_kernel(size_t height,
+                                              size_t width,
+                                              DataType learning_rate,
+                                              DataType momentum,
+                                              DataType * __restrict__ values,
+                                              size_t values_ldim,
+                                              const DataType * __restrict__ gradient,
+                                              size_t gradient_ldim,
+                                              DataType * __restrict__ velocity,
+                                              size_t velocity_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const size_t nthreads = gridDim.x * blockDim.x;
-  for (size_t pos = gid; pos < height * width; pos += nthreads) {
-    const auto& row = pos % height;
-    const auto& col = pos / height;
+  if (gid < height * width) {
+    const auto& row = gid % height;
+    const auto& col = gid / height;
     const auto& g = gradient[row + col * gradient_ldim];
     auto& v = velocity[row + col * velocity_ldim];
     auto& x = values[row + col * values_ldim];
+    v = momentum * v + g;
+    x -= learning_rate * v;
+  }
+}
+
+__global__ void momentum_contiguous_kernel(size_t size,
+                                           DataType learning_rate,
+                                           DataType momentum,
+                                           DataType * __restrict__ values,
+                                           const DataType * __restrict__ gradient,
+                                           DataType * __restrict__ velocity) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if (gid < size) {
+    const auto& g = gradient[gid];
+    auto& v = velocity[gid];
+    auto& x = values[gid];
     v = momentum * v + g;
     x -= learning_rate * v;
   }
@@ -98,12 +113,19 @@ void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
       gradient.LockedBuffer(), gradient.LDim(),
       m_velocity->Buffer(), m_velocity->LDim());
   } else {
-    momentum_kernel<<<grid_size, block_size, 0, stream>>>(
-      local_height, local_width,
-      this->get_learning_rate(), m_momentum,
-      values.Buffer(), values.LDim(),
-      gradient.LockedBuffer(), gradient.LDim(),
-      m_velocity->Buffer(), m_velocity->LDim());
+    if (values.Contiguous() && gradient.Contiguous()
+        && m_velocity->Contiguous()) {
+      momentum_contiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+        local_size, this->get_learning_rate(), m_momentum,
+        values.Buffer(), gradient.LockedBuffer(), m_velocity->Buffer());
+    } else {
+      momentum_noncontiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+        local_height, local_width,
+        this->get_learning_rate(), m_momentum,
+        values.Buffer(), values.LDim(),
+        gradient.LockedBuffer(), gradient.LDim(),
+        m_velocity->Buffer(), m_velocity->LDim());
+    }
   }
 
 }
