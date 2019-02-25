@@ -250,10 +250,6 @@ class generic_input_layer : public io_layer {
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_mode();
 
-    /// support for data_store out-of-memory mode; this instructs
-    /// the data_store (via the data_reader) to read in the
-    /// next mb from file, then exchange data as needed
-    get_data_reader()->init_minibatch();
     increment_active_buffer_idx(mode);
 
     generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];

@@ -168,7 +168,7 @@ std::unique_ptr<model> build_model_from_prototext(
   // share a single copy. See data_reader_jag_conduit_hdf5 for example
   if (first_model) {
     if (opts->has_string("share_data_reader_data")) {
-      for (auto t : data_readers) {
+      for (auto&& t : data_readers) {
         opts->set_ptr((void*)t.second);
       }
     }
@@ -195,12 +195,11 @@ std::unique_ptr<model> build_model_from_prototext(
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }
-    for (auto r : data_readers) {
+    for (auto&& r : data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(ret_model.get());
+      r.second->setup_data_store(model, pb_model->mini_batch_size());
     }
   }
-
 
   // restart model from checkpoint if we have one
   //@todo

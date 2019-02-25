@@ -318,7 +318,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "jag_conduit") || (name == "jag_conduit_hdf5") ||
+  if ((name == "imagenet") || (name == "jag_conduit") || 
       (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images") ||
       (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
@@ -354,17 +354,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   } else if (name == "moving_mnist") {
     reader = new moving_mnist_reader(7, 40, 40, 2);
 #ifdef LBANN_HAS_CONDUIT
-  } else if (name =="jag_conduit_hdf5") {
-    data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
-    const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
-    reader_jag->set_image_dims(width, height);
-    reader_jag->set_scalar_keys(pb_schema.scalar_keys());
-    reader_jag->set_input_keys(pb_schema.input_keys());
-    reader_jag->set_image_views(pb_schema.image_views());
-    reader_jag->set_image_channels(pb_schema.image_channels());
-    reader = reader_jag;
-    if (master) std::cout << reader->get_type() << " is set" << std::endl;
-    return;
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();

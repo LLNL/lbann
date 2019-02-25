@@ -37,6 +37,8 @@ constexpr int prof_colors[num_prof_colors] = {
   0x22AA99, 0xAAAA11, 0x6633CC, 0xE67300, 0x8B0707, 0x329262,
   0x5574A6, 0x3B3EAC};
 
+void prof_start();
+void prof_stop();
 void prof_region_begin(const char *s, int c, bool sync);
 void prof_region_end(const char *s, bool sync);
 

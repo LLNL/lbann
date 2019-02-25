@@ -130,7 +130,7 @@ void generic_data_store::get_my_datastore_indices() {
   }
 }
 
-void generic_data_store::setup() {
+void generic_data_store::setup(int mini_batch_size) {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
@@ -144,6 +144,7 @@ void generic_data_store::setup() {
     return;
   }
 
+  #if 0
   // get the set of global indices used by this processor in
   // generic_data_reader::fetch_data(). Note that these are
   // "original' indices, not shuffled indices, i.e, these indices
@@ -168,7 +169,7 @@ void generic_data_store::setup() {
   if (m_master) {
     std::cerr << "my num minibatch indices: " << m_my_minibatch_indices->size() << "\n";
   }
-
+#endif
 }
 
 void generic_data_store::print_partitioned_indices() {
@@ -314,12 +315,6 @@ void generic_data_store::exchange_partitioned_indices() {
         m_all_partitioned_indices[p][i].push_back(*ww++);
       }
     }
-  }
-}
-
-void generic_data_store::init_minibatch() {
-  if (! m_in_memory) {
-    fetch_data();
   }
 }
 
