@@ -57,29 +57,31 @@
 namespace lbann {
 namespace dc {
 
+static constexpr num_dims = 4; // TODO: set 4 or 5 via DISTCONV_NUM_DIMS
+
 ////////////////////////////////////////////////////////////
 // Helper type aliases
 ////////////////////////////////////////////////////////////
-using Array4 = ::distconv::tensor::Array<4>;
+using ArrayND = ::distconv::tensor::Array<num_dims>;
 
 using TensorHost = ::distconv::tensor::Tensor<
-  4, DataType, ::distconv::tensor::LocaleMPI,
+  num_dims, DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
 using TensorDev = ::distconv::tensor::Tensor<
-  4, DataType, ::distconv::tensor::LocaleMPI,
+  num_dims, DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
 using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<
-  4, DataType>;
+  num_dims, DataType>;
 using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<
-  4, DataType>;
+  num_dims, DataType>;
 using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
-  4, DataType>;
+  num_dims, DataType>;
 using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
-  4, DataType>;
+  num_dims, DataType>;
 
-using Dist = ::distconv::tensor::Distribution<4>;
+using Dist = ::distconv::tensor::Distribution<num_dims>;
 
 using LocaleMPI = ::distconv::tensor::LocaleMPI;
 
@@ -92,8 +94,8 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
-using Convolution = ::distconv::Convolution<Backend, 4, DataType>;
-using Pooling = ::distconv::Pooling<Backend, 4, DataType>;
+using Convolution = ::distconv::Convolution<Backend, num_dims, DataType>;
+using Pooling = ::distconv::Pooling<Backend, num_dims, DataType>;
 using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
 
 namespace tensor = ::distconv::tensor;

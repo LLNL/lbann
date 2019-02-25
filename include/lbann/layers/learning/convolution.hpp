@@ -148,6 +148,7 @@ public:
       LBANN_ERROR(err.str());
     }
 
+    // FIXME: distconv-3d
     // Initialize output tensor dimensions
     output_dims[0] = output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
@@ -336,30 +337,31 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
  public:
 
-  dc::Array4 get_prev_activations_overlap() const override {
+  dc::ArrayND get_prev_activations_overlap() const override {
     if (this->distconv_enabled()) {
+      // FIXME: distconv-3d
       int stencil_h = (this->m_kernel_dims[2] - 1) / 2;
       int stencil_w = (this->m_kernel_dims[3] - 1) / 2;
-      return dc::Array4({stencil_w, stencil_h, 0, 0});
+      return dc::ArrayND({stencil_w, stencil_h, 0, 0});
     } else {
-      return dc::Array4(0);
+      return dc::ArrayND(0);
     }
   }
 
-  dc::Array4 get_activations_overlap() const override {
-    return dc::Array4(0);
+  dc::ArrayND get_activations_overlap() const override {
+    return dc::ArrayND(0);
   }
 
-  dc::Array4 get_prev_error_signals_overlap() const override {
+  dc::ArrayND get_prev_error_signals_overlap() const override {
     if (this->distconv_enabled()) {
       return get_prev_activations_overlap();
     } else {
-      return dc::Array4(0);
+      return dc::ArrayND(0);
     }
   }
 
-  dc::Array4 get_error_signals_overlap() const override {
-    return dc::Array4(0);
+  dc::ArrayND get_error_signals_overlap() const override {
+    return dc::ArrayND(0);
   }
 
   void setup_tensor_distribution_init(
@@ -370,11 +372,12 @@ protected:
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
     if (this->distconv_enabled()) {
+      // FIXME: distconv-3d
       int stencil_h = (this->m_kernel_dims[2] - 1) / 2
           * this->m_dilations[0];
       int stencil_w = (this->m_kernel_dims[3] - 1) / 2
           * this->m_dilations[1];
-      dc::Array4 overlap(0);
+      dc::ArrayND overlap(0);
       if (this->get_parallel_strategy().width_splits > 1) {
         overlap[0] = stencil_w;
       }
@@ -398,14 +401,14 @@ protected:
     }
   }
 
-  dc::Array4 get_activations_tensor_local_shape() const override {
+  dc::ArrayND get_activations_tensor_local_shape() const override {
     std::vector<int> filter_dims = this->m_kernel_dims;
     std::reverse(filter_dims.begin(), filter_dims.end());
     std::vector<int> strides = this->m_strides;
     std::reverse(strides.begin(), strides.end());
     std::vector<int> dilations = this->m_dilations;
     std::reverse(dilations.begin(), dilations.end());
-    const dc::Array4 output_spatial_local_shape =
+    const dc::ArrayND output_spatial_local_shape =
         ::distconv::get_convolution_output_local_tensor_shape(
             this->m_prev_activations_t,
             filter_dims, strides, true, dilations,
@@ -417,6 +420,7 @@ protected:
     using namespace dc;
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
+    // FIXME: distconv-3d
 
     std::stringstream ss;
     util::print_vector(ss, this->m_kernel_dims.begin(), this->m_kernel_dims.end());
@@ -451,7 +455,7 @@ protected:
         << dc::util::tostring(this->m_bias_cudnn_desc)
         << ", bias factor: " << this->m_bias_scaling_factor;
     if (this->m_bias_scaling_factor != DataType(0)) {
-      Array4 bias_shape = {1, 1, this->get_output_dims()[0], 1};
+      ArrayND bias_shape = {1, 1, this->get_output_dims()[0], 1};
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
       assert0(tensor::View(m_bias_t,
                            this->get_weights()[1]->get_values().LockedBuffer()));
@@ -526,6 +530,7 @@ protected:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
+    // FIXME: distconv-3d
     if (!(this->m_kernel_dims[2] == this->m_kernel_dims[3] &&
           this->m_kernel_dims[2] == this->m_pads[0] / this->m_dilations[0] * 2 + 1 &&
           this->m_kernel_dims[3] == this->m_pads[1] / this->m_dilations[1] * 2 + 1)) {

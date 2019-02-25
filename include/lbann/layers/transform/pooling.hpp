@@ -213,6 +213,7 @@ public:
 protected:
 
   void setup_dims() override {
+    // FIXME: distconv-3d
     transform_layer::setup_dims();
     const auto& input_dims = get_input_dims();
     auto output_dims = input_dims;
@@ -573,10 +574,11 @@ private:
       std::set<dc::Dist*> &fixed) override {
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
+    // FIXME: distconv-3d
     if (distconv_enabled()) {
       int stencil_h = (m_pool_dims[0] - 1) / 2;
       int stencil_w = (m_pool_dims[1] - 1) / 2;
-      dc::Array4 overlap(0);
+      dc::ArrayND overlap(0);
       if (get_parallel_strategy().width_splits > 1) {
         overlap[0] = stencil_w;
       }
@@ -604,16 +606,17 @@ private:
           &error_signals_dist);
     }
   }
-  dc::Array4 get_strides() const override {
-    return dc::Array4({m_strides[1], m_strides[0], 1, 1});
+  dc::ArrayND get_strides() const override {
+    return dc::ArrayND({m_strides[1], m_strides[0], 1, 1});
   }
 
-  dc::Array4 get_activations_tensor_local_shape() const override {
+  dc::ArrayND get_activations_tensor_local_shape() const override {
+    // FIXME: distconv-3d
     const std::vector<int> filter_dims = {m_pool_dims[1], m_pool_dims[0]};
     const std::vector<int> strides = {m_strides[1], m_strides[0]};
     const std::vector<int> dilations = {1, 1};
     bool use_padding = m_pads[0] != 0;
-    dc::Array4 output_spatial_local_shape =
+    dc::ArrayND output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
             m_prev_activations_t,
             filter_dims, strides, use_padding, dilations);
@@ -624,6 +627,7 @@ private:
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
+    // FIXME: distconv-3d
     dc::MPIPrintStreamDebug()
         << "pooling: setup_tensors."
         << " pads: " << m_pads[0] << "x" << m_pads[1]
@@ -691,6 +695,7 @@ private:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
+    // FIXME: distconv-3d
     if (!(m_pool_dims[0] % 2 != 0 && m_pool_dims[1] % 2 != 0)) {
       dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape: "
                                 << m_pool_dims[0] << "x" << m_pool_dims[1];

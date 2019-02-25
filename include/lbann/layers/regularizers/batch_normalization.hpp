@@ -363,7 +363,8 @@ protected:
     assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
               num_channels);
 
-    dc::Array4 per_channel_stat_shape = {1, 1, num_channels, 1};
+    // FIXME: distconv-3d
+    dc::ArrayND per_channel_stat_shape = {1, 1, num_channels, 1};
     auto shared_dist = dc::Dist::make_distribution(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();
     // set all dimensions to be 1 except for the channel dimension
@@ -409,6 +410,7 @@ protected:
   void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!distconv_enabled()) return;
+    // FIXME: distconv-3d
 
     setup_prev_error_signals_tensor(dists);
     setup_error_signals_tensor(dists);
