@@ -42,7 +42,7 @@ namespace lbann {
    */
   class numpy_npz_reader : public generic_data_reader {
   public:
-    numpy_npz_reader(const bool shuffle);
+    numpy_npz_reader(const bool shuffle, const bool placeholder);
     // These need to be explicit because of some issue with the cnpy copy
     // constructor/assignment operator not linking correctly otherwise.
     numpy_npz_reader(const numpy_npz_reader&);
@@ -102,6 +102,10 @@ namespace lbann {
     // A constant to be multiplied when data is converted
     // from int16 to DataType.
     DataType m_scaling_factor_int16 = 1.0;
+
+    /// if true, the data reader does not hold the actual data.
+    /// This will cause an exception if fetch_datum is called.
+    bool m_placeholder = false;
 
   private:
     // Keys to retrieve data, labels, responses from a given .npz file.

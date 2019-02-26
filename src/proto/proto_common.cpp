@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <sys/stat.h>
+#include <cassert>
 
 namespace lbann {
 
@@ -189,7 +190,7 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
     } else if (name == "numpy_npz") {
-      auto* reader_numpy_npz = new numpy_npz_reader(shuffle);
+      auto* reader_numpy_npz = new numpy_npz_reader(shuffle, false);
       reader_numpy_npz->set_has_labels(!readme.disable_labels());
       reader_numpy_npz->set_has_responses(!readme.disable_responses());
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
@@ -215,7 +216,15 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
         } else if (readme.format() == "numpy_npz") {
-          auto* reader_numpy_npz = new numpy_npz_reader(false);
+          bool placeholder = false;
+          if(readme.local_shuffle()) {
+            assert(comm->get_num_trainers() == 1);
+            assert(paths.size() % comm->get_procs_per_trainer() == 0);
+            const unsigned int npz_index = std::distance(paths.begin(), i);
+            placeholder = !(npz_index >= paths.size()/comm->get_procs_per_trainer()*comm->get_rank_in_trainer()
+                            && npz_index < paths.size()/comm->get_procs_per_trainer()*(comm->get_rank_in_trainer()+1));
+          }
+          auto* reader_numpy_npz = new numpy_npz_reader(false, placeholder);
           reader_numpy_npz->set_data_filename(path);
           reader_numpy_npz->set_has_labels(!readme.disable_labels());
           reader_numpy_npz->set_has_responses(!readme.disable_responses());
@@ -320,6 +329,8 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
         throw lbann_exception(err.str());
       }
     }
+
+    reader->set_local_shuffle(readme.local_shuffle());
     reader->set_comm(comm);
 
     if (readme.data_filename() != "") {

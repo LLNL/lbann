@@ -96,6 +96,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_partition_overlap(0),
     m_partition_mode(0),
     m_procs_per_partition(1),
+    m_local_shuffle(false),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
     m_model(nullptr)
@@ -711,6 +712,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// have identical shuffled indices
   virtual void post_update() {}
 
+  void set_local_shuffle(const bool local_shuffle) {
+    m_local_shuffle = local_shuffle;
+  }
+
  protected:
 
   /**
@@ -871,6 +876,13 @@ class generic_data_reader : public lbann_image_preprocessor {
    /// only relevant if m_is_partitioned = true.  Currently this is same as
    /// comm->get_procs_per_trainer)
    int m_procs_per_partition;
+
+   /// if true, each shuffled index will be in the range of
+   /// [num_data/proc_size*proc_rank, num_data/proc_size*(proc_rank+1))
+   /// if index % proc_size == proc_rank, or -1 otherwise.
+   /// This enables each process to shuffle the dataset locally,
+   /// and avoid accessing the entire dataset.
+   bool m_local_shuffle;
 
   std::vector<std::vector<char>> m_thread_buffer;
 

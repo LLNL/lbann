@@ -31,17 +31,19 @@
 #include <string>
 #include <unordered_set>
 #include <cnpy.h>
+#include <cassert>
 
 namespace lbann {
   const std::string numpy_npz_reader::NPZ_KEY_DATA = "data";
   const std::string numpy_npz_reader::NPZ_KEY_LABELS = "labels";
   const std::string numpy_npz_reader::NPZ_KEY_RESPONSES = "responses";
 
-  numpy_npz_reader::numpy_npz_reader(const bool shuffle)
+numpy_npz_reader::numpy_npz_reader(const bool shuffle, const bool placeholder)
     : generic_data_reader(shuffle),
       m_num_samples(0),
       m_num_features(0),
-      m_num_response_features(0) {}
+      m_num_response_features(0),
+      m_placeholder(placeholder) {}
 
   numpy_npz_reader::numpy_npz_reader(const numpy_npz_reader& other) :
     generic_data_reader(other),
@@ -54,7 +56,8 @@ namespace lbann {
     m_data(other.m_data),
     m_labels(other.m_labels),
     m_responses(other.m_responses),
-    m_scaling_factor_int16(other.m_scaling_factor_int16) {}
+    m_scaling_factor_int16(other.m_scaling_factor_int16),
+    m_placeholder(other.m_placeholder) {}
 
   numpy_npz_reader& numpy_npz_reader::operator=(const numpy_npz_reader& other) {
     generic_data_reader::operator=(other);
@@ -68,6 +71,7 @@ namespace lbann {
     m_labels = other.m_labels;
     m_responses = other.m_responses;
     m_scaling_factor_int16 = other.m_scaling_factor_int16;
+    m_placeholder = other.m_placeholder;
     return *this;
   }
 
@@ -158,9 +162,14 @@ namespace lbann {
     m_shuffled_indices.resize(m_num_samples);
     std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
     select_subset_of_data();
+
+    if(m_placeholder)
+      m_data.data_holder = nullptr;
   }
 
   bool numpy_npz_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+    assert(!m_placeholder);
+
     Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
 
     if (m_data.word_size == 2) {
