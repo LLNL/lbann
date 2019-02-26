@@ -56,11 +56,15 @@ class data_reader_merge_samples : public generic_compound_data_reader {
   void load() override;
 
   int get_num_labels() const override { return m_data_readers[0]->get_num_labels(); }
+  int get_num_responses() const override { return m_data_readers[0]->get_num_responses(); }
   int get_linearized_data_size() const override {
     return m_data_readers[0]->get_linearized_data_size();
   }
   int get_linearized_label_size() const override {
     return m_data_readers[0]->get_linearized_label_size();
+  }
+  int get_linearized_response_size() const override {
+    return m_data_readers[0]->get_linearized_response_size();
   }
   const std::vector<int> get_data_dims() const override {
     return m_data_readers[0]->get_data_dims();

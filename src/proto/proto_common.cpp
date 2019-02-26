@@ -188,6 +188,12 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       reader_numpy->set_has_labels(!readme.disable_labels());
       reader_numpy->set_has_responses(!readme.disable_responses());
       reader = reader_numpy;
+    } else if (name == "numpy_npz") {
+      auto* reader_numpy_npz = new numpy_npz_reader(shuffle);
+      reader_numpy_npz->set_has_labels(!readme.disable_labels());
+      reader_numpy_npz->set_has_responses(!readme.disable_responses());
+      reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
+      reader = reader_numpy_npz;
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
@@ -199,7 +205,8 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       }
       auto paths = glob(filedir + readme.data_file_pattern());
       std::vector<generic_data_reader*> npy_readers;
-      for (const auto path : paths) {
+      for(auto i = paths.begin(); i != paths.end(); i++) {
+        const auto path = *i;
         if(master) { std::cout << "Loading file: " << path << std::endl; }
         if (readme.format() == "numpy") {
           auto *reader_numpy = new numpy_reader(false);
@@ -207,6 +214,13 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
           reader_numpy->set_has_labels(!readme.disable_labels());
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
+        } else if (readme.format() == "numpy_npz") {
+          auto* reader_numpy_npz = new numpy_npz_reader(false);
+          reader_numpy_npz->set_data_filename(path);
+          reader_numpy_npz->set_has_labels(!readme.disable_labels());
+          reader_numpy_npz->set_has_responses(!readme.disable_responses());
+          reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
+          npy_readers.push_back(reader_numpy_npz);
 #ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
