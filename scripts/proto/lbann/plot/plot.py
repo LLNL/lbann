@@ -66,8 +66,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
 
         # Total number of processes
         def parse_num(d, key):
-            if key in d.keys():
-                assert len(set(d[key])) == 1
+            if key in d.keys() and len(set(d[key])) == 1:
                 return d[key][0]
             else:
                 return None
@@ -79,6 +78,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
             num_nodes = int(num_procs / num_procs_on_node)
         else :
             num_nodes = None
+            print('WARNING: No process counts are provided.')
 
         # Total epochs of training
         total_epochs = len(d['val_time'])
