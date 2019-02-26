@@ -292,7 +292,7 @@ __global__ void backprop2_kernel(
 }
 
 } // namespace
-  
+
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   constexpr DataType one = 1;
@@ -301,7 +301,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
   auto&& stream = El::GPUManager::Stream();
-  
+
   // Matrices
   const auto& input = get_prev_activations();
   const auto& local_input = input.LockedMatrix();
@@ -401,7 +401,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
         local_scale.LockedBuffer(), local_bias.LockedBuffer(),
         local_output.Buffer(), local_output.LDim());
   }
-  
+
 }
 
 template <>
@@ -484,13 +484,15 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   }
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient_staging(*m_scale_gradient,
-                                             one / effective_mini_batch_size);
+    scale_optimizer->add_to_gradient(*m_scale_gradient,
+                                     one / effective_mini_batch_size,
+                                     true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient_staging(*m_bias_gradient,
-                                            one / effective_mini_batch_size);
+    bias_optimizer->add_to_gradient(*m_bias_gradient,
+                                    one / effective_mini_batch_size,
+                                    true);
   }
 
   // Compute error signal
@@ -526,7 +528,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
         local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
         local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
-  
+
 }
-  
+
 } // namespace lbann

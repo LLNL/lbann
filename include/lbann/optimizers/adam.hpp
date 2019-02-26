@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZERS_ADAM_HPP
-#define LBANN_OPTIMIZERS_ADAM_HPP
+#ifndef LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 
@@ -41,13 +41,11 @@ namespace lbann {
 class adam : public optimizer {
 public:
 
-  /** Constructor. */
-  adam(lbann_comm *comm,
+  adam(lbann_comm* comm,
        DataType learning_rate,
        DataType beta1 = 0.9,
        DataType beta2 = 0.99,
        DataType eps = 1e-8);
-
   adam(const adam& other);
   adam& operator=(const adam& other);
   ~adam() = default;
@@ -67,16 +65,13 @@ public:
   /** Second moment estimates. */
   AbsDistMat& get_moment2();
 
-  void setup(weights& w) override;
+  void setup(weights* w = nullptr) override;
 
-  /** Perform the computation in an optimization step. */
+protected:
+
+  /** Computation for an optimization step. */
   void step_compute(AbsDistMat& values,
                     const AbsDistMat& gradient) override;
-#ifdef LBANN_HAS_CUDNN
-  /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(AbsDistMat& values,
-                        const AbsDistMat& gradient) override;
-#endif // LBANN_HAS_CUDNN
 
 private:
 
@@ -97,6 +92,13 @@ private:
 
   /** Hyperparameter exploration. */
   friend class lbann_callback_perturb_adam;
+
+  /** CPU implementation of optimization step. */
+  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+#ifdef LBANN_HAS_CUDA
+  /** GPU implementation of optimization step. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+#endif // LBANN_HAS_CUDA
 
   // ===========================================
   // Checkpointing
@@ -154,4 +156,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZERS_ADAM_HPP
+#endif // LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED

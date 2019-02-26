@@ -631,8 +631,9 @@ protected:
                                                  m_bias_cudnn_desc,
                                                  m_bias_gradient.Buffer()));
       }
-      bias_optimizer->add_to_gradient_staging(m_bias_gradient,
-                                              m_bias_scaling_factor / effective_mini_batch_size);
+      bias_optimizer->add_to_gradient(m_bias_gradient,
+                                      m_bias_scaling_factor / effective_mini_batch_size,
+                                      true);
     }
 
     // Compute kernel gradient
@@ -718,8 +719,9 @@ protected:
       }
 
       // Add gradient contribution
-      kernel_optimizer->add_to_gradient_staging(m_kernel_gradient,
-                                                one / effective_mini_batch_size);
+      kernel_optimizer->add_to_gradient(m_kernel_gradient,
+                                        one / effective_mini_batch_size,
+                                        true);
 
     }
 
@@ -910,8 +912,7 @@ protected:
         local_bias_gradient(channel, 0) = m_bias_scaling_factor * sum;
       }
       const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
-      bias_optimizer->add_to_gradient_staging(m_bias_gradient,
-                                              bias_scale);
+      bias_optimizer->add_to_gradient(m_bias_gradient, bias_scale, true);
     }
 
     // Stop early if kernel is not being optimized
@@ -970,8 +971,9 @@ protected:
 
     // Scale and accumulate gradients
     const DataType kernel_scale = DataType(1) / effective_mini_batch_size;
-    kernel_optimizer->add_to_gradient_staging(m_kernel_gradient,
-                                              kernel_scale);
+    kernel_optimizer->add_to_gradient(m_kernel_gradient,
+                                      kernel_scale,
+                                      true);
 
   }
 

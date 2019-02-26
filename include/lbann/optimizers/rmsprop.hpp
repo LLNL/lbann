@@ -32,14 +32,18 @@
 
 namespace lbann {
 
-/** RMSprop optimizer. */
+/** RMSprop optimizer.
+ *
+ *  See
+ *  https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf.
+ */
 class rmsprop : public optimizer {
 public:
 
-  rmsprop(lbann_comm *comm,
+  rmsprop(lbann_comm* comm,
           DataType learning_rate,
           DataType decay_rate,
-          DataType eps = DataType(1e-8));
+          DataType eps = 1e-8);
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   ~rmsprop() override = default;
@@ -50,15 +54,13 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  /** Setup optimizer. */
-  void setup(weights& w) override;
+  void setup(weights* w = nullptr) override;
 
-  /** Perform the computation in an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
-#ifdef LBANN_HAS_CUDA
-  /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
-#endif // LBANN_HAS_CUDA
+protected:
+
+  /** Computation for an optimization step. */
+  void step_compute(AbsDistMat& values,
+                    const AbsDistMat& gradient) override;
 
 private:
 
@@ -69,9 +71,16 @@ private:
   /** RMSprop cache. */
   std::unique_ptr<AbsDistMat> m_cache;
 
-//************************************************************************
-// Checkpointing
-//************************************************************************
+  /** CPU implementation of optimization step. */
+  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+#ifdef LBANN_HAS_CUDA
+  /** GPU implementation of optimization step. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+#endif // LBANN_HAS_CUDA
+
+  // ===========================================
+  // Checkpointing
+  // ===========================================
 
   struct packing_header {
     DataType decay_rate;
