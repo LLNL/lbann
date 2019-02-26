@@ -41,7 +41,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         run_name_list = stat_name_list
     # Create table for comparing trials
     stat_table = tt.Texttable()
-    headings = ['Trial', 'Num Epochs', 'Avg. Train Time (s)', 'Avg. Val Time (s)']
+    headings = ['Trial', 'Num Procs', 'Num Nodes', 'Num Epochs', 'Avg. Train Time (s)', 'Avg. Val Time (s)']
     if plot_accuracy:
         headings += ['Peak Train Acc', 'Peak Val Acc']
 
@@ -63,6 +63,22 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         else:
             print('ERROR: Invalid file extension: {} from {}\nPlease provide either an LBANN output file with .out or .txt extension or a PyTorch output file with .json extension.'.format(stat_ext, stat_path))
             sys.exit(1)
+
+        # Total number of processes
+        def parse_num(d, key):
+            if key in d.keys():
+                assert len(set(d[key])) == 1
+                return d[key][0]
+            else:
+                return None
+
+        num_procs = parse_num(d, 'num_procs')
+        num_procs_on_node = parse_num(d, 'num_procs_on_node')
+        if num_procs is not None and num_procs_on_node is not None:
+            assert (num_procs % num_procs_on_node) == 0
+            num_nodes = int(num_procs / num_procs_on_node)
+        else :
+            num_nodes = None
 
         # Total epochs of training
         total_epochs = len(d['val_time'])
@@ -100,7 +116,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         stat_dict_list.append((run_name, d))
 
         # Add row to stats table for current trial
-        stat_table.add_row([run_name, total_epochs, avg_train_time, avg_val_time] \
+        stat_table.add_row([run_name, num_procs, num_nodes, total_epochs, avg_train_time, avg_val_time] \
                            + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
                            + [min_train_loss, min_val_loss])
 

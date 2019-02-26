@@ -241,6 +241,7 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
             << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
+            << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
