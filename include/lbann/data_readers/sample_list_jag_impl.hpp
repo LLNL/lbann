@@ -79,10 +79,14 @@ inline sample_list_jag::sample_list_jag()
 
 inline sample_list_jag::~sample_list_jag() {
   // Close the existing open files
-  // for(auto f : m_open_fd_map) {
-  //   conduit::relay::io::hdf5_close_file(f.second);
-  // }
-  // m_open_fd_map.clear();
+  for(auto f : m_sample_id_map) {
+    if(std::get<1>(f) > 0) {
+      conduit::relay::io::hdf5_close_file(std::get<1>(f));
+    }
+    std::get<1>(f) = 0;
+  }
+  m_sample_id_map.clear();
+  m_open_fd_pq.clear();
 }
 
 inline void sample_list_jag::set_num_partitions(size_t n) {

@@ -21,7 +21,7 @@
 #include <cereal/types/utility.hpp>
 #include "conduit/conduit_relay_io_hdf5.hpp"
 
-#define LBANN_MAX_OPEN_DATA_FILES 384
+#define LBANN_MAX_OPEN_DATA_FILES 16
 
 namespace lbann {
 
@@ -197,16 +197,6 @@ class sample_list_jag {
       }
     }
 
-    if(m_open_fd_pq.size() > 100/*LBANN_MAX_OPEN_DATA_FILES*/) {
-      std::cout << "The file descriptors are over the limit, lets close " << m_open_fd_pq.top().first << std::endl;
-      while(!m_open_fd_pq.empty()) {
-        auto e = m_open_fd_pq.top();
-        std::cout << "{" << e.first << ", " << e.second << "}" << std::endl;
-        //        std::cout << q.top() << " ";
-        m_open_fd_pq.pop();
-      }
-      std::cout << '\n';
-    }
 
     auto result = m_open_fd_map.emplace(filename, h);
     m_open_fd_pq.emplace(std::make_pair(filename,access_count));
@@ -254,6 +244,31 @@ class sample_list_jag {
         //LBANN_ERROR("We have weirdness here, the head of the queue is not " + std::to_string(id));
         m_open_fd_pq.pop_front();
       }
+
+      if(m_open_fd_pq.size() > LBANN_MAX_OPEN_DATA_FILES) {
+        // std::cout << "PQ is too big the queue looks like ";
+        // for(auto&& p: m_open_fd_pq) {
+        //   std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
+        // }
+        // std::cout << std::endl;
+        // std::cout << "The file descriptors are over the limit, lets close " << m_open_fd_pq.front().first << std::endl;
+        // {
+        auto& f = m_open_fd_pq.front();
+        auto& victim = m_sample_id_map[f.first];
+        // std::cout << "{" << f.second.first << ", " << f.second.second << "}" << std::endl;
+        //   //        std::cout << q.top() << " ";
+        // }
+        m_open_fd_pq.pop_front();
+        conduit::relay::io::hdf5_close_file(std::get<1>(victim));
+        std::get<1>(victim) = 0;
+        // std::cout << '\n';
+        // std::cout << "Now the queue looks like ";
+        // for(auto&& p: m_open_fd_pq) {
+        //   std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
+        // }
+        // std::cout << std::endl;
+      }
+
       std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
     }
 
@@ -376,6 +391,20 @@ class sample_list_jag {
     }
 
     return h;
+  }
+
+  void close_if_done_samples_hdf5_handle(const size_t i) {
+    const sample_t& s = m_sample_list[i];
+    sample_id_t id = s.first;
+    hid_t h = get_samples_hdf5_handle(id);
+    if (h > static_cast<hid_t>(0)) {
+      auto& e = m_sample_id_map[id];
+      auto& file_access_queue = std::get<2>(e);
+      if(file_access_queue.empty()) {
+      conduit::relay::io::hdf5_close_file(std::get<1>(e));
+      std::get<1>(e) = 0;
+      }
+    }
   }
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);

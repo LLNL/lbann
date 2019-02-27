@@ -1410,6 +1410,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_jag_store->set_conduit_node(data_id, node);
   }
 
+  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   //  close_conduit_node(data_id);
   return ok;
 }
