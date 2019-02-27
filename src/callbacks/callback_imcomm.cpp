@@ -132,7 +132,7 @@ void lbann_callback_imcomm::do_summary(model *m, weights *w,
   }
   std::string prefix = w->get_name() + "/imcomm_";
   m_summarizer->reduce_scalar(prefix + "time",
-                              im_time, m->get_cur_step());
+                              im_time, m->get_step(execution_mode::training));
   // Use the same approximation the comm layer does.
   const CPUMat& local_gradients =
     static_cast<const CPUMat&>(w->get_optimizer()->get_gradient().LockedMatrix());
@@ -141,9 +141,9 @@ void lbann_callback_imcomm::do_summary(model *m, weights *w,
   size_t bytes_received =
     sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
   m_summarizer->reduce_scalar(prefix + "bytes_sent",
-                              bytes_sent, m->get_cur_step());
+                              bytes_sent, m->get_step(execution_mode::training));
   m_summarizer->reduce_scalar(prefix + "bytes_received",
-                              bytes_received, m->get_cur_step());
+                              bytes_received, m->get_step(execution_mode::training));
 }
 
 static std::vector<std::string> comm_type_names  =

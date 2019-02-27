@@ -1410,14 +1410,14 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
+  if (m_jag_store != nullptr && m_model->get_epoch() > 0) {
     const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_jag_store != nullptr && m_model->get_cur_epoch() == 0) {
+  if (m_jag_store != nullptr && m_model->get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_jag_store != nullptr) {
       m_jag_store->set_conduit_node(data_id, node);

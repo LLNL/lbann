@@ -62,17 +62,8 @@ std::string weights_string(const weights& w) {
 std::string batch_step_string(const model& m) {
   std::stringstream msg;
   const auto& mode = m.get_execution_mode();
-  msg << _to_string(mode) << " batch";
-  switch (mode) {
-  case execution_mode::training:
-    msg << " " << m.get_cur_step(); break;
-  case execution_mode::validation:
-    msg << " " << m.get_cur_validation_step(); break;
-  case execution_mode::testing:
-    msg << " " << m.get_cur_testing_step(); break;
-  default: break;
-  }
-  msg << " (epoch " << m.get_cur_epoch() << ")";
+  msg << _to_string(mode) << " batch " << m.get_step();
+  msg << " (epoch " << m.get_epoch() << ")";
   return msg.str();
 }
 

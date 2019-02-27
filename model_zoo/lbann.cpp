@@ -83,6 +83,10 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
+    /// @todo Remove
+    auto* model_copy = model->copy();
+    delete model_copy;
+
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
       // Train model

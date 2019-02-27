@@ -36,7 +36,7 @@ void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
     ss << name() << ": "
        << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
        << "error in activations of " << l->get_name() << " "
-       << "(step=" << std::to_string(m->get_cur_step()) << ")";
+       << "(step=" << std::to_string(m->get_step(execution_mode::training)) << ")";
     throw lbann_exception(ss.str());
   }
 }
@@ -49,7 +49,7 @@ void lbann_callback_checksmall::on_backward_prop_end(model *m) {
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights gradient of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+         << "(step=" << std::to_string(m->get_step(execution_mode::training)) << ")";
       throw lbann_exception(ss.str());
     }
   }
@@ -62,7 +62,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()-1) << ")";
+         << "(step=" << std::to_string(m->get_step(execution_mode::training)-1) << ")";
       throw lbann_exception(ss.str());
     }
   }
