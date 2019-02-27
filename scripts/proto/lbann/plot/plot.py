@@ -26,8 +26,13 @@ def _get_time_axis(time_list, units='hours'):
     return time_axis
 
 def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
-         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, save_fig=None, save_csv=None):
+         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, save_fig=None, save_csv=None, ylim=None):
     """Tabulate and plot stats from LBANN or PyTorch training in common format."""
+
+    if pretty_ylim and ylim is not None:
+        print('ERROR: pretty_ylim and ylim must not be set at the same time.')
+        sys.exit(1)
+
     ### Load stat dicts and print stat summary
     stat_dict_list = []
     # Get run names
@@ -174,6 +179,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         plt.ylabel('Train Loss')
         if pretty_ylim:
             plt.ylim(0, PRETTY_YLIM_LOSS)
+        elif ylim is not None:
+            plt.ylim(*ylim)
 
         p, = plt.plot(stat_dict['train_axis'], stat_dict['train_loss'], label=run_name_train)
 
@@ -184,6 +191,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         plt.ylabel('Val Loss')
         if pretty_ylim:
             plt.ylim(0, PRETTY_YLIM_LOSS)
+        elif ylim is not None:
+            plt.ylim(*ylim)
 
         kwargs = {} if not merge_train_val else {"color": p.get_color(), "linestyle": "dashed"}
         plt.plot(stat_dict['val_axis'], stat_dict['val_loss'], label=run_name_val, **kwargs)
