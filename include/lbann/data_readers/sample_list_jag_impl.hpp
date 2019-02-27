@@ -79,13 +79,13 @@ inline sample_list_jag::sample_list_jag()
 
 inline sample_list_jag::~sample_list_jag() {
   // Close the existing open files
-  for(auto f : m_sample_id_map) {
+  for(auto f : m_file_id_stats_map) {
     if(std::get<1>(f) > 0) {
       conduit::relay::io::hdf5_close_file(std::get<1>(f));
     }
     std::get<1>(f) = 0;
   }
-  m_sample_id_map.clear();
+  m_file_id_stats_map.clear();
   m_open_fd_pq.clear();
 }
 
@@ -292,8 +292,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
       m_file_map[filename] = sample_names.size();
     }
 
-    sample_id_t index = m_sample_id_map.size();
-    m_sample_id_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+    sample_file_id_t index = m_file_id_stats_map.size();
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
     set_files_hdf5_handle(filename, hdf5_file_hnd);
 
     size_t valid_sample_count = 0u;
@@ -380,8 +380,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
-    sample_id_t index = m_sample_id_map.size();
-    m_sample_id_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+    sample_file_id_t index = m_file_id_stats_map.size();
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
     set_files_hdf5_handle(filename, hdf5_file_hnd);
 
     size_t valid_sample_count = 0u;
@@ -522,11 +522,11 @@ inline size_t sample_list_jag::all_gather_field(T data, std::vector<T>& gathered
 inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   int num_ranks = comm.get_procs_per_trainer();
   std::vector<samples_t> per_rank_samples(num_ranks);
-  std::vector<samples_id_map_v_t> per_rank_sample_id_map(num_ranks);
+  std::vector<file_id_stats_v_t> per_rank_file_id_stats_map(num_ranks);
   std::vector<std::unordered_map<std::string, size_t>> per_rank_file_map(num_ranks);
 
   // Close the existing open files
-  for(auto&& e : m_sample_id_map) {
+  for(auto&& e : m_file_id_stats_map) {
     conduit::relay::io::hdf5_close_file(std::get<1>(e));
     std::get<1>(e) = 0;
     std::get<2>(e).clear();
@@ -534,34 +534,34 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   m_open_fd_pq.clear();
 
   size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
-  size_t num_ids = all_gather_field(m_sample_id_map, per_rank_sample_id_map, comm);
+  size_t num_ids = all_gather_field(m_file_id_stats_map, per_rank_file_id_stats_map, comm);
   size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
 
   m_sample_list.clear();
-  m_sample_id_map.clear();
+  m_file_id_stats_map.clear();
 
   m_sample_list.reserve(num_samples);
-  m_sample_id_map.reserve(num_ids);
+  m_file_id_stats_map.reserve(num_ids);
   m_file_map.reserve(num_files);
 
   for(int r = 0; r < num_ranks; r++) {
     const samples_t& sample_list = per_rank_samples[r];
-    const samples_id_map_v_t& sample_id_map = per_rank_sample_id_map[r];
+    const file_id_stats_v_t& file_id_stats_map = per_rank_file_id_stats_map[r];
     const std::unordered_map<std::string, size_t>& file_map = per_rank_file_map[r];
     for (const auto& s : sample_list) {
-      sample_id_t index = s.first;
-      const std::string& filename = std::get<0>(sample_id_map[index]);
-      if(index >= m_sample_id_map.size()
-         || (std::get<0>(m_sample_id_map.back()) != filename)) {
-        index = m_sample_id_map.size();
-        m_sample_id_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+      sample_file_id_t index = s.first;
+      const std::string& filename = std::get<0>(file_id_stats_map[index]);
+      if(index >= m_file_id_stats_map.size()
+         || (std::get<0>(m_file_id_stats_map.back()) != filename)) {
+        index = m_file_id_stats_map.size();
+        m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
         // Update the file map structure
         if(m_file_map.count(filename) == 0) {
           m_file_map[filename] = file_map.at(filename);
         }
       }else {
-        for(size_t i = 0; i < m_sample_id_map.size(); i++) {
-          if(filename == std::get<0>(m_sample_id_map[i])) {
+        for(size_t i = 0; i < m_file_id_stats_map.size(); i++) {
+          if(filename == std::get<0>(m_file_id_stats_map[i])) {
             index = i;
             break;
           }
@@ -575,7 +575,7 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
 }
 
 inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& shuffled_indices, int mini_batch_size, const lbann_comm& comm) {
-  for (auto&& e : m_sample_id_map) {
+  for (auto&& e : m_file_id_stats_map) {
     std::get<1>(e) = 0;
     std::get<2>(e).clear();
   }
@@ -583,13 +583,13 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];
     const auto& s = m_sample_list[idx];
-    sample_id_t index = s.first;
+    sample_file_id_t index = s.first;
 
     if((i % mini_batch_size) % comm.get_procs_per_trainer() == static_cast<size_t>(comm.get_rank_in_trainer())) {
       /// Enqueue the iteration step when the sample will get used
       int step = i / mini_batch_size;
       int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
-      std::get<2>(m_sample_id_map[index]).emplace_back(std::make_pair(step, substep));
+      std::get<2>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
     }
   }
 }
@@ -600,7 +600,7 @@ inline void sample_list_jag::clear() {
 }
 
 template <class Archive> void sample_list_jag::serialize( Archive & ar ) {
-  ar(m_num_partitions, m_header, m_sample_list, m_sample_id_map);
+  ar(m_num_partitions, m_header, m_sample_list, m_file_id_stats_map);
 }
 
 inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) const {
@@ -634,7 +634,7 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
 
   std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
   for (const auto& s : m_sample_list) {
-    std::string filename = std::get<0>(m_sample_id_map[s.first]);
+    std::string filename = std::get<0>(m_file_id_stats_map[s.first]);
     tmp_file_map[filename].emplace_back(s.second);
   }
 
