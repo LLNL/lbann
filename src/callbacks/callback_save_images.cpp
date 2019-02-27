@@ -145,13 +145,6 @@ void lbann_callback_save_images::on_epoch_end(model *m) {
              m_layer_names);
 }
 
-void lbann_callback_save_images::on_phase_end(model *m) {
-  save_image(m_image_prefix + "phase" + std::to_string(m->get_current_phase()),
-             m_image_format,
-             m->get_layers(),
-             m_layer_names);
-}
-
 void lbann_callback_save_images::on_test_end(model *m) {
   save_image(m_image_prefix + "test",
              m_image_format,
