@@ -160,7 +160,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Checkpoint directories
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_cur_step();
+  const auto step = m.get_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
@@ -219,7 +219,7 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_cur_step();
+  const auto step = m.get_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
@@ -345,7 +345,7 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
 
   // Check whether to start LTFB round
   const auto mode = m->get_execution_mode();
-  const auto step = m->get_cur_step();
+  const auto step = m->get_step();
   if (mode != execution_mode::training || step == 0) { return; }
 
   // Print message

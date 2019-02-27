@@ -33,7 +33,7 @@ namespace lbann {
 
 void lbann_callback_check_init::on_train_begin(model *m) {
   // Skip after the first epoch.
-  if (m->get_cur_epoch() != 0) {
+  if (m->get_epoch() != 0) {
     return;
   }
   lbann_comm *comm = m->get_comm();

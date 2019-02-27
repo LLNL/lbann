@@ -39,7 +39,7 @@ lbann_callback_variable_minibatch::lbann_callback_variable_minibatch(
 
 void lbann_callback_variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
-  if (m->get_cur_epoch() != 0) { return; }
+  if (m->get_epoch() != 0) { return; }
 
   // Get first input layer in model
   generic_input_layer* input = nullptr;
@@ -103,12 +103,12 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
         std::cout << "Model " << comm->get_trainer_rank() <<
           ": Changing mini-batch size to " << new_mbsize <<
           " and learning rate to " << new_lr << " at epoch " <<
-          m->get_cur_epoch() << std::endl;
+          m->get_epoch() << std::endl;
       }
     } else if (comm->am_trainer_master()) {
       std::cout << "Model " << comm->get_trainer_rank() <<
         ": Changing mini-batch size to " << new_mbsize <<
-        " at epoch " << m->get_cur_epoch() << std::endl;
+        " at epoch " << m->get_epoch() << std::endl;
     }
   }
   // Ramp the learning rate, if needed.
@@ -152,7 +152,7 @@ lbann_callback_step_minibatch::lbann_callback_step_minibatch(
 
 bool lbann_callback_step_minibatch::schedule(
   model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
-  if (m->get_cur_epoch() % m_step == 0) {
+  if (m->get_epoch() % m_step == 0) {
     new_mbsize = m_current_mini_batch_size * 2;
     new_lr = get_current_learning_rate(m) * 2;
     ramp_time = m_ramp_time;
@@ -173,7 +173,7 @@ lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
 
 bool lbann_callback_minibatch_schedule::schedule(
   model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
-  if (!m_steps.empty() && m->get_cur_epoch() == m_steps.back().epoch) {
+  if (!m_steps.empty() && m->get_epoch() == m_steps.back().epoch) {
     new_mbsize = m_steps.back().mbsize;
     new_lr = m_steps.back().lr;
     ramp_time = m_steps.back().ramp_time;
