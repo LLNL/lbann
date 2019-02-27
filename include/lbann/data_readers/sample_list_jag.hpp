@@ -47,26 +47,6 @@ struct sample_list_header {
   }
 };
 
-/**
- * Maps a global index of a sample list to a local index.
- * When managing the sample list in a distributed fashion, with which every
- * one has the same copy (the whole global list), m_partition_offset must be
- * zero. In this case, the local index is the same as the global index.
- * When managing the sample list in a centralized fashion, with which each
- * has a portion of the list that corresponds to the only samples it needs,
- * a global index is subtracted by m_partition_offset for local indexing.
- */
-struct sample_list_indexer {
-  sample_list_indexer();
-  size_t operator()(size_t idx) const;
-
-  void set_partition_offset(size_t o);
-  size_t get_partition_offset() const;
-  bool check_index(size_t i) const;
-
-  size_t m_partition_offset;
-};
-
 static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
 static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
@@ -95,12 +75,6 @@ class sample_list_jag {
 
   /// Set the number of partitions and clear internal states
   void set_num_partitions(size_t n);
-
-  /// Set the index mapping function
-  void set_indexer(const sample_list_indexer& indexer);
-
-  /// Get the index mapping function
-  const sample_list_indexer& get_indexer() const;
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
@@ -409,9 +383,6 @@ class sample_list_jag {
 
   /// Maps sample's file id to file names, file descriptors, and use counts
   file_id_stats_v_t m_file_id_stats_map;
-
-  /// Maps a global index to a local index
-  sample_list_indexer m_indexer;
 
   /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;
