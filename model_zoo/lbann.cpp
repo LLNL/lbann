@@ -85,10 +85,6 @@ int main(int argc, char *argv[]) {
     model *model = build_model_from_prototext(argc, argv, pb,
                                               comm, io_thread_pool, true);
 
-    /// @todo Remove
-    auto* model_copy = model->copy();
-    delete model_copy;
-
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
       // Train model

@@ -49,7 +49,7 @@ namespace lbann {
 // Forward declarations
 class lbann_callback;
 
-/** Base class for neural network models. */
+/** @brief Abstract base class for neural network models. */
 class model {
 public:
 
@@ -57,9 +57,9 @@ public:
   // Life cycle functions
   // ===========================================
 
-  model(lbann_comm *comm,
+  model(lbann_comm* comm,
         El::Int mini_batch_size,
-        objective_function *obj_fn,
+        objective_function* obj_fn,
         optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
@@ -421,8 +421,8 @@ protected:
 
 private:
 
-  /** Mathematical function to be minimized during training. */
-  objective_function* m_objective_function;
+  /** LBANN communicator. */
+  lbann_comm* m_comm;
 
   /** @brief Model instance's name.
    *  @detailed Each model in a trainer should have a unique,
@@ -433,64 +433,65 @@ private:
   /** Current execution mode. */
   execution_mode m_execution_mode = execution_mode::training;
 
-  /** @brief Whether to terminate training.
-   *  @detailed If set to true, training will terminate immediately
-   *  before the next epoch.
-   */
-  bool m_terminate_training = false;
-
-  /** Current epoch. */
+  /** Number of times the training data set has been traversed. */
   El::Int m_epoch = 0;
-  /** @brief Current mini-batch step for each execution mode.
+
+  /** @brief Number of mini-batch steps performed.
    *  @detailed Step counts are not reset after each epoch.
    */
   std::map<execution_mode, El::Int> m_step;
 
+  /** @brief Whether to terminate training.
+   *  @detailed If true, training will terminate immediately before
+   *  the next epoch.
+   */
+  bool m_terminate_training = false;
+
+  /** Size of the current mini-batch in the model. */
+  int m_current_mini_batch_size;
   /** @details Maximum possible minibatch size supported by layers in
    *  this model.  Note that this is local to the particular model,
    *  not across multiple models.
    */
   int m_max_mini_batch_size;
-  /** Size of the current mini-batch in the model. */
-  int m_current_mini_batch_size;
   /** The "effective" size of a minibatch.
    *
    *  This is the size of the minibatch across all models and used for
    *  e.g.  correctly averaging gradients from multiple models.
    */
   int m_effective_mini_batch_size;
-  /** Communicator for the model. */
-  lbann_comm *m_comm;
+
+  /** @brief Tensor operations.
+   *  @details The list is in execution order for forward propagation.
+   */
+  std::vector<std::unique_ptr<Layer>> m_layers;
+
+  /** @brief Trainable parameters. */
+  std::vector<weights*> m_weights;
+
+  /** @detailed If a layer needs to construct an optimizer during
+   *  setup, it will make a copy of the default optimizer. This object
+   *  is just used to create copies and is not actually used for
+   *  optimization.
+   */
+  optimizer* m_default_optimizer = nullptr;
+
+  /** Mathematical function to be minimized during training. */
+  objective_function* m_objective_function;
+
+  /** @brief Numerical quantities to evaluate model performance.
+   *  @detailed Does not affect training.
+   */
+  std::vector<metric*> m_metrics;
+
   /** Current callbacks to process. */
-  std::vector<lbann_callback *> m_callbacks;
-
-  /** Default optimizer.
-   *
-   *  If a layer needs to construct an optimizer during setup, it will
-   *  make a copy of the default optimizer.
-   */
-  optimizer *m_default_optimizer;
-
-  /** List of model metrics.
-   *
-   *  A metric can be used to evaluate the performance of the model
-   *  without affecting the training process.
-   */
-  std::vector<metric *> m_metrics;
-
-  /** List of weights in model. */
-  std::vector<weights *> m_weights;
+  std::vector<lbann_callback*> m_callbacks;
 
   /** Threads available for I/O */
   std::shared_ptr<thread_pool> m_io_thread_pool;
 
   /** Flag that allows input layers to fetch data in the background */
-  bool m_background_io_allowed;
-
-  /** @brief List of layers in model.
-   *  @details The list is in execution order for forward propagation.
-   */
-  std::vector<std::unique_ptr<Layer>> m_layers;
+  bool m_background_io_allowed = true;
 
   // ===========================================
   // Functions to add utility layers

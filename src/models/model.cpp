@@ -52,18 +52,16 @@ namespace lbann {
 // Life cycle functions
 // =============================================
 
-model::model(lbann_comm *comm,
+model::model(lbann_comm* comm,
              El::Int mini_batch_size,
-             objective_function *obj_fn,
+             objective_function* obj_fn,
              optimizer* default_optimizer)
-  : m_objective_function(obj_fn),
-    m_max_mini_batch_size(mini_batch_size),
+  : m_comm(comm),
     m_current_mini_batch_size(mini_batch_size),
+    m_max_mini_batch_size(mini_batch_size),
     m_effective_mini_batch_size(mini_batch_size),
-    m_comm(comm),
     m_default_optimizer(default_optimizer),
-    m_io_thread_pool(),
-    m_background_io_allowed(true) {
+    m_objective_function(obj_fn) {
 
   // Default model name
   static El::Int num_models = 0;
@@ -73,30 +71,32 @@ model::model(lbann_comm *comm,
 }
 
 model::model(const model& other) :
+  m_comm(other.m_comm),
+  m_name(other.m_name),
   m_execution_mode(other.m_execution_mode),
-  m_terminate_training(other.m_terminate_training),
   m_epoch(other.m_epoch),
   m_step(other.m_step),
-  m_max_mini_batch_size(other.m_max_mini_batch_size),
+  m_terminate_training(other.m_terminate_training),
   m_current_mini_batch_size(other.m_current_mini_batch_size),
+  m_max_mini_batch_size(other.m_max_mini_batch_size),
   m_effective_mini_batch_size(other.m_effective_mini_batch_size),
-  m_comm(other.m_comm),
   m_background_io_allowed(other.m_background_io_allowed) {
 
   // Deep copies
-  m_objective_function = other.m_objective_function;
-  m_metrics            = other.m_metrics;
-  m_callbacks          = other.m_callbacks;
-  m_weights            = other.m_weights;
-  if (m_objective_function != nullptr) {
-    m_objective_function = m_objective_function->copy();
-  }
+  m_default_optimizer = (other.m_default_optimizer ?
+                         other.m_default_optimizer->copy() : nullptr);
+  m_objective_function = (other.m_objective_function ?
+                          other.m_objective_function->copy() : nullptr);
+  m_metrics = other.m_metrics;
+  m_callbacks = other.m_callbacks;
   for (auto& m : m_metrics) {
     m = m->copy();
   }
   for (auto& cb : m_callbacks) {
     cb = cb->copy();
   }
+
+  // Copy layers
   std::unordered_map<Layer*,Layer*> layer_map;
   m_layers.reserve(other.m_layers.size());
   for (const auto& ptr : other.m_layers) {
@@ -107,12 +107,17 @@ model::model(const model& other) :
     m_layers.emplace_back(new_layer);
     layer_map[old_layer] = new_layer;
   }
+
+  // Copy weights
+  m_weights = other.m_weights;
   std::unordered_map<weights*,weights*> weights_map;
   for (auto& w : m_weights) {
     auto&& w_copy = w->copy();
     weights_map[w] = w_copy;
     w = w_copy;
   }
+
+  // Fix pointers
   remap_pointers(layer_map, weights_map);
 
 }
@@ -126,14 +131,15 @@ model& model::operator=(const model& other) {
   for (const auto& w : m_weights)      { delete w; }
 
   // Shallow copies
+  m_comm = other.m_comm;
+  m_name = other.m_name;
   m_execution_mode = other.m_execution_mode;
-  m_terminate_training = other.m_terminate_training;
   m_epoch = other.m_epoch;
   m_step = other.m_step;
-  m_max_mini_batch_size = other.m_max_mini_batch_size;
+  m_terminate_training = other.m_terminate_training;
   m_current_mini_batch_size = other.m_current_mini_batch_size;
+  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_effective_mini_batch_size = other.m_effective_mini_batch_size;
-  m_comm = other.m_comm;
   m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
@@ -171,11 +177,11 @@ model& model::operator=(const model& other) {
 }
 
 model::~model() {
-  if (m_objective_function)           { delete m_objective_function; }
-  if (m_default_optimizer != nullptr) { delete m_default_optimizer; }
-  for (const auto& w : m_weights)     { delete w; }
-  for (const auto& m : m_metrics)     { delete m; }
-  for (const auto& cb : m_callbacks)  { delete cb; }
+  if (m_objective_function != nullptr) { delete m_objective_function; }
+  if (m_default_optimizer != nullptr)  { delete m_default_optimizer; }
+  for (const auto& w : m_weights)      { delete w; }
+  for (const auto& m : m_metrics)      { delete m; }
+  for (const auto& cb : m_callbacks)   { delete cb; }
 }
 
 // =============================================
