@@ -75,19 +75,20 @@ class sample_list_jag {
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
   using sample_name_t = std::string;
   /// The type for arbitrarily assigned index
-  using sample_id_t = std::size_t;
+  using sample_file_id_t = std::size_t;
   /// To describe a sample as a pair of the file to which it belongs and its name
   //  using sample_t = std::pair<std::string, sample_name_t>;
-  using sample_t = std::pair<sample_id_t, sample_name_t>;
-  /// Map of the file index to the file name, file descriptor, and
+  using sample_t = std::pair<sample_file_id_t, sample_name_t>;
+  /// Statistics for each file used by the sample list: includes the file name, file descriptor, and
   /// and a queue of each step and substep when data will be loaded from the file
-  using sample_id_map_t = std::tuple<std::string, hid_t, std::deque<std::pair<int,int>>>; // rename
-                                                                            // to sample_to_file_map
+  using file_id_stats_t = std::tuple<std::string, hid_t, std::deque<std::pair<int,int>>>;
+
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
-  using samples_id_map_v_t = std::vector< sample_id_map_t >; // rename to sample_to_file_v or something
+  /// Mapping of the file index to the statistics for each file
+  using file_id_stats_v_t = std::vector< file_id_stats_t >; // rename to sample_to_file_v or something
   /// Type for the map of file descriptors to usage step and substep
-  using fd_use_map_t = std::pair<sample_id_t, std::pair<int,int>>;
+  using fd_use_map_t = std::pair<sample_file_id_t, std::pair<int,int>>;
 
   sample_list_jag();
   ~sample_list_jag();
@@ -151,25 +152,25 @@ class sample_list_jag {
   /// Allow read-only access to the metadata of the idx-th sample in the list
   const sample_t& operator[](size_t idx) const;
 
-  const std::string& get_samples_filename(sample_id_t id) const {
-    return std::get<0>(m_sample_id_map[id]);
+  const std::string& get_samples_filename(sample_file_id_t id) const {
+    return std::get<0>(m_file_id_stats_map[id]);
   }
 
   const std::string& get_samples_dirname() const {
     return m_header.get_file_dir();
   }
 
-  hid_t get_samples_hdf5_handle(sample_id_t id) const {
-    hid_t h = std::get<1>(m_sample_id_map[id]);
+  hid_t get_samples_hdf5_handle(sample_file_id_t id) const {
+    hid_t h = std::get<1>(m_file_id_stats_map[id]);
     return h;
   }
 
-  void set_samples_filename(sample_id_t id, const std::string& filename) {
-    std::get<0>(m_sample_id_map[id]) = filename;
+  void set_samples_filename(sample_file_id_t id, const std::string& filename) {
+    std::get<0>(m_file_id_stats_map[id]) = filename;
   }
 
-  void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
-    auto&& e = m_sample_id_map[id];
+  void set_samples_hdf5_handle(sample_file_id_t id, hid_t h) {
+    auto&& e = m_file_id_stats_map[id];
     std::get<1>(e) = h;
     // std::cout << "Attempt to set the hdf5 handle " << h << " for filename " << std::get<0>(e) << std::endl;
 
@@ -205,7 +206,7 @@ class sample_list_jag {
         // std::cout << "The file descriptors are over the limit, lets close " << m_open_fd_pq.front().first << std::endl;
         // {
         auto& f = m_open_fd_pq.front();
-        auto& victim = m_sample_id_map[f.first];
+        auto& victim = m_file_id_stats_map[f.first];
         // std::cout << "{" << f.second.first << ", " << f.second.second << "}" << std::endl;
         //   //        std::cout << q.top() << " ";
         // }
@@ -243,11 +244,11 @@ class sample_list_jag {
       // std::cout << std::endl;
     }
 
-    //        std::get<1>(m_sample_id_map[id]) = h;
+    //        std::get<1>(m_file_id_stats_map[id]) = h;
     //        std::cout << "I am setting the hdf5 handle " << h << " for filename " << filename << std::endl;
 
     //    m_open_fd_map.emplace(std::make_tuple(filename, h, access_count));
-    // for (auto&& e : m_sample_id_map) {
+    // for (auto&& e : m_file_id_stats_map) {
     //   std::cout << "set_files_hdf5_handle {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
     //   if(std::get<2>(e).empty()) {
     //     std::cout << "empty" << std::endl;
@@ -258,14 +259,14 @@ class sample_list_jag {
     //     std::cout << std::endl;
     //   }
     // }
-    // for (auto&& e : m_sample_id_map)
+    // for (auto&& e : m_file_id_stats_map)
     //   std::cout << "{" << std::get<0)>(e) << ", " << std::get<1>(e) << ", " << std::get<2>(e) << "}" << std::endl;
 
   }
 
   void set_files_hdf5_handle(const std::string& filename, hid_t h) {
-    sample_id_t id = 0;
-    for (auto&& e : m_sample_id_map) {
+    sample_file_id_t id = 0;
+    for (auto&& e : m_file_id_stats_map) {
       if(std::get<0>(e) == filename) {
         break;
       }
@@ -276,7 +277,7 @@ class sample_list_jag {
 
   hid_t open_samples_hdf5_handle(const size_t i) {
     const sample_t& s = m_sample_list[i];
-    sample_id_t id = s.first;
+    sample_file_id_t id = s.first;
     hid_t h = get_samples_hdf5_handle(id);
     if (h <= static_cast<hid_t>(0)) {
       const std::string& file_name = get_samples_filename(id);
@@ -307,7 +308,7 @@ class sample_list_jag {
       //   LBANN_WARNING("We have weirdness here, the head of the queue is not " + std::to_string(id));
       // }
 
-      auto& e = m_sample_id_map[id];
+      auto& e = m_file_id_stats_map[id];
 
       // std::cout << "open_files_hdf5_handle updated list {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
       // for (auto&& v : std::get<2>(e)) {
@@ -346,10 +347,10 @@ class sample_list_jag {
 
   void close_if_done_samples_hdf5_handle(const size_t i) {
     const sample_t& s = m_sample_list[i];
-    sample_id_t id = s.first;
+    sample_file_id_t id = s.first;
     hid_t h = get_samples_hdf5_handle(id);
     if (h > static_cast<hid_t>(0)) {
-      auto& e = m_sample_id_map[id];
+      auto& e = m_file_id_stats_map[id];
       auto& file_access_queue = std::get<2>(e);
       if(file_access_queue.empty()) {
       conduit::relay::io::hdf5_close_file(std::get<1>(e));
@@ -403,11 +404,11 @@ class sample_list_jag {
   /// header info of sample list
   sample_list_header m_header;
 
-  /// Contains list of all sample
+  /// List of all samples with a file identifier and sample name for each sample
   samples_t m_sample_list;
 
-  /// Maps sample IDs to file names, file descriptors, and use counts
-  samples_id_map_v_t m_sample_id_map;
+  /// Maps sample's file id to file names, file descriptors, and use counts
+  file_id_stats_v_t m_file_id_stats_map;
 
   /// Maps a global index to a local index
   sample_list_indexer m_indexer;

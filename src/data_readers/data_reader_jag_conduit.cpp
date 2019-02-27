@@ -314,7 +314,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const std::string& sample_name = s.second;
   const std::string path = sample_name + key;
 
-  sample_id_t id = s.first;
+  sample_file_id_t id = s.first;
   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
@@ -330,7 +330,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];
-  sample_id_t id = s.first;
+  sample_file_id_t id = s.first;
   const std::string& file_name = m_sample_list.get_samples_filename(id);
   const std::string& sample_name = s.second;
   const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
