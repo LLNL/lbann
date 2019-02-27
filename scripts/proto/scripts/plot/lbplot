@@ -23,8 +23,10 @@ def main():
     parser.add_argument("--pretty-ylim", dest="pretty_ylim", action="store_const",
                         const=True, default=False,
                         help="Set ylim to [0,1] for accuracy plots and [0,{}] for loss plots".format(PRETTY_YLIM_LOSS))
-    parser.add_argument('--save-fig', type=str, default='')
-    parser.add_argument('--save-csv', type=str, default='')
+    parser.add_argument('--save-fig', type=str, default='',
+                        help="Save the training/validation curve plot as an image file.")
+    parser.add_argument('--save-csv', type=str, default='',
+                        help="Save the sumamry table as a CSV file.")
     args = parser.parse_args()
 
     # Tabulate and plot stats from user input files
