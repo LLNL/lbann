@@ -356,7 +356,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
   /// Check if a key exist for sample i
   bool has_conduit_path(const size_t i, const std::string& key) const;
-  void close_conduit_node(const size_t i);
+  //  void close_conduit_node(const size_t i);
 
   /// Obtain image data
   std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
