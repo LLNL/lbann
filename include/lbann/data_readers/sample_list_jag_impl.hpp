@@ -46,8 +46,7 @@ inline const std::string& sample_list_header::get_file_dir() const {
   return m_file_dir;
 }
 
-inline sample_list_jag::sample_list_jag()
-  : m_num_partitions(1u) {}
+inline sample_list_jag::sample_list_jag() {}
 
 inline sample_list_jag::~sample_list_jag() {
   // Close the existing open files
@@ -59,16 +58,6 @@ inline sample_list_jag::~sample_list_jag() {
   }
   m_file_id_stats_map.clear();
   m_open_fd_pq.clear();
-}
-
-inline void sample_list_jag::set_num_partitions(size_t n) {
-  if (n == 0) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: number of partitions must be a positive number ("
-                          + std::to_string(n) + ")");
-  }
-  clear();
-  m_num_partitions = n;
 }
 
 inline void sample_list_jag::load(const std::string& samplelist_file, size_t stride, size_t offset) {
@@ -385,23 +374,6 @@ inline size_t sample_list_jag::get_samples_per_file(std::istream& istrm, const s
 }
 
 
-inline void sample_list_jag::get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const{
-  const size_t total = static_cast<size_t>(m_sample_list.size());
-  const size_t one_more = total % m_num_partitions;
-  const size_t min_per_partition = total/m_num_partitions;
-
-  if (min_per_partition == 0u) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-          + " :: insufficient number of samples for each partition to have at least one.");
-  } else if (m_num_partitions == 1u) {
-    sid_start = 0u;
-    sid_end = total;
-  } else {
-    sid_start = min_per_partition * p + ((p >= one_more)? one_more : p);
-    sid_end = sid_start + min_per_partition + ((p < one_more)? 1u : 0u);
-  }
-}
-
 inline void sample_list_jag::all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm) {
   int size_of_list_archive = archive.size();
   std::vector<int> packed_sizes(comm.get_procs_per_trainer());
@@ -547,12 +519,11 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
 }
 
 inline void sample_list_jag::clear() {
-  m_num_partitions = 1u;
   m_sample_list.clear();
 }
 
 template <class Archive> void sample_list_jag::serialize( Archive & ar ) {
-  ar(m_num_partitions, m_header, m_sample_list, m_file_id_stats_map);
+  ar(m_header, m_sample_list, m_file_id_stats_map);
 }
 
 inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) const {
@@ -567,23 +538,7 @@ inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) c
 }
 
 
-inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
-  if ((m_num_partitions == 0u) ||
-      ((m_num_partitions > 1u) && (p >= m_num_partitions))) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-          + " :: partition id is out of range.");
-    return false;
-  }
-
-  size_t i_begin, i_end;
-  get_sample_range_per_part(p, i_begin, i_end);
-
-  if (i_begin > i_end) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-          + " :: incorrect partition range.");
-    return false;
-  }
-
+inline bool sample_list_jag::to_string(std::string& sstr) const {
   std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
   for (const auto& s : m_sample_list) {
     std::string filename = std::get<0>(m_file_id_stats_map[s.first]);
@@ -592,14 +547,12 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
 
   samples_t::const_iterator it_begin = m_sample_list.cbegin();
   samples_t::const_iterator it_end = m_sample_list.cbegin();
-  std::advance(it_begin, i_begin);
-  std::advance(it_end, i_end);
 
   sstr.clear();
 
   // reserve the string to hold the entire sample lit
   size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1;
-  if (i_begin < i_end) {
+  if (it_begin < it_end) {
     estimated_len += tmp_file_map.size();
     sstr.reserve(estimated_len);
   }
@@ -625,37 +578,9 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
   return true;
 }
 
-
-inline bool sample_list_jag::to_string(std::string& sstr) const {
-  size_t total_len = 0u;
-  std::vector<std::string> strvec(m_num_partitions);
-  bool ok = true;
-
-  for(size_t p=0u; (p < m_num_partitions) && ok; ++p) {
-    ok = to_string(p, strvec[p]);
-    total_len += strvec[p].size();
-  }
-
-  if (!ok) {
-    return false;
-  }
-
-  sstr.clear();
-  sstr.reserve(total_len);
-
-  for(size_t p=0u; p < m_num_partitions; ++p) {
-    sstr += strvec[p];
-  }
-
-  return true;
-}
-
-
-inline void sample_list_jag::write(size_t p, const std::string filename) const {
-  std::string filename_p = modify_file_name(filename, std::string("p") + std::to_string(p));
-
+inline void sample_list_jag::write(const std::string filename) const {
   std::string dir, basename;
-  parse_path(filename_p, dir, basename);
+  parse_path(filename, dir, basename);
   if (!dir.empty() && !check_if_dir_exists(dir)) {
     // The creation of a shared directory must be done once in a coordinated fashion
     // among the entities that have access to it. Thus, it must be done in advance
@@ -663,62 +588,22 @@ inline void sample_list_jag::write(size_t p, const std::string filename) const {
     return;
   }
 
-  std::fstream ofs(filename_p, std::fstream::out | std::fstream::binary);
+  std::fstream ofs(filename, std::fstream::out | std::fstream::binary);
 
   if (!ofs.good()) {
     return;
   }
 
   std::string buf;
-  to_string(p, buf);
+  to_string(buf);
 
   ofs.write(buf.data(), buf.size()*sizeof(std::string::value_type));
   ofs.close();
 }
 
-
-inline void sample_list_jag::write(const std::string filename) const {
-  for (size_t p = 0u; p < m_num_partitions; ++p) {
-    write(p, filename);
-  }
-}
-
-
 inline const sample_list_jag::samples_t& sample_list_jag::get_list() const {
   return m_sample_list;
 }
-
-
-inline std::pair<sample_list_jag::samples_t::const_iterator, sample_list_jag::samples_t::const_iterator>
-sample_list_jag::get_list(size_t p) const {
-  if (p >= m_num_partitions) {
-    return std::make_pair(m_sample_list.cend(), m_sample_list.cend());
-  }
-
-  size_t i_begin, i_end;
-  get_sample_range_per_part(p, i_begin, i_end);
-
-  if (i_begin > i_end) {
-    return std::make_pair(m_sample_list.cend(), m_sample_list.cend());
-  }
-
-  samples_t::const_iterator it_begin = m_sample_list.cbegin();
-  samples_t::const_iterator it_end = m_sample_list.cbegin();
-  std::advance(it_begin, i_begin);
-  std::advance(it_end, i_end);
-
-  return std::make_pair(it_begin, it_end);
-}
-
-
-inline bool sample_list_jag::get_list(size_t p, sample_list_jag::samples_t& l_p) const {
-  const auto it = get_list(p);
-  l_p.clear();
-  std::copy(it.first, it.second, l_p.begin());
-
-  return (it.first != m_sample_list.cend());
-}
-
 
 inline const sample_list_header& sample_list_jag::get_header() const {
   return m_header;
