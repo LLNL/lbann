@@ -126,6 +126,7 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
     return;
   }
   generic_data_reader::shuffle_indices(gen);
+  m_sample_list.compute_epochs_file_usage(get_shuffled_indices(), get_mini_batch_size(), *m_comm);
 }
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
@@ -327,16 +328,16 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   return true;
 }
 
-void data_reader_jag_conduit::close_conduit_node(const size_t i) {
-  const sample_t& s = m_sample_list[i];
+// void data_reader_jag_conduit::close_conduit_node(const size_t i) {
+//   const sample_t& s = m_sample_list[i];
 
-  sample_id_t id = s.first;
-  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
-  if (h > static_cast<hid_t>(0)) {
-    conduit::relay::io::hdf5_close_file(h);
-    m_sample_list.set_samples_hdf5_handle(id, 0);
-  }
-}
+//   sample_id_t id = s.first;
+//   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+//   if (h > static_cast<hid_t>(0)) {
+//     conduit::relay::io::hdf5_close_file(h);
+//     m_sample_list.set_samples_hdf5_handle(id, 0);
+//   }
+// }
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];

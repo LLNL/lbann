@@ -20,8 +20,6 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-#define LBANN_MAX_OPEN_DATA_FILES 768
-
 namespace lbann {
 
 inline sample_list_header::sample_list_header()
@@ -77,13 +75,14 @@ inline size_t sample_list_indexer::get_partition_offset() const {
 
 
 inline sample_list_jag::sample_list_jag()
-: m_num_partitions(1u) {
-  /// Create an unordered map that will not rehash and has a fixed
-  /// number of buckets.  This allows the sample list to easily select
-  /// a file descriptor for closing
-  m_open_fd_map.reserve(LBANN_MAX_OPEN_DATA_FILES);
-  m_open_fd_map.rehash(LBANN_MAX_OPEN_DATA_FILES);
-  m_open_fd_map.max_load_factor(std::numeric_limits<float>::max());
+  : m_num_partitions(1u) {}
+
+inline sample_list_jag::~sample_list_jag() {
+  // Close the existing open files
+  // for(auto f : m_open_fd_map) {
+  //   conduit::relay::io::hdf5_close_file(f.second);
+  // }
+  // m_open_fd_map.clear();
 }
 
 inline void sample_list_jag::set_num_partitions(size_t n) {
@@ -276,8 +275,6 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
       continue; // skipping the file
     }
 
-    set_files_hdf5_handle(filename, hdf5_file_hnd);
-
     if(m_file_map.count(filename) > 0) {
       if(sample_names.size() != m_file_map[filename]) {
         LBANN_ERROR(std::string("The same file ")
@@ -292,7 +289,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
     }
 
     sample_id_t index = m_sample_id_map.size();
-    m_sample_id_map.emplace_back(filename);
+    m_sample_id_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+    set_files_hdf5_handle(filename, hdf5_file_hnd);
 
     size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
@@ -363,8 +361,6 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
       continue; // skipping the file
     }
 
-    set_files_hdf5_handle(filename, hdf5_file_hnd);
-
     if(m_file_map.count(filename) > 0) {
       if(sample_names.size() != m_file_map[filename]) {
         LBANN_ERROR(std::string("The same file ")
@@ -381,7 +377,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
     sample_id_t index = m_sample_id_map.size();
-    m_sample_id_map.emplace_back(filename);
+    m_sample_id_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+    set_files_hdf5_handle(filename, hdf5_file_hnd);
 
     size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
@@ -524,18 +521,20 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   std::vector<samples_id_map_v_t> per_rank_sample_id_map(num_ranks);
   std::vector<std::unordered_map<std::string, size_t>> per_rank_file_map(num_ranks);
 
+  // Close the existing open files
+  for(auto&& e : m_sample_id_map) {
+    conduit::relay::io::hdf5_close_file(std::get<1>(e));
+    std::get<1>(e) = 0;
+    std::get<2>(e).clear();
+  }
+  m_open_fd_pq.clear();
+
   size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
   size_t num_ids = all_gather_field(m_sample_id_map, per_rank_sample_id_map, comm);
   size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
 
-  // Close the existing open files
-  for(auto f : m_open_fd_map) {
-    conduit::relay::io::hdf5_close_file(f.second);
-  }
-
   m_sample_list.clear();
   m_sample_id_map.clear();
-  m_open_fd_map.clear();
 
   m_sample_list.reserve(num_samples);
   m_sample_id_map.reserve(num_ids);
@@ -547,18 +546,18 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
     const std::unordered_map<std::string, size_t>& file_map = per_rank_file_map[r];
     for (const auto& s : sample_list) {
       sample_id_t index = s.first;
-      const std::string& filename = sample_id_map[index];
+      const std::string& filename = std::get<0>(sample_id_map[index]);
       if(index >= m_sample_id_map.size()
-         || (m_sample_id_map.back() != filename)) {
+         || (std::get<0>(m_sample_id_map.back()) != filename)) {
         index = m_sample_id_map.size();
-        m_sample_id_map.emplace_back(filename);
+        m_sample_id_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
         // Update the file map structure
         if(m_file_map.count(filename) == 0) {
           m_file_map[filename] = file_map.at(filename);
         }
       }else {
         for(size_t i = 0; i < m_sample_id_map.size(); i++) {
-          if(filename == m_sample_id_map[i]) {
+          if(filename == std::get<0>(m_sample_id_map[i])) {
             index = i;
             break;
           }
@@ -571,6 +570,25 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   return;
 }
 
+inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& shuffled_indices, int mini_batch_size, const lbann_comm& comm) {
+  for (auto&& e : m_sample_id_map) {
+    std::get<1>(e) = 0;
+    std::get<2>(e).clear();
+  }
+
+  for (size_t i = 0; i < shuffled_indices.size(); i++) {
+    int idx = shuffled_indices[i];
+    const auto& s = m_sample_list[idx];
+    sample_id_t index = s.first;
+
+    if((i % mini_batch_size) % comm.get_procs_per_trainer() == static_cast<size_t>(comm.get_rank_in_trainer())) {
+      /// Enqueue the iteration step when the sample will get used
+      int step = i / mini_batch_size;
+      int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
+      std::get<2>(m_sample_id_map[index]).emplace_back(std::make_pair(step, substep));
+    }
+  }
+}
 
 inline void sample_list_jag::clear() {
   m_num_partitions = 1u;
@@ -612,7 +630,7 @@ inline bool sample_list_jag::to_string(size_t p, std::string& sstr) const {
 
   std::map<std::string, std::vector<sample_name_t>> tmp_file_map;
   for (const auto& s : m_sample_list) {
-    std::string filename = m_sample_id_map[s.first];
+    std::string filename = std::get<0>(m_sample_id_map[s.first]);
     tmp_file_map[filename].emplace_back(s.second);
   }
 

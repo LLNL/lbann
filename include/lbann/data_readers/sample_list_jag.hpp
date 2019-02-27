@@ -14,10 +14,14 @@
 
 #include "lbann/utils/file_utils.hpp"
 #include <cereal/types/unordered_map.hpp>
+#include <cereal/types/deque.hpp>
 #include <cereal/types/vector.hpp>
+#include <cereal/types/tuple.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/utility.hpp>
 #include "conduit/conduit_relay_io_hdf5.hpp"
+
+#define LBANN_MAX_OPEN_DATA_FILES 384
 
 namespace lbann {
 
@@ -75,12 +79,18 @@ class sample_list_jag {
   /// To describe a sample as a pair of the file to which it belongs and its name
   //  using sample_t = std::pair<std::string, sample_name_t>;
   using sample_t = std::pair<sample_id_t, sample_name_t>;
-  using sample_id_map_t = std::string;
+  /// Map of the file index to the file name, file descriptor, and
+  /// and a queue of each step and substep when data will be loaded from the file
+  using sample_id_map_t = std::tuple<std::string, hid_t, std::deque<std::pair<int,int>>>; // rename
+                                                                            // to sample_to_file_map
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
-  using samples_id_map_v_t = std::vector< sample_id_map_t >;
+  using samples_id_map_v_t = std::vector< sample_id_map_t >; // rename to sample_to_file_v or something
+  /// Type for the map of file descriptors to usage step and substep
+  using fd_use_map_t = std::pair<sample_id_t, std::pair<int,int>>;
 
   sample_list_jag();
+  ~sample_list_jag();
 
   /// Set the number of partitions and clear internal states
   void set_num_partitions(size_t n);
@@ -142,7 +152,7 @@ class sample_list_jag {
   const sample_t& operator[](size_t idx) const;
 
   const std::string& get_samples_filename(sample_id_t id) const {
-    return m_sample_id_map[id];
+    return std::get<0>(m_sample_id_map[id]);
   }
 
   const std::string& get_samples_dirname() const {
@@ -150,26 +160,23 @@ class sample_list_jag {
   }
 
   hid_t get_samples_hdf5_handle(sample_id_t id) const {
-    const std::string& filename = m_sample_id_map[id];
-    hid_t h = 0;
-    if(m_open_fd_map.count(filename) != 0) {
-      h = m_open_fd_map.at(filename);
-    }
+    hid_t h = std::get<1>(m_sample_id_map[id]);
     return h;
   }
 
   void set_samples_filename(sample_id_t id, const std::string& filename) {
-    m_sample_id_map[id] = filename;
+    std::get<0>(m_sample_id_map[id]) = filename;
   }
 
-  void set_files_hdf5_handle(const std::string& filename, hid_t h) {
+  void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
+#if 0
     int bucket_count = m_open_fd_map.bucket_count();
     int bucket = m_open_fd_map.bucket(filename);
-    if(m_open_fd_map.bucket_size(bucket) > 0) {
-      // if(m_open_fd_map.bucket_size(bucket) != 1) {
-      //   LBANN_ERROR(std::string{} + " :: unexpected number of open file descriptors for bucket "
-      //               + std::to_string(bucket));
-      // }
+    if(!allow_collisions && m_open_fd_map.bucket_size(bucket) > 0) {
+      if(m_open_fd_map.bucket_size(bucket) != 1) {
+        LBANN_ERROR(std::string{} + " :: unexpected number of open file descriptors for bucket "
+                    + std::to_string(bucket));
+      }
       auto local_it = m_open_fd_map.begin(bucket);
       if(local_it == m_open_fd_map.end(bucket)) {
         LBANN_ERROR(std::string{} + " :: bucket '" + std::to_string(bucket)
@@ -182,16 +189,28 @@ class sample_list_jag {
                     + "' has a corrupt file descriptor = " + std::to_string(old_h));
       }
 
-      // conduit::relay::io::hdf5_close_file(old_h);
-      // int num_erased = m_open_fd_map.erase(old_filename);
-      // if(num_erased != 1) {
-      //   LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
-      //               + "' that had a file descriptor = " + std::to_string(old_h));
-      // }
+      conduit::relay::io::hdf5_close_file(old_h);
+      int num_erased = m_open_fd_map.erase(old_filename);
+      if(num_erased != 1) {
+        LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
+                    + "' that had a file descriptor = " + std::to_string(old_h));
+      }
     }
 
+    if(m_open_fd_pq.size() > 100/*LBANN_MAX_OPEN_DATA_FILES*/) {
+      std::cout << "The file descriptors are over the limit, lets close " << m_open_fd_pq.top().first << std::endl;
+      while(!m_open_fd_pq.empty()) {
+        auto e = m_open_fd_pq.top();
+        std::cout << "{" << e.first << ", " << e.second << "}" << std::endl;
+        //        std::cout << q.top() << " ";
+        m_open_fd_pq.pop();
+      }
+      std::cout << '\n';
+    }
 
     auto result = m_open_fd_map.emplace(filename, h);
+    m_open_fd_pq.emplace(std::make_pair(filename,access_count));
+
     int bucket2 = m_open_fd_map.bucket(filename);
     int bucket_count2 = m_open_fd_map.bucket_count();
     if(!result.second) {
@@ -201,16 +220,92 @@ class sample_list_jag {
         LBANN_ERROR(std::string{} + " :: the buckets don't match original bucket "
                     + std::to_string(bucket) + " with a count of " + std::to_string(bucket_count) + " and new bucket " + std::to_string(bucket2) + " and a new count of " + std::to_string(bucket_count2));
     }
-    // if(m_open_fd_map.bucket_size(bucket) != 1) {
-    //     LBANN_WARNING(std::string{} + " :: there should be one entry with an open file descriptors for bucket "
-    //                   + std::to_string(bucket) + " not "
-    //                   + std::to_string(m_open_fd_map.bucket_size(bucket)) + " entries");
+    if(m_open_fd_map.bucket_size(bucket) != 1) {
+        LBANN_WARNING(std::string{} + " :: there should be one entry with an open file descriptors for bucket "
+                      + std::to_string(bucket) + " not "
+                      + std::to_string(m_open_fd_map.bucket_size(bucket)) + " entries");
+    }
+#endif
+
+    //    for (auto&& e : m_sample_id_map) {
+    auto&& e = m_sample_id_map[id];
+    std::get<1>(e) = h;
+    // std::cout << "Attempt to set the hdf5 handle " << h << " for filename " << std::get<0>(e) << std::endl;
+
+    // std::cout << "set_files_hdf5_handle existing list for " << id << " {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
+    // for (auto&& v : std::get<2>(e)) {
+    //   std::cout << "{" << v.first << "," << v.second << "}, ";
     // }
+    // std::cout << std::endl;
+
+    // if(!m_open_fd_pq.empty()) {
+    //   // std::cout << "set_files_hdf5_handle Priotirty QUeue ";
+    //   std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+    //   // auto& q = m_open_fd_pq.front();
+    //   // std::cout << q.first << " {" << q.second.first << "," << q.second.second << "}, ";
+    //   // std::cout << std::endl;
+    // }
+
+    if(!m_open_fd_pq.empty()) {
+      /// Before we can enqueue the any new access times for this descriptor, remove any
+      /// earlier descriptor
+      std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+      if(m_open_fd_pq.front().first == id) {
+        //LBANN_ERROR("We have weirdness here, the head of the queue is not " + std::to_string(id));
+        m_open_fd_pq.pop_front();
+      }
+      std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+    }
+
+    auto& file_access_queue = std::get<2>(e);
+    if(!file_access_queue.empty()) {
+      file_access_queue.pop_front();
+      if(!file_access_queue.empty()) {
+        m_open_fd_pq.emplace_back(std::make_pair(id,file_access_queue.front()));
+        std::push_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+        // std::cout << "set_files_hdf5_handle New priotirty queue top ";
+        //        auto& q = m_open_fd_pq.front();
+        // for(auto&& q: m_open_fd_pq) {
+        //   std::cout << q.first << " {" << q.second.first << "," << q.second.second << "}, ";
+        // }
+        // std::cout << std::endl;
+      }
+      // std::cout << "set_files_hdf5_handle updated list for " << id << " {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
+      // for (auto&& v : std::get<2>(e)) {
+      //   std::cout << "{" << v.first << "," << v.second << "}, ";
+      // }
+      // std::cout << std::endl;
+    }
+
+    //        std::get<1>(m_sample_id_map[id]) = h;
+    //        std::cout << "I am setting the hdf5 handle " << h << " for filename " << filename << std::endl;
+
+    //    m_open_fd_map.emplace(std::make_tuple(filename, h, access_count));
+    // for (auto&& e : m_sample_id_map) {
+    //   std::cout << "set_files_hdf5_handle {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
+    //   if(std::get<2>(e).empty()) {
+    //     std::cout << "empty" << std::endl;
+    //   }else {
+    //     for (auto&& v : std::get<2>(e)) {
+    //       std::cout << "{" << v.first << "," << v.second << "}, ";
+    //     }
+    //     std::cout << std::endl;
+    //   }
+    // }
+    // for (auto&& e : m_sample_id_map)
+    //   std::cout << "{" << std::get<0)>(e) << ", " << std::get<1>(e) << ", " << std::get<2>(e) << "}" << std::endl;
+
   }
 
-  void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
-    const std::string& filename = m_sample_id_map[id];
-    set_files_hdf5_handle(filename, h);
+  void set_files_hdf5_handle(const std::string& filename, hid_t h) {
+    sample_id_t id = 0;
+    for (auto&& e : m_sample_id_map) {
+      if(std::get<0>(e) == filename) {
+        break;
+      }
+      id++;
+    }
+    set_samples_hdf5_handle(id, h);
   }
 
   hid_t open_samples_hdf5_handle(const size_t i) {
@@ -228,6 +323,56 @@ class sample_list_jag {
         LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
       }
       set_samples_hdf5_handle(id, h);
+    }else {
+
+      if(!m_open_fd_pq.empty()) {
+        /// Before we can enqueue the any new access times for this descriptor, remove any
+        /// earlier descriptor
+        std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+        if(m_open_fd_pq.front().first == id) {
+          //          LBANN_ERROR("We have weirdness here, the head of the queue is not " + std::to_string(id));
+          m_open_fd_pq.pop_front();
+        }
+        std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+      }
+
+      // std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+      // if(!m_open_fd_pq.empty() && m_open_fd_pq.front().first != id) {
+      //   LBANN_WARNING("We have weirdness here, the head of the queue is not " + std::to_string(id));
+      // }
+
+      auto& e = m_sample_id_map[id];
+
+      // std::cout << "open_files_hdf5_handle updated list {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
+      // for (auto&& v : std::get<2>(e)) {
+      //   std::cout << "{" << v.first << "," << v.second << "}, ";
+      // }
+      // std::cout << std::endl;
+
+      //        std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+      // if(!m_open_fd_pq.empty()) {
+      //   // std::cout << "open_files_hdf5_handle priority queue :";
+      //   auto& p = m_open_fd_pq.front();
+      //   std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
+      //   std::cout << std::endl;
+      // }
+
+      auto& file_access_queue = std::get<2>(e);
+      if(!file_access_queue.empty()) {
+        file_access_queue.pop_front();
+        if(!file_access_queue.empty()) {
+          m_open_fd_pq.emplace_back(std::make_pair(id,file_access_queue.front()));
+          std::push_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+          // if(!m_open_fd_pq.empty()) {
+          //   std::cout << "open_files_hdf5_handle new priority queue :";
+          //   //            auto& p = m_open_fd_pq.front();
+          //   for(auto&& p: m_open_fd_pq) {
+          //     std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
+          //   }
+          //   std::cout << std::endl;
+          // }
+        }
+      }
     }
 
     return h;
@@ -236,6 +381,8 @@ class sample_list_jag {
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
   void all_gather_packed_lists(lbann_comm& comm);
+
+  void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 
  protected:
 
@@ -263,6 +410,11 @@ class sample_list_jag {
   /// Add the header info to the given string
   void write_header(std::string& sstr, size_t num_files) const;
 
+  static bool pq_cmp(fd_use_map_t left, fd_use_map_t right) {
+    return ((left.second).first < (right.second).first) ||
+           (((left.second).first == (right.second).first) &&
+            ((left.second).second < (right.second).second)); }
+
  private:
 
   /// The number of partitions to divide samples into
@@ -274,7 +426,7 @@ class sample_list_jag {
   /// Contains list of all sample
   samples_t m_sample_list;
 
-  /// Maps sample IDs to file names
+  /// Maps sample IDs to file names, file descriptors, and use counts
   samples_id_map_v_t m_sample_id_map;
 
   /// Maps a global index to a local index
@@ -283,8 +435,14 @@ class sample_list_jag {
   /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;
 
-  /// Track the number of open file descriptors
-  std::unordered_map<std::string, hid_t> m_open_fd_map;
+  /// Track the number of open file descriptors and how many times
+  /// each file descriptor will be used
+  //  std::unordered_map<std::string, hid_t> m_open_fd_map;
+  //  std::set<fd_use_map, std::function<bool(fd_use_map_t, fd_use_map_t)>> m_open_fd_map;
+   // Using lambda to compare elements.
+  //  auto cmp = [](std::pair<string, int> left,std::pair<string, int> right) { return (left.second) > (right.second);};
+  //  std::priority_queue<fd_use_map_t, std::vector<fd_use_map_t>, std::function<bool(fd_use_map_t, fd_use_map_t)>> m_open_fd_pq;
+  std::deque<fd_use_map_t> m_open_fd_pq;
 
 };
 
