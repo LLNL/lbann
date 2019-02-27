@@ -999,13 +999,14 @@ private:
       cudnnDataType_t data_type;
       cudnnTensorFormat_t format;
       int num_dims;
+      std::vector<int> dims(1);
       CHECK_CUDNN(cudnnGetFilterNdDescriptor(src,
-                                             0,
+                                             dims.size(),
                                              &data_type,
                                              &format,
                                              &num_dims,
-                                             nullptr));
-      std::vector<int> dims(num_dims);
+                                             dims.data()));
+      dims.resize(num_dims);
       CHECK_CUDNN(cudnnGetFilterNdDescriptor(src,
                                              num_dims,
                                              &data_type,
