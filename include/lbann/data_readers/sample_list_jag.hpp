@@ -73,9 +73,6 @@ class sample_list_jag {
   sample_list_jag();
   ~sample_list_jag();
 
-  /// Set the number of partitions and clear internal states
-  void set_num_partitions(size_t n);
-
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
 
@@ -99,26 +96,14 @@ class sample_list_jag {
   /// Check if a sample index is in the valid range
   bool check_index(size_t idx) const;
 
-  /// Serialize sample list for a partition
-  bool to_string(size_t p, std::string& sstr) const;
-
-  /// Serialize sample list for all partitions
+  /// Serialize sample list
   bool to_string(std::string& sstr) const;
 
-  /// Write the sample list of partition p
-  void write(size_t p, const std::string filename) const;
-
-  /// Write the sample list of each partitions
+  /// Write the sample list
   void write(const std::string filename) const;
 
   /// Allow read-only access to the internal list data
   const samples_t& get_list() const;
-
-  /// Copy the internal list data for partition p
-  bool get_list(size_t p, samples_t& l_p) const;
-
-  /// Allow read-only access to the internal list data for partition p via iterators
-  std::pair<samples_t::const_iterator, samples_t::const_iterator> get_list(size_t p) const;
 
   /// Allow the read-only access to the list header
   const sample_list_header& get_header() const;
@@ -359,9 +344,6 @@ class sample_list_jag {
   /// Reads a sample list and populates the internal list
   size_t get_samples_per_file(std::istream& istrm, const std::string& filename, size_t stride=1, size_t offset=0);
 
-  /// Compute the sample index range that partition p covers
-  void get_sample_range_per_part(const size_t p, size_t& sid_start, size_t& sid_end) const;
-
   /// Add the header info to the given string
   void write_header(std::string& sstr, size_t num_files) const;
 
@@ -371,10 +353,6 @@ class sample_list_jag {
             ((left.second).second < (right.second).second)); }
 
  private:
-
-  /// The number of partitions to divide samples into
-  size_t m_num_partitions;
-
   /// header info of sample list
   sample_list_header m_header;
 
