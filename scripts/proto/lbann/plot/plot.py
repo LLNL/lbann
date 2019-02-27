@@ -4,6 +4,7 @@ import sys
 import json
 import matplotlib.pyplot as plt
 import texttable as tt
+import pandas as pd
 
 # Local imports
 from . import parser
@@ -25,7 +26,7 @@ def _get_time_axis(time_list, units='hours'):
     return time_axis
 
 def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
-         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, savefig=None):
+         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, save_fig=None, save_csv=None):
     """Tabulate and plot stats from LBANN or PyTorch training in common format."""
     ### Load stat dicts and print stat summary
     stat_dict_list = []
@@ -49,6 +50,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
 
     stat_table.header(headings)
     # Loop through each trial
+    rows = []
+    row_names = []
     for run_name, stat_path in zip(run_name_list, stat_path_list):
         # Load stat file
         stat_ext = os.path.splitext(stat_path)[1]
@@ -116,9 +119,14 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         stat_dict_list.append((run_name, d))
 
         # Add row to stats table for current trial
-        stat_table.add_row([run_name, num_procs, num_nodes, total_epochs, avg_train_time, avg_val_time] \
-                           + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
-                           + [min_train_loss, min_val_loss])
+        row = [run_name, num_procs, num_nodes, total_epochs, avg_train_time, avg_val_time] \
+            + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
+            + [min_train_loss, min_val_loss]
+        rows.append(row)
+        row_names.append(run_name)
+
+    for row in rows:
+        stat_table.add_row(row)
 
     # Print the stats table
     print()
@@ -184,8 +192,13 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
     # plt.legend(loc=(0.25, 1.22))
     plt.legend()
 
-    if savefig is None:
+    if save_fig is None:
         # Show the plot
         plt.show()
     else:
-        plt.savefig(savefig)
+        plt.savefig(save_fig)
+
+    if save_csv is not None:
+        df = pd.DataFrame([dict(zip(headings, row)) for row in rows],
+                          index=row_names)
+        df.to_csv(save_csv)
