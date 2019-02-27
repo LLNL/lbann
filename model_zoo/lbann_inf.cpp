@@ -35,36 +35,36 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
+  auto comm = initialize(argc, argv, random_seed);
+  const bool master = comm->am_world_master();
 
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm);
-      finalize(comm);
-      return 0;
+      print_help(*comm);
+      return EXIT_SUCCESS;
     }
 
-    std::stringstream err;
+    std::ostringstream err;
 
     // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+    std::shared_ptr<thread_pool> io_thread_pool
+      = construct_io_thread_pool(comm.get());
 
-    std::vector<lbann_data::LbannPB *> pbs;
-    protobuf_utils::load_prototext(master, argc, argv, pbs);
-    std::vector<model*> models;
-    for(auto pb_model : pbs) {
-      models.emplace_back(build_model_from_prototext(argc, argv, *pb_model,
-                                                     comm, io_thread_pool, models.size() == 0));
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    std::vector<std::unique_ptr<model>> models;
+    for(auto&& pb_model : pbs) {
+      models.emplace_back(
+        build_model_from_prototext(argc, argv, *pb_model,
+                                   comm.get(), io_thread_pool, models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      for(auto m : models) {
-        lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), m);
+      for(auto&& m : models) {
+        lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), m.get());
       }
     }else {
       LBANN_ERROR("Unable to reload model");
@@ -74,27 +74,15 @@ int main(int argc, char *argv[]) {
     /// Enable shared testing data readers on the command line via --share_testing_data_readers=1
     El::Int num_samples = models[0]->get_num_iterations_per_epoch(execution_mode::testing);
     for(El::Int s = 0; s < num_samples; s++) {
-      for(auto m : models) {
+      for(auto&& m : models) {
         m->evaluate(execution_mode::testing, 1);
       }
     }
 
-    for(auto m : models) {
-      delete m;
-    }
-
-    for (auto t : pbs) {
-      delete t;
-    }
-
   } catch (std::exception& e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
-  // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
-
 }

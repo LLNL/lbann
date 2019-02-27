@@ -566,7 +566,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
-  m_io_thread_pool = io_thread_pool;
+  m_io_thread_pool = std::move(io_thread_pool);
 
   // Setup layers
   setup_layer_topology();
