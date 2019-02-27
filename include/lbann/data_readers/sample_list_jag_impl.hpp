@@ -46,34 +46,6 @@ inline const std::string& sample_list_header::get_file_dir() const {
   return m_file_dir;
 }
 
-
-inline sample_list_indexer::sample_list_indexer()
-: m_partition_offset(0u) {
-}
-
-inline bool sample_list_indexer::check_index(size_t i) const {
-  return (i >= m_partition_offset);
-}
-
-inline size_t sample_list_indexer::operator()(size_t i) const {
-  if (!check_index(i)) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: index (" + std::to_string(i)
-                          + ") is less than the partition offset ("
-                          + std::to_string(m_partition_offset) + ")");
-  }
-  return i - m_partition_offset;
-}
-
-inline void sample_list_indexer::set_partition_offset(size_t o) {
-  m_partition_offset = o;
-}
-
-inline size_t sample_list_indexer::get_partition_offset() const {
-  return m_partition_offset;
-}
-
-
 inline sample_list_jag::sample_list_jag()
   : m_num_partitions(1u) {}
 
@@ -99,49 +71,29 @@ inline void sample_list_jag::set_num_partitions(size_t n) {
   m_num_partitions = n;
 }
 
-inline void sample_list_jag::set_indexer(const sample_list_indexer& indexer) {
-  m_indexer = indexer;
-}
-
-inline const sample_list_indexer& sample_list_jag::get_indexer() const {
-  return m_indexer;
-}
-
-
 inline void sample_list_jag::load(const std::string& samplelist_file, size_t stride, size_t offset) {
   std::ifstream istr(samplelist_file);
   get_samples_per_file(istr, samplelist_file, stride, offset);
   istr.close();
 }
 
-
 inline sample_list_header sample_list_jag::load_header(const std::string& samplelist_file) const {
   std::ifstream istr(samplelist_file);
   return read_header(istr, samplelist_file);
 }
-
 
 inline void sample_list_jag::load_from_string(const std::string& samplelist) {
   std::istringstream istr(samplelist);
   get_samples_per_file(istr, "<LOAD_FROM_STRING>", 1, 0);
 }
 
-
 inline size_t sample_list_jag::size() const {
   return m_sample_list.size();
 }
 
-
 inline bool sample_list_jag::empty() const {
   return m_sample_list.empty();
 }
-
-
-inline bool sample_list_jag::check_index(size_t idx) const {
-  return m_indexer.check_index(idx) &&
-         (m_indexer(idx) < m_sample_list.size());
-}
-
 
 inline std::string sample_list_jag::read_header_line(std::istream& istrm, const std::string& filename, const std::string& info) const {
   if (!istrm.good()) {
@@ -773,13 +725,7 @@ inline const sample_list_header& sample_list_jag::get_header() const {
 }
 
 inline const sample_list_jag::sample_t& sample_list_jag::operator[](size_t idx) const {
-  size_t i = m_indexer(idx);
-  if (i >= m_sample_list.size()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-          + " :: index (" + std::to_string(i) + ") out of range [0 "
-          + std::to_string(m_sample_list.size()) + ")");
-  }
-  return m_sample_list[i];
+  return m_sample_list[idx];
 }
 
 } // end of namespace lbann
