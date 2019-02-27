@@ -21,7 +21,7 @@
 #include <cereal/types/utility.hpp>
 #include "conduit/conduit_relay_io_hdf5.hpp"
 
-#define LBANN_MAX_OPEN_DATA_FILES 16
+#define LBANN_MAX_OPEN_DATA_FILES 768
 
 namespace lbann {
 
@@ -169,55 +169,6 @@ class sample_list_jag {
   }
 
   void set_samples_hdf5_handle(sample_id_t id, hid_t h) {
-#if 0
-    int bucket_count = m_open_fd_map.bucket_count();
-    int bucket = m_open_fd_map.bucket(filename);
-    if(!allow_collisions && m_open_fd_map.bucket_size(bucket) > 0) {
-      if(m_open_fd_map.bucket_size(bucket) != 1) {
-        LBANN_ERROR(std::string{} + " :: unexpected number of open file descriptors for bucket "
-                    + std::to_string(bucket));
-      }
-      auto local_it = m_open_fd_map.begin(bucket);
-      if(local_it == m_open_fd_map.end(bucket)) {
-        LBANN_ERROR(std::string{} + " :: bucket '" + std::to_string(bucket)
-                    + "' has an empty iterator");
-      }
-      const std::string& old_filename = local_it->first;
-      hid_t old_h = local_it->second;
-      if (old_h <= static_cast<hid_t>(0)) {
-        LBANN_ERROR(std::string{} + " :: data file '" + old_filename
-                    + "' has a corrupt file descriptor = " + std::to_string(old_h));
-      }
-
-      conduit::relay::io::hdf5_close_file(old_h);
-      int num_erased = m_open_fd_map.erase(old_filename);
-      if(num_erased != 1) {
-        LBANN_ERROR(std::string{} + " :: erasing file descriptor for '" + old_filename
-                    + "' that had a file descriptor = " + std::to_string(old_h));
-      }
-    }
-
-
-    auto result = m_open_fd_map.emplace(filename, h);
-    m_open_fd_pq.emplace(std::make_pair(filename,access_count));
-
-    int bucket2 = m_open_fd_map.bucket(filename);
-    int bucket_count2 = m_open_fd_map.bucket_count();
-    if(!result.second) {
-      LBANN_WARNING(std::string{} + " :: The key for " + filename + " already existed");
-    }
-    if(bucket2 != bucket) {
-        LBANN_ERROR(std::string{} + " :: the buckets don't match original bucket "
-                    + std::to_string(bucket) + " with a count of " + std::to_string(bucket_count) + " and new bucket " + std::to_string(bucket2) + " and a new count of " + std::to_string(bucket_count2));
-    }
-    if(m_open_fd_map.bucket_size(bucket) != 1) {
-        LBANN_WARNING(std::string{} + " :: there should be one entry with an open file descriptors for bucket "
-                      + std::to_string(bucket) + " not "
-                      + std::to_string(m_open_fd_map.bucket_size(bucket)) + " entries");
-    }
-#endif
-
-    //    for (auto&& e : m_sample_id_map) {
     auto&& e = m_sample_id_map[id];
     std::get<1>(e) = h;
     // std::cout << "Attempt to set the hdf5 handle " << h << " for filename " << std::get<0>(e) << std::endl;
