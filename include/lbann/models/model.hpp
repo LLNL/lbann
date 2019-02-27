@@ -90,7 +90,7 @@ public:
   /** Human-readable description. */
   virtual description get_description() const;
 
-  /** Return the model's objective function. */
+  /** Mathematical function to be minimized during training. */
   objective_function* get_objective_function() const {
     return m_objective_function;
   }
@@ -169,11 +169,6 @@ public:
     m_effective_mini_batch_size = mini_batch_size;
   }
   int get_num_iterations_per_epoch(execution_mode mode) const;
-
-  /** Get the current phase (multiple epochs) in layer-wise model training. */
-  inline int get_current_phase() const {
-    return m_current_phase;
-  }
 
   /** Return true if the flag to stop training is set. */
   bool get_terminate_training() const {
@@ -451,10 +446,6 @@ private:
    */
   std::map<execution_mode, El::Int> m_step;
 
-  /** Most recent/current training step for the model. */
-  int m_current_step;
-  int m_current_validation_step;
-  int m_current_testing_step;
   /** @details Maximum possible minibatch size supported by layers in
    *  this model.  Note that this is local to the particular model,
    *  not across multiple models.
@@ -468,8 +459,6 @@ private:
    *  e.g.  correctly averaging gradients from multiple models.
    */
   int m_effective_mini_batch_size;
-  /** current phase (multiple of epoch counts) in training a model */
-  int m_current_phase;
   /** Communicator for the model. */
   lbann_comm *m_comm;
   /** Current callbacks to process. */

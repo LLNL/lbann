@@ -60,7 +60,6 @@ model::model(lbann_comm *comm,
     m_max_mini_batch_size(mini_batch_size),
     m_current_mini_batch_size(mini_batch_size),
     m_effective_mini_batch_size(mini_batch_size),
-    m_current_phase(0),
     m_comm(comm),
     m_default_optimizer(default_optimizer),
     m_io_thread_pool(),
@@ -81,7 +80,6 @@ model::model(const model& other) :
   m_max_mini_batch_size(other.m_max_mini_batch_size),
   m_current_mini_batch_size(other.m_current_mini_batch_size),
   m_effective_mini_batch_size(other.m_effective_mini_batch_size),
-  m_current_phase(other.m_current_phase),
   m_comm(other.m_comm),
   m_background_io_allowed(other.m_background_io_allowed) {
 
@@ -135,7 +133,6 @@ model& model::operator=(const model& other) {
   m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_current_mini_batch_size = other.m_current_mini_batch_size;
   m_effective_mini_batch_size = other.m_effective_mini_batch_size;
-  m_current_phase = other.m_current_phase;
   m_comm = other.m_comm;
   m_background_io_allowed = other.m_background_io_allowed;
 
@@ -1052,16 +1049,12 @@ bool model::evaluate_mini_batch(execution_mode mode) {
     m->evaluate(mode, get_current_mini_batch_size());
   }
   const bool finished = update_layers();
-  switch(m_execution_mode) {
-  case execution_mode::validation:
-    ++m_current_validation_step;
-    break;
-  case execution_mode::testing:
-    ++m_current_testing_step;
-    break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate mini-batch function");
-  }
+
+  // Increment mini-batch step
+  /// @todo Move after the callbacks
+  if (m_step.count(mode) < 1) { m_step[mode] = 0; }
+  ++m_step[mode];
+
   do_batch_end_cbs(mode);
   return finished;
 }
@@ -1476,7 +1469,6 @@ struct lbann_model_header {
   uint64_t testing_step;
   uint32_t max_mini_batch_size;
   uint32_t current_mini_batch_size;
-  uint32_t current_phase;
   uint32_t callback_type;;
 };
 
@@ -1491,7 +1483,6 @@ bool model::save_to_checkpoint_shared(persist& p) {
       p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
       p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
       p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
-      p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
       p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
       if(p.get_cb_type() == callback_type::batch)
         p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
@@ -1549,7 +1540,6 @@ bool model::load_from_checkpoint_shared(persist& p) {
       p.read_uint64(persist_type::train, "testing_step",       &header.testing_step);
       p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
       p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
-      p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
       p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
     } else {
       p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
@@ -1570,7 +1560,6 @@ bool model::load_from_checkpoint_shared(persist& p) {
     m_step[execution_mode::testing] = (int) header.testing_step;
     m_max_mini_batch_size = (int)           header.max_mini_batch_size;
     m_current_mini_batch_size = (int)       header.current_mini_batch_size;
-    m_current_phase      =                  header.current_phase;
     // set state of persist object to know which type of ckpt we are returning from.
     p.set_cb_type((callback_type) header.callback_type);
   } else {
@@ -1608,7 +1597,6 @@ bool model::save_to_checkpoint_distributed(persist& p){
     p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
     p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_phase",      (uint32_t) m_current_phase);
     p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
     if(p.get_cb_type() == callback_type::batch)
       p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
@@ -1657,7 +1645,6 @@ bool model::load_from_checkpoint_distributed(persist& p){
   p.read_uint64(persist_type::train, "testing_step",               &header.testing_step);
   p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
   p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
-  p.read_uint32(persist_type::train, "current_phase",      &header.current_phase);
   p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
 
   m_execution_mode     = (execution_mode) header.execution_mode;
@@ -1669,7 +1656,6 @@ bool model::load_from_checkpoint_distributed(persist& p){
   m_step[execution_mode::testing] = (int) header.testing_step;
   m_max_mini_batch_size = (int)           header.max_mini_batch_size;
   m_current_mini_batch_size = (int)       header.current_mini_batch_size;
-  m_current_phase      =                  header.current_phase;
 
   p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint_shared(p, m_comm);
