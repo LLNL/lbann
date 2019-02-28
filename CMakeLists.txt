@@ -416,14 +416,11 @@ if (LBANN_WITH_UNIT_TESTING)
     find_package(Catch2 2.0.0 CONFIG QUIET REQUIRED)
   endif ()
   message(STATUS "Found Catch2: ${Catch2_DIR}")
-  message(STATUS "CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}")
 
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
   add_subdirectory(src/utils/unit_test)
-
-  message(STATUS "LBANN_CATCH2_TEST_FILES=${LBANN_CATCH2_TEST_FILES}")
 
   # Add this one last
   add_subdirectory(unit_test)
