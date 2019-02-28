@@ -79,9 +79,9 @@ model *build_model_from_prototext(int argc, char **argv,
     set_num_parallel_readers(comm, pb);
 
     // Check to see if the model wants to reduce the I/O parallelism
-    if(pb_model->serialize_background_io() && io_thread_pool->get_num_threads() != 1) {
+    if(pb_model->serialize_io() && io_thread_pool->get_num_threads() != 1) {
       if(master) {
-        std::cout << "Model " << pb_model->name() << " serialized the background I/O threads" << std::endl;
+        std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
       }
       io_thread_pool->relaunch_pinned_threads(1);
     }
