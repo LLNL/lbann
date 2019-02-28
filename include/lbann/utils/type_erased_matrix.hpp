@@ -39,6 +39,15 @@ public:
     return any_cast<El::Matrix<Field> const&>(m_matrix);
   }
 
+  template <typename OldField, typename NewField>
+  El::Matrix<NewField>& convert()
+  {
+    any new_mat{El::Matrix<NewField>{
+        any_cast<El:Matrix<OldField> const&>(m_matrix)}};
+    m_matrix.swap(new_mat);
+    return this->template get<NewField>();
+  }
+
 private:
   any m_matrix;
 };// class type_erased_matrix
