@@ -219,10 +219,20 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
           bool placeholder = false;
           if(readme.local_shuffle()) {
             assert(comm->get_num_trainers() == 1);
-            assert(paths.size() % comm->get_procs_per_trainer() == 0);
-            const unsigned int npz_index = std::distance(paths.begin(), i);
-            placeholder = !(npz_index >= paths.size()/comm->get_procs_per_trainer()*comm->get_rank_in_trainer()
-                            && npz_index < paths.size()/comm->get_procs_per_trainer()*(comm->get_rank_in_trainer()+1));
+            const int proc_rank = comm->get_rank_in_trainer();
+            const int proc_size = comm->get_procs_per_trainer();
+            const int npz_rank = std::distance(paths.begin(), i);
+            const int npz_size = paths.size();
+
+            if(npz_size >= proc_size) {
+              assert(npz_size % proc_size == 0);
+              placeholder = !(npz_rank >= npz_size/proc_size*proc_rank
+                              && npz_rank < npz_size/proc_size*(proc_rank+1));
+            } else {
+              assert(proc_size % npz_size == 0);
+              placeholder = !(proc_rank >= proc_size/npz_size*npz_rank
+                              && proc_rank < proc_size/npz_size*(npz_rank+1));
+            }
           }
           auto* reader_numpy_npz = new numpy_npz_reader(false, placeholder);
           reader_numpy_npz->set_data_filename(path);
