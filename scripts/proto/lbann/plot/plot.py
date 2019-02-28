@@ -86,17 +86,25 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
             num_nodes = int(num_procs / num_procs_on_node)
         else :
             num_nodes = None
-            print('WARNING: No process counts are provided.')
+            print('WARNING: No process counts are provided from {}'.format(stat_path))
 
         # Total epochs of training
         total_epochs = len(d['val_time'])
 
         # Compute accuracy stats
         if plot_accuracy:
+            if len(d['train_acc']) == 0:
+                print('WARNING: No accuracy information is provided from {}'.format(stat_path))
+                continue
+
             peak_train_acc = max(d['train_acc'])
             peak_train_epoch = d['train_acc'].index(peak_train_acc)
             peak_val_acc = max(d['val_acc'])
             peak_val_epoch = d['val_acc'].index(peak_val_acc)
+
+        if len(d['train_loss']) == 0:
+            print('WARNING: No loss information is provided from {}'.format(stat_path))
+            continue
 
         # Compute loss stats
         min_train_loss = min(d['train_loss'])
