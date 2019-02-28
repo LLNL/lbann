@@ -575,7 +575,7 @@ private:
         dists, invariants, updated, fixed);
     // REVIEW: distconv-3d
     if (distconv_enabled()) {
-      dc::ArrayND overlap(0);
+      dc::IntVector overlap(dc::num_dims, 0);
       for(int i = 0; i < dc::num_spatial_dims; i++) {
         const int splits = std::vector<int>(
             {get_parallel_strategy().height_splits,

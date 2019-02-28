@@ -65,6 +65,10 @@ static constexpr int num_spatial_dims = num_dims - 2;
 // Helper type aliases
 ////////////////////////////////////////////////////////////
 using ArrayND = ::distconv::tensor::Array<num_dims>;
+template <typename DataType>
+using Vector = ::distconv::Vector<DataType>;
+using IntVector = ::distconv::IntVector;
+using Shape = ::distconv::tensor::Shape;
 
 using TensorHost = ::distconv::tensor::Tensor<
   num_dims, DataType, ::distconv::tensor::LocaleMPI,
@@ -83,7 +87,7 @@ using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
 using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
   num_dims, DataType>;
 
-using Dist = ::distconv::tensor::Distribution<num_dims>;
+using Dist = ::distconv::tensor::Distribution;
 
 using LocaleMPI = ::distconv::tensor::LocaleMPI;
 
