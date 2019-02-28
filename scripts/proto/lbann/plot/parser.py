@@ -7,6 +7,7 @@ _parse_list = [
     ('val_loss', 'validation objective function : ([0-9.]+)', lambda r: float(r.group(1))),
     ('val_acc', 'validation categorical accuracy : ([0-9.]+)', lambda r: float(r.group(1))/100.0),
     ('val_time', 'validation run time : ([0-9.]+)', lambda r: float(r.group(1))),
+    ('test_loss', 'test objective function : ([0-9.]+)', lambda r: float(r.group(1))),
     ('num_procs', 'Total number of processes\s*:\s*([\d]+)', lambda r: int(r.group(1))),
     ('num_procs_on_node', 'Processes on node\s*:\s*([\d]+)', lambda r: int(r.group(1))),
 ]

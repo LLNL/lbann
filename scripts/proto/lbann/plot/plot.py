@@ -26,7 +26,8 @@ def _get_time_axis(time_list, units='hours'):
     return time_axis
 
 def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
-         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, save_fig=None, save_csv=None, ylim=None):
+         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, save_fig=None, save_csv=None, ylim=None,
+         test_loss=False):
     """Tabulate and plot stats from LBANN or PyTorch training in common format."""
 
     if pretty_ylim and ylim is not None:
@@ -52,6 +53,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         headings += ['Peak Train Acc', 'Peak Val Acc']
 
     headings += ['Min. Train Loss', 'Min. Val Loss']
+    if test_loss:
+        headings += ['Min. Test Loss']
 
     stat_table.header(headings)
     # Loop through each trial
@@ -111,6 +114,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         min_train_epoch = d['train_loss'].index(min_train_loss)
         min_val_loss = min(d['val_loss'])
         min_val_epoch = d['val_loss'].index(min_val_loss)
+        min_test_loss = d['test_loss'][0] if test_loss else None
 
         # Compute time stats
         avg_train_time = int(sum(d['train_time'])/len(d['train_time']))
@@ -134,7 +138,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         # Add row to stats table for current trial
         row = [run_name, num_procs, num_nodes, total_epochs, avg_train_time, avg_val_time] \
             + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
-            + [min_train_loss, min_val_loss]
+            + [min_train_loss, min_val_loss] \
+            + ([min_test_loss] if test_loss else [])
         rows.append(row)
         row_names.append(run_name)
 
