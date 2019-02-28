@@ -29,12 +29,12 @@ public:
   El::Matrix<Field>& get()
   {
     return const_cast<El::Matrix<Field>&>(
-        static_cast<type_erasted_matrix const&>(*this)
+        static_cast<type_erased_matrix const&>(*this)
         .template get<Field>());
   }
 
   template <typename Field>
-  El::Matrix<Field> const& get()
+  El::Matrix<Field> const& get() const
   {
     return any_cast<El::Matrix<Field> const&>(m_matrix);
   }
@@ -42,9 +42,9 @@ public:
   template <typename OldField, typename NewField>
   El::Matrix<NewField>& convert()
   {
-    any new_mat{El::Matrix<NewField>{
-        any_cast<El:Matrix<OldField> const&>(m_matrix)}};
-    m_matrix.swap(new_mat);
+    El::Matrix<NewField> new_mat;
+    El::Copy(this->template get<OldField>(), new_mat);
+    m_matrix.template emplace<El::Matrix<NewField>>(std::move(new_mat));
     return this->template get<NewField>();
   }
 
@@ -56,7 +56,7 @@ private:
 // process.
 template <typename Field>
 std::unique_ptr<type_erased_matrix>
-create_type_erased_matrx()
+create_type_erased_matrix()
 {
   return make_unique<type_erased_matrix>(El::Matrix<Field>{});
 }
