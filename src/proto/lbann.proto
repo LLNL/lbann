@@ -741,6 +741,8 @@ message ParallelStrategy {
   // For fully-connected layers.
   int64 replications = 11;
   int64 procs_per_replica = 12;
+  int64 depth_groups = 13; // TODO: enable/disable by CMake
+  int64 depth_splits = 14;
 }
 
 //========================================================================

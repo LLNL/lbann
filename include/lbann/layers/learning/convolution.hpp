@@ -148,7 +148,6 @@ public:
       LBANN_ERROR(err.str());
     }
 
-    // FIXME: distconv-3d
     // Initialize output tensor dimensions
     output_dims[0] = output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
@@ -339,10 +338,14 @@ protected:
 
   dc::ArrayND get_prev_activations_overlap() const override {
     if (this->distconv_enabled()) {
-      // FIXME: distconv-3d
-      int stencil_h = (this->m_kernel_dims[2] - 1) / 2;
-      int stencil_w = (this->m_kernel_dims[3] - 1) / 2;
-      return dc::ArrayND({stencil_w, stencil_h, 0, 0});
+      // REVIEW: distconv-3d
+      std::vector<int> overlaps;
+      overlaps.push_back(0); // N
+      overlaps.push_back(0); // C
+      for(auto i = this->m_kernel_dims.begin()+2; i != this->m_kernel_dims.end(); ++i)
+        overlaps.push_back((*i - 1) / 2);
+      std::reverse(overlaps.begin(), overlaps.end());
+      return dc::ArrayND(overlaps);
     } else {
       return dc::ArrayND(0);
     }
@@ -365,24 +368,27 @@ protected:
   }
 
   void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dims>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
     if (this->distconv_enabled()) {
-      // FIXME: distconv-3d
-      int stencil_h = (this->m_kernel_dims[2] - 1) / 2
-          * this->m_dilations[0];
-      int stencil_w = (this->m_kernel_dims[3] - 1) / 2
-          * this->m_dilations[1];
+      // REVIEW: distconv-3d
       dc::ArrayND overlap(0);
-      if (this->get_parallel_strategy().width_splits > 1) {
-        overlap[0] = stencil_w;
-      }
-      if (this->get_parallel_strategy().height_splits > 1) {
-        overlap[1] = stencil_h;
+      for(int i = 0; i < dc::num_spatial_dims; i++) {
+        const int splits = std::vector<int>(
+            {this->get_parallel_strategy().height_splits,
+             this->get_parallel_strategy().width_splits,
+             -1,
+             this->get_parallel_strategy().depth_splits,
+             this->get_parallel_strategy().height_splits,
+             this->get_parallel_strategy().width_splits})
+            [i + 3 * (dc::num_dims - 4)];
+        assert(splits != -1);
+        if(splits > 1)
+          overlap[dc::num_dims - i] = (this->m_kernel_dims[2 + i] - 1) / 2 * this->m_dilations[i];
       }
       auto &prev_activations_dist = dists[this][0];
       prev_activations_dist.set_overlap(overlap);
@@ -416,11 +422,11 @@ protected:
     return output_spatial_local_shape;
   }
 
-  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+  // REVIEW: distconv-3d
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
     using namespace dc;
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
-    // FIXME: distconv-3d
 
     std::stringstream ss;
     util::print_vector(ss, this->m_kernel_dims.begin(), this->m_kernel_dims.end());
@@ -455,7 +461,9 @@ protected:
         << dc::util::tostring(this->m_bias_cudnn_desc)
         << ", bias factor: " << this->m_bias_scaling_factor;
     if (this->m_bias_scaling_factor != DataType(0)) {
-      ArrayND bias_shape = {1, 1, this->get_output_dims()[0], 1};
+      std::vector<int> bias_shape_v(dc::num_dims, 1);
+      bias_shape_v[dc::num_spatial_dims] = this->get_output_dims()[0];
+      ArrayND bias_shape(bias_shape_v);
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
       assert0(tensor::View(m_bias_t,
                            this->get_weights()[1]->get_values().LockedBuffer()));
@@ -473,7 +481,8 @@ protected:
     }
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+  // REVIEW: distconv-3d
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 
@@ -530,10 +539,13 @@ protected:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
-    // FIXME: distconv-3d
-    if (!(this->m_kernel_dims[2] == this->m_kernel_dims[3] &&
-          this->m_kernel_dims[2] == this->m_pads[0] / this->m_dilations[0] * 2 + 1 &&
-          this->m_kernel_dims[3] == this->m_pads[1] / this->m_dilations[1] * 2 + 1)) {
+    // REVIEW: distconv-3d
+    bool cond = true;
+    for(int i = 0; i < dc::num_spatial_dims; i++) {
+      cond &= this->m_kernel_dims[2 + i] == this->m_kernel_dims[2];
+      cond &= this->m_kernel_dims[2 + i] == this->m_pads[i] / this->m_dilations[i] * 2 + 1;
+    }
+    if (!cond) {
       dc::MPIPrintStreamDebug()
           << "Unsupported as padding does not match the kernel size";
       return false;

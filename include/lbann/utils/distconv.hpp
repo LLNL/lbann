@@ -52,12 +52,14 @@
 #include "distconv/tensor/shuffle_al.hpp"
 #include "distconv/tensor/shuffle_hybrid.hpp"
 #include "distconv/tensor/algorithms.hpp"
+#include "distconv/util/util.hpp"
 #include "p2p/p2p.hpp"
 
 namespace lbann {
 namespace dc {
 
-static constexpr num_dims = 4; // TODO: set 4 or 5 via DISTCONV_NUM_DIMS
+static constexpr int num_dims = 4; // TODO: set 4 or 5 via DISTCONV_NUM_DIMS
+static constexpr int num_spatial_dims = num_dims - 2;
 
 ////////////////////////////////////////////////////////////
 // Helper type aliases

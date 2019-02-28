@@ -56,6 +56,11 @@ struct ParallelStrategy {
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
   int sample_splits = 0;
+  // TODO: distconv-3d, do not define if num_dims == 4
+  /** Number of process groups the depth dimension is split over. */
+  int depth_groups = 0;
+  /** Number of groups the depth dimension is split over. */
+  int depth_splits = 0;
   /** Number of process groups the height dimension is split over. */
   int height_groups = 0;
   /** Number of groups the height dimension is split over. */
@@ -77,6 +82,8 @@ struct ParallelStrategy {
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
+        depth_groups == ps.depth_groups &&
+        depth_splits == ps.depth_splits &&
         height_groups == ps.height_groups &&
         height_splits == ps.height_splits &&
         width_groups == ps.width_groups &&
@@ -96,6 +103,8 @@ inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
   os << "{" << ps.sample_groups
      << "/" << ps.sample_splits
+     << ", " << ps.depth_groups
+     << "/" << ps.depth_splits
      << ", " << ps.height_groups
      << "/" << ps.height_splits
      << ", " << ps.width_groups
@@ -693,6 +702,11 @@ private:
   const AbsDistMat& get_activations(const Layer& child) const;
   /** Get error signal tensor corresponding to parent layer. */
   const AbsDistMat& get_error_signals(const Layer& parent) const;
+
+  /** Return Distconv-related shapes. */
+  const dc::ArrayND get_input_tensor_shape() const;
+  const dc::ArrayND get_output_tensor_shape() const;
+  const dc::ArrayND get_sample_block_size() const;
 
   // ===========================================================
   // Private class members

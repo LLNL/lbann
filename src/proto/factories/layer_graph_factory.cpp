@@ -243,6 +243,9 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     ps.filter_groups = proto_layer.parallel_strategy().filter_groups();
     ps.filter_splits = proto_layer.parallel_strategy().filter_splits();
     ps.replications = proto_layer.parallel_strategy().replications();
+    // TODO: distconv-3d, do not define if num_dims == 4
+    ps.depth_groups = proto_layer.parallel_strategy().depth_groups();
+    ps.depth_splits = proto_layer.parallel_strategy().depth_splits();
 
     // Check that layer has been constructed
     if (l == nullptr) {
