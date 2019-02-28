@@ -759,6 +759,9 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (opts->has_int("random_seed")) {
     model->set_random_seed(opts->get_int("random_seed"));
   }
+  if(opts->has_bool("serialize_io")) {
+    model->set_serialize_io(opts->get_bool("serialize_io"));
+  }
 
 
   if (opts->has_string("opt")) {
@@ -838,7 +841,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  block_size:              " << m.block_size()  << std::endl
             << "  procs_per_trainer:       " << m.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
-            << "  serialize_background_io: " << m.serialize_background_io()  << std::endl
+            << "  serialize_io:            " << m.serialize_io()  << std::endl
             << "  disable_cuda:            " << m.disable_cuda()  << std::endl
             << "  random_seed:             " << m.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
@@ -878,7 +881,11 @@ void print_help(const lbann_comm& comm)
        "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
+       "      # of threads used for I/O by the data readers\n"
+       "  --serialize_io=<bool>\n"
+       "      force data readers to use a single thread for I/O\n"
        "  --disable_background_io_activity=<bool>\n"
+       "      prevent the input layers from fetching data in the background\n"
        "  --disable_cuda=<bool>\n"
        "     has no effect unless lbann was compiled with: LBANN_HAS_CUDNN\n"
        "  --random_seed=<int>\n"
