@@ -31,6 +31,9 @@ def main():
                         help="The minimum y-axis limit of the loss plot.")
     parser.add_argument('--loss-ymax', type=float, # default=None, # float("inf"),
                         help="The maximum y-axis limit of the loss plot.")
+    parser.add_argument("--test-loss", dest="test_loss", action="store_const",
+                        const=True, default=False,
+                        help="Show the test loss")
     args = parser.parse_args()
 
     ylim = None
@@ -48,7 +51,8 @@ def main():
          pretty_ylim=args.pretty_ylim,
          save_fig=args.save_fig if args.save_fig != '' else None,
          save_csv=args.save_csv if args.save_csv != '' else None,
-         ylim=[args.loss_ymin, args.loss_ymax])
+         ylim=[args.loss_ymin, args.loss_ymax],
+         test_loss=args.test_loss)
 
 
 if __name__=='__main__':
