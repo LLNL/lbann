@@ -58,7 +58,7 @@
 namespace lbann {
 namespace dc {
 
-static constexpr int num_dims = 4; // TODO: set 4 or 5 via DISTCONV_NUM_DIMS
+static constexpr int num_dims = 4; // TODO: distconv-3d, set 4 or 5 via DISTCONV_NUM_DIMS
 static constexpr int num_spatial_dims = num_dims - 2;
 
 ////////////////////////////////////////////////////////////

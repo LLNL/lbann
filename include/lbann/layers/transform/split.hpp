@@ -91,7 +91,7 @@ protected:
   void fp_compute_distconv() {}
 
  public:
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
     this->setup_prev_activations_tensor(dists);
@@ -100,7 +100,7 @@ protected:
     this->setup_activations_copyout_tensor(dists);
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 

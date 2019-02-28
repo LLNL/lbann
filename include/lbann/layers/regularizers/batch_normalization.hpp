@@ -345,7 +345,7 @@ protected:
 
   dc::LocaleMPI m_spatial_loc;
 
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
@@ -409,7 +409,7 @@ protected:
         m_var_gradient_t, this->m_var_gradient->Buffer()));
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!distconv_enabled()) return;
 

@@ -368,7 +368,7 @@ protected:
   }
 
   void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dims>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
@@ -423,7 +423,7 @@ protected:
   }
 
   // REVIEW: distconv-3d
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
     using namespace dc;
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
@@ -482,7 +482,7 @@ protected:
   }
 
   // REVIEW: distconv-3d
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dims> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 
