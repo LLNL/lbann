@@ -63,7 +63,7 @@ protected:
    *  convolution. The default convolution operation has one group, and a
    *  depthwise convolution has as many groups as there are input channels.
    */
-  int m_num_groups;
+  int m_groups;
 
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
@@ -106,50 +106,19 @@ public:
                          int groups,
                          bool has_bias)
     : Layer(comm),
-      m_output_channels(std::max(output_channels, 1)),
+      m_output_channels(output_channels),
       m_conv_dims(std::move(conv_dims)),
       m_pads(std::move(pads)),
       m_strides(std::move(strides)),
       m_dilations(std::move(dilations)),
-      m_num_groups(std::max(groups, 1)),
+      m_groups(groups),
       m_bias_scaling_factor(has_bias ? 1 : 0),
       m_kernel_gradient(this->get_comm()->get_trainer_grid()),
       m_bias_gradient(this->get_comm()->get_trainer_grid())
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {
-    std::ostringstream err;
-
-    // Make sure that configuration is supported
-    if (Device == El::Device::CPU
-        && std::any_of(m_dilations.begin(), m_dilations.end(),
-                       [](El::Int d) { return d != 1; })) {
-      err << "layer \"" << this->get_name() << "\" "
-          << "has non-unit dilation, which is not yet supported on CPU";
-      LBANN_ERROR(err.str());
-    }
-    if (Device == El::Device::CPU && m_num_groups != 1) {
-      err << "layer \"" << this->get_name() << "\" "
-          << "has " << m_num_groups << ", "
-          << "but only unit groups are currently supported on CPU";
-      LBANN_ERROR(err.str());
-    }
-
-    // Check dimensions of convolution parameters
-    if (m_pads.size() != m_conv_dims.size()
-        || m_strides.size() != m_conv_dims.size()
-        || m_dilations.size() != m_conv_dims.size()) {
-      err << " layer \"" << this->get_name() << "\" "
-          << "has an invalid number of convolution parameters "
-          << "(conv_dims has " << m_conv_dims.size() << " entries, "
-          << "pads has " << m_pads.size() << ", "
-          << "strides has " << m_strides.size() << ", "
-          << "dilations has " << m_dilations.size() << ")";
-      LBANN_ERROR(err.str());
-    }
-
-  }
+  {}
 
   base_convolution_layer(const base_convolution_layer& other)
     : Layer(other),
@@ -158,7 +127,7 @@ public:
       m_pads(other.m_pads),
       m_strides(other.m_strides),
       m_dilations(other.m_dilations),
-      m_num_groups(other.m_num_groups),
+      m_groups(other.m_groups),
       m_bias_scaling_factor(other.m_bias_scaling_factor),
       m_kernel_gradient(other.m_kernel_gradient),
       m_bias_gradient(other.m_bias_gradient)
@@ -184,7 +153,7 @@ public:
     m_pads = other.m_pads;
     m_strides = other.m_strides;
     m_dilations = other.m_dilations;
-    m_num_groups = other.m_num_groups;
+    m_groups = other.m_groups;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
     m_kernel_gradient = other.m_kernel_gradient;
     m_bias_gradient = other.m_bias_gradient;
@@ -255,7 +224,7 @@ public:
     desc.add("Dilations", ss.str());
 
     // Groups
-    desc.add("Groups", m_num_groups);
+    desc.add("Groups", m_groups);
 
     // Bias
     ss.str(std::string{});
@@ -266,6 +235,90 @@ public:
 
     // Result
     return desc;
+
+  }
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    std::ostringstream err;
+
+    // Check number of channels and channel groups
+    const auto& input_dims = get_input_dims();
+    if (m_output_channels < 1) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has an invalid number of output channels "
+          << "(" << m_output_channels << ")";
+      LBANN_ERROR(err.str());
+    } else if (m_groups < 1) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has an invalid number of groups (" << m_groups << ")";
+      LBANN_ERROR(err.str());
+    } else if (input_dims[0] % m_groups != 0
+               || m_output_channels % m_groups != 0) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has " << m_groups << " groups, which does not divide "
+          << "the input channels (" << input_dims[0] << ") or "
+          << "the output channels (" << m_output_channels << ")";
+      LBANN_ERROR(err.str());
+    }
+
+    // Check kernel dims, pads, stride, dilations
+    const auto& num_spatial_dims = input_dims.size() - 1;
+    if (m_conv_dims.size() != num_spatial_dims
+        || std::any_of(m_conv_dims.begin(), m_conv_dims.end(),
+                       [](El::Int d) { return d < 1; })) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has invalid spatial dimensions for convolution kernel (";
+      if (m_conv_dims.empty()) { err << "no dimensions"; }
+      for (size_t i = 0; i < m_conv_dims.size(); ++i) {
+        err << (i > 0 ? "x" : "") << m_conv_dims[i];
+      }
+      err << ", expected " << num_spatial_dims << " spatial dimensions)";
+      LBANN_ERROR(err.str());
+    } else if (m_pads.size() != num_spatial_dims) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has invalid convolution pads ((";
+      for (size_t i = 0; i < m_pads.size(); ++i) {
+        err << (i > 0 ? "," : "") << m_pads[i];
+      }
+      err << "), expected " << num_spatial_dims << " spatial dimensions)";
+      LBANN_ERROR(err.str());
+    } else if (m_strides.size() != num_spatial_dims
+               || std::any_of(m_strides.begin(), m_strides.end(),
+                              [](El::Int d) { return d < 1; })) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has invalid convolution strides ((";
+      for (size_t i = 0; i < m_strides.size(); ++i) {
+        err << (i > 0 ? "," : "") << m_strides[i];
+      }
+      err << "), expected " << num_spatial_dims << " spatial dimensions)";
+      LBANN_ERROR(err.str());
+    } else if (m_dilations.size() != num_spatial_dims
+               || std::any_of(m_dilations.begin(), m_dilations.end(),
+                              [](El::Int d) { return d < 1; })) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has invalid convolution dilations ((";
+      for (size_t i = 0; i < m_dilations.size(); ++i) {
+        err << (i > 0 ? "," : "") << m_dilations[i];
+      }
+      err << "), expected " << num_spatial_dims << " spatial dimensions)";
+      LBANN_ERROR(err.str());
+    }
+
+    // Make sure that configuration is supported
+    if (Device == El::Device::CPU
+        && std::any_of(m_dilations.begin(), m_dilations.end(),
+                       [](El::Int d) { return d != 1; })) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has non-unit dilation, which is not yet supported on CPU";
+      LBANN_ERROR(err.str());
+    }
+    if (Device == El::Device::CPU && m_groups != 1) {
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has " << m_groups << " groups, "
+          << "but only one group is currently supported on CPU";
+      LBANN_ERROR(err.str());
+    }
 
   }
 
@@ -388,7 +441,7 @@ public:
                                                 CUDNN_CROSS_CORRELATION,
                                                 cudnn::get_data_type()));
     CHECK_CUDNN(cudnnSetConvolutionGroupCount(m_convolution_cudnn_desc,
-                                              m_num_groups));
+                                              m_groups));
 
     // Set bias tensor descriptor
     std::vector<int> bias_dims(output_dims.size() + 1, 1);
