@@ -1416,7 +1416,7 @@ void Layer::setup_tensor_distribution_init(
   int w = ps.width_groups;
   int np = m_comm->get_procs_per_trainer();
 
-  if(dc::num_dims == 4 && d != 1) {
+  if(dc::num_dims == 4 && d > 1) {
     MPIRootPrintStreamError() << "The numbers of depth decomposition should be 1.\n";
     throw lbann_exception();
   }
