@@ -90,26 +90,19 @@ public:
     return any_cast<El::Matrix<Field> const&>(m_matrix);
   }
 
-  /** @brief Access the underlying matrix.
+  /** @brief Replace the held matrix with a new one constructed
+   *      in-place from the arguments.
    *
-   *  Converts (copies) the internal matrix into a matrix of a new
-   *  type, which is then held in place of the original matrix.
+   *  @tparam Field The data type of the newly held matrix
    *
-   *  @tparam OldField The data type of the originally held matrix
-   *  @tparam NewField The data type of the newly held matrix
+   *  @param args The arguments with which to construct the new matrix.
    *
-   *  @return @c const reference to the underlying matrix
-   *
-   *  @throws bad_any_cast If the datatype of the held matrix does not
-   *      match the input @c OldField.
+   *  @return Reference to the new underlying matrix
    */
-  template <typename OldField, typename NewField>
-  El::Matrix<NewField>& convert()
+  template <typename Field, typename... Args>
+  El::Matrix<Field>& emplace(Args&&... args)
   {
-    El::Matrix<NewField> new_mat;
-    El::Copy(this->template get<OldField>(), new_mat);
-    m_matrix.template emplace<El::Matrix<NewField>>(std::move(new_mat));
-    return this->template get<NewField>();
+    return m_matrix.emplace<El::Matrix<Field>>(std::forward<Args>(args)...);
   }
 
 private:
