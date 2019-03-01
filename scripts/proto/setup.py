@@ -32,7 +32,8 @@ setup(
                       "matplotlib>=2.0.2",
                       "graphviz>=0.10.1",
                       "texttable>=1.4.0",
-                      "nose>=1.3.7"],
+                      "nose>=1.3.7",
+                      "pandas>=0.24.1"],
     test_suite="nose.collector",
     tests_require=["nose"],
     include_package_data=True
