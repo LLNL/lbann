@@ -1487,19 +1487,19 @@ void Layer::setup_tensor_distribution_init(
   Shape output_split_shape;
 
   if(dc::num_dims == 4) {
-    input_locale_shape = {w, h, c, n};
-    input_split_shape = {ps.width_splits, ps.height_splits,
-                         ps.channel_splits, ps.sample_splits};
-    output_locale_shape = {w, h, f, n};
-    output_split_shape = {ps.width_splits, ps.height_splits,
-                          ps.filter_splits, ps.sample_splits};
+    input_locale_shape = Shape({w, h, c, n});
+    input_split_shape = Shape({ps.width_splits, ps.height_splits,
+                               ps.channel_splits, ps.sample_splits});
+    output_locale_shape = Shape({w, h, f, n});
+    output_split_shape = Shape({ps.width_splits, ps.height_splits,
+                                ps.filter_splits, ps.sample_splits});
   } else {
-    input_locale_shape = {w, h, d, c, n};
-    input_split_shape = {ps.width_splits, ps.height_splits, ps.depth_splits,
-                         ps.channel_splits, ps.sample_splits};
-    output_locale_shape = {w, h, f, n};
-    output_split_shape = {ps.width_splits, ps.height_splits, ps.depth_splits,
-                          ps.filter_splits, ps.sample_splits};
+    input_locale_shape = Shape({w, h, d, c, n});
+    input_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
+                               ps.channel_splits, ps.sample_splits});
+    output_locale_shape = Shape({w, h, f, n});
+    output_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
+                                ps.filter_splits, ps.sample_splits});
   }
 
   auto prev_activations_dist =  Dist::make_shared_distribution(
