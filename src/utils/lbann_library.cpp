@@ -82,9 +82,9 @@ std::unique_ptr<model> build_model_from_prototext(
   set_num_parallel_readers(*comm, pb);
 
   // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_background_io() && io_thread_pool->get_num_threads() != 1) {
+  if(pb_model->serialize_io() && io_thread_pool->get_num_threads() != 1) {
     if(master) {
-      std::cout << "Model " << pb_model->name() << " serialized the background I/O threads" << std::endl;
+      std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
     }
     io_thread_pool->relaunch_pinned_threads(1);
   }
@@ -236,6 +236,7 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
             << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
+            << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
