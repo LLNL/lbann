@@ -127,10 +127,8 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   size_t found = sample_list_type.find(type_exclusive);
 
   if (found != std::string::npos) {
-    std::cout << "Exclusive (" + sample_list_type + ") sample list" << std::endl;
     hdr.m_is_exclusive = true;
   } else {
-    std::cout << "Inclusive (" + sample_list_type + ") sample list" << std::endl;
     hdr.m_is_exclusive = false;
   }
 
@@ -534,10 +532,6 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
       int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
       std::get<2>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
     }
-    // hid_t hdf5_file_hnd = get_samples_hdf5_handle(index);
-    // if(hdf5_file_hnd <= static_cast<hid_t>(0)) {
-    //   open_samples_hdf5_handle(idx, true);
-    // }
   }
 }
 

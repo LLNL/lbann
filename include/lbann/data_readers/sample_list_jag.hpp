@@ -146,66 +146,27 @@ class sample_list_jag {
     /// When we enter this function the priority queue is either empty or a heap
     if(!m_open_fd_pq.empty()) {
       if(m_open_fd_pq.size() > m_max_open_files) {
-        // std::cout << "PQ is too big the queue looks like ";
-        // for(auto&& p: m_open_fd_pq) {
-        //   std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
-        // }
-        // std::cout << std::endl;
-        // std::cout << "The file descriptors are over the limit, lets close " << m_open_fd_pq.front().first << std::endl;
-        // {
         auto& f = m_open_fd_pq.front();
         auto& victim = m_file_id_stats_map[f.first];
         hid_t victim_fd = std::get<1>(victim);
-        // std::cout << "Removing [" << f.first << ", {" << f.second.first << ", " << f.second.second << "}]" << std::endl;
         std::pop_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
         m_open_fd_pq.pop_back();
         if(victim_fd > 0) {
           conduit::relay::io::hdf5_close_file(victim_fd);
           std::get<1>(victim) = 0;
-        // }else {
-        //   std::cout << "Closing id " << id << " {" << f.second.first << ", " << f.second.second << "}" << " but the hid = " << victim_fd << std::endl;
         }
-        // std::cout << '\n';
-        // std::cout << "Now the queue looks like ";
-        // for(auto&& p: m_open_fd_pq) {
-        //   std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
-        // }
-        // std::cout << std::endl;
       }
-
-      //      std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
     }
 
     /// Before we can enqueue the any new access times for this descriptor, remove any
     /// earlier descriptor
     std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
     if(m_open_fd_pq.front().first == id) {
-      //          LBANN_ERROR("We have weirdness here, the head of the queue is not " + std::to_string(id));
       m_open_fd_pq.pop_front();
     }
     std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
 
-    // std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-    // if(!m_open_fd_pq.empty() && m_open_fd_pq.front().first != id) {
-    //   LBANN_WARNING("We have weirdness here, the head of the queue is not " + std::to_string(id));
-    // }
-
     auto& e = m_file_id_stats_map[id];
-
-    // std::cout << "manage_open_files_hdf5_handle updated list {" << std::get<0>(e) << ", " << std::get<1>(e) << ": ";
-    // for (auto&& v : std::get<2>(e)) {
-    //   std::cout << "{" << v.first << "," << v.second << "}, ";
-    // }
-    // std::cout << std::endl;
-
-    //        std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-    // if(!m_open_fd_pq.empty()) {
-      // std::cout << "manage_open_files_hdf5_handle priority queue :";
-      // auto& p = m_open_fd_pq.front();
-      // std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
-      // std::cout << std::endl;
-    // }
-
     auto& file_access_queue = std::get<2>(e);
     if(!file_access_queue.empty()) {
       if(!pre_open_fd) {
@@ -220,14 +181,6 @@ class sample_list_jag {
       m_open_fd_pq.emplace_back(std::make_pair(id,std::make_pair(INT_MAX,id)));
     }
     std::push_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-    // if(!m_open_fd_pq.empty()) {
-      // std::cout << "manage_open_files_hdf5_handle new priority queue after inserting eleement :";
-      // //            auto& p = m_open_fd_pq.front();
-      // for(auto&& p: m_open_fd_pq) {
-      //   std::cout << "[" << p.first << ", " << "{" << p.second.first << "," << p.second.second << "}], ";
-      // }
-      // std::cout << std::endl;
-    // }
     return;
   }
 
@@ -324,13 +277,7 @@ class sample_list_jag {
   /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;
 
-  /// Track the number of open file descriptors and how many times
-  /// each file descriptor will be used
-  //  std::unordered_map<std::string, hid_t> m_open_fd_map;
-  //  std::set<fd_use_map, std::function<bool(fd_use_map_t, fd_use_map_t)>> m_open_fd_map;
-   // Using lambda to compare elements.
-  //  auto cmp = [](std::pair<string, int> left,std::pair<string, int> right) { return (left.second) > (right.second);};
-  //  std::priority_queue<fd_use_map_t, std::vector<fd_use_map_t>, std::function<bool(fd_use_map_t, fd_use_map_t)>> m_open_fd_pq;
+  /// Track the number of open file descriptors and when they will be used next
   std::deque<fd_use_map_t> m_open_fd_pq;
 
   size_t m_max_open_files;
