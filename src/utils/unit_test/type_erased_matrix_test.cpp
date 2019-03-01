@@ -52,9 +52,9 @@ TEMPLATE_PRODUCT_TEST_CASE(
         REQUIRE(internal_mat.Height() == 10);
         REQUIRE(internal_mat.Width() == 12);
       }
-      AND_WHEN ("The matrix is converted")
+      AND_WHEN ("The matrix is changed")
       {
-        REQUIRE_NOTHROW(mat->template convert<src_type, tgt_type>());
+        REQUIRE_NOTHROW(mat->template emplace<tgt_type>(14,10));
 
         THEN ("The internal matrix has the right type and size")
         {
@@ -62,8 +62,8 @@ TEMPLATE_PRODUCT_TEST_CASE(
           REQUIRE_THROWS_AS(mat->template get<src_type>(),
                             lbann::utils::bad_any_cast);
 
-          REQUIRE(mat->template get<tgt_type>().Height() == 10);
-          REQUIRE(mat->template get<tgt_type>().Width() == 12);
+          REQUIRE(mat->template get<tgt_type>().Height() == 14);
+          REQUIRE(mat->template get<tgt_type>().Width() == 10);
         }
       }
     }
