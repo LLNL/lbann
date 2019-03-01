@@ -442,7 +442,6 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power8 -mtune=power8"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power8 -mtune=power8"
         elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
-			# no power9 option shown in the manual
             C_FLAGS="${C_FLAGS} -mcpu=power9 -mtune=power9"
             CXX_FLAGS="${CXX_FLAGS} -mcpu=power9 -mtune=power9"
             Fortran_FLAGS="${Fortran_FLAGS} -mcpu=power9 -mtune=power9"
@@ -584,7 +583,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.3.7-1+cuda9.2_ppc64le
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_ppc64le
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 	else
@@ -778,6 +777,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
+-D LBANN_SB_BUILD_CEREAL=ON \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \

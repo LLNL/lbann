@@ -95,7 +95,7 @@ weights::weights(const weights& other)
   m_optimizer.reset(other.m_optimizer ?
                     other.m_optimizer->copy() : nullptr);
   if (m_optimizer != nullptr) {
-    m_optimizer->set_weights(*this);
+    m_optimizer->set_weights(this);
   }
 
 }
@@ -115,7 +115,7 @@ weights& weights::operator=(const weights& other) {
   m_optimizer.reset(other.m_optimizer ?
                     other.m_optimizer->copy() : nullptr);
   if (m_optimizer != nullptr) {
-    m_optimizer->set_weights(*this);
+    m_optimizer->set_weights(this);
   }
 
   return *this;
@@ -288,7 +288,7 @@ void weights::setup() {
 
   // Setup optimizer
   if (m_optimizer != nullptr) {
-    m_optimizer->setup(*this);
+    m_optimizer->setup(this);
   }
 
 }
@@ -397,7 +397,7 @@ void weights::set_value(DataType value, int row, int col) {
 void weights::reconcile_values() {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    values *= DataType(1) / values.RedundantSize();
+    El::Scale(DataType(1) / values.RedundantSize(), values);
     m_comm->allreduce(values, values.RedundantComm());
   }
 }
@@ -405,7 +405,7 @@ void weights::reconcile_values() {
 void weights::reconcile_values(Al::request& req) {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    values *= DataType(1) / values.RedundantSize();
+    El::Scale(DataType(1) / values.RedundantSize(), values);
     m_comm->nb_allreduce(values, values.RedundantComm(), req);
   }
 }

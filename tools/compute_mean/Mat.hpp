@@ -195,6 +195,9 @@ inline void Copy(const ElMatLike<T>& S, ElMatLike<T>& D) {
   D.Copy(S);
 }
 
+template<typename T>
+using Matrix = ElMatLike<T>;
+
 } // end of namespace
 
 using Mat = El::ElMatLike<lbann::DataType>;

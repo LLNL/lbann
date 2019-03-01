@@ -65,9 +65,7 @@ model {
     name: "data"
     children: "image label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     name: "image"

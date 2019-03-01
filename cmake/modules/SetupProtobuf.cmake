@@ -17,9 +17,6 @@ if (${PROJECT_NAME}_USE_PROTOBUF_MODULE)
 
   # At this point, throw an error if Protobuf is not found.
   find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE)
-  if(NOT Protobuf_FOUND)
-    find_package(Protobuf "${PROTOBUF_MIN_VERSION}" MODULE REQUIRED)
-  endif ()
 
   if (__remove_protobuf_from_paths)
     list(REMOVE_ITEM CMAKE_LIBRARY_PATH ${PROTOBUF_DIR}/lib)
@@ -33,8 +30,8 @@ else ()
     "Be compatible with FindProtobuf.cmake" ON)
   option(protobuf_VERBOSE
     "Enable verbose protobuf output" OFF)
-  
-  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG
+
+  find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG QUIET
     NAMES protobuf PROTOBUF
     HINTS
     "${Protobuf_DIR}" "${PROTOBUF_DIR}"
@@ -42,8 +39,9 @@ else ()
     PATH_SUFFIXES lib64/cmake/protobuf lib/cmake/protobuf
     NO_DEFAULT_PATH)
   if(NOT Protobuf_FOUND)
-    find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG REQUIRED)
+    find_package(Protobuf "${PROTOBUF_MIN_VERSION}" CONFIG QUIET REQUIRED)
   endif ()
+  message(STATUS "Found Protobuf: ${Protobuf_DIR}")
 endif ()
 
 if (NOT Protobuf_FOUND)
@@ -56,7 +54,7 @@ if (NOT TARGET protobuf::libprotobuf)
   add_library(protobuf::libprotobuf INTERFACE IMPORTED)
   set_property(TARGET protobuf::libprotobuf PROPERTY
     INTERFACE_LINK_LIBRARIES "${PROTOBUF_LIBRARIES}")
-  
+
   set_property(TARGET protobuf::libprotobuf PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES "${PROTOBUF_INCLUDE_DIRS}")
 endif ()

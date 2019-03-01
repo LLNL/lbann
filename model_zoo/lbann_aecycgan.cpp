@@ -35,45 +35,40 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
-
-#ifdef EL_USE_CUBLAS
-  El::GemmUseGPU(32,32,32);
-#endif
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  const bool master = comm->am_world_master();
 
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm);
-      finalize(comm);
-      return 0;
+      print_help(*comm);
+      return EXIT_SUCCESS;
     }
 
-    std::stringstream err;
+    std::ostringstream err;
 
     // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
 
-    std::vector<lbann_data::LbannPB *> pbs;
-    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
 
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, io_thread_pool, true); //ae
-    model *model_2 = nullptr; //cycgan
-    model *model_3 = nullptr; //ae+cycgan
+    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
+                                                comm.get(), io_thread_pool, true); //ae
+    std::unique_ptr<model>
+      model_2, //cycgan
+      model_3; //ae+cycgan
 
 
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
 
 
@@ -100,24 +95,10 @@ int main(int argc, char *argv[]) {
     if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
     model_3->evaluate(execution_mode::testing);
 
-    delete model_1;
-    if (model_2 != nullptr) {
-      delete model_2;
-    }
-    if (model_3 != nullptr) {
-      delete model_3;
-    }
-    for (auto t : pbs) {
-      delete t;
-    }
-
   } catch (std::exception& e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
-  // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }

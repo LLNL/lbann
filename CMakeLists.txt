@@ -48,8 +48,8 @@ endif ()
 #
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 97)
-set(LBANN_VERSION_PATCH 1)
+set(LBANN_VERSION_MINOR 99)
+set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION "${LBANN_VERSION_MAJOR}.${LBANN_VERSION_MINOR}.${LBANN_VERSION_PATCH}")
 
@@ -112,9 +112,11 @@ option(LBANN_WITH_NVPROF
 
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
-
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
+
+option(LBANN_WITH_UNIT_TESTING
+  "Enable the unit testing framework (requires Catch2)" OFF)
 
 # Enable parallel random matrix generation, if possible
 option(LBANN_DETERMINISTIC
@@ -156,15 +158,25 @@ include(SetupCXX)
 ################################################################
 
 # Required dependencies
+find_package(CEREAL NO_MODULE
+  HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
+  PATH_SUFFIXES share/cmake/cereal
+  NO_DEFAULT_PATH)
+if (NOT CEREAL_FOUND)
+  find_package(CEREAL NO_MODULE REQUIRED)
+endif ()
+set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
+# The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.1.0 NO_MODULE
+find_package(Hydrogen 1.2.0 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.1.0 NO_MODULE REQUIRED)
+  find_package(Hydrogen 1.2.0 NO_MODULE QUIET REQUIRED)
 endif ()
+message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
 include(SetupOpenMP)
@@ -172,13 +184,14 @@ include(SetupMPI)
 include(SetupProtobuf)
 
 # OpenCV installs a CMake configure file we can exploit
-find_package(OpenCV NO_MODULE
+find_package(OpenCV NO_MODULE QUIET
   HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
   PATH_SUFFIXES share/OpenCV
   NO_DEFAULT_PATH)
 if (NOT OpenCV_FOUND)
-  find_package(OpenCV NO_MODULE REQUIRED)
+  find_package(OpenCV NO_MODULE QUIET REQUIRED)
 endif ()
+message(STATUS "Found OpenCV: ${OpenCV_DIR}")
 set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 
 # CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA, LBANN gets CUDA.
@@ -198,13 +211,13 @@ endif ()
 if (LBANN_WITH_ALUMINUM)
   # Aluminum may have already been found by Hydrogen
   if (NOT Aluminum_FOUND)
-    find_package(Aluminum NO_MODULE
+    find_package(Aluminum 0.2.0 NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum NO_MODULE)
+      find_package(Aluminum 0.2.0 NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
@@ -220,6 +233,8 @@ if (LBANN_WITH_ALUMINUM)
     set(LBANN_WITH_ALUMINUM OFF)
 
   else ()
+
+    message(STATUS "Found Aluminum: ${Aluminum_DIR}")
 
     if (AL_HAS_CUDA AND NOT LBANN_HAS_CUDA)
       message(WARNING
@@ -292,7 +307,7 @@ if (LBANN_WITH_VTUNE)
   endif (VTune_FOUND)
 endif (LBANN_WITH_VTUNE)
 
-if (LBANN_WITH_NVPROF)
+if (LBANN_WITH_CUDA AND LBANN_WITH_NVPROF)
   set(LBANN_NVPROF TRUE)
 endif ()
 
@@ -308,28 +323,30 @@ endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
   # Apparently we have to find HDF5, too.
-  find_package(HDF5 CONFIG
+  find_package(HDF5 CONFIG QUIET
     HINTS ${HDF5_DIR} $ENV{HDF5_DIR}
     PATH_SUFFIXES share/cmake/hdf5
     NO_DEFAULT_PATH)
   if (NOT HDF5_FOUND)
-    find_package(HDF5 CONFIG)
+    find_package(HDF5 CONFIG QUIET)
   endif ()
   if (NOT HDF5_FOUND)
     enable_language(C) # WHY??????????????
     find_package(HDF5 REQUIRED)
     set(HDF5_FOUND_WITH_MODULE TRUE)
+  else ()
+    message(STATUS "Found HDF5: ${HDF5_DIR}")
   endif ()
 
-  find_package(CONDUIT CONFIG
-    NAMES conduit
-    CONFIGS conduit.cmake
+  find_package(CONDUIT CONFIG QUIET
     HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
     NO_DEFAULT_PATH)
   if (NOT CONDUIT_FOUND)
-    find_package(CONDUIT CONFIG REQUIRED)
+    find_package(CONDUIT CONFIG QUIET REQUIRED
+      PATH_SUFFIXES lib64/cmake lib/cmake)
   endif ()
+  message(STATUS "Found CONDUIT: ${CONDUIT_DIR}")
 
   # Ugh. I don't like that this requires intimate knowledge of
   # specific targets that CONDUIT exports. It should support
@@ -349,6 +366,29 @@ if (LBANN_WITH_CONDUIT)
 
   set(_conduit_interface_link_libs
     "conduit;conduit_relay;conduit_relay_mpi;conduit_blueprint")
+
+  # Remove -pthread from linkage, if found
+  foreach (_lib IN LISTS _conduit_interface_link_libs)
+    if (TARGET ${_lib})
+      get_property(_tmp_interface_link_libs TARGET ${_lib}
+        PROPERTY INTERFACE_LINK_LIBRARIES)
+
+      list(FIND _tmp_interface_link_libs "-pthread" _pthread_idx)
+      if (_pthread_idx GREATER_EQUAL 0)
+        list(REMOVE_AT _tmp_interface_link_libs ${_pthread_idx})
+
+        set_property(TARGET ${_lib} PROPERTY
+          INTERFACE_LINK_LIBRARIES ${_tmp_interface_link_libs})
+      endif ()
+
+      get_property(_tmp_interface_compile_opts TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS)
+      set_property(TARGET ${_lib}
+        PROPERTY INTERFACE_COMPILE_OPTIONS
+          $<$<COMPILE_LANGUAGE:CXX>:${_tmp_interface_compile_opts}>)
+    endif ()
+  endforeach ()
+
   if (HDF5_FOUND_WITH_MODULE)
     list(APPEND _conduit_interface_link_libs
       ${HDF5_LIBRARIES})
@@ -366,6 +406,25 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
   set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
 endif (LBANN_WITH_CONDUIT)
+
+if (LBANN_WITH_UNIT_TESTING)
+  find_package(Catch2 2.0.0 CONFIG QUIET
+    HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
+    PATH_SUFFIXES lib64/cmake/Catch2 lib/cmake/Catch2
+    NO_DEFAULT_PATH)
+  if (NOT Catch2_FOUND)
+    find_package(Catch2 2.0.0 CONFIG QUIET REQUIRED)
+  endif ()
+  message(STATUS "Found Catch2: ${Catch2_DIR}")
+
+  # Now that Catch2 has been found, start adding the unit tests
+  include(CTest)
+  include(Catch)
+  add_subdirectory(src/utils/unit_test)
+
+  # Add this one last
+  add_subdirectory(unit_test)
+endif (LBANN_WITH_UNIT_TESTING)
 
 # Handle the documentation
 add_subdirectory(docs)
@@ -394,6 +453,7 @@ target_include_directories(lbann PUBLIC
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
 target_link_libraries(lbann PUBLIC protobuf::libprotobuf)
@@ -581,6 +641,7 @@ append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_HYDROGEN
   LBANN_HAS_OPENCV
+  LBANN_HAS_CEREAL
   LBANN_HAS_CUDA
   LBANN_HAS_CUDNN
   LBANN_HAS_NCCL2

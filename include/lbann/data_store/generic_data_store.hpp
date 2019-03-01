@@ -49,7 +49,7 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(generic_data_reader *reader, model *m); 
+  generic_data_store(generic_data_reader *reader, model *m);
 
   //! copy ctor
   generic_data_store(const generic_data_store&) = default;
@@ -63,13 +63,13 @@ class generic_data_store {
   virtual generic_data_store * copy() const = 0;
 
   /// called by generic_data_reader::setup_data_store
-  virtual void setup();
+  virtual void setup(int mini_batch_size);
 
   /// called by generic_data_reader::update;
-  /// this method call exchange_data if m_epoch > 1
+  /// this method calls exchange_data if m_epoch > 1
   virtual void set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices = true);
 
-  /// called by various image data readers 
+  /// called by various image data readers
   virtual void get_data_buf(int data_id, std::vector<unsigned char> *&buf, int multi_idx = 0) {}
   virtual void get_data_buf(int data_id, int tid, std::vector<double> *&buf) {}
 
@@ -137,7 +137,12 @@ class generic_data_store {
 
   void init_minibatch();
 
+  virtual void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {};
+  virtual void setup_data_store_buffers() {};
 protected :
+
+  // number of times exchange_data is called
+  int m_n;
 
   virtual void exchange_data() = 0;
 
@@ -185,7 +190,7 @@ protected :
 
   /// the indices that this processor owns;
   std::unordered_set<int> m_my_datastore_indices;
-  /// fills in m_my_datastore_indices 
+  /// fills in m_my_datastore_indices
   void get_my_datastore_indices();
   /// fills in m_my_datastore_indices; this call is used when creating tarballs
   /// for pre-staging data
@@ -198,8 +203,6 @@ protected :
 
   /// number of procs in the model
   int  m_np;
-
-  size_t m_epoch;
 
   bool m_in_memory;
 
@@ -223,7 +226,7 @@ protected :
   std::unordered_map<int, int> m_owner;
 
   /// fills in m_owner
-  void build_index_owner();
+  virtual void build_index_owner();
 
   /// mostly for use during development and debugging
   virtual void extended_testing() {}

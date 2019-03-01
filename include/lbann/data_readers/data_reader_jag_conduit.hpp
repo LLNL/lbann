@@ -40,34 +40,11 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
+#include "lbann/data_readers/sample_list_jag.hpp"
 
 namespace lbann {
 
-/**
- * Store the handles of open hdf5 files, and close files at the end of the
- * life time of this container object.
- */
-class hdf5_file_handles {
- protected:
-  std::unordered_map<std::string, hid_t> m_open_hdf5_files;
-  std::map<hid_t, std::string> m_open_hdf5_handles;
-
- public:
-  ~hdf5_file_handles();
-  /// Add a handle that corresponds to the filename fname
-  bool add(const std::string fname, hid_t hnd);
-  /**
-   *  Returns the handle that corresponds to the given file name.
-   *  Reuturns a negative value if not found.
-   */
-  hid_t get(const std::string& fname) const;
-
-  std::string get(const hid_t h) const;
-
-  /// Returns the read-only access to the internal data
-  const std::unordered_map<std::string, hid_t>& get() const { return m_open_hdf5_files; }
-};
-
+class data_store_jag;
 
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
@@ -81,6 +58,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type for the pair of the key string of a sample and the handle of the file that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
+  using sample_t = sample_list_jag::sample_t;
+  using sample_file_id_t = sample_list_jag::sample_file_id_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -120,6 +99,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Tell which data to use for dependent variable
   std::vector<variable_t> get_dependent_variable_type() const;
 
+  /// Set the common prefix path for any output scalar fields stored
+  void set_output_scalar_prefix(const std::string& prefix) { m_output_scalar_prefix = prefix; }
+  /// Set the common prefix path for any output images stored
+  void set_output_image_prefix(const std::string& prefix) { m_output_image_prefix = prefix; }
+  /// Set the common prefix path for any input variables stored
+  void set_input_prefix(const std::string& prefix) { m_input_prefix = prefix; }
+
   /// Set the image dimension
   void set_image_dims(const int width, const int height, const int ch = 1);
   /// Choose images to use. e.g. by measurement views and time indices
@@ -153,18 +139,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load data and do data reader's chores.
   void load() override;
-  /// True if the data reader's current position is valid.
-  bool position_valid() const override;
-  /// Return the base offset.
-  void set_base_offset(const int s) override;
-  /// Set the starting mini-batch index for the epoch
-  void set_reset_mini_batch_index(const int s) override;
-  /// Get the number of samples in this dataset.
-  int get_num_data() const override;
-  /// Select the appropriate subset of data based on settings.
-  void select_subset_of_data() override;
-  /// Replace the sample indices with the unused sample indices.
-  void use_unused_index_set() override;
   /// Set the type of io_buffer that will rely on this reader
   void set_io_buffer_type(const std::string io_buffer);
 
@@ -173,23 +147,26 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Get the id of this local instance
   int get_local_id(const std::string role) const;
   /// Set the set of open hdf5 data files
-  void set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f);
-  /// Get the set of open hdf5 data files
-  std::shared_ptr<hdf5_file_handles>& get_open_hdf5_files();
+  // void set_open_hdf5_files(std::shared_ptr<hdf5_file_handles>& f);
+  // /// Get the set of open hdf5 data files
+  // std::shared_ptr<hdf5_file_handles>& get_open_hdf5_files();
   /// Set the leader of local data reader group
   void set_leading_reader(data_reader_jag_conduit* r);
   /// Get the leader of local data reader group
   data_reader_jag_conduit* get_leading_reader();
 #else
-  /// Load a data file
-  void load_conduit(const std::string conduit_file_path, size_t& idx);
   /// See if the image size is consistent with the linearized size
   void check_image_data();
-  /** Manually set m_global_num_samples_to_use and m_local_num_samples_to_use
-   *  to avoid calling determine_num_samples_to_use();
-   */
-  void set_num_samples(size_t ns);
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
+  /// Set every reader instances in a trainer to have an independent index list
+  void set_list_per_trainer(bool flag) { m_list_per_trainer = flag; };
+  /// Set every reader instances in a model to have an independent index list
+  void set_list_per_model(bool flag) { m_list_per_model = flag; };
+
+  bool has_list_per_model() const { return m_list_per_model; }
+  bool has_list_per_trainer() const { return m_list_per_trainer; }
+
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
   int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched) override;
@@ -197,13 +174,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   int fetch_responses(CPUMat& Y) override;
   /// Fetch labels of a mini-batch or reuse it from the cache of the leading reader
   int fetch_labels(CPUMat& Y) override;
-
-  /// Return the number of valid samples locally available
-  size_t get_num_valid_local_samples() const;
-  /// Allow read-only access to m_valid_samples member data
-  const sample_map_t& get_valid_local_samples() const;
-  /// Allow read-only access to m_unused_samples member data
-  const sample_map_t& get_valid_local_samples_unused() const;
 
   /// Return the number of measurement views
   unsigned int get_num_img_srcs() const;
@@ -233,6 +203,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the slice points for linearized dependent variables
   std::vector<El::Int> get_slice_points_dependent() const;
 
+  int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
   int get_linearized_size(const std::string& desc) const override;
@@ -245,19 +216,19 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::string get_description() const;
 
   /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i) const;
+  std::vector<cv::Mat> get_cv_images(const size_t i, conduit::Node& sample) const;
 
   /**
    * Return the images of the i-th sample as an 1-D vector of lbann::DataType
    * There is one image per view, each of which is taken at closest to the bang time.
    */
-  std::vector<ch_t> get_images(const size_t i) const;
+  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample) const;
 
   /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i) const;
+  std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
 
   /// Return the simulation input parameters of the i-th sample
-  std::vector<input_t> get_inputs(const size_t i) const;
+  std::vector<input_t> get_inputs(const size_t i, conduit::Node& sample) const;
 
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
@@ -266,7 +237,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  void setup_data_store(model *m, int mini_batch_size) override;
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// A untiliy function to convert the pointer to image data into an opencv image
@@ -286,6 +257,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
+  data_store_jag *m_jag_store;
+
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit& rhs);
@@ -323,15 +296,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Export cached labels minibatch
   int reuse_labels(CPUMat& Y);
 
-  bool fetch(CPUMat& X, int data_id, int mb_idx, int tid,
+  bool fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
              const variable_t vt, const std::string tag);
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Shuffle sample indices
-  void shuffle_indices() override;
   /// Shuffle sammple indices using a different RNG
   void shuffle_indices(rng_gen& gen) override;
 
@@ -347,24 +318,22 @@ class data_reader_jag_conduit : public generic_data_reader {
    * the number of models and the mini batch size.
    */
   bool check_num_parallel_readers(long data_set_size);
-  /// Determine the number of samples to use
-  void determine_num_samples_to_use();
-  /**
-   * Approximate even distribution of samples by using as much samples
-   * as commonly available to every data reader instead of using
-   * all the available samples.
-   */
-  void adjust_num_samples_to_use();
-  /**
-   * populate the m_shuffled_indices such that each data reader can
-   * access local data using local indices.
-   */
-  void populate_shuffled_indices(const size_t num_samples);
-  /// Load a data file
-  void load_conduit(const std::string conduit_file_path, size_t& idx);
+  /// Rely on pre-determined list of samples.
+  void load_list_of_samples(const std::string filename, size_t stride=1, size_t offset=0);
+  /// Load the sample list from a serialized archive from another rank
+  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+
   /// See if the image size is consistent with the linearized size
   void check_image_data();
 #endif // _JAG_OFFLINE_TOOL_MODE_
+
+#if 0
+  /// Open a conduit file and register the open file descriptor
+  hid_t open_conduit_file(const std::string& conduit_file_path);
+
+  /// Open all conduit files for all the samples to cache the file descriptor
+  void open_all_conduit_files();
+#endif
 
   /// Obtain the linearized size of images of a sample from the meta info
   void set_linearized_image_size();
@@ -372,9 +341,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   void check_scalar_keys();
   /// Make sure that the keys to choose scalar outputs are valid
   void check_input_keys();
-
-  /// Check if the given sample id is valid
-  bool check_sample_id(const size_t i) const;
 
   /**
    * Check if the key is associated with non-numeric value, that is not and
@@ -392,7 +358,17 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool has_conduit_path(const size_t i, const std::string& key) const;
 
   /// Obtain image data
-  std::vector< std::vector<ch_t> > get_image_data(const size_t i) const;
+  std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
+
+  bool data_store_active() const {
+    bool flag = generic_data_reader::data_store_active();
+    return (m_jag_store != nullptr && flag);
+  }
+
+  bool priming_data_store() const {
+    bool flag = generic_data_reader::priming_data_store();
+    return (m_jag_store != nullptr && flag);
+  }
 
  protected:
   /// The flat list of independent variable types
@@ -416,6 +392,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool m_is_data_loaded;
 
   int m_num_labels; ///< number of labels
+
+  /// Common prefix path to any output scalar fields in Conduit / HDF5
+  std::string m_output_scalar_prefix;
+  /// Common prefix path to any output image fields in Conduit / HDF5
+  std::string m_output_image_prefix;
+  /// Common prefix path to any input fields in Conduit / HDF5
+  std::string m_input_prefix;
 
   /// Allow image selection by the view and the time index
   std::vector<std::string> m_emi_image_keys;
@@ -452,26 +435,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<prefix_t> m_input_prefix_filter;
 
   /**
-   * maps integers to sample IDs and the handle of the file that contains it.
-   * In the future the sample IDs may not be integers; also, this map only
-   * includes sample IDs that have <sample_id>/performance/success = 1
-   */
-  sample_map_t m_valid_samples;
-  /// To support validation_percent
-  sample_map_t m_unused_samples;
-
-  /**
-   * The number of local samples that are selected to use.
-   * This is less than or equal to the number of valid samples locally available.
-   */
-  size_t m_local_num_samples_to_use;
-  /**
-   * The total number of samples to use.
-   * This is the sum of m_local_num_samples_to_use.
-   */
-  size_t m_global_num_samples_to_use;
-
-  /**
    * io_buffer type that will rely on this reader.
    * e.g. distributed_io_buffer, partitioned_io_buffer
    */
@@ -481,9 +444,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   static std::unordered_map<std::string, int> m_num_local_readers;
   /// locally addressable id in case of multiple data reader instances attached to a model
   int m_local_reader_id;
-
-  /// Shared set of the handles of open HDF5 files
-  std::shared_ptr<hdf5_file_handles> m_open_hdf5_files;
 
   /**
    * The leading data reader among the local readers, which actually does the
@@ -502,6 +462,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<linear_transform_t> m_image_normalization_params;
   std::vector<linear_transform_t> m_scalar_normalization_params;
   std::vector<linear_transform_t> m_input_normalization_params;
+
+  typedef std::pair<std::string, std::string> conduit_sample;
+  sample_list_jag m_sample_list;
+  bool m_list_per_trainer;
+  bool m_list_per_model;
+
   /** temporary image normalization
    * The inputs are the image to normalize, the image source id and the channel id.
    */

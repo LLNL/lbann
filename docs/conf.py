@@ -183,5 +183,4 @@ breathe_projects = {
     "lbann":"doxy_out/xml/",
     }
 extensions = [ "m2r", "breathe", 'sphinx.ext.mathjax' ]
-
-
+m2r_parse_relative_links = True

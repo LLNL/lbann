@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
 #include <iostream>
 #include <fstream>
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 #if 0
 
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   int np = comm->get_procs_in_world();
 
@@ -82,7 +82,6 @@ int main(int argc, char *argv[]) {
 
   } catch (std::exception& e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   } catch (...) {
     std::cerr << "unknown exception in main\n";
@@ -90,7 +89,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 
 #endif //if 0

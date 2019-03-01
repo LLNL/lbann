@@ -28,7 +28,6 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -130,17 +129,10 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   int width=0, height=0, img_type=0;
 
-  std::vector<unsigned char> *image_buf;
-
   CPUMat X_v = create_datum_view(X, mb_idx);
 
   bool ret;
-  if (m_data_store != nullptr) {
-    m_data_store->get_data_buf(data_id, image_buf, 0);
-    ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
-  } else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
-  }
+  ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
 
   if(!ret) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
@@ -154,16 +146,6 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
                           + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
   }
   return true;
-}
-
-void imagenet_reader::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_imagenet(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
 }
 
 }  // namespace lbann

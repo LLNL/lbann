@@ -24,55 +24,57 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP
-#define LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP
+#ifndef LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
 /** Hypergradient Adam optimizer.
+
  *  Reference:
- *  Baydin et al. "Online Learning Rate Adaptation with Hypergradient Descent", 2017.
+
+ *  Baydin et al. "Online Learning Rate Adaptation with Hypergradient
+ *  Descent", 2017.
  */
 class hypergradient_adam : public optimizer {
- public:
+public:
 
-  /** Constructor
-   *  @param init_learning_rate Initial Adam learning rate (0.001 reasonable).
-   *  @param hyper_learning_rate Hypergradient learning rate.
-   *  @param beta1 Decay rate for the first moment moving average.
-   *  @param beta2 Decay rate for the second moment moving average.
-   *  @param eps A small value.
+  /** @param init_learning_rate     Initial Adam learning rate (0.001 is
+   *                                reasonable).
+   *  @param hyper_learning_rate    Hypergradient learning rate.
+   *  @param beta1                  Decay rate for the first moment
+   *                                moving average.
+   *  @param beta2                  Decay rate for the second moment
+   *                                moving average.
+   *  @param eps                    Small factor to avoid division by
+   *                                zero.
    */
   hypergradient_adam(lbann_comm *comm,
-                     DataType init_learning_rate,
-                     DataType hyper_learning_rate = DataType(1e-7),
-                     DataType beta1 = DataType(0.9),
-                     DataType beta2 = DataType(0.99),
-                     DataType eps = DataType(1e-8));
-
-  /** Copy constructor. */
+                     DataType init_learning_rate = 1e-3,
+                     DataType hyper_learning_rate = 1e-7,
+                     DataType beta1 = 0.9,
+                     DataType beta2 = 0.99,
+                     DataType eps = 1e-8);
   hypergradient_adam(const hypergradient_adam& other);
-  /** Copy assignment operator. */
   hypergradient_adam& operator=(const hypergradient_adam& other);
-  /** Destructor. */
-  ~hypergradient_adam() override;
-  /** Create a copy. */
+  ~hypergradient_adam() override = default;
   hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
 
-  /** Returns the optimizer name. */
+  /** Human-readable type name. */
   std::string get_type() const override { return "hypergradient Adam"; }
   /** Human-readable description. */
   description get_description() const override;
 
-  /** Setup optimizer. */
-  void setup(weights& w) override;
+  void setup(weights* w = nullptr) override;
 
-  /** Perform the computation in an optimization step. */
+protected:
+
+  /** Computation for an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 
- private:
+private:
 
   /** Hypergradient learning rate. */
   DataType m_hyper_learning_rate;
@@ -87,15 +89,16 @@ class hypergradient_adam : public optimizer {
   /** beta2 ^ iteration. */
   DataType m_current_beta2;
   /** First moment estimates. */
-  AbsDistMat *m_moment1;
+  std::unique_ptr<AbsDistMat> m_moment1;
   /** Second moment estimates. */
-  AbsDistMat *m_moment2;
+  std::unique_ptr<AbsDistMat> m_moment2;
   /** Gradient estimate from the prior step (for hypergradient). */
-  AbsDistMat *m_old_gradient;
+  std::unique_ptr<AbsDistMat> m_old_gradient;
 
-  //************************************************************************
+  // ===========================================
   // Checkpointing
-  //************************************************************************
+  // ===========================================
+
   /* struct used to serialize mode fields in file and MPI transfer */
   struct packing_header {
     DataType hyper_learning_rate;
@@ -154,4 +157,4 @@ class hypergradient_adam : public optimizer {
 
 } // namespace lbann
 
-#endif  // LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP
+#endif // LBANN_OPTIMIZER_HYPERGRADIENT_ADAM_HPP_INCLUDED

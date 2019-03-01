@@ -55,21 +55,19 @@ model {
   layer {
     name: "data"
     children: "finetunedata label"
-    data_layout: "model_parallel"
-    input {
-      io_buffer: "distributed"
-    }
+    data_layout: "data_parallel"
+    input {}
   }
   layer {
     parents: "data"
     name: "finetunedata"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
   layer {
     parents: "data"
     name: "label"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
 

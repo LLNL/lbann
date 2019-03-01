@@ -108,9 +108,14 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
-  if (!m_save_minibatch_indices) {
-    El::Zeros_seq(X, X.Height(), X.Width());
-    El::Zeros_seq(indices_fetched, mb_size, 1);
+  El::Zeros_seq(X, X.Height(), X.Width());
+  El::Zeros_seq(indices_fetched, mb_size, 1);
+
+  /// Make sure that every rank participates in the data store prior
+  /// to seeing if the local rank's position is valid.  Note that
+  /// every rank will hold data that may be used in the last mini-batch
+  if (data_store_active()) {
+    m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
   }
 
   if(!position_valid()) {
@@ -123,12 +128,10 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     }
   }
 
-  if (!m_save_minibatch_indices) {
-    /// Allow each thread to perform any preprocessing necessary on the
-    /// data source prior to fetching data
-    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
-      preprocess_data_source(t);
-    }
+  /// Allow each thread to perform any preprocessing necessary on the
+  /// data source prior to fetching data
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    preprocess_data_source(t);
   }
 
   static bool fix_jag = true;
@@ -137,36 +140,26 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     set_jag_variables(mb_size);
   }
 
-  if (m_save_minibatch_indices) {
-    m_my_minibatch_indices.resize(m_my_minibatch_indices.size() + 1);
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      m_my_minibatch_indices.back().push_back(n);
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    // Queue up work into other threads and then finish off the
+    // mini-batch in the active thread
+    if(t == m_io_thread_pool->get_local_thread_id()) {
+      continue;
+    }else {
+      m_io_thread_pool->submit_job_to_work_group(
+        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                  mb_size, std::ref(indices_fetched)));
     }
   }
+  fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
 
-  else {
-    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
-      // Queue up work into other threads and then finish off the
-      // mini-batch in the active thread
-      if(t == m_io_thread_pool->get_local_thread_id()) {
-        continue;
-      }else {
-        m_io_thread_pool->submit_job_to_work_group(
-          std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
-                    mb_size, std::ref(indices_fetched)));
-      }
-    }
-    fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
+  // Wait for all of the threads to finish
+  m_io_thread_pool->finish_work_group();
 
-    // Wait for all of the threads to finish
-    m_io_thread_pool->finish_work_group();
-
-    /// Allow each thread to perform any postprocessing necessary on the
-    /// data source prior to fetching data
-    for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
-      postprocess_data_source(t);
-    }
+  /// Allow each thread to perform any postprocessing necessary on the
+  /// data source prior to fetching data
+  for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
+    postprocess_data_source(t);
   }
 
   return mb_size;
@@ -218,22 +211,17 @@ int lbann::generic_data_reader::fetch_labels(CPUMat& Y) {
     }
   }
 
-//  if (m_data_store != nullptr) {
-    //@todo: get it to work, then add omp support
-    //m_data_store->fetch_labels(...);
- // }
-//  else {
-    std::string error_message;
-    for (int s = 0; s < mb_size; s++) {
-      int n = m_current_pos + (s * m_sample_stride);
-      int index = m_shuffled_indices[n];
-      bool valid = fetch_label(Y, index, s);
-      if (!valid) {
-        error_message = "invalid label (index " + std::to_string(index) + ")";
-      }
+  std::string error_message;
+  for (int s = 0; s < mb_size; s++) {
+    int n = m_current_pos + (s * m_sample_stride);
+    int index = m_shuffled_indices[n];
+    bool valid = fetch_label(Y, index, s);
+    if (!valid) {
+      error_message = "invalid label (index " + std::to_string(index) + ")";
     }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
-  //}
+  }
+  if (!error_message.empty()) { LBANN_ERROR(error_message); }
+
   return mb_size;
 }
 
@@ -302,17 +290,13 @@ bool generic_data_reader::update(bool is_active_reader) {
         + std::to_string(m_stride_to_last_mini_batch));
     }
 
-    if (!m_save_minibatch_indices) {
-      shuffle_indices();
+    shuffle_indices();
+    if (priming_data_store()) {
+      m_data_store->set_shuffled_indices(&m_shuffled_indices);
     }
 
     set_initial_position();
 
-    if (!m_save_minibatch_indices) {
-      if (m_data_store) {
-        m_data_store->set_shuffled_indices(&m_shuffled_indices);
-      }
-    }
   }
 
   post_update();
@@ -450,7 +434,7 @@ void generic_data_reader::select_subset_of_data_partitioned() {
 
   //pull out validation set; note that we pull the validation set from
   //the end of the index vector
-  long unused = get_validation_percent()*m_shuffled_indices.size();
+  long unused = get_validation_percent()*get_num_data();
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
@@ -509,37 +493,6 @@ void generic_data_reader::select_subset_of_data_partitioned() {
       std::cout << "Actual overlap percentage: " << s << "%\n";
     }
   }
-
-  #if 0
-  NOTE: the following block will eventually go away, but please
-        leave it alone for now; I need it to explore alternative
-        overlap algorithms in the future
-
-  char b[80];
-  sprintf(b, "indices.%d", m_comm->get_rank_in_world());
-  std::ofstream out(b);
-  for (auto t : m_shuffled_indices) out << t << " ";
-  out << "\n";
-  out.close();
-
-  script for examining overlap:
-
-r = {}
-for j in range(5) :
-  a = open('indices.' + str(j)).readlines()
-  t = a[0].split()
-  for x in t :
-    if not r.has_key(x) : r[x] = 0
-    r[x] += 1
-
-for j in range(40) :
-  n = 0;
-  for k in r.keys() :
-    if r[k] == j :
-      n += 1
-  if n :
-    print j, n
-  #endif
 }
 
 void generic_data_reader::select_subset_of_data() {
@@ -669,6 +622,19 @@ std::string generic_data_reader::get_local_file_dir() const {
   return m_local_file_dir;
 }
 
+void generic_data_reader::set_data_index_list(std::string s) {
+  m_data_index_list = s;
+}
+
+std::string generic_data_reader::get_data_index_list() const {
+  if (m_data_index_list == "") {
+    throw lbann_exception(
+      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+      " :: you apparently did not call set_data_index_list; error!");
+  }
+  return m_data_index_list;
+}
+
 void generic_data_reader::set_data_filename(std::string s) {
   m_data_fn = s;
 }
@@ -738,15 +704,20 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::setup_data_store(model *m) {
+void generic_data_reader::setup_data_store(model *m, int mini_batch_size) {
   m_data_store = nullptr;
 }
 
-void generic_data_reader::set_save_minibatch_entries(bool b) {
-  m_save_minibatch_indices = b;
-  if (b) {
-    m_my_minibatch_indices.reserve(get_num_iterations_per_epoch());
-  }
+bool generic_data_reader::data_store_active() const {
+  return (m_data_store != nullptr
+          && (m_model->get_execution_mode() == execution_mode::training)
+          && m_model->get_cur_epoch() > 0);
+}
+
+bool generic_data_reader::priming_data_store() const {
+  return (m_data_store != nullptr
+          && (m_model->get_execution_mode() == execution_mode::training)
+          && m_model->get_cur_epoch() == 0);
 }
 
 void generic_data_reader::set_data_store(generic_data_store *g) {
@@ -754,12 +725,6 @@ void generic_data_reader::set_data_store(generic_data_store *g) {
       delete m_data_store;
     }
     m_data_store = g;
-}
-
-void generic_data_reader::init_minibatch() {
-  if (m_data_store != nullptr) {
-    m_data_store->init_minibatch();
-  }
 }
 
 void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, int mode) {

@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -44,7 +44,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
   const int np = comm->get_procs_in_world();
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     opts->init(argc, argv);
 
     // sanity check invocation
-    if (!(opts->has_string("filelist") && opts->has_string("output_base_dir") 
+    if (!(opts->has_string("filelist") && opts->has_string("output_base_dir")
          && opts->has_int("num_subdirs") && opts->has_string("samples_per_file"))) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string> --output_base_dir=<string> --num_subdirs=<int> --samples_per_file=<int>");
@@ -167,7 +167,7 @@ int main(int argc, char *argv[]) {
                 key = "/" + cnames[i];
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
                 save_me["/" + cnames[i]] = node;
- 
+
             } catch (std::exception e) {
               throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: rank " + std::to_string(rank) + " :: " + "exception reading sample: " + cnames[i] + " which is " + std::to_string(i) + " of " + std::to_string(cnames[i].size()) + "; " + files[j]);
             }
@@ -206,12 +206,10 @@ int main(int argc, char *argv[]) {
 
   } catch (std::exception const &e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
   // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }
 

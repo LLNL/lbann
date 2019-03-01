@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -45,11 +45,11 @@ using namespace lbann;
 
 void get_input_names(std::unordered_set<std::string> &s);
 void get_scalar_names(std::unordered_set<std::string> &s);
-void get_image_names(std::unordered_set<std::string> &s); 
+void get_image_names(std::unordered_set<std::string> &s);
 //==========================================================================
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   const int np = comm->get_procs_in_world();
 
@@ -103,13 +103,13 @@ int main(int argc, char *argv[]) {
             key = cnames[i] + "/inputs/" + t;
             std::cerr << "calling: hdf5_read for key: " << key << "\n";
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-        }  
-  
+        }
+
         for (auto t : scalar_names) {
             key = cnames[i] + "/outputs/scalars/" + t;
             std::cerr << "calling: hdf5_read for key: " << key << "\n";
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
-        }  
+        }
 
         for (auto t : image_names) {
             key = cnames[i] + "/outputs/images/" + t;
@@ -119,16 +119,15 @@ int main(int argc, char *argv[]) {
       }
     }
 
-  finalize(comm);
   return 0;
 }
 
 void get_input_names(std::unordered_set<std::string> &s) {
-  s.insert("shape_model_initial_modes:(4,3)"); 
-  s.insert("betti_prl15_trans_u"); 
-  s.insert("betti_prl15_trans_v"); 
-  s.insert("shape_model_initial_modes:(2,1)"); 
-  s.insert("shape_model_initial_modes:(1,0)"); 
+  s.insert("shape_model_initial_modes:(4,3)");
+  s.insert("betti_prl15_trans_u");
+  s.insert("betti_prl15_trans_v");
+  s.insert("shape_model_initial_modes:(2,1)");
+  s.insert("shape_model_initial_modes:(1,0)");
 }
 
 void get_scalar_names(std::unordered_set<std::string> &s) {

@@ -28,7 +28,6 @@ def keras_to_lbann(model, num_classes,
         l = pb.model.layer.add()
         l.name = model.input_names[0]
         exec('l.input.SetInParent()')
-        l.input.io_buffer = "partitioned"
     setup_layers(model)
     # allow user to specify we need a reconstruciton target layer
     target_layer(model,target)
@@ -115,7 +114,6 @@ def setup_callbacks(callbacks):
 # IO layers
 def input(keras_layer, pb_layer):
     exec('pb_layer.input.SetInParent()')
-    pb_layer.input.io_buffer = "partitioned"
 
 def target_layer(model, target):
     l = pb.model.layer.add()
