@@ -41,6 +41,9 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p);
 /// prints usage information
 void print_help(const lbann_comm& comm);
 
+/// prints usage information
+void print_help(std::ostream& os);
+
 /// prints prototext file, cmd line, etc to file
 void save_session(const lbann_comm& comm, const int argc, char * const* argv, lbann_data::LbannPB& p);
 

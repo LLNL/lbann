@@ -850,11 +850,14 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
 
 void print_help(const lbann_comm& comm)
 {
-  if (!comm.am_world_master()) {
-    return;
+  if (comm.am_world_master()) {
+    print_help(std::cerr);
   }
+}
 
-  std::cerr <<
+void print_help(std::ostream& os)
+{
+  os <<
        "General usage: you need to specify three prototext files, e.g:\n"
        "  srun -n# proto --model=<string> --optimizer=<string> --reader=<string> --metadata=<string>\n"
        "\n"
