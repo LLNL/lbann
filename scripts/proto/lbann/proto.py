@@ -211,7 +211,8 @@ class Layer:
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, parents, children, weights,
-                 name, data_layout, hint_layer):
+                 name, data_layout, hint_layer,
+                 parallel_strategy={}):
         Layer.global_count += 1
         self.parents = []
         self.children = []
@@ -219,6 +220,7 @@ class Layer:
         self.name = name if name else 'layer{0}'.format(Layer.global_count)
         self.data_layout = data_layout
         self.hint_layer = hint_layer
+        self.parallel_strategy = parallel_strategy
 
         # Initialize parents, children, and weights
         for l in _make_iterable(parents):
@@ -237,6 +239,10 @@ class Layer:
         proto.name = self.name
         proto.data_layout = self.data_layout
         proto.hint_layer = self.hint_layer.name if self.hint_layer else ''
+        if hasattr(proto, "parallel_strategy"):
+            for k, v in self.parallel_strategy.items():
+                setattr(proto.parallel_strategy, k, v)
+
         return proto
 
     def add_parent(self, parent):
@@ -271,10 +277,11 @@ _generate_classes_from_message(
     skip_fields=set([
         'name', 'parents', 'children', 'data_layout', 'device_allocation',
         'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
+        'parallel_strategy',
         'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
     base_kwargs=[('parents', []), ('children', []), ('weights', []),
                  ('name', None), ('data_layout', 'data_parallel'),
-                 ('hint_layer', None)])
+                 ('hint_layer', None), ('parallel_strategy', {})])
 
 def traverse_layer_graph(layers):
     """Generator function for a topologically ordered graph traversal.
