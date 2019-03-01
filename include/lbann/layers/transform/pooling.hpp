@@ -532,7 +532,7 @@ private:
                                                 nullptr));
         std::vector<int> dims(num_dims), pads(num_dims), strides(num_dims);
         CHECK_CUDNN(cudnnGetPoolingNdDescriptor(src,
-                                                0,
+                                                num_dims,
                                                 &mode,
                                                 &nan_propagation,
                                                 &num_dims,
