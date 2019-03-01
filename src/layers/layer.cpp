@@ -1497,7 +1497,7 @@ void Layer::setup_tensor_distribution_init(
     input_locale_shape = Shape({w, h, d, c, n});
     input_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
                                ps.channel_splits, ps.sample_splits});
-    output_locale_shape = Shape({w, h, f, n});
+    output_locale_shape = Shape({w, h, d, f, n});
     output_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
                                 ps.filter_splits, ps.sample_splits});
   }
