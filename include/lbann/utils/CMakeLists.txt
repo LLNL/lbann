@@ -1,5 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  any.hpp
   compiler_control.hpp
   cublas.hpp
   cuda.hpp
@@ -25,6 +26,7 @@ set_full_path(THIS_DIR_HEADERS
   statistics.hpp
   summary.hpp
   timer.hpp
+  type_erased_matrix.hpp
   )
 
 # Add the subdirectories
