@@ -20,7 +20,7 @@ using namespace lbann;
 
 int main(int argc, char **argv) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   int rank, np;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
            << "assumes: the file '<base_dir>/index.txt' exists\n"
            << "output: writes the file <base_dir>/id_mapping.txt\n\n";
     }
-    finalize(comm);
     return(0);
   }
 
@@ -78,7 +77,7 @@ int main(int argc, char **argv) {
     out << filenames[j] << " ";
     ++q;
     if (q % 10 == 0) cout << rank << " :: " << q/10 << " *10 processed\n";
-    const std::string f_name(base_dir + filenames[j]); 
+    const std::string f_name(base_dir + filenames[j]);
     hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( f_name );
     std::vector<std::string> cnames;
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
@@ -117,5 +116,4 @@ int main(int argc, char **argv) {
     }
   }
 
-  finalize(comm);
 }
