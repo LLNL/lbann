@@ -35,9 +35,7 @@ namespace lbann {
 // Forward declaration.
 class lbann_callback_imcomm;
 
-/** @brief Transpose of the convolution layer.
- *  @todo Rename to "transposed_convolution_layer".
- */
+/** @brief Transpose of the convolution layer. */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Device> {
 private:
@@ -78,10 +76,10 @@ public:
         comm,
         num_data_dims,
         num_output_channels,
-        conv_dims,
-        pads,
-        strides,
-        dilations,
+        std::move(conv_dims),
+        std::move(pads),
+        std::move(strides),
+        std::move(dilations),
         groups,
         has_bias) {
     static_assert(Layout == data_layout::DATA_PARALLEL,
@@ -104,8 +102,6 @@ public:
     // Get tensor dimensions
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
-    const auto input_channels = input_dims[0];
-    const auto output_channels = this->m_output_channels;
 
     // Check for unsupported features
     /// @todo Implement dilated and grouped deconvolution
@@ -121,35 +117,17 @@ public:
       err << ")";
       LBANN_ERROR(err.str());
     }
-    if (this->m_num_groups != 1) {
+    if (this->m_groups != 1) {
       err << this->get_type() << " layer "
           << "\"" << this->get_name() << "\" "
           << "has non-unit groups "
-          << "(" << this->m_num_groups << ")";
-      LBANN_ERROR(err.str());
-    }
-
-    // Check that number of groups is valid
-    if (this->m_num_groups < 1) {
-      err << this->get_type() << " layer "
-          << "\"" << this->get_name() << "\" "
-          << "has " << this->m_num_groups << " groups";
-      LBANN_ERROR(err.str());
-    } else if (input_channels % this->m_num_groups != 0
-               || output_channels % this->m_num_groups != 0) {
-      err << this->get_type() << " layer "
-          << "\"" << this->get_name() << "\" has "
-          << input_channels << " input channels, "
-          << output_channels << " output channels, and "
-          << this->m_num_groups << " groups "
-          << "(groups must evenly divide "
-          << "the input channels and output channels)";
+          << "(" << this->m_groups << ")";
       LBANN_ERROR(err.str());
     }
 
     // Initialize output tensor dimensions
     /// @todo Dilated deconvolution
-    output_dims[0] = output_channels;
+    output_dims[0] = this->m_output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
       const auto& input_dim = input_dims[i+1];
       const auto& kernel_dim = this->m_conv_dims[i];

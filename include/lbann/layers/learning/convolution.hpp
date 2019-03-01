@@ -78,10 +78,10 @@ public:
         comm,
         num_data_dims,
         num_output_channels,
-        conv_dims,
-        pads,
-        strides,
-        dilations,
+        std::move(conv_dims),
+        std::move(pads),
+        std::move(strides),
+        std::move(dilations),
         groups,
         has_bias) {
     static_assert(Layout == data_layout::DATA_PARALLEL,
@@ -97,36 +97,17 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
+protected:
+
   void setup_dims() override {
     base_convolution_layer<Device>::setup_dims();
-    std::stringstream err;
 
     // Get tensor dimensions
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
-    const auto input_channels = input_dims[0];
-    const auto output_channels = this->m_output_channels;
-
-    // Check that number of groups is valid
-    if (this->m_num_groups < 1) {
-      err << this->get_type() << " layer "
-          << "\"" << this->get_name() << "\" "
-          << "has " << this->m_num_groups << " groups";
-      LBANN_ERROR(err.str());
-    } else if (input_channels % this->m_num_groups != 0
-               || output_channels % this->m_num_groups != 0) {
-      err << this->get_type() << " layer "
-          << "\"" << this->get_name() << "\" has "
-          << input_channels << " input channels, "
-          << output_channels << " output channels, and "
-          << this->m_num_groups << " groups "
-          << "(groups must evenly divide "
-          << "the input channels and output channels)";
-      LBANN_ERROR(err.str());
-    }
 
     // Initialize output tensor dimensions
-    output_dims[0] = output_channels;
+    output_dims[0] = this->m_output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
       const auto& input_dim = input_dims[i+1];
       const auto& kernel_dim = this->m_conv_dims[i];
@@ -141,8 +122,6 @@ public:
     this->set_output_dims(output_dims);
 
   }
-
-protected:
 
   std::vector<int> get_kernel_dims() const {
     std::vector<int> dims;
