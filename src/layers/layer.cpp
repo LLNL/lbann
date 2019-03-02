@@ -1416,9 +1416,12 @@ void Layer::setup_tensor_distribution_init(
   int w = ps.width_groups;
   int np = m_comm->get_procs_per_trainer();
 
-  if(dc::num_dims == 4 && d > 1) {
-    MPIRootPrintStreamError() << "The numbers of depth decomposition should be 1.\n";
-    throw lbann_exception();
+  if(dc::num_dims == 4) {
+    if(d > 1) {
+      MPIRootPrintStreamError() << "The numbers of depth decomposition should be 1.\n";
+      throw lbann_exception();
+    }
+    d = 1;
   }
 
   // if only one process is used, do not parallelize
