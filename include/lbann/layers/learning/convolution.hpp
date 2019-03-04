@@ -340,11 +340,10 @@ protected:
     if (this->distconv_enabled()) {
       // REVIEW: distconv-3d
       std::vector<int> overlaps;
-      overlaps.push_back(0); // N
+      for(auto i = this->m_kernel_dims.rbegin(); i != this->m_kernel_dims.rbegin()+dc::num_spatial_dims; ++i)
+        overlaps.push_back((*i - 1) / 2); // W, H, (D)
       overlaps.push_back(0); // C
-      for(auto i = this->m_kernel_dims.begin()+2; i != this->m_kernel_dims.end(); ++i)
-        overlaps.push_back((*i - 1) / 2);
-      std::reverse(overlaps.begin(), overlaps.end());
+      overlaps.push_back(0); // N
       return dc::ArrayND(overlaps);
     } else {
       return dc::ArrayND(0);
@@ -388,7 +387,7 @@ protected:
             [i + 3 * (dc::num_dims - 4)];
         assert(splits != -1);
         if(splits > 1)
-          overlap[dc::num_dims - i] = (this->m_kernel_dims[2 + i] - 1) / 2 * this->m_dilations[i];
+          overlap[dc::num_spatial_dims - 1 - i] = (this->m_kernel_dims[2 + i] - 1) / 2 * this->m_dilations[i];
       }
       auto &prev_activations_dist = dists[this][0];
       prev_activations_dist.set_overlap(overlap);

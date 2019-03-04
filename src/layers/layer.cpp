@@ -1416,17 +1416,13 @@ void Layer::setup_tensor_distribution_init(
   int w = ps.width_groups;
   int np = m_comm->get_procs_per_trainer();
 
-  if(dc::num_dims == 4) {
-    if(d > 1) {
-      MPIRootPrintStreamError() << "The numbers of depth decomposition should be 1.\n";
-      throw lbann_exception();
-    }
-    d = 1;
-  }
+  const bool use_d = (dc::num_dims == 5);
 
   // if only one process is used, do not parallelize
   if (np == 1) {
-    n = c = f = d = h = w = 1;
+    n = c = f = h = w = 1;
+    if(use_d)
+      d = 1;
   }
   if (distconv_enabled()) {
     if (c != f) {
@@ -1437,7 +1433,7 @@ void Layer::setup_tensor_distribution_init(
       MPIRootPrintStreamError() << "Distconv does not support channel/filter parallelization yet. Layer: " << get_name() << ", ps: " << ps;
       throw lbann_exception();
     }
-    int ncdhw = n * c * d * h * w;
+    int ncdhw = n * c * (use_d ? d : 1) * h * w;
     if (ncdhw > np) {
       MPIRootPrintStreamError() <<
           "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: "
@@ -1448,7 +1444,7 @@ void Layer::setup_tensor_distribution_init(
     float rem = np / (float)ncdhw;
     n *= rem;
     ps.sample_splits *= rem;
-    ncdhw = n * c * d * h * w;
+    ncdhw = n * c * (use_d ? d : 1) * h * w;
     if (ncdhw != np) {
       MPIRootPrintStreamError() <<
           "Can't determine factorization of the number of MPI ranks for parallel strategy: "
@@ -1456,7 +1452,7 @@ void Layer::setup_tensor_distribution_init(
       throw lbann_exception();
     }
     std::string xd_array, xd_array_names;
-    if(dc::num_dims == 4) {
+    if(!use_d) {
       xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
       xd_array_names = "NxCxHxW";
     } else {
@@ -1468,19 +1464,21 @@ void Layer::setup_tensor_distribution_init(
   }
 
   assert_always(!distconv_enabled() || (
-      d * h * w * n * c == np && d * h * w * n * f == np));
+      (use_d ? d : 1) * h * w * n * c == np && (use_d ? d : 1) * h * w * n * f == np));
 
   ps.sample_groups = n;
   ps.channel_groups = c;
   ps.filter_groups = f;
-  ps.depth_groups = d;
+  if(use_d)
+    ps.depth_groups = d;
   ps.height_groups = h;
   ps.width_groups = w;
   // If splits are not set, set them to be equal to the group numbers
   if (ps.sample_splits == 0) ps.sample_splits = n;
   if (ps.channel_splits == 0) ps.channel_splits = c;
   if (ps.filter_splits == 0) ps.filter_splits = f;
-  if (ps.depth_splits == 0) ps.depth_splits = h;
+  if(use_d)
+    if (ps.depth_splits == 0) ps.depth_splits = d;
   if (ps.height_splits == 0) ps.height_splits = h;
   if (ps.width_splits == 0) ps.width_splits = w;
 
@@ -1489,7 +1487,7 @@ void Layer::setup_tensor_distribution_init(
   Shape output_locale_shape;
   Shape output_split_shape;
 
-  if(dc::num_dims == 4) {
+  if(!use_d) {
     input_locale_shape = Shape({w, h, c, n});
     input_split_shape = Shape({ps.width_splits, ps.height_splits,
                                ps.channel_splits, ps.sample_splits});

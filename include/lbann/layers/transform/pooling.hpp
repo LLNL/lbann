@@ -587,7 +587,7 @@ private:
             [i + 3 * (dc::num_dims - 4)];
         assert(splits != -1);
         if(splits > 1)
-          overlap[dc::num_dims - i] = (this->m_pool_dims[i] - 1) / 2;
+          overlap[dc::num_spatial_dims - 1 - i] = (this->m_pool_dims[i] - 1) / 2;
       }
       auto &prev_activations_dist = dists[this][0];
       auto &activations_dist = dists[this][1];
@@ -722,7 +722,7 @@ private:
       pad_zero &= (m_pads[i] == 0);
       pad_stencil &= (m_pads[i] == stencils[dc::num_spatial_dims-1-i]);
       stride_one &= (m_strides[i] == 1);
-      stride_stencil &= (m_strides[i] == stencils[dc::num_spatial_dims-1-i] + 1);
+      stride_stencil &= (m_strides[i] == stencils[i] + 1);
     }
 
     if (!(pad_zero || pad_stencil)) {
