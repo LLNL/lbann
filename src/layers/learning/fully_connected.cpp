@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 
 namespace lbann {
 
@@ -106,9 +108,10 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_com
 /** CPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const int mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& linearity = m_weights[0]->get_values();
@@ -213,9 +216,10 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
 /** CPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const int mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
@@ -296,9 +300,10 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
 /** GPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const int mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
@@ -397,9 +402,10 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const int mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& linearity = m_weights[0]->get_values();

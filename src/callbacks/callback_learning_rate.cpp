@@ -64,6 +64,7 @@ void lbann_callback_learning_rate::setup(model *m) {
 }
 
 void lbann_callback_learning_rate::on_epoch_end(model *m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   const float new_lr = global_schedule(m);
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
@@ -71,7 +72,7 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
   if (comm->am_trainer_master() && new_lr != old_global_lr) {
     std::cout << "Model " << comm->get_trainer_rank() << ": "
               << "changing global learning rate to " << new_lr
-              << " at epoch " << m->get_epoch() << std::endl;
+              << " at epoch " << c.get_epoch() << std::endl;
   }
   for (weights *w : m_weights) {
     optimizer *opt = w->get_optimizer();
@@ -102,7 +103,8 @@ lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
   lbann_callback_learning_rate(weights_list), m_step(step), m_amt(amt) {}
 
 float lbann_callback_step_learning_rate::global_schedule(model *m) {
-  if (m->get_epoch() % m_step == 0) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  if (c.get_epoch() % m_step == 0) {
     return m_cur_global_lr * m_amt;
   } else {
     return m_cur_global_lr;
@@ -119,10 +121,11 @@ lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
   lbann_callback_learning_rate(weights_list), m_patience(patience), m_amt(amt) {}
 
 float lbann_callback_adaptive_learning_rate::global_schedule(model *m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Determine behavior the first time this is called in an epoch
-  if (m_cur_epoch != m->get_epoch()) {
-    m_cur_epoch = m->get_epoch();
-    const execution_mode mode = m->get_execution_mode();
+  if (m_cur_epoch != c.get_epoch()) {
+    m_cur_epoch = c.get_epoch();
+    const execution_mode mode = c.get_execution_mode();
     const EvalType score = m->get_objective_function()->get_mean_value(mode);
     if (score < m_last_score) {
       // Reset wait counter if score has decreased
@@ -162,14 +165,15 @@ lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate
 }
 
 float lbann_callback_drop_fixed_learning_rate::global_schedule(model* m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
-         && m->get_epoch() > m_drop_epochs.back()) {
+         && c.get_epoch() > m_drop_epochs.back()) {
     m_drop_epochs.pop_back();
   }
 
   // Adjust learning rate if at a drop epoch
-  if (!m_drop_epochs.empty() && m->get_epoch() == m_drop_epochs.back()) {
+  if (!m_drop_epochs.empty() && c.get_epoch() == m_drop_epochs.back()) {
     return m_cur_global_lr * m_amt;
   } else {
     return m_cur_global_lr;
@@ -203,10 +207,11 @@ void lbann_callback_linear_growth_learning_rate::setup(model *m) {
 }
 
 float lbann_callback_linear_growth_learning_rate::global_schedule(model *m) {
-  if (m->get_epoch() < m_delay) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  if (c.get_epoch() < m_delay) {
     return m_cur_global_lr;
-  } else if (m->get_epoch() <= m_num_epochs + m_delay) {
-    int num_left = m_num_epochs + m_delay - m->get_epoch();
+  } else if (c.get_epoch() <= m_num_epochs + m_delay) {
+    int num_left = m_num_epochs + m_delay - c.get_epoch();
     return m_base_lr + m_inc*(m_num_epochs - num_left);
   } else {
     return m_cur_global_lr;
@@ -255,7 +260,8 @@ float lbann_callback_poly_learning_rate::global_schedule(model *m) {
  * Compute the learning rate for the next iteration.
  */
 float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const uint64_t cur_iter = static_cast<uint64_t>(m->get_step(execution_mode::training));
+  const execution_context& c = m->get_execution_context();
+  const uint64_t cur_iter = static_cast<uint64_t>(c.get_step());
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }

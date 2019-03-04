@@ -8,6 +8,8 @@ message LbannPB {
   Optimizer optimizer = 3;
   MotifDefinitions motif_definitions = 4;
   DataSetMetaData data_set_metadata = 5;
+  Trainer trainer = 6;
+  TrainingAlgorithm training_algorithm = 76;
 }
 
 //========================================================================
@@ -258,13 +260,10 @@ message Model {
   int64 num_epochs = 4;
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN
   int64 num_batches = 122; //multiple batches/sub epoch
-  int64 block_size = 50;
-  int64 procs_per_trainer = 51;
-  int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
-  int64 num_parallel_readers = 100;
   bool  serialize_io = 101;
 
+  // Enables a model to explicity prohibit any layer from using a GPU device type
   bool disable_cuda = 8;
 
   repeated Layer layer = 10;
@@ -277,6 +276,48 @@ message Model {
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
 
+}
+
+//========================================================================
+// Trainer
+//========================================================================
+
+message Trainer {
+  string type = 1;
+  string name = 3;
+  ObjectiveFunction objective_function = 2;
+  repeated Metric metric = 5;
+  string data_layout = 6;
+  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
+  bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
+  bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
+
+  int64 mini_batch_size = 12;
+  int64 num_epochs = 4;
+  int64 super_steps = 121; //multiple steps/epochs currently use in GAN
+  int64 num_batches = 122; //multiple batches/sub epoch
+  int64 block_size = 50;
+  int64 procs_per_trainer = 51;
+  int64 num_gpus = 53; //has no effect
+  int64 evaluation_frequency = 54;
+  int64 num_parallel_readers = 100;
+  bool  serialize_io = 101;
+
+  repeated Callback callback = 20;
+
+  int64 random_seed = 30;
+  // If true, models will have their model rank mixed into their random seed.
+  bool random_init_models_differently = 31;
+
+}
+
+//========================================================================
+// Training Algorithm
+//========================================================================
+
+message TrainingAlgorithm {
+  string type = 1;
+  string name = 3;
 }
 
 //========================================================================

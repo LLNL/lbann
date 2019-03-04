@@ -70,7 +70,7 @@ protected:
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (this->m_model->get_execution_mode() == execution_mode::training) {
+    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
     } else {
       El::Fill(output, m_mean);

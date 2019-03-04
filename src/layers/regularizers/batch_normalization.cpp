@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
 
 namespace lbann {
 
@@ -32,7 +33,7 @@ template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
   const auto& input = get_prev_activations();
@@ -158,7 +159,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
   const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
@@ -178,7 +179,8 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const El::Int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  const El::Int effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
   const auto& output_dims = get_output_dims();

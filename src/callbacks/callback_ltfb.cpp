@@ -159,8 +159,9 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
                                       const std::vector<weights*>& local_weights) {
 
   // Checkpoint directories
+  const execution_context& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_step();
+  const auto step = c.get_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
@@ -218,8 +219,9 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
+  const execution_context& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_step();
+  const auto step = c.get_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
@@ -241,13 +243,13 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
 /** Get mean metric value with validation set. */
 EvalType evaluate(model& m, const std::string& metric_name) {
-
+  execution_context& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
-  const auto original_mode = m.get_execution_mode();
+  const auto original_mode = c.get_execution_mode();
   m.collect_background_data_fetch(original_mode);
 
   // Evaluate model on validation set
-  m.evaluate(execution_mode::validation);
+  c.get_trainer()->evaluate(&m, execution_mode::validation);
 
   // Get metric value
   bool found_metric = false;
@@ -267,7 +269,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   }
 
   // Clean up and return metric value
-  m.set_execution_mode(original_mode);
+  c.set_execution_mode(original_mode);
   return metric_value;
 
 }
@@ -341,11 +343,12 @@ void lbann_callback_ltfb::setup(model *m) {
 }
 
 void lbann_callback_ltfb::on_batch_begin(model *m) {
+  const execution_context& c = m->get_execution_context();
   auto&& comm = *m->get_comm();
 
   // Check whether to start LTFB round
-  const auto mode = m->get_execution_mode();
-  const auto step = m->get_step();
+  const auto mode = c.get_execution_mode();
+  const auto step = c.get_step();
   if (mode != execution_mode::training || step == 0) { return; }
 
   // Print message

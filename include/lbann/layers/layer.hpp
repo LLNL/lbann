@@ -29,6 +29,8 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"

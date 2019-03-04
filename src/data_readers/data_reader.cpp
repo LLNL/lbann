@@ -50,7 +50,7 @@ void generic_data_reader::shuffle_indices(rng_gen& gen) {
   }
 }
 
-  void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void generic_data_reader::setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
   m_stride_to_next_mini_batch = 0;
@@ -709,15 +709,17 @@ void generic_data_reader::setup_data_store(model *m, int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
+  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() == execution_mode::training)
-          && m_model->get_epoch() > 0);
+          && (c.get_execution_mode() == execution_mode::training)
+          && c.get_epoch() > 0);
 }
 
 bool generic_data_reader::priming_data_store() const {
+  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() == execution_mode::training)
-          && m_model->get_epoch() == 0);
+          && (c.get_execution_mode() == execution_mode::training)
+          && c.get_epoch() == 0);
 }
 
 void generic_data_reader::set_data_store(generic_data_store *g) {

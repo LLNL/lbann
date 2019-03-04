@@ -33,6 +33,12 @@
 namespace lbann {
 namespace proto {
 
+/** Construct a trainer specified with a prototext. */
+trainer* construct_trainer(lbann_comm* comm,
+                           const std::map<execution_mode, generic_data_reader*>& data_readers,
+                           const lbann_data::Optimizer& proto_opt,
+                           const lbann_data::Model& proto_model);
+
 /** Construct a model specified with a prototext. */
 model* construct_model(lbann_comm* comm,
                        const std::map<execution_mode, generic_data_reader*>& data_readers,

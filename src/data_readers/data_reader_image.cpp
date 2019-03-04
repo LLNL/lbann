@@ -136,7 +136,7 @@ void image_data_reader::load() {
   select_subset_of_data();
 }
 
-void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void image_data_reader::setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 
   using InputBuf_T = lbann::cv_image_type<uint8_t>;

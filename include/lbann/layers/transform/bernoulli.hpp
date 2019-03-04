@@ -65,7 +65,7 @@ protected:
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (this->m_model->get_execution_mode() == execution_mode::training) {
+    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       bernoulli_fill(output, output.Height(), output.Width(), m_prob);
     } else {
       El::Zero(output);

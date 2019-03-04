@@ -69,7 +69,7 @@ class categorical_random_layer : public transform_layer {
     const auto& local_width = local_input.Width();
 
     // Initialize output and random numbers
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     El::Zero(local_output);
     StarVCMat<El::Device::CPU> rand_mat(input.Grid(), input.Root());
     if (mode == execution_mode::training) {

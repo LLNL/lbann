@@ -40,8 +40,9 @@ void lbann_callback_dump_weights::on_epoch_end(model *m) {
 }
 
 void lbann_callback_dump_weights::dump_weights(model *m, std::string s) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   for (weights *w : m->get_weights()) {
-    std::string epoch = "-epoch" + std::to_string(m->get_epoch()-1);
+    std::string epoch = "-epoch" + std::to_string(c.get_epoch()-1);
     if(s != "") {
       epoch = "-" + s;
     }

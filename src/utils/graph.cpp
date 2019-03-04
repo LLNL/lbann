@@ -36,7 +36,7 @@ namespace graph {
 
 void print(const std::set<El::Int>& nodes,
            const std::map<El::Int,std::set<El::Int>>& edges,
-           std::ostream& os) {
+           std::ostream& os = std::cout) {
   for (const auto& node : nodes) {
     os << "node " << node << " neighbors :";
     for (const auto& neighbor : get_neighbors(node, edges)) {

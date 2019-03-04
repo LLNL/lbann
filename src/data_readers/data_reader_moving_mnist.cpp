@@ -79,6 +79,7 @@ int moving_mnist_reader::get_linearized_label_size() const {
 }
 
 bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
 
   // Useful constants
   constexpr DataType zero = 0;
@@ -90,7 +91,7 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
     size_t hash = 1234;
     hash_combine(hash, data_id);
-    hash_combine(hash, m_model->get_epoch());
+    hash_combine(hash, c.get_epoch());
     hash_combine(hash, obj);
     raw_image_indices[obj] = hash % m_num_raw_images;
   }
@@ -218,6 +219,7 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
 }
 
 bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
 
   // Choose raw images
   /// @todo Implementation with uniform distribution
@@ -225,7 +227,7 @@ bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col) {
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
     size_t hash = 1234;
     hash_combine(hash, data_id);
-    hash_combine(hash, m_model->get_epoch());
+    hash_combine(hash, c.get_epoch());
     hash_combine(hash, obj);
     raw_image_indices[obj] = hash % m_num_raw_images;
   }

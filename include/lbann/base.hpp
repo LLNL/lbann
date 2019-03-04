@@ -44,6 +44,9 @@ namespace lbann {
 // Forward-declaration.
 class lbann_comm;
 
+/// Creating an observing_ptr to complement the unique_ptr and shared_ptr
+template <typename T> using observing_ptr = typename std::add_pointer<T>::type;
+
 // Note that this should only be used to wrap the thing coming out of
 // initialize()! This will be removed when we have proper RAII around
 // these things.

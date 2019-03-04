@@ -41,8 +41,9 @@ void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
     return;
   }
 
+  const execution_context& c = m->get_execution_context();
   if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
-    if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
+    if(m_debug_phase == execution_mode::invalid || m_debug_phase == c.get_execution_mode()) {
       print_fp_start(m, input);
     }
   }
@@ -52,11 +53,12 @@ void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
 }
 
 void lbann::lbann_callback_debug_io::print_fp_start(model *m, generic_input_layer *input) {
-  const auto& step = m->get_step();
+  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& step = c.get_step();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
             << "." << m->get_comm()->get_rank_in_trainer()
-            << "] @" << m->get_epoch() << "." << step
-            << " Phase: " << _to_string(m->get_execution_mode())
+            << "] @" << c.get_epoch() << "." << step
+            << " Phase: " << _to_string(c.get_execution_mode())
             << " starting forward propagation for layer " << input->get_name()
             << " type: " << input->get_type()
             << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
@@ -72,6 +74,7 @@ void lbann::lbann_callback_debug_io::print_fp_start(model *m, generic_input_laye
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
+  const execution_context& c = m->get_execution_context();
 
   // Get data reader from first input layer in model
   generic_data_reader* data_reader = nullptr;
@@ -84,7 +87,7 @@ void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode 
   }
   if (data_reader == nullptr) { return; }
 
-  const auto& step = m->get_step();
+  const auto& step = c.get_step();
 
   if(data_reader->get_rank() < data_reader->get_num_parallel_readers()) {
     std::cout << "[" << m->get_comm()->get_trainer_rank()
@@ -129,13 +132,14 @@ void lbann::lbann_callback_debug_io::on_validation_begin(model *m) {
 }
 
 void lbann::lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+  const execution_context& c = m->get_execution_context();
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
 
   if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
-    if(m_debug_phase == execution_mode::invalid || m_debug_phase == m->get_execution_mode()) {
+    if(m_debug_phase == execution_mode::invalid || m_debug_phase == c.get_execution_mode()) {
       print_fp_start(m, input);
     }
   }

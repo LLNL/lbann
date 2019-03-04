@@ -76,12 +76,13 @@ bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
  *  necessarily have bad data, and the check is purely local.
  */
 void dump_network(model *m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   for (const auto* l : m->get_layers()) {
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
-       << "-epoch" << m->get_epoch()
-       << "-step" << m->get_step(execution_mode::training)
+       << "-epoch" << c.get_epoch()
+       << "-step" << c.get_step()
        << "-" << l->get_name() << "-";
     const std::string prefix = ss.str();
     for (int i = 0; i < l->get_num_children(); ++i) {
@@ -99,8 +100,8 @@ void dump_network(model *m) {
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
-       << "-epoch" << m->get_epoch()
-       << "-step" << m->get_step(execution_mode::training)
+       << "-epoch" << c.get_epoch()
+       << "-step" << c.get_step()
        << "-" << w->get_name() << "-";
     const std::string prefix = ss.str();
     El::Write(w->get_values().LockedMatrix(),

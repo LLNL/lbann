@@ -34,6 +34,8 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 
 #include <future>
 
@@ -131,7 +133,7 @@ class generic_input_layer : public io_layer {
   description get_description() const override {
     auto&& desc = io_layer::get_description();
     desc.add("Buffer", m_io_buffers[0]->get_type());
-    desc.add("Background I/O", this->m_model->background_io_activity_allowed());
+    desc.add("Background I/O", this->m_model->get_execution_context().background_io_activity_allowed());
     return desc;
   }
 
@@ -152,19 +154,22 @@ class generic_input_layer : public io_layer {
       output.Resize(output.Height(), max_mb_size);
     }
 
-    auto num_io_threads = this->m_model->get_io_thread_pool()->get_num_threads();
+    /// @todo BVE FIXME We don't have proper support for accessing the
+    /// execution context during setup
+    const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    auto num_io_threads = c.get_io_thread_pool()->get_num_threads();
     /// BVE FIXME foreach data reader
     // in case that target_layer gets initialized beforehand
     if(m_data_readers[execution_mode::training] != nullptr) {
-      m_data_readers[execution_mode::training]->setup(num_io_threads, this->m_model->get_io_thread_pool());
+      m_data_readers[execution_mode::training]->setup(num_io_threads, c.get_io_thread_pool());
       m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
     if(m_data_readers[execution_mode::validation] != nullptr) {
-      m_data_readers[execution_mode::validation]->setup(num_io_threads, this->m_model->get_io_thread_pool());
+      m_data_readers[execution_mode::validation]->setup(num_io_threads, c.get_io_thread_pool());
       m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
     if(m_data_readers[execution_mode::testing] != nullptr) {
-      m_data_readers[execution_mode::testing]->setup(num_io_threads, this->m_model->get_io_thread_pool());
+      m_data_readers[execution_mode::testing]->setup(num_io_threads, c.get_io_thread_pool());
       m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
 
@@ -214,9 +219,10 @@ class generic_input_layer : public io_layer {
       }
     }
 
+    sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     // Set mini-batch size in model
-    this->m_model->set_current_mini_batch_size(mini_batch_size);
-    this->m_model->set_effective_mini_batch_size(effective_mini_batch_size);
+    c.set_current_mini_batch_size(mini_batch_size);
+    c.set_effective_mini_batch_size(effective_mini_batch_size);
 
     // Initialize matrices
     io_layer::fp_setup_outputs(mini_batch_size);
@@ -248,7 +254,7 @@ class generic_input_layer : public io_layer {
   }
 
   void fp_compute() override {
-    execution_mode mode = this->m_model->get_execution_mode();
+    execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
 
     increment_active_buffer_idx(mode);
 
@@ -257,7 +263,7 @@ class generic_input_layer : public io_layer {
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->is_data_fetched_in_background(mode)) {
-      std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
+      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, get_active_buffer_idx(mode), mode));
       io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       io_buffer->set_fetch_data_in_background(true, mode);
@@ -300,9 +306,9 @@ class generic_input_layer : public io_layer {
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
-    if(!m_data_set_processed && this->m_model->background_io_activity_allowed()) {
+    if(!m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
-      std::future<void> background_fetch_done = this->m_model->get_io_thread_pool()->submit_job(
+      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool()->submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
@@ -350,7 +356,7 @@ class generic_input_layer : public io_layer {
   }
 
   generic_data_reader *get_data_reader() const {
-    return get_data_reader(this->m_model->get_execution_mode());
+    return get_data_reader(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_num_parallel_readers(execution_mode mode) const {
@@ -359,7 +365,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_num_parallel_readers() const {
-    return get_num_parallel_readers(this->m_model->get_execution_mode());
+    return get_num_parallel_readers(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_num_iterations_per_epoch(execution_mode mode) const {
@@ -368,7 +374,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_num_iterations_per_epoch() const {
-    return get_num_iterations_per_epoch(this->m_model->get_execution_mode());
+    return get_num_iterations_per_epoch(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_current_step_in_epoch(execution_mode mode) const {
@@ -377,7 +383,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_current_step_in_epoch() const {
-    return get_current_step_in_epoch(this->m_model->get_execution_mode());
+    return get_current_step_in_epoch(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_mini_batch_size(execution_mode mode) const {
@@ -391,7 +397,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_last_mini_batch_size() const {
-    return get_last_mini_batch_size(this->m_model->get_execution_mode());
+    return get_last_mini_batch_size(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_current_mini_batch_size(execution_mode mode) const {
@@ -400,7 +406,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_current_mini_batch_size() const {
-    return get_current_mini_batch_size(this->m_model->get_execution_mode());
+    return get_current_mini_batch_size(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_global_mini_batch_size(execution_mode mode) const {
@@ -419,7 +425,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_current_global_mini_batch_size() const {
-    return get_current_global_mini_batch_size(this->m_model->get_execution_mode());
+    return get_current_global_mini_batch_size(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const {
@@ -428,7 +434,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_world_master_mini_batch_adjustment() const {
-    return get_world_master_mini_batch_adjustment(this->m_model->get_execution_mode());
+    return get_world_master_mini_batch_adjustment(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const {
@@ -437,7 +443,7 @@ class generic_input_layer : public io_layer {
   }
 
   virtual int get_current_world_master_mini_batch_adjustment(int model_rank) const {
-    return get_current_world_master_mini_batch_adjustment(this->m_model->get_execution_mode(), model_rank);
+    return get_current_world_master_mini_batch_adjustment(this->m_model->get_execution_context().get_execution_mode(), model_rank);
   }
 
   /** Calculate how many iterations are required for training, testing,
@@ -524,8 +530,8 @@ class generic_input_layer : public io_layer {
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() override { return get_dataset(m_model->get_execution_mode()); }
-  const dataset& select_dataset() const override { return get_dataset(m_model->get_execution_mode()); }
+  dataset& select_dataset() override { return get_dataset(m_model->get_execution_context().get_execution_mode()); }
+  const dataset& select_dataset() const override { return get_dataset(m_model->get_execution_context().get_execution_mode()); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
@@ -563,9 +569,9 @@ class generic_input_layer : public io_layer {
    * Return the sample indices fetched in the current mini-batch.
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
-    execution_mode mode = this->m_model->get_execution_mode();
+    execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
     generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
-    return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_mode());
+    return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_context().get_execution_mode());
   }
 
   /**

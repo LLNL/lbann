@@ -28,6 +28,8 @@
 #define LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 
 namespace lbann {
 
@@ -185,8 +187,9 @@ class weights_layer : public transform_layer {
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
     El::Fill(*m_workspace, one);
 
+    const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     // Compute gradient contribution and accumulate
-    const auto& scale = one / this->m_model->get_effective_mini_batch_size();
+    const auto& scale = one / c.get_effective_mini_batch_size();
     El::Gemv(El::NORMAL,
              scale, local_gradient_wrt_output, *m_workspace,
              zero, m_gradient->Matrix());

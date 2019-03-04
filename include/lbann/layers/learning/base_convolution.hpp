@@ -37,6 +37,8 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 
 namespace lbann {
 
@@ -657,7 +659,8 @@ protected:
     // Useful constants
     const DataType zero = DataType(0);
     const DataType one = DataType(1);
-    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const int effective_mini_batch_size = c.get_effective_mini_batch_size();
     const bool has_local_data = (local_input.Height() > 0
                                  && local_input.Width() > 0
                                  && local_gradient_wrt_output.Height() > 0
@@ -942,7 +945,8 @@ protected:
     const int num_input_channels = input_dims[0];
     const int num_output_channels = output_dims[0];
     const int num_per_output_channel = get_output_size() / num_output_channels;
-    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const int effective_mini_batch_size = c.get_effective_mini_batch_size();
     const auto& kernel_dims = get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),

@@ -43,7 +43,7 @@ class imagenet_reader_patches : public image_data_reader {
 
   imagenet_reader_patches* copy() const override { return new imagenet_reader_patches(*this); }
 
-  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) override;
 
   std::string get_type() const override {
     return "imagenet_reader_patches";

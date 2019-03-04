@@ -68,11 +68,18 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
-
+    /// Load the prototexts specificed on the command line
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
     lbann_data::LbannPB pb = *(pbs[0]);
+
+    // Optionally over-ride some values in prototext
+    get_cmdline_overrides(*comm, pb);
+
+    const lbann_data::Trainer *pb_trainer = pb.trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm, pb_trainer, opts)
+
 
     lbann_data::Model *pb_model = pb.mutable_model();
 
@@ -86,10 +93,12 @@ int main(int argc, char *argv[]) {
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
       // Train model
-      model->train(pb_model->num_epochs());
+      trainer->train(model, pb_model->num_epochs());
+      //      trainer->apply(SGD, execution_mode::training, model, lambdat ()(return pb_model->num_epochs()> 0));
 
       // Evaluate model on test set
-      model->evaluate(execution_mode::testing);
+      trainer->evaluate(model, execution_mode::testing);
+      //      trainer->apply(SGD, execution_mode::testing, model, pb_model->num_epochs());
 
       //has no affect unless option: --st_on was given
       stack_profiler::get()->print();

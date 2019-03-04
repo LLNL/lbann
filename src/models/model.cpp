@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/io/persist.hpp"
@@ -57,11 +58,9 @@ model::model(lbann_comm* comm,
              objective_function* obj_fn,
              optimizer* default_optimizer)
   : m_comm(comm),
-    m_current_mini_batch_size(mini_batch_size),
-    m_max_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size),
     m_default_optimizer(default_optimizer),
-    m_objective_function(obj_fn) {
+    m_objective_function(obj_fn),
+    m_max_mini_batch_size(mini_batch_size) {
 
   // Default model name
   static El::Int num_models = 0;
@@ -73,14 +72,7 @@ model::model(lbann_comm* comm,
 model::model(const model& other) :
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_execution_mode(other.m_execution_mode),
-  m_epoch(other.m_epoch),
-  m_step(other.m_step),
-  m_terminate_training(other.m_terminate_training),
-  m_current_mini_batch_size(other.m_current_mini_batch_size),
-  m_max_mini_batch_size(other.m_max_mini_batch_size),
-  m_effective_mini_batch_size(other.m_effective_mini_batch_size),
-  m_background_io_allowed(other.m_background_io_allowed) {
+  m_max_mini_batch_size(other.m_max_mini_batch_size) {
 
   // Deep copies
   m_default_optimizer = (other.m_default_optimizer ?
@@ -133,14 +125,7 @@ model& model::operator=(const model& other) {
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_execution_mode = other.m_execution_mode;
-  m_epoch = other.m_epoch;
-  m_step = other.m_step;
-  m_terminate_training = other.m_terminate_training;
-  m_current_mini_batch_size = other.m_current_mini_batch_size;
   m_max_mini_batch_size = other.m_max_mini_batch_size;
-  m_effective_mini_batch_size = other.m_effective_mini_batch_size;
-  m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
   m_objective_function = other.m_objective_function;
@@ -324,26 +309,6 @@ const std::vector<weights*> model::get_weights() const {
     weights_list.push_back(w);
   }
   return weights_list;
-}
-
-void model::set_execution_mode(execution_mode mode) {
-  m_execution_mode = mode;
-}
-
-execution_mode model::get_execution_mode() const noexcept {
-  return m_execution_mode;
-}
-
-El::Int model::get_step() const noexcept {
-  return get_step(get_execution_mode());
-}
-
-El::Int model::get_step(execution_mode mode) const noexcept {
-  if (m_step.count(mode) > 0) {
-    return m_step.at(mode);
-  } else {
-    return 0;
-  }
 }
 
 int model::get_num_iterations_per_epoch(execution_mode mode) const {
@@ -589,11 +554,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
-  // Setup I/O threads - set up before setting up the layers (input
-  // layer depends on having a properly initialized thread pool)
-  m_io_thread_pool = std::move(io_thread_pool);
-
+void model::setup() {
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
@@ -601,9 +562,6 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
 
   // Setup weights
   setup_weights();
-
-  // Setup objective function
-  m_objective_function->setup(*this);
 
   // Setup metrics
   for (const auto& m : m_metrics) {
@@ -951,87 +909,12 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // Execution
 // =============================================
 
-void model::evaluate(execution_mode mode, int num_batches) {
-
-  // Return early if execution mode is invalid
-  if (!is_execution_mode_valid(mode)) return;
-  if (mode != execution_mode::validation
-      && mode != execution_mode::testing) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "invalid execution mode for evaluation";
-    throw lbann_exception(err.str());
-  }
-
-  // Evaluate on all mini-batches
-  reset_epoch_statistics(mode);
-  reset_mode_and_model(mode);
-  do_evaluate_begin_cbs(mode);
-  if (num_batches > 0) {
-    for (int i = 0; i < num_batches; i++) { evaluate_mini_batch(mode); }
-  } else {
-    while (!evaluate_mini_batch(mode)) {}
-  }
-  do_evaluate_end_cbs(mode);
-}
-
-void model::train(int num_epochs, int num_batches) {
-  do_train_begin_cbs();
-  for (int epoch = m_epoch; epoch < num_epochs; ++epoch) {
-    if (get_terminate_training()) { break; }
-
-    // Initialize epoch
-    reset_mode_and_model(execution_mode::training);
-    do_epoch_begin_cbs();
-
-    // Training iterations
-    if (num_batches > 0) {
-      for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
-    } else {
-      while (!train_mini_batch()) {}
-    }
-
-    // Finalize epoch
-    ++m_epoch;
-    reconcile_weight_values();
-    do_epoch_end_cbs();
-    reset_epoch_statistics(execution_mode::training);
-
-    // Evaluate on validation set
-    evaluate(execution_mode::validation);
-
-  }
-  do_train_end_cbs();
-}
-
-//this is for data store functionality
-void model::collect_indices(execution_mode mode) {
-  reset_mode_and_model(mode);
-  while (true) {
-    get_layer(0).forward_prop();
-    bool finished = true;
-    finished = get_layer(0).update() && finished;
-    if (finished) {
-      break;
-    }
-  }
-  //this may not be necessary, but shouldn't hurt
-  reset_epoch_statistics(mode);
-}
-
-void model::collect_background_data_fetch(execution_mode mode) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
-    if (input != nullptr) {
-      input->collect_background_data_fetch(mode);
-    }
-  }
-}
 
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
-void model::reset_mode_and_model(execution_mode mode) {
-  set_execution_mode(mode);
+void model::reset_mode(observing_ptr<execution_context> context, execution_mode mode) {
+  m_execution_context = context;
+  //  set_execution_mode(mode);
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).set_model(this);
   }
@@ -1039,78 +922,26 @@ void model::reset_mode_and_model(execution_mode mode) {
 
 // At the end of the epoch, clean up the objective function and metrics
 void model::reset_epoch_statistics(execution_mode mode) {
-  m_objective_function->reset_statistics(mode);
+  m_objective_function()->reset_statistics(mode);
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
   }
 }
 
-bool model::evaluate_mini_batch(execution_mode mode) {
-  reset_mode_and_model(mode);
-  do_batch_begin_cbs(mode);
-  forward_prop(mode);
-  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
-  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(mode, get_current_mini_batch_size());
-  }
-  const bool finished = update_layers();
-
-  // Increment mini-batch step
-  /// @todo Move after the callbacks
-  if (m_step.count(mode) < 1) { m_step[mode] = 0; }
-  ++m_step[mode];
-
-  do_batch_end_cbs(mode);
-  return finished;
-}
-
-bool model::train_mini_batch() {
-  constexpr execution_mode mode = execution_mode::training;
-  reset_mode_and_model(mode);
-  do_batch_begin_cbs(mode);
-
-
-  bool finished;
-
-#if defined(LBANN_HAVE_OMP_TASKLOOP)
-  LBANN_OMP_PARALLEL
-  {
-    #pragma omp single
-    {
-#endif
-  // Forward prop step
-  clear_gradients();
-  forward_prop(mode);
-  // Result is not needed until the end of the mini-batch.
-  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
-
-  // Backward prop step
-  m_objective_function->differentiate();
-  backward_prop();
-  m_objective_function->compute_weight_regularization();
-
-  // Finish evaluation.
-  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(mode, get_current_mini_batch_size());
-  }
-
-  // Update step
-  update_weights();
-  finished = update_layers();
-#if defined(LBANN_HAVE_OMP_TASKLOOP)
+void training_algorithm::collect_background_data_fetch(execution_mode mode) {
+  for (const auto& layer : m_layers) {
+    auto *input = dynamic_cast<generic_input_layer*>(layer);
+    if (input != nullptr) {
+      input->collect_background_data_fetch(mode);
     }
   }
-#endif
+  return;
+}
 
-  // Increment mini-batch step
-  /// @todo Move after the callbacks
-  if (m_step.count(mode) < 1) { m_step[mode] = 0; }
-  ++m_step[mode];
-
-  do_batch_end_cbs(execution_mode::training);
-  return finished;
+void model::evaluate_metrics(execution_mode mode, size_t current_mini_batch_size) {
+  for (const auto& m : m_metrics) {
+    m->evaluate(mode, current_mini_batch_size);
+  }
 }
 
 void model::clear_gradients() {
@@ -1190,103 +1021,11 @@ void model::reconcile_weight_values() {
 // Callbacks
 // =============================================
 
-void model::do_train_begin_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_train_begin(this);
-  }
-}
-
-void model::do_train_end_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_train_end(this);
-  }
-}
-
-void model::do_evaluate_begin_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::validation:
-      cb->on_validation_begin(this); break;
-    case execution_mode::testing:
-      cb->on_test_begin(this); break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
-    }
-  }
-}
-
-void model::do_evaluate_end_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::validation:
-      cb->on_validation_end(this); break;
-    case execution_mode::testing:
-      cb->on_test_end(this); break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
-    }
-  }
-}
-
-void model::do_epoch_begin_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_epoch_begin(this);
-  }
-}
-
-void model::do_epoch_end_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_epoch_end(this);
-  }
-}
-
-void model::do_batch_begin_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
-        cb->on_batch_begin(this);
-      }
-      break;
-    case execution_mode::validation:
-    case execution_mode::testing:
-      cb->on_batch_evaluate_begin(this);
-      break;
-    default:
-      LBANN_ERROR("invalid execution mode");
-    }
-  }
-}
-
-void model::do_batch_end_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
-        cb->on_batch_end(this);
-      }
-      break;
-    case execution_mode::validation:
-    case execution_mode::testing:
-      cb->on_batch_evaluate_end(this);
-      break;
-    default:
-      LBANN_ERROR("invalid execution mode");
-    }
-  }
-}
-
 void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_begin(this);
       }
       break;
@@ -1304,7 +1043,7 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_end(this);
       }
       break;
@@ -1325,7 +1064,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_begin(this, l);
       }
       break;
@@ -1346,7 +1085,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_end(this, l);
       }
       break;
@@ -1362,7 +1101,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
 
 void model::do_model_backward_prop_begin_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this);
     }
   }
@@ -1370,7 +1109,7 @@ void model::do_model_backward_prop_begin_cbs() {
 
 void model::do_model_backward_prop_end_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this);
     }
   }
@@ -1378,7 +1117,7 @@ void model::do_model_backward_prop_end_cbs() {
 
 void model::do_layer_backward_prop_begin_cbs(Layer *l) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this, l);
     }
   }
@@ -1386,7 +1125,7 @@ void model::do_layer_backward_prop_begin_cbs(Layer *l) {
 
 void model::do_layer_backward_prop_end_cbs(Layer *l) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
     }
   }
@@ -1394,7 +1133,7 @@ void model::do_layer_backward_prop_end_cbs(Layer *l) {
 
 void model::do_model_optimize_begin_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this);
     }
   }
@@ -1402,7 +1141,7 @@ void model::do_model_optimize_begin_cbs() {
 
 void model::do_model_optimize_end_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this);
     }
   }
@@ -1410,7 +1149,7 @@ void model::do_model_optimize_end_cbs() {
 
 void model::do_weight_optimize_begin_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this, w);
     }
   }
@@ -1418,10 +1157,14 @@ void model::do_weight_optimize_begin_cbs(weights *w) {
 
 void model::do_weight_optimize_end_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this, w);
     }
   }
+}
+
+inline model::lbann_comm *get_comm() const {
+  return m_trainee_ptr->get_comm();
 }
 
 // =============================================
@@ -1469,13 +1212,6 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 struct lbann_model_header {
   uint32_t execution_mode;
   uint32_t terminate_training;
-  uint64_t epoch;
-  uint64_t training_step;
-  uint64_t validation_step;
-  uint64_t testing_step;
-  uint32_t max_mini_batch_size;
-  uint32_t current_mini_batch_size;
-  uint32_t callback_type;;
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
@@ -1483,15 +1219,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
   if (p.get_cb_type() != callback_type::validation) {
     if (m_comm->am_trainer_master()) {
       p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
-      p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
-      p.write_uint64(persist_type::train, "epoch",              (uint64_t) m_epoch);
-      p.write_uint64(persist_type::train, "training_step",      (uint64_t) get_step(execution_mode::training));
-      p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
-      p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-      p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
       p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
-      if(p.get_cb_type() == callback_type::batch)
-        p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
     }
 
     for (weights *w : m_weights) {
@@ -1511,9 +1239,6 @@ bool model::save_to_checkpoint_shared(persist& p) {
     }
   }
   else{
-    if (m_comm->am_trainer_master()) {
-      p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
-    }
     save_rng_to_checkpoint_shared(p, m_comm);
     for (weights *w : m_weights) {
       w->save_to_checkpoint_shared(p);
@@ -1539,16 +1264,16 @@ bool model::load_from_checkpoint_shared(persist& p) {
     if (p.get_cb_type() != callback_type::validation) {
       p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
       p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
-      p.read_uint64(persist_type::train, "epoch",              &header.epoch);
-      p.read_uint64(persist_type::train, "training_step",       &header.training_step);
-      if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-        p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
-      p.read_uint64(persist_type::train, "testing_step",       &header.testing_step);
-      p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
-      p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
+      // p.read_uint64(persist_type::train, "epoch",              &header.epoch);
+      // p.read_uint64(persist_type::train, "training_step",       &header.training_step);
+      // if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+      //   p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
+      // p.read_uint64(persist_type::train, "testing_step",       &header.testing_step);
+      // p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
+      // p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
       p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
-    } else {
-      p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
+    // } else {
+    //   p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
     }
   }
   load_rng_from_checkpoint_shared(p, m_comm);
@@ -1559,17 +1284,17 @@ bool model::load_from_checkpoint_shared(persist& p) {
   if (p.get_cb_type() != callback_type::validation) {
     m_execution_mode     = (execution_mode) header.execution_mode;
     m_terminate_training = (bool)           header.terminate_training;
-    m_epoch              = (int)            header.epoch;
-    m_step[execution_mode::training] = (int) header.training_step;
-    if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-      m_step[execution_mode::validation] = (int) header.validation_step;
-    m_step[execution_mode::testing] = (int) header.testing_step;
-    m_max_mini_batch_size = (int)           header.max_mini_batch_size;
-    m_current_mini_batch_size = (int)       header.current_mini_batch_size;
+    // m_epoch              = (int)            header.epoch;
+    // m_step[execution_mode::training] = (int) header.training_step;
+    // if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+    //   m_step[execution_mode::validation] = (int) header.validation_step;
+    // m_step[execution_mode::testing] = (int) header.testing_step;
+    // m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+    // m_current_mini_batch_size = (int)       header.current_mini_batch_size;
     // set state of persist object to know which type of ckpt we are returning from.
     p.set_cb_type((callback_type) header.callback_type);
-  } else {
-    m_step[execution_mode::validation] = (int) header.validation_step;
+  // } else {
+  //   m_step[execution_mode::validation] = (int) header.validation_step;
   }
 
   for (weights *w : m_weights) {
@@ -1598,14 +1323,14 @@ bool model::save_to_checkpoint_distributed(persist& p){
   if (p.get_cb_type() != callback_type::validation) {
     p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
     p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
-    p.write_uint64(persist_type::train, "epoch",              (uint64_t) m_epoch);
-    p.write_uint64(persist_type::train, "training_step",      (uint64_t) get_step(execution_mode::training));
-    p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
-    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
+    // p.write_uint64(persist_type::train, "epoch",              (uint64_t) m_epoch);
+    // p.write_uint64(persist_type::train, "training_step",      (uint64_t) get_step(execution_mode::training));
+    // p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
+    // p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+    // p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
-    if(p.get_cb_type() == callback_type::batch)
-      p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
+    // if(p.get_cb_type() == callback_type::batch)
+    //   p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
 
     for (weights *w : m_weights) {
       w->save_to_checkpoint_distributed(p);
@@ -1644,24 +1369,24 @@ bool model::load_from_checkpoint_distributed(persist& p){
   struct lbann_model_header header;
   p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
   p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
-  p.read_uint64(persist_type::train, "epoch",              &header.epoch);
-  p.read_uint64(persist_type::train, "training_step",      &header.training_step);
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-    p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
-  p.read_uint64(persist_type::train, "testing_step",               &header.testing_step);
-  p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
-  p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
+  // p.read_uint64(persist_type::train, "epoch",              &header.epoch);
+  // p.read_uint64(persist_type::train, "training_step",      &header.training_step);
+  // if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+  //   p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
+  // p.read_uint64(persist_type::train, "testing_step",               &header.testing_step);
+  // p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
+  // p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
   p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
 
   m_execution_mode     = (execution_mode) header.execution_mode;
   m_terminate_training = (bool)           header.terminate_training;
-  m_epoch              = (int)            header.epoch;
-  m_step[execution_mode::training] = (int) header.training_step;
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-    m_step[execution_mode::validation] = (int) header.validation_step;
-  m_step[execution_mode::testing] = (int) header.testing_step;
-  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
-  m_current_mini_batch_size = (int)       header.current_mini_batch_size;
+  // m_epoch              = (int)            header.epoch;
+  // m_step[execution_mode::training] = (int) header.training_step;
+  // if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
+  //   m_step[execution_mode::validation] = (int) header.validation_step;
+  // m_step[execution_mode::testing] = (int) header.testing_step;
+  // m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  // m_current_mini_batch_size = (int)       header.current_mini_batch_size;
 
   p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint_shared(p, m_comm);

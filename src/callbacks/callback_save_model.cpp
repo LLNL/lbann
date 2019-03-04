@@ -83,6 +83,7 @@ bool lbann_callback_save_model::save_model(model *m) {
 
 // Save model weights
 bool lbann_callback_save_model::save_model_weights(model *m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // if the checkpoint directory is not defined, bail
   if (m_dir.length() == 0) {
     return false;
@@ -93,8 +94,8 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
   lbann_comm *comm = m->get_comm();
   comm->trainer_barrier();
   // let user know we're saving the weights
-  int epoch = m->get_epoch();
-  int step = m->get_step(execution_mode::training);
+  int epoch = c.get_epoch();
+  int step = c.get_step();
   if (comm->am_trainer_master()) {
     timer.Start();
     printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_trainer_rank(), epoch, step);

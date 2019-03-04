@@ -83,7 +83,7 @@ void imagenet_reader::set_defaults() {
   m_num_labels = 1000;
 }
 
-void imagenet_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void imagenet_reader::setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) {
   image_data_reader::setup(num_io_threads, io_thread_pool);
   replicate_processor(*m_master_pps, num_io_threads);
 }

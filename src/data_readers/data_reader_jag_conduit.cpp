@@ -29,6 +29,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_jag.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -272,7 +273,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_list_per_model = false;
 }
 
-void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void data_reader_jag_conduit::setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
   replicate_processor(*m_master_pps, num_io_threads);
 }
@@ -1410,14 +1411,14 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_jag_store != nullptr && m_model->get_epoch() > 0) {
+  if (m_jag_store != nullptr && m_model->get_execution_context().get_epoch() > 0) {
     const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_jag_store != nullptr && m_model->get_epoch() == 0) {
+  if (m_jag_store != nullptr && m_model->get_execution_context().get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_jag_store != nullptr) {
       m_jag_store->set_conduit_node(data_id, node);

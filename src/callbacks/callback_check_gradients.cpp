@@ -176,15 +176,16 @@ void lbann_callback_check_gradients::on_test_begin(model *m) {
 }
 
 DataType lbann_callback_check_gradients::compute_objective_function(model *m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   const std::vector<Layer*>& layers = m->get_layers();
   objective_function* obj_fn = m->get_objective_function();
   for (size_t l = 1; l < layers.size(); l++) {
     layers[l]->forward_prop();
   }
-  obj_fn->start_evaluation(m->get_execution_mode(),
-                           m->get_current_mini_batch_size());
-  return obj_fn->finish_evaluation(m->get_execution_mode(),
-                                   m->get_current_mini_batch_size());
+  obj_fn->start_evaluation(c.get_execution_mode(),
+                           c.get_current_mini_batch_size());
+  return obj_fn->finish_evaluation(c.get_execution_mode(),
+                                   c.get_current_mini_batch_size());
 }
 
 }  // namespace lbann

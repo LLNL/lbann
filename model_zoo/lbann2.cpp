@@ -49,8 +49,11 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
+    // Construct the trainer
+    std::shared_ptr<trainer> trainer = construct_trainer(comm, procs_per_model, pb_model->disable_cuda())
+
+    //   // Initalize a global I/O thread pool
+    // std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
 
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
 

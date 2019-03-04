@@ -58,16 +58,18 @@ void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, 
 }
 
 void lbann_callback_check_dataset::on_forward_prop_end(model *m, Layer *l) {
-  add_to_set(m, l, m->get_step(), training_set);
+  const execution_context& c = m->get_execution_context();
+  add_to_set(m, l, c.get_step(), training_set);
 }
 
 void lbann_callback_check_dataset::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  switch(m->get_execution_mode()) {
+  const execution_context& c = m->get_execution_context();
+  switch(c.get_execution_mode()) {
   case execution_mode::validation:
-    add_to_set(m, l, m->get_step(), validation_set);
+    add_to_set(m, l, c.get_step(), validation_set);
     break;
   case execution_mode::testing:
-    add_to_set(m, l, m->get_step(), testing_set);
+    add_to_set(m, l, c.get_step(), testing_set);
     break;
   default:
     throw lbann_exception("lbann_callback_check_dataset: invalid execution phase");

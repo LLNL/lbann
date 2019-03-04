@@ -31,31 +31,35 @@
 namespace lbann {
 
 void lbann_callback_timer::batch_timing_begin(const model& m) {
-  const auto& mode = m.get_execution_mode();
+  const execution_context& c = m.get_execution_context();
+  const auto& mode = c.get_execution_mode();
   m_batch_start_times[mode] = get_time();
 }
 
 void lbann_callback_timer::batch_timing_end(const model& m) {
-  const auto& mode = m.get_execution_mode();
+  const execution_context& c = m.get_execution_context();
+  const auto& mode = c.get_execution_mode();
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
   if (m_summarizer != nullptr) {
-    m_summarizer->reduce_scalar("minibatch_time", batch_time, m.get_step(execution_mode::training)-1);
-    m_summarizer->reduce_scalar_all("minibatch_time", batch_time, m.get_step(execution_mode::training)-1);
+    m_summarizer->reduce_scalar("minibatch_time", batch_time, c.get_step()-1);
+    m_summarizer->reduce_scalar_all("minibatch_time", batch_time, c.get_step()-1);
   }
 }
 
 void lbann_callback_timer::timing_begin(const model& m) {
-  const auto& mode = m.get_execution_mode();
+  const execution_context& c = m.get_execution_context();
+  const auto& mode = c.get_execution_mode();
   m_start_times[mode] = get_time();
   m_batch_times[mode].clear();
 }
 
 void lbann_callback_timer::timing_end(model& m) {
+  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m.get_execution_context());
   constexpr EvalType zero = 0;
 
   // Get run time
-  const auto& mode = m.get_execution_mode();
+  const auto& mode = c.get_execution_mode();
   const auto& run_time = get_time() - m_start_times[mode];
 
   // Compute minibatch statistics
@@ -76,8 +80,8 @@ void lbann_callback_timer::timing_end(model& m) {
   }
   if (num_batches > 1) {
     batch_time_stdev = zero;
-    for (const auto& t : batch_times) {
-      const auto& diff = t - batch_time_mean;
+    for (const auto& bt : batch_times) {
+      const auto& diff = bt - batch_time_mean;
       batch_time_stdev += diff * diff;
     }
     batch_time_stdev /= num_batches - 1;
@@ -88,7 +92,7 @@ void lbann_callback_timer::timing_end(model& m) {
   std::string mode_string;
   switch(mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m.get_epoch()-1);
+    mode_string = "training epoch " + std::to_string(c.get_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";

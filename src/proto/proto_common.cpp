@@ -564,10 +564,10 @@ bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data::Model& model)
+bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data::Trainer& trainer)
 {
   const bool master = comm.am_world_master();
-  const int parallel_io = model.num_parallel_readers();
+  const int parallel_io = trainer.num_parallel_readers();
 
   if (parallel_io == 0) {
     if (master) {
@@ -584,24 +584,24 @@ bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data:
 
 void set_num_parallel_readers(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
-  lbann_data::Model *model = p.mutable_model();
-  const bool is_set = check_if_num_parallel_readers_set(comm, *model);
+  lbann_data::Trainer *trainer = p.mutable_trainer();
+  const bool is_set = check_if_num_parallel_readers_set(comm, *trainer);
 
   if (!is_set) {
     const int parallel_io = comm.get_procs_per_trainer();
-    model->set_num_parallel_readers(parallel_io); //adjust the prototext
+    trainer->set_num_parallel_readers(parallel_io); //adjust the prototext
   }
 }
 
 int get_requested_num_parallel_readers(const lbann_comm& comm, const lbann_data::LbannPB& p)
 {
-  const lbann_data::Model& model = p.model();
-  const bool is_set = check_if_num_parallel_readers_set(comm, model);
+  const lbann_data::Trainer& trainer = p.trainer();
+  const bool is_set = check_if_num_parallel_readers_set(comm, trainer);
 
   if (!is_set) {
     return comm.get_procs_per_trainer();
   }
-  return model.num_parallel_readers();
+  return trainer.num_parallel_readers();
 }
 
 void set_data_readers_filenames(
@@ -830,6 +830,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
     return;
   }
 
+  const lbann_data::Traine &t = p.trainer();
   const lbann_data::Model &m = p.model();
 
   std::cout << std::endl
@@ -838,11 +839,11 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  datatype size:           " << sizeof(DataType) << std::endl
             << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
-            << "  block_size:              " << m.block_size()  << std::endl
-            << "  procs_per_trainer:       " << m.procs_per_trainer()  << std::endl
-            << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
+            << "  block_size:              " << t.block_size()  << std::endl
+            << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
+            << "  num_parallel_readers:    " << t.num_parallel_readers()  << std::endl
             << "  serialize_io:            " << m.serialize_io()  << std::endl
-            << "  disable_cuda:            " << m.disable_cuda()  << std::endl
+            << "  disable_cuda:            " << t.disable_cuda()  << std::endl
             << "  random_seed:             " << m.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
