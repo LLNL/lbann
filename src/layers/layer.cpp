@@ -1347,12 +1347,12 @@ void Layer::setup_inter_layer_adaptation() {
   const auto &child_layers = get_child_layers();
   MPIPrintStreamDebug() << ": number of children: "
                             << child_layers.size()
-                            << ", child name: " << child_layers[0]->get_name()
+                            << ", child name: " << (child_layers.size() > 0 ? child_layers[0]->get_name() : "not available")
                             << "\n";
   const auto &parent_layers = get_parent_layers();
   MPIPrintStreamDebug() << ": number of parents: "
                             << parent_layers.size()
-                            << ", parent name: " << parent_layers[0]->get_name()
+                            << ", parent name: " << (parent_layers.size() > 0 ? parent_layers[0]->get_name() : "not available")
                             << "\n";
 
   const auto &ps = get_parallel_strategy();
