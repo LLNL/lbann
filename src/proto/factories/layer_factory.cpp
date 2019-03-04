@@ -298,11 +298,6 @@ std::unique_ptr<Layer> construct_layer(
                comm, dims, params.min(), params.max());
     }
   }
-  if (proto_layer.has_zero()) {
-    const auto& params = proto_layer.zero();
-    return lbann::make_unique<zero_layer<Layout>>(
-             comm, params.first_half(), params.second_half());
-  }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
     const auto& mode_str = params.pool_mode();
@@ -608,6 +603,8 @@ std::unique_ptr<Layer> construct_layer(
                   "a data-parallel layout");
     }
   }
+  CONSTRUCT_LAYER(mini_batch_index);
+  CONSTRUCT_LAYER(mini_batch_size);
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();
