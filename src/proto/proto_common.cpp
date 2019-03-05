@@ -641,6 +641,29 @@ void set_data_readers_filenames(
   }
 }
 
+void set_data_readers_index_list(
+  const std::string& which, lbann_data::LbannPB& p)
+{
+  options *opts = options::get();
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  const std::string key = "index_list";
+  const std::string key_role = "index_list_" + which;
+
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    if (r->role() == which) {
+      if (opts->has_string(key_role)) {
+        r->set_index_list(opts->get_string(key_role));
+      }else {
+        if (opts->has_string(key)) {
+          r->set_index_list(opts->get_string(key));
+        }
+      }
+    }
+  }
+}
+
 void set_data_readers_percent(lbann_data::LbannPB& p)
 {
   options *opts = options::get();
@@ -725,6 +748,14 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
+  }
+  if (opts->has_string("index_list")
+      or opts->has_string("index_list_train")) {
+    set_data_readers_index_list("train", p);
+  }
+  if (opts->has_string("index_list")
+      or opts->has_string("index_list_test")) {
+    set_data_readers_index_list("test", p);
   }
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
