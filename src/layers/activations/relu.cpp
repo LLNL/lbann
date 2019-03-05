@@ -81,7 +81,7 @@ using namespace dc;
 
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::setup_tensor_distribution_init(
-    std::map<const Layer*, std::array<Dist, 4>> &dists,
+    std::map<const Layer*, std::array<Dist, dc::num_dists>> &dists,
     std::map<Dist*, std::set<Dist*>> &invariants,
     std::set<Dist*> &updated,
     std::set<Dist*> &fixed)  {
@@ -112,7 +112,7 @@ void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::setup_tensor_distr
 
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-setup_tensors_fwd(const std::array<Dist, 4> &dists) {
+setup_tensors_fwd(const std::array<Dist, dc::num_dists> &dists) {
   Layer::setup_tensors_fwd(dists);
   if (!distconv_enabled()) return;
   setup_prev_activations_tensor(dists);
@@ -122,7 +122,7 @@ setup_tensors_fwd(const std::array<Dist, 4> &dists) {
 
 template <>
 void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-setup_tensors_bwd(const std::array<Dist, 4> &dists)  {
+setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists)  {
   Layer::setup_tensors_bwd(dists);
   if (!distconv_enabled()) return;
   setup_prev_error_signals_tensor(dists);

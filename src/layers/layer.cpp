@@ -1400,7 +1400,7 @@ void Layer::setup_keep_original_tensors() {
 }
 
 void Layer::setup_tensor_distribution_init(
-    std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
+    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
     std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
     std::set<dc::Dist*> &updated,
     std::set<dc::Dist*> &fixed) {
@@ -1459,7 +1459,7 @@ void Layer::setup_tensor_distribution_init(
       xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
       xd_array_names = "NxCxDxHxW";
     }
-    MPIRootPrintStreamInfo() << "Process grid of NxCxHxW: "
+    MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
                              << xd_array << "\n";
   }
 
@@ -1509,7 +1509,7 @@ void Layer::setup_tensor_distribution_init(
       output_locale_shape, output_split_shape);
   auto prev_error_signals_dist = activations_dist;
   auto error_signals_dist = prev_activations_dist;
-  std::array<Dist, 4> layer_dists = {prev_activations_dist,
+  std::array<Dist, dc::num_dists> layer_dists = {prev_activations_dist,
                                                 activations_dist,
                                                 error_signals_dist,
                                                 prev_error_signals_dist};
@@ -1521,7 +1521,7 @@ void Layer::setup_tensor_distribution_init(
 }
 
 void Layer::setup_tensor_distribution_add_adjacent_invariants(
-    std::map<const Layer*, std::array<Dist, 4>> &dists,
+    std::map<const Layer*, std::array<Dist, dc::num_dists>> &dists,
     std::map<Dist*, std::set<Dist*>> &invariants) {
   if (!distconv_enabled()) return;
   auto &layer_dists = dists[this];
@@ -1583,7 +1583,7 @@ Dist get_hydrogen_matrix_distribution() {
 }
 } // namespace
 
-size_t Layer::estimate_memory_usage(const std::array<Dist, 4> &dists) {
+size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists) {
   if (!distconv_enabled()) {
     return 0;
   }
@@ -1601,7 +1601,7 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, 4> &dists) {
   usage += get_input_size() * max_mb / dists[2].get_split_shape().size();
   return usage * sizeof(DataType);
 }
-void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
+void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> &dists) {
   // REVIEW: distconv-3d
   const ArrayND input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -1649,7 +1649,7 @@ ArrayND Layer::get_activations_tensor_local_shape() const {
   return m_prev_activations_t.get_local_shape();
 }
 
-void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
+void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dists,
                                      bool allocate) {
   // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -1665,7 +1665,7 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
   }
 }
 
-void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
+void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const ArrayND sample_block_size = get_sample_block_size();
@@ -1688,11 +1688,11 @@ void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
 }
 
 // REVIEW: distconv-3d
-void Layer::setup_tensors_bwd(const std::array<Dist, 4> &dists) {}
+void Layer::setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists) {}
 
 void Layer::setup_distconv_post(size_t) {}
 
-void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
+void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
   // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const ArrayND sample_block_size = get_sample_block_size();
@@ -1735,7 +1735,7 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
 }
 
 // REVIEW: distconv-3d
-void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
+void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const ArrayND input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
@@ -1749,7 +1749,7 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
 }
 
 // REVIEW: distconv-3d
-void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists) {
+void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const ArrayND input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
@@ -2035,18 +2035,14 @@ void Layer::copy_out_error_signals() {
 }
 
 const dc::ArrayND Layer::get_input_tensor_shape() const {
-  std::vector<int> input_tensor_shape_v;
   const auto input_dims = get_input_dims();
-  for(int i = 0; i < dc::num_spatial_dims+1; i++)
-    input_tensor_shape_v.push_back(input_dims[dc::num_spatial_dims-i]);
+  std::vector<int> input_tensor_shape_v(input_dims.rbegin(), input_dims.rend());
   input_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return input_tensor_shape_v;
 }
 const dc::ArrayND Layer::get_output_tensor_shape() const {
-  std::vector<int> output_tensor_shape_v;
   const auto output_dims = get_output_dims();
-  for(int i = 0; i < dc::num_spatial_dims+1; i++)
-    output_tensor_shape_v.push_back(output_dims[dc::num_spatial_dims-i]);
+  std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
   output_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return ArrayND(output_tensor_shape_v);
 }

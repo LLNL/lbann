@@ -1774,8 +1774,8 @@ bool model::save_model() {
 
 #ifdef LBANN_HAS_DISTCONV
 void model::setup_distconv() {
-  // Dist[4]: {x, y, dx, dy}
-  std::map<const Layer*, std::array<dc::Dist, 4>> dists;
+  // Dist[dc::num_dists]: {x, y, dx, dy}
+  std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> dists;
   std::map<dc::Dist*, std::set<dc::Dist*>> invariants;
   std::set<dc::Dist*> updated;
   std::set<dc::Dist*> fixed;

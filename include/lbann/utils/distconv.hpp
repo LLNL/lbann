@@ -88,6 +88,7 @@ using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
   num_dims, DataType>;
 
 using Dist = ::distconv::tensor::Distribution;
+static constexpr int num_dists = 4;
 
 using LocaleMPI = ::distconv::tensor::LocaleMPI;
 

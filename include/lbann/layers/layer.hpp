@@ -552,26 +552,26 @@ protected:
   void setup_early_termination();
   void setup_keep_original_tensors();
   virtual void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<lbann::dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed);
   virtual void setup_tensor_distribution_add_adjacent_invariants(
-      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
   virtual void setup_tensor_distribution_block();
-  virtual size_t estimate_memory_usage(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) {}
-  virtual void setup_prev_activations_tensor(const std::array<dc::Dist, 4> &dists);
+  virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {}
+  virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual dc::ArrayND get_activations_tensor_local_shape() const;
-  virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists,
+  virtual void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
                                         bool allocate=true);
-  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists);
+  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual void setup_distconv_post(size_t ws_size);
-  virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, 4> &dists);
+  virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual dc::ArrayND get_prev_activations_overlap() const;
   virtual dc::ArrayND get_activations_overlap() const;
   virtual dc::ArrayND get_prev_error_signals_overlap() const;

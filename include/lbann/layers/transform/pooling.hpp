@@ -567,7 +567,7 @@ private:
  public:
 
   void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
@@ -631,7 +631,7 @@ private:
     return output_spatial_local_shape;
   }
 
-  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
@@ -647,7 +647,7 @@ private:
     setup_activations_copyout_tensor(dists);
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!distconv_enabled()) return;
 

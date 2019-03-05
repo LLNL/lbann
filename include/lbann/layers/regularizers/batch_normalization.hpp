@@ -65,7 +65,6 @@ template <data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {
 
 private:
-
   /** Decay rate for the running statistics. */
   DataType m_decay;
   /** Small number to avoid division by zero. */
@@ -345,7 +344,7 @@ protected:
 
   dc::LocaleMPI m_spatial_loc;
 
-  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
@@ -409,7 +408,7 @@ protected:
         m_var_gradient_t, this->m_var_gradient->Buffer()));
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!distconv_enabled()) return;
 
