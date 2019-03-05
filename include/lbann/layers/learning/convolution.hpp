@@ -344,6 +344,7 @@ protected:
         overlaps.push_back((*i - 1) / 2); // W, H, (D)
       overlaps.push_back(0); // C
       overlaps.push_back(0); // N
+      assert_eq(overlaps.size(), dc::num_dims);
       return dc::ArrayND(overlaps);
     } else {
       return dc::ArrayND(0);
@@ -375,7 +376,7 @@ protected:
         dists, invariants, updated, fixed);
     if (this->distconv_enabled()) {
       // REVIEW: distconv-3d
-          dc::IntVector overlap(dc::num_dims, 0);
+      dc::IntVector overlap(dc::num_dims, 0);
       for(int i = 0; i < dc::num_spatial_dims; i++) {
         const int splits = std::vector<int>(
             {this->get_parallel_strategy().height_splits,
@@ -480,7 +481,6 @@ protected:
     }
   }
 
-  // REVIEW: distconv-3d
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
