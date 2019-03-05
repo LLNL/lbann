@@ -553,7 +553,7 @@ protected:
   virtual size_t estimate_memory_usage(const std::array<dc::Dist, 4> &dists);
   virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual dc::Array4 get_activations_tensor_local_shape() const;
+  virtual dc::Shape get_activations_tensor_local_shape() const;
   virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists,
                                         bool allocate=true);
   virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, 4> &dists);

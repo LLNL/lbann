@@ -60,28 +60,24 @@ namespace dc {
 ////////////////////////////////////////////////////////////
 // Helper type aliases
 ////////////////////////////////////////////////////////////
-using Array4 = ::distconv::tensor::Array<4>;
 template <typename DataType>
 using Vector = ::distconv::Vector<DataType>;
 using IntVector = ::distconv::IntVector;
+using IndexVector = ::distconv::IndexVector;
 using Shape = ::distconv::tensor::Shape;
 
 using TensorHost = ::distconv::tensor::Tensor<
-  4, DataType, ::distconv::tensor::LocaleMPI,
+  DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
 using TensorDev = ::distconv::tensor::Tensor<
-  4, DataType, ::distconv::tensor::LocaleMPI,
+  DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
-using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<
-  4, DataType>;
-using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<
-  4, DataType>;
-using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
-  4, DataType>;
-using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
-  4, DataType>;
+using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<DataType>;
+using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<DataType>;
+using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<DataType>;
+using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<DataType>;
 
 using Dist = ::distconv::tensor::Distribution;
 
@@ -98,7 +94,7 @@ using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
 using Convolution = ::distconv::Convolution<Backend, 4, DataType>;
 using Pooling = ::distconv::Pooling<Backend, 4, DataType>;
-using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
+using BatchNormalization = ::distconv::BatchNormalization<Backend, 4, DataType>;
 
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;

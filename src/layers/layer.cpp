@@ -1551,19 +1551,15 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, 4> &dists) {
   return usage * sizeof(DataType);
 }
 void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
-  const Array4 input_tensor_shape =
+  const Shape input_tensor_shape(
       {get_input_dims()[2], get_input_dims()[1],
-       get_input_dims()[0], this->m_model->get_max_mini_batch_size()};
+       get_input_dims()[0], this->m_model->get_max_mini_batch_size()});
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  Array4 input_local_shape = input_tensor_shape;
-  // Assuming single GPU per rank
-  //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
-  // m_max_mini_batch_size_per_gpu is the maximum among all GPUs, so
-  // it's larger than the actual maximum size for some ranks when the
-  // mini batch size is not divisible.
+  auto input_local_shape = input_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   input_local_shape[3] = 0;
-  const Array4 spatial_local_size = {0, 0, 0, 0};
 
   if (m_parent_copy_in_required || m_parent_shuffle_required) {
     if (m_parent_copy_in_required) {
@@ -1573,8 +1569,7 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
     } else {
       m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t();
     }
-    m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0],
-                                     spatial_local_size);
+    m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
     assert0(m_prev_activations_t.allocate());
     m_prev_activations_t.zero();
     m_prev_activations_shuffler = get_tensor_shuffler(
@@ -1591,17 +1586,17 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
                         << "prev activations: " << m_prev_activations_t;
 }
 
-Array4 Layer::get_activations_tensor_local_shape() const {
+Shape Layer::get_activations_tensor_local_shape() const {
   return m_prev_activations_t.get_local_shape();
 }
 
 void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
                                      bool allocate) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Array4 output_tensor_shape =
+  const Shape output_tensor_shape(
       {get_output_dims()[2], get_output_dims()[1],
-       get_output_dims()[0], this->m_model->get_max_mini_batch_size()};
-  const Array4 activations_local_shape =
+       get_output_dims()[0], this->m_model->get_max_mini_batch_size()});
+  const auto activations_local_shape =
       get_activations_tensor_local_shape();
   m_activations_t = TensorDev(output_tensor_shape,
                               loc, dists[1], activations_local_shape);
@@ -1614,11 +1609,12 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  const Array4 output_tensor_shape =
+  const Shape output_tensor_shape(
       {get_output_dims()[2], get_output_dims()[1],
-       get_output_dims()[0], this->m_model->get_max_mini_batch_size()};
-  Array4 output_local_shape = output_tensor_shape;
-  //output_local_shape[3] = m_max_mini_batch_size_per_gpu;
+       get_output_dims()[0], this->m_model->get_max_mini_batch_size()});
+  auto output_local_shape = output_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   output_local_shape[3] = 0;
   m_activations_copyout = TensorDev(output_tensor_shape, loc, sample_dist,
                                     output_local_shape);
@@ -1640,11 +1636,12 @@ void Layer::setup_distconv_post(size_t) {}
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  const Array4 output_tensor_shape =
+  const Shape output_tensor_shape(
       {get_output_dims()[2], get_output_dims()[1],
-       get_output_dims()[0], this->m_model->get_max_mini_batch_size()};
-  Array4 output_local_shape = output_tensor_shape;
-  //output_local_shape[3] = m_max_mini_batch_size_per_gpu;
+       get_output_dims()[0], this->m_model->get_max_mini_batch_size()});
+  auto output_local_shape = output_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   output_local_shape[3] = 0;
 
   if (m_child_copy_out_required || m_child_shuffle_required) {
@@ -1676,9 +1673,9 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
 }
 
 void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
-  const Array4 input_tensor_shape =
+  const Shape input_tensor_shape(
       {get_input_dims()[2], get_input_dims()[1],
-       get_input_dims()[0], this->m_model->get_max_mini_batch_size()};
+       get_input_dims()[0], this->m_model->get_max_mini_batch_size()});
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
                                 dists[2],
@@ -1690,14 +1687,14 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
 }
 
 void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists) {
-  const Array4 input_tensor_shape =
+  const Shape input_tensor_shape(
       {get_input_dims()[2], get_input_dims()[1],
-       get_input_dims()[0], this->m_model->get_max_mini_batch_size()};
+       get_input_dims()[0], this->m_model->get_max_mini_batch_size()});
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  Array4 input_local_shape = input_tensor_shape;
-  // Assuming single GPU per rank
-  //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
+  auto input_local_shape = input_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   input_local_shape[3] = 0;
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,

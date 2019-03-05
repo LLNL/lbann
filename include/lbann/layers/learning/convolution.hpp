@@ -372,14 +372,14 @@ protected:
     }
   }
 
-  dc::Array4 get_activations_tensor_local_shape() const override {
+  dc::Shape get_activations_tensor_local_shape() const override {
     std::vector<int> filter_dims = this->m_kernel_dims;
     std::reverse(filter_dims.begin(), filter_dims.end());
     std::vector<int> strides = this->m_strides;
     std::reverse(strides.begin(), strides.end());
     std::vector<int> dilations = this->m_dilations;
     std::reverse(dilations.begin(), dilations.end());
-    const dc::Array4 output_spatial_local_shape =
+    const auto output_spatial_local_shape =
         ::distconv::get_convolution_output_local_tensor_shape(
             this->m_prev_activations_t,
             filter_dims, strides, true, dilations,
@@ -406,7 +406,7 @@ protected:
     auto shared_dist = dc::Dist::make_shared_distribution(
         dists[0].get_locale_shape());
 
-    std::vector<int> kernel_shape = this->m_kernel_dims;
+    Shape kernel_shape(this->m_kernel_dims);
     std::reverse(kernel_shape.begin(), kernel_shape.end());
     const LocaleMPI loc(dc::get_mpi_comm(), false);
     m_kernel_t = TensorDev(kernel_shape, loc, shared_dist);
@@ -425,7 +425,7 @@ protected:
         << dc::util::tostring(this->m_bias_cudnn_desc)
         << ", bias factor: " << this->m_bias_scaling_factor;
     if (this->m_bias_scaling_factor != DataType(0)) {
-      Array4 bias_shape = {1, 1, this->get_output_dims()[0], 1};
+      Shape bias_shape({1, 1, this->get_output_dims()[0], 1});
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
       assert0(tensor::View(m_bias_t,
                            this->get_weights()[1]->get_values().LockedBuffer()));
@@ -516,6 +516,7 @@ protected:
     }
     return true;
   }
+
 #endif // LBANN_HAS_DISTCONV
 };
 

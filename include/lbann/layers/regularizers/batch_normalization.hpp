@@ -363,7 +363,7 @@ protected:
     assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
               num_channels);
 
-    dc::Array4 per_channel_stat_shape = {1, 1, num_channels, 1};
+    dc::Shape per_channel_stat_shape({1, 1, num_channels, 1});
     auto shared_dist = dc::Dist::make_distribution(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();
     // set all dimensions to be 1 except for the channel dimension
@@ -427,7 +427,7 @@ protected:
       break;
     case batch_normalization_stats_aggregation::spatial:
       reduced_dims = std::vector<bool>(4, false);
-      for (int i = 0; i < dc::TensorDev::num_spatial_dims; ++i) {
+      for (int i = 0; i < m_prev_activations_t.get_num_spatial_dims(); ++i) {
         reduced_dims[i] = true;
       }
       m_spatial_loc = m_mean_t.get_spatial_locale();
