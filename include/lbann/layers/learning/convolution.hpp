@@ -336,32 +336,6 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
  public:
 
-  dc::Array4 get_prev_activations_overlap() const override {
-    if (this->distconv_enabled()) {
-      int stencil_h = (this->m_kernel_dims[2] - 1) / 2;
-      int stencil_w = (this->m_kernel_dims[3] - 1) / 2;
-      return dc::Array4({stencil_w, stencil_h, 0, 0});
-    } else {
-      return dc::Array4(0);
-    }
-  }
-
-  dc::Array4 get_activations_overlap() const override {
-    return dc::Array4(0);
-  }
-
-  dc::Array4 get_prev_error_signals_overlap() const override {
-    if (this->distconv_enabled()) {
-      return get_prev_activations_overlap();
-    } else {
-      return dc::Array4(0);
-    }
-  }
-
-  dc::Array4 get_error_signals_overlap() const override {
-    return dc::Array4(0);
-  }
-
   void setup_tensor_distribution_init(
       std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,

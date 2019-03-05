@@ -543,7 +543,7 @@ protected:
   void setup_early_termination();
   void setup_keep_original_tensors();
   virtual void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<lbann::dc::Dist, 4>> &dists, 
+      std::map<const Layer*, std::array<lbann::dc::Dist, 4>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed);
@@ -556,34 +556,16 @@ protected:
   virtual dc::Array4 get_activations_tensor_local_shape() const;
   virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists,
                                         bool allocate=true);
-  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, 4> &dists);  
+  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, 4> &dists);
   virtual void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists);
   virtual void setup_distconv_post(size_t ws_size);
   virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
   virtual void setup_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
   virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual dc::Array4 get_prev_activations_overlap() const;
-  virtual dc::Array4 get_activations_overlap() const;  
-  virtual dc::Array4 get_prev_error_signals_overlap() const;
-  virtual dc::Array4 get_error_signals_overlap() const;
-#if 0
-  virtual const dc::Dist &get_prev_activations_distribution() const {
-    return m_prev_activations_dist;
-  }
-  virtual const dc::Dist &get_activations_distribution() const {
-    return m_activations_dist;
-  }
-  virtual const dc::Dist &get_prev_error_signals_distribution() const {
-    return m_prev_error_signals_dist;
-  }
-  virtual const dc::Dist &get_error_signals_distribution() const {
-    return m_error_signals_dist;
-  }
-#endif
-  
+
   // REFACTORING: returning non-const tensor should be protected
   virtual const dc::TensorDev &get_activations_t() const;
-  virtual const dc::TensorDev &get_error_signals_t() const;  
+  virtual const dc::TensorDev &get_error_signals_t() const;
   //virtual ConstTensorDev get_activations_const_view() const;
   //virtual ConstTensorDev get_prev_activations_const_view() const;
 
@@ -593,14 +575,12 @@ protected:
   void disable_distconv() {
     m_distconv_enabled = false;
   }
-  
+
  protected:
   virtual bool keep_original_input() const { return m_keep_original_input; }
   virtual bool keep_original_output() const { return m_keep_original_output; }
   virtual void fp_setup_distconv(int mini_batch_size);
-  virtual void bp_setup_distconv(int mini_batch_size);  
-  
-  virtual dc::Array4 get_strides() const;
+  virtual void bp_setup_distconv(int mini_batch_size);
 
   // Copis and converts input or output tensors when necessary
   void ensure_prev_activations();

@@ -1711,48 +1711,12 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists)
   }
 }
 
-Array4 Layer::get_prev_activations_overlap() const {
-  return Array4(0);
-}
-
-Array4 Layer::get_activations_overlap() const {
-#if 0
-  if (distconv_enabled() &&
-      get_child_layers().size() > 0) {
-    return get_child_layers()[0]->get_prev_activations_overlap();
-  } else {
-    return Array4(0);
-  }
-#endif
-  return Array4(0);
-}
-
-Array4 Layer::get_prev_error_signals_overlap() const {
-  return Array4(0);
-}
-
-Array4 Layer::get_error_signals_overlap() const {
-#if 0
-  if (distconv_enabled() &&
-      get_parent_layers().size() > 0) {
-    return get_parent_layers()[0]->get_prev_error_signals_overlap();
-  } else {
-    return Array4(0);
-  }
-#endif
-  return Array4(0);
-}
-
 const TensorDev &Layer::get_activations_t() const {
   return m_activations_t;
 }
 
 const TensorDev &Layer::get_error_signals_t() const {
   return m_error_signals_t;
-}
-
-Array4 Layer::get_strides() const {
-  return Array4(1);
 }
 
 void Layer::fp_setup_distconv(int mini_batch_size) {

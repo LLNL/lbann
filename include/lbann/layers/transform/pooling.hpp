@@ -604,9 +604,6 @@ private:
           &error_signals_dist);
     }
   }
-  dc::Array4 get_strides() const override {
-    return dc::Array4({m_strides[1], m_strides[0], 1, 1});
-  }
 
   dc::Array4 get_activations_tensor_local_shape() const override {
     const std::vector<int> filter_dims = {m_pool_dims[1], m_pool_dims[0]};
