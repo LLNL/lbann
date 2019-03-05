@@ -554,6 +554,10 @@ class Model:
 
         return model
 
+    def save_proto(self, filename):
+        """Export model to prototext file."""
+        save_prototext(filename, model=self.export_proto())
+
     def render(self, filename, format="pdf", **kwargs):
         """
         Save a vizualized graph of the network to `filename`.`format`.
@@ -566,15 +570,6 @@ class Model:
 # ==============================================
 # Export models
 # ==============================================
-
-def save_model(filename, *args, **kwargs):
-    """Create a model and save to a file.
-    This function delegates all the arguments to `lp.Model` except
-    for `filename`.
-    """
-
-    save_prototext(filename,
-                   model=Model(*args, **kwargs).export_proto())
 
 def save_prototext(filename, **kwargs):
     """Save a prototext.

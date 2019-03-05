@@ -543,6 +543,7 @@ if __name__ == '__main__':
             target=0.1*args.mbsize / 256, num_epochs=5))
 
     # Export model to file
-    lp.save_model(args.file, args.mbsize, args.epochs,
-                  layers=layers, objective_function=obj,
-                  metrics=metrics, callbacks=callbacks)
+    model = lp.Model(args.mbsize, args.epochs,
+                     layers=layers, objective_function=obj,
+                     metrics=metrics, callbacks=callbacks)
+    model.save_proto(args.file)
