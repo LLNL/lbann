@@ -966,7 +966,6 @@ model {
   layer {
     parents: "fc8_new"
     name: "prob_new"
-    children: "target_new"
     data_layout: "data_parallel"
     softmax {}
   }
