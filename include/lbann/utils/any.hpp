@@ -3,7 +3,7 @@
 
 #include <lbann_config.hpp>
 
-#ifdef LBANN_HAVE_STD_ANY
+#ifdef LBANN_HAS_STD_ANY
 
 #include <any>
 
@@ -14,14 +14,14 @@
 #include <memory>
 #include <stdexcept>
 #include <typeinfo>
-#endif // LBANN_HAVE_STD_ANY
+#endif // LBANN_HAS_STD_ANY
 
 namespace lbann
 {
 namespace utils
 {
 
-#ifdef LBANN_HAVE_STD_ANY
+#ifdef LBANN_HAS_STD_ANY
 // This case is simple symbol injection; don't feel great about this,
 // but it's not my fault they couldn't get this into C++11...
 
