@@ -1512,23 +1512,6 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
   }
 }
 
-void Layer::setup_tensor_distribution_block() {
-  m_input_decomposition_block = Array4(1);
-  m_output_decomposition_block = Array4(1);
-  // Disable as we don't need to enforce divisible boundaries
-#if 0
-  if (distconv_enabled()) {
-    const auto *child = get_child_layers()[0];
-    if (child->distconv_enabled()) {
-      m_output_decomposition_block =
-          child->get_input_decomposition_block();
-    }
-    m_input_decomposition_block =
-        m_output_decomposition_block * get_strides();
-  }
-#endif
-}
-
 namespace {
 Dist get_hydrogen_matrix_distribution() {
   using ::distconv::index_t;
@@ -1572,7 +1555,6 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
       {get_input_dims()[2], get_input_dims()[1],
        get_input_dims()[0], this->m_model->get_max_mini_batch_size()};
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Array4 sample_block_size = {1, 1, 1, 1};
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   Array4 input_local_shape = input_tensor_shape;
   // Assuming single GPU per rank
@@ -1587,13 +1569,12 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
     if (m_parent_copy_in_required) {
       m_prev_activations_const_view = TensorDev(input_tensor_shape, loc,
                                                 sample_dist,
-                                                input_local_shape,
-                                                sample_block_size);
+                                                input_local_shape);
     } else {
       m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t();
     }
     m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0],
-                                     spatial_local_size, m_input_decomposition_block);
+                                     spatial_local_size);
     assert0(m_prev_activations_t.allocate());
     m_prev_activations_t.zero();
     m_prev_activations_shuffler = get_tensor_shuffler(
@@ -1604,8 +1585,6 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, 4> &dists) {
   } else {
     m_prev_activations_t = get_parent_layers()[0]->get_activations_t();
     assert_always(m_prev_activations_t.get_distribution() == dists[0]);
-    assert_always(m_prev_activations_t.get_requested_local_block()
-                  == m_input_decomposition_block);
   }
 
   MPIPrintStreamDebug() << get_name() << "; "
@@ -1625,8 +1604,7 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
   const Array4 activations_local_shape =
       get_activations_tensor_local_shape();
   m_activations_t = TensorDev(output_tensor_shape,
-                              loc, dists[1], activations_local_shape,
-                              m_output_decomposition_block);
+                              loc, dists[1], activations_local_shape);
   if (allocate) {
     assert0(m_activations_t.allocate());
     m_activations_t.zero();
@@ -1635,7 +1613,6 @@ void Layer::setup_activations_tensor(const std::array<Dist, 4> &dists,
 
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Array4 sample_block_size = {1, 1, 1, 1};
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   const Array4 output_tensor_shape =
       {get_output_dims()[2], get_output_dims()[1],
@@ -1644,7 +1621,7 @@ void Layer::setup_activations_copyout_tensor(const std::array<Dist, 4> &dists) {
   //output_local_shape[3] = m_max_mini_batch_size_per_gpu;
   output_local_shape[3] = 0;
   m_activations_copyout = TensorDev(output_tensor_shape, loc, sample_dist,
-                                    output_local_shape, sample_block_size);
+                                    output_local_shape);
   if (m_child_copy_out_required) {
     m_activations_shuffler = get_tensor_shuffler(
         m_activations_t, m_activations_copyout);
@@ -1662,7 +1639,6 @@ void Layer::setup_distconv_post(size_t) {}
 
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Array4 sample_block_size = {1, 1, 1, 1};
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   const Array4 output_tensor_shape =
       {get_output_dims()[2], get_output_dims()[1],
@@ -1675,16 +1651,14 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
     if (m_child_copy_out_required) {
       m_prev_error_signals_const_view = TensorDev(output_tensor_shape, loc,
                                                   sample_dist,
-                                                  output_local_shape,
-                                                  sample_block_size);
+                                                  output_local_shape);
     } else {
       m_prev_error_signals_const_view =
           get_child_layers()[0]->get_error_signals_t();
     }
     m_prev_error_signals_t = TensorDev(output_tensor_shape, loc,
                                        dists[3],
-                                       m_activations_t.get_local_shape(),
-                                       m_output_decomposition_block);
+                                       m_activations_t.get_local_shape());
     assert0(m_prev_error_signals_t.allocate());
     m_prev_error_signals_t.zero();
     m_prev_error_signals_shuffler = get_tensor_shuffler(
@@ -1696,8 +1670,6 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, 4> &dists) {
     m_prev_error_signals_t = get_child_layers()[0]->get_error_signals_t();
     assert_always(m_prev_error_signals_t.get_distribution() ==
                   dists[3]);
-    assert_always(m_prev_error_signals_t.get_requested_local_block() ==
-                  m_output_decomposition_block);
   }
   MPIPrintStreamDebug() << get_name() << "; "
                         << "prev error signals: " << m_prev_error_signals_t;
@@ -1710,8 +1682,7 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, 4> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
                                 dists[2],
-                                m_prev_activations_t.get_local_shape(),
-                                m_input_decomposition_block);
+                                m_prev_activations_t.get_local_shape());
   assert0(m_error_signals_t.allocate());
   m_error_signals_t.zero();
   MPIPrintStreamDebug() << get_name() << "; "
@@ -1728,10 +1699,9 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, 4> &dists)
   // Assuming single GPU per rank
   //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
   input_local_shape[3] = 0;
-  const Array4 sample_block_size = {1, 1, 1, 1};
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
-                                      input_local_shape, sample_block_size);
+                                      input_local_shape);
   if (m_parent_copy_in_required) {
     m_error_signals_shuffler = get_tensor_shuffler(
         m_error_signals_t, m_error_signals_copyout);
@@ -1771,14 +1741,6 @@ Array4 Layer::get_error_signals_overlap() const {
   }
 #endif
   return Array4(0);
-}
-
-Array4 Layer::get_input_decomposition_block() const {
-  return m_input_decomposition_block;
-}
-
-Array4 Layer::get_output_decomposition_block() const {
-  return m_output_decomposition_block;
 }
 
 const TensorDev &Layer::get_activations_t() const {

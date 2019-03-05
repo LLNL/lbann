@@ -550,7 +550,6 @@ protected:
   virtual void setup_tensor_distribution_add_adjacent_invariants(
       std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
-  virtual void setup_tensor_distribution_block();
   virtual size_t estimate_memory_usage(const std::array<dc::Dist, 4> &dists);
   virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, 4> &dists);
@@ -567,8 +566,6 @@ protected:
   virtual dc::Array4 get_activations_overlap() const;  
   virtual dc::Array4 get_prev_error_signals_overlap() const;
   virtual dc::Array4 get_error_signals_overlap() const;
-  virtual dc::Array4 get_input_decomposition_block() const;
-  virtual dc::Array4 get_output_decomposition_block() const;
 #if 0
   virtual const dc::Dist &get_prev_activations_distribution() const {
     return m_prev_activations_dist;
@@ -646,13 +643,11 @@ protected:
     dump_tensor(m_error_signals_copyout,
                 get_name() + "_error_signals_original");
   }
-  
+
   bool m_parent_copy_in_required = false;
   bool m_parent_shuffle_required = false;
   bool m_child_copy_out_required = false;
-  bool m_child_shuffle_required = false;  
-  dc::Array4 m_input_decomposition_block;
-  dc::Array4 m_output_decomposition_block;  
+  bool m_child_shuffle_required = false;
   /** Previous activation tensor */
   dc::TensorDev m_prev_activations_t;
   /** View to Elemental matrix of previous activations */
