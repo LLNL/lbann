@@ -1,5 +1,5 @@
-#ifndef __SAMPLE_LIST_JAG_HPP__
-#define __SAMPLE_LIST_JAG_HPP__
+#ifndef __SAMPLE_LIST_HPP__
+#define __SAMPLE_LIST_HPP__
 
 #include <iostream>
 #include <string>
@@ -52,7 +52,7 @@ struct sample_list_header {
 static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
 static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
-class sample_list_jag {
+class sample_list {
  public:
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
   using sample_name_t = std::string;
@@ -72,8 +72,8 @@ class sample_list_jag {
   /// Type for the map of file descriptors to usage step and substep
   using fd_use_map_t = std::pair<sample_file_id_t, std::pair<int,int>>;
 
-  sample_list_jag();
-  ~sample_list_jag();
+  sample_list();
+  ~sample_list();
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
@@ -286,11 +286,11 @@ class sample_list_jag {
 void handle_mpi_error(int ierr);
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-void distribute_sample_list(const sample_list_jag& sn,
+void distribute_sample_list(const sample_list& sn,
                             std::string& my_samples,
                             lbann_comm& comm);
 #else
-void distribute_sample_list(const sample_list_jag& sn,
+void distribute_sample_list(const sample_list& sn,
                             std::string& my_samples,
                             MPI_Comm& comm);
 #endif
@@ -299,4 +299,4 @@ void distribute_sample_list(const sample_list_jag& sn,
 
 #include "sample_list_impl.hpp"
 
-#endif // __SAMPLE_LIST_JAG_HPP__
+#endif // __SAMPLE_LIST_HPP__
