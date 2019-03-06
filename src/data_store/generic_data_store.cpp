@@ -211,7 +211,7 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
-if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_cur_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
+if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
 }
 

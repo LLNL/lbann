@@ -93,8 +93,8 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
   lbann_comm *comm = m->get_comm();
   comm->trainer_barrier();
   // let user know we're saving the weights
-  int epoch = m->get_cur_epoch();
-  int step = m->get_cur_step();
+  int epoch = m->get_epoch();
+  int step = m->get_step(execution_mode::training);
   if (comm->am_trainer_master()) {
     timer.Start();
     printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_trainer_rank(), epoch, step);
