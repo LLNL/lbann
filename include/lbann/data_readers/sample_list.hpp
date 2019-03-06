@@ -132,7 +132,7 @@ class sample_list {
   }
 
   void set_files_hdf5_handle(const std::string& filename, hid_t h) {
-    sample_file_id_t id = 0;
+    sample_file_id_t id = sample_file_id_t(0);
     for (auto&& e : m_file_id_stats_map) {
       if(std::get<0>(e) == filename) {
         std::get<1>(e) = h;
