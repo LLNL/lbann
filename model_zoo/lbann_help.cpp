@@ -23,42 +23,16 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
+// lbann_proto.cpp - prototext application
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_IMAGENET_PATCHES_HPP__
-#define __DATA_STORE_IMAGENET_PATCHES_HPP__
+#include <lbann/proto/proto_common.hpp>
 
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include <iostream>
 
-namespace lbann {
+using namespace lbann;
 
-/**
- * todo
- */
-
-class data_store_imagenet_patches : public data_store_imagenet {
- public:
-
-  //! ctor
-  data_store_imagenet_patches(generic_data_reader *reader, model *m) :
-    data_store_imagenet(reader, m) {}
-
-  //! copy ctor
-  data_store_imagenet_patches(const data_store_imagenet_patches&) = default;
-
-  //! operator=
-  data_store_imagenet_patches& operator=(const data_store_imagenet_patches&) = default;
-
-  data_store_imagenet_patches * copy() const override { return new data_store_imagenet_patches(*this); }
-
-  //! dtor
-  ~data_store_imagenet_patches() override {};
-
-  void setup() override;
-
- protected :
-};
-
-}  // namespace lbann
-
-#endif  // __DATA_STORE_IMAGENET_PATCHES_HPP__
+int main(int, char **) {
+  print_help(std::cerr);
+  return EXIT_SUCCESS;
+}

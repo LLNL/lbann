@@ -55,6 +55,7 @@ message Reader {
   int64 num_neighbors = 112; // pilot2_molecular_reader
   int64 max_neighborhood = 113; // pilot2_molecular_reader
   int32 num_image_srcs = 114; // data_reader_multi_images
+  float scaling_factor_int16 = 116; // for numpy_npz_reader with int16 data
 
   int32 max_files_to_load = 1000;
 
@@ -219,12 +220,6 @@ message DataSetMetaData {
     }
     repeated JAGDataSlice independent = 97;
     repeated JAGDataSlice dependent = 98;
-
-    // for jag_conduit_hdf5
-    string scalar_keys = 1004;
-    string input_keys = 1005;
-    string image_views = 1006;
-    string image_channels = 1007;
     //------------------  end of only for jag_conduit  -----------------------
   }
 
@@ -268,7 +263,7 @@ message Model {
   int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
-  bool  serialize_background_io = 101;
+  bool  serialize_io = 101;
 
   bool disable_cuda = 8;
 
@@ -445,6 +440,7 @@ message CallbackPrint {
 
 message CallbackProfiler {
   bool sync = 1;
+  bool skip_init = 2;
 }
 
 message CallbackTimer {
@@ -777,7 +773,6 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 315;
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -888,6 +883,8 @@ message Layer {
    Covariance covariance = 600;
    Variance variance = 601;
    ChannelwiseMean channelwise_mean = 602;
+   MiniBatchIndex mini_batch_index = 603;
+   MiniBatchSize mini_batch_size = 604;
 
 }
 ///////////////////////
@@ -1022,9 +1019,9 @@ message Dropout {
 // Input layers //
 //////////////////
 message Input {
-  bool data_set_per_model = 1;  //default: false
-  string io_buffer = 2;
-  string target_mode = 3;
+  bool data_set_per_model = 1;  // Default: false
+  string io_buffer = 2;         // Options: "partitioned" (default)
+  string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
 }
 
 //////////////////////
@@ -1089,12 +1086,6 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
-}
-
-
-message Zero {
-  bool first_half=1; //default: true
-  bool second_half=2; //default: true
 }
 
 message Reduction {
@@ -1245,3 +1236,5 @@ message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
 message ChannelwiseMean {}
+message MiniBatchIndex {}
+message MiniBatchSize {}

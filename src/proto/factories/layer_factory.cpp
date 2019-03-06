@@ -60,13 +60,15 @@ std::unique_ptr<Layer> construct_layer(
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
-    if (io_buffer == "partitioned") {
+    if (io_buffer == "partitioned" || io_buffer.empty()) {
       return lbann::make_unique<input_layer<partitioned_io_buffer,Layout,Device>>(
                comm,
                num_parallel_readers,
                data_readers,
                !params.data_set_per_model(),
                target_mode);
+    } else {
+      LBANN_ERROR("invalid IO buffer type (" + io_buffer + ")");
     }
   }
 
@@ -76,35 +78,7 @@ std::unique_ptr<Layer> construct_layer(
     int num_neurons = 0;
     std::string num_neurons_method_name;
 
-    if (params.get_input_dimension_from_reader()
-        || params.get_image_dimension_from_reader()
-        || params.get_scalar_dimension_from_reader()
-        || params.get_image_and_scalar_dimension_from_reader()) {
-      num_neurons_method_name = "get_*_dimension_from_reader";
-    #if defined(LBANN_HAS_CONDUIT)
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      const auto dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic);
-      if (dr != nullptr) {
-        size_t input_dim = dr->get_linearized_input_size();
-        size_t scalar_dim = dr->get_linearized_scalar_size();
-        size_t image_dim = dr->get_linearized_channel_size() * dr->get_num_channels();
-        size_t num_images = dr->get_num_img_srcs();
-
-        if (params.get_input_dimension_from_reader()) {
-          num_neurons += input_dim;
-        }
-        if (params.get_image_dimension_from_reader()) {
-          num_neurons += (num_images * image_dim);
-        }
-        if (params.get_scalar_dimension_from_reader()) {
-          num_neurons += scalar_dim;
-        }
-        if (params.get_image_and_scalar_dimension_from_reader()) {
-          num_neurons += (num_images * image_dim + scalar_dim);
-        }
-      }
-    #endif // defined(LBANN_HAS_CONDUIT)
-    } else if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
+    if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
       num_neurons_method_name = "get_num_neurons_of_slice_from_reader";
     #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
@@ -264,24 +238,7 @@ std::unique_ptr<Layer> construct_layer(
     bool is_supported = false;
     std::string slice_point_method_name;
 
-    if (params.get_slice_points_from_reader_bool()) {
-      slice_point_method_name = "'get_slice_points_from_reader_bool'";
-    #if defined(LBANN_HAS_CONDUIT)
-      size_t total = 0;
-      slice_points.push_back(total);
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      if (dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr_generic) != nullptr) {
-        is_supported = true;
-        const auto dr1  = lbann::peek_map(data_readers, execution_mode::training);
-        lbann::data_reader_jag_conduit_hdf5 *dr = dynamic_cast<lbann::data_reader_jag_conduit_hdf5*>(dr1);
-        total += dr->get_num_img_srcs() * dr->get_linearized_channel_size() * dr->get_num_channels()
-              + dr->get_linearized_scalar_size();
-        slice_points.push_back(total);
-        total += dr->get_linearized_input_size();
-        slice_points.push_back(total);
-      }
-    #endif // defined(LBANN_HAS_CONDUIT)
-    } else if (params.get_slice_points_from_reader() != "") {
+    if (params.get_slice_points_from_reader() != "") {
       slice_point_method_name = "'get_slice_points_from_reader'";
     #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
@@ -340,11 +297,6 @@ std::unique_ptr<Layer> construct_layer(
       return lbann::make_unique<uniform_layer<Layout, Device>>(
                comm, dims, params.min(), params.max());
     }
-  }
-  if (proto_layer.has_zero()) {
-    const auto& params = proto_layer.zero();
-    return lbann::make_unique<zero_layer<Layout>>(
-             comm, params.first_half(), params.second_half());
   }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
@@ -651,6 +603,8 @@ std::unique_ptr<Layer> construct_layer(
                   "a data-parallel layout");
     }
   }
+  CONSTRUCT_LAYER(mini_batch_index);
+  CONSTRUCT_LAYER(mini_batch_size);
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

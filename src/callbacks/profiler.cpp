@@ -38,60 +38,67 @@
 
 namespace lbann {
 
-lbann_callback_profiler::lbann_callback_profiler(bool sync) :
-  lbann_callback(), m_sync(sync) {
+lbann_callback_profiler::lbann_callback_profiler(bool sync, bool skip_init) :
+    lbann_callback(), m_sync(sync), m_skip_init(skip_init) {
 #ifdef LBANN_NVPROF
   nvtxNameCudaStreamA(El::GPUManager::Stream(), "Hydrogen");
-#endif  
+#endif
+  if (!m_skip_init) {
+    prof_start();
+  }
 }
 
 void lbann_callback_profiler::on_epoch_begin(model *m) {
-  prof_region_begin(("epoch " + std::to_string(m->get_cur_epoch())).c_str(),
+  // Skip the first epoch
+  if (m_skip_init && m->get_epoch() == 1) {
+    prof_start();
+  }
+  prof_region_begin(("epoch " + std::to_string(m->get_epoch())).c_str(),
                     prof_colors[0], m_sync);
 }
 
 void lbann_callback_profiler::on_epoch_end(model *m) {
-  prof_region_end(("epoch " + std::to_string(m->get_cur_epoch())).c_str(),
+  prof_region_end(("epoch " + std::to_string(m->get_epoch())).c_str(),
                   m_sync);
 }
 
 void lbann_callback_profiler::on_validation_begin(model *m) {
-  prof_region_begin(("val " + std::to_string(m->get_cur_epoch())).c_str(),
+  prof_region_begin(("val " + std::to_string(m->get_epoch())).c_str(),
                     prof_colors[0], m_sync);
 }
 
 void lbann_callback_profiler::on_validation_end(model *m) {
-  prof_region_end(("val " + std::to_string(m->get_cur_epoch())).c_str(),
+  prof_region_end(("val " + std::to_string(m->get_epoch())).c_str(),
                   m_sync);
 }
 
 void lbann_callback_profiler::on_test_begin(model *m) {
-  prof_region_begin(("test " + std::to_string(m->get_cur_epoch())).c_str(),
+  prof_region_begin(("test " + std::to_string(m->get_epoch())).c_str(),
                     prof_colors[0], m_sync);
 }
 
 void lbann_callback_profiler::on_test_end(model *m) {
-  prof_region_end(("test " + std::to_string(m->get_cur_epoch())).c_str(),
+  prof_region_end(("test " + std::to_string(m->get_epoch())).c_str(),
                   m_sync);
 }
 
 void lbann_callback_profiler::on_batch_begin(model *m) {
-  prof_region_begin(("batch " + std::to_string(m->get_cur_step())).c_str(),
+  prof_region_begin(("batch " + std::to_string(m->get_step(execution_mode::training))).c_str(),
                     prof_colors[1], m_sync);
 }
 
 void lbann_callback_profiler::on_batch_end(model *m) {
-  prof_region_end(("batch " + std::to_string(m->get_cur_step())).c_str(),
+  prof_region_end(("batch " + std::to_string(m->get_step(execution_mode::training))).c_str(),
                   m_sync);
 }
 
 void lbann_callback_profiler::on_batch_evaluate_begin(model *m) {
-  prof_region_begin(("batch eval " + std::to_string(m->get_cur_step())).c_str(),
+  prof_region_begin(("batch eval " + std::to_string(m->get_step(execution_mode::training))).c_str(),
                     prof_colors[1], m_sync);
 }
 
 void lbann_callback_profiler::on_batch_evaluate_end(model *m) {
-  prof_region_end(("batch eval " + std::to_string(m->get_cur_step())).c_str(),
+  prof_region_end(("batch eval " + std::to_string(m->get_step(execution_mode::training))).c_str(),
                   m_sync);
 }
 

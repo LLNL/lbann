@@ -90,8 +90,6 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_save_minibatch_indices(false),
-    m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
     m_is_partitioned(false),
@@ -693,31 +691,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// sets up a data_store.
-  virtual void setup_data_store(model *m);
-
-  /** This call changes the functionality of fetch_data(); when set,
-    * indices are added to m_my_minibatch_indices, but fetch_datum()
-    * is not called. This method is added to support data store functionality.
-    */
-  void set_save_minibatch_entries(bool b);
-
-  /// support of data store functionality
-  void init_minibatch();
-
-  /// support of data store functionality
-  const std::vector<std::vector<int> > & get_minibatch_indices() const {
-    return m_my_minibatch_indices;
-  }
-
-  /// support of data store functionality
-  int get_compound_rank() {
-    return m_compound_rank;
-  }
-
-  /// support of data store functionality
-  void set_compound_rank(int r) {
-    m_compound_rank = r;
-  }
+  virtual void setup_data_store(model *m, int mini_batch_size);
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -869,16 +843,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_samples;
 
  protected :
-   /// added to support data store functionality
-   bool m_save_minibatch_indices;
-
-   /// added to support data store functionality
-   std::vector<std::vector<int> > m_my_minibatch_indices;
-
-   /// added to support data store functionality
-   int m_compound_rank;
-
-
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0

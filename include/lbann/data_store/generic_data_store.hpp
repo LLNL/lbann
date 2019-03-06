@@ -63,7 +63,7 @@ class generic_data_store {
   virtual generic_data_store * copy() const = 0;
 
   /// called by generic_data_reader::setup_data_store
-  virtual void setup();
+  virtual void setup(int mini_batch_size);
 
   /// called by generic_data_reader::update;
   /// this method calls exchange_data if m_epoch > 1
@@ -141,8 +141,7 @@ class generic_data_store {
   virtual void setup_data_store_buffers() {};
 protected :
 
-  // number of times set_shuffled_indices was called. This is
-  // a hack to get data_store_jag working correctly
+  // number of times exchange_data is called
   int m_n;
 
   virtual void exchange_data() = 0;

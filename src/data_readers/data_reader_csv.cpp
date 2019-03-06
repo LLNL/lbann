@@ -28,7 +28,6 @@
 
 #include <unordered_set>
 #include "lbann/data_readers/data_reader_csv.hpp"
-#include "lbann/data_store/data_store_csv.hpp"
 #include "lbann/utils/options.hpp"
 #include <omp.h>
 
@@ -270,18 +269,10 @@ void csv_reader::load() {
 }
 
 bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  if (m_data_store != nullptr) {
-    std::vector<DataType> *buf;
-    m_data_store->get_data_buf_DataType(data_id, buf);
-    for (size_t i = 0; i < buf->size(); ++i) {
-      X(i, mb_idx) = (*buf)[i];
-    }
-  } else {
-    auto line = fetch_line_label_response(data_id);
-    // TODO: Avoid unneeded copies.
-    for (size_t i = 0; i < line.size(); ++i) {
-      X(i, mb_idx) = line[i];
-    }
+  auto line = fetch_line_label_response(data_id);
+  // TODO: Avoid unneeded copies.
+  for (size_t i = 0; i < line.size(); ++i) {
+    X(i, mb_idx) = line[i];
   }
   return true;
 }
@@ -402,16 +393,6 @@ void csv_reader::setup_ifstreams() {
       throw lbann_exception(
         "csv_reader: failed to open " + get_file_dir() + get_data_filename());
     }
-  }
-}
-
-void csv_reader::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_csv(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
   }
 }
 

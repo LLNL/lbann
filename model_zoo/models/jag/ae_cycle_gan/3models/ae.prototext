@@ -4,7 +4,7 @@
 model {
   name: "ae_model"
   shareable_training_data_reader:false
-  serialize_background_io: true
+  serialize_io: true
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -72,14 +72,12 @@ model {
   #  children: "encode1 reconstruction"
   #  data_layout: "data_parallel"
   #  input {
-  #    io_buffer: "distributed"
   #    target_mode: "reconstruction"
   #  }
   #}
 
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"

@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
-#include "lbann/data_store/data_store_pilot2_molecular.hpp"
 #include "lbann/utils/options.hpp"
 
 namespace lbann {
@@ -40,16 +39,9 @@ void pilot2_molecular_reader::load() {
   // support for data store functionality: when not using data store, all procs
   // load the data; when using data store, only one does so
   bool is_mine = true;
-  int rank = m_comm->get_rank_in_trainer();
   // note: when support for merge_samples is in place, the condition
   //       "get_role() == "test" will go away. For now we need it, else
   //       merge_samples will break
-  options *opts = options::get();
-  if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store") && get_role() == "test") {
-    if (rank != get_compound_rank()) {
-      is_mine = false;
-    }
-  }
 
   if (is_mine) {
     std::string infile = get_file_dir() + get_data_filename();
@@ -119,34 +111,6 @@ void pilot2_molecular_reader::load() {
     m_shape[2] = m_features.shape[3];
   }
 
-  // when using data store, need to bcast some variable to all procs
-  if (options::get()->get_bool("use_data_store")) {
-    std::vector<int> tmp(8);
-    if (rank == get_compound_rank()) {
-      //@todo: fix if we have floats!
-      m_neighbors_data_size = m_neighbors.data_holder->size() / 8;
-
-      tmp[0] = m_num_samples;
-      tmp[1] = m_num_samples_per_frame;
-      tmp[2] = m_num_features;
-      tmp[3] = m_num_neighbors + 1;
-      tmp[4] = m_features.shape[2];
-      tmp[5] = m_features.shape[3];
-      tmp[6] = m_word_size;
-      tmp[7] = m_neighbors_data_size;
-    }
-    MPI_Bcast(tmp.data(), 8, MPI_INT, get_compound_rank(), m_comm->get_trainer_comm().GetMPIComm());
-    m_num_samples = tmp[0];
-    m_num_samples_per_frame = tmp[1];
-    m_num_features = tmp[2];
-    m_shape.resize(3);
-    m_shape[0] = tmp[3];
-    m_shape[1] = tmp[4];
-    m_shape[2] = tmp[5];
-    m_word_size = tmp[6];
-    m_neighbors_data_size = tmp[7];
-  }
-
   // Reset indices.
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
@@ -156,20 +120,6 @@ void pilot2_molecular_reader::load() {
 
 bool pilot2_molecular_reader::fetch_datum(
   CPUMat& X, int data_id, int mb_idx) {
-  int tid = m_io_thread_pool->get_local_thread_id();
-
-  if (m_data_store != nullptr) {
-    std::vector<double> *buf;
-    size_t jj = 0;
-    m_data_store->get_data_buf(data_id, tid, buf);
-    for (int idx = 0; idx < m_num_neighbors+1; idx++) {
-      for (int i = 0; i < m_num_features; ++i) {
-        X(m_num_features * idx + i, mb_idx) = (*buf)[jj++];
-        //note: scale_data was already computed by the data_store
-      }
-    }
-    return true;
-  }
 
   const int frame = get_frame(data_id);
   // Fetch the actual molecule.
@@ -224,16 +174,6 @@ void pilot2_molecular_reader::fetch_molecule(CPUMat& X, int data_id, int idx,
     for (int i = 0; i < m_num_features; ++i) {
       X(m_num_features * idx + i, mb_idx) = scale_data<double>(i, data[i]);
     }
-  }
-}
-
-void pilot2_molecular_reader::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_pilot2_molecular(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
   }
 }
 

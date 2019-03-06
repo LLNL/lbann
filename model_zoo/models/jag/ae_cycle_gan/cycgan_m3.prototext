@@ -1,7 +1,7 @@
 model {
   name: "inv_model"
   shareable_training_data_reader: true
-  serialize_background_io: true
+  serialize_io: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -19,7 +19,6 @@ model {
   data_layout: "model_parallel"
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"

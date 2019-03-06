@@ -36,24 +36,20 @@
 #include "lbann/models/model.hpp"
 #include <unordered_set>
 
-
 namespace lbann {
-
-std::ofstream debug;
-char b[1024];
 
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
-  m_super_node(false) {
+  m_super_node(false),
+  m_super_node_overhead(0),
+  m_compacted_sample_size(0) {
   set_name("data_store_jag");
 }
 
-data_store_jag::~data_store_jag() {
-  debug.close();
-}
+data_store_jag::~data_store_jag() {}
 
-void data_store_jag::setup() {
+void data_store_jag::setup(int mini_batch_size) {
   double tm1 = get_time();
   std::stringstream err;
 
@@ -66,7 +62,8 @@ void data_store_jag::setup() {
     LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
   }
 
-  generic_data_store::setup();
+  generic_data_store::setup(mini_batch_size);
+  build_owner_map(mini_batch_size);
 
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
@@ -76,9 +73,6 @@ void data_store_jag::setup() {
       std::cerr << "mode: exchange_data via individual samples\n";
     }
   }
-
-  sprintf(b, "debug.%d", m_rank);
-  debug.open(b);
 
   if (m_master) {
     std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
@@ -100,118 +94,75 @@ void data_store_jag::setup_data_store_buffers() {
   m_send_buffer_2.resize(m_np);
   m_send_requests.resize(m_np);
   m_recv_requests.resize(m_np);
-  m_status.resize(m_np);
   m_outgoing_msg_sizes.resize(m_np);
   m_incoming_msg_sizes.resize(m_np);
   m_recv_buffer.resize(m_np);
-
-  m_reconstituted.resize(m_data.size());
-
-  exchange_ds_indices();
+  m_reconstituted.resize(m_np);
 }
 
-// this gets called at the beginning of each epoch (except for epoch 0)
-//
 // Note: conduit has a very nice interface for communicating nodes
-//       in non-blocking scenarios. Unf, for blocking we need to
-//       handle things ourselves. TODO: possible modify conduit to
+//       in blocking scenarios. Unf, for non-blocking we need to
+//       handle things ourselves. TODO: possibly modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
-  // double tm1 = get_time();
 
-  //========================================================================
-  //build map: proc -> global indices that P_x needs for this epoch, and
-  //                   which I own
-
-  //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
-  //vector<unordered_set<int>>; then:
-  //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
-  //
-  //  Hm ... I think m_all_minibatch_indices is identical to ds indices
-
-  double tma = get_time();
-
-  std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  /// Within a trainer the shuffled indices are distributed round
-  /// robin across ranks
-  size_t j = 0;
-  for (auto i = current_pos; i < current_pos + mb_size; i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// If this rank owns the index send it to the j'th rank
-    if (m_data.find(index) != m_data.end()) {
-      proc_to_indices[j].insert(index);
-    }
-    j = (j + 1) % m_np;
+  if (m_n == 0) {
+    setup_data_store_buffers();
   }
 
   //========================================================================
-  //part 1: exchange the sizes of the data
-  // m_send_buffer[j] is a conduit::Node that contains
-  // all samples that this proc will send to P_j
+  //part 1: construct the super_nodes
 
-tma = get_time();
-//double t1 = 0;
-//double t2 = 0;
+  build_indices_i_will_send(current_pos, mb_size);
+  build_indices_i_will_recv(current_pos, mb_size);
 
+  // construct a super node for each processor; the super node
+  // contains all samples this proc owns that other procs need
   for (int p=0; p<m_np; p++) {
-//tmb = get_time;
     m_send_buffer[p].reset();
-    //    std::cout << "For rank "<< p << " I am packing indices ";
-    for (auto idx : proc_to_indices[p]) {
-      //std::cout << " " << idx;
+    for (auto idx : m_indices_to_send[p]) {
       m_send_buffer[p].update_external(m_data[idx]);
     }
-    //                  std::cout << std::endl;
-      //if (m_master) m_send_buffer[p].print();
-
-    // code in the following method is a modification of code from
-    // conduit/src/libs/relay/conduit_relay_mpi.cpp
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
-
-    m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
-    MPI_Isend((void*)&m_outgoing_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_send_requests[p]);
   }
 
-  //start receives for sizes of the data
+  //========================================================================
+  //part 1.5: exchange super_node sizes
+
   for (int p=0; p<m_np; p++) {
-    MPI_Irecv((void*)&m_incoming_msg_sizes[p], 1, MPI_INT, p, 0, MPI_COMM_WORLD, &m_recv_requests[p]);
-
+    m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
+    El::byte *s = reinterpret_cast<El::byte*>(&m_outgoing_msg_sizes[p]);
+    m_comm->nb_send<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_send_requests[p]);
   }
 
-  // wait for all msgs to complete
-  MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
-  MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
-
-debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
+  for (int p=0; p<m_np; p++) {
+    El::byte *s = reinterpret_cast<El::byte*>(&m_incoming_msg_sizes[p]);
+    m_comm->nb_recv<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_recv_requests[p]);
+  }
+  m_comm->wait_all<El::byte>(m_send_requests);
+  m_comm->wait_all<El::byte>(m_recv_requests);
 
   //========================================================================
   //part 2: exchange the actual data
 
-  //tma = get_time();
-
   // start sends for outgoing data
   for (int p=0; p<m_np; p++) {
-    const void *s = m_send_buffer_2[p].data_ptr();
-    MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
+    const El::byte *s = reinterpret_cast<El::byte*>(m_send_buffer_2[p].data_ptr());
+    m_comm->nb_send<El::byte>(s, m_outgoing_msg_sizes[p], m_comm->get_trainer_rank(), p, m_send_requests[p]);
   }
 
   // start recvs for incoming data
   for (int p=0; p<m_np; p++) {
     m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
-    MPI_Irecv(m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_recv_requests[p]);
+    m_comm->nb_recv<El::byte>((El::byte*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, m_recv_requests[p]);
   }
 
   // wait for all msgs to complete
-  MPI_Waitall(m_np, m_send_requests.data(), m_status.data());
-  MPI_Waitall(m_np, m_recv_requests.data(), m_status.data());
-
-// debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-//tma = get_time();
+  m_comm->wait_all<El::byte>(m_send_requests);
+  m_comm->wait_all<El::byte>(m_recv_requests);
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
-
-//double tmw = get_time();
 
   m_minibatch_data.clear();
   for (int p=0; p<m_np; p++) {
@@ -225,22 +176,19 @@ debug << "TOTAL Time to exchange data sizes: " << get_time() -  tma << "\n\n";
     gen.walk(rcv_schema);
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
-    //nd.reset();
-    //nd.update_external(n_msg["data"]);
     m_reconstituted[p].reset();
+
+    // I'm unsure what happens here: m_reconstituted is persistent, but
+    // we're updating from n_msg, which is transitory. Best guess,
+    // when n_msg goes out of scope a deep copy is made. Possibly
+    // there's room for optimization here.
     m_reconstituted[p].update_external(n_msg["data"]);
     const std::vector<std::string> &names = m_reconstituted[p].child_names();
 
-    for (auto t : names) {
+    for (auto &t : names) {
       m_minibatch_data[atoi(t.c_str())][t].update_external(m_reconstituted[p][t]);
     }
   }
-
-// debug << "TOTAL Time to unpack and break up all incoming data: " << get_time() - tmw << "\n";
-
-//  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
-
-  // debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
 }
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
@@ -248,79 +196,65 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
 
+  if (m_owner[data_id] != m_rank) {
+    std::stringstream s;
+    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank;
+    LBANN_ERROR(s.str());
+  }
+
   if (! m_super_node) {
-    node["id"] = data_id;
-    conduit::Node n2;
-    build_node_for_sending(node, n2);
-
-    // if(n2.total_bytes_compact() != 201624) {
-
-    // //    debug.open(b, std::ios::app);
-    // std::cout << "set_conduit_node sample size node " << data_id << " node : " << node.total_bytes_compact() << "\n";
-    // //    node.print();
-    // std::cout << "set_conduit_node sample size node " << data_id << " node n2 : " << n2.total_bytes_compact() << "\n";
-    //   n2.print();
-    //   MPI_Barrier(MPI_COMM_WORLD);
-    //   MPI_Abort(MPI_COMM_WORLD, -1);
-    // }
-    // debug.close();
-    // debug.open(b, std::ios::app);
-
-    m_data[data_id] = n2;
+    build_node_for_sending(node, m_data[data_id]);
+    const conduit::Node& n2 = m_data[data_id];
+    if(m_compacted_sample_size == 0) {
+      m_compacted_sample_size = n2.total_bytes_compact();
+    }else if(m_compacted_sample_size != n2.total_bytes_compact()) {
+      LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
+                  + " is not the same size as existing nodes in the data_store "
+                  + std::to_string(m_compacted_sample_size) + " != "
+                  + std::to_string(n2.total_bytes_compact()));
+    }
+    if(!m_data[data_id].is_contiguous()) {
+      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
+    }
+    if(m_data[data_id].data_ptr() == nullptr) {
+      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid data pointer");
+    }
+    if(m_data[data_id].contiguous_data_ptr() == nullptr) {
+      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid contiguous data pointer");
+    }
   }
 
   else {
     m_data[data_id] = node;
-    /* debug block, to test if idx matches the id in the conduit node;
-     * if these don't match up exceptions will be thrown in get_conduit_node
-     *
-    if (m_master) {
-      std::cerr<<"data id:" <<data_id<< "\n";
-      node.print();
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Abort(MPI_COMM_WORLD, -1);
-    */
+    // @TODO would like to do: m_data[data_id].set_external(node); but since
+    // (as of now) 'node' is a local variable in a data_reader+jag_conduit,
+    // we need to do a deep copy. If the data_store furnishes a node to the
+    // data_reader during the first epoch, this copy can be avoided
   }
 }
 
-const conduit::Node & data_store_jag::get_conduit_node(int data_id, bool any_node) const {
-  if (any_node) {
-    LBANN_ERROR("data_store_jag::get_conduit_node called with any_node = true; this is not yet functional; please contact Dave Hysom");
-  }
-
-  {
-    std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
-    if (t != m_data.end()) {
+const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+  if (t != m_data.end()) {
+    if(m_super_node) {
       return t->second;
+    } else {
+      return t->second["data"];
     }
   }
 
-  /// check the main m_data as well
-  std::unordered_map<int, conduit::Node>::const_iterator t = m_minibatch_data.find(data_id);
-  if (t == m_minibatch_data.end()) {
-    debug << "failed to find data_id: " << data_id <<  " in m_minibatch_data; m_minibatch_data.size: " << m_minibatch_data.size() << "\n";
-    debug << "data IDs that we know about (these are the keys in the m_minibatch_data map): ";
-    std::set<int> s3;
-    for (auto t3 :  m_minibatch_data) {
-      s3.insert(t3.first);
-    }
-    for (auto t3 : s3) debug << t3 << " ";
-    debug << "\n";
-    int owner = m_owner.at(data_id);
-    debug << "I believe that the owner is " << std::to_string(owner) << "\n";
-    debug.close();
-    debug.open(b, std::ios::app);
-
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
+  std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  if (t2 == m_minibatch_data.end()) {
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_epoch()));
   }
 
-  return t->second;
+  return t2->second;
 }
 
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
+  node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
     s_data_compact = node_in.schema();
@@ -341,192 +275,70 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
   node_out.set(s_msg_compact);
   node_out["schema"].set(snd_schema_json);
   node_out["data"].update(node_in);
-}
 
-
-#if 0
-void data_store_jag::build_all_minibatch_indices() {
-  m_all_minibatch_indices.clear();
-  m_owner.clear();
-  m_all_minibatch_indices.resize(m_np);
-  for (size_t idx=0; idx<m_shuffled_indices->size(); ++idx) {
-    int owner = idx % m_np;
-    m_owner[idx] = owner;
-    m_all_minibatch_indices[owner].push_back(idx);
+  if(!node_out.is_contiguous()) {
+    LBANN_ERROR("node_out does not have a contiguous layout");
+  }
+  if(node_out.data_ptr() == nullptr) {
+    LBANN_ERROR("node_out does not have a valid data pointer");
+  }
+  if(node_out.contiguous_data_ptr() == nullptr) {
+    LBANN_ERROR("node_out does not have a valid contiguous data pointer");
   }
 }
-#endif
 
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
-  double tm1 = get_time();
+  int num_send_req = build_indices_i_will_send(current_pos, mb_size);
+  int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
 
-  debug.open(b, std::ios::app);
-  debug << "\n============================================================\n"
-  <<"starting exchange_data_by_sample; epoch: "<<m_model->get_cur_epoch()<< " data size: "<<m_data.size()<<"  m_n: " << m_n << "  send_buffer size: " << m_send_buffer.size() << "\n";
-  debug.close();
-
-  if (m_n == 1) {
-    if (m_master) std::cerr << "allocating storage\n";
-    int sz = m_data.size();
-    m_send_buffer.resize(sz);
-    m_send_requests.resize(sz);
-    m_recv_requests.resize(sz);
-    m_recv_buffer.resize(sz);
-    m_status.resize(sz);
-
-    exchange_ds_indices();
-    // sanity check
-    /*
-    int n = 0;
-    for (auto t : m_data) {
-      if (t.second.total_bytes_compact() != n) {
-        LBANN_ERROR("t.total_bytes_compact() != n; " + std::to_string(n) + " " + std::to_string(t.second.total_bytes_compact()));
-      }
-    }
-    */
-  }
-
-  //========================================================================
-  // build map: proc -> global indices that P_x needs for this epoch, and
-  //                    which I own
-  // build map: owner -> set of indices I need that owner has
-
-  //@TODO: change m_all_minibatch_indices from vector<vector<int>> to
-  //vector<unordered_set<int>>; then:
-  //  const std::unordered_set<int>> &my_datastore_indices;m_rank]
-  //
-  //  Hm ... I think m_all_minibatch_indices is identical to ds indices
-
-double tma = get_time();
-
-  // std::unordered_set<int> my_ds_indices;
-  // for (auto t : m_all_minibatch_indices[m_rank]) {
-  //   my_ds_indices.insert(t);
-  // }
-
-  std::vector<std::unordered_set<int>> proc_to_indices(m_np);
-  // get indices that I need for this epoch; these correspond to
-  // samples that this proc receives from others
-  std::unordered_map<int, std::unordered_set<int>> needed;
-  {
-  size_t j = 0;
-  for (auto i = current_pos; i < current_pos + mb_size; i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// If this rank owns the index send it to the j'th rank
-    if (m_data.find(index) != m_data.end()) {
-      proc_to_indices[j].insert(index);
-    }
-    if(j == static_cast<size_t>(m_rank)) {
-      int owner = m_owner[index];
-      needed[owner].insert(index);
-    }
-    j = (j + 1) % m_np;
-  }
-  }
-  {
-  debug.open(b, std::ios::app);
-  debug << "preparing to send the following indices: "  << "\n";
-  for (int p=0; p<m_np; p++) {
-    debug << p << ": ";
-    for (auto idx : proc_to_indices[p]) {
-      debug << idx << " ";
-    }
-    debug << "\n";
-  }
-  debug.close();
-  debug.open(b, std::ios::app);
-  }
-
-  //debug block
-  int tot = 0;
-  for (auto t : needed) {
-    debug << "I need " << t.second.size() << " samples from P_" << t.first << " :: ";
-    for (auto tt : t.second) debug << tt << " ";
-    debug << "\n";
-    tot += t.second.size();
-  }
-  debug << "total incoming samples: " << tot << "\n";
-  debug << "exchange_data: Time to build maps: " << get_time() -  tma << "\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-
-  int sample_size = 0;
-  for (auto t : m_data) {
-    if(sample_size == 0) {
-      sample_size = t.second.total_bytes_compact();
-    }else {
-      if(sample_size != t.second.total_bytes_compact()) {
-        debug << "bad sample size: " << t.second.total_bytes_compact() << " num samples: " << m_data.size() << "\n";
-      }
-    }
-  }
-  debug << "sample size: " << sample_size << " num samples: " << m_data.size() << "\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-
+  m_send_requests.resize(num_send_req);
+  m_recv_requests.resize(num_recv_req);
+  m_recv_buffer.resize(num_recv_req);
+  m_recv_data_ids.resize(num_recv_req);
 
   //========================================================================
   //part 2: exchange the actual data
 
-tma = get_time();
-
   // start sends for outgoing data
   size_t ss = 0;
   for (int p=0; p<m_np; p++) {
-    const std::unordered_set<int> &indices = proc_to_indices[p];
+    const std::unordered_set<int> &indices = m_indices_to_send[p];
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
         LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
       }
-
-  debug << "sending " << index << " to " << p << " &m_send_requests size: " << m_send_requests.size() <<  " bytes: " << m_data[index].total_bytes_compact() << " ss: " << ss << "\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-
-      //const void *s = m_send_buffer[ss].data_ptr();
-      const void *s = m_data[index].data_ptr();
-      MPI_Isend(s, sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_send_requests[ss++]);
-      //MPI_Isend(s, m_outgoing_msg_sizes[p], MPI_BYTE, p, 1, MPI_COMM_WORLD, &m_send_requests[p]);
-
-  debug << "    DONE!\n";
-  debug.close();
-  debug.open(b, std::ios::app);
-
+      const conduit::Node& n = m_data[index];
+      const El::byte *s = reinterpret_cast<const El::byte*>(n.data_ptr());
+      if(!n.is_contiguous()) {
+        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a contiguous layout");
+      }
+      if(n.data_ptr() == nullptr) {
+        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid data pointer");
+      }
+      if(n.contiguous_data_ptr() == nullptr) {
+        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid contiguous data pointer");
+      }
+      m_comm->nb_tagged_send(s, m_compacted_sample_size, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
     }
   }
-  LBANN_ERROR("Stopping");
 
   // sanity checks
   if (ss != m_send_requests.size()) {
-    LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests`.size: " + std::to_string(m_send_requests.size()));
+    LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests.size: " + std::to_string(m_send_requests.size()));
   }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (m_master) std::cerr << "\nSENDS STARTED\n\n";
-  debug << "\nSENDS STARTED\n\n";
-  MPI_Barrier(MPI_COMM_WORLD);
-
 
   // start recvs for incoming data
   ss = 0;
   for (int p=0; p<m_np; p++) {
-    const std::unordered_set<int> &indices = needed[p];
-debug << "starting " << indices.size() << " recvs from " << p << "\n";
+    const std::unordered_set<int> &indices = m_indices_to_recv[p];
     for (auto index : indices) {
-      m_recv_buffer[ss].set(conduit::DataType::uint8(sample_size));
-      MPI_Irecv(m_recv_buffer[ss].data_ptr(), sample_size, MPI_BYTE, p, index, MPI_COMM_WORLD, &m_recv_requests[ss]);
-      m_index_to_data_id[index] = ss;
+      m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
+      El::byte *r = reinterpret_cast<El::byte*>(m_recv_buffer[ss].data_ptr());
+      m_comm->nb_tagged_recv<El::byte>(r, m_compacted_sample_size, p, index, m_recv_requests[ss], m_comm->get_trainer_comm());
+      m_recv_data_ids[ss] = index;
       ++ss;
     }
-
-debug << "FINISHED! starting " << indices.size() << " recvs from " << p << "\n";
-debug.close();
-debug.open(b, std::ios::app);
-
   }
-  debug << "\nALL RECVS STARTED\n\n";
-debug.close();
-debug.open(b, std::ios::app);
 
   // sanity checks
   if (ss != m_recv_buffer.size()) {
@@ -537,19 +349,11 @@ debug.open(b, std::ios::app);
   }
 
   // wait for all msgs to complete
-  MPI_Waitall(m_send_requests.size(), m_send_requests.data(), m_status.data());
-  MPI_Waitall(m_recv_requests.size(), m_recv_requests.data(), m_status.data());
-
-debug << "TOTAL Time to exchange the actual data: " << get_time() -  tma << "\n";
-debug.close();
-debug.open(b, std::ios::app);
-
-tma = get_time();
+  m_comm->wait_all(m_send_requests);
+  m_comm->wait_all(m_recv_requests);
 
   //========================================================================
   //part 3: construct the Nodes needed by me for the current minibatch
-
-double tmw = get_time();
 
   conduit::Node nd;
   m_minibatch_data.clear();
@@ -565,57 +369,82 @@ double tmw = get_time();
     n_buff_ptr += n_msg["schema"].total_bytes_compact();
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
 
-    // this is inefficent @TODO
-    nd.reset();
-    nd.update(n_msg["data"]);
-//    int data_id = m_index_to_data_id[j];
-//    m_data[data_id] = nd;
-    m_minibatch_data[nd["id"].value()] = nd;
-
+    int data_id = m_recv_data_ids[j];
+    m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
-for (auto t : m_minibatch_data) {
-  debug << t.first << " ";
-}
-debug << "\n";
-
-debug << "TOTAL Time to unpack incoming data: " << get_time() - tmw << "\n";
-
-  if (m_master) std::cout << "data_store_jag::exchange_data Time: " << get_time() - tm1 << "\n";
-
-  debug << "TOTAL exchange_data Time: " << get_time() - tm1 << "\n";
-debug.close(); debug.open(b, std::ios::app);
 }
 
-void data_store_jag::exchange_ds_indices() {
-  std::vector<int> counts(m_np);
-  int my_num_indices = m_data.size();
-  m_comm->trainer_all_gather<int>(my_num_indices, counts);
-
-  //setup data structures to exchange minibatch indices with all processors
-  //displacement vector
-  std::vector<int> displ(m_np);
-  displ[0] = 0;
-  for (size_t j=1; j<counts.size(); j++) {
-    displ[j] = displ[j-1] + counts[j-1];
+int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
+  m_indices_to_recv.clear();
+  m_indices_to_recv.resize(m_np);
+  int k = 0;
+  for (int i=current_pos; i< current_pos + mb_size; ++i) {
+    auto index = (*m_shuffled_indices)[i];
+    if ((i % mb_size) % m_np == m_rank) {
+      int owner = m_owner[index];
+      m_indices_to_recv[owner].insert(index);
+      k++;
+    }
   }
+  return k;
+}
 
-  //recv vector
-  int n = std::accumulate(counts.begin(), counts.end(), 0);
-  std::vector<int> all_indices(n);
+int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
+  m_indices_to_send.clear();
+  m_indices_to_send.resize(m_np);
+  int k = 0;
+  for (int i = current_pos; i < current_pos + mb_size; i++) {
+    auto index = (*m_shuffled_indices)[i];
+    /// If this rank owns the index send it to the (i%m_np)'th rank
+    if (m_data.find(index) != m_data.end()) {
+      m_indices_to_send[(i % mb_size) % m_np].insert(index);
 
-  //receive the indices
-  std::vector<int> v;
-  v.reserve(m_data.size());
-  for (auto t : m_data) {
-    v.push_back(t.first);
+      // Sanity check
+      if (m_owner[index] != m_rank) {
+        std::stringstream s;
+        s << "error for i: "<<i<<" index: "<<index<< " m_owner: " << m_owner[index] << " me: " << m_rank;
+        LBANN_ERROR(s.str());
+      }
+      k++;
+    }
   }
-  m_comm->all_gather<int>(v, all_indices, counts, displ, m_comm->get_trainer_comm());
+  return k;
+}
 
-  //fill in the final data structure
+void data_store_jag::build_owner_map(int mini_batch_size) {
   m_owner.clear();
-  for (int p=0; p<m_np; p++) {
-    for (int i=displ[p]; i<displ[p]+counts[p]; i++) {
-      m_owner[all_indices[i]] = p;
+  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+    auto index = (*m_shuffled_indices)[i];
+    /// To compute the owner index first find its position inside of
+    /// the mini-batch (mod mini-batch size) and then find how it is
+    /// striped across the ranks in the trainer
+    m_owner[index] = (i % mini_batch_size) % m_np;
+  }
+}
+
+void data_store_jag::compute_super_node_overhead() {
+  if (m_super_node_overhead != 0) {
+    return;
+  }
+  if (m_data.size() < 2) {
+    LBANN_ERROR("m_data must contain at least two sample nodes");
+  }
+  conduit::Node n2;
+  conduit::Node n3;
+  int first = 0;
+  for (auto &t : m_data) {
+    n2.update_external(t.second);
+    build_node_for_sending(n2, n3);
+    if (first == 0) {
+      first = n3.total_bytes_compact();
+    } else {
+      m_super_node_overhead = 2*first - n3.total_bytes_compact();
+      m_compacted_sample_size = first - m_super_node_overhead;
+      if (m_master) {
+        std::cerr << "m_super_node_overhead: " << m_super_node_overhead
+                  << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
+      }
+      return;
     }
   }
 }

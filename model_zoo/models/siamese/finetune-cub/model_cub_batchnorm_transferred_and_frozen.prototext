@@ -533,9 +533,7 @@ model {
     name: "input_new"
     children: "data_new label_new"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     parents: "input_new"
@@ -968,7 +966,6 @@ model {
   layer {
     parents: "fc8_new"
     name: "prob_new"
-    children: "target_new"
     data_layout: "data_parallel"
     softmax {}
   }

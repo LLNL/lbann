@@ -15,7 +15,7 @@ class AlexNet(lm.Module):
         E. Hinton. "ImageNet classification with deep convolutional
         neural networks." In Advances in Neural Information Processing
         Systems, pp. 1097-1105. 2012.
-        
+
     Note that there is very little consistency in the implementation of
     AlexNet across frameworks. If a particular variant is needed, you should
     implement it yourself.
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Construct layer graph.
-    input = lp.Input(io_buffer='partitioned')
+    input = lp.Input()
     images = lp.Identity(input)
     labels = lp.Identity(input)
     preds = AlexNet(args.num_labels)(images)

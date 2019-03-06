@@ -56,11 +56,15 @@ class data_reader_merge_samples : public generic_compound_data_reader {
   void load() override;
 
   int get_num_labels() const override { return m_data_readers[0]->get_num_labels(); }
+  int get_num_responses() const override { return m_data_readers[0]->get_num_responses(); }
   int get_linearized_data_size() const override {
     return m_data_readers[0]->get_linearized_data_size();
   }
   int get_linearized_label_size() const override {
     return m_data_readers[0]->get_linearized_label_size();
+  }
+  int get_linearized_response_size() const override {
+    return m_data_readers[0]->get_linearized_response_size();
   }
   const std::vector<int> get_data_dims() const override {
     return m_data_readers[0]->get_data_dims();
@@ -71,9 +75,6 @@ class data_reader_merge_samples : public generic_compound_data_reader {
     return m_num_samples_psum;
   }
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
-
  protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
@@ -81,10 +82,6 @@ class data_reader_merge_samples : public generic_compound_data_reader {
 
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;
-
-  /// support for data store functionality; load() will call
-  /// this method when using data store
-  void load_using_data_store();
 
   /// code common to both load() and load_using_data_store()
   void setup_indices(int num_samples);

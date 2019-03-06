@@ -55,7 +55,7 @@ def onnxToLbannLayers(o, lbannInputNames, l2oInputMap, dataLayout="auto"):
     layers.append(lbann_pb2.Layer(name=inputLayerName,
                                   children=lbann.onnx.util.list2LbannList(lbannInputNames),
                                   data_layout="data_parallel",
-                                  input=lbann_pb2.Input(io_buffer="partitioned")))
+                                  input=lbann_pb2.Input()))
     for i in lbannInputNames:
         layers.append(lbann_pb2.Layer(name=i,
                                       parents=lbann.onnx.util.list2LbannList([inputLayerName]),

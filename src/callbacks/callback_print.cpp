@@ -58,7 +58,7 @@ void lbann_callback_print::on_epoch_begin(model *m) {
     // Print message
     std::cout << "--------------------------------------------------------------------------------"
               << std::endl;
-    std::cout << "[" << m->get_cur_epoch() << "] Epoch : stats formated [tr/v/te]"
+    std::cout << "[" << m->get_epoch() << "] Epoch : stats formated [tr/v/te]"
               << " iter/epoch ="
               << " ["
               << input->get_num_iterations_per_epoch(execution_mode::training)
@@ -135,7 +135,7 @@ void lbann_callback_print::report_results(model *m) {
   std::string mode_string;
   switch (mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m->get_cur_epoch()-1);
+    mode_string = "training epoch " + std::to_string(m->get_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";

@@ -3,7 +3,7 @@
 model {
   name: "ae_cycgan_model"
   shareable_training_data_reader:false
-  serialize_background_io: true
+  serialize_io: true
   data_layout: "data_parallel"
   mini_batch_size: 256
   block_size: 256
@@ -54,7 +54,6 @@ model {
   #Layer from cycle GAN
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"
