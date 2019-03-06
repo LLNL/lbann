@@ -48,11 +48,7 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(const lbann::partitioned_io_
 }
 
 lbann::partitioned_io_buffer* lbann::partitioned_io_buffer::copy() const {
-  auto new_io_buffer = new partitioned_io_buffer(*this);
-  for (const auto& buf : m_data_buffers) {
-    new_io_buffer->m_data_buffers[buf.first] = buf.second->copy();
-  }
-  return new_io_buffer;
+  return new partitioned_io_buffer(*this);
 }
 
 lbann::partitioned_io_buffer& lbann::partitioned_io_buffer::operator=(const lbann::partitioned_io_buffer& other) {
