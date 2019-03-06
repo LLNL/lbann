@@ -59,7 +59,7 @@ class data_buffer {
     m_input_buffers.clear();
     m_input_buffers.reserve(other.m_input_buffers.size());
     for (const auto& ptr : other.m_input_buffers) {
-      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+      m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
     }
   }
   data_buffer& operator=(const data_buffer& other) {
@@ -68,7 +68,7 @@ class data_buffer {
     m_input_buffers.clear();
     m_input_buffers.reserve(other.m_input_buffers.size());
     for (const auto& ptr : other.m_input_buffers) {
-      m_input_buffers.emplace_back(ptr ? nullptr : ptr->Copy());
+      m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
     }
     return *this;
   }
