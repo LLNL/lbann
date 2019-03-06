@@ -1573,7 +1573,7 @@ Dist get_hydrogen_matrix_distribution() {
   // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
   // training data.
   Shape sample_locale_shape({static_cast<index_t>(dc::get_rank_stride()),
-          index_t(1), index_t(1), static_cast<index_t>(
+          index_t(1), index_t(1), index_t(1), static_cast<index_t>(
               dc::get_mpi_num_ranks() / dc::get_rank_stride())});
   auto sample_split_shape = sample_locale_shape;
   sample_split_shape[0] = 1;
@@ -1609,13 +1609,12 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   ArrayND input_local_shape = input_tensor_shape;
   // Assuming single GPU per rank
-  //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
+  //input_local_shape[-1] = m_max_mini_batch_size_per_gpu;
   // m_max_mini_batch_size_per_gpu is the maximum among all GPUs, so
   // it's larger than the actual maximum size for some ranks when the
   // mini batch size is not divisible.
-  input_local_shape[dc::num_spatial_dims+1] = 0;
+  input_local_shape[-1] = 0;
   const ArrayND spatial_local_size(std::vector<int>(dc::num_dims, 0));
-
   if (m_parent_copy_in_required || m_parent_shuffle_required) {
     if (m_parent_copy_in_required) {
       m_prev_activations_const_view = TensorDev(input_tensor_shape, loc,
@@ -1672,8 +1671,8 @@ void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dist
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   const ArrayND output_tensor_shape = get_output_tensor_shape();
   ArrayND output_local_shape = output_tensor_shape;
-  //output_local_shape[dc::num_spatial_dims+1] = m_max_mini_batch_size_per_gpu;
-  output_local_shape[dc::num_spatial_dims+1] = 0;
+  //output_local_shape[-1] = m_max_mini_batch_size_per_gpu;
+  output_local_shape[-1] = 0;
   m_activations_copyout = TensorDev(output_tensor_shape, loc, sample_dist,
                                     output_local_shape, sample_block_size);
   if (m_child_copy_out_required) {
@@ -1699,8 +1698,8 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   const ArrayND output_tensor_shape = get_output_tensor_shape();
   ArrayND output_local_shape = output_tensor_shape;
-  //output_local_shape[dc::num_spatial_dims+1] = m_max_mini_batch_size_per_gpu;
-  output_local_shape[dc::num_spatial_dims+1] = 0;
+  //output_local_shape[-1] = m_max_mini_batch_size_per_gpu;
+  output_local_shape[-1] = 0;
 
   if (m_child_copy_out_required || m_child_shuffle_required) {
     if (m_child_copy_out_required) {
@@ -1755,8 +1754,8 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   ArrayND input_local_shape = input_tensor_shape;
   // Assuming single GPU per rank
-  //input_local_shape[3] = m_max_mini_batch_size_per_gpu;
-  input_local_shape[3] = 0;
+  //input_local_shape[-1] = m_max_mini_batch_size_per_gpu;
+  input_local_shape[-1] = 0;
   const ArrayND sample_block_size = get_sample_block_size();
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
