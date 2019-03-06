@@ -1256,7 +1256,7 @@ void model::do_batch_begin_cbs(execution_mode mode) {
       break;
     case execution_mode::validation:
     case execution_mode::testing:
-      if (get_cur_step() % cb->get_batch_interval() == 0) {
+      if (get_step() % cb->get_batch_interval() == 0) {
         cb->on_batch_evaluate_begin(this);
       }
       break;
