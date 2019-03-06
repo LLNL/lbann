@@ -54,6 +54,7 @@ lbann::partitioned_io_buffer* lbann::partitioned_io_buffer::copy() const {
 lbann::partitioned_io_buffer& lbann::partitioned_io_buffer::operator=(const lbann::partitioned_io_buffer& other) {
   generic_io_buffer::operator=(other);
   for (auto& buf : m_data_buffers) {
+    if (buf.second) delete buf.second;
     buf.second = buf.second->copy();
   }
   return *this;
