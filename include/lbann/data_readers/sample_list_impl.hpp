@@ -48,13 +48,13 @@ inline const std::string& sample_list_header::get_file_dir() const {
   return m_file_dir;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline sample_list<sample_file_id_t, sample_name_t>::sample_list() {
+template <typename sample_name_t>
+inline sample_list<sample_name_t>::sample_list() {
   m_max_open_files = getdtablesize() - LBANN_MAX_OPEN_FILE_MARGIN;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline sample_list<sample_file_id_t, sample_name_t>::~sample_list() {
+template <typename sample_name_t>
+inline sample_list<sample_name_t>::~sample_list() {
   // Close the existing open files
   for(auto f : m_file_id_stats_map) {
     if(std::get<1>(f) > 0) {
@@ -66,8 +66,8 @@ inline sample_list<sample_file_id_t, sample_name_t>::~sample_list() {
   m_open_fd_pq.clear();
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::load(const std::string& samplelist_file,
        size_t stride, size_t offset) {
   std::ifstream istr(samplelist_file);
@@ -75,31 +75,31 @@ inline void sample_list<sample_file_id_t, sample_name_t>
   istr.close();
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline sample_list_header sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline sample_list_header sample_list<sample_name_t>
 ::load_header(const std::string& samplelist_file) const {
   std::ifstream istr(samplelist_file);
   return read_header(istr, samplelist_file);
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>::load_from_string(const std::string& samplelist) {
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>::load_from_string(const std::string& samplelist) {
   std::istringstream istr(samplelist);
   get_samples_per_file(istr, "<LOAD_FROM_STRING>", 1, 0);
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline size_t sample_list<sample_file_id_t, sample_name_t>::size() const {
+template <typename sample_name_t>
+inline size_t sample_list<sample_name_t>::size() const {
   return m_sample_list.size();
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline bool sample_list<sample_file_id_t, sample_name_t>::empty() const {
+template <typename sample_name_t>
+inline bool sample_list<sample_name_t>::empty() const {
   return m_sample_list.empty();
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline std::string sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline std::string sample_list<sample_name_t>
 ::read_header_line(std::istream& istrm,
                    const std::string& filename,
                    const std::string& info) const {
@@ -120,8 +120,8 @@ inline std::string sample_list<sample_file_id_t, sample_name_t>
 }
 
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline sample_list_header sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline sample_list_header sample_list<sample_name_t>
 ::read_header(std::istream& istrm,
               const std::string& filename) const {
   sample_list_header hdr;
@@ -164,8 +164,8 @@ inline sample_list_header sample_list<sample_file_id_t, sample_name_t>
   return hdr;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline hid_t sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline hid_t sample_list<sample_name_t>
 ::get_conduit_bundle_samples(std::string conduit_file_path,
                              std::vector<std::string>& sample_names,
                              size_t included_samples,
@@ -202,8 +202,8 @@ inline hid_t sample_list<sample_file_id_t, sample_name_t>
   return hdf5_file_hnd;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::read_exclusive_list(std::istream& istrm,
                       size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
@@ -306,8 +306,8 @@ inline void sample_list<sample_file_id_t, sample_name_t>
 }
 
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::read_inclusive_list(std::istream& istrm,
                       size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
@@ -394,8 +394,8 @@ inline void sample_list<sample_file_id_t, sample_name_t>
 }
 
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline size_t sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline size_t sample_list<sample_name_t>
 ::get_samples_per_file(std::istream& istrm,
                        const std::string& filename,
                        size_t stride, size_t offset) {
@@ -419,8 +419,8 @@ inline size_t sample_list<sample_file_id_t, sample_name_t>
 }
 
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
@@ -465,9 +465,9 @@ inline void sample_list<sample_file_id_t, sample_name_t>
   return;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
+template <typename sample_name_t>
 template <typename T>
-inline size_t sample_list<sample_file_id_t, sample_name_t>
+inline size_t sample_list<sample_name_t>
 ::all_gather_field(T data,
                    std::vector<T>& gathered_data,
                    lbann_comm& comm) {
@@ -496,8 +496,8 @@ inline size_t sample_list<sample_file_id_t, sample_name_t>
   return gathered_field_size;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::all_gather_packed_lists(lbann_comm& comm) {
   int num_ranks = comm.get_procs_per_trainer();
   typename std::vector<samples_t> per_rank_samples(num_ranks);
@@ -555,8 +555,8 @@ inline void sample_list<sample_file_id_t, sample_name_t>
   return;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::compute_epochs_file_usage(const std::vector<int>& shuffled_indices,
                             int mini_batch_size,
                             const lbann_comm& comm) {
@@ -582,19 +582,19 @@ inline void sample_list<sample_file_id_t, sample_name_t>
   }
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>::clear() {
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>::clear() {
   m_sample_list.clear();
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
+template <typename sample_name_t>
 template <class Archive>
-void sample_list<sample_file_id_t, sample_name_t>::serialize( Archive & ar ) {
+void sample_list<sample_name_t>::serialize( Archive & ar ) {
   ar(m_header, m_sample_list, m_file_id_stats_map);
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>::write_header(std::string& sstr, size_t num_files) const {
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>::write_header(std::string& sstr, size_t num_files) const {
   // The first line indicate if the list is exclusive or inclusive
   // The next line contains the number of samples and the number of files, which are the same in this caes
   // The next line contains the root data file directory
@@ -606,8 +606,8 @@ inline void sample_list<sample_file_id_t, sample_name_t>::write_header(std::stri
 }
 
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline bool sample_list<sample_file_id_t, sample_name_t>::to_string(std::string& sstr) const {
+template <typename sample_name_t>
+inline bool sample_list<sample_name_t>::to_string(std::string& sstr) const {
   std::map<std::string, std::template vector<sample_name_t>> tmp_file_map;
   for (const auto& s : m_sample_list) {
     std::string filename = std::get<0>(m_file_id_stats_map[s.first]);
@@ -647,8 +647,8 @@ inline bool sample_list<sample_file_id_t, sample_name_t>::to_string(std::string&
   return true;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline void sample_list<sample_file_id_t, sample_name_t>::write(const std::string filename) const {
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>::write(const std::string filename) const {
   std::string dir, basename;
   parse_path(filename, dir, basename);
   if (!dir.empty() && !check_if_dir_exists(dir)) {
@@ -671,21 +671,21 @@ inline void sample_list<sample_file_id_t, sample_name_t>::write(const std::strin
   ofs.close();
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline const typename sample_list<sample_file_id_t, sample_name_t>::samples_t&
-sample_list<sample_file_id_t, sample_name_t>::get_list() const {
+template <typename sample_name_t>
+inline const typename sample_list<sample_name_t>::samples_t&
+sample_list<sample_name_t>::get_list() const {
   return m_sample_list;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
+template <typename sample_name_t>
 inline const sample_list_header&
-sample_list<sample_file_id_t, sample_name_t>::get_header() const {
+sample_list<sample_name_t>::get_header() const {
   return m_header;
 }
 
-template <typename sample_file_id_t, typename sample_name_t>
-inline const typename sample_list<sample_file_id_t, sample_name_t>::sample_t&
-sample_list<sample_file_id_t, sample_name_t>::operator[](size_t idx) const {
+template <typename sample_name_t>
+inline const typename sample_list<sample_name_t>::sample_t&
+sample_list<sample_name_t>::operator[](size_t idx) const {
   return m_sample_list[idx];
 }
 

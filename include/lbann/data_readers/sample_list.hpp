@@ -52,13 +52,13 @@ struct sample_list_header {
 static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
 static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
-template <typename sample_file_id_t, typename sample_name_t>
+template <typename sample_name_t>
 class sample_list {
  public:
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
   //using sample_name_t = std::string;
   /// The type for arbitrarily assigned index
-  //using sample_file_id_t = std::size_t;
+  using sample_file_id_t = std::size_t;
   /// To describe a sample as a pair of the file to which it belongs and its name
   //  using sample_t = std::pair<std::string, sample_name_t>;
   using sample_t = std::pair<sample_file_id_t, sample_name_t>;
@@ -287,13 +287,13 @@ class sample_list {
 void handle_mpi_error(int ierr);
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-template <typename sample_file_id_t, typename sample_name_t>
-void distribute_sample_list(const sample_list<sample_file_id_t, sample_name_t>& sn,
+template <typename sample_name_t>
+void distribute_sample_list(const sample_list<sample_name_t>& sn,
                             std::string& my_samples,
                             lbann_comm& comm);
 #else
-template <typename sample_file_id_t, typename sample_name_t>
-void distribute_sample_list(const sample_list<sample_file_id_t, sample_name_t>& sn,
+template <typename sample_name_t>
+void distribute_sample_list(const sample_list< sample_name_t>& sn,
                             std::string& my_samples,
                             MPI_Comm& comm);
 #endif

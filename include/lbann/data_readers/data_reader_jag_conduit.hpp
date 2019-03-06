@@ -58,9 +58,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type for the pair of the key string of a sample and the handle of the file that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
-  using sample_file_id_t = std::size_t;
   using sample_name_t = std::string;
-  using sample_list_t = sample_list<sample_file_id_t, sample_name_t>;
+  using sample_list_t = sample_list<sample_name_t>;
+  using sample_file_id_t = sample_list_t::sample_file_id_t;
   using sample_t = std::pair<sample_file_id_t, sample_name_t>;
   //using sample_t = sample_list_t::sample_t;
   /// linear transform on X defined as: first * X + second => X'
