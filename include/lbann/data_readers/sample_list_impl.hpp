@@ -6,7 +6,6 @@
 #include <unordered_set>
 #include <algorithm>
 #include <locale>
-#include "sample_list_jag.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <deque>

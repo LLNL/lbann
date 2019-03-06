@@ -40,7 +40,7 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
-#include "lbann/data_readers/sample_list_jag.hpp"
+#include "lbann/data_readers/sample_list.hpp"
 
 namespace lbann {
 

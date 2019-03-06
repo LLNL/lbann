@@ -297,6 +297,6 @@ void distribute_sample_list(const sample_list_jag& sn,
 
 } // end of namespace
 
-#include "sample_list_jag_impl.hpp"
+#include "sample_list_impl.hpp"
 
 #endif // __SAMPLE_LIST_JAG_HPP__
