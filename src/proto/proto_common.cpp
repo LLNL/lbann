@@ -641,6 +641,22 @@ void set_data_readers_filenames(
   }
 }
 
+void set_data_readers_index_list(
+  const std::string& which, lbann_data::LbannPB& p)
+{
+  options *opts = options::get();
+  lbann_data::DataReader *readers = p.mutable_data_reader();
+  int size = readers->reader_size();
+  const std::string key_role = "index_list_" + which;
+
+  for (int j=0; j<size; j++) {
+    lbann_data::Reader *r = readers->mutable_reader(j);
+    if (r->role() == which) {
+      r->set_index_list(opts->get_string(key_role));
+    }
+  }
+}
+
 void set_data_readers_percent(lbann_data::LbannPB& p)
 {
   options *opts = options::get();
@@ -725,6 +741,12 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
+  }
+  if (opts->has_string("index_list_train")) {
+    set_data_readers_index_list("train", p);
+  }
+  if (opts->has_string("index_list_test")) {
+    set_data_readers_index_list("test", p);
   }
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
@@ -910,6 +932,7 @@ void print_help(std::ostream& os)
        "      sets the file directory for train and test data\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
+       "  --index_list_train=<string>     --index_list_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "  --data_reader_percent=<float>\n"
        "  --share_testing_data_readers=<bool:[0|1]>\n"
