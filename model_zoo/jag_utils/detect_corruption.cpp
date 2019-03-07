@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
     const std::string fn = opts->get_string("filelist");
     std::vector<std::string> filenames;
     read_filelist(comm.get(), fn, filenames);
-    if (master) std::cerr << "num files: " << filenames.size() << "\n";
 
     std::unordered_set<std::string> input_names;
     std::unordered_set<std::string> scalar_names;
@@ -80,15 +79,15 @@ int main(int argc, char *argv[]) {
     get_image_names(image_names);
 
     if (master) {
-      std::cout << "\nchecking the following inputs: ";
-      for (auto t : input_names) std::cout << t << " ";
-      std::cout << "\n";
-      std::cout << "\nchecking the following scalars: ";
-      for (auto t : scalar_names) std::cout << t << " ";
-      std::cout << "\n";
-      std::cout << "\nchecking the following images: ";
-      for (auto t : image_names) std::cout << t << " ";
-      std::cout << "\n";
+      std::cerr << "\nchecking the following inputs: \n";
+      for (auto t : input_names) std::cerr << t << " ";
+      std::cerr << "\n";
+      std::cerr << "\nchecking the following scalars: ";
+      for (auto t : scalar_names) std::cerr << t << " ";
+      std::cerr << "\n";
+      std::cerr << "\nchecking the following images: ";
+      for (auto t : image_names) std::cerr << t << " ";
+      std::cerr << "\n\n";
     }
 
     //================================================================
@@ -107,18 +106,17 @@ int main(int argc, char *argv[]) {
     std::string key;
     conduit::Node n_ok;
     conduit::Node tmp;
-    size_t h = 0;
+    int h = 0;
     
     // used to ensure all values are used
     double total = 0;
     for (size_t j=rank; j<filenames.size(); j+= np) {
       h += 1;
-      if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
+      if (h % 1 == 0 && master) std::cerr << "P_0 has processed " << h << " files\n";
 
       try {
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( filenames[j].c_str() );
       } catch (...) {
-        //std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         open_err << filenames[j] << "\n";
         continue;
       }
@@ -127,7 +125,6 @@ int main(int argc, char *argv[]) {
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
       } catch (...) {
-        //std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         children_err << filenames[j] << "\n";
         continue;
       }
@@ -137,7 +134,6 @@ int main(int argc, char *argv[]) {
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
         } catch (...) {
-          //std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           success_flag_err << filenames[j] << " " << cnames[i] << "\n";
           continue;
         }
@@ -151,7 +147,6 @@ int main(int argc, char *argv[]) {
                 total += static_cast<double>(tmp.value());
               }
             } catch (...) {
-              //std::cerr << rank << " :: " << "exception reading an input for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               success_flag_err << filenames[j] << "\n";
               sample_err << filenames[j] << " " << cnames[i] << "\n";
               continue;
@@ -164,7 +159,6 @@ int main(int argc, char *argv[]) {
                 total += static_cast<double>(tmp.value());
               }
             } catch (...) {
-              //std::cerr << rank << " :: " << "exception reading an scalar for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               sample_err << filenames[j] << " " << cnames[i] << "\n";
               continue;
             }
@@ -180,7 +174,6 @@ int main(int argc, char *argv[]) {
                 }
               }  
             } catch (...) {
-              //std::cerr << rank << " :: " << "exception reading image: (0.0, 0.0) for sample: " << cnames[i] << " which is " << i << " of " << cnames[i] << "; "<< files[j] << "\n";
               sample_err << filenames[j] << " " << cnames[i] << "\n";
               continue;
             }
@@ -188,18 +181,21 @@ int main(int argc, char *argv[]) {
         }
       }
 
-      // print out totals, to ensure a compiler doesn't discard unused values
-      comm->global_barrier();
       if (master) {
-        std::cout << "totals; this is a sanity check; please IGNORE!!\n";
+        int h2 = comm->reduce<int>(h, comm->get_world_comm());
+        double total2 = comm->reduce<double>(total, comm->get_world_comm());
+        std::cerr << "\nnum files processed: " << h2 << "\n"
+                  << "sanity check - please ignore: " << total2 << "\n\n";
+      } else {
+        comm->reduce<int>(h, 0, comm->get_world_comm());
+        comm->reduce<double>(total, 0, comm->get_world_comm());
       }
-      std::cout << rank << " :: " << total << "\n";
 
       // print erros, if any
-      print_errs(comm, np, rank, open_err, "failed to open these files:");
-      print_errs(comm, np, rank, children_err, "failed to read children from these files:");
-      print_errs(comm, np, rank, success_flag_err, "failed to read success flag for these samples:");
-      print_errs(comm, np, rank, sample_err, "failed to read input or scalars or images for these samples:");
+      print_errs(comm, np, rank, open_err, "failed to open these files (if any):");
+      print_errs(comm, np, rank, children_err, "failed to read children from these files (if any):");
+      print_errs(comm, np, rank, success_flag_err, "failed to read success flag for these samples (if any):");
+      print_errs(comm, np, rank, sample_err, "failed to read input or scalars or images for these samples (if any):");
 
   } catch (exception const &e) {
     El::ReportException(e);
@@ -249,16 +245,16 @@ void get_scalar_names(std::unordered_set<std::string> &s) {
 void get_image_names(std::unordered_set<std::string> &s) {
   s.insert("(0.0, 0.0)");
   s.insert("(90.0, 0.0)");
-  s.insert("90.0, 78.0)");
+  s.insert("(90.0, 78.0)");
 }
 
 void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, const char *msg) {
   comm->global_barrier();
-  if (rank == 0) { std::cout << "\n" << msg << "\n"; }  
+  if (rank == 0) { std::cerr << "\n" << msg << "\n"; }  
   for (int i=0; i<np; i++) {
     comm->global_barrier();
     if (rank == i) {
-        std::cout << s.str();
+        std::cerr << s.str();
     }
   }
   comm->global_barrier();
