@@ -758,8 +758,11 @@ void data_reader_jag_conduit::load() {
 
   /// Check the data that each rank loaded
   if (!m_is_data_loaded) {
-    std::cout << "Checking local data" << std::endl;
     m_is_data_loaded = true;
+
+    /// Open the first sample to make sure that all of the fields are correct
+    size_t data_id = (m_sample_list[0]).first;
+    m_sample_list.open_samples_hdf5_handle(data_id, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -772,6 +775,8 @@ void data_reader_jag_conduit::load() {
     check_input_keys();
 
     check_image_data();
+
+    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   }
 
   /// Merge all of the sample lists
