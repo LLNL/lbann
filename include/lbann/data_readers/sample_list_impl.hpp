@@ -22,6 +22,59 @@
 
 namespace lbann {
 
+template<typename T>
+inline std::string to_string(const T val) {
+  return std::to_string(val);
+}
+
+template<>
+inline std::string to_string(const std::string val) {
+  return val;
+}
+
+template <typename sample_name_t>
+inline auto to_sample_name_t(const std::string& sn_str) -> decltype (sample_name_t()){
+  // TODO: throw exception
+  return sample_name_t();
+}
+
+template<> inline int to_sample_name_t<int>(const std::string& sn_str) {
+  return std::stoi(sn_str);
+}
+
+template<> inline long to_sample_name_t<long>(const std::string& sn_str) {
+  return std::stol(sn_str);
+}
+
+template<> inline unsigned long to_sample_name_t<unsigned long>(const std::string& sn_str) {
+  return std::stoul(sn_str);
+}
+
+template<> inline long long to_sample_name_t<long long>(const std::string& sn_str) {
+  return std::stoll(sn_str);
+}
+
+template<> inline unsigned long long to_sample_name_t<unsigned long long>(const std::string& sn_str) {
+  return std::stoull(sn_str);
+}
+
+template<> inline float to_sample_name_t<float>(const std::string& sn_str) {
+  return std::stof(sn_str);
+}
+
+template<> inline double to_sample_name_t<double>(const std::string& sn_str) {
+  return std::stod(sn_str);
+}
+
+template<> inline long double to_sample_name_t<long double>(const std::string& sn_str) {
+  return std::stold(sn_str);
+}
+
+template<> inline std::string to_sample_name_t<std::string>(const std::string& sn_str) {
+  return sn_str;
+}
+
+
 inline sample_list_header::sample_list_header()
   : m_is_exclusive(false), m_included_sample_count(0u),
     m_excluded_sample_count(0u), m_num_files(0u),
@@ -281,7 +334,7 @@ inline void sample_list<sample_name_t>
       if (found != excluded_sample_indices.cend()) {
         continue;
       }
-      m_sample_list.emplace_back(index, s);
+      m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(s));
       valid_sample_count++;
     }
 
@@ -368,13 +421,13 @@ inline void sample_list<sample_name_t>
 
     size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
-      std::string sample_name;;
-      sstr >> sample_name;
-      std::unordered_set<std::string>::const_iterator found = set_of_samples.find(sample_name);
+      std::string sample_name_str;
+      sstr >> sample_name_str;
+      std::unordered_set<std::string>::const_iterator found = set_of_samples.find(sample_name_str);
       if (found == set_of_samples.cend()) {
-        LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name);
+        LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name_str);
       }
-      m_sample_list.emplace_back(index, sample_name);
+      m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
       valid_sample_count++;
     }
     if(valid_sample_count != included_samples) {
@@ -639,7 +692,7 @@ inline bool sample_list<sample_name_t>::to_string(std::string& sstr) const {
     sstr += std::string(" ") + std::to_string(m_file_map.at(f.first) - f.second.size());
     // Inclusion sample list
     for (const auto& s : f.second) {
-      sstr += ' ' + s;
+      sstr += ' ' + lbann::to_string(s);
     }
     sstr += '\n';
   }
