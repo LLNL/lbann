@@ -161,10 +161,12 @@ void lbann_callback_print::report_results(model *m) {
       std::vector<int> num_samples_list(comm->get_num_trainers());
       comm->intertrainer_gather(obj_fn, obj_fn_list);
       comm->intertrainer_gather(obj_fn_samples, num_samples_list);
-      for (int i = 0; i < num_trainers; ++i) {
-        std::cout << m->get_name() << " (instance " <<  i <<  ") "  << mode_string << " "
-                  << "objective function : " << obj_fn_list[i]
-                  << std::endl;
+      if(!m_print_global_stat_only) {
+        for (int i = 0; i < num_trainers; ++i) {
+          std::cout << m->get_name() << " (instance " <<  i <<  ") "  << mode_string << " "
+                    << "objective function : " << obj_fn_list[i]
+                    << std::endl;
+        }
       }
       if (num_trainers > 1) {
         const EvalType avg_obj_fn = (std::inner_product(num_samples_list.begin(),
@@ -192,14 +194,16 @@ void lbann_callback_print::report_results(model *m) {
         std::vector<int> num_samples_list(comm->get_num_trainers());
         comm->intertrainer_gather(score, score_list);
         comm->intertrainer_gather(score_samples, num_samples_list);
-        for (int i = 0; i < num_trainers; ++i) {
-          std::cout << m->get_name() << " (instance " << i <<  ") " << mode_string << " "
-                    << met->name() << " : "
-                    << score_list[i] << met->get_unit()
-                    << std::endl;
+        if(!m_print_global_stat_only) {
+          for (int i = 0; i < num_trainers; ++i) {
+            std::cout << m->get_name() << " (instance " << i <<  ") " << mode_string << " "
+                      << met->name() << " : "
+                      << score_list[i] << met->get_unit()
+                      << std::endl;
+          }
         }
         if (num_trainers > 1) {
-          const EvalType min_score = *std::min_element(begin(score_list), end(score_list));
+          const EvalType min_score = *std::min_element(score_list.begin(), score_list.end());
           const EvalType avg_score = (std::inner_product(num_samples_list.begin(),
                                                          num_samples_list.end(),
                                                          score_list.begin(),
@@ -207,12 +211,12 @@ void lbann_callback_print::report_results(model *m) {
                                       / std::accumulate(num_samples_list.begin(),
                                                         num_samples_list.end(),
                                                         0));
-          const EvalType max_score = *std::max_element(begin(score_list), end(score_list));
+          const EvalType max_score = *std::max_element(score_list.begin(), score_list.end());
           std::cout << m->get_name() << " (global min) "  << mode_string << " "
                     << met->name() << " : "
                     << min_score << met->get_unit()
                     << std::endl;
-          std::cout << m->get_name() << " (global mean) "  << mode_string << " "
+          std::cout << m->get_name() << " (global average) "  << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()
                     << std::endl;
