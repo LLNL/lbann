@@ -131,15 +131,19 @@ if __name__ == '__main__':
     l2_reg = lp.L2WeightRegularization(weights=weights, scale=5e-4)
     obj = lp.ObjectiveFunction([ce, l2_reg])
 
-    # Set up metrics and callbacks
+    # Setup model
+    mini_batch_size = 256
+    num_epochs = 100
     metrics = [lp.Metric(top1, name='categorical accuracy', unit='%'),
                lp.Metric(top5, name='top-5 categorical accuracy', unit='%')]
     callbacks = [lp.CallbackPrint(),
                  lp.CallbackTimer(),
                  lp.CallbackDropFixedLearningRate(
                      drop_epoch=[20,40,60], amt=0.1)]
+    model = lp.Model(mini_batch_size, num_epochs,
+                     layers=layers, weights=weights,
+                     objective_function=obj,
+                     metrics=metrics, callbacks=callbacks)
 
     # Export model to file
-    lp.save_model(args.file, 256, 100,
-                  layers=layers, objective_function=obj,
-                  metrics=metrics, callbacks=callbacks)
+    model.save_proto(args.file)

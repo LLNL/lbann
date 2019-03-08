@@ -31,14 +31,14 @@ class LbannLayerParser_slice(LbannLayerParser):
         offsets = list(map(int, params.slice_points.split(" ")))
         sizes = list(map(lambda x: offsets[x+1]-offsets[x], range(len(offsets)-1)))
         self.appendOperator("Split",
-                            attrs={"axis": params.slice_axis,
+                            attrs={"axis": params.axis,
                                    "split": sizes})
 
 @parserDescriptor(["Concat"])
 class LbannLayerParser_concatenation(LbannLayerParser):
     def parse(self):
         self.appendOperator("Concat",
-                            attrs={"axis": self.l.concatenation.concatenation_axis})
+                            attrs={"axis": self.l.concatenation.axis})
 
 @parserDescriptor(["RandomNormal"])
 class LbannLayerParser_gaussian(LbannLayerParser):
