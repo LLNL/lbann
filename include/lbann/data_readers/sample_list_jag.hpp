@@ -19,7 +19,8 @@
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/utility.hpp>
-#include "conduit/conduit_relay_io_hdf5.hpp"
+#include "conduit/conduit_relay_io_handle.hpp"
+
 
 /// Number of system and other files that may be open during execution
 #define LBANN_MAX_OPEN_FILE_MARGIN 128
@@ -49,8 +50,8 @@ struct sample_list_header {
   }
 };
 
-static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
-static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
+static const std::string conduit_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
+static const std::string conduit_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
 class sample_list_jag {
  public:
@@ -61,9 +62,11 @@ class sample_list_jag {
   /// To describe a sample as a pair of the file to which it belongs and its name
   //  using sample_t = std::pair<std::string, sample_name_t>;
   using sample_t = std::pair<sample_file_id_t, sample_name_t>;
+  /// Type for file handles; this replaces hid_t
+  using io_t = conduit::relay::io::IOHandle;
   /// Statistics for each file used by the sample list: includes the file name, file descriptor, and
   /// and a queue of each step and substep when data will be loaded from the file
-  using file_id_stats_t = std::tuple<std::string, hid_t, std::deque<std::pair<int,int>>>;
+  using file_id_stats_t = std::tuple<std::string, io_t, std::deque<std::pair<int,int>>>;
 
   /// Type for the list of samples
   using samples_t = std::vector< sample_t >;
@@ -121,8 +124,8 @@ class sample_list_jag {
     return m_header.get_file_dir();
   }
 
-  hid_t get_samples_hdf5_handle(sample_file_id_t id) const {
-    hid_t h = std::get<1>(m_file_id_stats_map[id]);
+  io_t get_samples_handle(sample_file_id_t id) const {
+    io_t h = std::get<1>(m_file_id_stats_map[id]);
     return h;
   }
 
@@ -130,7 +133,7 @@ class sample_list_jag {
     std::get<0>(m_file_id_stats_map[id]) = filename;
   }
 
-  void set_files_hdf5_handle(const std::string& filename, hid_t h) {
+  void set_files_handle(const std::string& filename, io_t h) {
     sample_file_id_t id = 0;
     for (auto&& e : m_file_id_stats_map) {
       if(std::get<0>(e) == filename) {
@@ -139,20 +142,20 @@ class sample_list_jag {
       }
       id++;
     }
-    manage_open_hdf5_handles(id, true);
+    manage_open_handles(id, true);
   }
 
-  void manage_open_hdf5_handles(sample_file_id_t id, bool pre_open_fd = false) {
+  void manage_open_handles(sample_file_id_t id, bool pre_open_fd = false) {
     /// When we enter this function the priority queue is either empty or a heap
     if(!m_open_fd_pq.empty()) {
       if(m_open_fd_pq.size() > m_max_open_files) {
         auto& f = m_open_fd_pq.front();
         auto& victim = m_file_id_stats_map[f.first];
-        hid_t victim_fd = std::get<1>(victim);
+        io_t victim_fd = std::get<1>(victim);
         std::pop_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
         m_open_fd_pq.pop_back();
         if(victim_fd > 0) {
-          conduit::relay::io::hdf5_close_file(victim_fd);
+          victim_fd.close();
           std::get<1>(victim) = 0;
         }
       }
@@ -184,11 +187,11 @@ class sample_list_jag {
     return;
   }
 
-  hid_t open_samples_hdf5_handle(const size_t i, bool pre_open_fd = false) {
+  io_t open_samples_handle(const size_t i, bool pre_open_fd = false) {
     const sample_t& s = m_sample_list[i];
     sample_file_id_t id = s.first;
-    hid_t h = get_samples_hdf5_handle(id);
-    if (h <= static_cast<hid_t>(0)) {
+    io_t h = get_samples_handle(id);
+    if (h <= static_cast<io_t>(0)) {
       const std::string& file_name = get_samples_filename(id);
       const std::string conduit_file_path = add_delimiter(get_samples_dirname()) + file_name;
       if (file_name.empty() || !check_if_file_exists(conduit_file_path)) {
@@ -198,7 +201,7 @@ class sample_list_jag {
       int retry_cnt = 0;
       do {
         try {
-          h = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+          h.open( conduit_file_path );
         }catch (conduit::Error const& e) {
           LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
           retry = true;
@@ -206,25 +209,25 @@ class sample_list_jag {
         }
       }while(retry && retry_cnt < 3);
 
-      if (h <= static_cast<hid_t>(0)) {
+      if (h <= static_cast<io_t>(0)) {
         LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
       }
       auto& e = m_file_id_stats_map[id];
       std::get<1>(e) = h;
     }
-    manage_open_hdf5_handles(id, pre_open_fd);
+    manage_open_handles(id, pre_open_fd);
     return h;
   }
 
-  void close_if_done_samples_hdf5_handle(const size_t i) {
+  void close_if_done_samples_handle(const size_t i) {
     const sample_t& s = m_sample_list[i];
     sample_file_id_t id = s.first;
-    hid_t h = get_samples_hdf5_handle(id);
-    if (h > static_cast<hid_t>(0)) {
+    io_t h = get_samples_handle(id);
+    if (h > static_cast<io_t>(0)) {
       auto& e = m_file_id_stats_map[id];
       auto& file_access_queue = std::get<2>(e);
       if(file_access_queue.empty()) {
-        conduit::relay::io::hdf5_close_file(std::get<1>(e));
+        std::get<1>(e).close();
         std::get<1>(e) = 0;
       }
     }
@@ -245,7 +248,7 @@ class sample_list_jag {
   sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
 
   /// Get the list of samples that exist in a conduit bundle
-  hid_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
+  io_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);

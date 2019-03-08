@@ -10,10 +10,10 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <deque>
-#include "hdf5.h"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
+#include "conduit/conduit_relay_io_handle.hpp"
+
 #include <unordered_set>
 #include <memory>
 
@@ -55,7 +55,7 @@ inline sample_list_jag::~sample_list_jag() {
   // Close the existing open files
   for(auto f : m_file_id_stats_map) {
     if(std::get<1>(f) > 0) {
-      conduit::relay::io::hdf5_close_file(std::get<1>(f));
+      std::get<1>(f).close();
     }
     std::get<1>(f) = 0;
   }
@@ -123,7 +123,7 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   header1 >> sample_list_type;
   std::for_each(sample_list_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
 
-  const std::string type_exclusive = conduit_hdf5_exclusion_list;
+  const std::string type_exclusive = conduit_exclusion_list;
   size_t found = sample_list_type.find(type_exclusive);
 
   if (found != std::string::npos) {
@@ -147,12 +147,12 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
 }
 
 inline hid_t sample_list_jag::get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples) {
-  hid_t hdf5_file_hnd = 0;
+  io_t file_hnd = 0;
   bool retry = false;
   int retry_cnt = 0;
   do {
     try {
-      hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+      file_hnd.open( conduit_file_path );
     }catch (conduit::Error const& e) {
       LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
       retry = true;
@@ -160,12 +160,12 @@ inline hid_t sample_list_jag::get_conduit_bundle_samples(std::string conduit_fil
     }
   }while(retry && retry_cnt < LBANN_MAX_OPEN_FILE_RETRY);
 
-  if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
+  if (file_hnd <= static_cast<io_t>(0)) {
     std::cout << "Opening the file didn't work" << std::endl;
-    return hdf5_file_hnd;
+    return file_hnd;
   }
 
-  conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
+  file_hnd.list_child_names("/", sample_names_;
 
   if(sample_names.size() != (included_samples + excluded_samples)) {
     LBANN_ERROR(std::string("File does not contain the correct number of samples: found ")
@@ -176,7 +176,7 @@ inline hid_t sample_list_jag::get_conduit_bundle_samples(std::string conduit_fil
                 + std::to_string(excluded_samples));
   }
 
-  return hdf5_file_hnd;
+  return file_hnd;
 }
 
 inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t stride, size_t offset) {
@@ -227,8 +227,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
     }
 
     std::vector<std::string> sample_names;
-    hid_t hdf5_file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
-    if(hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    io_t file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
+    if(file_hnd <= static_cast<io_t>(0)) {
       continue; // skipping the file
     }
 
@@ -247,7 +247,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 
     sample_file_id_t index = m_file_id_stats_map.size();
     m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
-    set_files_hdf5_handle(filename, hdf5_file_hnd);
+    set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
@@ -313,8 +313,8 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
     }
 
     std::vector<std::string> sample_names;
-    hid_t hdf5_file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
-    if(hdf5_file_hnd <= static_cast<hid_t>(0)) {
+    io_t file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
+    if(file_hnd <= static_cast<hid_t>(0)) {
       continue; // skipping the file
     }
 
@@ -335,7 +335,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 
     sample_file_id_t index = m_file_id_stats_map.size();
     m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
-    set_files_hdf5_handle(filename, hdf5_file_hnd);
+    set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
@@ -464,7 +464,7 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
   // Close the existing open files
   for(auto&& e : m_file_id_stats_map) {
     if(std::get<1>(e) > 0) {
-      conduit::relay::io::hdf5_close_file(std::get<1>(e));
+      std::get<1>(e).close();
       std::get<1>(e) = 0;
     }
     std::get<2>(e).clear();
@@ -515,7 +515,7 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
 inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& shuffled_indices, int mini_batch_size, const lbann_comm& comm) {
   for (auto&& e : m_file_id_stats_map) {
     if(std::get<1>(e) > 0) {
-      conduit::relay::io::hdf5_close_file(std::get<1>(e));
+      std::get<1>(e).close();
       std::get<1>(e) = 0;
     }
     std::get<2>(e).clear();
@@ -548,7 +548,7 @@ inline void sample_list_jag::write_header(std::string& sstr, size_t num_files) c
   // The next line contains the number of samples and the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
-  sstr += (m_header.is_exclusive()? conduit_hdf5_exclusion_list + "\n" : conduit_hdf5_inclusion_list + "\n");
+  sstr += (m_header.is_exclusive()? conduit_exclusion_list + "\n" : conduit_inclusion_list + "\n");
   /// Include the number of invalid samples, which for an inclusive index list is always 0
   sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
