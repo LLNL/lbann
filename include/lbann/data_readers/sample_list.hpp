@@ -52,7 +52,7 @@ struct sample_list_header {
 static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
 static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
-template <typename sample_name_t>
+template <typename file_handle_t, typename sample_name_t>
 class sample_list {
  public:
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
@@ -64,7 +64,7 @@ class sample_list {
   using sample_t = std::pair<sample_file_id_t, sample_name_t>;
   /// Statistics for each file used by the sample list: includes the file name, file descriptor, and
   /// and a queue of each step and substep when data will be loaded from the file
-  using file_id_stats_t = std::tuple<std::string, hid_t, std::deque<std::pair<int,int>>>;
+  using file_id_stats_t = std::tuple<std::string, file_handle_t, std::deque<std::pair<int,int>>>;
 
   /// Type for the list of samples
   using samples_t = std::template vector< sample_t >;
@@ -114,122 +114,21 @@ class sample_list {
   /// Allow read-only access to the metadata of the idx-th sample in the list
   const sample_t& operator[](size_t idx) const;
 
-  const std::string& get_samples_filename(sample_file_id_t id) const {
-    return std::get<0>(m_file_id_stats_map[id]);
-  }
+  const std::string& get_samples_filename(sample_file_id_t id) const;
 
-  const std::string& get_samples_dirname() const {
-    return m_header.get_file_dir();
-  }
+  const std::string& get_samples_dirname() const;
 
-  hid_t get_samples_hdf5_handle(sample_file_id_t id) const {
-    hid_t h = std::get<1>(m_file_id_stats_map[id]);
-    return h;
-  }
+  file_handle_t get_samples_hdf5_handle(sample_file_id_t id) const;
 
-  void set_samples_filename(sample_file_id_t id, const std::string& filename) {
-    std::get<0>(m_file_id_stats_map[id]) = filename;
-  }
+  void set_samples_filename(sample_file_id_t id, const std::string& filename);
 
-  void set_files_hdf5_handle(const std::string& filename, hid_t h) {
-    sample_file_id_t id = sample_file_id_t(0);
-    for (auto&& e : m_file_id_stats_map) {
-      if(std::get<0>(e) == filename) {
-        std::get<1>(e) = h;
-        break;
-      }
-      id++;
-    }
-    manage_open_hdf5_handles(id, true);
-  }
+  void set_files_hdf5_handle(const std::string& filename, file_handle_t h);
 
-  void manage_open_hdf5_handles(sample_file_id_t id, bool pre_open_fd = false) {
-    /// When we enter this function the priority queue is either empty or a heap
-    if(!m_open_fd_pq.empty()) {
-      if(m_open_fd_pq.size() > m_max_open_files) {
-        auto& f = m_open_fd_pq.front();
-        auto& victim = m_file_id_stats_map[f.first];
-        hid_t victim_fd = std::get<1>(victim);
-        std::pop_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-        m_open_fd_pq.pop_back();
-        if(victim_fd > 0) {
-          conduit::relay::io::hdf5_close_file(victim_fd);
-          std::get<1>(victim) = 0;
-        }
-      }
-    }
+  void manage_open_hdf5_handles(sample_file_id_t id, bool pre_open_fd = false);
 
-    /// Before we can enqueue the any new access times for this descriptor, remove any
-    /// earlier descriptor
-    std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-    if(m_open_fd_pq.front().first == id) {
-      m_open_fd_pq.pop_front();
-    }
-    std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+  file_handle_t open_samples_hdf5_handle(const size_t i, bool pre_open_fd = false);
 
-    auto& e = m_file_id_stats_map[id];
-    auto& file_access_queue = std::get<2>(e);
-    if(!file_access_queue.empty()) {
-      if(!pre_open_fd) {
-        file_access_queue.pop_front();
-      }
-    }
-    if(!file_access_queue.empty()) {
-      m_open_fd_pq.emplace_back(std::make_pair(id,file_access_queue.front()));
-    }else {
-      /// If there are no future access of the file place a terminator entry to track
-      /// the open file, but is always sorted to the top of the heap
-      m_open_fd_pq.emplace_back(std::make_pair(id,std::make_pair(INT_MAX,id)));
-    }
-    std::push_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
-    return;
-  }
-
-  hid_t open_samples_hdf5_handle(const size_t i, bool pre_open_fd = false) {
-    const sample_t& s = m_sample_list[i];
-    sample_file_id_t id = s.first;
-    hid_t h = get_samples_hdf5_handle(id);
-    if (h <= static_cast<hid_t>(0)) {
-      const std::string& file_name = get_samples_filename(id);
-      const std::string conduit_file_path = add_delimiter(get_samples_dirname()) + file_name;
-      if (file_name.empty() || !check_if_file_exists(conduit_file_path)) {
-        LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
-      }
-      bool retry = false;
-      int retry_cnt = 0;
-      do {
-        try {
-          h = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
-        }catch (conduit::Error const& e) {
-          LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
-          retry = true;
-          retry_cnt++;
-        }
-      }while(retry && retry_cnt < 3);
-
-      if (h <= static_cast<hid_t>(0)) {
-        LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
-      }
-      auto& e = m_file_id_stats_map[id];
-      std::get<1>(e) = h;
-    }
-    manage_open_hdf5_handles(id, pre_open_fd);
-    return h;
-  }
-
-  void close_if_done_samples_hdf5_handle(const size_t i) {
-    const sample_t& s = m_sample_list[i];
-    sample_file_id_t id = s.first;
-    hid_t h = get_samples_hdf5_handle(id);
-    if (h > static_cast<hid_t>(0)) {
-      auto& e = m_file_id_stats_map[id];
-      auto& file_access_queue = std::get<2>(e);
-      if(file_access_queue.empty()) {
-        conduit::relay::io::hdf5_close_file(std::get<1>(e));
-        std::get<1>(e) = 0;
-      }
-    }
-  }
+  void close_if_done_samples_hdf5_handle(const size_t i);
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
@@ -246,7 +145,7 @@ class sample_list {
   sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
 
   /// Get the list of samples that exist in a conduit bundle
-  hid_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
+  file_handle_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
@@ -287,13 +186,13 @@ class sample_list {
 void handle_mpi_error(int ierr);
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-template <typename sample_name_t>
-void distribute_sample_list(const sample_list<sample_name_t>& sn,
+template <typename file_handle_t, typename sample_name_t>
+void distribute_sample_list(const sample_list<file_handle_t, sample_name_t>& sn,
                             std::string& my_samples,
                             lbann_comm& comm);
 #else
-template <typename sample_name_t>
-void distribute_sample_list(const sample_list< sample_name_t>& sn,
+template <typename file_handle_t, typename sample_name_t>
+void distribute_sample_list(const sample_list<file_handle_t, sample_name_t>& sn,
                             std::string& my_samples,
                             MPI_Comm& comm);
 #endif
