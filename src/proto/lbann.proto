@@ -71,6 +71,15 @@ message Reader {
   bool index_list_per_trainer = 400;
   bool index_list_per_model   = 401;
   //------------- end of only for index lists ------------------
+
+  PythonDataReader python = 501;
+}
+
+message PythonDataReader {
+  string module = 1;                // Python module (can be a file path)
+  string sample_function = 2;       // Name of function that gets data sample
+  string num_samples_function = 3;  // Name of function that gets number of data samples
+  string sample_dims_function = 4;  // Name of function that gets dimensions of data sample
 }
 
 message ImagePreprocessor {

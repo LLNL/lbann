@@ -325,6 +325,17 @@ void init_data_readers(
       reader = new mesh_reader(shuffle);
     } else if (name == "moving_mnist") {
       reader = new moving_mnist_reader(7, 40, 40, 2);
+    } else if (name == "python") {
+#ifdef LBANN_HAS_PYTHON
+      const auto& params = readme.python();
+      reader = new python_reader(params.module(),
+                                 params.sample_function(),
+                                 params.num_samples_function(),
+                                 params.sample_dims_function());
+#else
+      LBANN_ERROR("attempted to construct Python data reader, "
+                  "but LBANN is not built with Python/C API");
+#endif // LBANN_HAS_PYTHON
     } else {
       if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
@@ -473,6 +484,17 @@ void init_data_readers(
       } else if (name == "moving_mnist") {
         reader_validation = new moving_mnist_reader(7, 40, 40, 2);
         (*(moving_mnist_reader *)reader_validation) = (*(moving_mnist_reader *)reader);
+      } else if (name == "python") {
+#ifdef LBANN_HAS_PYTHON
+        const auto& params = readme.python();
+        reader_validation = new python_reader(params.module(),
+                                              params.sample_function(),
+                                              params.num_samples_function(),
+                                              params.sample_dims_function());
+#else
+        LBANN_ERROR("attempted to construct Python data reader, "
+                    "but LBANN is not built with Python/C API");
+#endif // LBANN_HAS_PYTHON
       }
 
       reader_validation->set_role("validate");
