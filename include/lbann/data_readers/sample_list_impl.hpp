@@ -110,11 +110,9 @@ inline sample_list<file_handle_t, sample_name_t>::sample_list() {
 template <typename file_handle_t, typename sample_name_t>
 inline sample_list<file_handle_t, sample_name_t>::~sample_list() {
   // Close the existing open files
-  for(auto f : m_file_id_stats_map) {
-    if(std::get<1>(f) > 0) {
-      conduit::relay::io::hdf5_close_file(std::get<1>(f));
-    }
-    std::get<1>(f) = 0;
+  for(auto& f : m_file_id_stats_map) {
+    file_handle_t& h = std::get<1>(f);
+    close_and_clear_file_handle(h);
   }
   m_file_id_stats_map.clear();
   m_open_fd_pq.clear();
@@ -198,7 +196,7 @@ inline sample_list_header sample_list<file_handle_t, sample_name_t>
   header1 >> sample_list_type;
   std::for_each(sample_list_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
 
-  const std::string type_exclusive = conduit_hdf5_exclusion_list;
+  const std::string type_exclusive = sample_exclusion_list;
   size_t found = sample_list_type.find(type_exclusive);
 
   if (found != std::string::npos) {
@@ -223,29 +221,30 @@ inline sample_list_header sample_list<file_handle_t, sample_name_t>
 
 template <typename file_handle_t, typename sample_name_t>
 inline file_handle_t sample_list<file_handle_t, sample_name_t>
-::get_conduit_bundle_samples(std::string conduit_file_path,
-                             std::vector<std::string>& sample_names,
-                             size_t included_samples,
-                             size_t excluded_samples) {
-  file_handle_t hdf5_file_hnd = 0;
+::get_bundled_sample_names(std::string file_path,
+                           std::vector<std::string>& sample_names,
+                           size_t included_samples,
+                           size_t excluded_samples) {
+  file_handle_t file_hnd;
+  clear_file_handle(file_hnd);
   bool retry = false;
   int retry_cnt = 0;
   do {
     try {
-      hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+      file_hnd = conduit::relay::io::hdf5_open_file_for_read( file_path );
     }catch (conduit::Error const& e) {
-      LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
+      LBANN_WARNING(" :: trying to open the file " + file_path + " and got " + e.what());
       retry = true;
       retry_cnt++;
     }
   }while(retry && retry_cnt < LBANN_MAX_OPEN_FILE_RETRY);
 
-  if (hdf5_file_hnd <= static_cast<file_handle_t>(0)) {
+  if (!is_file_handle_valid(file_hnd)) {
     std::cout << "Opening the file didn't work" << std::endl;
-    return hdf5_file_hnd;
+    return file_hnd;
   }
 
-  conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
+  conduit::relay::io::hdf5_group_list_child_names(file_hnd, "/", sample_names);
 
   if(sample_names.size() != (included_samples + excluded_samples)) {
     LBANN_ERROR(std::string("File does not contain the correct number of samples: found ")
@@ -256,7 +255,7 @@ inline file_handle_t sample_list<file_handle_t, sample_name_t>
                 + std::to_string(excluded_samples));
   }
 
-  return hdf5_file_hnd;
+  return file_hnd;
 }
 
 template <typename file_handle_t, typename sample_name_t>
@@ -288,10 +287,10 @@ inline void sample_list<file_handle_t, sample_name_t>
 
     sstr >> filename >> included_samples >> excluded_samples;
 
-    const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
+    const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
+    if (filename.empty() || !check_if_file_exists(file_path)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
     }
 
     excluded_sample_indices.reserve(excluded_samples);
@@ -310,8 +309,8 @@ inline void sample_list<file_handle_t, sample_name_t>
     }
 
     std::vector<std::string> sample_names;
-    file_handle_t hdf5_file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
-    if(hdf5_file_hnd <= static_cast<file_handle_t>(0)) {
+    file_handle_t file_hnd = get_bundled_sample_names(file_path, sample_names, included_samples, excluded_samples);
+    if (!is_file_handle_valid(file_hnd)) {
       continue; // skipping the file
     }
 
@@ -330,7 +329,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 
     sample_file_id_t index = m_file_id_stats_map.size();
     m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
-    set_files_hdf5_handle(filename, hdf5_file_hnd);
+    set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
     for(auto s : sample_names) {
@@ -391,16 +390,16 @@ inline void sample_list<file_handle_t, sample_name_t>
 
     sstr >> filename >> included_samples >> excluded_samples;
 
-    const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
+    const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(conduit_file_path)) {
+    if (filename.empty() || !check_if_file_exists(file_path)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                             + " :: data file '" + filename + "' does not exist.");
     }
 
     std::vector<std::string> sample_names;
-    file_handle_t hdf5_file_hnd = get_conduit_bundle_samples(conduit_file_path, sample_names, included_samples, excluded_samples);
-    if(hdf5_file_hnd <= static_cast<file_handle_t>(0)) {
+    file_handle_t file_hnd = get_bundled_sample_names(file_path, sample_names, included_samples, excluded_samples);
+    if (!is_file_handle_valid(file_hnd)) {
       continue; // skipping the file
     }
 
@@ -421,7 +420,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 
     sample_file_id_t index = m_file_id_stats_map.size();
     m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
-    set_files_hdf5_handle(filename, hdf5_file_hnd);
+    set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
     while(!sstr.eof()) {
@@ -659,7 +658,7 @@ inline void sample_list<file_handle_t, sample_name_t>
   // The next line contains the number of samples and the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
-  sstr += (m_header.is_exclusive()? conduit_hdf5_exclusion_list + "\n" : conduit_hdf5_inclusion_list + "\n");
+  sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
   /// Include the number of invalid samples, which for an inclusive index list is always 0
   sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
@@ -765,7 +764,7 @@ inline   const std::string& sample_list<file_handle_t, sample_name_t>
 
 template <typename file_handle_t, typename sample_name_t>
 inline file_handle_t sample_list<file_handle_t, sample_name_t>
-::get_samples_hdf5_handle(sample_file_id_t id) const {
+::get_samples_file_handle(sample_file_id_t id) const {
   file_handle_t h = std::get<1>(m_file_id_stats_map[id]);
   return h;
 }
@@ -778,7 +777,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 
 template <typename file_handle_t, typename sample_name_t>
 inline void sample_list<file_handle_t, sample_name_t>
-::set_files_hdf5_handle(const std::string& filename, file_handle_t h) {
+::set_files_handle(const std::string& filename, file_handle_t h) {
   sample_file_id_t id = sample_file_id_t(0);
   for (auto&& e : m_file_id_stats_map) {
     if(std::get<0>(e) == filename) {
@@ -787,12 +786,33 @@ inline void sample_list<file_handle_t, sample_name_t>
     }
     id++;
   }
-  manage_open_hdf5_handles(id, true);
+  manage_open_file_handles(id, true);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline bool sample_list<file_handle_t, sample_name_t>
+::is_file_handle_valid(const file_handle_t& h) const {
+  return (h > static_cast<file_handle_t>(0));
 }
 
 template <typename file_handle_t, typename sample_name_t>
 inline void sample_list<file_handle_t, sample_name_t>
-::manage_open_hdf5_handles(sample_file_id_t id, bool pre_open_fd) {
+::clear_file_handle(file_handle_t& h) {
+  h = file_handle_t(0);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::close_and_clear_file_handle(file_handle_t& h) {
+  if(is_file_handle_valid(h)) {
+    conduit::relay::io::hdf5_close_file(h);
+  }
+  clear_file_handle(h);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::manage_open_file_handles(sample_file_id_t id, bool pre_open_fd) {
   /// When we enter this function the priority queue is either empty or a heap
   if(!m_open_fd_pq.empty()) {
     if(m_open_fd_pq.size() > m_max_open_files) {
@@ -836,46 +856,45 @@ inline void sample_list<file_handle_t, sample_name_t>
 
 template <typename file_handle_t, typename sample_name_t>
 inline file_handle_t sample_list<file_handle_t, sample_name_t>
-::open_samples_hdf5_handle(const size_t i, bool pre_open_fd) {
+::open_samples_file_handle(const size_t i, bool pre_open_fd) {
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
-  file_handle_t h = get_samples_hdf5_handle(id);
-  if (h <= static_cast<file_handle_t>(0)) {
+  file_handle_t h = get_samples_file_handle(id);
+  if (!is_file_handle_valid(h)) {
     const std::string& file_name = get_samples_filename(id);
-    const std::string conduit_file_path = add_delimiter(get_samples_dirname()) + file_name;
-    if (file_name.empty() || !check_if_file_exists(conduit_file_path)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' does not exist.");
+    const std::string file_path = add_delimiter(get_samples_dirname()) + file_name;
+    if (file_name.empty() || !check_if_file_exists(file_path)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
     }
     bool retry = false;
     int retry_cnt = 0;
     do {
       try {
-        h = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+        h = conduit::relay::io::hdf5_open_file_for_read( file_path );
       }catch (conduit::Error const& e) {
-        LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
+        LBANN_WARNING(" :: trying to open the file " + file_path + " and got " + e.what());
         retry = true;
         retry_cnt++;
       }
     }while(retry && retry_cnt < 3);
 
-    // TODO: general method to check is needed
-    if (h <= static_cast<file_handle_t>(0)) {
-      LBANN_ERROR(std::string{} + " :: data file '" + conduit_file_path + "' could not be opened.");
+    if (!is_file_handle_valid(h)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' could not be opened.");
     }
     auto& e = m_file_id_stats_map[id];
     std::get<1>(e) = h;
   }
-  manage_open_hdf5_handles(id, pre_open_fd);
+  manage_open_file_handles(id, pre_open_fd);
   return h;
 }
 
 template <typename file_handle_t, typename sample_name_t>
 inline void sample_list<file_handle_t, sample_name_t>
-::close_if_done_samples_hdf5_handle(const size_t i) {
+::close_if_done_samples_file_handle(const size_t i) {
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
-  file_handle_t h = get_samples_hdf5_handle(id);
-  if (h > static_cast<file_handle_t>(0)) {
+  file_handle_t h = get_samples_file_handle(id);
+  if (!is_file_handle_valid(h)) {
     auto& e = m_file_id_stats_map[id];
     auto& file_access_queue = std::get<2>(e);
     if(file_access_queue.empty()) {

@@ -315,7 +315,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const std::string path = sample_name + key;
 
   sample_file_id_t id = s.first;
-  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  hid_t h = m_sample_list.get_samples_file_handle(id);
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
     LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
@@ -333,7 +333,7 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
   sample_file_id_t id = s.first;
   const std::string& file_name = m_sample_list.get_samples_filename(id);
   const std::string& sample_name = s.second;
-  const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  const hid_t h = m_sample_list.get_samples_file_handle(id);
 
   const std::string path = sample_name + key;
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
@@ -762,7 +762,7 @@ void data_reader_jag_conduit::load() {
 
     /// Open the first sample to make sure that all of the fields are correct
     size_t data_id = (m_sample_list[0]).first;
-    m_sample_list.open_samples_hdf5_handle(data_id, true);
+    m_sample_list.open_samples_file_handle(data_id, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -776,7 +776,7 @@ void data_reader_jag_conduit::load() {
 
     check_image_data();
 
-    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
+    m_sample_list.close_if_done_samples_file_handle(data_id);
   }
 
   /// Merge all of the sample lists
@@ -1391,7 +1391,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }else {
-    m_sample_list.open_samples_hdf5_handle(data_id);
+    m_sample_list.open_samples_file_handle(data_id);
   }
 
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
@@ -1404,7 +1404,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_jag_store->set_conduit_node(data_id, node);
   }
 
-  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
+  m_sample_list.close_if_done_samples_file_handle(data_id);
   return ok;
 }
 

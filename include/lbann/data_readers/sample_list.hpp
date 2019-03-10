@@ -19,7 +19,6 @@
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/utility.hpp>
-#include "conduit/conduit_relay_io_hdf5.hpp"
 
 /// Number of system and other files that may be open during execution
 #define LBANN_MAX_OPEN_FILE_MARGIN 128
@@ -49,8 +48,8 @@ struct sample_list_header {
   }
 };
 
-static const std::string conduit_hdf5_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
-static const std::string conduit_hdf5_inclusion_list = "CONDUIT_HDF5_INCLUSION";
+static const std::string sample_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
+static const std::string sample_inclusion_list = "CONDUIT_HDF5_INCLUSION";
 
 template <typename file_handle_t, typename sample_name_t>
 class sample_list {
@@ -74,7 +73,7 @@ class sample_list {
   using fd_use_map_t = std::template pair<sample_file_id_t, std::pair<int,int>>;
 
   sample_list();
-  ~sample_list();
+  virtual ~sample_list();
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
@@ -118,23 +117,23 @@ class sample_list {
 
   const std::string& get_samples_dirname() const;
 
-  file_handle_t get_samples_hdf5_handle(sample_file_id_t id) const;
+  file_handle_t get_samples_file_handle(sample_file_id_t id) const;
 
   void set_samples_filename(sample_file_id_t id, const std::string& filename);
 
-  void set_files_hdf5_handle(const std::string& filename, file_handle_t h);
+  void set_files_handle(const std::string& filename, file_handle_t h);
 
-  void manage_open_hdf5_handles(sample_file_id_t id, bool pre_open_fd = false);
+  virtual void manage_open_file_handles(sample_file_id_t id, bool pre_open_fd = false);
 
-  file_handle_t open_samples_hdf5_handle(const size_t i, bool pre_open_fd = false);
+  virtual file_handle_t open_samples_file_handle(const size_t i, bool pre_open_fd = false);
 
-  void close_if_done_samples_hdf5_handle(const size_t i);
+  virtual void close_if_done_samples_file_handle(const size_t i);
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
-  void all_gather_packed_lists(lbann_comm& comm);
+  virtual void all_gather_packed_lists(lbann_comm& comm);
 
-  void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
+  virtual void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 
  protected:
 
@@ -144,8 +143,8 @@ class sample_list {
   /// Reads the header of a sample list
   sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
 
-  /// Get the list of samples that exist in a conduit bundle
-  file_handle_t get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
+  /// Get the list of samples that exist in a bundle file
+  virtual file_handle_t get_bundled_sample_names(std::string file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
@@ -163,6 +162,10 @@ class sample_list {
     return ((left.second).first < (right.second).first) ||
            (((left.second).first == (right.second).first) &&
             ((left.second).second < (right.second).second)); }
+
+  virtual bool is_file_handle_valid(const file_handle_t& h) const;
+  virtual void clear_file_handle(file_handle_t& h);
+  virtual void close_and_clear_file_handle(file_handle_t& h);
 
  private:
   /// header info of sample list
