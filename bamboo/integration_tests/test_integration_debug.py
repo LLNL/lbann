@@ -9,9 +9,13 @@ def skeleton_mnist_debug(cluster, dir_name, executables, compiler_name, weekly,
                          debug, should_log=False):
     # If weekly or debug are true, then run the test.
     if (not weekly) and (not debug):
-        pytest.skip('Not doing weekly or debug testing')
+        e = 'skeleton_mnist_debug: Not doing weekly or debug testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
     if compiler_name not in executables:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+        e = 'skeleton_mnist_debug: default_exes[%s] does not exist' % compiler_name
+        print('Skip - ' + e)
+        pytest.skip(e)
     model_name = 'lenet_mnist'
     output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
     error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name)
@@ -30,11 +34,17 @@ def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
                          debug, should_log=False):
     # If weekly or debug are true, then run the test.
     if (not weekly) and (not debug):
-        pytest.skip('Not doing weekly or debug testing')
+        e = 'skeleton_cifar_debug: Not doing weekly or debug testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
     if cluster == 'ray':
-        pytest.skip('cifar not operational on Ray')
+        e = 'skeleton_cifar_debug: cifar not operational on Ray'
+        print('Skip - ' + e)
+        pytest.skip(e)
     if compiler_name not in executables:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+        e = 'skeleton_cifar_debug: default_exes[%s] does not exist' % compiler_name
+        print('Skip - ' + e)
+        pytest.skip(e)
     model_name = 'autoencoder_cifar10'
     output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
     error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name)
@@ -85,14 +95,18 @@ def test_integration_cifar_intel18_debug(cluster, dirname, exes, weekly, debug):
 # Run with python -m pytest -s test_integration_debug.py -k 'test_integration_mnist_exe' --exe=<executable>
 def test_integration_mnist_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
-    exes = {'exe' : exe}
+        e = 'test_integration_mnist_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
+    exes = {'exe': exe}
     skeleton_mnist_debug(cluster, dirname, exes, 'exe', True, True)
 
 
 # Run with python -m pytest -s test_integration_debug.py -k 'test_integration_cifar_exe' --exe=<executable>
 def test_integration_cifar_exe(cluster, dirname, exe):
     if exe == None:
-        pytest.skip('Non-local testing')
-    exes = {'exe' : exe}
+        e = 'test_integration_cifar_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
+    exes = {'exe': exe}
     skeleton_cifar_debug(cluster, dirname, exes, 'exe', True, True)

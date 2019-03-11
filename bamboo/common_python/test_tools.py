@@ -34,7 +34,7 @@ def test_command_ray():
 def test_blacklisted_substrings():
     try:
         tools.get_command('ray', 'exe', partition=';', optimizer_path='--model=new_model', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid character(s): ; contains ; , --model=new_model contains --'
         assert actual == expected
@@ -42,7 +42,7 @@ def test_blacklisted_substrings():
 def test_unsupported_cluster():
     try:
         tools.get_command('quartz', 'exe', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Unsupported Cluster: quartz'
         assert actual == expected
@@ -50,7 +50,7 @@ def test_unsupported_cluster():
 def test_bad_model_1():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', model_folder='folder', model_name='name', model_path='path', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: model_path is set but so is at least one of model folder and model_name'
         assert actual == expected
@@ -58,7 +58,7 @@ def test_bad_model_1():
 def test_bad_model_2():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', model_folder='folder', model_path='path', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: model_path is set but so is at least one of model folder and model_name'
         assert actual == expected
@@ -66,7 +66,7 @@ def test_bad_model_2():
 def test_bad_model_3():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', model_name='name',  model_path='path', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: model_path is set but so is at least one of model folder and model_name'
         assert actual == expected
@@ -74,7 +74,7 @@ def test_bad_model_3():
 def test_bad_model_4():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', model_folder='folder', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: model_folder set but not model_name.'
         assert actual == expected
@@ -82,7 +82,7 @@ def test_bad_model_4():
 def test_bad_model_5():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', model_name='name', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: model_name set but not model_folder.'
         assert actual == expected
@@ -90,7 +90,7 @@ def test_bad_model_5():
 def test_bad_data_reader():
     try:
         tools.get_command('catalyst', 'exe', dir_name='dir', data_reader_name='name', data_reader_path='path', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_reader_path is set but so is data_reader_name , data_reader_name or data_reader_path is set but not data_filedir_default. If a data reader is provided, the default filedir must be set. This allows for determining what the filedir should be on each cluster. Alternatively, some or all of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] can be set.'
         assert actual == expected
@@ -98,7 +98,7 @@ def test_bad_data_reader():
 def test_bad_optimizer():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', optimizer_name='name', optimizer_path='path', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: optimizer_path is set but so is optimizer_name'
         assert actual == expected
@@ -106,7 +106,7 @@ def test_bad_optimizer():
 def test_bad_dir_name_1():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
 	actual = str(e)
 	expected = 'Invalid Usage: dir_name set but none of model_folder, model_name, data_reader_name, optimizer_name are.'
         assert actual == expected
@@ -114,7 +114,7 @@ def test_bad_dir_name_1():
 def test_bad_dir_name_2():
     try:
         tools.get_command('ray', 'exe', model_folder='folder', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: dir_name is not set but at least one of model_folder, model_name, data_reader_name, optimizer_name is.'
         assert actual == expected
@@ -122,7 +122,7 @@ def test_bad_dir_name_2():
 def test_bad_dir_name_3():
     try:
         tools.get_command('ray', 'exe', model_name='name', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
 	actual = str(e)
 	expected = 'Invalid Usage: dir_name is not set but at least one of model_folder, model_name, data_reader_name, optimizer_name is.'
         assert actual == expected
@@ -130,7 +130,7 @@ def test_bad_dir_name_3():
 def test_bad_dir_name_4():
     try:
         tools.get_command('catalyst', 'exe', data_reader_name='name', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: dir_name is not set but at least one of model_folder, model_name, data_reader_name, optimizer_name is. , data_reader_name or data_reader_path is set but not data_filedir_default. If a data reader is provided, the default filedir must be set. This allows for determining what the filedir should be on each cluster. Alternatively, some or all of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] can be set.'
         assert actual == expected
@@ -138,7 +138,7 @@ def test_bad_dir_name_4():
 def test_bad_dir_name_5():
     try:
         tools.get_command('ray', 'exe', optimizer_name='name', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
 	actual = str(e)
 	expected = 'Invalid Usage: dir_name is not set but at least one of model_folder, model_name, data_reader_name, optimizer_name is.'
         assert actual == expected
@@ -147,7 +147,7 @@ def test_bad_data_filedir_1():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', data_reader_name='name', data_filedir_default='filedir', data_filedir_train_default='a',
                           check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -156,7 +156,7 @@ def test_bad_data_filedir_2():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', data_reader_name='name', data_filedir_default='filedir', data_filename_train_default='b',
                           check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -166,7 +166,7 @@ def test_bad_data_filedir_3():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', data_reader_name='name', data_filedir_default='filedir', data_filedir_test_default='c',
                           check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -175,7 +175,7 @@ def test_bad_data_filedir_4():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', data_reader_name='name', data_filedir_default='filedir', data_filename_test_default='d',
                           check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -183,7 +183,7 @@ def test_bad_data_filedir_4():
 def test_bad_data_filedir_5():
     try:
         tools.get_command('ray', 'exe', data_reader_path='path', data_filedir_default='filedir', data_filedir_train_default='e', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -191,7 +191,7 @@ def test_bad_data_filedir_5():
 def test_bad_data_filedir_6():
     try:
         tools.get_command('ray', 'exe', data_reader_path='path', data_filedir_default='filedir', data_filename_train_default='f', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -200,7 +200,7 @@ def test_bad_data_filedir_6():
 def test_bad_data_filedir_7():
     try:
         tools.get_command('ray', 'exe', data_reader_path='path', data_filedir_default='filedir', data_filedir_test_default='g', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -208,7 +208,7 @@ def test_bad_data_filedir_7():
 def test_bad_data_filedir_8():
     try:
         tools.get_command('ray', 'exe', data_reader_path='path', data_filedir_default='filedir', data_filename_test_default='h', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_fildir_default set but so is at least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default]'
         assert actual == expected
@@ -216,7 +216,7 @@ def test_bad_data_filedir_8():
 def test_bad_data_filedir_9():
     try:
         tools.get_command('ray', 'exe', dir_name='dir', data_reader_name='name', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_reader_name or data_reader_path is set but not data_filedir_default. If a data reader is provided, the default filedir must be set. This allows for determining what the filedir should be on each cluster. Alternatively, some or all of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] can be set.'
         assert actual == expected
@@ -224,7 +224,7 @@ def test_bad_data_filedir_9():
 def test_bad_data_filedir_10():
     try:
         tools.get_command('ray', 'exe', data_reader_path='path', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_reader_name or data_reader_path is set but not data_filedir_default. If a data reader is provided, the default filedir must be set. This allows for determining what the filedir should be on each cluster. Alternatively, some or all of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] can be set.'
         assert actual == expected
@@ -232,7 +232,7 @@ def test_bad_data_filedir_10():
 def test_bad_data_filedir_11():
     try:
         tools.get_command('ray', 'exe', data_filedir_default='filedir', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: data_filedir_default set but neither data_reader_name or data_reader_path are.'
 	assert actual == expected
@@ -240,7 +240,7 @@ def test_bad_data_filedir_11():
 def test_bad_data_filedir_12():
     try:
         tools.get_command('ray', 'exe', data_filedir_train_default='a', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: At least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] is set, but neither data_reader_name or data_reader_path are.'
         assert actual == expected
@@ -249,7 +249,7 @@ def test_bad_data_filedir_12():
 def test_bad_data_filedir_13():
     try:
         tools.get_command('ray', 'exe', data_filename_train_default='b', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: At least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] is set, but neither data_reader_name or data_reader_path are.'
         assert actual == expected
@@ -258,7 +258,7 @@ def test_bad_data_filedir_13():
 def test_bad_data_filedir_14():
     try:
         tools.get_command('ray', 'exe', data_filedir_test_default='c', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: At least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] is set, but neither data_reader_name or data_reader_path are.'
         assert actual == expected
@@ -267,7 +267,7 @@ def test_bad_data_filedir_14():
 def test_bad_data_filedir_15():
     try:
         tools.get_command('ray', 'exe', data_filename_test_default='e', check_executable_existence=False)
-    except Exception, e:
+    except Exception as e:
         actual = str(e)
         expected = 'Invalid Usage: At least one of [data_filedir_train_default, data_filename_train_default, data_filedir_test_default, data_filename_test_default] is set, but neither data_reader_name or data_reader_path are.'
         assert actual == expected
