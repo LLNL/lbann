@@ -68,7 +68,7 @@ class GroupLasso(lm.Module):
         self.width = width
     def forward(self, _):
         w = lp.WeightsLayer(weights=self.weights, dims='%d %d'.format(self.width, self.height))
-        slice = lp.Slice(w, slice_axis=0, slice_points=' '.join(range(self.width+1)))
+        slice = lp.Slice(w, axis=0, slice_points=' '.join(range(self.width+1)))
         cols = []
         for _ in range(self.width):
             cols.append(lp.Sqrt(lp.L2Norm2(slice)))

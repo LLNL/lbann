@@ -38,8 +38,6 @@ except ImportError:
     else:
         raise  # Give up.
 
-from lbann.viz import getGraphFromModel
-
 def _add_to_module_namespace(stuff):
     """Add stuff to the module namespace.
 
@@ -295,10 +293,10 @@ def traverse_layer_graph(layers):
         l = stack.pop()
         if l not in visited:
             visited.add(l)
+            stack.extend(l.parents)
+            stack.extend(l.children)
             if not l.parents:
                 roots.append(l)
-            else:
-                stack.extend(l.parents)
 
     # DFS to traverse layer graph in topological order
     visited = set()
@@ -502,18 +500,38 @@ _generate_classes_from_message(Callback, lbann_pb2.Callback)
 # ==============================================
 
 class Model:
-    """Base class for models."""
+    """Neural network model."""
 
     def __init__(self, mini_batch_size, epochs,
-                 layers, weights=[], objective_function=None,
+                 layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[]):
+
+        # Scalar fields
         self.mini_batch_size = mini_batch_size
         self.epochs = epochs
-        self.layers = layers
-        self.weights = weights
-        self.objective_function = objective_function
-        self.metrics = metrics
-        self.callbacks = callbacks
+        self.block_size = 256           # TODO: Make configurable
+        self.num_parallel_readers = 0   # TODO: Make configurable
+        self.procs_per_trainer = 0      # TODO: Make configurable
+
+        # Get connected layers
+        self.layers = list(traverse_layer_graph(layers))
+
+        # Get weights associated with layers
+        self.weights = set(_make_iterable(weights))
+        for l in self.layers:
+            self.weights.update(l.weights)
+
+        # Construct objective function if needed
+        if isinstance(objective_function, ObjectiveFunction):
+            self.objective_function = objective_function
+        elif objective_function is None:
+            self.objective_function = ObjectiveFunction()
+        else:
+            self.objective_function = ObjectiveFunction(objective_function)
+
+        # Metrics and callbacks
+        self.metrics = _make_iterable(metrics)
+        self.callbacks = _make_iterable(callbacks)
 
     def export_proto(self):
         """Construct and return a protobuf message."""
@@ -521,52 +539,26 @@ class Model:
         model = lbann_pb2.Model()
         model.mini_batch_size = self.mini_batch_size
         model.num_epochs = self.epochs
-        model.block_size = 256           # TODO: Make configurable.
-        model.num_parallel_readers = 0   # TODO: Make configurable
-        model.procs_per_trainer = 0      # TODO: Make configurable
+        model.block_size = self.block_size
+        model.num_parallel_readers = self.num_parallel_readers
+        model.procs_per_trainer = self.procs_per_trainer
 
-        # Add layers
-        layers = list(traverse_layer_graph(self.layers))
-        model.layer.extend([l.export_proto() for l in layers])
-
-        # Add weights
-        weights = set(self.weights)
-        for l in layers:
-            weights.update(l.weights)
-        model.weights.extend([w.export_proto() for w in weights])
-
-        # Add objective function
-        objective_function = self.objective_function \
-            if self.objective_function else ObjectiveFunction()
-        model.objective_function.CopyFrom(objective_function.export_proto())
-
-        # Add metrics and callbacks
+        # Add model components
+        model.layer.extend([l.export_proto() for l in self.layers])
+        model.weights.extend([w.export_proto() for w in self.weights])
+        model.objective_function.CopyFrom(self.objective_function.export_proto())
         model.metric.extend([m.export_proto() for m in self.metrics])
         model.callback.extend([c.export_proto() for c in self.callbacks])
 
         return model
 
-    def render(self, filename, format="pdf", **kwargs):
-        """
-        Save a vizualized graph of the network to `filename`.`format`.
-        This function passes `kwargs` to `lbann.viz.getGraphFromModel`.
-        """
-        g = getGraphFromModel(self, format=format,
-                              **kwargs)
-        g.render(filename)
+    def save_proto(self, filename):
+        """Export model to prototext file."""
+        save_prototext(filename, model=self.export_proto())
 
 # ==============================================
 # Export models
 # ==============================================
-
-def save_model(filename, *args, **kwargs):
-    """Create a model and save to a file.
-    This function delegates all the arguments to `lp.Model` except
-    for `filename`.
-    """
-
-    save_prototext(filename,
-                   model=Model(*args, **kwargs).export_proto())
 
 def save_prototext(filename, **kwargs):
     """Save a prototext.

@@ -139,7 +139,7 @@ model {
     children: "branch3_conv1 branch3_conv2"
     data_layout: "data_parallel"
     slice {
-      slice_axis: 1
+      axis: 1
       slice_points: "0 4 6"
     }
   }
@@ -184,7 +184,7 @@ model {
     name: "branch3_concat"
     data_layout: "data_parallel"
     concatenation {
-      concatenation_axis: 1
+      axis: 1
     }
   }
 

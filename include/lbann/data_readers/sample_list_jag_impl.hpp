@@ -19,6 +19,7 @@
 
 #include <cereal/archives/binary.hpp>
 #include <sstream>
+#include <unistd.h>
 
 namespace lbann {
 
@@ -46,7 +47,9 @@ inline const std::string& sample_list_header::get_file_dir() const {
   return m_file_dir;
 }
 
-inline sample_list_jag::sample_list_jag() {}
+inline sample_list_jag::sample_list_jag() {
+  m_max_open_files = getdtablesize() - LBANN_MAX_OPEN_FILE_MARGIN;
+}
 
 inline sample_list_jag::~sample_list_jag() {
   // Close the existing open files
@@ -124,10 +127,8 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
   size_t found = sample_list_type.find(type_exclusive);
 
   if (found != std::string::npos) {
-    std::cout << "Exclusive (" + sample_list_type + ") sample list" << std::endl;
     hdr.m_is_exclusive = true;
   } else {
-    std::cout << "Inclusive (" + sample_list_type + ") sample list" << std::endl;
     hdr.m_is_exclusive = false;
   }
 
@@ -146,7 +147,18 @@ inline sample_list_header sample_list_jag::read_header(std::istream& istrm, cons
 }
 
 inline hid_t sample_list_jag::get_conduit_bundle_samples(std::string conduit_file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples) {
-  hid_t hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+  hid_t hdf5_file_hnd = 0;
+  bool retry = false;
+  int retry_cnt = 0;
+  do {
+    try {
+      hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( conduit_file_path );
+    }catch (conduit::Error const& e) {
+      LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
+      retry = true;
+      retry_cnt++;
+    }
+  }while(retry && retry_cnt < LBANN_MAX_OPEN_FILE_RETRY);
 
   if (hdf5_file_hnd <= static_cast<hid_t>(0)) {
     std::cout << "Opening the file didn't work" << std::endl;
@@ -451,8 +463,10 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
 
   // Close the existing open files
   for(auto&& e : m_file_id_stats_map) {
-    conduit::relay::io::hdf5_close_file(std::get<1>(e));
-    std::get<1>(e) = 0;
+    if(std::get<1>(e) > 0) {
+      conduit::relay::io::hdf5_close_file(std::get<1>(e));
+      std::get<1>(e) = 0;
+    }
     std::get<2>(e).clear();
   }
   m_open_fd_pq.clear();
@@ -500,7 +514,10 @@ inline void sample_list_jag::all_gather_packed_lists(lbann_comm& comm) {
 
 inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& shuffled_indices, int mini_batch_size, const lbann_comm& comm) {
   for (auto&& e : m_file_id_stats_map) {
-    std::get<1>(e) = 0;
+    if(std::get<1>(e) > 0) {
+      conduit::relay::io::hdf5_close_file(std::get<1>(e));
+      std::get<1>(e) = 0;
+    }
     std::get<2>(e).clear();
   }
 

@@ -445,6 +445,7 @@ message CallbackSaveImages {
 
 message CallbackPrint {
   int64 interval = 1; //default in lbann_callback_print.hpp is 1
+  bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
 }
 
 message CallbackProfiler {
@@ -1068,12 +1069,12 @@ message Unpooling {
 
 
 message Concatenation {
-  int64 concatenation_axis = 2;
+  int64 axis = 1;
 }
 
 message Slice {
-  int64 slice_axis = 2;
-  string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+  int64 axis = 1;
+  string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
   //the following is for jag_conduit_hdf5;
   string get_slice_points_from_reader = 4;
   bool get_slice_points_from_reader_bool = 5;
