@@ -111,7 +111,10 @@ public:
   object(object&& other);
   object& operator=(object&& other);
   ~object();
-  operator PyObject*() { return m_ptr; }
+  inline PyObject* get()                  { return m_ptr; }
+  inline const PyObject* get() const      { return m_ptr; }
+  inline operator PyObject*()             { return get(); }
+  inline operator const PyObject*() const { return get(); }
 private:
   PyObject* m_ptr;
 };
@@ -120,7 +123,7 @@ private:
 
 class python_reader : public generic_data_reader {
 public:
-  python_reader(std::string module,
+  python_reader(std::string script,
                 std::string sample_function,
                 std::string num_samples_function,
                 std::string sample_dims_function);

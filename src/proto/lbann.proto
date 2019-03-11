@@ -76,7 +76,7 @@ message Reader {
 }
 
 message PythonDataReader {
-  string module = 1;                // Python module (can be a file path)
+  string script = 1;                // Python script
   string sample_function = 2;       // Name of function that gets data sample
   string num_samples_function = 3;  // Name of function that gets number of data samples
   string sample_dims_function = 4;  // Name of function that gets dimensions of data sample

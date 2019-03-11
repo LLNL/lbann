@@ -28,7 +28,6 @@
 #include "lbann/data_readers/data_reader_python.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
-#include "lbann/utils/file_utils.hpp"
 
 namespace lbann {
 
@@ -75,14 +74,20 @@ void manager::check_error(bool force_error) const {
     std::ostringstream err;
     err << "detected Python error";
     if (value != nullptr) {
-      err << " (" << PyUnicode_AsUTF8(value) << ")";
+      const char* msg = PyUnicode_AsUTF8(value);
+      if (msg != nullptr) {
+        err << " (" << msg << ")";
+      }
     }
     if (traceback != nullptr) {
       auto tb_module = PyImport_ImportModule("traceback");
       auto tb_message = PyObject_CallMethod(tb_module,
                                             "format_exc",
                                             nullptr);
-      err << "\n\n" << PyUnicode_AsUTF8(tb_message) << "\n";
+      const char* tb_str = PyUnicode_AsUTF8(tb_message);
+      if (tb_str != nullptr) {
+        err << "\n\n" << tb_str;
+      }
       Py_XDECREF(tb_module);
       Py_XDECREF(tb_message);
     }
@@ -139,35 +144,40 @@ object::~object() {
 
 } // namespace python
 
-python_reader::python_reader(std::string module,
+python_reader::python_reader(std::string script,
                              std::string sample_function,
                              std::string num_samples_function,
                              std::string sample_dims_function)
   : generic_data_reader(true) {
+  int status;
 
-  // Import Python module
+  // Execute Python script
   auto& manager = python::manager::get_instance();
   const auto lock = manager.get_mutex_guard();
-  const auto& module_dir = file::extract_parent_directory(module);
-  if (!module_dir.empty()) {
-    python::object path = PySys_GetObject("path");
-    auto status = PyList_Append(path, python::object(module_dir));
+  auto&& f = std::fopen(script.c_str(), "r");
+  if (f == nullptr) {
+    LBANN_ERROR("failed to open file (" + script + ")");
+  }
+  status = PyRun_SimpleFile(f, script.c_str());
+  if (status) {
     manager.check_error(status);
   }
-  auto module_name = file::extract_base_name(module);
-  module_name.erase(module_name.rfind(".py"));
-  python::object _module = PyImport_ImportModule(module_name.c_str());
+  status = std::fclose(f);
+  if (status) {
+    LBANN_ERROR("failed to close file (" + script + ")");
+  }
+  python::object module = PyImport_ImportModule("__main__");
 
   // Get number of samples
   python::object num_func
-    = PyObject_GetAttrString(_module, num_samples_function.c_str());
+    = PyObject_GetAttrString(module, num_samples_function.c_str());
   python::object num = PyObject_CallObject(num_func, nullptr);
   m_num_samples = PyLong_AsLong(num);
   manager.check_error();
 
   // Get sample dimensions
   python::object dims_func
-    = PyObject_GetAttrString(_module, sample_dims_function.c_str());
+    = PyObject_GetAttrString(module, sample_dims_function.c_str());
   python::object dims = PyObject_CallObject(dims_func, nullptr);
   dims = PyObject_GetIter(dims);
   for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
@@ -178,7 +188,7 @@ python_reader::python_reader(std::string module,
 
   // Get sample function
   m_sample_function
-    = PyObject_GetAttrString(_module, sample_function.c_str());
+    = PyObject_GetAttrString(module, sample_function.c_str());
 
 }
 
@@ -208,10 +218,8 @@ bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
   const auto lock = manager.get_mutex_guard();
 
   // Get sample with Python
-  python::object id = PyTuple_New(1);
-  auto status = PyTuple_SetItem(id, 0, PyLong_FromLong(data_id));
-  manager.check_error(status);
-  python::object sample = PyObject_CallObject(m_sample_function, id);
+  python::object args = Py_BuildValue("(i)", data_id);
+  python::object sample = PyObject_CallObject(m_sample_function, args);
   sample = PyObject_GetIter(sample);
 
   // Extract sample entries from Python iterator
