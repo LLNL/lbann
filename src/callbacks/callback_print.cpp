@@ -212,13 +212,13 @@ void lbann_callback_print::report_results(model *m) {
                                                         num_samples_list.end(),
                                                         0));
           const EvalType max_score = *std::max_element(score_list.begin(), score_list.end());
-          std::cout << m->get_name() << " (global min) "  << mode_string << " "
-                    << met->name() << " : "
-                    << min_score << met->get_unit()
-                    << std::endl;
           std::cout << m->get_name() << " (global average) "  << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()
+                    << std::endl;
+          std::cout << m->get_name() << " (global min) "  << mode_string << " "
+                    << met->name() << " : "
+                    << min_score << met->get_unit()
                     << std::endl;
           std::cout << m->get_name() << " (global max) "  << mode_string << " "
                     << met->name() << " : "
