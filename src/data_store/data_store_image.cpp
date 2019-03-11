@@ -639,7 +639,7 @@ void data_store_image::fetch_data() {
     const std::unordered_set<int> &s = t.second;
     for (auto idx : s) {
       //note: for imagenet_reader, m_num_img_srcs = 1;
-      //      for other readers (multi, triplet) it is larger, probably three
+      //      for other readers (multi, siamese) it is larger, probably three
       for (size_t k=0; k<m_num_img_srcs; k++) {
         size_t index = idx*m_num_img_srcs+k;
         if (m_file_sizes.find(index) == m_file_sizes.end()) {
