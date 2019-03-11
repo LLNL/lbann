@@ -436,6 +436,7 @@ message CallbackSaveImages {
 
 message CallbackPrint {
   int64 interval = 1; //default in lbann_callback_print.hpp is 1
+  bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
 }
 
 message CallbackProfiler {
