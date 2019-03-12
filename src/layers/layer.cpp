@@ -1546,23 +1546,6 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
   }
 }
 
-void Layer::setup_tensor_distribution_block() {
-  m_input_decomposition_block = ArrayND(1);
-  m_output_decomposition_block = ArrayND(1);
-  // Disable as we don't need to enforce divisible boundaries
-#if 0
-  if (distconv_enabled()) {
-    const auto *child = get_child_layers()[0];
-    if (child->distconv_enabled()) {
-      m_output_decomposition_block =
-          child->get_input_decomposition_block();
-    }
-    m_input_decomposition_block =
-        m_output_decomposition_block * get_strides();
-  }
-#endif
-}
-
 namespace {
 Dist get_hydrogen_matrix_distribution() {
   using ::distconv::index_t;
@@ -1601,31 +1584,27 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists
   usage += get_input_size() * max_mb / dists[2].get_split_shape().size();
   return usage * sizeof(DataType);
 }
+
 void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> &dists) {
   // REVIEW: distconv-3d
-  const ArrayND input_tensor_shape = get_input_tensor_shape();
+  const auto input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const ArrayND sample_block_size = get_sample_block_size();
+  const auto sample_block_size = get_sample_block_size();
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  ArrayND input_local_shape = input_tensor_shape;
-  // Assuming single GPU per rank
-  //input_local_shape[-1] = m_max_mini_batch_size_per_gpu;
-  // m_max_mini_batch_size_per_gpu is the maximum among all GPUs, so
-  // it's larger than the actual maximum size for some ranks when the
-  // mini batch size is not divisible.
+  auto input_local_shape = input_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   input_local_shape[-1] = 0;
-  const ArrayND spatial_local_size(std::vector<int>(dc::num_dims, 0));
+
   if (m_parent_copy_in_required || m_parent_shuffle_required) {
     if (m_parent_copy_in_required) {
       m_prev_activations_const_view = TensorDev(input_tensor_shape, loc,
                                                 sample_dist,
-                                                input_local_shape,
-                                                sample_block_size);
+                                                input_local_shape);
     } else {
       m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t();
     }
-    m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0],
-                                     spatial_local_size, m_input_decomposition_block);
+    m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
     assert0(m_prev_activations_t.allocate());
     m_prev_activations_t.zero();
     m_prev_activations_shuffler = get_tensor_shuffler(
@@ -1636,15 +1615,13 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
   } else {
     m_prev_activations_t = get_parent_layers()[0]->get_activations_t();
     assert_always(m_prev_activations_t.get_distribution() == dists[0]);
-    assert_always(m_prev_activations_t.get_requested_local_block()
-                  == m_input_decomposition_block);
   }
 
   MPIPrintStreamDebug() << get_name() << "; "
                         << "prev activations: " << m_prev_activations_t;
 }
 
-ArrayND Layer::get_activations_tensor_local_shape() const {
+Shape Layer::get_activations_tensor_local_shape() const {
   return m_prev_activations_t.get_local_shape();
 }
 
@@ -1652,12 +1629,11 @@ void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dist
                                      bool allocate) {
   // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const ArrayND output_tensor_shape = get_output_tensor_shape();
-  const ArrayND activations_local_shape =
+  const Shape output_tensor_shape = get_output_tensor_shape();
+  const auto activations_local_shape =
       get_activations_tensor_local_shape();
   m_activations_t = TensorDev(output_tensor_shape,
-                              loc, dists[1], activations_local_shape,
-                              m_output_decomposition_block);
+                              loc, dists[1], activations_local_shape);
   if (allocate) {
     assert0(m_activations_t.allocate());
     m_activations_t.zero();
@@ -1667,14 +1643,14 @@ void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dist
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const ArrayND sample_block_size = get_sample_block_size();
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  const ArrayND output_tensor_shape = get_output_tensor_shape();
-  ArrayND output_local_shape = output_tensor_shape;
-  //output_local_shape[-1] = m_max_mini_batch_size_per_gpu;
+  const Shape output_tensor_shape = get_output_tensor_shape();
+  auto output_local_shape = output_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   output_local_shape[-1] = 0;
   m_activations_copyout = TensorDev(output_tensor_shape, loc, sample_dist,
-                                    output_local_shape, sample_block_size);
+                                    output_local_shape);
   if (m_child_copy_out_required) {
     m_activations_shuffler = get_tensor_shuffler(
         m_activations_t, m_activations_copyout);
@@ -1694,27 +1670,25 @@ void Layer::setup_distconv_post(size_t) {}
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
   // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const ArrayND sample_block_size = get_sample_block_size();
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  const ArrayND output_tensor_shape = get_output_tensor_shape();
-  ArrayND output_local_shape = output_tensor_shape;
-  //output_local_shape[-1] = m_max_mini_batch_size_per_gpu;
+  const Shape output_tensor_shape = get_output_tensor_shape();
+  auto output_local_shape = output_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   output_local_shape[-1] = 0;
 
   if (m_child_copy_out_required || m_child_shuffle_required) {
     if (m_child_copy_out_required) {
       m_prev_error_signals_const_view = TensorDev(output_tensor_shape, loc,
                                                   sample_dist,
-                                                  output_local_shape,
-                                                  sample_block_size);
+                                                  output_local_shape);
     } else {
       m_prev_error_signals_const_view =
           get_child_layers()[0]->get_error_signals_t();
     }
     m_prev_error_signals_t = TensorDev(output_tensor_shape, loc,
                                        dists[3],
-                                       m_activations_t.get_local_shape(),
-                                       m_output_decomposition_block);
+                                       m_activations_t.get_local_shape());
     assert0(m_prev_error_signals_t.allocate());
     m_prev_error_signals_t.zero();
     m_prev_error_signals_shuffler = get_tensor_shuffler(
@@ -1726,8 +1700,6 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
     m_prev_error_signals_t = get_child_layers()[0]->get_error_signals_t();
     assert_always(m_prev_error_signals_t.get_distribution() ==
                   dists[3]);
-    assert_always(m_prev_error_signals_t.get_requested_local_block() ==
-                  m_output_decomposition_block);
   }
   MPIPrintStreamDebug() << get_name() << "; "
                         << "prev error signals: " << m_prev_error_signals_t;
@@ -1735,12 +1707,11 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
 
 // REVIEW: distconv-3d
 void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
-  const ArrayND input_tensor_shape = get_input_tensor_shape();
+  const Shape input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
                                 dists[2],
-                                m_prev_activations_t.get_local_shape(),
-                                m_input_decomposition_block);
+                                m_prev_activations_t.get_local_shape());
   assert0(m_error_signals_t.allocate());
   m_error_signals_t.zero();
   MPIPrintStreamDebug() << get_name() << "; "
@@ -1749,17 +1720,16 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
 
 // REVIEW: distconv-3d
 void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
-  const ArrayND input_tensor_shape = get_input_tensor_shape();
+  const Shape input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
-  ArrayND input_local_shape = input_tensor_shape;
-  // Assuming single GPU per rank
-  //input_local_shape[-1] = m_max_mini_batch_size_per_gpu;
+  auto input_local_shape = input_tensor_shape;
+  // Set the sample dimension as 0 so that its actual value is
+  // calculated by Distconv
   input_local_shape[-1] = 0;
-  const ArrayND sample_block_size = get_sample_block_size();
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
-                                      input_local_shape, sample_block_size);
+                                      input_local_shape);
   if (m_parent_copy_in_required) {
     m_error_signals_shuffler = get_tensor_shuffler(
         m_error_signals_t, m_error_signals_copyout);
@@ -1769,56 +1739,12 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
   }
 }
 
-ArrayND Layer::get_prev_activations_overlap() const {
-  return ArrayND(0);
-}
-
-ArrayND Layer::get_activations_overlap() const {
-#if 0
-  if (distconv_enabled() &&
-      get_child_layers().size() > 0) {
-    return get_child_layers()[0]->get_prev_activations_overlap();
-  } else {
-    return ArrayND(0);
-  }
-#endif
-  return ArrayND(0);
-}
-
-ArrayND Layer::get_prev_error_signals_overlap() const {
-  return ArrayND(0);
-}
-
-ArrayND Layer::get_error_signals_overlap() const {
-#if 0
-  if (distconv_enabled() &&
-      get_parent_layers().size() > 0) {
-    return get_parent_layers()[0]->get_prev_error_signals_overlap();
-  } else {
-    return ArrayND(0);
-  }
-#endif
-  return ArrayND(0);
-}
-
-ArrayND Layer::get_input_decomposition_block() const {
-  return m_input_decomposition_block;
-}
-
-ArrayND Layer::get_output_decomposition_block() const {
-  return m_output_decomposition_block;
-}
-
 const TensorDev &Layer::get_activations_t() const {
   return m_activations_t;
 }
 
 const TensorDev &Layer::get_error_signals_t() const {
   return m_error_signals_t;
-}
-
-ArrayND Layer::get_strides() const {
-  return ArrayND(1);
 }
 
 void Layer::fp_setup_distconv(int mini_batch_size) {
@@ -2033,20 +1959,20 @@ void Layer::copy_out_error_signals() {
       El::GPUManager::Stream());
 }
 
-const dc::ArrayND Layer::get_input_tensor_shape() const {
+const dc::Shape Layer::get_input_tensor_shape() const {
   const auto input_dims = get_input_dims();
   std::vector<int> input_tensor_shape_v(input_dims.rbegin(), input_dims.rend());
   input_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
-  return input_tensor_shape_v;
+  return dc::Shape(input_tensor_shape_v);
 }
-const dc::ArrayND Layer::get_output_tensor_shape() const {
+const dc::Shape Layer::get_output_tensor_shape() const {
   const auto output_dims = get_output_dims();
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
   output_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
-  return ArrayND(output_tensor_shape_v);
+  return dc::Shape(output_tensor_shape_v);
 }
-const dc::ArrayND Layer::get_sample_block_size() const {
-  return ArrayND(std::vector<int>(dc::num_dims, 1));
+const dc::Shape Layer::get_sample_block_size() const {
+  return dc::Shape(std::vector<int>(dc::num_dims, 1));
 }
 
 #endif

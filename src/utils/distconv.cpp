@@ -153,7 +153,7 @@ bool is_p2p_shuffle_feasible(const TensorDev &tensor) {
   auto local_comm_size = get_number_of_local_ranks(
       tensor.get_locale().get_comm());
   auto spatial_proc_size = 1;
-  for (int i = 0; i < TensorDev::num_spatial_dims; ++i) {
+  for (int i = 0; i < tensor.get_num_spatial_dims(); ++i) {
     spatial_proc_size *= dist.get_locale_shape()[i];
   }
   if (local_comm_size < spatial_proc_size) {

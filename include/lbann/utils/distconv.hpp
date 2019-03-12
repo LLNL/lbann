@@ -64,28 +64,24 @@ static constexpr int num_spatial_dims = num_dims - 2;
 ////////////////////////////////////////////////////////////
 // Helper type aliases
 ////////////////////////////////////////////////////////////
-using ArrayND = ::distconv::tensor::Array<num_dims>;
 template <typename DataType>
 using Vector = ::distconv::Vector<DataType>;
 using IntVector = ::distconv::IntVector;
+using IndexVector = ::distconv::IndexVector;
 using Shape = ::distconv::tensor::Shape;
 
 using TensorHost = ::distconv::tensor::Tensor<
-  num_dims, DataType, ::distconv::tensor::LocaleMPI,
+  DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
 using TensorDev = ::distconv::tensor::Tensor<
-  num_dims, DataType, ::distconv::tensor::LocaleMPI,
+  DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
-using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<
-  num_dims, DataType>;
-using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<
-  num_dims, DataType>;
-using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<
-  num_dims, DataType>;
-using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<
-  num_dims, DataType>;
+using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<DataType>;
+using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<DataType>;
+using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<DataType>;
+using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<DataType>;
 
 using Dist = ::distconv::tensor::Distribution;
 static constexpr int num_dists = 4;
@@ -103,7 +99,7 @@ using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
 using Convolution = ::distconv::Convolution<Backend, num_dims, DataType>;
 using Pooling = ::distconv::Pooling<Backend, num_dims, DataType>;
-using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
+using BatchNormalization = ::distconv::BatchNormalization<Backend, num_dims, DataType>;
 
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;

@@ -1833,9 +1833,6 @@ void model::setup_distconv() {
           << layer.get_name() << "; distconv disabled";
     }
   }
-  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
-    get_layer(i).setup_tensor_distribution_block();
-  }
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto &layer = get_layer(i);
     layer.setup_tensors_fwd(dists[&layer]);

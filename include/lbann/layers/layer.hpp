@@ -552,18 +552,17 @@ protected:
   void setup_early_termination();
   void setup_keep_original_tensors();
   virtual void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed);
   virtual void setup_tensor_distribution_add_adjacent_invariants(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
-  virtual void setup_tensor_distribution_block();
   virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual dc::ArrayND get_activations_tensor_local_shape() const;
+  virtual dc::Shape get_activations_tensor_local_shape() const;
   virtual void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
                                         bool allocate=true);
   virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
@@ -572,26 +571,6 @@ protected:
   virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual void setup_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual dc::ArrayND get_prev_activations_overlap() const;
-  virtual dc::ArrayND get_activations_overlap() const;
-  virtual dc::ArrayND get_prev_error_signals_overlap() const;
-  virtual dc::ArrayND get_error_signals_overlap() const;
-  virtual dc::ArrayND get_input_decomposition_block() const;
-  virtual dc::ArrayND get_output_decomposition_block() const;
-#if 0
-  virtual const dc::Dist &get_prev_activations_distribution() const {
-    return m_prev_activations_dist;
-  }
-  virtual const dc::Dist &get_activations_distribution() const {
-    return m_activations_dist;
-  }
-  virtual const dc::Dist &get_prev_error_signals_distribution() const {
-    return m_prev_error_signals_dist;
-  }
-  virtual const dc::Dist &get_error_signals_distribution() const {
-    return m_error_signals_dist;
-  }
-#endif
 
   // REFACTORING: returning non-const tensor should be protected
   virtual const dc::TensorDev &get_activations_t() const;
@@ -611,8 +590,6 @@ protected:
   virtual bool keep_original_output() const { return m_keep_original_output; }
   virtual void fp_setup_distconv(int mini_batch_size);
   virtual void bp_setup_distconv(int mini_batch_size);
-
-  virtual dc::ArrayND get_strides() const;
 
   // Copis and converts input or output tensors when necessary
   void ensure_prev_activations();
@@ -660,8 +637,6 @@ protected:
   bool m_parent_shuffle_required = false;
   bool m_child_copy_out_required = false;
   bool m_child_shuffle_required = false;
-  dc::ArrayND m_input_decomposition_block;
-  dc::ArrayND m_output_decomposition_block;
   /** Previous activation tensor */
   dc::TensorDev m_prev_activations_t;
   /** View to Elemental matrix of previous activations */
@@ -704,9 +679,9 @@ private:
   const AbsDistMat& get_error_signals(const Layer& parent) const;
 
   /** Return Distconv-related shapes. */
-  const dc::ArrayND get_input_tensor_shape() const;
-  const dc::ArrayND get_output_tensor_shape() const;
-  const dc::ArrayND get_sample_block_size() const;
+  const dc::Shape get_input_tensor_shape() const;
+  const dc::Shape get_output_tensor_shape() const;
+  const dc::Shape get_sample_block_size() const;
 
   // ===========================================================
   // Private class members

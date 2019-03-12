@@ -336,37 +336,6 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
  public:
 
-  dc::ArrayND get_prev_activations_overlap() const override {
-    if (this->distconv_enabled()) {
-      // REVIEW: distconv-3d
-      std::vector<int> overlaps;
-      for(auto i = this->m_kernel_dims.rbegin(); i != this->m_kernel_dims.rbegin()+dc::num_spatial_dims; ++i)
-        overlaps.push_back((*i - 1) / 2); // W, H, (D)
-      overlaps.push_back(0); // C
-      overlaps.push_back(0); // N
-      assert_eq(overlaps.size(), dc::num_dims);
-      return dc::ArrayND(overlaps);
-    } else {
-      return dc::ArrayND(0);
-    }
-  }
-
-  dc::ArrayND get_activations_overlap() const override {
-    return dc::ArrayND(0);
-  }
-
-  dc::ArrayND get_prev_error_signals_overlap() const override {
-    if (this->distconv_enabled()) {
-      return get_prev_activations_overlap();
-    } else {
-      return dc::ArrayND(0);
-    }
-  }
-
-  dc::ArrayND get_error_signals_overlap() const override {
-    return dc::ArrayND(0);
-  }
-
   void setup_tensor_distribution_init(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
@@ -407,14 +376,14 @@ protected:
     }
   }
 
-  dc::ArrayND get_activations_tensor_local_shape() const override {
+  dc::Shape get_activations_tensor_local_shape() const override {
     std::vector<int> filter_dims = this->m_kernel_dims;
     std::reverse(filter_dims.begin(), filter_dims.end());
     std::vector<int> strides = this->m_strides;
     std::reverse(strides.begin(), strides.end());
     std::vector<int> dilations = this->m_dilations;
     std::reverse(dilations.begin(), dilations.end());
-    const dc::ArrayND output_spatial_local_shape =
+    const auto output_spatial_local_shape =
         ::distconv::get_convolution_output_local_tensor_shape(
             this->m_prev_activations_t,
             filter_dims, strides, true, dilations,
@@ -442,7 +411,7 @@ protected:
     auto shared_dist = dc::Dist::make_shared_distribution(
         dists[0].get_locale_shape());
 
-    std::vector<int> kernel_shape = this->m_kernel_dims;
+    Shape kernel_shape(this->m_kernel_dims);
     std::reverse(kernel_shape.begin(), kernel_shape.end());
     const LocaleMPI loc(dc::get_mpi_comm(), false);
     m_kernel_t = TensorDev(kernel_shape, loc, shared_dist);
@@ -463,7 +432,7 @@ protected:
     if (this->m_bias_scaling_factor != DataType(0)) {
       std::vector<int> bias_shape_v(dc::num_dims, 1);
       bias_shape_v[dc::num_spatial_dims] = this->get_output_dims()[0];
-      ArrayND bias_shape(bias_shape_v);
+      Shape bias_shape(bias_shape_v);
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
       assert0(tensor::View(m_bias_t,
                            this->get_weights()[1]->get_values().LockedBuffer()));
@@ -558,6 +527,7 @@ protected:
     }
     return true;
   }
+
 #endif // LBANN_HAS_DISTCONV
 };
 

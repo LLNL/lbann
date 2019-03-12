@@ -610,21 +610,14 @@ private:
           &error_signals_dist);
     }
   }
-  dc::ArrayND get_strides() const override {
-    // REVIEW: distconv-3d
-    std::vector<int> strides(m_strides.rbegin(), m_strides.rend());
-    strides.push_back(1);
-    strides.push_back(1);
-    return dc::ArrayND(strides);
-  }
 
-  dc::ArrayND get_activations_tensor_local_shape() const override {
+  dc::Shape get_activations_tensor_local_shape() const override {
     // REVIEW: distconv-3d
     const std::vector<int> filter_dims(m_pool_dims.rbegin(), m_pool_dims.rend());
     const std::vector<int> strides(m_strides.rbegin(), m_strides.rend());
     const std::vector<int> dilations(dc::num_spatial_dims, 1);
     bool use_padding = m_pads[0] != 0;
-    dc::ArrayND output_spatial_local_shape =
+    auto output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
             m_prev_activations_t,
             filter_dims, strides, use_padding, dilations);
