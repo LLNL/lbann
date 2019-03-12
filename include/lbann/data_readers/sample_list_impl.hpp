@@ -35,7 +35,7 @@ inline std::string to_string(const std::string val) {
 
 template <typename sample_name_t>
 inline auto to_sample_name_t(const std::string& sn_str) -> decltype (sample_name_t()){
-  // TODO: throw exception
+  LBANN_ERROR(std::string{} + " :: string conversion is not implement for the sample_name_t");
   return sample_name_t();
 }
 
@@ -112,7 +112,8 @@ inline sample_list<file_handle_t, sample_name_t>::~sample_list() {
   // Close the existing open files
   for(auto& f : m_file_id_stats_map) {
     file_handle_t& h = std::get<1>(f);
-    close_and_clear_file_handle(h);
+    close_file_handle(h);
+    clear_file_handle(h);
   }
   m_file_id_stats_map.clear();
   m_open_fd_pq.clear();
@@ -662,6 +663,255 @@ inline void sample_list<file_handle_t, sample_name_t>
     id++;
   }
   manage_open_file_handles(id, true);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const {
+  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline file_handle_t sample_list<file_handle_t, sample_name_t>
+::get_bundled_sample_names(std::string file_path,
+                           std::vector<std::string>& sample_names,
+                           size_t included_samples,
+                           size_t excluded_samples) {
+  file_handle_t file_hnd;
+  clear_file_handle(file_hnd);
+  bool retry = false;
+  int retry_cnt = 0;
+  do {
+    try {
+      file_hnd = open_file_handle_for_read( file_path );
+    }catch (conduit::Error const& e) {
+      LBANN_WARNING(" :: trying to open the file " + file_path + " and got " + e.what());
+      retry = true;
+      retry_cnt++;
+    }
+  }while(retry && retry_cnt < LBANN_MAX_OPEN_FILE_RETRY);
+
+  if (!is_file_handle_valid(file_hnd)) {
+    std::cout << "Opening the file didn't work" << std::endl;
+    return file_hnd;
+  }
+
+  obtain_sample_names(file_hnd, sample_names);
+
+  if(sample_names.size() != (included_samples + excluded_samples)) {
+    LBANN_ERROR(std::string("File does not contain the correct number of samples: found ")
+                + std::to_string(sample_names.size())
+                + std::string(" -- this does not equal the expected number of samples that are marked for inclusion: ")
+                + std::to_string(included_samples)
+                + std::string(" and exclusion: ")
+                + std::to_string(excluded_samples));
+  }
+
+  return file_hnd;
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::all_gather_packed_lists(lbann_comm& comm) {
+  int num_ranks = comm.get_procs_per_trainer();
+  typename std::vector<samples_t> per_rank_samples(num_ranks);
+  typename std::vector<file_id_stats_v_t> per_rank_file_id_stats_map(num_ranks);
+  std::vector<std::unordered_map<std::string, size_t>> per_rank_file_map(num_ranks);
+
+  // Close the existing open files
+  for(auto&& e : m_file_id_stats_map) {
+    auto& h = std::get<1>(e);
+    close_file_handle(h);
+    clear_file_handle(h);
+    std::get<2>(e).clear();
+  }
+  m_open_fd_pq.clear();
+
+  size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
+  size_t num_ids = all_gather_field(m_file_id_stats_map, per_rank_file_id_stats_map, comm);
+  size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
+
+  m_sample_list.clear();
+  m_file_id_stats_map.clear();
+
+  m_sample_list.reserve(num_samples);
+  m_file_id_stats_map.reserve(num_ids);
+  m_file_map.reserve(num_files);
+
+  for(int r = 0; r < num_ranks; r++) {
+    const samples_t& s_list = per_rank_samples[r];
+    const file_id_stats_v_t& file_id_stats_map = per_rank_file_id_stats_map[r];
+    const std::unordered_map<std::string, size_t>& file_map = per_rank_file_map[r];
+    for (const auto& s : s_list) {
+      sample_file_id_t index = s.first;
+      const std::string& filename = std::get<0>(file_id_stats_map[index]);
+      if(index >= m_file_id_stats_map.size()
+         || (std::get<0>(m_file_id_stats_map.back()) != filename)) {
+        index = m_file_id_stats_map.size();
+        m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+        // Update the file map structure
+        if(m_file_map.count(filename) == 0) {
+          m_file_map[filename] = file_map.at(filename);
+        }
+      }else {
+        for(size_t i = 0; i < m_file_id_stats_map.size(); i++) {
+          if(filename == std::get<0>(m_file_id_stats_map[i])) {
+            index = i;
+            break;
+          }
+        }
+      }
+      m_sample_list.emplace_back(std::make_pair(index, s.second));
+    }
+  }
+
+  return;
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::compute_epochs_file_usage(const std::vector<int>& shuffled_indices,
+                            int mini_batch_size,
+                            const lbann_comm& comm) {
+  for (auto&& e : m_file_id_stats_map) {
+    auto& h = std::get<1>(e);
+    close_file_handle(h);
+    clear_file_handle(h);
+    std::get<2>(e).clear();
+  }
+
+  for (size_t i = 0; i < shuffled_indices.size(); i++) {
+    int idx = shuffled_indices[i];
+    const auto& s = m_sample_list[idx];
+    sample_file_id_t index = s.first;
+
+    if((i % mini_batch_size) % comm.get_procs_per_trainer() == static_cast<size_t>(comm.get_rank_in_trainer())) {
+      /// Enqueue the iteration step when the sample will get used
+      int step = i / mini_batch_size;
+      int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
+      std::get<2>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
+    }
+  }
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::manage_open_file_handles(sample_file_id_t id, bool pre_open_fd) {
+  /// When we enter this function the priority queue is either empty or a heap
+  if(!m_open_fd_pq.empty()) {
+    if(m_open_fd_pq.size() > m_max_open_files) {
+      auto& f = m_open_fd_pq.front();
+      auto& victim = m_file_id_stats_map[f.first];
+      auto& victim_fd = std::get<1>(victim);
+      std::pop_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+      m_open_fd_pq.pop_back();
+      close_file_handle(victim_fd);
+      clear_file_handle(victim_fd);
+    }
+  }
+
+  /// Before we can enqueue the any new access times for this descriptor, remove any
+  /// earlier descriptor
+  std::sort_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+  if(m_open_fd_pq.front().first == id) {
+    m_open_fd_pq.pop_front();
+  }
+  std::make_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+
+  auto& e = m_file_id_stats_map[id];
+  auto& file_access_queue = std::get<2>(e);
+  if(!file_access_queue.empty()) {
+    if(!pre_open_fd) {
+      file_access_queue.pop_front();
+    }
+  }
+  if(!file_access_queue.empty()) {
+    m_open_fd_pq.emplace_back(std::make_pair(id,file_access_queue.front()));
+  }else {
+    /// If there are no future access of the file place a terminator entry to track
+    /// the open file, but is always sorted to the top of the heap
+    m_open_fd_pq.emplace_back(std::make_pair(id,std::make_pair(INT_MAX,id)));
+  }
+  std::push_heap(m_open_fd_pq.begin(), m_open_fd_pq.end(), pq_cmp);
+  return;
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline file_handle_t sample_list<file_handle_t, sample_name_t>
+::open_samples_file_handle(const size_t i, bool pre_open_fd) {
+  const sample_t& s = m_sample_list[i];
+  sample_file_id_t id = s.first;
+  file_handle_t h = get_samples_file_handle(id);
+  if (!is_file_handle_valid(h)) {
+    const std::string& file_name = get_samples_filename(id);
+    const std::string& file_dir = get_samples_dirname();
+    const std::string file_path = add_delimiter(file_dir) + file_name;
+    if (file_name.empty() || !check_if_file_exists(file_path)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
+    }
+    bool retry = false;
+    int retry_cnt = 0;
+    do {
+      try {
+        h = open_file_handle_for_read( file_path );
+      }catch (conduit::Error const& e) {
+        LBANN_WARNING(" :: trying to open the file " + file_path + " and got " + e.what());
+        retry = true;
+        retry_cnt++;
+      }
+    }while(retry && retry_cnt < 3);
+
+    if (!is_file_handle_valid(h)) {
+      LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' could not be opened.");
+    }
+    auto& e = m_file_id_stats_map[id];
+    std::get<1>(e) = h;
+  }
+  manage_open_file_handles(id, pre_open_fd);
+  return h;
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::close_if_done_samples_file_handle(const size_t i) {
+  const sample_t& s = m_sample_list[i];
+  sample_file_id_t id = s.first;
+  auto h = get_samples_file_handle(id);
+  if (!is_file_handle_valid(h)) {
+    auto& e = m_file_id_stats_map[id];
+    auto& file_access_queue = std::get<2>(e);
+    if(file_access_queue.empty()) {
+      auto& fh = std::get<1>(e);
+      close_file_handle(fh);
+      clear_file_handle(fh);
+    }
+  }
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline bool sample_list<file_handle_t, sample_name_t>
+::is_file_handle_valid(const file_handle_t& h) const {
+  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  return false;
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline file_handle_t sample_list<file_handle_t, sample_name_t>
+::open_file_handle_for_read(const std::string& file_path) {
+  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  return file_handle_t();
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::close_file_handle(file_handle_t& h) {
+  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::clear_file_handle(file_handle_t& h) {
+  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
 }
 
 } // end of namespace lbann

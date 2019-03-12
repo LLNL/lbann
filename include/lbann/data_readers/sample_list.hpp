@@ -123,17 +123,17 @@ class sample_list {
 
   void set_files_handle(const std::string& filename, file_handle_t h);
 
-  virtual void manage_open_file_handles(sample_file_id_t id, bool pre_open_fd = false) = 0;
+  void manage_open_file_handles(sample_file_id_t id, bool pre_open_fd = false);
 
-  virtual file_handle_t open_samples_file_handle(const size_t i, bool pre_open_fd = false) = 0;
+  file_handle_t open_samples_file_handle(const size_t i, bool pre_open_fd = false);
 
-  virtual void close_if_done_samples_file_handle(const size_t i) = 0;
+  void close_if_done_samples_file_handle(const size_t i);
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
-  virtual void all_gather_packed_lists(lbann_comm& comm) = 0;
+  void all_gather_packed_lists(lbann_comm& comm);
 
-  virtual void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm) = 0;
+  void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 
  protected:
 
@@ -143,8 +143,11 @@ class sample_list {
   /// Reads the header of a sample list
   sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
 
+  /// Get the list of samples from a specific type of bundle file
+  virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const;
+
   /// Get the list of samples that exist in a bundle file
-  virtual file_handle_t get_bundled_sample_names(std::string file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples) = 0;
+  file_handle_t get_bundled_sample_names(std::string file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
@@ -163,23 +166,10 @@ class sample_list {
            (((left.second).first == (right.second).first) &&
             ((left.second).second < (right.second).second)); }
 
-  virtual bool is_file_handle_valid(const file_handle_t& h) const = 0;
-  virtual void clear_file_handle(file_handle_t& h) = 0;
-  virtual void close_and_clear_file_handle(file_handle_t& h) {}
-
- protected: // accessors for private member variables of the base class
-  sample_list_header& my_header() { return m_header; }
-  const sample_list_header& my_header() const { return m_header; }
-  samples_t& my_sample_list() { return m_sample_list; }
-  const samples_t& my_sample_list() const { return m_sample_list; }
-  file_id_stats_v_t& my_file_id_stats_map() { return m_file_id_stats_map; }
-  const file_id_stats_v_t& my_file_id_stats_map() const { return m_file_id_stats_map; }
-  std::unordered_map<std::string, size_t>& my_file_map() { return m_file_map; }
-  const std::unordered_map<std::string, size_t>& my_file_map() const { return m_file_map; }
-  std::deque<fd_use_map_t>& my_open_fd_pq() { return m_open_fd_pq; }
-  const std::deque<fd_use_map_t>& my_open_fd_pq() const { return m_open_fd_pq; }
-  size_t& my_max_open_files() { return m_max_open_files; }
-  const size_t& my_max_open_files() const { return m_max_open_files; }
+  virtual bool is_file_handle_valid(const file_handle_t& h) const;
+  virtual file_handle_t open_file_handle_for_read(const std::string& file_path);
+  virtual void close_file_handle(file_handle_t& h);
+  virtual void clear_file_handle(file_handle_t& h);
 
  private:
   /// header info of sample list
