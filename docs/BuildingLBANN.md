@@ -326,6 +326,7 @@ supported. These are one or two edges from LBANN in the
 dependency DAG.
 
 + Aluminum
++ CEREAL
 + CNPY
 + CONDUIT
 + [CUB](https://github.com/nvlabs/cub). This is used by Hydrogen for
@@ -382,8 +383,8 @@ cmake \
   /path/to/lbann/superbuild
 ```
 will invoke the superbuild to build Aluminum, Hydrogen, and LBANN
-_only_. Acceptable values for `<PKG>` are `ALUMINUM`, `CNPY`,
-`CONDUIT`, `CUB`, `HDF5`, `HYDROGEN`, `JPEG_TURBO`, `OPENCV`,
+_only_. Acceptable values for `<PKG>` are `ALUMINUM`, `CEREAL`,
+`CNPY`, `CONDUIT`, `CUB`, `HDF5`, `HYDROGEN`, `JPEG_TURBO`, `OPENCV`,
 `PROTOBUF` and `LBANN`.
 
 ### Forwarding options to sub-projects
