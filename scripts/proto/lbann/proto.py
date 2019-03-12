@@ -362,9 +362,10 @@ class Weights:
             init_message.CopyFrom(self.initializer.export_proto())
             init_message.SetInParent()
 
-        # TODO: implement
+        # Set optimizer if needed
         if self.optimizer:
-            raise NotImplementedError('Weights cannot handle non-default optimizers')
+            proto.optimizer.CopyFrom(self.optimizer.export_proto())
+            proto.optimizer.SetInParent()
 
         return proto
 
