@@ -1562,7 +1562,7 @@ Dist get_hydrogen_matrix_distribution() {
   // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
   // training data.
 
-  std::vector<index_t> sample_locale_shape_v(index_t(1), dc::num_dims);
+  std::vector<index_t> sample_locale_shape_v(dc::num_dims, index_t(1));
   sample_locale_shape_v[0] = static_cast<index_t>(dc::get_rank_stride());
   sample_locale_shape_v[dc::num_spatial_dims+1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
   Shape sample_locale_shape(sample_locale_shape_v);
