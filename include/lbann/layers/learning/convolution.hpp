@@ -24,80 +24,27 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_CONVOLUTION_HPP_INCLUDED
-#define LBANN_LAYER_CONVOLUTION_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LEARNING_CONVOLUTION_HPP_INCLUDED
+#define LBANN_LAYERS_LEARNING_CONVOLUTION_HPP_INCLUDED
 
-#include <vector>
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-/// Convolution layer
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class convolution_layer : public base_convolution_layer<Dev> {
- private:
+/** @brief Standard deep learning convolution.
+ *
+ *  Applies convolution (more precisely, cross-correlation) to input
+ *  tensors. This is primarily optimized for image data in NCHW
+ *  format.
+ */
+template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+class convolution_layer : public base_convolution_layer<Device> {
+private:
 
   friend class lbann_callback_imcomm;
 
-  public:
-
-  /// kernel tensor is output channels, input channels, conv dimension (w x h)
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " convolution; conv_dims: ";
-    // for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-    //   if (h == 0) { s << " channels (out x in) "; }
-    //   if (h == 2) { s << " filters (w x h) "; }
-    //   s << this->m_kernel_dims[h] << " ";
-    // }
-    s << get_topo_description();
-    s << " pads: ";
-    for (size_t h=0; h<this->m_pads.size(); h++) {
-      s << this->m_pads[h] << " ";
-    }
-    s << " strides: ";
-    for (size_t h=0; h<this->m_strides.size(); h++) {
-      s << this->m_strides[h] << " ";
-    }
-    s << " dilation: ";
-    for (size_t h = 0; h < this->m_dilations.size(); ++h) {
-      s << this->m_dilations[h] << " ";
-    }
-    s << " groups: " << this->m_num_groups;
-    s << " num_output_channels: " << this->get_output_dims()[0]
-      << " has_bias: " << this->m_bias_scaling_factor
-      << " dataLayout: " << this->get_data_layout_string(get_data_layout())
-      << " device alloc: " + this->get_device_allocation_string(get_device_allocation());
-    return s.str();
-  }
-
-  std::string get_topo_description() const override {
-    std::stringstream s;
-    // Get the topo description from any parent class
-    std::string str = base_convolution_layer<Dev>::get_topo_description();
-    s << str << " - ";
-
-    // Display the topology of the kernel
-    for (size_t h=0; h<this->m_kernel_dims.size(); h++) {
-      if (h == 0) { s << "C="; }
-      s << this->m_kernel_dims[h] ;
-      if (h == 0) { s << "o,"; }
-      if (h == 1) { s << "i F="; }
-      if (this->m_kernel_dims.size() == 3) {
-        if (h == 2) { s << "w "; }
-      }else if (this->m_kernel_dims.size() == 4) {
-        if (h == 2) { s << "w x "; }
-        if (h == 3) { s << "h"; }
-      }else {
-        if (h > 1) {
-          s << " ";
-        }
-      }
-    }
-    return s.str();
-  }
+public:
 
   convolution_layer(lbann_comm *comm,
                     int num_data_dims,
@@ -127,17 +74,18 @@ class convolution_layer : public base_convolution_layer<Dev> {
                     std::vector<int> dilations,
                     int groups,
                     bool has_bias = true)
-    : base_convolution_layer<Dev>(comm,
-                                  num_data_dims,
-                                  num_output_channels,
-                                  conv_dims,
-                                  pads,
-                                  strides,
-                                  dilations,
-                                  groups,
-                                  has_bias) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "convolution only supports DATA_PARALLEL");
+    : base_convolution_layer<Device>(
+        comm,
+        num_data_dims,
+        num_output_channels,
+        std::move(conv_dims),
+        std::move(pads),
+        std::move(strides),
+        std::move(dilations),
+        groups,
+        has_bias) {
+    static_assert(Layout == data_layout::DATA_PARALLEL,
+                  "convolution layer only supports DATA_PARALLEL");
 
   }
 
@@ -145,86 +93,63 @@ class convolution_layer : public base_convolution_layer<Dev> {
 
   std::string get_type() const override { return "convolution"; }
 
-  data_layout get_data_layout() const override { return T_layout; }
+  data_layout get_data_layout() const override { return Layout; }
 
-  El::Device get_device_allocation() const override { return Dev; }
+  El::Device get_device_allocation() const override { return Device; }
+
+protected:
 
   void setup_dims() override {
-    base_convolution_layer<Dev>::setup_dims();
+    base_convolution_layer<Device>::setup_dims();
 
     // Get tensor dimensions
-    auto& kernel_dims = this->m_kernel_dims;
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
 
-    // Initialize convolution kernel dimensions
-    if (input_dims[0] % this->m_num_groups != 0) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << " has input tensor with channels " << input_dims[0]
-          << " but groups " << this->m_num_groups
-          << "; groups must evenly divide input channels";
-      LBANN_ERROR(err.str());
-    }
-    kernel_dims.insert(kernel_dims.begin() + 1, input_dims[0] / this->m_num_groups);
-    this->m_kernel_size = std::accumulate(kernel_dims.begin(),
-                                          kernel_dims.end(),
-                                          1,
-                                          std::multiplies<int>());
-
-    // Check if input tensor dimensions are valid
-    if (input_dims.size() != kernel_dims.size() - 1) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << "has an input tensor with "
-          << input_dims.size() << " dimensions "
-          << "and a convolution kernel with "
-          << kernel_dims.size() << " dimensions";
-      LBANN_ERROR(err.str());
-    }
-
     // Initialize output tensor dimensions
-    output_dims[0] = kernel_dims[0];
+    output_dims[0] = this->m_output_channels;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
+      const auto& input_dim = input_dims[i+1];
+      const auto& kernel_dim = this->m_conv_dims[i];
       const auto& stride = this->m_strides[i];
       const auto& pad = this->m_pads[i];
       const auto& dilation = this->m_dilations[i];
-      const auto& effective_dim = (input_dims[i+1]
+      const auto& effective_dim = (input_dim
                                    + 2 * pad
-                                   - dilation*(kernel_dims[i+2] - 1));
+                                   - dilation * (kernel_dim-1));
       output_dims[i+1] = (effective_dim + stride - 1) / stride;
     }
     this->set_output_dims(output_dims);
-    if (output_dims[0] % this->m_num_groups != 0) {
-      std::stringstream err;
-      err << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << " has output tensor with filters " << output_dims[0]
-          << " but groups " << this->m_num_groups
-          << "; groups must evenly divide output filters";
-      LBANN_ERROR(err.str());
-    }
 
   }
 
- protected:
+  std::vector<int> get_kernel_dims() const {
+    std::vector<int> dims;
+    dims.push_back(this->m_output_channels);
+    dims.push_back(this->get_input_dims()[0]);
+    dims.insert(dims.end(),
+                this->m_conv_dims.begin(),
+                this->m_conv_dims.end());
+    return dims;
+  }
 
   void fp_compute() override {
     if(this->using_gpus()) {
-      base_convolution_layer<Dev>::apply_convolution_cudnn(true);
-      base_convolution_layer<Dev>::apply_bias_cudnn();
+      base_convolution_layer<Device>::apply_convolution_cudnn(true);
+      base_convolution_layer<Device>::apply_bias_cudnn();
     } else {
-      base_convolution_layer<Dev>::apply_convolution_im2col(true);
-      base_convolution_layer<Dev>::apply_bias_cpu();
+      base_convolution_layer<Device>::apply_convolution_im2col(true);
+      base_convolution_layer<Device>::apply_bias_cpu();
     }
   }
 
   void bp_compute() override {
     if(this->using_gpus()) {
-      base_convolution_layer<Dev>::compute_gradients_cudnn(false);
-      base_convolution_layer<Dev>::apply_transposed_convolution_cudnn(false);
+      base_convolution_layer<Device>::compute_gradients_cudnn(false);
+      base_convolution_layer<Device>::apply_transposed_convolution_cudnn(false);
     } else {
-      base_convolution_layer<Dev>::compute_gradients_im2col(false);
-      base_convolution_layer<Dev>::apply_transposed_convolution_im2col(false);
+      base_convolution_layer<Device>::compute_gradients_im2col(false);
+      base_convolution_layer<Device>::apply_transposed_convolution_im2col(false);
     }
   }
 
@@ -232,4 +157,4 @@ class convolution_layer : public base_convolution_layer<Dev> {
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_CONVOLUTION_HPP_INCLUDED
+#endif // LBANN_LAYERS_LEARNING_CONVOLUTION_HPP_INCLUDED

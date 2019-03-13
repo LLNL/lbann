@@ -43,21 +43,10 @@ model* instantiate_model(lbann_comm* comm,
   auto&& opt = construct_optimizer(comm, proto_opt);
 
   // Construct model
-  const auto& type = proto_model.name();
+  const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
-  }
-  if (type == "sequential_model") {
-    return new sequential_model(comm, mini_batch_size, obj, opt);
-  }
-  if (type == "siamese_model") {
-    const auto& params = proto_model.siamese();
-    return new siamese_model(comm,
-                             mini_batch_size,
-                             obj,
-                             opt,
-                             params.num_heads());
   }
 
   // Throw error if model type is not supported
@@ -67,8 +56,12 @@ model* instantiate_model(lbann_comm* comm,
 
 }
 
+/** Setup pointers from objective function to layers.
+ *
+ *  Layer terms require pointers to layers.
+ */
 void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
-                                         objective_function* obj,
+                                         objective_function& obj,
                                          const lbann_data::ObjectiveFunction& proto_obj) {
   std::stringstream err;
 
@@ -84,13 +77,12 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
   }
 
   // Assign layers to layer terms in objective function
-  auto&& obj_terms = obj->get_terms();
-  int num_layer_terms = 0;
+  auto&& obj_terms = obj.get_terms();
+  El::Int num_layer_terms = 0;
   for (size_t i = 0; i < obj_terms.size(); ++i) {
     auto&& term = dynamic_cast<layer_term*>(obj_terms[i]);
     if (term != nullptr) {
       ++num_layer_terms;
-      if (num_layer_terms > proto_obj.layer_term_size()) { continue; }
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
       auto* l = names_to_layers[params.layer()];
       if (l == nullptr) {
@@ -111,7 +103,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
         << "in the prototext";
     LBANN_ERROR(err.str());
   }
-  
+
 }
 
 void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
@@ -146,7 +138,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
       m->set_layer(*l);
     }
   }
-  
+
 }
 
 /** Setup pointers from layers to weights. */
@@ -185,7 +177,52 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
       }
       layer_weights.push_back(w);
     }
-  }  
+  }
+
+}
+
+/** Setup pointers from objective function to weights.
+ *
+ *  L2 weight regularization requires pointers to weights.
+ */
+void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
+                                          objective_function& obj,
+                                          const lbann_data::ObjectiveFunction& proto_obj) {
+  std::stringstream err;
+
+  // Construct map from weights names to weights
+  std::unordered_map<std::string, weights*> names_to_weights;
+  for (auto&& w : weights_list) {
+    const auto& name = w->get_name();
+    if (names_to_weights.count(name) > 0) {
+      err << "weights name \"" << name << "\" is not unique";
+      LBANN_ERROR(err.str());
+    }
+    names_to_weights[name] = w;
+  }
+
+  // Setup weights with L2 regularization
+  auto&& obj_terms = obj.get_terms();
+  El::Int num_l2_weight_regularization_terms = 0;
+  for (size_t i = 0; i < obj_terms.size(); ++i) {
+    auto&& term = dynamic_cast<l2_weight_regularization*>(obj_terms[i]);
+    if (term != nullptr) {
+      ++num_l2_weight_regularization_terms;
+      const auto& params = proto_obj.l2_weight_regularization(num_l2_weight_regularization_terms-1);
+      std::vector<weights*> term_weights;
+      for (auto&& weights_name : parse_list<std::string>(params.weights())) {
+        auto&& w = names_to_weights[weights_name];
+        if (w == nullptr) {
+          err << "attempted to apply L2 weight regularization to "
+              << "weights \"" << weights_name << "\", "
+              << "but no such weights exists";
+          LBANN_ERROR(err.str());
+        }
+        term_weights.push_back(w);
+      }
+      term->set_weights_pointers(term_weights);
+    }
+  }
 
 }
 
@@ -200,11 +237,16 @@ model* construct_model(lbann_comm* comm,
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
                                             proto_model);
+  std::vector<Layer*> layer_pointers;
+  layer_pointers.reserve(layer_list.size());
+  for (auto&& ptr : layer_list) {
+    layer_pointers.push_back(ptr.get());
+  }
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();
   auto&& obj = construct_objective_function(proto_obj);
-  assign_layers_to_objective_function(layer_list, obj, proto_obj);
+  assign_layers_to_objective_function(layer_pointers, *obj, proto_obj);
 
   // Construct weights
   std::vector<weights*> weights_list;
@@ -213,14 +255,18 @@ model* construct_model(lbann_comm* comm,
                                              proto_opt,
                                              proto_model.weights(i)));
   }
-  assign_weights_to_layers(layer_list, weights_list, proto_model);
+  assign_weights_to_layers(layer_pointers, weights_list, proto_model);
+  assign_weights_to_objective_function(weights_list, *obj, proto_obj);
 
   // Construct metrics
   std::vector<metric*> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    metric_list.push_back(construct_metric(comm, proto_model.metric(i)));
+    const auto& params = proto_model.metric(i).layer_metric();
+    metric_list.push_back(new layer_metric(comm,
+                                           params.name(),
+                                           params.unit()));
   }
-  assign_layers_to_metrics(layer_list, metric_list, proto_model);
+  assign_layers_to_metrics(layer_pointers, metric_list, proto_model);
 
   // Construct callbacks
   std::vector<lbann_callback*> callback_list;
@@ -229,18 +275,21 @@ model* construct_model(lbann_comm* comm,
     callback_list.push_back(construct_callback(comm,
                                                proto_model.callback(i),
                                                data_readers,
-                                               layer_list,
+                                               layer_pointers,
                                                weights_list,
                                                summarizer));
   }
 
   // Instantiate model
   auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
-  for (auto&& l   : layer_list   ) { m->add_layer(l);     }
+  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
   for (auto&& cb  : callback_list) { m->add_callback(cb); }
-  m->set_model_id(proto_model.model_id());
+  const auto& name = proto_model.name();
+  if (!name.empty()) {
+    m->set_name(name);
+  }
   for (auto t : data_readers) {
     t.second->set_model(m);
   }

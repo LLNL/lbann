@@ -32,10 +32,12 @@
 
 namespace lbann {
 
-/** Generate random output from discrete distribution.
+/** @brief Random output from discrete distribution.
+ *
  *  Inputs are interpreted as the probability of choosing each
  *  distribution value.
- *  @todo Get distribution values from a parent layer.
+ *
+ *  @todo Remove.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class discrete_random_layer : public transform_layer {
@@ -90,7 +92,7 @@ class discrete_random_layer : public transform_layer {
     }
 
     // Process each mini-batch sample
-    #pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       const auto& input_ptr = local_input.LockedBuffer(0, col);
       const auto& output_ptr = local_output.Buffer(0, col);

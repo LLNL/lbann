@@ -31,21 +31,20 @@
 
 namespace lbann {
 
-/** Mean squared error layer.
-
- *  Given a prediction \f$y\f$ and ground truth \f$\hat{y}\f$, the
- *  mean squared error is
- *    \f[
- *    MSE(y,\hat{y}) = \frac{1}{n} \sum\limits_{i}^{n} (y_i - \hat{y}_i)^2
- *    \f]
+/** @brief
+ *
+ *  Given a prediction @f$y@f$ and ground truth @f$\hat{y}@f$,
+ *  @f[
+ *    MSE(y,\hat{y})
+ *      = \frac{1}{n} \sum\limits_{i=1}^{n} (y_i - \hat{y}_i)^2
+ *  @f]
  */
 template <data_layout T_layout, El::Device Dev>
 class mean_squared_error_layer : public Layer {
 public:
 
   mean_squared_error_layer(lbann_comm *comm) : Layer(comm) {
-    set_output_dims({1});
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
 
   mean_squared_error_layer(const mean_squared_error_layer& other)
@@ -70,26 +69,28 @@ public:
 
   void setup_dims() override {
     Layer::setup_dims();
-    if (get_input_size(0) != get_input_size(1)) {
+    set_output_dims({1});
+
+    // Check that input dimensions match
+    if (get_input_dims(0) != get_input_dims(1)) {
       const auto& parents = get_parent_layers();
-      const auto& prediction_dims = get_input_dims(0);
-      const auto& ground_truth_dims = get_input_dims(1);
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" has ";
-      for (size_t i = 0; i < prediction_dims.size(); ++i) {
-        err << (i > 0 ? "x" : "") << prediction_dims[i];
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has input tensors with different dimensions (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& dims = get_input_dims(i);
+        err << (i > 0 ? ", " : "")
+            << "layer \"" << parents[i]->get_name() << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
       }
-      err << " prediction tensor "
-          << "from layer \"" << parents[0]->get_name() << "\" and ";
-      for (size_t i = 0; i < ground_truth_dims.size(); ++i) {
-        err << (i > 0 ? "x" : "") << ground_truth_dims[i];
-      }
-      err << " ground truth tensor "
-          << "from layer \"" << parents[1]->get_name() << "\"";
+      err << ")";
       LBANN_ERROR(err.str());
     }
+
   }
-  
+
   void setup_data() override {
     Layer::setup_data();
 
@@ -108,7 +109,7 @@ public:
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
     }
 #endif // HYDROGEN_HAVE_CUB
-    
+
   }
 
   void fp_compute() override {
@@ -129,9 +130,9 @@ public:
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
-  
+
   void bp_compute() override {
 
     // Initialize workspace
@@ -169,7 +170,7 @@ private:
 
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMat> m_workspace;
-  
+
 };
 
 } // namespace lbann

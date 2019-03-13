@@ -1,5 +1,5 @@
 model {
-  procs_per_model:0 
+  procs_per_trainer:0
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -46,7 +46,6 @@ model {
   data_layout: "data_parallel"
   layer {
     input {
-      io_buffer: "partitioned"
       data_set_per_model: true
       target_mode: "N/A"
     }

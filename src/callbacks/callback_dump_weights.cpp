@@ -41,13 +41,13 @@ void lbann_callback_dump_weights::on_epoch_end(model *m) {
 
 void lbann_callback_dump_weights::dump_weights(model *m, std::string s) {
   for (weights *w : m->get_weights()) {
-    std::string epoch = "-epoch" + std::to_string(m->get_cur_epoch()-1);
+    std::string epoch = "-epoch" + std::to_string(m->get_epoch()-1);
     if(s != "") {
       epoch = "-" + s;
     }
     const std::string file
       = (m_basename
-         + "model" + std::to_string(m->get_comm()->get_model_rank())
+         + "model" + std::to_string(m->get_comm()->get_trainer_rank())
          + epoch
          + "-" + w->get_name()
          + "-Weights");

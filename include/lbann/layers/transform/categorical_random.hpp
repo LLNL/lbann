@@ -32,10 +32,13 @@
 
 namespace lbann {
 
-/** Generate random categorical output.
+/** @brief Random categorical outputs.
+ *
  *  Inputs are probability distributions and outputs are one-hot
  *  vectors. An input entry is the probability that the corresponding
  *  output entry is one.
+ *
+ *  @todo Remove.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class categorical_random_layer : public transform_layer {
@@ -74,7 +77,7 @@ class categorical_random_layer : public transform_layer {
     }
 
     // Process each mini-batch sample
-    #pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
 
       // Determine index of output

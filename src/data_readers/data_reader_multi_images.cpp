@@ -29,7 +29,6 @@
 
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_multi_images.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -88,8 +87,8 @@ void data_reader_multi_images::set_input_params(const int width, const int heigh
   set_input_params(width, height, num_ch, num_labels, 1);
 }
 
-std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const int mb_idx) const {
-  std::vector<::Mat> X_v(m_num_img_srcs);
+std::vector<CPUMat> data_reader_multi_images::create_datum_views(CPUMat& X, const int mb_idx) const {
+  std::vector<CPUMat> X_v(m_num_img_srcs);
   El::Int h = 0;
   for(unsigned int i=0u; i < m_num_img_srcs; ++i) {
     El::View(X_v[i], X, El::IR(h, h + m_image_linearized_size), El::IR(mb_idx, mb_idx + 1));
@@ -98,22 +97,16 @@ std::vector<::Mat> data_reader_multi_images::create_datum_views(::Mat& X, const 
   return X_v;
 }
 
-bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-
-  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
+bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
 
   const img_src_t& img_src = m_image_list[data_id].first;
   for(size_t i=0u; i < m_num_img_srcs; ++i) {
     int width=0, height=0, img_type=0;
     const std::string imagepath = get_file_dir() + img_src[i];
     bool ret = true;
-    if (m_data_store != nullptr) {
-      std::vector<unsigned char> *image_buf;
-      m_data_store->get_data_buf(data_id, image_buf, i);
-      ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
-    } else {
-      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
-    }
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
 
     if(!ret) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
@@ -130,7 +123,7 @@ bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx, i
   return true;
 }
 
-bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);
   return true;
@@ -140,10 +133,10 @@ std::vector<data_reader_multi_images::sample_t> data_reader_multi_images::get_im
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
 
-  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
-    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
-    ret.push_back(m_image_list[index]);
-  }
+  // for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+  //   El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+  //   ret.push_back(m_image_list[index]);
+  // }
   return ret;
 }
 
@@ -212,16 +205,6 @@ void data_reader_multi_images::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
-}
-
-void data_reader_multi_images::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_multi_images(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
 }
 
 }  // namespace lbann

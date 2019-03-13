@@ -39,7 +39,7 @@ lbann_callback_variable_minibatch::lbann_callback_variable_minibatch(
 
 void lbann_callback_variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
-  if (m->get_cur_epoch() != 0) { return; }
+  if (m->get_epoch() != 0) { return; }
 
   // Get first input layer in model
   generic_input_layer* input = nullptr;
@@ -79,8 +79,8 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
   int ramp_time = 0;
   if (schedule(m, new_mbsize, new_lr, ramp_time)) {
     if (new_mbsize > m->get_max_mini_batch_size()) {
-      if (comm->am_model_master()) {
-        std::cout << "Model " << comm->get_model_rank() << ": WARNING " <<
+      if (comm->am_trainer_master()) {
+        std::cout << "Model " << comm->get_trainer_rank() << ": WARNING " <<
           "requested new mini-batch size " << new_mbsize <<
           " is greater than the model maximum mini-batch size " <<
           m->get_max_mini_batch_size() << std::endl;
@@ -99,16 +99,16 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
         float cur_lr = get_current_learning_rate(m);
         m_lr_incr = (new_lr - cur_lr) / ramp_time;
       }
-      if (comm->am_model_master()) {
-        std::cout << "Model " << comm->get_model_rank() <<
+      if (comm->am_trainer_master()) {
+        std::cout << "Model " << comm->get_trainer_rank() <<
           ": Changing mini-batch size to " << new_mbsize <<
           " and learning rate to " << new_lr << " at epoch " <<
-          m->get_cur_epoch() << std::endl;
+          m->get_epoch() << std::endl;
       }
-    } else if (comm->am_model_master()) {
-      std::cout << "Model " << comm->get_model_rank() <<
+    } else if (comm->am_trainer_master()) {
+      std::cout << "Model " << comm->get_trainer_rank() <<
         ": Changing mini-batch size to " << new_mbsize <<
-        " at epoch " << m->get_cur_epoch() << std::endl;
+        " at epoch " << m->get_epoch() << std::endl;
     }
   }
   // Ramp the learning rate, if needed.
@@ -116,8 +116,8 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
     --m_ramp_count;
     float target_lr = get_current_learning_rate(m) + m_lr_incr;
     change_learning_rate(m, target_lr);
-    if (comm->am_model_master()) {
-      std::cout << "Model " << comm->get_model_rank() <<
+    if (comm->am_trainer_master()) {
+      std::cout << "Model " << comm->get_trainer_rank() <<
         ": Variable-size mini-batch ramping learning rate to " <<
         target_lr << std::endl;
     }
@@ -152,7 +152,7 @@ lbann_callback_step_minibatch::lbann_callback_step_minibatch(
 
 bool lbann_callback_step_minibatch::schedule(
   model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
-  if (m->get_cur_epoch() % m_step == 0) {
+  if (m->get_epoch() % m_step == 0) {
     new_mbsize = m_current_mini_batch_size * 2;
     new_lr = get_current_learning_rate(m) * 2;
     ramp_time = m_ramp_time;
@@ -173,7 +173,7 @@ lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
 
 bool lbann_callback_minibatch_schedule::schedule(
   model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
-  if (!m_steps.empty() && m->get_cur_epoch() == m_steps.back().epoch) {
+  if (!m_steps.empty() && m->get_epoch() == m_steps.back().epoch) {
     new_mbsize = m_steps.back().mbsize;
     new_lr = m_steps.back().lr;
     ramp_time = m_steps.back().ramp_time;

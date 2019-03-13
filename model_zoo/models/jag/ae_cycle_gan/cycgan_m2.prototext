@@ -1,4 +1,7 @@
 model {
+  name: "fw_model"
+  shareable_training_data_reader: true
+  serialize_io: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -16,7 +19,6 @@ model {
   data_layout: "model_parallel"
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"
@@ -29,7 +31,7 @@ model {
     parents: "data"
     children: "image_data_id param_data_id"
     slice {
-      slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
     }
   }
   layer {
@@ -449,7 +451,8 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_y"
@@ -608,7 +611,8 @@ model {
   layer {
     freeze: true
     fully_connected {
-      num_neurons: 5
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_gsample"
@@ -654,6 +658,14 @@ model {
     device_allocation: "cpu"
     data_layout: "model_parallel"
     parents: "gsample_minus_y"
+  }
+  ####For metric, loss per individual sample
+  layer {
+    name: "fw_latent_loss"
+    data_layout: "model_parallel"
+    parents: "param_data_id l_l2_y"
+    concatenation {
+    }
   }
   weights {
     name: "gen1fc1linearity"
@@ -710,22 +722,39 @@ model {
     he_normal_initializer {
     }
   }
-  mini_batch_size: 100
+  mini_batch_size: 256
   callback {
     print {
       interval: 1
     }
   }
   callback { timer {} }
+  callback {
+    dump_outputs {
+      #directory: "/p/lscratchh/jacobs32/EuroViz/fw_latent_loss/"
+      #general directory: "/p/gpfs1/jacobs32/EuroViz2/fw_latent_loss/"
+      directory: "fw_latent_loss/"
+      layers: "fw_latent_loss"
+      execution_modes: "test"
+      format: "npy"
+    }
+  }
  #callback {
- #   dump_activations {
- #     basename: "/dir/to/dump_y_activations/"
-  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jags10K_multi/cycgan_m2/"
-  #    interval: 100
-  #    layer_names: "image_data_dummy gen1fc4_1 l_l2_y"
+ #   dump_outputs {
+ #     directory: "/dir/to/dump_y_activations/"
+  #    directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jags10K_multi/cycgan_m2/"
+  #    batch_interval: 100
+  #    layers: "image_data_dummy gen1fc4_1 l_l2_y"
+  #    execution_modes: "test"
   #  }
   #}
+  callback {
+    save_model {
+      dir: "model"
+      disable_save_after_training: true
+    }
+  }
   block_size: 256
-  super_steps: 10000
+  super_steps: 20000
   num_batches: 1
 }

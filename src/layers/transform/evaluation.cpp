@@ -44,7 +44,7 @@ void fp_cpu(lbann_comm& comm,
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
   value = 0;
-#pragma omp parallel for reduction(+:value) collapse(2)
+  LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
       value += local_input(row, col);
@@ -62,7 +62,7 @@ void fp_gpu(lbann_comm& comm,
             cuda::event_wrapper& copy_event) {
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
-  
+
   // Local matrix
   const auto& local_input = input.LockedMatrix();
   const auto& local_height = local_input.Height();
@@ -149,9 +149,25 @@ EvalType abstract_evaluation_layer::get_value(bool scaled) {
 
 abstract_evaluation_layer::abstract_evaluation_layer(lbann_comm *comm)
   : transform_layer(comm) {
-  m_expected_num_child_layers = 0;
+  this->m_expected_num_child_layers = 0;
 }
-  
+
+void abstract_evaluation_layer::setup_dims() {
+  transform_layer::setup_dims();
+  if (get_input_size() != 1) {
+    std::stringstream err;
+    const auto& dims = get_input_dims();
+    err << get_type() << " layer \"" << get_name() << "\" "
+        << "expects a scalar input, but "
+        << "parent layer \"" << m_parent_layers[0]->get_name() << "\" "
+        << "has dimensions of ";
+    for (size_t i = 0; i < dims.size(); ++i) {
+      err << (i > 0 ? " x " : "") << dims[i];
+    }
+    LBANN_ERROR(err.str());
+  }
+}
+
 void abstract_evaluation_layer::setup_data() {
   transform_layer::setup_data();
 #ifdef LBANN_HAS_GPU
@@ -159,7 +175,7 @@ void abstract_evaluation_layer::setup_data() {
 #endif // LBANN_HAS_GPU
   El::Zeros(m_value, 1, 1);
 }
-  
+
 void abstract_evaluation_layer::fp_compute() {
   switch (get_device_allocation()) {
   case El::Device::CPU:
@@ -208,5 +224,5 @@ abstract_evaluation_layer::construct(lbann_comm *comm,
   return nullptr;
 
 }
-  
+
 } // namespace lbann

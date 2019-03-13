@@ -31,7 +31,7 @@
 
 namespace lbann {
 
-/** Sort entries in each mini-batch sample. */
+/** @brief Sort tensor entries. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sort_layer : public transform_layer {
  public:
@@ -80,19 +80,25 @@ class sort_layer : public transform_layer {
     }
     return *this;
   }
-  
+
   sort_layer* copy() const override { return new sort_layer(*this); }
   std::string get_type() const override { return "sort"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Descending", m_descending);
+    return desc;
+  }
+
  protected:
 
   void setup_dims() override {
-    set_output_dims(get_input_dims());
     transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
   }
-  
+
   void setup_matrices(const El::Grid& grid) override {
     transform_layer::setup_matrices(grid);
     const auto& dist = get_activations().DistData();
@@ -115,7 +121,7 @@ class sort_layer : public transform_layer {
     const auto& output = get_activations();
     m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }
-  
+
   void fp_compute() override;
   void bp_compute() override;
 
@@ -123,13 +129,13 @@ class sort_layer : public transform_layer {
 
   /** Whether values are sorted by descending order. */
   bool m_descending;
-  
+
   /** Input indices corresponding to output entries.
    *  @todo Switch to distributed integer matrix once it's supported
    *  in Hydrogen.
    */
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
-  
+
 };
 
 } // namespace lbann

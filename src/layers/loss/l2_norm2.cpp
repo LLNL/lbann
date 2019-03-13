@@ -32,7 +32,7 @@ namespace {
 
 void local_fp_cpu(const AbsMat& local_input,
                   AbsMat& local_contribution) {
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     DataType sum = 0;
     for (El::Int row = 0; row < local_input.Height(); ++row) {
@@ -48,7 +48,7 @@ void local_bp_cpu(const AbsMat& local_input,
                   AbsMat& local_gradient_wrt_input) {
   auto const width = local_input.Width();
   auto const height = local_input.Height();
-#pragma omp parallel for collapse(2)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < width; ++col) {
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = local_input(row, col);

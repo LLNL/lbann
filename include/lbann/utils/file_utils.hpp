@@ -22,11 +22,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _LBANN_FILE_UTILS_HPP_
-#define _LBANN_FILE_UTILS_HPP_
+/// @todo Rename this file to file.hpp
+
+#ifndef LBANN_UTILS_FILE_HPP_INCLUDED
+#define LBANN_UTILS_FILE_HPP_INCLUDED
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -53,14 +55,19 @@ std::vector<int> get_tokens(std::string str, const std::vector<char> delims);
 /// Tokenize a string into substrings by set of delimiter characters.
 std::vector<std::string> get_tokens(const std::string str, const std::string delims = " :;\t\r\n");
 
+/** @todo Deprecated. Use @c lbann::file::extract_parent_directory and
+ *  @c lbann::file::extract_base_name instead. */
 bool parse_path(const std::string& path, std::string& dir, std::string& basename);
 std::string get_ext_name(const std::string file_name);
 std::string get_basename_without_ext(const std::string file_name);
 std::string add_delimiter(const std::string dir);
 std::string modify_file_name(const std::string file_name, const std::string tag, const std::string new_ext="");
 
+/** @todo Deprecated. Use @c lbann::file::file_exists instead. */
 bool check_if_file_exists(const std::string& filename);
+/** @todo Deprecated. Use @c lbann::file::directory_exists instead. */
 bool check_if_dir_exists(const std::string& dirname);
+/** @todo Deprecated. Use @c lbann::file::make_directory instead. */
 bool create_dir(const std::string output_dir);
 
 bool load_file(const std::string filename, std::vector<char>& buf);
@@ -69,5 +76,50 @@ inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
 }
 
-} // end of namespace lbann
-#endif // _LBANN_FILE_UTILS_HPP_
+// The generic approach
+template<typename T>
+std::basic_string<T> pad(const std::basic_string<T>& s,
+         typename std::basic_string<T>::size_type n, T c) {
+  if (n > s.length()) {
+    std::string t = s;
+    t.insert(t.begin(), n - t.length(), c);
+    return t;
+  }else {
+    return s;
+  }
+}
+
+namespace file {
+
+/** @brief Wrapper around @c dirname.
+ *
+ *  Deletes any suffix beginning with the last '/' (ignoring trailing
+ *  slashes).
+ */
+std::string extract_parent_directory(const std::string& path);
+
+/** @brief Wrapper around @c basename.
+ *
+ *  Deletes any prefix up to the last '/' (ignoring trailing slashes).
+ */
+std::string extract_base_name(const std::string& path);
+
+/** @brief Check if file exists. */
+bool file_exists(const std::string& path);
+
+/** @brief Check if directory exists. */
+bool directory_exists(const std::string& path);
+
+/** @brief Create directory if needed.
+ *
+ *  Does nothing if directory already exists. Parent directories are
+ *  created recursively if needed. This is thread-safe (provided @c
+ *  mkdir is thread-safe).
+ */
+void make_directory(const std::string& path);
+
+} // namespace file
+
+} // namespace lbann
+
+#endif // LBANN_UTILS_FILE_HPP_INCLUDED

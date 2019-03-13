@@ -13,6 +13,7 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     adagrad.cu
     adam.cu
+    rmsprop.cu
     sgd.cu
     )
 endif ()

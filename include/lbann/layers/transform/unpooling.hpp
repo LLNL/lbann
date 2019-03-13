@@ -34,7 +34,9 @@
 
 namespace lbann {
 
-/** Unpooling layer. */
+/** @brief Transpose of pooling layer.
+ *  @todo GPU support.
+ */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class unpooling_layer : public transform_layer {
  private:
@@ -169,7 +171,7 @@ class unpooling_layer : public transform_layer {
         = prev_activations_local.LockedBuffer(0, sample);
       const int *indices_buffer
         = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
-      #pragma omp parallel for
+      LBANN_OMP_PARALLEL_FOR
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_input_channel; ++j) {
           const int input_index = j + channel * num_per_input_channel;
@@ -233,7 +235,7 @@ class unpooling_layer : public transform_layer {
       DataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
         = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
-      #pragma omp parallel for
+      LBANN_OMP_PARALLEL_FOR
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_output_channel; ++j) {
           const int output_index = j + channel * num_per_output_channel;

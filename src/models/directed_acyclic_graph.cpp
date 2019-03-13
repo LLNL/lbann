@@ -22,29 +22,47 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// directed_acyclic_graph .hpp .cpp - Directed acyclic graph neural network models
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/directed_acyclic_graph.hpp"
-#include <stack>
 #include <unordered_map>
 
 namespace lbann {
 
 directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
-                                                           int mini_batch_size,
+                                                           El::Int mini_batch_size,
                                                            objective_function *obj_fn,
                                                            optimizer* default_optimizer)
   : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
 
 void directed_acyclic_graph_model::setup_layer_execution_order() {
-  std::set<int> nodes;
-  std::map<int,std::set<int>> edges;
-  construct_layer_graph(nodes, edges);
+
+  // Construct layer graph
+  // Note: Each layer depends on its parent layers and its hint layer.
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  std::set<El::Int> nodes;
+  std::map<El::Int,std::set<El::Int>> edges;
+  std::unordered_map<const Layer*,El::Int> layer_indices;
+  for (El::Int node = 0; node < num_layers; ++node) {
+    nodes.insert(node);
+    layer_indices[layers[node]] = node;
+  }
+  for (El::Int node = 0; node < num_layers; ++node) {
+    const auto& l = layers[node];
+    for (const auto& child : l->get_child_layers()) {
+      edges[node].insert(layer_indices[child]);
+    }
+    if (l->get_hint_layer() != nullptr) {
+      edges[layer_indices[l->get_hint_layer()]].insert(node);
+    }
+  }
+
+  // Topologically sort layers
   const auto& sorted_order = graph::topological_sort(nodes, edges);
-  permute_layers(sorted_order);
+  reorder_layers(sorted_order);
   model::setup_layer_execution_order();
+
 }
 
-}  // namespace lbann
+} // namespace lbann

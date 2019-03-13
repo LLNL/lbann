@@ -28,7 +28,6 @@
 
 #include <unordered_set>
 #include "lbann/data_readers/data_reader_csv.hpp"
-#include "lbann/data_store/data_store_csv.hpp"
 #include "lbann/utils/options.hpp"
 #include <omp.h>
 
@@ -101,7 +100,7 @@ void csv_reader::load() {
   bool master = m_comm->am_world_master();
   setup_ifstreams();
   std::ifstream& ifs = *m_ifstreams[0];
-  const El::mpi::Comm world_comm = m_comm->get_world_comm();
+  const El::mpi::Comm& world_comm = m_comm->get_world_comm();
   // Parse the header to determine how many columns there are.
   // Skip rows if needed.
   if (master) {
@@ -269,29 +268,21 @@ void csv_reader::load() {
   select_subset_of_data();
 }
 
-bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
-  if (m_data_store != nullptr) {
-    std::vector<DataType> *buf;
-    m_data_store->get_data_buf_DataType(data_id, buf);
-    for (size_t i = 0; i < buf->size(); ++i) {
-      X(i, mb_idx) = (*buf)[i];
-    }
-  } else {
-    auto line = fetch_line_label_response(data_id);
-    // TODO: Avoid unneeded copies.
-    for (size_t i = 0; i < line.size(); ++i) {
-      X(i, mb_idx) = line[i];
-    }
+bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  auto line = fetch_line_label_response(data_id);
+  // TODO: Avoid unneeded copies.
+  for (size_t i = 0; i < line.size(); ++i) {
+    X(i, mb_idx) = line[i];
   }
   return true;
 }
 
-bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   Y(m_labels[data_id], mb_idx) = 1;
   return true;
 }
 
-bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
   Y(0, mb_idx) = m_responses[data_id];
   return true;
 }
@@ -402,16 +393,6 @@ void csv_reader::setup_ifstreams() {
       throw lbann_exception(
         "csv_reader: failed to open " + get_file_dir() + get_data_filename());
     }
-  }
-}
-
-void csv_reader::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_csv(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
   }
 }
 

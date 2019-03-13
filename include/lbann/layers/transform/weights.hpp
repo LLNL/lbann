@@ -31,8 +31,9 @@
 
 namespace lbann {
 
-/** Weights layer.
- *  This layer outputs the values from a weights tensor.
+/** @brief Output a weights tensor.
+ *
+ *  Interfaces with a @c weights object and outputs its tensor.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class weights_layer : public transform_layer {
@@ -43,7 +44,7 @@ class weights_layer : public transform_layer {
     std::vector<int> dims_;
     for (const auto& d : dims) { dims_.push_back(d); }
     set_output_dims(dims_);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
 
   weights_layer(const weights_layer& other)
@@ -104,9 +105,9 @@ class weights_layer : public transform_layer {
 #endif // LBANN_HAS_GPU
     default: LBANN_ERROR("unknown device type");
     }
-    
+
   }
-  
+
   void setup_data() override {
     transform_layer::setup_data();
 
@@ -149,11 +150,11 @@ class weights_layer : public transform_layer {
           << "weights \"" << w->get_name() << "\"";
       LBANN_ERROR(err.str());
     }
-    
+
   }
-  
+
   void fp_compute() override {
-    
+
     // Matrices
     const auto& local_weights = m_weights[0]->get_values().LockedMatrix();
     auto& local_output = get_local_activations();
@@ -167,10 +168,12 @@ class weights_layer : public transform_layer {
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
 
   void bp_compute() override {
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
@@ -180,20 +183,20 @@ class weights_layer : public transform_layer {
     // Matrices
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, DataType(1));
+    El::Fill(*m_workspace, one);
 
     // Compute gradient contribution and accumulate
-    const auto& scale = DataType(1) / this->m_model->get_effective_mini_batch_size();
+    const auto& scale = one / this->m_model->get_effective_mini_batch_size();
     El::Gemv(El::NORMAL,
              scale, local_gradient_wrt_output, *m_workspace,
-             DataType(0), m_gradient->Matrix());
-    opt->add_to_gradient_staging(*m_gradient);
+             zero, m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, one, true);
 
     // Clean up
     m_workspace->Empty();
-    
+
   }
-  
+
  private:
 
   /** Weights gradient. */

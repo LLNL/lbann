@@ -28,7 +28,6 @@
 
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet_patches.hpp"
 
 #include <omp.h>
 
@@ -44,19 +43,19 @@ imagenet_reader_patches::imagenet_reader_patches(const std::shared_ptr<cv_proces
     throw lbann_exception(err.str());
   }
 
-  replicate_processor(*pp);
+  m_master_pps = lbann::make_unique<cv_process_patches>(*pp);
 }
 
 imagenet_reader_patches::imagenet_reader_patches(const imagenet_reader_patches& rhs)
   : image_data_reader(rhs)
 {
-  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+  if (!rhs.m_master_pps) {
     std::stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
   m_num_patches = rhs.m_num_patches;
-  replicate_processor(*rhs.m_pps[0]);
+  m_master_pps = lbann::make_unique<cv_process_patches>(*rhs.m_master_pps);
 }
 
 imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reader_patches& rhs) {
@@ -67,13 +66,13 @@ imagenet_reader_patches& imagenet_reader_patches::operator=(const imagenet_reade
 
   image_data_reader::operator=(rhs);
 
-  if (rhs.m_pps.size() == 0u || !rhs.m_pps[0]) {
+  if (!rhs.m_master_pps) {
     std::stringstream err;
     err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
     throw lbann_exception(err.str());
   }
   m_num_patches = rhs.m_num_patches;
-  replicate_processor(*rhs.m_pps[0]);
+  m_master_pps = lbann::make_unique<cv_process_patches>(*rhs.m_master_pps);
   return (*this);
 }
 
@@ -89,17 +88,19 @@ void imagenet_reader_patches::set_defaults() {
   m_num_patches = 1;
 }
 
+void imagenet_reader_patches::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+  image_data_reader::setup(num_io_threads, io_thread_pool);
+  replicate_processor(*m_master_pps, num_io_threads);
+}
+
+
 /// Replicate image processor for each OpenMP thread
-bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp) {
-  const int nthreads = omp_get_max_threads();
+bool imagenet_reader_patches::replicate_processor(const cv_process_patches& pp, const int nthreads) {
   m_pps.resize(nthreads);
 
   // Construct thread private preprocessing objects out of a shared pointer
-  #pragma omp parallel for schedule(static, 1)
   for (int i = 0; i < nthreads; ++i) {
-    //auto ppu = std::make_unique<cv_process_patches>(pp); // c++14
-    std::unique_ptr<cv_process_patches> ppu(new cv_process_patches(pp));
-    m_pps[i] = std::move(ppu);
+    m_pps[i] = lbann::make_unique<cv_process_patches>(pp);
   }
 
   bool ok = true;
@@ -143,19 +144,14 @@ std::vector<CPUMat> imagenet_reader_patches::create_datum_views(CPUMat& X, const
   return X_v;
 }
 
-bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int tid = m_io_thread_pool->get_local_thread_id();
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
   int width=0, height=0, img_type=0;
   std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
   bool ret;
-  if (m_data_store != nullptr) {
-    std::vector<unsigned char> *image_buf;
-    m_data_store->get_data_buf(data_id, image_buf, 0);
-    ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
-  } else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
-  }
+  ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
     //ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
 
   if (m_pps[tid]->is_self_labeling()) {
@@ -174,16 +170,6 @@ bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx, in
                           + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
   }
   return true;
-}
-
-void imagenet_reader_patches::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_imagenet_patches(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
 }
 
 }  // namespace lbann

@@ -46,15 +46,15 @@ class lbann_callback_checkpoint : public lbann_callback {
  * @param checkpoint_secs interval to checkpoint
  * @param checkpoint_per_rank true to save/load a file per mpi rank
  */
-  lbann_callback_checkpoint(std::string checkpoint_dir, 
-                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) : 
+  lbann_callback_checkpoint(std::string checkpoint_dir,
+                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) :
     lbann_callback(),
     m_checkpoint_dir(checkpoint_dir),
-    m_checkpoint_epochs(checkpoint_epochs), 
-    m_checkpoint_steps(checkpoint_steps), 
-    m_checkpoint_secs(checkpoint_secs), 
+    m_checkpoint_epochs(checkpoint_epochs),
+    m_checkpoint_steps(checkpoint_steps),
+    m_checkpoint_secs(checkpoint_secs),
     m_per_rank_dir(per_rank_dir),
-    m_ckpt_dist_epochs(ckpt_dist_epochs), 
+    m_ckpt_dist_epochs(ckpt_dist_epochs),
     m_ckpt_dist_steps(ckpt_dist_steps) {}
   lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
@@ -79,14 +79,14 @@ class lbann_callback_checkpoint : public lbann_callback {
   inline void set_checkpoint_secs(EvalType secs){
     m_checkpoint_secs= secs;
   }
-  
+
   inline void set_per_rank_dir(std::string dir){
     m_per_rank_dir = dir;
   }
 
-  inline void set_ckpt_dist_epochs(int ckpt_dist_epochs){                                                                  
+  inline void set_ckpt_dist_epochs(int ckpt_dist_epochs){
     m_ckpt_dist_epochs = ckpt_dist_epochs;
-  }  
+  }
 
   inline void set_ckpt_dist_steps(int ckpt_dist_steps){
     m_ckpt_dist_steps = ckpt_dist_steps;
@@ -117,6 +117,77 @@ class lbann_callback_checkpoint : public lbann_callback {
     char dirname[_max_dir_len];
   };
 };
+
+static inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/";
+  ss << m->get_name().c_str() << ".";
+  ss << comm->get_trainer_rank() << ".last.shared.checkpoint";
+  return ss.str();
+}
+
+static inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/" << m->get_name().c_str();
+  ss << "." << comm->get_trainer_rank();
+  ss << ".shared.epoch." << epoch;
+  ss << ".step."<< step << "/";
+  return ss.str();
+}
+
+static inline std::string get_last_distributed_checkpoint_filename(model *m, std::string dir) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/";
+  ss << m->get_name().c_str() << ".";
+  ss << comm->get_trainer_rank() << ".last.distributed.checkpoint";
+  return ss.str();
+}
+
+static inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+  lbann_comm *comm = m->get_comm();
+  std::stringstream ss;
+  ss << dir << "/" << m->get_name().c_str();
+  ss << "." << comm->get_trainer_rank();
+  ss << ".rank." << comm->get_rank_in_trainer();
+  ss << ".epoch." << epoch;
+  ss << ".step."<< step << "/";
+  return ss.str();
+}
+
+// Print last checkpoint to file, used to determine which checkpoint to load from.
+static inline bool write_latest(std::string filename, int epoch, int train) {
+  // open the file for writing
+  int fd = openwrite(filename.c_str());
+  if (fd != -1) {
+    char field[256];
+    sprintf(field, "epoch=%d step=%d\n", epoch, train);
+    write_string(fd, filename.c_str(), field, strlen(field));
+    // close our file
+    closewrite(fd, filename.c_str());
+  }
+  return true;
+}
+/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
+static inline bool read_latest(std::string filename, int *epochLast, int *trainLast) {
+  // assume we don't have a file, we'll return -1 in that case
+  *epochLast = -1;
+  *trainLast = -1;
+  // open the file for reading
+  int fd = openread(filename.c_str());
+  if (fd != -1) {
+    // read epoch from file
+    char field[256];
+    read_string(fd, filename.c_str(), field, sizeof(field));
+    int ret = sscanf(field, "epoch=%d step=%d\n", epochLast, trainLast);
+    // close our file
+    closeread(fd, filename.c_str());
+    if(ret != 2) { return false; }
+  }
+  return true;
+}
 
 }  // namespace lbann
 

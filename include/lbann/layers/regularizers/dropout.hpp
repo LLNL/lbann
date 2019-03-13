@@ -32,15 +32,16 @@
 
 namespace lbann {
 
-/** Dropout layer.
- *  Probabilistically drop layer outputs. See:
- *    Srivastava, Nitish, et al. "Dropout: a simple way to prevent
- *    neural networks from overfitting." Journal of Machine Learning
- *    Research 15.1 (2014).
+/** @brief Probabilistically drop layer outputs
+ *
  *  The weights are multiplied by 1/(keep probability) at training
- *  time, as discussed in section 10 of the paper. Keep probabilities
- *  of 0.5 for fully-connected layers and 0.8 for input layers are
- *  good starting points.
+ *  time. Keep probabilities of 0.5 for fully-connected layers and 0.8
+ *  for input layers are good starting points. See:
+ *
+ *  Nitish Srivastava, Geoffrey Hinton, Alex Krizhevsky, Ilya
+ *  Sutskever, and Ruslan Salakhutdinov. "Dropout: a simple way to
+ *  prevent neural networks from overfitting." The Journal of Machine
+ *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
 template <data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer {
@@ -57,7 +58,7 @@ public:
   {
 #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
+    if (Dev == El::Device::GPU && get_comm()->am_trainer_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
@@ -111,18 +112,22 @@ public:
   }
 
   dropout* copy() const override { return new dropout(*this); }
-
   std::string get_type() const override { return "dropout"; }
-
-  std::string get_description() const override {
-    return " dropout keep_prob: " + std::to_string(m_keep_prob)
-           + " dataLayout: " + get_data_layout_string(get_data_layout());
-  }
-
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  description get_description() const override {
+    auto&& desc = regularizer_layer::get_description();
+    desc.add("Keep probability", m_keep_prob);
+    return desc;
+  }
+
 protected:
+
+  void setup_dims() override {
+    regularizer_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
@@ -179,7 +184,7 @@ protected:
     m_mask->Resize(height, width);
 #ifdef LBANN_DETERMINISTIC
     bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
-    *m_mask *= scale;
+    El::Scale(scale, *m_mask);
 #else
     El::EntrywiseMap(*m_mask,
                      (std::function<DataType(const DataType&)>)
@@ -211,7 +216,7 @@ protected:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    
+
     // Matrices
     const auto& input = get_prev_activations();
     const auto& local_input = input.LockedMatrix();

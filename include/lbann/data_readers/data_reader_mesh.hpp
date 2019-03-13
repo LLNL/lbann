@@ -74,8 +74,8 @@ class mesh_reader : public generic_data_reader {
         m_data_width};
   }
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   /**
    * Load filename into mat.
@@ -132,7 +132,7 @@ class mesh_reader : public generic_data_reader {
   /// Number of samples.
   int m_num_samples = 0;
   /// Buffers for loading data into.
-  std::vector<std::vector<float>> m_load_bufs;
+  std::vector<std::vector<DataType>> m_load_bufs;
   /// Whether to do random horizontal/vertical flips.
   bool m_random_flips = false;
   /**

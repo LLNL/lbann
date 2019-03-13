@@ -53,7 +53,7 @@ Layer::Layer(lbann_comm *comm)
 
   // Reset timing counters
   reset_counters();
-  
+
 }
 
 Layer::Layer(const Layer& other) :
@@ -71,7 +71,8 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
-  m_output_dims_list(other.m_output_dims_list) {
+  m_output_dims_list(other.m_output_dims_list),
+  m_hint_layer(other.m_hint_layer) {
 
   // Deep matrix copies
   m_inputs.reserve(other.m_inputs.size());
@@ -111,6 +112,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_update_time = other.m_update_time;
   m_name = other.m_name;
   m_output_dims_list = other.m_output_dims_list;
+  m_hint_layer = other.m_hint_layer;
 
   // Deep matrix copies
   m_inputs.clear();
@@ -137,42 +139,110 @@ Layer& Layer::operator=(const Layer& other) {
   return *this;
 }
 
-std::string Layer::get_description() const {
-  std::stringstream ss;
-  ss << get_name() << " (" << get_type() << "): ";
-  return ss.str();
-}
+description Layer::get_description() const {
 
-std::string Layer::get_topo_description() const {
+  // Construct description object
   std::stringstream ss;
-  const size_t num_children = get_num_children();
-  for (size_t i = 0; i < num_children; ++i) {
-    const auto& dims = get_output_dims(i);
-    if (i > 0) { ss << ", "; }
-    ss << "activations";
-    if (num_children > 1) { ss << "[" << i << "]"; }
-    ss << " = [";
-    switch (dims.size()) {
-    case 0:
-      ss << "0"; break;
-    case 2:
-      ss << dims[0] << "c x "
-         << dims[1] << "w";
-      break;
-    case 3:
-      ss << dims[0] << "c x "
-         << dims[1] << "w x "
-         << dims[2] << "h";
-      break;
-    default:
-      ss << dims[0];
-      for (size_t j = 1; j < dims.size(); ++j) {
-        ss << " x " << dims[j];
+  ss << get_name() << " (" << get_type() << ")";
+  description desc(ss.str());
+
+  // Input dimensions
+  const auto& parents = get_parent_layers();
+  if (!parents.empty()) {
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < parents.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      const auto& dims = get_input_dims(i);
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j == 0 ? "" : "x") << dims[j];
+      }
+      ss << " (from ";
+      if (parents[i] == nullptr) {
+        ss << "unknown layer";
+      } else {
+        ss << parents[i]->get_type() << " layer "
+           << "\"" << parents[i]->get_name() << "\"";
+      }
+      ss << ")";
+    }
+    desc.add("Input dimensions", ss.str());
+  }
+
+  // Output dimensions
+  const auto& children = get_child_layers();
+  if (!children.empty()) {
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < children.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      const auto& dims = get_output_dims(i);
+      for (size_t j = 0; j < dims.size(); ++j) {
+        ss << (j == 0 ? "" : "x") << dims[j];
+      }
+      ss << " (to ";
+      if (children[i] == nullptr) {
+        ss << "unknown layer";
+      } else {
+        ss << children[i]->get_type() << " layer "
+           << "\"" << children[i]->get_name() << "\"";
+      }
+      ss << ")";
+    }
+    desc.add("Output dimensions", ss.str());
+  }
+
+  // Weights
+  const auto& weights_list = get_weights();
+  if (!weights_list.empty()) {
+    ss.str(std::string{});
+    ss.clear();
+    for (size_t i = 0; i < weights_list.size(); ++i) {
+      ss << (i > 0 ? ", " : "");
+      if (weights_list[i] == nullptr) {
+        ss << "unknown weights";
+      } else {
+        const auto& dims = weights_list[i]->get_dims();
+        ss << weights_list[i]->get_name() << " (";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          ss << (j > 0 ? "x" : "") << dims[j];
+        }
+        ss << ")";
       }
     }
-    ss << ", " << get_activations(i).Width() << "s]";
+    desc.add("Weights", ss.str());
   }
-  return ss.str();
+
+  // Data layout
+  ss.str(std::string{});
+  ss.clear();
+  switch (get_data_layout()) {
+  case data_layout::DATA_PARALLEL:  ss << "data-parallel";  break;
+  case data_layout::MODEL_PARALLEL: ss << "model-parallel"; break;
+  case data_layout::invalid:
+  default:
+    ss << "invalid";
+  }
+  desc.add("Data layout", ss.str());
+
+  // Device
+  ss.str(std::string{});
+  ss.clear();
+  switch (get_device_allocation()) {
+  case El::Device::CPU: ss << "CPU";     break;
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU: ss << "GPU";     break;
+#endif // LBANN_HAS_GPU
+  default:              ss << "unknown";
+  }
+  desc.add("Device", ss.str());
+
+  // Freeze state
+  if (is_frozen()) {
+    desc.add("Frozen");
+  }
+
+  return desc;
 }
 
 void Layer::forward_prop() {
@@ -538,7 +608,7 @@ bool Layer::is_frozen() const {
 void Layer::setup() {
   setup_pointers();
   setup_dims();
-  setup_matrices(m_comm->get_model_grid());
+  setup_matrices(m_comm->get_trainer_grid());
   setup_data();
   if (using_gpus()) { setup_gpu(); }
 }
@@ -622,7 +692,12 @@ void Layer::setup_pointers() {
 
 void Layer::setup_dims() {
   m_output_dims_list.resize(get_num_children());
-  if (get_num_parents() > 0) {
+  if (m_hint_layer != nullptr) {
+    const auto& hint_dims = m_hint_layer->get_output_dims();
+    for (auto& output_dims : m_output_dims_list) {
+      output_dims = hint_dims;
+    }
+  } else if (get_num_parents() > 0) {
     const auto& input_dims = get_input_dims();
     for (auto& output_dims : m_output_dims_list) {
       if (output_dims.empty()) {
@@ -921,7 +996,7 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
     }
 
   }
-  
+
 }
 
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {
@@ -1047,53 +1122,57 @@ std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
 }
 
 void Layer::add_parent_layer(const Layer* parent) {
-  auto parent_pos = std::find(m_parent_layers.begin(),
-                              m_parent_layers.end(),
-                              parent);
-  if(parent != nullptr
-     && parent != this
-     && parent_pos == m_parent_layers.end()) {
+  const auto parent_pos = std::find(m_parent_layers.begin(),
+                                    m_parent_layers.end(),
+                                    parent);
+  if (parent != nullptr
+      && parent != this
+      && parent_pos == m_parent_layers.end()) {
     m_parent_layers.push_back(parent);
   }
 }
 
 void Layer::add_child_layer(const Layer* child) {
-  auto child_pos = std::find(m_child_layers.begin(),
-                             m_child_layers.end(),
-                             child);
-  if(child != nullptr
-     && child != this
-     && child_pos == m_child_layers.end()) {
+  const auto child_pos = std::find(m_child_layers.begin(),
+                                   m_child_layers.end(),
+                                   child);
+  if (child != nullptr
+      && child != this
+      && child_pos == m_child_layers.end()) {
     m_child_layers.push_back(child);
   }
 }
 
 std::vector<Layer*> Layer::get_layer_pointers() {
   std::vector<Layer*> layers;
-  for(const Layer* parent: m_parent_layers) {
+  for (const auto* parent: m_parent_layers) {
     layers.push_back(const_cast<Layer*>(parent));
   }
-  for(const Layer* child: m_child_layers) {
+  for (const auto* child: m_child_layers) {
     layers.push_back(const_cast<Layer*>(child));
   }
+  layers.push_back(const_cast<Layer*>(m_hint_layer));
   return layers;
 }
 
 void Layer::set_layer_pointers(std::vector<Layer*> layers) {
-  if(layers.size() != m_parent_layers.size() + m_child_layers.size()) {
+  const size_t expected_size = (m_parent_layers.size()
+                                + m_child_layers.size()
+                                + 1);
+  if (layers.size() != expected_size) {
     LBANN_ERROR("attempted to set layer pointers with an invalid number of pointers");
   }
   size_t pos = 0;
-  for(const Layer*& parent: m_parent_layers) {
-    parent = (const Layer*) layers[pos];
+  for (auto& parent: m_parent_layers) {
+    parent = static_cast<const Layer*>(layers[pos]);
     pos++;
   }
-  for(const Layer*& child: m_child_layers) {
-    child = (const Layer*) layers[pos];
+  for (auto& child: m_child_layers) {
+    child = static_cast<const Layer*>(layers[pos]);
     pos++;
   }
+  m_hint_layer = layers[pos];
+  pos++;
 }
-
-
 
 }  // namespace lbann

@@ -32,10 +32,11 @@
 
 namespace lbann {
 
-/** Indicate top-k entries in each mini-batch sample.
+/** @brief Indicate top-k entries.
+ *
  *  Output entries corresponding to the top-k input entries are set to
- *  one and the rest are set to zero. Ties are broken in favor of
- *  entries with smaller indices.
+ *  one and the rest to zero. Ties are broken in favor of entries with
+ *  smaller indices.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class in_top_k_layer : public transform_layer {
@@ -55,7 +56,18 @@ class in_top_k_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("k", m_k);
+    return desc;
+  }
+
  protected:
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
 
   void fp_compute() override;
 

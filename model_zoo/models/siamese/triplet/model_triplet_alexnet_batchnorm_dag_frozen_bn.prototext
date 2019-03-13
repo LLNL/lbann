@@ -1,18 +1,17 @@
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 128
   block_size: 256
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -22,10 +21,18 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 2
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-2 categorical accuracy"
+      layer: "top2_accuracy"
+      unit: "%"
     }
   }
 
@@ -34,7 +41,7 @@ model {
   ###################################################
   callback {
     imcomm {
-      intermodel_comm_method: "normal"
+      intertrainer_comm_method: "normal"
       all_optimizers: true
     }
   }
@@ -562,23 +569,26 @@ model {
   ###################################################
 
   layer {
-    name: "data"
-    children: "slice target"
+    name: "input"
+    children: "slice label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
-
   layer {
-    parents: "data"
+    parents: "input"
     name: "slice"
     children: "conv1_head0 conv1_head1 conv1_head2"
     data_layout: "data_parallel"
     slice {
-      slice_axis: 0
+      axis: 0
       slice_points: "0 3 6 9"
     }
+  }
+  layer {
+    parents: "input"
+    name: "label"
+    data_layout: "data_parallel"
+    split {}
   }
 
   #### Siamese head 0 begins ####
@@ -611,7 +621,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -667,7 +677,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -723,7 +733,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -764,7 +774,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -805,7 +815,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -856,7 +866,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_fc6_scale bn_fc6_bias bn_fc6_running_mean bn_fc6_running_variance"
   }
@@ -901,7 +911,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -957,7 +967,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -1013,7 +1023,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -1054,7 +1064,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -1095,7 +1105,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -1146,7 +1156,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_fc6_scale bn_fc6_bias bn_fc6_running_mean bn_fc6_running_variance"
   }
@@ -1191,7 +1201,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -1247,7 +1257,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -1303,7 +1313,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -1344,7 +1354,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -1385,7 +1395,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -1436,7 +1446,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_fc6_scale bn_fc6_bias bn_fc6_running_mean bn_fc6_running_variance"
   }
@@ -1481,7 +1491,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 
@@ -1515,7 +1525,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 
@@ -1542,17 +1552,27 @@ model {
   layer {
     parents: "fc9"
     name: "prob"
-    children: "target"
     data_layout: "data_parallel"
     softmax {}
   }
 
   layer {
-    parents: "prob data"
-    name: "target"
-    children: ""
+    parents: "prob label"
+    name: "cross_entropy"
     data_layout: "data_parallel"
-    target {}
+    cross_entropy {}
+  }
+  layer {
+    parents: "prob label"
+    name: "top1_accuracy"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
+  }
+  layer {
+    parents: "prob label"
+    name: "top2_accuracy"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 2 }
   }
 
 }

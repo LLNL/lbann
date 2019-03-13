@@ -1,12 +1,12 @@
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 64 
+  mini_batch_size: 64
   block_size: 256
   super_steps: 10000
   num_batches: 1
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -56,14 +56,15 @@ model {
     }
   }
   #callback { timer {} }
-  
+
   callback {
-      dump_activations{
-      basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m2/"
-      layer_names: "image_data_dummy gen1fc4_1 gen1fc4_2"
+    dump_outputs {
+      directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m2/"
+      layers: "image_data_dummy gen1fc4_1 gen1fc4_2"
+      execution_modes: "test"
     }
   }
- 
+
 
   ###################################################
   # start of layers

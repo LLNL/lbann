@@ -16,7 +16,6 @@ model {
   data_layout: "data_parallel"
   layer {
     input {
-      io_buffer: "partitioned"
       target_mode: "N/A"
     }
     name: "data"
@@ -586,9 +585,10 @@ model {
     }
   }
   #callback {
-  #  dump_activations {
-  #    basename: "/dir/to/dump_x_activations/"
-  #    layer_names: "param_data_id gen2fc4_1"
+  #  dump_outputs {
+  #    directory: "/dir/to/dump_x_activations/"
+  #    layers: "param_data_id gen2fc4_1"
+  #    execution_modes: "test"
   #  }
   #}
   block_size: 256

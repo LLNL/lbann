@@ -31,12 +31,13 @@
 
 namespace lbann {
 
-/** Layer that blocks back propagation.
- *  This layer's output is identical to its input, but its back
- *  propagation output (i.e. its error signal) is always zero. Compare
- *  with the stop_gradient operation in TensorFlow and Keras. Note
- *  that this means that computed gradients in preceeding layers are
- *  not exact gradients of the objective function.
+/** @brief Block back propagation.
+ *
+ *  The output is identical to the input, but the back propagation
+ *  output (i.e. the error signal) is always zero. Compare with the
+ *  stop_gradient operation in TensorFlow and Keras. Note that this
+ *  means that computed gradients in preceeding layers are not exact
+ *  gradients of the objective function.
  */
 template <data_layout T_layout, El::Device Dev>
 class stop_gradient_layer : public transform_layer {
@@ -48,6 +49,10 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
 protected:
+  void setup_dims() override {
+    transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
   void fp_setup_outputs(El::Int mini_batch_size) override {
     El::LockedView(get_activations(), get_prev_activations());
   }

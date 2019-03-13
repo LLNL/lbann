@@ -43,6 +43,8 @@ class imagenet_reader_patches : public image_data_reader {
 
   imagenet_reader_patches* copy() const override { return new imagenet_reader_patches(*this); }
 
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+
   std::string get_type() const override {
     return "imagenet_reader_patches";
   }
@@ -54,18 +56,17 @@ class imagenet_reader_patches : public image_data_reader {
     return {m_num_patches*m_image_num_channels, m_image_height, m_image_width};
   }
 
-  void setup_data_store(model *m) override;
-
  protected:
   void set_defaults() override;
-  virtual bool replicate_processor(const cv_process_patches& pp);
+  virtual bool replicate_processor(const cv_process_patches& pp, const int nthreads);
   virtual std::vector<CPUMat> create_datum_views(CPUMat& X, const int mb_idx) const;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
 
  protected:
   int m_num_patches; ///< number of patches extracted
   /// preprocessor for patches duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process_patches> > m_pps;
+  std::unique_ptr<cv_process_patches> m_master_pps;
 };
 
 }  // namespace lbann

@@ -7,7 +7,7 @@ model {
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -51,22 +51,21 @@ model {
   layer {
     name: "input"
     children: "data dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     input {
-      io_buffer: "distributed"
       target_mode: "reconstruction"
     }
   }
   layer {
     parents: "input"
     name: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
   layer {
     parents: "input"
     name: "dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     dummy {}
   }
 

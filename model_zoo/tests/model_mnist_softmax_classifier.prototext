@@ -4,7 +4,7 @@ model {
   block_size: 199
   num_epochs: 4
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -17,19 +17,19 @@ model {
   ###################################################
   # Metrics
   ###################################################
-  
+
   metric { layer_metric { layer: "accuracy" } }
 
   ###################################################
   # Callbacks
   ###################################################
-  
+
   callback { print {} }
   callback { timer {} }
   callback {
-    gradient_check {
+    check_gradients {
       verbose: false
-      fail_on_error: true
+      error_on_failure: true
     }
   }
 
@@ -41,7 +41,7 @@ model {
     name: "data"
     children: "image label"
     data_layout: "data_parallel"
-    input { io_buffer: "partitioned" }
+    input {}
   }
   layer {
     parents: "data"

@@ -1,7 +1,27 @@
 # Create the LbannProto library
 if (LBANN_HAS_PROTOBUF)
-    protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS lbann.proto)
-    #protobuf_generate(LANG cpp OUT_VAR PROTO_SRCS PROTOS lbann.proto)
+
+  # In its current state, LBANN does not make complicated use of
+  # protobuf -- it's really just one file. This is the meat of the
+  # implementation of "protobuf_generate_cpp" but it gives us a custom
+  # command on which we can depend. Using this, when lbann.proto is
+  # touched, CMake will rebuild the LbannProto library.
+  set(PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.cc")
+  set(PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.h")
+  set(PROTO_PY "${CMAKE_CURRENT_BINARY_DIR}/lbann_pb2.py")
+  add_custom_command(
+    COMMAND protobuf::protoc
+    "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
+    "--python_out=${CMAKE_CURRENT_BINARY_DIR}"
+    "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto"
+    OUTPUT ${PROTO_SRCS} ${PROTO_HDRS} ${PROTO_PY}
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto" protobuf::protoc
+    COMMENT "Running protoc on lbann.proto"
+    VERBATIM)
+
+  add_custom_target(LbannProto_genSrc
+    DEPENDS ${PROTO_SRCS} ${PROTO_HDRS})
 
   add_library(LbannProto ${PROTO_SRCS} ${PROTO_HDRS})
   target_link_libraries(LbannProto PUBLIC protobuf::libprotobuf)
@@ -9,6 +29,8 @@ if (LBANN_HAS_PROTOBUF)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
   target_include_directories(LbannProto PUBLIC
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+
+  add_dependencies(LbannProto LbannProto_genSrc)
 
   # Install the library
   install(TARGETS LbannProto
@@ -21,6 +43,9 @@ if (LBANN_HAS_PROTOBUF)
 
   # Install the newly built headers
   install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+  # Install the Python module.
+  install(FILES ${PROTO_PY} DESTINATION ${CMAKE_INSTALL_DATADIR}/python)
 
 endif (LBANN_HAS_PROTOBUF)
 

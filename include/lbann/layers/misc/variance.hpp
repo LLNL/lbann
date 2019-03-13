@@ -31,7 +31,17 @@
 
 namespace lbann {
 
-/** Variance layer. */
+/** @brief Estimate variance.
+ *
+ *  Given an input @f$x@f$ with empirical mean @f$\bar{x}@f$, an
+ *  unbiased estimator for the variance is given by
+ *  @f[
+ *    \sigma_{x}^2
+ *      \approx \frac{1}{n-1} \sum\limits_{i=1}^{n} (x - \bar{x})^2
+ *  @f]
+ *  Scaling by @f$ 1/n @f$ instead of @f$ 1/(n-1) @f$ is a biased
+ *  estimator.
+ */
 template <data_layout Layout, El::Device Device>
 class variance_layer : public Layer {
 public:
@@ -52,11 +62,17 @@ public:
                       other.m_workspace->Copy() : nullptr);
     return *this;
   }
-  
+
   variance_layer* copy() const override { return new variance_layer(*this); }
   std::string get_type() const override { return "variance"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+
+  description get_description() const override {
+    auto&& desc = Layer::get_description();
+    desc.add("Biased", m_biased);
+    return desc;
+  }
 
 protected:
 
@@ -66,8 +82,8 @@ protected:
     dist_data.colDist = El::STAR;
     m_means.reset(AbsDistMat::Instantiate(dist_data));
     m_workspace.reset(AbsDistMat::Instantiate(dist_data));
-  }  
-  
+  }
+
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims({1});
@@ -85,7 +101,7 @@ protected:
       LBANN_ERROR(err.str());
     }
   }
-  
+
   void fp_compute() override;
   void bp_compute() override;
 
@@ -98,7 +114,7 @@ private:
   std::unique_ptr<AbsDistMat> m_means;
   /** Workspace. */
   std::unique_ptr<AbsDistMat> m_workspace;
-  
+
 };
 
 } // namespace lbann

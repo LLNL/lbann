@@ -32,14 +32,13 @@
 
 namespace lbann {
 
-/** Sum layer. */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class sum_layer : public transform_layer {
+public:
 
- public:
   sum_layer(lbann_comm *comm)
     : transform_layer(comm) {
-    m_expected_num_parent_layers = -1; // No limit on parents
+    this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   sum_layer* copy() const override { return new sum_layer(*this); }
@@ -47,51 +46,50 @@ class sum_layer : public transform_layer {
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-     s << " sum; parents: ";
-     for (size_t i=0; i<this->m_parent_layers.size(); i++) {
-       s << this->m_parent_layers[i]->get_name() << " " << this->m_parent_layers[i]->get_type() << " ";
-     }
-     s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return s.str();
-  }
+protected:
 
- protected:
+  void setup_pointers() override {
+    transform_layer::setup_pointers();
+    if (get_num_parents() < 1) {
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has no parent layers";
+      LBANN_ERROR(err.str());
+    }
+  }
 
   void setup_dims() override {
     transform_layer::setup_dims();
+    set_output_dims(get_input_dims());
+
+    // Check that input dimensions match
     const auto& output_dims = get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
-      const auto& input_dims = get_input_dims(i);
-      if (input_dims != output_dims) {
+      if (get_input_dims(i) != output_dims) {
+        const auto& parents = get_parent_layers();
         std::stringstream err;
         err << get_type() << " layer \"" << get_name() << "\" "
-            << "expects input tensors with dimensions ";
-        for (size_t j = 0; j < output_dims.size(); ++j) {
-          err << (j > 0 ? " x " : "") << output_dims[j];
+            << "has input tensors with incompatible dimensions (";
+        for (int j = 0; j < get_num_parents(); ++j) {
+          const auto& dims = get_input_dims(j);
+          err << (j > 0 ? ", " : "")
+              << "layer \"" << parents[j]->get_name() << "\" outputs ";
+          for (size_t k = 0; k < dims.size(); ++k) {
+            err << (k > 0 ? " x " : "") << dims[k];
+          }
         }
-        err << ", but parent layer "
-            << "\"" << m_parent_layers[i]->get_name() << "\" "
-            << "outputs with dimensions ";
-        for (size_t j = 0; j < input_dims.size(); ++j) {
-          err << (j > 0 ? " x " : "") << input_dims[j];
-        }
+        err << ")";
         LBANN_ERROR(err.str());
       }
     }
+
   }
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (get_num_parents() < 1) {
-      El::Zero(output);
-    } else {
-      El::Copy(get_prev_activations(0), output);
-      for (int i = 1; i < get_num_parents(); ++i) {
-        El::Axpy(DataType(1), get_prev_activations(i), output);
-      }
+    El::Copy(get_prev_activations(0), output);
+    for (int i = 1; i < get_num_parents(); ++i) {
+      El::Axpy(DataType(1), get_prev_activations(i), output);
     }
   }
 

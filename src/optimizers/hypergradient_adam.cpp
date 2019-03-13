@@ -41,10 +41,7 @@ hypergradient_adam::hypergradient_adam(lbann_comm *comm,
     m_beta2(beta2),
     m_eps(eps),
     m_current_beta1(1),
-    m_current_beta2(1),
-    m_moment1(nullptr),
-    m_moment2(nullptr),
-    m_old_gradient(nullptr) {}
+    m_current_beta2(1) {}
 
 hypergradient_adam::hypergradient_adam(const hypergradient_adam& other)
   : optimizer(other),
@@ -54,13 +51,10 @@ hypergradient_adam::hypergradient_adam(const hypergradient_adam& other)
     m_eps(other.m_eps),
     m_current_beta1(other.m_current_beta1),
     m_current_beta2(other.m_current_beta2),
-    m_moment1(other.m_moment1),
-    m_moment2(other.m_moment2),
-    m_old_gradient(other.m_old_gradient) {
-  if (m_moment1 != nullptr)      { m_moment1 = m_moment1->Copy(); }
-  if (m_moment2 != nullptr)      { m_moment2 = m_moment2->Copy(); }
-  if (m_old_gradient != nullptr) { m_old_gradient = m_old_gradient->Copy(); }
-}
+    m_moment1(other.m_moment1 ? other.m_moment1->Copy() : nullptr),
+    m_moment2(other.m_moment2 ? other.m_moment2->Copy() : nullptr),
+    m_old_gradient(other.m_old_gradient ?
+                   other.m_old_gradient->Copy() : nullptr) {}
 
 hypergradient_adam& hypergradient_adam::operator=(const hypergradient_adam& other) {
   optimizer::operator=(other);
@@ -70,70 +64,38 @@ hypergradient_adam& hypergradient_adam::operator=(const hypergradient_adam& othe
   m_eps = other.m_eps;
   m_current_beta1 = other.m_current_beta1;
   m_current_beta2 = other.m_current_beta2;
-  
-  // Copy matrices
-  if (m_moment1 != nullptr && other.m_moment1 != nullptr
-      && m_moment1->DistData() == other.m_moment1->DistData()) {
-    El::Copy(*other.m_moment1, *m_moment1);
-  }
-  else {
-    if (m_moment1 != nullptr) { delete m_moment1; }
-    m_moment1 = other.m_moment1;
-    if (m_moment1 != nullptr) { m_moment1 = m_moment1->Copy(); }
-  }
-  if (m_moment2 != nullptr && other.m_moment2 != nullptr
-      && m_moment2->DistData() == other.m_moment2->DistData()) {
-    El::Copy(*other.m_moment2, *m_moment2);
-  }
-  else {
-    if (m_moment2 != nullptr) { delete m_moment2; }
-    m_moment2 = other.m_moment2;
-    if (m_moment2 != nullptr) { m_moment2 = m_moment2->Copy(); }
-  }
-  if (m_old_gradient != nullptr && other.m_old_gradient != nullptr
-      && m_old_gradient->DistData() == other.m_old_gradient->DistData()) {
-    El::Copy(*other.m_old_gradient, *m_old_gradient);
-  }
-  else {
-    if (m_old_gradient != nullptr) { delete m_old_gradient; }
-    m_old_gradient = other.m_old_gradient;
-    if (m_old_gradient != nullptr) { m_old_gradient = m_old_gradient->Copy(); }
-  }
-
+  m_moment1.reset(other.m_moment1 ? other.m_moment1->Copy() : nullptr);
+  m_moment2.reset(other.m_moment2 ? other.m_moment2->Copy() : nullptr);
+  m_old_gradient.reset(other.m_old_gradient ?
+                       other.m_old_gradient->Copy() : nullptr);
   return *this;
 }
 
-hypergradient_adam::~hypergradient_adam() {
-  if(m_moment1 != nullptr)      { delete m_moment1; }
-  if(m_moment2 != nullptr)      { delete m_moment2; }
-  if(m_old_gradient != nullptr) { delete m_old_gradient; }
+description hypergradient_adam::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("Hypergradient learning rate", m_hyper_learning_rate);
+  desc.add("beta1", m_beta1);
+  desc.add("beta2", m_beta2);
+  desc.add("eps", m_eps);
+  return desc;
 }
 
-std::string hypergradient_adam::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "hyper_learning_rate=" << m_hyper_learning_rate << ", "
-     << "beta1=" << m_beta1 << ", "
-     << "beta2=" << m_beta2 << ", "
-     << "eps=" << m_eps;
-  return ss.str();
-}
-
-void hypergradient_adam::setup(weights& w) {
+void hypergradient_adam::setup(weights* w) {
   optimizer::setup(w);
-  m_moment1 = m_gradient->Construct(m_gradient->Grid(),
-                                    m_gradient->Root());
-  m_moment2 = m_gradient->Construct(m_gradient->Grid(),
-                                    m_gradient->Root());
-  m_old_gradient = m_gradient->Construct(m_gradient->Grid(),
-                                    m_gradient->Root());
-  El::Zeros(*m_moment1, m_gradient->Height(), m_gradient->Width());
-  El::Zeros(*m_moment2, m_gradient->Height(), m_gradient->Width());
-  El::Zeros(*m_old_gradient, m_gradient->Height(), m_gradient->Width());
+  const auto& gradient = this->get_gradient();
+  m_moment1.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_moment2.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_old_gradient.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
+  El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
+  El::Zeros(*m_old_gradient, gradient.Height(), gradient.Width());
 }
 
 void hypergradient_adam::step_compute(AbsDistMat& values,
                                       const AbsDistMat& gradient) {
+  if (values.GetLocalDevice() != El::Device::CPU) {
+    LBANN_ERROR("hypergradient Adam is only supported on CPU");
+  }
 
   // Precompute the bias correction.
   m_current_beta1 *= m_beta1;
@@ -142,106 +104,84 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
                               (DataType(1) - m_current_beta1);
 
   // Get local matrix data
-  const int local_height = values.LocalHeight();
-  const int local_width = values.LocalWidth();
-  DataType* __restrict__ values_buffer = values.Buffer();
-  const int values_ldim = values.LDim();
+  const size_t local_height = values.LocalHeight();
+  const size_t local_width = values.LocalWidth();
+  auto* __restrict__ values_buffer = values.Buffer();
+  const size_t values_ldim = values.LDim();
   const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
-  const int gradient_ldim = gradient.LDim();
-  DataType* __restrict__ moment1_buffer = m_moment1->Buffer();
-  const int moment1_ldim = m_moment1->LDim();
-  DataType* __restrict__ moment2_buffer = m_moment2->Buffer();
-  const int moment2_ldim = m_moment2->LDim();
-  DataType* __restrict__ old_gradient_buffer = m_old_gradient->Buffer();
-  const int old_gradient_ldim = m_old_gradient->LDim();
+  const size_t gradient_ldim = gradient.LDim();
+  auto* __restrict__ moment1_buffer = m_moment1->Buffer();
+  const size_t moment1_ldim = m_moment1->LDim();
+  auto* __restrict__ moment2_buffer = m_moment2->Buffer();
+  const size_t moment2_ldim = m_moment2->LDim();
+  auto* __restrict__ old_gradient_buffer = m_old_gradient->Buffer();
+  const size_t old_gradient_ldim = m_old_gradient->LDim();
 
   // Compute the learning rate update.
   DataType lr_update = El::Dot(gradient, *m_old_gradient);
-  m_learning_rate += m_hyper_learning_rate * lr_update;
+  auto learning_rate = this->get_learning_rate();
+  learning_rate += m_hyper_learning_rate * lr_update;
+  this->set_learning_rate(learning_rate);
 
-  // Check if matrix data is contiguous.
-  if (values_ldim != local_height
-      || gradient_ldim != local_height
-      || moment1_ldim != local_height
-      || moment2_ldim != local_height
-      || old_gradient_ldim != local_height) {
-    // Non-contiguous data.
-    #pragma omp parallel for collapse(2)
-    for (int j = 0; j < local_width; ++j) {
-      for (int i = 0; i < local_height; ++i) {
-        DataType& x = values_buffer[i+j*values_ldim];
-        const DataType g = gradient_buffer[i+j*gradient_ldim] + m_eps;
-        DataType& m1 = moment1_buffer[i+j*moment1_ldim];
-        DataType& m2 = moment2_buffer[i+j*moment2_ldim];
-        DataType& old_c = old_gradient_buffer[i+j*old_gradient_ldim];
-        m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
-        m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-        old_c = correction * m1 / (std::sqrt(m2) + m_eps);
-        x -= m_learning_rate * old_c;
-      }
-    }
-  } else {
-    // Contiguous data.
-    #pragma omp parallel for
-    for (int i = 0; i < local_height * local_width; ++i) {
-      DataType& x = values_buffer[i];
-      // Add eps here to avoid denormalized floats.
-      const DataType g = gradient_buffer[i] + m_eps;
-      DataType& m1 = moment1_buffer[i];
-      DataType& m2 = moment2_buffer[i];
-      DataType& old_c = old_gradient_buffer[i];
-      // Update the first/second moment estimates.
+  // Hypergradient Adam step
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  for (size_t col = 0; col < local_width; ++col) {
+    for (size_t row = 0; row < local_height; ++row) {
+      auto& x = values_buffer[row+col*values_ldim];
+      const auto g = gradient_buffer[row+col*gradient_ldim] + m_eps;
+      auto& m1 = moment1_buffer[row+col*moment1_ldim];
+      auto& m2 = moment2_buffer[row+col*moment2_ldim];
+      auto& old_c = old_gradient_buffer[row+col*old_gradient_ldim];
       m1 = m_beta1 * m1 + (DataType(1) - m_beta1) * g;
       m2 = m_beta2 * m2 + (DataType(1) - m_beta2) * g * g;
-      // Compute the unbiased gradient estimate.
       old_c = correction * m1 / (std::sqrt(m2) + m_eps);
-      // Parameter update.
-      x -= m_learning_rate * old_c;
+      x -= learning_rate * old_c;
     }
   }
+
 }
 
 bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if(p.get_cb_type() == callback_type::batch)
     optimizer::save_to_checkpoint_shared(p,name_prefix);
-  if (m_comm->am_model_master()) {
+  if (get_comm().am_trainer_master()) {
     pack_scalars(p);
   }
- 
+
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment1);
- 
+  p.write_distmat(persist_type::train, l_name, m_moment1.get());
+
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.write_distmat(persist_type::train, l_name, m_moment2);
- 
+  p.write_distmat(persist_type::train, l_name, m_moment2.get());
+
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
-  p.write_distmat(persist_type::train, l_name, m_old_gradient);
+  p.write_distmat(persist_type::train, l_name, m_old_gradient.get());
 
   return true;
 }
- 
+
 bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   if(p.get_cb_type() == callback_type::batch)
     optimizer::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
-  if (m_comm->am_model_master()) {
+  if (get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
   }
- 
-  m_comm->model_broadcast(0, header);
+
+  get_comm().trainer_broadcast(0, header);
 
   unpack_header(header);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment1);
+  p.read_distmat(persist_type::train, l_name, m_moment1.get());
 
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld.bin", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
-  p.read_distmat(persist_type::train, l_name, m_moment2);
- 
+  p.read_distmat(persist_type::train, l_name, m_moment2.get());
+
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld.bin", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
-  p.read_distmat(persist_type::train, l_name, m_old_gradient);
+  p.read_distmat(persist_type::train, l_name, m_old_gradient.get());
   return true;
 }
 
@@ -249,33 +189,33 @@ bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string 
   if(p.get_cb_type() == callback_type::batch)
     optimizer::save_to_checkpoint_distributed(p,name_prefix);
   pack_scalars(p);
-   
+
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.write_rank_distmat(persist_type::train, l_name, *m_moment1);
- 
+
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
   p.write_rank_distmat(persist_type::train, l_name, *m_moment2);
-  
+
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
   p.write_rank_distmat(persist_type::train, l_name, *m_old_gradient);
-    
+
   return true;
-} 
- 
+}
+
 bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   if(p.get_cb_type() == callback_type::batch)
     optimizer::load_from_checkpoint_distributed(p,name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
-    
+
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_moment1);
-  
+
   sprintf(l_name, "%s_optimizer_adam_moment2_%lldx%lld", name_prefix.c_str(), m_moment2->Height(), m_moment2->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
-    
+
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_old_gradient);
   return true;

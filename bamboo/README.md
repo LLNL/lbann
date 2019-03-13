@@ -47,13 +47,13 @@ As an alternative to splitting the file, errors can be searched for with `grep -
 
 Bamboo agent properties are used to specify requirements for each job.
 
-| Agents (jobs)              | `agent_owner` | `architecture` | `cluster`  | `gpu_architecture` | `sys_type`             |
-| ---                        | ---           | ---            | ---        | ---                | ---                    |
-| Catalyst Agents (x86_cpu)  | `lbannusr`    | `x86_64`       | `catalyst` | `none`             | `toss_3_x86_64_ib`     |
-| Pascal Agents              | `lbannusr`    | `x86_64`       | `pascal`   | `pascal`           | `chaos_6_x86_64_ib`    |
-| Quartz Agents (x86_cpu)    | `lbannusr`    | `x86_64`	      |	`quartz`   | `none`		| `toss_3_x86_64_ib`     |
-| Ray Agents (ppc64le_gpu)   | `lbannusr`    | `ppc64_le`     | `ray`      | `pascal`           | `blueos_3_ppc64le_ib`  |
-| Surface Agents (x86_gpu)   | `lbannusr`    | `x86_64`       | `surface`  | `kepler`           | `chaos_5_x86_64_ib`    |
+| Agents (jobs)                  | `agent_owner` | `architecture` | `cluster`  | `gpu_architecture` | `sys_type`             |
+| ---                            | ---           | ---            | ---        | ---                | ---                    |
+| Catalyst Agents (x86_cpu)      | `lbannusr`    | `x86_64`       | `catalyst` | `none`             | `toss_3_x86_64_ib`     |
+| Pascal Agents (x86_gpu_pascal) | `lbannusr`    | `x86_64`       | `pascal`   | `pascal`           | `chaos_6_x86_64_ib`    |
+| Quartz Agents (x86_cpu)        | `lbannusr`    | `x86_64`	  | `quartz`   | `none`	            | `toss_3_x86_64_ib`     |
+| Ray Agents (ppc64le_gpu)       | `lbannusr`    | `ppc64_le`     | `ray`      | `pascal`           | `blueos_3_ppc64le_ib`  |
+| Surface Agents (x86_gpu)       | `lbannusr`    | `x86_64`       | `surface`  | `kepler`           | `chaos_5_x86_64_ib`    |
 
 Currently, `agent_owner`, `architecture`, and `gpu_architecture` are used to determine agents to run a job.
 

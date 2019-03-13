@@ -24,11 +24,10 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
-#define LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
+#ifndef LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED
+#define LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED
 
 #include "lbann/layers/learning/learning.hpp"
-#include "lbann/layers/activations/activation.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
@@ -37,33 +36,10 @@
 
 namespace lbann {
 
-/** Fully-connected layer.
- *  This layer applies an affine transformation.
- */
+/** @brief Perform an affine transformation. */
 template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
- private:
-
-  /** Scaling factor for bias term.
-   *  If the scaling factor is zero, bias is not applied.
-   */
-  DataType m_bias_scaling_factor;
-
-  /** Linearity gradient.
-   *  This is this layer's contribution to the objective function
-   *  gradient w.r.t. the linearity weights (i.e. its matrix weights).
-   */
-  AbsDistMat* m_linearity_gradient;
-  /** Bias weights gradient.
-   *  This is this layer's contribution to the objective function
-   *  gradient w.r.t. the bias weights.
-   */
-  AbsDistMat* m_bias_gradient;
-
-  /** Whether the transpose of the linearity matrix is applied. */
-  bool m_transpose;
-
- public:
+public:
 
   fully_connected_layer(lbann_comm *comm,
                         int output_size,  /// @todo Accept a vector
@@ -81,16 +57,6 @@ class fully_connected_layer : public learning_layer {
     // Initialize bias
     m_bias_scaling_factor = has_bias ? DataType(1) : DataType(0);
 
-  }
-
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    return std::string {} +
-     " fully_connected; num_neurons: "
-     + std::to_string(get_output_size())
-     + " has_bias: " + std::to_string(this->m_bias_scaling_factor)
-     + " dataLayout: " + this->get_data_layout_string(get_data_layout())
-     + " device alloc: " + this->get_device_allocation_string(get_device_allocation());
   }
 
   fully_connected_layer(const fully_connected_layer& other) :
@@ -138,20 +104,18 @@ class fully_connected_layer : public learning_layer {
   }
 
   std::string get_type() const override { return "fully connected"; }
-
   data_layout get_data_layout() const override { return T_layout; }
-
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Set dimensions of output tensor.
-   *  E.g. set the dimensions of an "activations tensor" or the
-   *  "neuron dimensions."
-   */
-  void set_output_dims(std::vector<int> dims) {
-    learning_layer::set_output_dims(dims);
+  description get_description() const override {
+    auto&& desc = learning_layer::get_description();
+    const auto& bias_str = (m_bias_scaling_factor == DataType(0) ?
+                            "disabled" : "enabled");
+    desc.add("Bias", bias_str);
+    return desc;
   }
 
- protected:
+protected:
 
   void setup_matrices(const El::Grid& grid) override;
 
@@ -241,13 +205,32 @@ class fully_connected_layer : public learning_layer {
         LBANN_ERROR(err.str());
       }
     }
-    
+
   }
 
   void fp_compute() override;
   void bp_compute() override;
 
- private:
+private:
+
+  /** Scaling factor for bias term.
+   *  If the scaling factor is zero, bias is not applied.
+   */
+  DataType m_bias_scaling_factor;
+
+  /** Linearity gradient.
+   *  This is this layer's contribution to the objective function
+   *  gradient w.r.t. the linearity weights (i.e. its matrix weights).
+   */
+  AbsDistMat* m_linearity_gradient;
+  /** Bias weights gradient.
+   *  This is this layer's contribution to the objective function
+   *  gradient w.r.t. the bias weights.
+   */
+  AbsDistMat* m_bias_gradient;
+
+  /** Whether the transpose of the linearity matrix is applied. */
+  bool m_transpose;
 
   /** Deallocate distributed matrices. */
   void deallocate_matrices() {
@@ -259,4 +242,4 @@ class fully_connected_layer : public learning_layer {
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_FULL_CONNECTED_HPP_INCLUDED
+#endif // LBANN_LAYERS_LEARNING_FULLY_CONNECTED_HPP_INCLUDED

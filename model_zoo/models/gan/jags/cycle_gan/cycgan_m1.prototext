@@ -23,9 +23,7 @@ model {
   num_epochs: 1
   data_layout: "data_parallel"
   layer {
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
     name: "data"
     data_layout: "data_parallel"
     parents: " "
@@ -537,9 +535,10 @@ model {
     }
   }
   #callback {
-  #  dump_activations {
-  #    basename: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
-  #    layer_names: "image_data_dummy"
+  #  dump_outputs {
+  #    directory: "/usr/workspace/wsa/jacobs32/github.saj.lbann/jagsv2/cycgan_m1/"
+  #    layers: "image_data_dummy"
+  #    execution_modes: "test"
   #  }
   #}
   block_size: 256

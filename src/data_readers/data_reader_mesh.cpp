@@ -66,7 +66,7 @@ void mesh_reader::load() {
   select_subset_of_data();
 }
 
-bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
+bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   if (m_random_flips) {
     fast_rng_gen& gen = get_fast_generator();
     std::uniform_int_distribution<int> dist(0, 1);
@@ -82,7 +82,7 @@ bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) {
   return true;
 }
 
-bool mesh_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) {
+bool mesh_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
   Mat Y_view = El::View(Y, El::ALL, El::IR(mb_idx));
   load_file(data_id, m_target_name, Y_view);
   return true;
@@ -95,7 +95,7 @@ void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat) {
     throw lbann_exception("mesh_reader: failed to open " + filename);
   }
   // Load into a local buffer.
-  float* buf = m_load_bufs[omp_get_thread_num()].data();
+  DataType* buf = m_load_bufs[omp_get_thread_num()].data();
   if (!f.read((char*) buf, m_data_height * m_data_width * sizeof(float))) {
     throw lbann_exception("mesh_reader: failed to read " + filename);
   }

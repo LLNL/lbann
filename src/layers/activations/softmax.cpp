@@ -51,7 +51,7 @@ void fp(lbann_comm& comm,
 
   // Find column-wise maximum entries
   El::Fill(workspace, std::numeric_limits<DataType>::lowest());
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& max_entry = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
@@ -63,7 +63,7 @@ void fp(lbann_comm& comm,
   // Exponentiate outputs and compute column sums
   // Note: Subtracting by the column max prevents output from blowing
   // up. Large negative values underflow to 0.
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
     DataType sum = 0;
@@ -80,7 +80,7 @@ void fp(lbann_comm& comm,
   // Divide outputs by column sums
   // Note: Small values can be rounded to minimum output value to
   // avoid denormalized floats.
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& scale = 1 / local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
@@ -107,7 +107,7 @@ void bp(lbann_comm& comm,
 
   // Compute dot products between output and gradient w.r.t. output
   El::Zero(local_workspace);
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& y_dot_dy = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
@@ -119,7 +119,7 @@ void bp(lbann_comm& comm,
   comm.allreduce(workspace, workspace.RedundantComm());
 
   // Compute gradient w.r.t. input
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& y_dot_dy = local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {

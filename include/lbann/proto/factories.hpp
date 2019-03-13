@@ -24,10 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_PROTO_FACTORIES_HPP
-#define LBANN_PROTO_FACTORIES_HPP
+#ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
+#define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/data_readers/data_reader.hpp"
 
 namespace lbann {
 namespace proto {
@@ -39,16 +40,18 @@ model* construct_model(lbann_comm* comm,
                        const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
-std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          const lbann_data::Model& proto_model);
+std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <data_layout layout, El::Device Dev>
-Layer* construct_layer(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       int num_parallel_readers,
-                       const lbann_data::Layer& proto_layer);
+std::unique_ptr<Layer> construct_layer(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int num_parallel_readers,
+  const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
 weights* construct_weights(lbann_comm* comm,
@@ -70,10 +73,6 @@ lbann_callback* construct_callback(lbann_comm* comm,
 lbann_summary* construct_summarizer(lbann_comm* comm,
                                     const lbann_data::Model& m);
 
-/** Construct a metric specified with prototext. */
-metric* construct_metric(lbann_comm* comm,
-                         const lbann_data::Metric& proto_metric);
-
 /** Construct an optimizer specified with prototext. */
 optimizer* construct_optimizer(lbann_comm* comm,
                                const lbann_data::Optimizer& proto_opt);
@@ -91,8 +90,20 @@ std::vector<T> parse_list(std::string str) {
   }
   return list;
 }
+template <>
+std::vector<execution_mode> parse_list<execution_mode>(std::string str);
+
+/** Parse a space-separated set. */
+template <typename T = std::string>
+std::set<T> parse_set(std::string str) {
+  std::set<T> set;
+  for (const auto& entry : parse_list<T>(str)) {
+    set.insert(entry);
+  }
+  return set;
+}
 
 } // namespace proto
 } // namespace lbann
 
-#endif // LBANN_PROTO_FACTORIES_HPP
+#endif // LBANN_PROTO_FACTORIES_HPP_INCLUDED

@@ -1,0 +1,22 @@
+diff --git a/cub/util_allocator.cuh b/cub/util_allocator.cuh
+index 0e6dd048..f41f2e64 100644
+--- a/cub/util_allocator.cuh
++++ b/cub/util_allocator.cuh
+@@ -446,7 +446,7 @@ struct CachingDeviceAllocator
+             if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes)) == cudaErrorMemoryAllocation)
+             {
+                 // The allocation attempt failed: free all cached blocks on device and retry
+-                if (debug) _CubLog("\tDevice %d failed to allocate %lld bytes for stream %lld, retrying after freeing cached allocations",
++                _CubLog("\tDevice %d failed to allocate %lld bytes for stream %lld, retrying after freeing cached allocations",
+                       device, (long long) search_key.bytes, (long long) search_key.associated_stream);
+ 
+                 error = cudaSuccess;    // Reset the error we will return
+@@ -606,7 +606,7 @@ struct CachingDeviceAllocator
+             if (CubDebug(error = cudaFree(d_ptr))) return error;
+             if (CubDebug(error = cudaEventDestroy(search_key.ready_event))) return error;
+ 
+-            if (debug) _CubLog("\tDevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
++            _CubLog("\tDevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
+                 device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].live);
+         }
+ 

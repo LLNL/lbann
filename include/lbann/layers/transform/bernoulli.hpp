@@ -32,38 +32,36 @@
 
 namespace lbann {
 
-/** Activations are drawn from Bernoulli distribution.
- *  During validation and testing, the layer outputs 0.
+/** @brief Random values with Bernoulli distribution.
+ *
+ *  During validation and testing, outputs are all zero.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class bernoulli_layer : public transform_layer {
- private:
+private:
   /** Probability of outputting 1. */
   DataType m_prob;
 
- public:
+public:
   bernoulli_layer(lbann_comm *comm,
                   std::vector<int> dims,
                   DataType prob = DataType(0.5))
     : transform_layer(comm), m_prob(prob) {
     set_output_dims(dims);
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
   }
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
   std::string get_type() const override { return "Bernoulli"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream ss;
-    ss << "bernoulli_layer" << "  "
-       << "prob: " << m_prob << " "
-       << "dataLayout: " << this->get_data_layout_string(get_data_layout());
-     return ss.str();
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Probability", m_prob);
+    return desc;
   }
 
- protected:
+protected:
 
   void fp_compute() override {
     auto& output = get_activations();

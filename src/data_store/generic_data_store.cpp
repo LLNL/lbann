@@ -38,9 +38,9 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
-    m_reader(reader), 
+m_n(0),
+    m_reader(reader),
     m_my_minibatch_indices(nullptr),
-    m_epoch(0),
     m_in_memory(true),
     m_model(m),
     m_extended_testing(false),
@@ -50,36 +50,29 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_verbose(false)
 {
   if (m_reader == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_reader is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_reader is nullptr");
   }
 
   if (m_model == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_model is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_model is nullptr");
   }
 
   m_comm = m_model->get_comm();
   if (m_comm == nullptr) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << " m_comm is nullptr";
-        throw lbann_exception(err.str());
+    LBANN_ERROR(" m_comm is nullptr");
   }
+
   m_master = m_comm->am_world_master();
-  m_rank = m_comm->get_rank_in_model();
-  m_np = m_comm->get_procs_per_model();
-  m_mpi_comm = m_comm->get_model_comm().comm;
+  m_rank = m_comm->get_rank_in_trainer();
+  m_np = m_comm->get_procs_per_trainer();
+  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
 
   m_dir = m_reader->get_file_dir();
 
   set_name("generic_data_store");
-  options *opts = options::get();
+
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
+  options *opts = options::get();
   if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
     m_extended_testing = true;
   }
@@ -97,7 +90,7 @@ generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
     m_dir = m_reader->get_local_file_dir();
   }
 
-  if (m_comm->get_num_models() != 1) {
+  if (m_comm->get_num_trainers() != 1) {
     if (m_master) {
       std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
                 << "a single model; please ask Dave Hysom to fix!\n\n";
@@ -137,18 +130,21 @@ void generic_data_store::get_my_datastore_indices() {
   }
 }
 
-void generic_data_store::setup() {
+void generic_data_store::setup(int mini_batch_size) {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
   if (m_master) {
-    std::cerr << "data_reader type is: " << m_reader->get_type() << "\n";
+    std::cerr << "data_reader type is: " << m_reader->get_type()
+              << " num_readers: " << m_num_readers << " role: "
+              << m_reader->get_role() << "\n";
   }
 
   if (is_subsidiary_store()) {
     return;
   }
 
+  #if 0
   // get the set of global indices used by this processor in
   // generic_data_reader::fetch_data(). Note that these are
   // "original' indices, not shuffled indices, i.e, these indices
@@ -170,11 +166,15 @@ void generic_data_store::setup() {
   }
   m_reader->set_save_minibatch_entries(false);
   m_my_minibatch_indices = &(m_reader->get_minibatch_indices());
+  if (m_master) {
+    std::cerr << "my num minibatch indices: " << m_my_minibatch_indices->size() << "\n";
+  }
+#endif
 }
 
 void generic_data_store::print_partitioned_indices() {
   if (! m_master) {
-    return; 
+    return;
   }
   std::cerr << "\n\n=============================================\n"
             << "minibatch indices:\n";
@@ -203,25 +203,22 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << "stat failed for dir: " << dir
-        << " and fn: " << fn 
+        << " and fn: " << fn
         << " on node: " << getenv("SLURMD_NODENAME");
     throw lbann_exception(err.str());
   }
-  return st.st_size;   
+  return st.st_size;
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
+if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
-  ++m_epoch;
-  if (m_epoch > 1 && exchange_indices && m_in_memory) {
-    exchange_data();
-  }
 }
 
 void generic_data_store::exchange_mb_counts() {
   int my_num_indices = m_my_minibatch_indices_v.size();
   m_mb_counts.resize(m_np);
-  m_comm->model_all_gather<int>(my_num_indices, m_mb_counts);
+  m_comm->trainer_all_gather<int>(my_num_indices, m_mb_counts);
 }
 
 void generic_data_store::exchange_mb_indices() {
@@ -255,7 +252,7 @@ void generic_data_store::exchange_partitioned_indices() {
   //determine the largest number of minibatches over all processors
   std::vector<int> counts(m_np);
   int my_num_mb = m_my_minibatch_indices->size();
-  m_comm->model_all_gather<int>(my_num_mb, counts);
+  m_comm->trainer_all_gather<int>(my_num_mb, counts);
   m_num_minibatches = 0;
   for (auto t : counts) {
     m_num_minibatches = (size_t)t > m_num_minibatches ? t : m_num_minibatches;
@@ -269,7 +266,7 @@ void generic_data_store::exchange_partitioned_indices() {
   for (auto t : (*m_my_minibatch_indices)) {
     count += t.size();
   }
-  m_comm->model_all_gather<int>(count, counts);
+  m_comm->trainer_all_gather<int>(count, counts);
 
 
   //now, fill in the vector
@@ -294,7 +291,7 @@ void generic_data_store::exchange_partitioned_indices() {
   for (size_t k=1; k<counts.size(); k++) {
     displ[k] = displ[k-1] + counts[k-1];
   }
-  
+
   //construct recv vector
   int n = std::accumulate(counts.begin(), counts.end(), 0);
   std::vector<int> all_w(n);
@@ -318,12 +315,6 @@ void generic_data_store::exchange_partitioned_indices() {
         m_all_partitioned_indices[p][i].push_back(*ww++);
       }
     }
-  }
-}
-
-void generic_data_store::init_minibatch() {
-  if (! m_in_memory) {
-    fetch_data();
   }
 }
 
@@ -406,13 +397,13 @@ void generic_data_store::build_index_owner() {
     num_indices = 1;
   }
   std::vector<int>counts(m_np);
-  m_comm->model_all_gather<int>(num_indices, counts);
+  m_comm->trainer_all_gather<int>(num_indices, counts);
 
   std::vector<int> disp(m_np);
   disp[0] = 0;
   for (int h=1; h<m_np; h++) {
     disp[h] = disp[h-1] + counts[h-1];
-  }  
+  }
   int num_global_indices = std::accumulate(counts.begin(), counts.end(), 0);
   std::vector<int> my_indices;
   my_indices.reserve(num_indices);

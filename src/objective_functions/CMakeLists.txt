@@ -6,7 +6,6 @@ set_full_path(THIS_DIR_SOURCES
   )
 
 # Add the subdirectories
-add_subdirectory(loss_functions)
 add_subdirectory(weight_regularization)
 
 # Propagate the files up the tree

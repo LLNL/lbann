@@ -24,19 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
-#define LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
+#ifndef LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
+#define LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 
 namespace lbann {
 
-/** Log softmax layer.
- *  The softmax function is defined:
- *    \f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} \f]
- *  This layer computes:
- *    \f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} \f]
+/** @brief Logarithm of softmax function.
+ *
+ *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
  */
 template <data_layout Layout, El::Device Device>
 class log_softmax_layer : public Layer {
@@ -80,6 +78,11 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
+
   void setup_matrices(const El::Grid& grid) override {
     Layer::setup_matrices(grid);
     auto dist = get_prev_activations().DistData();
@@ -117,4 +120,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_ACTIVATION_LOG_SOFTMAX_HPP_INCLUDED
+#endif // LBANN_LAYERS_ACTIVATIONS_LOG_SOFTMAX_HPP_INCLUDED

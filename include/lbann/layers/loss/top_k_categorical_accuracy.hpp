@@ -31,13 +31,15 @@
 
 namespace lbann {
 
-/** Top-k categorical accuracy layer.
- *  The two inputs are interpreted as prediction scores and
- *  ground-truth labels, respectively. An output is set to one if the
- *  corresponding label matches one of the top-k prediction scores and
- *  is otherwise zero. Each label is assumed to be a one-hot vector
- *  and ties in the top-k prediction scores are broken in favor of
- *  entries with smaller indices.
+
+/** @brief
+ *
+ *  Requires two inputs, which are respectively interpreted as
+ *  prediction scores and as a one-hot label vector. The output is one
+ *  if the corresponding label matches one of the top-k prediction
+ *  scores and is otherwise zero. Ties in the top-k prediction scores
+ *  are broken in favor of entries with smaller indices.
+ *
  *  @todo Gracefully handle case where label is not a one-hot vector.
  */
 template <data_layout T_layout, El::Device Dev>
@@ -46,10 +48,7 @@ public:
 
   top_k_categorical_accuracy_layer(lbann_comm *comm, El::Int k)
     : Layer(comm), m_k(k) {
-    set_output_dims({1});
-
-    // Expects inputs for prediction and ground truth
-    m_expected_num_parent_layers = 2;
+    this->m_expected_num_parent_layers = 2;
   }
 
   top_k_categorical_accuracy_layer* copy() const override {
@@ -59,13 +58,45 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+  description get_description() const override {
+    auto&& desc = Layer::get_description();
+    desc.add("k", m_k);
+    return desc;
+  }
+
+protected:
+
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims({1});
+
+    // Check that input dimensions match
+    if (get_input_dims(0) != get_input_dims(1)) {
+      const auto& parents = get_parent_layers();
+      std::stringstream err;
+      err << get_type() << " layer \"" << get_name() << "\" "
+          << "has input tensors with different dimensions (";
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& dims = get_input_dims(i);
+        err << (i > 0 ? ", " : "")
+            << "layer \"" << parents[i]->get_name() << "\" outputs ";
+        for (size_t j = 0; j < dims.size(); ++j) {
+          err << (j > 0 ? " x " : "") << dims[j];
+        }
+      }
+      err << ")";
+      LBANN_ERROR(err.str());
+    }
+
+  }
+
   void fp_compute() override;
 
- private:
+private:
 
   /** Parameter for top-k search. */
   const El::Int m_k;
-  
+
 };
 
 } // namespace lbann

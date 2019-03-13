@@ -1,115 +1,110 @@
 model {
-  name: "sequential_model"
-  data_layout: "data_parallel"
   mini_batch_size: 512
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
-  procs_per_model: 0
+  procs_per_trainer: 0
 
-  ###################################################
+  ##############################################
   # Objective function
-  ###################################################
+  ##############################################
 
   objective_function {
-    mean_squared_error {}
+    layer_term { layer: "mean_squared_error" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
   }
 
-  ###################################################
+  ##############################################
   # Callbacks
-  ###################################################
-  callback {
-    print {
-      interval: 1
-    }
-  }
-  callback {
-    timer {
-    }
-  }
-  # callback {
-  #   save_images {
-  #     image_prefix: "images_"
-  #     image_format: "pgm"
-  #   }
-  # }
-  ###################################################
-  # start of layers
-  ###################################################
+  ##############################################
 
-  #######
-  # INPUT
-  #######
+  callback { print {} }
+  callback { timer {} }
+
+  ##############################################
+  # Layers
+  ##############################################
+
+  ######################
+  # Data
+  ######################
+
   layer {
-    name: "data"
-    children: "encode1 reconstruction"
+    name: "input"
+    children: "data label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-      target_mode: "reconstruction"
-    }
+    input {}
+  }
+  layer {
+    parents: "input"
+    name: "data"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "input"
+    name: "label"
+    data_layout: "data_parallel"
+    dummy {}
   }
 
-  #############
-  # FULLY CONNECTED ENCODE 1
-  #############
+  ######################
+  # Encoder
+  ######################
+
   layer {
-    name: "encode1"
+    parents: "data"
+    name: "encode1_fc"
     data_layout: "data_parallel"
     fully_connected {
       num_neurons: 12
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
-
-  ######
-  # RELU encode1
-  ######
   layer {
-    name: "encode_relu1"
+    parents: "encode1_fc"
+    name: "encode1"
     data_layout: "data_parallel"
-    relu {
-    }
+    relu {}
   }
 
-  #################
-  # FULLY_CONNECTED decode1
-  #################
+  ######################
+  # Decoder
+  ######################
+
+  weights {
+    name: "decode1_fc_matrix"
+    glorot_uniform_initializer {}
+  }
   layer {
+    parents: "encode1"
+    name: "decode1_fc"
+    weights: "decode1_fc_matrix"
+    hint_layer: "data"
+    data_layout: "data_parallel"
+    fully_connected {
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode1_fc"
     name: "decode1"
     data_layout: "data_parallel"
-    num_neurons_from_data_reader: true
-    fully_connected {
-      weight_initialization: "glorot_uniform"
-      has_bias: true
-    }
-  }
-
-  #######
-  # RELU decode1
-  #######
-  layer {
-    name: "decode_relu10"
-    data_layout: "data_parallel"
     relu {
     }
   }
 
-  #################
-  # RECONSTRUCTION
-  #################
+  ######################
+  # Reconstruction
+  ######################
+
   layer {
-    name: "reconstruction"
-    parents: "decode_relu10 data"
+    parents: "decode1 data"
+    name: "mean_squared_error"
     data_layout: "data_parallel"
-    reconstruction {}
+    mean_squared_error {}
   }
 
-  ###################################################
-  # end of layers
-  ###################################################
 }

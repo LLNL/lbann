@@ -1,0 +1,216 @@
+# This will create IMPORTED targets for LBANN. The executables will be
+# LBANN::<exe-name>-bin (e.g., LBANN::lbann-bin) and the library will
+# be LBANN::lbann.
+
+include("${CMAKE_CURRENT_LIST_DIR}/LBANNConfigVersion.cmake")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/modules")
+list(APPEND CMAKE_MODULE_PATH "@EXTRA_CMAKE_MODULE_DIR@")
+
+set(LBANN_VERSION ${PACKAGE_VERSION})
+
+# Record compiler information
+set(LBANN_CXX_COMPILER "@CMAKE_CXX_COMPILER@")
+set(LBANN_CUDA_COMPILER "$@CMAKE_CUDA_COMPILER@")
+
+set(LBANN_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
+set(LBANN_CUDA_FLAGS "@CMAKE_CUDA_FLAGS@")
+
+set(LBANN_CXX_STANDARD "@CMAKE_CXX_STANDARD@")
+set(LBANN_CUDA_STANDARD "@CMAKE_CUDA_STANDARD@")
+
+set(LBANN_MPI_CXX_COMPILER "@MPI_CXX_COMPILER@")
+
+# Fix the CXX and CUDA standards
+if (CMAKE_CXX_STANDARD LESS LBANN_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD "${LBANN_CXX_STANDARD}")
+endif ()
+set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+
+# Record the various flags and switches accumlated in LBANN
+set(LBANN_ALUMINUM_MPI_PASSTHROUGH @LBANN_ALUMINUM_MPI_PASSTHROUGH@)
+set(LBANN_BUILT_WITH_SPECTRUM @LBANN_BUILT_WITH_SPECTRUM@)
+set(LBANN_DATATYPE @LBANN_DATATYPE@)
+set(LBANN_DETERMINISTIC @LBANN_DETERMINISTIC@)
+set(LBANN_GNU_LINUX @LBANN_GNU_LINUX@)
+set(LBANN_HAS_ALUMINUM @LBANN_HAS_ALUMINUM@)
+set(LBANN_HAS_CEREAL @LBANN_HAS_CEREAL@)
+set(LBANN_HAS_CNPY @LBANN_HAS_CNPY@)
+set(LBANN_HAS_CONDUIT @LBANN_HAS_CONDUIT@)
+set(LBANN_HAS_CUDA @LBANN_HAS_CUDA@)
+set(LBANN_HAS_CUDNN @LBANN_HAS_CUDNN@)
+set(LBANN_HAS_DOXYGEN @LBANN_HAS_DOXYGEN@)
+set(LBANN_HAS_HYDROGEN @LBANN_HAS_HYDROGEN@)
+set(LBANN_HAS_LBANN_PROTO @LBANN_HAS_LBANN_PROTO@)
+set(LBANN_HAS_OPENCV @LBANN_HAS_OPENCV@)
+set(LBANN_HAS_NCCL2 @LBANN_HAS_NCCL2@)
+set(LBANN_HAS_PROTOBUF @LBANN_HAS_PROTOBUF@)
+set(LBANN_HAS_TBINF @LBANN_HAS_TBINF@)
+set(LBANN_HAS_VTUNE @LBANN_HAS_VTUNE@)
+set(LBANN_NO_OMP_FOR_DATA_READERS @LBANN_NO_OMP_FOR_DATA_READERS@)
+set(LBANN_NVPROF @LBANN_NVPROF@)
+set(LBANN_SEQUENTIAL_INITIALIZATION @LBANN_SEQUENTIAL_INITIALIZAION@)
+set(LBANN_TOPO_AWARE @LBANN_TOPO_AWARE@)
+
+# Setup dependencies
+
+# First, CEREAL.
+if (LBANN_HAS_CEREAL)
+  find_package(CEREAL NO_MODULE
+    HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
+    PATH_SUFFIXES share/cmake/cereal
+    NO_DEFAULT_PATH)
+  if (NOT CEREAL_FOUND)
+    find_package(CEREAL NO_MODULE)
+  endif ()
+  if (NOT CEREAL_FOUND AND NOT CEREAL_DIR)
+    set(CEREAL_DIR "@CEREAL_DIR@")
+    find_package(CEREAL NO_MODULE REQUIRED)
+  endif ()
+endif ()
+
+# Next, Hydrogen. We can probably inherit Aluminum-ness from
+# there, as well as MPI and OpenMP.
+if (LBANN_HAS_HYDROGEN)
+  if (NOT Hydrogen_DIR AND NOT HYDROGEN_DIR)
+    set(Hydrogen_DIR "@Hydrogen_DIR@")
+  endif ()
+  set(MIN_H_VERSION "@HYDROGEN_VERSION@")
+  find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE QUIET
+    HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
+    PATH_SUFFIXES lib/cmake/hydrogen
+    NO_DEFAULT_PATH)
+
+  if (NOT Hydrogen_FOUND)
+    find_package(Hydrogen ${MIN_H_VERSION} NO_MODULE REQUIRED)
+  endif ()
+
+  # Fake Hydrogen components
+  set(__hydrogen_have_cuda @_HYDROGEN_HAVE_CUDA@)
+  set(__hydrogen_have_cub @_HYDROGEN_HAVE_CUB@)
+  set(__hydrogen_have_aluminum @_HYDROGEN_HAVE_ALUMINUM@)
+  set(__hydrogen_have_quadmath @_HYDROGEN_HAVE_QUADMATH@)
+  set(__hydrogen_have_qd @_HYDROGEN_HAVE_QD@)
+  set(__hydrogen_have_mpc @_HYDROGEN_HAVE_MPC@)
+
+  set(__hydrogen_components
+    __hydrogen_have_cuda __hydrogen_have_cub __hydrogen_have_aluminum
+    __hydrogen_have_quadmath __hydrogen_have_qd __hydrogen_have_mpc)
+  foreach (comp IN LISTS __hydrogen_components)
+    string(SUBSTRING "${comp}" 1 -1 _tmp_comp)
+    string(TOUPPER "${_tmp_comp}" match_comp)
+    if (${comp} AND NOT ${match_comp})
+      string(SUBSTRING "${match_comp}" 1 -1 _tmp_comp)
+      message(SEND_ERROR
+        "Hydrogen missing component: ${_tmp_comp}.")
+      set(Hydrogen_FOUND FALSE)
+    endif ()
+    if (${match_comp} AND NOT ${comp})
+      string(SUBSTRING "${match_comp}" 1 -1 _tmp_comp)
+      message(SEND_ERROR
+        "Hydrogen has extra component: ${_tmp_comp}.")
+      set(Hydrogen_FOUND FALSE)
+    endif ()
+  endforeach()
+
+  if (NOT Hydrogen_FOUND)
+    message(FATAL_ERROR
+      "A suitable version of Hydrogen could not be properly found. "
+      "Please set Hydrogen_DIR to the path to the correct Hydrogen build.")
+  endif ()
+else ()
+  message(FATAL_ERROR
+    "LBANN does not have LBANN_HAS_HYDROGEN set properly. "
+    "This should not be possible.")
+endif (LBANN_HAS_HYDROGEN)
+
+# Start with Aluminum. If we can inherit MPI, OpenMPI, etc, from there, super.
+if (LBANN_HAS_ALUMINUM)
+  set(MIN_AL_VERSION "@ALUMINUM_VERSION@")
+  find_package(Aluminum "${MIN_AL_VERSION}" NO_MODULE QUIET
+    HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
+    $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
+    PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
+    NO_DEFAULT_PATH)
+  find_package(Aluminum NO_MODULE REQUIRED)
+
+  # Ensure Aluminum features match
+  if (ALUMINUM_VERSION VERSION_LESS MIN_AL_VERSION)
+    message(FATAL_ERROR
+      "Incompatible Aluminum version found: ${ALUMINUM_VERSION}. "
+      "Required minimum version is: ${MIN_AL_VERSION}")
+  endif ()
+endif (LBANN_HAS_ALUMINUM)
+
+include(SetupOpenMP)
+include(SetupMPI)
+
+if (NOT Protobuf_DIR AND NOT PROTOBUF_DIR)
+  set(Protobuf_DIR "@Protobuf_DIR@")
+endif ()
+include(SetupProtobuf)
+
+if (LBANN_HAS_CNPY)
+  if (NOT CNPY_DIR)
+    set(CNPY_DIR "@CNPY_DIR@")
+  endif ()
+
+  find_package(CNPY REQUIRED)
+endif (LBANN_HAS_CNPY)
+
+if (LBANN_HAS_OPENCV)
+  if (NOT OPENCV_DIR AND NOT OpenCV_DIR)
+    set(OpenCV_DIR "@OpenCV_DIR@")
+    find_package(OpenCV NO_MODULE
+      HINTS ${OpenCV_DIR} ${OPENCV_DIR} $ENV{OpenCV_DIR} $ENV{OPENCV_DIR}
+      PATH_SUFFIXES share/OpenCV
+      NO_DEFAULT_PATH)
+    if (NOT OpenCV_FOUND)
+      find_package(OpenCV NO_MODULE REQUIRED)
+    endif ()
+  endif ()
+endif (LBANN_HAS_OPENCV)
+
+# Setup CUDA dependencies
+if (LBANN_HAS_CUDA)
+  if (CMAKE_CUDA_STANDARD LESS LBANN_CUDA_STANDARD
+      OR CMAKE_CUDA_STANDARD EQUAL 98 OR NOT CMAKE_CUDA_STANDARD)
+    set(CMAKE_CUDA_STANDARD "${LBANN_CUDA_STANDARD}")
+  endif ()
+  set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+
+  if (NOT CUDNN_DIR)
+    set(CUDNN_DIR "@CUDNN_DIR@")
+  endif ()
+  if (NOT CUDNN_DIR AND NOT CUDNN_LIBRARY AND NOT CUDNN_INCLUDE_PATH)
+    set(CUDNN_LIBRARY "@CUDNN_LIBRARY@")
+    set(CUDNN_INCLUDE_PATH "@CUDNN_INCLUDE_PATH@")
+  endif ()
+
+  enable_language(CUDA)
+  include(SetupCUDAToolkit)
+endif (LBANN_HAS_CUDA)
+
+@PACKAGE_INIT@
+
+# Now actually import the LBANN target
+set(_TMP_INCLUDE_DIRS "@PACKAGE_INCLUDE_INSTALL_DIRS@")
+foreach (_DIR ${_TMP_INCLUDE_DIRS})
+  set_and_check(_INCLUDE_DIR "${_DIR}")
+  list(APPEND LBANN_INCLUDE_DIRS "${_INCLUDE_DIR}")
+endforeach (_DIR "${_TMP_INCLUDE_DIRS}")
+
+set(_TMP_LIBRARY_DIRS "@PACKAGE_LIB_INSTALL_DIR@")
+foreach (_DIR ${_TMP_LIBRARY_DIRS})
+  set_and_check(_LIBRARY_DIR "${_DIR}")
+  list(APPEND LBANN_LIBRARY_DIRS "${_LIBRARY_DIR}")
+endforeach (_DIR ${_TMP_LIBRARY_DIRS})
+
+if (NOT TARGET LBANN::lbann)
+  include(${CMAKE_CURRENT_LIST_DIR}/LBANNTargets.cmake)
+endif (NOT TARGET LBANN::lbann)
+
+check_required_components(LBANN)
+
+set(LBANN_LIBRARIES LBANN::lbann)

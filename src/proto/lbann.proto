@@ -7,6 +7,7 @@ message LbannPB {
   Model model = 2;
   Optimizer optimizer = 3;
   MotifDefinitions motif_definitions = 4;
+  DataSetMetaData data_set_metadata = 5;
 }
 
 //========================================================================
@@ -15,6 +16,7 @@ message LbannPB {
 message DataReader {
   int64 max_par_io_size = 1;
   repeated Reader reader = 2;
+  bool requires_data_set_metadata = 3;
 }
 
 message Reader {
@@ -25,6 +27,7 @@ message Reader {
   string data_local_filedir = 50; //to support data_store
   string data_filename = 6;
   string label_filename = 7;
+  string index_list = 8;
   double validation_percent = 9;
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
@@ -34,50 +37,6 @@ message Reader {
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
-
-  //------------------ start of only for jag_conduit -----------------------
-  message JagLinearNormalizationParams {
-    double scale = 1;
-    double bias = 2;
-  }
-
-  repeated JagLinearNormalizationParams jag_image_normalization_params = 86;
-  repeated JagLinearNormalizationParams jag_scalar_normalization_params = 87;
-  repeated JagLinearNormalizationParams jag_input_normalization_params = 88;
-
-  bool split_jag_image_channels = 89;
-  repeated string jag_image_keys = 90;
-  repeated string jag_scalar_keys = 91;
-  repeated string jag_input_keys = 92;
-  message JagKeyPrefixFilter {
-    string key_prefix = 1;
-    uint32 min_len = 2;
-  }
-  repeated string jag_scalar_filters = 93;
-  repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
-  repeated string jag_input_filters = 95;
-  repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
-
-  enum JAG_Data {
-    Undefined  = 0;
-    JAG_Image  = 1;
-    JAG_Scalar = 2;
-    JAG_Input  = 3;
-  }
-  message JAGDataSlice {
-    repeated JAG_Data pieces = 1;
-  }
-  repeated JAGDataSlice independent = 97;
-  repeated JAGDataSlice dependent = 98;
-
-  int32 max_files_to_load = 1000;
-
-  // for jag_conduit_hdf5
-  string scalar_keys = 1004;
-  string input_keys = 1005;
-  string image_views = 1006;
-  string image_channels = 1007;
-  //------------------  end of only for jag_conduit  -----------------------
 
   int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
@@ -97,6 +56,9 @@ message Reader {
   int64 num_neighbors = 112; // pilot2_molecular_reader
   int64 max_neighborhood = 113; // pilot2_molecular_reader
   int32 num_image_srcs = 114; // data_reader_multi_images
+  float scaling_factor_int16 = 116; // for numpy_npz_reader with int16 data
+
+  int32 max_files_to_load = 1000;
 
   //------------- start of only for partitioned data sets ------------------
   bool is_partitioned = 300;
@@ -105,6 +67,11 @@ message Reader {
        // 1 - share a portion of your data with two neighbors;
        // 2 - there's a set of overlap indices that are common to all models
   //------------- end of only for partitioned data sets ------------------
+
+  //------------- start of only for index lists ------------------
+  bool index_list_per_trainer = 400;
+  bool index_list_per_model   = 401;
+  //------------- end of only for index lists ------------------
 }
 
 message ImagePreprocessor {
@@ -221,25 +188,83 @@ message GenericPreprocessor {
 }
 
 //========================================================================
+// Metadata for a Data set
+//========================================================================
+message DataSetMetaData {
+  message Schema {
+    string scalar_prefix = 1;
+    string image_prefix = 2;
+    string input_prefix = 3;
+
+    //------------------ start of only for jag_conduit -----------------------
+    bool split_jag_image_channels = 89;
+    repeated string jag_image_keys = 90;
+    repeated string jag_scalar_keys = 91;
+    repeated string jag_input_keys = 92;
+    message JagKeyPrefixFilter {
+      string key_prefix = 1;
+      uint32 min_len = 2;
+    }
+    repeated string jag_scalar_filters = 93;
+    repeated JagKeyPrefixFilter jag_scalar_prefix_filters = 94;
+    repeated string jag_input_filters = 95;
+    repeated JagKeyPrefixFilter jag_input_prefix_filters = 96;
+
+    enum JAG_Data {
+      Undefined  = 0;
+      JAG_Image  = 1;
+      JAG_Scalar = 2;
+      JAG_Input  = 3;
+    }
+    message JAGDataSlice {
+      repeated JAG_Data pieces = 1;
+    }
+    repeated JAGDataSlice independent = 97;
+    repeated JAGDataSlice dependent = 98;
+    //------------------  end of only for jag_conduit  -----------------------
+  }
+
+  message Normalization {
+    //------------------ start of only for jag_conduit -----------------------
+    message JagLinearNormalizationParams {
+      double scale = 1;
+      double bias = 2;
+    }
+
+    repeated JagLinearNormalizationParams jag_image_normalization_params = 86;
+    repeated JagLinearNormalizationParams jag_scalar_normalization_params = 87;
+    repeated JagLinearNormalizationParams jag_input_normalization_params = 88;
+
+    //------------------  end of only for jag_conduit  -----------------------
+  }
+    Schema schema = 1;
+  Normalization normalization = 2;
+}
+
+//========================================================================
 // Model
 //========================================================================
 
 message Model {
-  string model_id = 1000; //arbitrary identifier
-  string name = 1; //deprecated
+  string type = 1;
+  string name = 3;
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
+  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
+  bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
+  bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 block_size = 50;
-  int64 procs_per_model = 51;
+  int64 procs_per_trainer = 51;
   int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
+  bool  serialize_io = 101;
 
   bool disable_cuda = 8;
 
@@ -247,19 +272,12 @@ message Model {
 
   repeated Weights weights = 11;
 
-  // checknan, debug, dump_activations, etc;
-  // for complete list, see: lbann/include/lbann/callbacks
   repeated Callback callback = 20;
 
   int64 random_seed = 30;
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
 
-  // Siamese model parameters
-  message Siamese {
-    uint32 num_heads = 1;
-  }
-  Siamese siamese = 37;
 }
 
 //========================================================================
@@ -267,68 +285,8 @@ message Model {
 //========================================================================
 
 message ObjectiveFunction {
-  repeated MeanSquaredError mean_squared_error = 10;
-  repeated MeanAbsoluteDeviation mean_absolute_deviation = 11;
-  repeated MeanAbsoluteError mean_absolute_error = 24;
-  repeated CrossEntropy cross_entropy = 12;
-  repeated BinaryCrossEntropy binary_cross_entropy = 13;
-  repeated CrossEntropyWithUncertainty cross_entropy_with_uncertainty = 14;
-  repeated GeomNegLogLike geom_negloglike = 15;
-  repeated PoissonNegLogLike poisson_negloglike = 16;
-  repeated PolyaNegLogLike polya_negloglike = 17;
-  repeated L1WeightRegularization l1_weight_regularization = 20;
-  repeated L2WeightRegularization l2_weight_regularization = 21;
-  repeated GroupLassoWeightRegularization group_lasso_weight_regularization = 22;
-  repeated LayerTerm layer_term = 25;
-}
-
-message MeanSquaredError {
-  double scale_factor = 1;
-}
-
-message MeanAbsoluteDeviation {
-  double scale_factor = 1;
-}
-
-message MeanAbsoluteError {
-  double scale_factor = 1;
-}
-
-message CrossEntropy {
-  double scale_factor = 1;
-}
-
-
-message BinaryCrossEntropy {
-  double scale_factor = 1;
-}
-
-message CrossEntropyWithUncertainty {
-  double scale_factor = 1;
-}
-
-message GeomNegLogLike {
-  double scale_factor = 1;
-}
-
-message PoissonNegLogLike {
-  double scale_factor = 1;
-}
-
-message PolyaNegLogLike {
-  double scale_factor = 1;
-}
-
-message L1WeightRegularization {
-  double scale_factor = 1;
-}
-
-message L2WeightRegularization {
-  double scale_factor = 1;
-}
-
-message GroupLassoWeightRegularization {
-  double scale_factor = 1;
+  repeated LayerTerm layer_term = 1;
+  repeated L2WeightRegularization l2_weight_regularization = 2;
 }
 
 message LayerTerm {
@@ -336,49 +294,17 @@ message LayerTerm {
   string layer = 2;
 }
 
+message L2WeightRegularization {
+  double scale_factor = 1;
+  string weights = 2;   // If empty, L2 regularization is applied to all weights
+}
+
 //========================================================================
 // Metrics
 //========================================================================
 
 message Metric {
-  // a Metric should contain exactly one of the following
-  CategoricalAccuracy categorical_accuracy = 1;
-  TopKCategoricalAccuracy top_k_categorical_accuracy = 2;
-  MeanSquaredError mean_squared_error = 3;
-  MeanAbsoluteDeviation mean_absolute_deviation = 4;
-  MeanAbsoluteError mean_absolute_error = 6;
-  PearsonCorrelation pearson_correlation = 5;
-  R2 r2 = 7;
-  BooleanAccuracy boolean_accuracy = 8;
-  BooleanFalsePositives boolean_false_positives = 9;
-  BooleanFalseNegatives boolean_false_negatives = 10;
   LayerMetric layer_metric = 11;
-}
-
-message CategoricalAccuracy {
-}
-
-// Already defined as an objective function
-// message MeanSquaredError {}
-
-message TopKCategoricalAccuracy {
-  int64 k = 1;
-  int64 top_k = 2; //deprecated
-}
-
-message PearsonCorrelation {
-}
-
-message R2 {
-}
-
-message BooleanAccuracy {
-}
-
-message BooleanFalsePositives {
-}
-
-message BooleanFalseNegatives {
 }
 
 message LayerMetric {
@@ -443,7 +369,7 @@ message Callback {
    CallbackTimer timer = 2;
    CallbackSummary summary = 3;
    CallbackDumpWeights dump_weights = 4;
-   CallbackDumpActivations dump_activations = 5;
+   CallbackDumpOutputs dump_outputs = 5;
    CallbackDumpErrorSignals dump_error_signals = 35;
    CallbackDumpGradients dump_gradients = 6;
    CallbackDumpMBIndices dump_mb_indices = 7;
@@ -462,7 +388,7 @@ message Callback {
    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
    CallbackProfiler profiler = 21;
    CallbackStepMinibatch step_minibatch = 22;
-   CallbackGradientCheck gradient_check = 23;
+   CallbackCheckGradients check_gradients = 23;
    CallbackLTFB ltfb = 24;
    CallbackDebugIO debug_io = 25;
    CallbackMinibatchSchedule minibatch_schedule = 26;
@@ -474,13 +400,17 @@ message Callback {
    CallbackGPUMemoryUsage gpu_memory_usage = 32;
    CallbackSyncLayers sync_layers = 33;
    CallbackSyncSelected sync_selected = 34;
+   CallbackConfusionMatrix confusion_matrix = 36;
+   CallbackCheckMetric check_metric = 37;
+   CallbackPerturbAdam perturb_adam = 38;
 }
 
 message CallbackLTFB {
-  int64 round_size = 1;
-  bool increasing_metric_mode = 2; //Expectation for a good tournament metric: increasing (true) is default
-  string eval_metrics = 3; //eval metrics to use for tournament, at least 1 metric has to be provided
-  string weights_tosend = 4; //list of weights to transfer between model, default is all weights (classic LTFB)
+  int64 batch_interval = 1;
+  string metric = 2;
+  string weights = 3;       // default: all weights
+  bool low_score_wins = 4;
+  string communication_algorithm = 5;   // default: "sendrecv_weights"
 }
 
 message CallbackStepLearningRate {
@@ -507,10 +437,12 @@ message CallbackSaveImages {
 
 message CallbackPrint {
   int64 interval = 1; //default in lbann_callback_print.hpp is 1
+  bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
 }
 
 message CallbackProfiler {
   bool sync = 1;
+  bool skip_init = 2;
 }
 
 message CallbackTimer {
@@ -526,11 +458,12 @@ message CallbackDumpWeights {
   string basename = 1;
 }
 
-message CallbackDumpActivations {
-  string basename = 1;
-  int64 interval = 2;
-  string layer_names = 3; //layer(s) at which to dump activations e.g., "relu1 relu4 relu12"
-
+message CallbackDumpOutputs {
+  string layers = 1;          // Default: all layers
+  string execution_modes = 2; // Default: all modes
+  int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
+  string directory = 4;       // Directory for output files
+  string format = 5;          // Options: csv, tsv, npy, npz (default: csv)
 }
 
 message CallbackDumpErrorSignals {
@@ -552,7 +485,7 @@ message CallbackDispIOStats {
 }
 
 message CallbackImComm {
-  string intermodel_comm_method = 1;
+  string intertrainer_comm_method = 1;
   bool all_optimizers = 2;
 }
 
@@ -621,12 +554,19 @@ message CallbackMinibatchSchedule {
   repeated MinibatchScheduleStep step = 2;
 }
 
-message CallbackGradientCheck {
+message CallbackCheckGradients {
   double step_size = 1;
   bool verbose = 2;
-  bool fail_on_error = 3;
+  bool error_on_failure = 3; // Throw error if gradient check fails
 }
 
+message CallbackCheckMetric {
+  string metric = 1;
+  double lower_bound = 2;
+  double upper_bound = 3;
+  bool error_on_failure = 4;  // Throw error if metric check fails
+  string execution_modes = 5; // Default: all modes
+}
 
 message CallbackCheckpoint {
   string checkpoint_dir = 1;
@@ -642,6 +582,7 @@ message CallbackCheckpoint {
 message CallbackSaveModel {
   string dir = 1;
   string extension = 2;
+  bool disable_save_after_training = 3;
 }
 
 message CallbackReplaceWeights {
@@ -684,6 +625,22 @@ message CallbackSyncSelected {
   bool async_mpi = 2;
   repeated LayerToSync layer_to_sync = 3;
   CudaProfilerSetup cuda_profiler_setup = 4;
+}
+
+message CallbackConfusionMatrix {
+  string prediction = 1; // Prediction layer
+  string label = 2;      // Label layer
+  string prefix = 3;     // Prefix for output files
+}
+
+message CallbackPerturbAdam {
+  float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
+  float beta1_factor = 2;           // beta1 perturbation (in log space)
+  float beta2_factor = 3;           // beta2 perturbation (in log space)
+  float eps_factor = 4;             // eps perturbation (in log space)
+  bool perturb_during_training = 5; // Whether to periodically perturb during training
+  int64 batch_interval = 6;         // Frequency of perturbation if perturb_during_training is true
+  string weights = 7;               // Weights with Adam optimizer
 }
 
 //========================================================================
@@ -782,6 +739,7 @@ message Layer {
    string weights = 54;
    bool num_neurons_from_data_reader = 53;
    bool freeze = 5;
+   string hint_layer = 56;
 
    repeated WeightsData weights_data = 153;
    string top = 154;
@@ -817,7 +775,6 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 315;
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -831,6 +788,7 @@ message Layer {
    InTopK in_top_k = 324;
    Sort sort = 325;
    WeightsLayer weights_layer = 326;
+   Tessellate tessellate = 327;
 
    // Learning layers
    FullyConnected fully_connected = 11;
@@ -838,19 +796,21 @@ message Layer {
    Deconvolution deconvolution = 305;
 
    // Loss layers
-   CategoricalAccuracy categorical_accuracy = 60;
-   CrossEntropy cross_entropy = 61;
-   MeanSquaredError mean_squared_error = 62;
-   TopKCategoricalAccuracy top_k_categorical_accuracy = 63;
-   L2Norm2 l2_norm2 = 64;
-   BinaryCrossEntropy binary_cross_entropy = 65;
-   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 66;
-   BooleanAccuracy boolean_accuracy = 67;
-   BooleanFalseNegative boolean_false_negative = 68;
-   BooleanFalsePositive boolean_false_positive = 69;
+   CrossEntropy cross_entropy = 60;
+   MeanSquaredError mean_squared_error = 61;
+   MeanAbsoluteError mean_absolute_error = 62;
+   CategoricalAccuracy categorical_accuracy = 63;
+   TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
+   L2Norm2 l2_norm2 = 65;
+   L1Norm l1_norm = 66;
+   BinaryCrossEntropy binary_cross_entropy = 67;
+   SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 68;
+   BooleanAccuracy boolean_accuracy = 69;
+   BooleanFalseNegative boolean_false_negative = 70;
+   BooleanFalsePositive boolean_false_positive = 71;
 
    // Math layers
-   Not not = 401;
+   LogicalNot logical_not = 401;
    Abs abs = 402;
    Negative negative = 403;
    Sign sign = 404;
@@ -885,41 +845,38 @@ message Layer {
    Mod mod = 454;
    Pow pow = 455;
    SafeDivide safe_divide = 456;
-   Max max = 457;
-   Min min = 458;
-   Equal equal = 459;
-   NotEqual not_equal = 460;
-   Less less = 461;
-   LessEqual less_equal = 462;
-   Greater greater = 463;
-   GreaterEqual greater_equal = 464;
-   And and = 465;
-   Or or = 466;
-   Xor xor = 467;
+   SquaredDifference squared_difference = 457;
+   Max max = 458;
+   Min min = 459;
+   Equal equal = 460;
+   NotEqual not_equal = 461;
+   Less less = 462;
+   LessEqual less_equal = 463;
+   Greater greater = 464;
+   GreaterEqual greater_equal = 465;
+   LogicalAnd logical_and = 466;
+   LogicalOr logical_or = 467;
+   LogicalXor logical_xor = 468;
+   Clamp clamp = 469;
 
-   // Target Layers
-   Target target = 18;
-   TargetReconstruction reconstruction = 22;
-
-   // Regularization Layers
+   // Regularization layers
    BatchNormalization batch_normalization = 19;
    LocalResponseNormalization local_response_normalization = 20;
    Dropout dropout = 21;
    SeluDropout selu_dropout = 229;
 
-   // Activation Layers
-   Softmax softmax = 200;
-   LogSoftmax log_softmax = 203;
-   ELU elu = 30;
-   Identity identity = 31;
-   LeakyRelu leaky_relu = 32;
-   Relu relu = 33;
-   Sigmoid sigmoid = 34;
-   SmoothRelu smooth_relu = 35;
-   Softplus softplus = 36;
-   Selu selu = 37;
-   BentIdentity bent_identity = 40;
-   Swish swish = 42;
+   // Activation layers
+   Elu elu = 200;
+   Identity identity = 201;
+   LeakyRelu leaky_relu = 202;
+   LogSigmoid log_sigmoid = 203;
+   LogSoftmax log_softmax = 204;
+   Relu relu = 205;
+   Selu selu = 206;
+   Sigmoid sigmoid = 207;
+   Softmax softmax = 208;
+   Softplus softplus = 209;
+   Softsign softsign = 210;
 
    // Image layers
    BilinearResize bilinear_resize = 500;
@@ -927,6 +884,9 @@ message Layer {
    // Miscellaneous layers
    Covariance covariance = 600;
    Variance variance = 601;
+   ChannelwiseMean channelwise_mean = 602;
+   MiniBatchIndex mini_batch_index = 603;
+   MiniBatchSize mini_batch_size = 604;
 
 }
 ///////////////////////
@@ -938,9 +898,9 @@ message MotifLayer {
 }
 
 ///////////////////////
-// Math Layers       //
+// Math layers       //
 ///////////////////////
-message Not {}
+message LogicalNot {}
 message Abs {}
 message Negative {}
 message Sign {}
@@ -975,6 +935,7 @@ message Divide {}
 message Mod {}
 message Pow {}
 message SafeDivide {}
+message SquaredDifference {}
 message Max {}
 message Min {}
 message Equal {}
@@ -983,70 +944,60 @@ message Less {}
 message LessEqual {}
 message Greater {}
 message GreaterEqual {}
-message And {}
-message Or {}
-message Xor {}
-
-///////////////////////
-// Activation Layers //
-///////////////////////
-message ELU {
-  double alpha = 2; //default: 1.0; must be >= 0
+message LogicalAnd {}
+message LogicalOr {}
+message LogicalXor {}
+message Clamp {
+  double min = 1;
+  double max = 2;
 }
 
-message Identity {
+///////////////////////
+// Activation layers //
+///////////////////////
+message Elu {
+  double alpha = 1; //default: 1.0; should be >= 0
 }
-
+message Identity {}
 message LeakyRelu {
-  double leak = 2; //default: 0.01
+  double negative_slope = 1; //default: 0.01
 }
-
-message Relu {
-}
-
-message Sigmoid {
-}
-
-message SmoothRelu {
-}
-
-message Softplus {
-}
-
-message BentIdentity {
-}
-
-message Swish {
-}
-
-message Selu {
-  double alpha = 2; //default: 1.6732632423543772848170429916717
-  double scale = 3; //default: 1.0507009873554804934193349852946
-}
-
-message Softmax {
-}
-
-message LogSoftmax {
-}
+message LogSigmoid {}
+message LogSoftmax {}
+message Relu {}
+message Selu {}
+message Sigmoid {}
+message Softmax {}
+message Softplus {}
+message Softsign {}
 
 ///////////////////////
-// Loss Layers //
+// Loss layers //
 ///////////////////////
+message CrossEntropy {}
+message MeanSquaredError {}
+message MeanAbsoluteError {}
+message CategoricalAccuracy {}
+message TopKCategoricalAccuracy {
+  int64 k = 1;
+}
 message L2Norm2 {}
+message L1Norm {}
+message BinaryCrossEntropy {}
 message SigmoidBinaryCrossEntropy {}
+message BooleanAccuracy {}
 message BooleanFalseNegative {}
 message BooleanFalsePositive {}
 
 ///////////////////////////
-// Regularization Layers //
+// Regularization layers //
 ///////////////////////////
 message BatchNormalization {
   double decay = 1;          //default: 0.9
   double scale_init = 2;     //default: 1.0
   double bias_init = 3;      //default: 0.0
   double epsilon = 4;        //default: 1e-5
-  bool global_stats = 5;     //default: false
+  string stats_aggregation = 5; // default: local
 }
 
 message SeluDropout {
@@ -1067,28 +1018,20 @@ message Dropout {
 }
 
 //////////////////
-// Input Layers //
+// Input layers //
 //////////////////
 message Input {
-  bool data_set_per_model = 1;  //default: false
-  string io_buffer = 2;
-  string target_mode = 3;
-}
-
-/// @todo Remove when possible
-message RepeatedInput {
-  bool data_set_per_model = 1;  //default: false
-  int64 num_steps = 2;
-  string target_mode = 3;
+  bool data_set_per_model = 1;  // Default: false
+  string io_buffer = 2;         // Options: "partitioned" (default)
+  string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
 }
 
 //////////////////////
-// transform Layers //
+// Transform layers //
 //////////////////////
 message Reshape {
-  int64 num_dims = 1;
+  int64 num_dims = 1; //DEPRECATED
   string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
-  bool reshape_to_flattened_conv_format = 3;
 }
 
 message Pooling {
@@ -1118,13 +1061,12 @@ message Unpooling {
 
 
 message Concatenation {
-  string parents = 1; //TODO: this doesn't do anything and should be removed
-  int64 concatenation_axis = 2;
+  int64 axis = 1;
 }
 
 message Slice {
-  int64 slice_axis = 2;
-  string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+  int64 axis = 1;
+  string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
   //the following is for jag_conduit_hdf5;
   string get_slice_points_from_reader = 4;
   bool get_slice_points_from_reader_bool = 5;
@@ -1146,12 +1088,6 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
-}
-
-
-message Zero {
-  bool first_half=1; //default: true
-  bool second_half=2; //default: true
 }
 
 message Reduction {
@@ -1209,8 +1145,12 @@ message WeightsLayer {
   string dims = 1;
 }
 
+message Tessellate {
+  string dims = 1;
+}
+
 /////////////////////
-// learning Layers //
+// Learning layers //
 /////////////////////
 message FullyConnected {
   int64 num_neurons = 1;
@@ -1280,21 +1220,8 @@ message Deconvolution {
   double l2_regularization_factor = 12; //default: 0
 }
 
-///////////////////
-// Target Layers //
-///////////////////
-message Target {
-  string paired_input_layer = 1;
-  bool shared_data_reader = 2;
-  bool for_regression = 3; //default: false
-  string io_buffer = 4;
-}
-
-message TargetReconstruction {
-}
-
 //////////////////
-// Image Layers //
+// Image layers //
 //////////////////
 message BilinearResize {
   int64 height = 1;
@@ -1302,7 +1229,7 @@ message BilinearResize {
 }
 
 //////////////////////////
-// Miscellaneous Layers //
+// Miscellaneous layers //
 //////////////////////////
 message Covariance {
   bool biased = 1; //Whether to use a biased covariance estimate
@@ -1310,3 +1237,6 @@ message Covariance {
 message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
+message ChannelwiseMean {}
+message MiniBatchIndex {}
+message MiniBatchSize {}

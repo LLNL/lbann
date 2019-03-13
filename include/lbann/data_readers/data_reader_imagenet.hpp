@@ -43,22 +43,22 @@ class imagenet_reader : public image_data_reader {
 
   imagenet_reader* copy() const override { return new imagenet_reader(*this); }
 
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+
   std::string get_type() const override {
     return "imagenet_reader";
   }
 
  protected:
   void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp);
+  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
 
  protected:
   /// preprocessor duplicated for each omp thread
   std::vector<std::unique_ptr<cv_process> > m_pps;
+  std::unique_ptr<cv_process> m_master_pps;
 };
 
 }  // namespace lbann

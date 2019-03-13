@@ -32,8 +32,17 @@
 
 namespace lbann {
 
-/** Slice layer.
- *  This layer slices an input tensor along a specified dimension.
+/** @brief Slice tensor along a specified dimension.
+ *
+ *  Suppose we slice a @f$ D_1 \times\cdots\times D_n @f$ input tensor
+ *  along the dimension @f$ k @f$. We specify slice points
+ *  @f$ s_1,\cdots,s_\ell @f$, which are strictly increasing and have
+ *  @f$ s_1 = 0 @f$ and @f$ s_\ell=D_k @f$. The @f$ i @f$th output
+ *  tensor is then a
+ *  @f$ D_1 \times\cdots
+ *    \times D_{i-1}\times (s_i - s_{i-1}) \times D_{i+1} \times
+ *    \cdots\times D_n @f$
+ *  tensor.
  */
 template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer {
@@ -45,7 +54,7 @@ public:
     : transform_layer(comm),
       m_slice_dim(slice_dim),
       m_slice_points(slice_points) {
-    m_expected_num_child_layers = -1; // No limit on children
+    this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   slice_layer(const slice_layer& other)
@@ -69,27 +78,21 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  /** Returns description of ctor params */
-  std::string get_description() const override {
-    std::stringstream s;
-    s << " slice; slice_dim: "
-      << m_slice_dim << " children: ";
-    for (size_t h=0; h<this->m_child_layers.size(); h++) {
-      s << this->m_child_layers[h]->get_name() << " " << this->m_child_layers[h]->get_type() << " ";
-    }
-    s << " slice_points: ";
-    for (size_t h=0; h<this->m_slice_points.size(); h++) {
-      s << this->m_slice_points[h] << " ";
-    }
-    s << " dataLayout: " << this->get_data_layout_string(get_data_layout());
-    s << " device alloc: " << this->get_device_allocation_string(get_device_allocation());
-    return s.str();
-  }
-
   /** Get slice points. */
   std::vector<El::Int>& get_slice_points() { return m_slice_points; }
   /** Get slice points (const). */
   std::vector<El::Int> get_slice_points() const { return m_slice_points; }
+
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("Slice dimension", m_slice_dim);
+    std::stringstream ss;
+    for (size_t i = 0; i < m_slice_points.size(); ++i) {
+      ss << (i > 0 ? ", " : "") << m_slice_points[i];
+    }
+    desc.add("Slice points", ss.str());
+    return desc;
+  }
 
 protected:
 

@@ -1,5 +1,5 @@
 model {
-  name: "directed_acyclic_graph_model"
+  type: "directed_acyclic_graph_model"
   objective_function {
     cross_entropy {
     }
@@ -14,9 +14,7 @@ model {
   }
   data_layout: "data_parallel"
   layer {
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
     name: "conv2d_1_input"
   }
   layer {

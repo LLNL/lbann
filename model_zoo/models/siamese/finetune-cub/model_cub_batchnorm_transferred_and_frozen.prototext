@@ -1,18 +1,17 @@
 model {
-  name: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 64
   block_size: 256
   num_epochs: 50
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
   ###################################################
 
   objective_function {
-    cross_entropy {}
+    layer_term { layer: "cross_entropy_new" }
     l2_weight_regularization {
       scale_factor: 0.0005
     }
@@ -22,10 +21,18 @@ model {
   # Metrics
   ###################################################
 
-  metric { categorical_accuracy {} }
   metric {
-    top_k_categorical_accuracy {
-       top_k: 5
+    layer_metric {
+      name: "categorical accuracy"
+      layer: "top1_accuracy_new"
+      unit: "%"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "top-5 categorical accuracy"
+      layer: "top5_accuracy_new"
+      unit: "%"
     }
   }
 
@@ -34,7 +41,7 @@ model {
   ###################################################
   callback {
     imcomm {
-      intermodel_comm_method: "normal"
+      intertrainer_comm_method: "normal"
       all_optimizers: true
     }
   }
@@ -523,12 +530,22 @@ model {
   ###################################################
 
   layer {
-    name: "data_new"
-    children: "conv1_head0 target_new"
+    name: "input_new"
+    children: "data_new label_new"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
+  }
+  layer {
+    parents: "input_new"
+    name: "data_new"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "input_new"
+    name: "label_new"
+    data_layout: "data_parallel"
+    split {}
   }
 
   layer {
@@ -559,7 +576,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv1_scale bn_conv1_bias bn_conv1_running_mean bn_conv1_running_variance"
   }
@@ -615,7 +632,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv2_scale bn_conv2_bias bn_conv2_running_mean bn_conv2_running_variance"
   }
@@ -671,7 +688,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv3_scale bn_conv3_bias bn_conv3_running_mean bn_conv3_running_variance"
   }
@@ -712,7 +729,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv4_scale bn_conv4_bias bn_conv4_running_mean bn_conv4_running_variance"
   }
@@ -753,7 +770,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
     weights: "bn_conv5_scale bn_conv5_bias bn_conv5_running_mean bn_conv5_running_variance"
   }
@@ -816,7 +833,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 
@@ -856,7 +873,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 
@@ -910,7 +927,7 @@ model {
       scale_init: 1.0
       bias_init: 0.0
       epsilon: 1e-5
-      global_stats: true
+      stats_aggregation: "global"
     }
   }
 
@@ -949,16 +966,27 @@ model {
   layer {
     parents: "fc8_new"
     name: "prob_new"
-    children: "target_new"
     data_layout: "data_parallel"
     softmax {}
   }
 
   layer {
-    parents: "prob_new data_new"
-    name: "target_new"
+    parents: "prob_new label_new"
+    name: "cross_entropy_new"
     data_layout: "data_parallel"
-    target {}
+    cross_entropy {}
+  }
+  layer {
+    parents: "prob_new label_new"
+    name: "top1_accuracy_new"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
+  }
+  layer {
+    parents: "prob_new label_new"
+    name: "top5_accuracy_new"
+    data_layout: "data_parallel"
+    top_k_categorical_accuracy { k: 5 }
   }
 
 }

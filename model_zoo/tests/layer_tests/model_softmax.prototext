@@ -4,25 +4,41 @@ model {
   block_size: 256
   num_epochs: 0
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
-  # Objective function
+  # Objective function and metrics
   ###################################################
 
   objective_function {
     layer_term { layer: "l2" }
   }
+  metric {
+    layer_metric {
+      layer: "l2"
+      name: "L2 norm"
+    }
+  }
 
   ###################################################
   # Callbacks
   ###################################################
+
   callback { print {} }
   callback { timer {} }
   callback {
-    gradient_check {
+    check_metric {
+      metric: "L2 norm" # Expected value: 1.987
+      lower_bound: 1.986
+      upper_bound: 1.988
+      error_on_failure: true
+      execution_modes: "test"
+    }
+  }
+  callback {
+    check_gradients {
       verbose: false
-      fail_on_error: true
+      error_on_failure: true
     }
   }
 
@@ -33,9 +49,7 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
 
   # Input data

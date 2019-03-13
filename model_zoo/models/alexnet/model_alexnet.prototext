@@ -4,7 +4,7 @@ model {
   block_size: 256
   num_epochs: 72
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -41,7 +41,7 @@ model {
   ###################################################
   callback {
     imcomm {
-      intermodel_comm_method: "normal"
+      intertrainer_comm_method: "normal"
       all_optimizers: true
     }
   }
@@ -63,20 +63,18 @@ model {
 
   layer {
     name: "data"
-    children: "images labels"
+    children: "image label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
-    name: "images"
+    name: "image"
     parents: "data"
     data_layout: "data_parallel"
     split {}
   }
   layer {
-    name: "labels"
+    name: "label"
     parents: "data"
     data_layout: "data_parallel"
     split {}
@@ -84,7 +82,7 @@ model {
 
   layer {
     name: "conv1"
-    parents: "images"
+    parents: "image"
     data_layout: "data_parallel"
     convolution {
       num_dims: 2
@@ -300,8 +298,8 @@ model {
     name: "fc8"
     parents: "drop7"
     data_layout: "model_parallel"
+    hint_layer: "label"
     fully_connected {
-      num_neurons_is_num_labels: true
       has_bias: false
     }
   }
@@ -315,21 +313,21 @@ model {
 
   layer {
     name: "cross_entropy"
-    parents: "prob labels"
+    parents: "prob label"
     data_layout: "data_parallel"
-    cross_entropy {}    
+    cross_entropy {}
   }
 
   layer {
     name: "top1_accuracy"
-    parents: "prob labels"
+    parents: "prob label"
     data_layout: "data_parallel"
     categorical_accuracy {}
   }
 
   layer {
     name: "top5_accuracy"
-    parents: "prob labels"
+    parents: "prob label"
     data_layout: "data_parallel"
     top_k_categorical_accuracy { k: 5 }
   }

@@ -24,57 +24,63 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_RMSPROP_HPP
-#define LBANN_OPTIMIZER_RMSPROP_HPP
+#ifndef LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 #include <sys/stat.h>
 
 namespace lbann {
 
-/** RMSprop optimizer. */
+/** RMSprop optimizer.
+ *
+ *  See
+ *  https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf.
+ */
 class rmsprop : public optimizer {
- public:
+public:
 
-  /** Constructor. */
-  rmsprop(lbann_comm *comm,
+  rmsprop(lbann_comm* comm,
           DataType learning_rate,
           DataType decay_rate,
-          DataType eps = DataType(1e-8));
-
-  /** Copy constructor. */
+          DataType eps = 1e-8);
   rmsprop(const rmsprop& other);
-  /** Copy assignment operator. */
   rmsprop& operator=(const rmsprop& other);
-  /** Destructor. */
-  ~rmsprop() override;
-  /** Create a copy. */
+  ~rmsprop() override = default;
   rmsprop* copy() const override { return new rmsprop(*this); }
-  
-  /** Get the optimizer name. */
+
+  /** Human-readable type name. */
   std::string get_type() const override { return "RMSprop"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
-  /** Setup optimizer. */
-  void setup(weights& w) override;
+  void setup(weights* w = nullptr) override;
 
-  /** Perform the computation in an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+protected:
 
- private:
+  /** Computation for an optimization step. */
+  void step_compute(AbsDistMat& values,
+                    const AbsDistMat& gradient) override;
+
+private:
 
   /** Decay rate. */
   DataType m_decay_rate;
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** RMSprop cache. */
-  AbsDistMat *m_cache;
+  std::unique_ptr<AbsDistMat> m_cache;
 
+  /** CPU implementation of optimization step. */
+  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+#ifdef LBANN_HAS_CUDA
+  /** GPU implementation of optimization step. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+#endif // LBANN_HAS_CUDA
 
-//************************************************************************
-// Checkpointing
-//************************************************************************
+  // ===========================================
+  // Checkpointing
+  // ===========================================
 
   struct packing_header {
     DataType decay_rate;
@@ -87,18 +93,18 @@ class rmsprop : public optimizer {
 
   bool unpack_scalars(persist& p, struct packing_header *header){
     p.read_datatype(persist_type::train, "momentum",  &m_decay_rate);
-    
+
     if(header != nullptr){
       header->decay_rate = m_decay_rate;
     }
-   
+
   return true;
   }
-  
+
   void unpack_header(struct packing_header& header){
     m_decay_rate = header.decay_rate;
   }
-  
+
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
@@ -108,4 +114,4 @@ class rmsprop : public optimizer {
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZER_RMSPROP_HPP
+#endif // LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED

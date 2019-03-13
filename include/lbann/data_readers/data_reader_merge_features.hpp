@@ -70,13 +70,10 @@ class data_reader_merge_features : public generic_compound_data_reader {
     return {get_linearized_data_size()};
   }
 
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
-
  protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx, int tid) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx, int tid) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx, int tid) override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   /// Reader providing label data.
   generic_data_reader *m_label_reader;

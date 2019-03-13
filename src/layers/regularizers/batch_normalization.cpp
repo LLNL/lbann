@@ -56,7 +56,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     auto& local_running_var = this->m_weights[3]->get_values().Matrix();
 
     // Compute sums and sums of squares
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_channels; ++channel) {
       DataType sum = zero;
       DataType sqsum = zero;
@@ -73,19 +73,35 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
       local_var(channel, 0) = sqsum;
     }
     El::Int num_per_sum;
-    if (m_use_global_stats) {
+    switch (m_stats_aggregation) {
+    case batch_normalization_stats_aggregation::global:
       m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
       m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
       num_per_sum = channel_size * width;
-    } else {
+      break;
+    case batch_normalization_stats_aggregation::node_local:
+      m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
+      m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
+      if (m_num_per_sum_cache.count(width) == 0) {
+        num_per_sum = channel_size * local_width;
+        num_per_sum = m_comm->allreduce(num_per_sum, m_comm->get_node_comm());
+        m_num_per_sum_cache[width] = num_per_sum;
+      } else {
+        num_per_sum = m_num_per_sum_cache[width];
+      }
+      break;
+    case batch_normalization_stats_aggregation::local:
       num_per_sum = channel_size * local_width;
+      break;
+    default:
+      LBANN_ERROR("Unknown batch normalization stats aggregation");
     }
 
     // Compute minibatch statistics
     if (num_per_sum <= 1) {
       El::Fill(local_var, one);
     } else {
-#pragma omp parallel for
+      LBANN_OMP_PARALLEL_FOR
       for (El::Int channel = 0; channel < num_channels; ++channel) {
         const auto& mean = local_mean(channel, 0) / num_per_sum;
         const auto& sqmean = local_var(channel, 0) / num_per_sum;
@@ -113,7 +129,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
                            this->m_weights[3]->get_values().LockedMatrix());
 
   // Iterate through channels
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int channel = 0; channel < num_channels; ++channel) {
 
     // Get channel parameters
@@ -136,7 +152,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     }
 
   }
-    
+
 }
 
 template <>
@@ -170,7 +186,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   const auto& channel_size = get_output_size() / num_channels;
 
   // Compute local gradients
-#pragma omp parallel for
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int channel = 0; channel < num_channels; ++channel) {
 
     // Initialize channel parameters and gradients
@@ -208,12 +224,19 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
   // Accumulate gradients
   if (is_training) {
-    if (m_use_global_stats) {
+    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
       m_comm->allreduce(*m_mean_gradient,
                         m_mean_gradient->RedundantComm(),
                         El::mpi::SUM);
       m_comm->allreduce(*m_var_gradient,
                         m_var_gradient->RedundantComm(),
+                        El::mpi::SUM);
+    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
+      m_comm->allreduce(*m_mean_gradient,
+                        m_comm->get_node_comm(),
+                        El::mpi::SUM);
+      m_comm->allreduce(*m_var_gradient,
+                        m_comm->get_node_comm(),
                         El::mpi::SUM);
     }
   } else {
@@ -222,23 +245,36 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   }
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient_staging(*m_scale_gradient,
-                                             one / effective_mini_batch_size);
+    scale_optimizer->add_to_gradient(*m_scale_gradient,
+                                     one / effective_mini_batch_size,
+                                     true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient_staging(*m_bias_gradient,
-                                            one / effective_mini_batch_size);
+    bias_optimizer->add_to_gradient(*m_bias_gradient,
+                                    one / effective_mini_batch_size,
+                                    true);
   }
 
   // Compute error signal
-  const auto& num_per_sum = (m_use_global_stats ?
-                             width * channel_size :
-                             local_width * channel_size);
+  El::Int num_per_sum;
+  switch (m_stats_aggregation) {
+  case batch_normalization_stats_aggregation::global:
+    num_per_sum = channel_size * width;
+    break;
+  case batch_normalization_stats_aggregation::node_local:
+    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
+    break;
+  case batch_normalization_stats_aggregation::local:
+    num_per_sum = channel_size * local_width;
+    break;
+  default:
+    LBANN_ERROR("Unknown batch normalization stats aggregation");
+  }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
   } else {
-#pragma omp parallel for
+    LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_channels; ++channel) {
 
       // Initialize channel parameters and gradients
@@ -268,7 +304,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
     }
   }
-  
+
 }
-  
+
 } // namespace lbann

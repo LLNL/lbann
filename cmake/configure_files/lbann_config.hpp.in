@@ -7,6 +7,10 @@
 #define LBANN_HAS_GPU
 #endif // HYDROGEN_HAVE_CUDA
 
+#ifdef HYDROGEN_HAVE_OMP_TASKLOOP
+#define LBANN_HAVE_OMP_TASKLOOP
+#endif // HYDROGEN_HAVE_OMP_TASKLOOP
+
 /* Version string for LBANN */
 #define LBANN_VERSION @LBANN_VERSION@
 #cmakedefine LBANN_GIT_VERSION @LBANN_GIT_VERSION@
@@ -19,6 +23,7 @@
 
 #cmakedefine LBANN_GNU_LINUX
 
+#cmakedefine LBANN_HAS_CEREAL
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY
@@ -26,16 +31,19 @@
 #cmakedefine LBANN_HAS_ALUMINUM
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
 #cmakedefine LBANN_HAS_CONDUIT
-#cmakedefine LBANN_NO_OMP_FOR_DATA_READERS
 
 #cmakedefine LBANN_DETERMINISTIC
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 
+#cmakedefine LBANN_VTUNE
 #cmakedefine LBANN_NVPROF
 
 #cmakedefine LBANN_SYS_SENDFILE_OK
+
+#cmakedefine LBANN_HAS_STD_ANY
+#cmakedefine LBANN_HAS_STD_MAKE_UNIQUE
 
 // Define the LBANN datatype
 namespace lbann

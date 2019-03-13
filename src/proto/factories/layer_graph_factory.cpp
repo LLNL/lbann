@@ -32,10 +32,11 @@ namespace proto {
 namespace {
 
 /** Setup parent/child relationships between layers. */
-void setup_parents_and_children(lbann_comm* comm,
-                                std::vector<Layer*>& layers,
-                                std::unordered_map<std::string, Layer*>& names_to_layers,
-                                const lbann_data::Model& proto_model) {
+void setup_parents_and_children(
+       lbann_comm* comm,
+       std::vector<Layer*>& layers,
+       std::unordered_map<std::string, Layer*>& names_to_layers,
+       const lbann_data::Model& proto_model) {
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
@@ -43,19 +44,38 @@ void setup_parents_and_children(lbann_comm* comm,
     const auto& children = parse_list<std::string>(proto_layer.children());
     for (const auto& parent : parents) {
       if (names_to_layers.count(parent) == 0) {
-        err << "could not find parent layer " << parent << " "
-            << "for layer " << layers[i]->get_name();
+        err << "could not find parent layer \"" << parent << "\" "
+            << "for layer \"" << layers[i]->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
-      layers[i]->add_parent_layer(names_to_layers[parent]);
+      layers[i]->add_parent_layer(names_to_layers.at(parent));
     }
     for (const auto& child : children) {
       if (names_to_layers.count(child) == 0) {
-        err << "could not find child layer " << child << " "
-            << "for layer " << layers[i]->get_name();
+        err << "could not find child layer \"" << child << "\" "
+            << "for layer \"" << layers[i]->get_name() << "\"";
         LBANN_ERROR(err.str());
       }
-      layers[i]->add_child_layer(names_to_layers[child]);
+      layers[i]->add_child_layer(names_to_layers.at(child));
+    }
+  }
+}
+
+void setup_hints(
+       std::vector<Layer*>& layers,
+       const std::unordered_map<std::string, Layer*>& names_to_layers,
+       const lbann_data::Model& proto_model) {
+  std::stringstream err;
+  for (int i=0; i<proto_model.layer_size(); ++i) {
+    const auto& proto_layer = proto_model.layer(i);
+    const auto& hint = proto_layer.hint_layer();
+    if (!hint.empty()) {
+      if (names_to_layers.count(hint) == 0) {
+        err << "could not find hint layer \"" << hint << "\" "
+            << "for layer \"" << layers[i]->get_name() << "\"";
+        LBANN_ERROR(err.str());
+      }
+      layers[i]->set_hint_layer(names_to_layers.at(hint));
     }
   }
 }
@@ -88,34 +108,6 @@ void setup_fc_num_neurons(
 #endif // LBANN_HAS_GPU
           }
         }
-      }
-    }
-  }
-}
-
-/** Setup paired input layers for target layers. */
-void setup_target_pointers(lbann_comm* comm,
-                           std::vector<Layer*>& layers,
-                           std::unordered_map<std::string, Layer*>& names_to_layers,
-                           const lbann_data::Model& proto_model) {
-  std::stringstream err;
-  for (int i=0; i<proto_model.layer_size(); ++i) {
-    generic_target_layer* target = dynamic_cast<generic_target_layer*>(layers[i]);
-    if (target != nullptr) {
-      generic_input_layer* input = nullptr;
-      const auto& input_name = proto_model.layer(i).target().paired_input_layer();
-      if (!input_name.empty()) {
-        input = dynamic_cast<generic_input_layer*>(names_to_layers[input_name]);
-      } else {
-        for (auto&& other : layers) {
-          input = dynamic_cast<generic_input_layer*>(other);
-          if (input != nullptr) { break; }
-        }
-      }
-      if (input == nullptr) {
-        err << "could not find input layer " << input_name << " "
-            << "to pair with target layer " << target->get_name();
-        LBANN_ERROR(err.str());
       }
     }
   }
@@ -165,13 +157,15 @@ void setup_unpooling_pointers(lbann_comm* comm,
 
 } // namespace
 
-std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          const lbann_data::Model& proto_model) {
+std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Model& proto_model) {
   std::stringstream err;
 
   // List of layers
-  std::vector<Layer*> layers;
+  std::vector<std::unique_ptr<Layer>> layers;
+  layers.reserve(proto_model.layer_size());
 
   // Map from names to layer pointers
   std::unordered_map<std::string, Layer*> names_to_layers;
@@ -210,18 +204,15 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
         device = El::Device::GPU;
       }
       if (device_str == "cpu") { device = El::Device::CPU; }
-      if (proto_layer.has_input()
-          || proto_layer.has_target()
-          || proto_layer.has_reconstruction()) {
-        // Input, Target, and Reconstruction layers are not allowed on
-        // the GPUs: force the default to be the CPU
+      if (proto_layer.has_input()) {
+        // Input layers must be on CPU
         device = El::Device::CPU;
       }
     }
 #endif // LBANN_HAS_GPU
 
     // Construct layer
-    Layer* l = nullptr;
+    std::unique_ptr<Layer> l;
 #define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
     do {                                                                \
       if (layout == T_layout && device == T_device) {        \
@@ -255,7 +246,7 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       err << "layer name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_layers[name] = l;
+    names_to_layers[name] = l.get();
 
     if (proto_layer.freeze()) {
       #ifdef LBANN_DEBUG
@@ -266,17 +257,20 @@ std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
       l->freeze();
     }
     // Add layer to list
-    layers.push_back(l);
+    layers.emplace_back(std::move(l));
 
   }
 
   // Setup pointers between layers
-  setup_parents_and_children(comm, layers, names_to_layers, proto_model);
-  setup_target_pointers(comm, layers, names_to_layers, proto_model);
-  setup_unpooling_pointers(comm, layers, names_to_layers, proto_model);
+  std::vector<Layer*> layer_pointers;
+  layer_pointers.reserve(layers.size());
+  for (auto&& ptr : layers) { layer_pointers.push_back(ptr.get()); }
+  setup_parents_and_children(comm, layer_pointers, names_to_layers, proto_model);
+  setup_hints(layer_pointers, names_to_layers, proto_model);
+  setup_unpooling_pointers(comm, layer_pointers, names_to_layers, proto_model);
 
   // Optionally Set num_neurons = num_labels
-  setup_fc_num_neurons(layers, data_readers, proto_model);
+  setup_fc_num_neurons(layer_pointers, data_readers, proto_model);
 
   // Return layer list
   return layers;

@@ -4,7 +4,7 @@ model {
   block_size: 256
   num_epochs: 10
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -33,21 +33,19 @@ model {
   layer {
     name: "data"
     children: "image dummy"
-    data_layout: "model_parallel"
-    input {
-      io_buffer: "distributed"
-    }
+    data_layout: "data_parallel"
+    input {}
   }
   layer {
     parents: "data"
     name: "image"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
   layer {
     parents: "data"
     name: "dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     dummy {}
   }
 
@@ -210,7 +208,7 @@ model {
     parents: "relu6"
     name: "decode1"
     data_layout: "model_parallel"
-    num_neurons_from_data_reader: true
+    hint_layer: "image"
     fully_connected {
       weight_initialization: "glorot_uniform"
       has_bias: true
@@ -228,14 +226,13 @@ model {
     }
   }
 
-
   #################
   # RECONSTRUCTION
   #################
   layer {
     parents: "reconstruction image"
     name: "mean_squared_error"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     mean_squared_error {}
   }
 

@@ -26,10 +26,26 @@
 
 #include "lbann/data_readers/data_reader_moving_mnist.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/models/model.hpp"
 #include <fstream>
 #include <functional>
 
 namespace lbann {
+
+namespace {
+
+/** Called repeatedly to incrementally create a hash value from
+ *  several variables.
+ *
+ *  Copied from Boost. See
+ *  https://www.boost.org/doc/libs/1_55_0/doc/html/hash/reference.html#boost.hash_combine.
+ */
+template <typename T>
+inline void hash_combine(size_t& seed, T v) {
+  seed ^= std::hash<T>()(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+} // namespace
 
 moving_mnist_reader::moving_mnist_reader(El::Int num_frames,
                                          El::Int image_height,
@@ -62,7 +78,7 @@ int moving_mnist_reader::get_linearized_label_size() const {
   return get_num_labels();
 }
 
-bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, int tid) {
+bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
 
   // Useful constants
   constexpr DataType zero = 0;
@@ -72,9 +88,10 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, int tid) 
   /// @todo Implementation with uniform distribution
   std::vector<El::Int> raw_image_indices(m_num_objects);
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
-    const El::Int hash = (std::hash<int>()(data_id)
-                          ^ std::hash<int>()(col)
-                          ^ std::hash<El::Int>()(obj));
+    size_t hash = 1234;
+    hash_combine(hash, data_id);
+    hash_combine(hash, m_model->get_epoch());
+    hash_combine(hash, obj);
     raw_image_indices[obj] = hash % m_num_raw_images;
   }
 
@@ -147,7 +164,6 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, int tid) 
         y = std::min(std::max(y, zero), ymax);
         vy = -vy;
       }
-
     }
   }
 
@@ -201,16 +217,17 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col, int tid) 
   return true;
 }
 
-bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col, int tid) {
+bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col) {
 
   // Choose raw images
   /// @todo Implementation with uniform distribution
-  std::vector<El::Int> raw_image_indices;
-  for (El::Int i = 0; i < m_num_objects; ++i) {
-    const El::Int hash = (std::hash<int>()(data_id)
-                          ^ std::hash<int>()(col)
-                          ^ std::hash<El::Int>()(i));
-    raw_image_indices.push_back(hash % m_num_raw_images);
+  std::vector<El::Int> raw_image_indices(m_num_objects);
+  for (El::Int obj = 0; obj < m_num_objects; ++obj) {
+    size_t hash = 1234;
+    hash_combine(hash, data_id);
+    hash_combine(hash, m_model->get_epoch());
+    hash_combine(hash, obj);
+    raw_image_indices[obj] = hash % m_num_raw_images;
   }
 
   // Label is sum of raw image labels
@@ -218,7 +235,9 @@ bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col, int tid) 
   for (const auto& i : raw_image_indices) {
     sum += m_raw_label_data[i];
   }
-  Y(sum, col) = DataType(1);
+  auto&& Y_col = El::View(Y, El::ALL, El::IR(col));
+  El::Zero(Y_col);
+  Y_col(sum, 0) = DataType(1);
 
   return true;
 }
