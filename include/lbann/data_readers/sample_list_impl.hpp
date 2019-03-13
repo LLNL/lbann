@@ -9,10 +9,6 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <deque>
-#include "hdf5.h"
-#include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <unordered_set>
 #include <memory>
 #include <type_traits>

@@ -2,6 +2,10 @@
 #define __SAMPLE_LIST_HDF5_HPP__
 
 #include "sample_list.hpp"
+#include "hdf5.h"
+#include "conduit/conduit.hpp"
+#include "conduit/conduit_relay.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 
 namespace lbann {
 
