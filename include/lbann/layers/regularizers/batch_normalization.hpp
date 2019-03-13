@@ -65,6 +65,7 @@ template <data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {
 
 private:
+
   /** Decay rate for the running statistics. */
   DataType m_decay;
   /** Small number to avoid division by zero. */

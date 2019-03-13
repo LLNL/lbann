@@ -1561,9 +1561,11 @@ Dist get_hydrogen_matrix_distribution() {
   // dimension. It is assumed that LBANN uses only the
   // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
   // training data.
-  Shape sample_locale_shape({static_cast<index_t>(dc::get_rank_stride()),
-          index_t(1), index_t(1), index_t(1), static_cast<index_t>(
-              dc::get_mpi_num_ranks() / dc::get_rank_stride())});
+
+  std::vector<index_t> sample_locale_shape_v(index_t(1), dc::num_dims);
+  sample_locale_shape_v[0] = static_cast<index_t>(dc::get_rank_stride());
+  sample_locale_shape_v[dc::num_spatial_dims+1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
+  Shape sample_locale_shape(sample_locale_shape_v);
   auto sample_split_shape = sample_locale_shape;
   sample_split_shape[0] = 1;
   auto sample_dist = Dist::make_shared_distribution

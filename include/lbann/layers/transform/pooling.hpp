@@ -586,7 +586,6 @@ private:
             {this->get_parallel_strategy().height_splits,
              this->get_parallel_strategy().width_splits})[i];
 #endif // DISTCONV_HAS_DEPTH
-        assert(splits != -1);
         if(splits > 1)
           overlap[dc::num_spatial_dims - 1 - i] = (this->m_pool_dims[i] - 1) / 2;
       }
