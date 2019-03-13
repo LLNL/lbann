@@ -363,9 +363,8 @@ protected:
     assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
               num_channels);
 
-    std::vector<int> per_channel_stat_shape_v(dc::num_dims, 1);
-    per_channel_stat_shape_v[dc::num_spatial_dims] = num_channels;
-    dc::Shape per_channel_stat_shape(per_channel_stat_shape_v);
+    dc::Shape per_channel_stat_shape(dc::num_dims, 1);
+    per_channel_stat_shape[dc::num_spatial_dims] = num_channels;
     auto shared_dist = dc::Dist::make_distribution(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();
     // set all dimensions to be 1 except for the channel dimension

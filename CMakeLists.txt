@@ -436,10 +436,6 @@ if (LBANN_WITH_DISTCONV)
   endif(NOT P2P_FOUND)
 endif (LBANN_WITH_DISTCONV)
 
-if (LBANN_WITH_DISTCONV)
-  add_definitions(-DLBANN_DISTCONV_NUM_DIMS=${LBANN_DISTCONV_NUM_DIMS})
-endif (LBANN_WITH_DISTCONV)
-
 # Handle the documentation
 add_subdirectory(docs)
 

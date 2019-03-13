@@ -45,6 +45,18 @@
 /* Defined if LBANN has Distconv */
 #cmakedefine LBANN_HAS_DISTCONV
 
+#ifdef LBANN_HAS_DISTCONV
+#cmakedefine LBANN_DISTCONV_NUM_DIMS @LBANN_DISTCONV_NUM_DIMS@
+
+#if LBANN_DISTCONV_NUM_DIMS == 5
+#define LBANN_DISTCONV_HAS_DEPTH
+#elif LBANN_DISTCONV_NUM_DIMS == 4
+#else
+#error Only 4 or 5 are supported for LBANN_DISTCONV_NUM_DIMS.
+#endif
+
+#endif
+
 // Define the LBANN datatype
 namespace lbann
 {

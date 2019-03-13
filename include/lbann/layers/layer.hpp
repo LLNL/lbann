@@ -56,7 +56,7 @@ struct ParallelStrategy {
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
   int sample_splits = 0;
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
   /** Number of process groups the depth dimension is split over. */
   int depth_groups = 0;
   /** Number of groups the depth dimension is split over. */
@@ -83,7 +83,7 @@ struct ParallelStrategy {
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
         depth_groups == ps.depth_groups &&
         depth_splits == ps.depth_splits &&
 #endif
@@ -106,7 +106,7 @@ inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
   os << "{" << ps.sample_groups
      << "/" << ps.sample_splits
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
      << ", " << ps.depth_groups
      << "/" << ps.depth_splits
 #endif
@@ -686,7 +686,6 @@ private:
   /** Return Distconv-related shapes. */
   const dc::Shape get_input_tensor_shape() const;
   const dc::Shape get_output_tensor_shape() const;
-  const dc::Shape get_sample_block_size() const;
 
   // ===========================================================
   // Private class members

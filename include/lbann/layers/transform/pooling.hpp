@@ -576,7 +576,7 @@ private:
     if (distconv_enabled()) {
       dc::IntVector overlap(dc::num_dims, 0);
       for(int i = 0; i < dc::num_spatial_dims; i++) {
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
         const int splits = std::vector<int>(
             {this->get_parallel_strategy().depth_splits,
              this->get_parallel_strategy().height_splits,
@@ -585,7 +585,7 @@ private:
         const int splits = std::vector<int>(
             {this->get_parallel_strategy().height_splits,
              this->get_parallel_strategy().width_splits})[i];
-#endif // DISTCONV_HAS_DEPTH
+#endif // LBANN_DISTCONV_HAS_DEPTH
         if(splits > 1)
           overlap[dc::num_spatial_dims - 1 - i] = (this->m_pool_dims[i] - 1) / 2;
       }
@@ -710,7 +710,7 @@ private:
     bool pad_zero = true, pad_stencil = true, stride_one = true, stride_stencil = true;
     for(int i = 0; i < dc::num_spatial_dims; i++) {
       pad_zero &= (m_pads[i] == 0);
-      pad_stencil &= (m_pads[i] == stencils[dc::num_spatial_dims-1-i]);
+      pad_stencil &= (m_pads[i] == stencils[i]);
       stride_one &= (m_strides[i] == 1);
       stride_stencil &= (m_strides[i] == stencils[i] + 1);
     }

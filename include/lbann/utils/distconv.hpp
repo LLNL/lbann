@@ -40,13 +40,6 @@
 
 #define DISTCONV_HAS_CUDNN
 
-#if LBANN_DISTCONV_NUM_DIMS == 5
-#define DISTCONV_HAS_DEPTH
-#elif LBANN_DISTCONV_NUM_DIMS == 4
-#else
-#error Only 4 or 5 are supported for LBANN_DISTCONV_NUM_DIMS.
-#endif
-
 //#define DISTCONV_ZERO_OUT_ERROR_SIGNALS
 // temporary workaround
 #define DISTCONV_USE_SAME_RELU_CALL_AS_LBANN

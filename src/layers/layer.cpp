@@ -1410,25 +1410,25 @@ void Layer::setup_tensor_distribution_init(
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
   int d = ps.depth_groups;
-#endif // DISTCONV_HAS_DEPTH
+#endif // LBANN_DISTCONV_HAS_DEPTH
   int h = ps.height_groups;
   int w = ps.width_groups;
   int np = m_comm->get_procs_per_trainer();
 
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
   const int spatial_prod = d * h * w;
 #else
   const int spatial_prod = h * w;
-#endif // DISTCONV_HAS_DEPTH
+#endif // LBANN_DISTCONV_HAS_DEPTH
 
   // if only one process is used, do not parallelize
   if (np == 1) {
     n = c = f = h = w = 1;
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
       d = 1;
-#endif // DISTCONV_HAS_DEPTH
+#endif // LBANN_DISTCONV_HAS_DEPTH
   }
   if (distconv_enabled()) {
     if (c != f) {
@@ -1456,13 +1456,13 @@ void Layer::setup_tensor_distribution_init(
       throw lbann_exception();
     }
     std::string xd_array, xd_array_names;
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
     xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
     xd_array_names = "NxCxDxHxW";
 #else
     xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
     xd_array_names = "NxCxHxW";
-#endif // DISTCONV_HAS_DEPTH
+#endif // LBANN_DISTCONV_HAS_DEPTH
     MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
                              << xd_array << "\n";
   }
@@ -1473,7 +1473,7 @@ void Layer::setup_tensor_distribution_init(
   ps.sample_groups = n;
   ps.channel_groups = c;
   ps.filter_groups = f;
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
   ps.depth_groups = d;
 #endif
   ps.height_groups = h;
@@ -1482,7 +1482,7 @@ void Layer::setup_tensor_distribution_init(
   if (ps.sample_splits == 0) ps.sample_splits = n;
   if (ps.channel_splits == 0) ps.channel_splits = c;
   if (ps.filter_splits == 0) ps.filter_splits = f;
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
     if (ps.depth_splits == 0) ps.depth_splits = d;
 #endif
   if (ps.height_splits == 0) ps.height_splits = h;
@@ -1493,7 +1493,7 @@ void Layer::setup_tensor_distribution_init(
   Shape output_locale_shape;
   Shape output_split_shape;
 
-#ifdef DISTCONV_HAS_DEPTH
+#ifdef LBANN_DISTCONV_HAS_DEPTH
   input_locale_shape = Shape({w, h, d, c, n});
   input_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
                              ps.channel_splits, ps.sample_splits});
@@ -1501,12 +1501,12 @@ void Layer::setup_tensor_distribution_init(
   output_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
                               ps.filter_splits, ps.sample_splits});
 #else
-    input_locale_shape = Shape({w, h, c, n});
-    input_split_shape = Shape({ps.width_splits, ps.height_splits,
-                               ps.channel_splits, ps.sample_splits});
-    output_locale_shape = Shape({w, h, f, n});
-    output_split_shape = Shape({ps.width_splits, ps.height_splits,
-                                ps.filter_splits, ps.sample_splits});
+  input_locale_shape = Shape({w, h, c, n});
+  input_split_shape = Shape({ps.width_splits, ps.height_splits,
+                             ps.channel_splits, ps.sample_splits});
+  output_locale_shape = Shape({w, h, f, n});
+  output_split_shape = Shape({ps.width_splits, ps.height_splits,
+                              ps.filter_splits, ps.sample_splits});
 #endif
 
   auto prev_activations_dist =  Dist::make_shared_distribution(
@@ -1561,11 +1561,9 @@ Dist get_hydrogen_matrix_distribution() {
   // dimension. It is assumed that LBANN uses only the
   // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
   // training data.
-
-  std::vector<index_t> sample_locale_shape_v(dc::num_dims, index_t(1));
-  sample_locale_shape_v[0] = static_cast<index_t>(dc::get_rank_stride());
-  sample_locale_shape_v[dc::num_spatial_dims+1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
-  Shape sample_locale_shape(sample_locale_shape_v);
+  Shape sample_locale_shape(dc::num_dims, 1);
+  sample_locale_shape[0] = static_cast<index_t>(dc::get_rank_stride());
+  sample_locale_shape[-1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
   auto sample_split_shape = sample_locale_shape;
   sample_split_shape[0] = 1;
   auto sample_dist = Dist::make_shared_distribution
@@ -1596,7 +1594,6 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists
 void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const auto input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto sample_block_size = get_sample_block_size();
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   auto input_local_shape = input_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
@@ -1970,9 +1967,6 @@ const dc::Shape Layer::get_output_tensor_shape() const {
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
   output_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return dc::Shape(output_tensor_shape_v);
-}
-const dc::Shape Layer::get_sample_block_size() const {
-  return dc::Shape(std::vector<int>(dc::num_dims, 1));
 }
 
 #endif
