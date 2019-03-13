@@ -40,6 +40,10 @@
 
 #define DISTCONV_HAS_CUDNN
 
+#if LBANN_DISTCONV_NUM_DIMS == 5
+#define DISTCONV_HAS_DEPTH
+#endif
+
 //#define DISTCONV_ZERO_OUT_ERROR_SIGNALS
 // temporary workaround
 #define DISTCONV_USE_SAME_RELU_CALL_AS_LBANN

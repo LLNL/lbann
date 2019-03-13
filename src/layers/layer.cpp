@@ -1410,18 +1410,25 @@ void Layer::setup_tensor_distribution_init(
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
+#ifdef DISTCONV_HAS_DEPTH
   int d = ps.depth_groups;
+#endif // DISTCONV_HAS_DEPTH
   int h = ps.height_groups;
   int w = ps.width_groups;
   int np = m_comm->get_procs_per_trainer();
 
-  const bool use_d = (dc::num_dims == 5);
+#ifdef DISTCONV_HAS_DEPTH
+  const int spatial_prod = d * h * w;
+#else
+  const int spatial_prod = h * w;
+#endif // DISTCONV_HAS_DEPTH
 
   // if only one process is used, do not parallelize
   if (np == 1) {
     n = c = f = h = w = 1;
-    if(use_d)
+#ifdef DISTCONV_HAS_DEPTH
       d = 1;
+#endif // DISTCONV_HAS_DEPTH
   }
   if (distconv_enabled()) {
     if (c != f) {
@@ -1432,52 +1439,52 @@ void Layer::setup_tensor_distribution_init(
       MPIRootPrintStreamError() << "Distconv does not support channel/filter parallelization yet. Layer: " << get_name() << ", ps: " << ps;
       throw lbann_exception();
     }
-    int ncdhw = n * c * (use_d ? d : 1) * h * w;
-    if (ncdhw > np) {
+    if (n * c * spatial_prod > np) {
       MPIRootPrintStreamError() <<
           "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: "
                             << ps << "\n";
       throw lbann_exception();
     }
     // Put the remaining factor into the outer-most process dimension
-    float rem = np / (float)ncdhw;
+    float rem = np / (float) (n * c * spatial_prod);
     n *= rem;
     ps.sample_splits *= rem;
-    ncdhw = n * c * (use_d ? d : 1) * h * w;
-    if (ncdhw != np) {
+    if (n * c * spatial_prod != np) {
       MPIRootPrintStreamError() <<
           "Can't determine factorization of the number of MPI ranks for parallel strategy: "
                             << ps << "\n";
       throw lbann_exception();
     }
     std::string xd_array, xd_array_names;
-    if(!use_d) {
-      xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
-      xd_array_names = "NxCxHxW";
-    } else {
-      xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
-      xd_array_names = "NxCxDxHxW";
-    }
+#ifdef DISTCONV_HAS_DEPTH
+    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
+    xd_array_names = "NxCxDxHxW";
+#else
+    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
+    xd_array_names = "NxCxHxW";
+#endif // DISTCONV_HAS_DEPTH
     MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
                              << xd_array << "\n";
   }
 
   assert_always(!distconv_enabled() || (
-      (use_d ? d : 1) * h * w * n * c == np && (use_d ? d : 1) * h * w * n * f == np));
+      spatial_prod * n * c == np && spatial_prod * n * f == np));
 
   ps.sample_groups = n;
   ps.channel_groups = c;
   ps.filter_groups = f;
-  if(use_d)
-    ps.depth_groups = d;
+#ifdef DISTCONV_HAS_DEPTH
+  ps.depth_groups = d;
+#endif
   ps.height_groups = h;
   ps.width_groups = w;
   // If splits are not set, set them to be equal to the group numbers
   if (ps.sample_splits == 0) ps.sample_splits = n;
   if (ps.channel_splits == 0) ps.channel_splits = c;
   if (ps.filter_splits == 0) ps.filter_splits = f;
-  if(use_d)
+#ifdef DISTCONV_HAS_DEPTH
     if (ps.depth_splits == 0) ps.depth_splits = d;
+#endif
   if (ps.height_splits == 0) ps.height_splits = h;
   if (ps.width_splits == 0) ps.width_splits = w;
 
@@ -1486,21 +1493,21 @@ void Layer::setup_tensor_distribution_init(
   Shape output_locale_shape;
   Shape output_split_shape;
 
-  if(!use_d) {
+#ifdef DISTCONV_HAS_DEPTH
+  input_locale_shape = Shape({w, h, d, c, n});
+  input_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
+                             ps.channel_splits, ps.sample_splits});
+  output_locale_shape = Shape({w, h, d, f, n});
+  output_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
+                              ps.filter_splits, ps.sample_splits});
+#else
     input_locale_shape = Shape({w, h, c, n});
     input_split_shape = Shape({ps.width_splits, ps.height_splits,
                                ps.channel_splits, ps.sample_splits});
     output_locale_shape = Shape({w, h, f, n});
     output_split_shape = Shape({ps.width_splits, ps.height_splits,
                                 ps.filter_splits, ps.sample_splits});
-  } else {
-    input_locale_shape = Shape({w, h, d, c, n});
-    input_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
-                               ps.channel_splits, ps.sample_splits});
-    output_locale_shape = Shape({w, h, d, f, n});
-    output_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
-                                ps.filter_splits, ps.sample_splits});
-  }
+#endif
 
   auto prev_activations_dist =  Dist::make_shared_distribution(
       input_locale_shape, input_split_shape);

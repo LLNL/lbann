@@ -56,10 +56,12 @@ struct ParallelStrategy {
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
   int sample_splits = 0;
+#ifdef DISTCONV_HAS_DEPTH
   /** Number of process groups the depth dimension is split over. */
   int depth_groups = 0;
   /** Number of groups the depth dimension is split over. */
   int depth_splits = 0;
+#endif
   /** Number of process groups the height dimension is split over. */
   int height_groups = 0;
   /** Number of groups the height dimension is split over. */
@@ -81,8 +83,10 @@ struct ParallelStrategy {
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
+#ifdef DISTCONV_HAS_DEPTH
         depth_groups == ps.depth_groups &&
         depth_splits == ps.depth_splits &&
+#endif
         height_groups == ps.height_groups &&
         height_splits == ps.height_splits &&
         width_groups == ps.width_groups &&
@@ -102,8 +106,10 @@ inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
   os << "{" << ps.sample_groups
      << "/" << ps.sample_splits
+#ifdef DISTCONV_HAS_DEPTH
      << ", " << ps.depth_groups
      << "/" << ps.depth_splits
+#endif
      << ", " << ps.height_groups
      << "/" << ps.height_splits
      << ", " << ps.width_groups

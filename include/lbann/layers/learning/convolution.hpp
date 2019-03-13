@@ -346,14 +346,16 @@ protected:
     if (this->distconv_enabled()) {
       dc::IntVector overlap(dc::num_dims, 0);
       for(int i = 0; i < dc::num_spatial_dims; i++) {
+#ifdef DISTCONV_HAS_DEPTH
+        const int splits = std::vector<int>(
+            {this->get_parallel_strategy().depth_splits,
+             this->get_parallel_strategy().height_splits,
+             this->get_parallel_strategy().width_splits})[i];
+#else
         const int splits = std::vector<int>(
             {this->get_parallel_strategy().height_splits,
-             this->get_parallel_strategy().width_splits,
-             -1,
-             this->get_parallel_strategy().depth_splits,
-             this->get_parallel_strategy().height_splits,
-             this->get_parallel_strategy().width_splits})
-            [i + 3 * (dc::num_dims - 4)];
+             this->get_parallel_strategy().width_splits})[i];
+#endif // DISTCONV_HAS_DEPTH
         assert(splits != -1);
         if(splits > 1)
           overlap[dc::num_spatial_dims - 1 - i] = (this->m_kernel_dims[2 + i] - 1) / 2 * this->m_dilations[i];
