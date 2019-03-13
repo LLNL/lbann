@@ -153,7 +153,7 @@ Hydrogen, and LBANN separately, by whatever means they choose.
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
     using the superbuild. See
-    <a href=#building-an-entire-ecosystem-with-the-superbuild>below</a>
+    [here](BuildingLBANNWithCMake.md#building-an-entire-ecosystem-with-the-superbuild)
     for a list and descriptions of all CMake flags known to LBANN's
     "Superbuild" build system. A representative CMake command line
     that expects `LBANN_HOME`, `LBANN_BUILD_DIR`, `LBANN_INSTALL_DIR`
