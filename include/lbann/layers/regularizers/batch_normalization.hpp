@@ -362,7 +362,6 @@ protected:
     assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
               num_channels);
 
-    // REVIEW: distconv-3d
     std::vector<int> per_channel_stat_shape_v(dc::num_dims, 1);
     per_channel_stat_shape_v[dc::num_spatial_dims] = num_channels;
     dc::Shape per_channel_stat_shape(per_channel_stat_shape_v);

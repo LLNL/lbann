@@ -1407,7 +1407,6 @@ void Layer::setup_tensor_distribution_init(
   auto &ps = get_parallel_strategy();
   MPIRootPrintStreamInfo() << "Parallel Strategy for layer " << get_name()
                            << ": " << ps << "\n";
-  // REVIEW: distconv-3d
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
@@ -1586,7 +1585,6 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists
 }
 
 void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> &dists) {
-  // REVIEW: distconv-3d
   const auto input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const auto sample_block_size = get_sample_block_size();
@@ -1627,7 +1625,6 @@ Shape Layer::get_activations_tensor_local_shape() const {
 
 void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dists,
                                      bool allocate) {
-  // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Shape output_tensor_shape = get_output_tensor_shape();
   const auto activations_local_shape =
@@ -1641,7 +1638,6 @@ void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dist
 }
 
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
-  // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   const Shape output_tensor_shape = get_output_tensor_shape();
@@ -1662,13 +1658,11 @@ void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dist
                         << "activations: " << m_activations_t;
 }
 
-// REVIEW: distconv-3d
 void Layer::setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists) {}
 
 void Layer::setup_distconv_post(size_t) {}
 
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
-  // REVIEW: distconv-3d
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution();
   const Shape output_tensor_shape = get_output_tensor_shape();
@@ -1705,7 +1699,6 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
                         << "prev error signals: " << m_prev_error_signals_t;
 }
 
-// REVIEW: distconv-3d
 void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const Shape input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -1718,7 +1711,6 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
                         << "error signals: " << m_error_signals_t;
 }
 
-// REVIEW: distconv-3d
 void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const Shape input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
@@ -1829,7 +1821,6 @@ TensorShuffler *get_shuffler(Layer *layer,
                              TensorShuffler **last_mb_shufflers,
                              const TensorDev &src,
                              const TensorDev &dst) {
-  // REVIEW: distconv-3d
   TensorShuffler *shuffler = nullptr;
   if (layer->get_model()->get_max_mini_batch_size() ==
       layer->get_model()->get_current_mini_batch_size()) {

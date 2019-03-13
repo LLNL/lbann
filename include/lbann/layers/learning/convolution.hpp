@@ -344,7 +344,6 @@ protected:
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
     if (this->distconv_enabled()) {
-      // REVIEW: distconv-3d
       dc::IntVector overlap(dc::num_dims, 0);
       for(int i = 0; i < dc::num_spatial_dims; i++) {
         const int splits = std::vector<int>(
@@ -391,7 +390,6 @@ protected:
     return output_spatial_local_shape;
   }
 
-  // REVIEW: distconv-3d
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     using namespace dc;
     Layer::setup_tensors_fwd(dists);
@@ -507,7 +505,6 @@ protected:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
-    // REVIEW: distconv-3d
     bool cond = true;
     for(int i = 0; i < dc::num_spatial_dims; i++) {
       cond &= this->m_kernel_dims[2 + i] == this->m_kernel_dims[2];

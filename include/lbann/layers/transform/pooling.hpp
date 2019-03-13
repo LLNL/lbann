@@ -573,7 +573,6 @@ private:
       std::set<dc::Dist*> &fixed) override {
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
-    // REVIEW: distconv-3d
     if (distconv_enabled()) {
       dc::IntVector overlap(dc::num_dims, 0);
       for(int i = 0; i < dc::num_spatial_dims; i++) {
@@ -612,7 +611,6 @@ private:
   }
 
   dc::Shape get_activations_tensor_local_shape() const override {
-    // REVIEW: distconv-3d
     const std::vector<int> filter_dims(m_pool_dims.rbegin(), m_pool_dims.rend());
     const std::vector<int> strides(m_strides.rbegin(), m_strides.rend());
     const std::vector<int> dilations(dc::num_spatial_dims, 1);
@@ -628,7 +626,6 @@ private:
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
-    // REVIEW: distconv-3d
     dc::MPIPrintStreamDebug()
         << "pooling: setup_tensors."
         << " pads: " << dc::util::join_xd_array(m_pads)
@@ -696,7 +693,6 @@ private:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
-    // REVIEW: distconv-3d
     bool cond = true;
     for(int i = 0; i < dc::num_spatial_dims; i++)
       cond &= (m_pool_dims[i] % 2 != 0);

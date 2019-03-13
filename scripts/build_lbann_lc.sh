@@ -74,6 +74,7 @@ WITH_CONDUIT=OFF
 WITH_DISTCONV=OFF
 DISTCONV_URL=ssh://git@cz-bitbucket.llnl.gov:7999/~maruyama/distconv.git
 DISTCONV_TAG=master
+LBANN_DISTCONV_NUM_DIMS=4
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
@@ -287,6 +288,10 @@ while :; do
 			DISTCONV_TAG=$2
 			shift
 			;;
+		--distconv-num-dims)
+			LBANN_DISTCONV_NUM_DIMS=$2
+			shift
+			;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
             ;;
@@ -338,7 +343,7 @@ if [ ${USE_MODULES} -ne 0 ]; then
         HDF5_CMAKE_EXE=$(which cmake)
     fi
     module load cmake/3.9.2
-    
+
     CMAKE_PATH=$(dirname $(which cmake))
 else
     use git
@@ -842,6 +847,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DISTCONV_URL=${DISTCONV_URL} \
 -D DISTCONV_TAG=${DISTCONV_TAG} \
+-D LBANN_DISTCONV_NUM_DIMS=${LBANN_DISTCONV_NUM_DIMS} \
 -D LBANN_SB_BUILD_P2P=${WITH_DISTCONV} \
 -D LBANN_WITH_P2P=${WITH_DISTCONV} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \

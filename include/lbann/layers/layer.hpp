@@ -56,7 +56,6 @@ struct ParallelStrategy {
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
   int sample_splits = 0;
-  // TODO: distconv-3d, do not define if num_dims == 4
   /** Number of process groups the depth dimension is split over. */
   int depth_groups = 0;
   /** Number of groups the depth dimension is split over. */
