@@ -23,32 +23,39 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_triplet .hpp .cpp - data reader to use triplet patches
+// data_reader_multihead_siamese .hpp .cpp - data reader to use m patches
 //                                 generated offline.
-// Depreciated and replaced by data_reader_multihead_siamese .hpp .cpp.
-// Kept here just for reference.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_triplet.hpp"
+#include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/data_store/data_store_multihead_siamese.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
 #include <omp.h>
 
+#include <iostream>
+
 namespace lbann {
 
-data_reader_triplet::data_reader_triplet(const std::shared_ptr<cv_process>& pp, bool shuffle)
+data_reader_multihead_siamese::data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, unsigned int nimages, bool shuffle) : data_reader_multi_images(pp, shuffle) {
+  set_defaults();
+  m_num_img_srcs = nimages;
+  m_samples = offline_patches_npz (m_num_img_srcs);
+}
+
+data_reader_multihead_siamese::data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : data_reader_multi_images(pp, shuffle) {
   set_defaults();
 }
 
-data_reader_triplet::data_reader_triplet(const data_reader_triplet& rhs)
+data_reader_multihead_siamese::data_reader_multihead_siamese(const data_reader_multihead_siamese& rhs)
   : data_reader_multi_images(rhs),
     m_samples(rhs.m_samples)
 {}
 
-data_reader_triplet& data_reader_triplet::operator=(const data_reader_triplet& rhs) {
+data_reader_multihead_siamese& data_reader_multihead_siamese::operator=(const data_reader_multihead_siamese& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -60,10 +67,10 @@ data_reader_triplet& data_reader_triplet::operator=(const data_reader_triplet& r
   return (*this);
 }
 
-data_reader_triplet::~data_reader_triplet() {
+data_reader_multihead_siamese::~data_reader_multihead_siamese() {
 }
 
-void data_reader_triplet::set_defaults() {
+void data_reader_multihead_siamese::set_defaults() {
   m_image_width = 110;
   m_image_height = 110;
   m_image_num_channels = 3;
@@ -74,23 +81,30 @@ void data_reader_triplet::set_defaults() {
 
 /**
  * Same as the parent class method except the default value of the last argument,
- * num_img_srcs, which is 3 here.
+ * num_img_srcs, which is 4 here.
  */
-void data_reader_triplet::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
-  data_reader_multi_images::set_input_params(width, height, num_ch, num_labels, 3);
+void data_reader_multihead_siamese::set_input_params(const int width, const int height, const int num_ch, const int num_labels) {
+  data_reader_multi_images::set_input_params(width, height, num_ch, num_labels, 4);
 }
 
 
-bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  int tid = m_io_thread_pool->get_local_thread_id();
-  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
+bool data_reader_multihead_siamese::fetch_datum(Mat& X, int data_id, int mb_idx, int tid) {
+
+  std::vector<::Mat> X_v = create_datum_views(X, mb_idx);
 
   sample_t sample = m_samples.get_sample(data_id);
   for(size_t i=0u; i < m_num_img_srcs; ++i) {
     int width=0, height=0, img_type=0;
     const std::string imagepath = get_file_dir() + sample.first[i];
     bool ret = true;
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+    if (m_data_store != nullptr) {
+      std::vector<unsigned char> *image_buf;
+      m_data_store->get_data_buf(data_id, image_buf, i);
+      // This could probably have used image_utils::import_image()
+      ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
+    } else {
+      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+    }
 
     if(!ret) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
@@ -104,25 +118,31 @@ bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx) {
                             + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
     }
   }
+
   return true;
 }
 
 
-bool data_reader_triplet::fetch_label(Mat& Y, int data_id, int mb_idx) {
+bool data_reader_multihead_siamese::fetch_label(Mat& Y, int data_id, int mb_idx, int tid) {
   const label_t label = m_samples.get_label(data_id);
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
 
-std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list_of_current_mb() const {
+std::vector<data_reader_multihead_siamese::sample_t> data_reader_multihead_siamese::get_image_list_of_current_mb() const {
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
+
+  for (El::Int i = 0; i < m_indices_fetched_per_mb.Height(); ++i) {
+    El::Int index = m_indices_fetched_per_mb.Get(i, 0);
+    ret.emplace_back(m_samples.get_sample(index));
+  }
   return ret;
 }
 
 
-std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list() const {
+std::vector<data_reader_multihead_siamese::sample_t> data_reader_multihead_siamese::get_image_list() const {
   const size_t num_samples = m_samples.get_num_samples();
   std::vector<sample_t> ret;
   ret.reserve(num_samples);
@@ -134,7 +154,7 @@ std::vector<data_reader_triplet::sample_t> data_reader_triplet::get_image_list()
 }
 
 
-void data_reader_triplet::load() {
+void data_reader_multihead_siamese::load() {
   const std::string data_filename = get_data_filename();
 
   // To support m_first_n semantic, m_samples.load() takes m_first_n
@@ -162,6 +182,16 @@ void data_reader_triplet::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
+}
+
+void data_reader_multihead_siamese::setup_data_store(model *m) {
+  if (m_data_store != nullptr) {
+    delete m_data_store;
+  }
+  m_data_store = new data_store_multihead_siamese(this, m);
+  if (m_data_store != nullptr) {
+    m_data_store->setup();
+  }
 }
 
 }  // namespace lbann

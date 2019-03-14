@@ -57,8 +57,12 @@ def run_tests(actual_performance, model_name, dir_name, should_log,
       plan = os.environ[key]
       if plan in ['LBANN-NIGHTD', 'LBANN-WD']:
         archive_file = '/usr/workspace/wsb/lbannusr/archives/%s/%s/%s/performance_%s.txt' % (plan, cluster, compiler_name, model_name)
+        archival_string = '%s, %f, %f, %f, %f, %f, %f\n' % (os.environ['bamboo_buildNumber'], max_run_time, max_mean, max_max, max_min, max_stdev, min_accuracy)
+        print('Archive file: ' + archive_file)
+        print('Archiving: ' + archival_string)
         with open(archive_file, 'a') as archive:
-          archive.write('%s, %f, %f, %f, %f, %f, %f\n' % (os.environ['bamboo_buildNumber'], max_run_time, max_mean, max_max, max_min, max_stdev, min_accuracy))
+          print('Archiving to file.')
+          archive.write(archival_string)
       else:
         print('The plan %s does not have archiving activated' % plan)
     else:
