@@ -1,3 +1,5 @@
+FIXME (TRB): This is probably all out of date. Should this file be deleted?
+
 ## LBANN Documentation via Doxygen
 ### Updating the Github Pages
 This documentation is generated and deployed to github pages automatically using Bamboo CI. To trigger an update to the pages add "gen_doxygen" to your commit message.
