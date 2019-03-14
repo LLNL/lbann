@@ -17,11 +17,10 @@ Dependencies
 --------------------
 
 The following packages and tools are required to build LBANN. All
-packages listed below may be installed using
-`Spack <https://github.com/llnl/spack>`_. See
-<a href="#building-with-spack">below</a>
-for more details on using Spack to build a complete LBANN
-environment.
+packages listed below may be installed using `Spack
+<https://github.com/llnl/spack>`_. See :ref:`below
+<building-with-spack>` for more details on using Spack to build a
+complete LBANN environment.
 
 The following basic tools are **required**.
 
@@ -77,6 +76,9 @@ The following third-party packages are **optional**.
   NVTX. NVTX is provided as part of the CUDA toolkit.
 + VTune. LBANN supports some improved annotations for VTune.
 
+
+.. _building-with-spack:
+
 ------------------------------------------------------------
 Building with `Spack <https://github.com/llnl/spack>`_
 ------------------------------------------------------------
@@ -116,8 +118,51 @@ Setup Spack and local base tools
 Building & Installing LBANN as a user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This section is work in progress. For now, follow the developer
-instructions below. We are working to simplify this process.
+.. warning:: This section is still underdevelopment and being
+             tested. It contains known issues. This warning will be
+             removed when it is believed to be generally usable.
+
+With Spack setup and installed into your path, it can be used to
+install the LBANN executables. This approach is appropriate for users
+that want to train new or existing models using the python front-end.
+
+.. note:: If your model requires custom layers or data readers, you
+          may need to install LBANN as a developer, which would allow
+          you to modify and recompile the source code.
+
+Here are three easy ways to install LBANN:
+
+- Building with the latest released versions and GPU support:
+
+  .. code-block:: bash
+
+      spack install lbann +gpu +nccl
+      ml load spack
+
+- Building with the head of develop branch for lbann, hydrogen and
+  aluminum with GPU support:
+
+  .. code-block:: bash
+
+      spack install lbann@develop +gpu +nccl ^hydrogen@develop ^aluminum@master
+      ml load spack
+
+- Using the Spack environment method, (e.g., for an x86_64 LLNL LC
+  system with GPU support):
+
+  .. code-block:: bash
+
+      cd <path to spack repo>/spack_environments/users/llnl_lc/x86_64_gpu/
+      spack install
+      spack env loads
+      source loads
+
+There are numerous options for all of these packages. These options
+can be viewed via commands such as :bash:`spack info lbann`. To
+specify the compiler, one can add options such as :code:`%gcc@7.3.0`.
+For further information about specifying dependencies, such as the MPI
+library, please consult `the Spack documentation
+<https://spack.readthedocs.io>`_.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Building & Installing LBANN as a developer
@@ -158,7 +203,7 @@ Hydrogen, and LBANN separately, by whatever means they choose.
       Alternatively, you can create baseline versions of the
       user-level Spack configuration files and remove the externals
       and compilers from the :code:`spack.yaml` file. More details are
-      provided `here <spack_environment.md>`_.
+      provided :ref:`here <setup-spack-env>`.
 
     + Note that the initial build of all of the standard packages in Spack
       will take a while.
@@ -177,8 +222,7 @@ Hydrogen, and LBANN separately, by whatever means they choose.
                 ...
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
-    using the superbuild. See
-    `here <BuildingLBANNWithCMake.md#building-an-entire-ecosystem-with-the-superbuild>`_
+    using the superbuild. See :ref:`here <building-with-the-superbuild>`
     for a list and descriptions of all CMake flags known to LBANN's
     "Superbuild" build system. A representative CMake command line
     that expects :bash:`LBANN_HOME`, :bash:`LBANN_BUILD_DIR`,
@@ -220,13 +264,17 @@ Hydrogen, and LBANN separately, by whatever means they choose.
 
 
 The complete documentation for building LBANN directly with CMake can
-be found `here <BuildingLBANNWithCMake.md>`_.
+be found :ref:`here <build-with-cmake>`.
+
+------------------------------
+Advanced build methods
+------------------------------
 
 .. toctree::
    :maxdepth: 1
-   :caption: Advanced build methods
 
    build_with_cmake
    build_with_superbuild
    build_containers
    build_llnl_idiosyncracies
+   build_spack_extra_config
