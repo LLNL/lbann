@@ -111,7 +111,7 @@ protected:
   std::vector<dc::TensorDev> m_prev_activations_siblings;
 
  public:
-  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
     this->setup_prev_activations_tensor(dists);
@@ -127,7 +127,7 @@ protected:
     }
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 

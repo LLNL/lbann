@@ -140,6 +140,8 @@ mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 option(LBANN_WITH_DISTCONV
   "Enable Distconv distributed convolution" OFF)
 
+set(LBANN_DISTCONV_NUM_DIMS 4 CACHE STRING "The number of tensor dimensions")
+
 option(LBANN_WITH_P2P
   "Enable P2P library" OFF)
 
@@ -415,7 +417,7 @@ if (LBANN_WITH_DISTCONV)
   message(STATUS "DISTCONV requested")
   find_package(P2P)
   find_package(DISTCONV)
-  set(LBANN_HAS_DISTCONV ${DISTCONV_FOUND}) 
+  set(LBANN_HAS_DISTCONV ${DISTCONV_FOUND})
   if (NOT LBANN_HAS_DISTCONV)
     message(FATAL_ERROR
       "Requested LBANN_WITH_DISTCONV but Distconv not found. "
@@ -423,7 +425,7 @@ if (LBANN_WITH_DISTCONV)
       "Try specifying DISTCONV_DIR as the root of a DISTCONV install. "
       "Alternatively, build with LBANN_WITH_DISTCONV=OFF.")
     set(LBANN_WITH_DISTCONV OFF)
-  endif(NOT LBANN_HAS_DISTCONV)      
+  endif(NOT LBANN_HAS_DISTCONV)
   if (NOT P2P_FOUND)
     message(FATAL_ERROR
       "Requested LBANN_WITH_DISTCONV but its required package, P2P, not found. "

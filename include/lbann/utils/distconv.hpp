@@ -52,10 +52,14 @@
 #include "distconv/tensor/shuffle_al.hpp"
 #include "distconv/tensor/shuffle_hybrid.hpp"
 #include "distconv/tensor/algorithms.hpp"
+#include "distconv/util/util.hpp"
 #include "p2p/p2p.hpp"
 
 namespace lbann {
 namespace dc {
+
+static constexpr int num_dims = LBANN_DISTCONV_NUM_DIMS;
+static constexpr int num_spatial_dims = num_dims - 2;
 
 ////////////////////////////////////////////////////////////
 // Helper type aliases
@@ -80,6 +84,7 @@ using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<DataType>;
 using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<DataType>;
 
 using Dist = ::distconv::tensor::Distribution;
+static constexpr int num_dists = 4;
 
 using LocaleMPI = ::distconv::tensor::LocaleMPI;
 
@@ -92,9 +97,9 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
-using Convolution = ::distconv::Convolution<Backend, 4, DataType>;
-using Pooling = ::distconv::Pooling<Backend, 4, DataType>;
-using BatchNormalization = ::distconv::BatchNormalization<Backend, 4, DataType>;
+using Convolution = ::distconv::Convolution<Backend, num_dims, DataType>;
+using Pooling = ::distconv::Pooling<Backend, num_dims, DataType>;
+using BatchNormalization = ::distconv::BatchNormalization<Backend, num_dims, DataType>;
 
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;

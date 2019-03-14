@@ -345,7 +345,7 @@ protected:
 
   dc::LocaleMPI m_spatial_loc;
 
-  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
@@ -363,7 +363,8 @@ protected:
     assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
               num_channels);
 
-    dc::Shape per_channel_stat_shape({1, 1, num_channels, 1});
+    dc::Shape per_channel_stat_shape(dc::num_dims, 1);
+    per_channel_stat_shape[dc::num_spatial_dims] = num_channels;
     auto shared_dist = dc::Dist::make_distribution(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();
     // set all dimensions to be 1 except for the channel dimension
@@ -406,7 +407,7 @@ protected:
         m_var_gradient_t, this->m_var_gradient->Buffer()));
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!distconv_enabled()) return;
 
@@ -417,16 +418,16 @@ protected:
     std::vector<bool> reduced_dims;
     switch (m_stats_aggregation) {
     case batch_normalization_stats_aggregation::local:
-      reduced_dims = std::vector<bool>(4, false);
+      reduced_dims = std::vector<bool>(dc::num_dims, false);
       break;
     case batch_normalization_stats_aggregation::node_local:
       // Not supproted
       LBANN_ERROR("Node-local aggregation is not supported in Distconv");
     case batch_normalization_stats_aggregation::global:
-      reduced_dims = std::vector<bool>(4, true);
+      reduced_dims = std::vector<bool>(dc::num_dims, true);
       break;
     case batch_normalization_stats_aggregation::spatial:
-      reduced_dims = std::vector<bool>(4, false);
+      reduced_dims = std::vector<bool>(dc::num_dims, false);
       for (int i = 0; i < m_prev_activations_t.get_num_spatial_dims(); ++i) {
         reduced_dims[i] = true;
       }

@@ -56,6 +56,12 @@ struct ParallelStrategy {
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
   int sample_splits = 0;
+#ifdef LBANN_DISTCONV_HAS_DEPTH
+  /** Number of process groups the depth dimension is split over. */
+  int depth_groups = 0;
+  /** Number of groups the depth dimension is split over. */
+  int depth_splits = 0;
+#endif
   /** Number of process groups the height dimension is split over. */
   int height_groups = 0;
   /** Number of groups the height dimension is split over. */
@@ -77,6 +83,10 @@ struct ParallelStrategy {
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
+#ifdef LBANN_DISTCONV_HAS_DEPTH
+        depth_groups == ps.depth_groups &&
+        depth_splits == ps.depth_splits &&
+#endif
         height_groups == ps.height_groups &&
         height_splits == ps.height_splits &&
         width_groups == ps.width_groups &&
@@ -96,6 +106,10 @@ inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
   os << "{" << ps.sample_groups
      << "/" << ps.sample_splits
+#ifdef LBANN_DISTCONV_HAS_DEPTH
+     << ", " << ps.depth_groups
+     << "/" << ps.depth_splits
+#endif
      << ", " << ps.height_groups
      << "/" << ps.height_splits
      << ", " << ps.width_groups
@@ -543,25 +557,25 @@ protected:
   void setup_early_termination();
   void setup_keep_original_tensors();
   virtual void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<lbann::dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed);
   virtual void setup_tensor_distribution_add_adjacent_invariants(
-      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
-  virtual size_t estimate_memory_usage(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) {}
-  virtual void setup_prev_activations_tensor(const std::array<dc::Dist, 4> &dists);
+  virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {}
+  virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual dc::Shape get_activations_tensor_local_shape() const;
-  virtual void setup_activations_tensor(const std::array<dc::Dist, 4> &dists,
+  virtual void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
                                         bool allocate=true);
-  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists);
+  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual void setup_distconv_post(size_t ws_size);
-  virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_error_signals_tensor(const std::array<dc::Dist, 4> &dists);
-  virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, 4> &dists);
+  virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
+  virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
 
   // REFACTORING: returning non-const tensor should be protected
   virtual const dc::TensorDev &get_activations_t() const;
@@ -668,6 +682,10 @@ private:
   const AbsDistMat& get_activations(const Layer& child) const;
   /** Get error signal tensor corresponding to parent layer. */
   const AbsDistMat& get_error_signals(const Layer& parent) const;
+
+  /** Return Distconv-related shapes. */
+  const dc::Shape get_input_tensor_shape() const;
+  const dc::Shape get_output_tensor_shape() const;
 
   // ===========================================================
   // Private class members

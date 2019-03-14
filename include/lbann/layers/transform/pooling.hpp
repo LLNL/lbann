@@ -567,21 +567,27 @@ private:
  public:
 
   void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<dc::Dist, 4>> &dists,
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
     if (distconv_enabled()) {
-      int stencil_h = (m_pool_dims[0] - 1) / 2;
-      int stencil_w = (m_pool_dims[1] - 1) / 2;
-      dc::IntVector overlap(4, 0);
-      if (get_parallel_strategy().width_splits > 1) {
-        overlap[0] = stencil_w;
-      }
-      if (get_parallel_strategy().height_splits > 1) {
-        overlap[1] = stencil_h;
+      dc::IntVector overlap(dc::num_dims, 0);
+      for(int i = 0; i < dc::num_spatial_dims; i++) {
+#ifdef LBANN_DISTCONV_HAS_DEPTH
+        const int splits = std::vector<int>(
+            {this->get_parallel_strategy().depth_splits,
+             this->get_parallel_strategy().height_splits,
+             this->get_parallel_strategy().width_splits})[i];
+#else
+        const int splits = std::vector<int>(
+            {this->get_parallel_strategy().height_splits,
+             this->get_parallel_strategy().width_splits})[i];
+#endif // LBANN_DISTCONV_HAS_DEPTH
+        if(splits > 1)
+          overlap[dc::num_spatial_dims - 1 - i] = (this->m_pool_dims[i] - 1) / 2;
       }
       auto &prev_activations_dist = dists[this][0];
       auto &activations_dist = dists[this][1];
@@ -606,9 +612,9 @@ private:
   }
 
   dc::Shape get_activations_tensor_local_shape() const override {
-    const std::vector<int> filter_dims = {m_pool_dims[1], m_pool_dims[0]};
-    const std::vector<int> strides = {m_strides[1], m_strides[0]};
-    const std::vector<int> dilations = {1, 1};
+    const std::vector<int> filter_dims(m_pool_dims.rbegin(), m_pool_dims.rend());
+    const std::vector<int> strides(m_strides.rbegin(), m_strides.rend());
+    const std::vector<int> dilations(dc::num_spatial_dims, 1);
     bool use_padding = m_pads[0] != 0;
     auto output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
@@ -617,22 +623,22 @@ private:
     return output_spatial_local_shape;
   }
 
-  void setup_tensors_fwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!distconv_enabled()) return;
 
     dc::MPIPrintStreamDebug()
         << "pooling: setup_tensors."
-        << " pads: " << m_pads[0] << "x" << m_pads[1]
-        << ", pool_dims: " << m_pool_dims[0] << "x" << m_pool_dims[1]
-        << ", m_strides: " << m_strides[0] << "x" << m_strides[1];
+        << " pads: " << dc::util::join_xd_array(m_pads)
+        << ", pool_dims: " << dc::util::join_xd_array(m_pool_dims)
+        << ", m_strides: " << dc::util::join_xd_array(m_strides);
 
     setup_prev_activations_tensor(dists);
     setup_activations_tensor(dists);
     setup_activations_copyout_tensor(dists);
   }
 
-  void setup_tensors_bwd(const std::array<dc::Dist, 4> &dists) override {
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_bwd(dists);
     if (!distconv_enabled()) return;
 
@@ -688,25 +694,34 @@ private:
   bool using_distconv() const override {
     if (!Layer::using_distconv()) return false;
 
-    if (!(m_pool_dims[0] % 2 != 0 && m_pool_dims[1] % 2 != 0)) {
+    bool cond = true;
+    for(int i = 0; i < dc::num_spatial_dims; i++)
+      cond &= (m_pool_dims[i] % 2 != 0);
+    if (!cond) {
       dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape: "
-                                << m_pool_dims[0] << "x" << m_pool_dims[1];
+                                << dc::util::join_xd_array(m_pool_dims);
       return false;
     }
 
-    int stencil_h = (m_pool_dims[0] - 1) / 2;
-    int stencil_w = (m_pool_dims[1] - 1) / 2;
+    std::vector<int> stencils;
+    for(int i = 0; i < dc::num_spatial_dims; i++)
+      stencils.push_back((m_pool_dims[i] - 1) / 2);
 
-    if (!((m_pads[0] == 0 && m_pads[1] == 0) ||
-          (m_pads[0] == stencil_w && m_pads[1] == stencil_h))) {
+    bool pad_zero = true, pad_stencil = true, stride_one = true, stride_stencil = true;
+    for(int i = 0; i < dc::num_spatial_dims; i++) {
+      pad_zero &= (m_pads[i] == 0);
+      pad_stencil &= (m_pads[i] == stencils[i]);
+      stride_one &= (m_strides[i] == 1);
+      stride_stencil &= (m_strides[i] == stencils[i] + 1);
+    }
+
+    if (!(pad_zero || pad_stencil)) {
       dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding: "
                                 << m_pads[0] << "x" << m_pads[1];
       return false;
     }
 
-    if (!((m_strides[0] == 1 && m_strides[1] == 1) ||
-         (m_strides[0] == stencil_h + 1 &&
-          m_strides[1] == stencil_w + 1))) {
+    if (!(stride_one || stride_stencil)) {
       dc::MPIPrintStreamDebug() << "pooling: unsupported due to strides";
       return false;
     }

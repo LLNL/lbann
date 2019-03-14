@@ -61,7 +61,7 @@ class FullyConnectedModule(Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self, size, bias=True, weights=[], activation=None,
-                 name=None, data_layout='data_parallel'):
+                 name=None, data_layout='data_parallel', parallel_strategy={}):
         """Initialize fully-connected module.
 
         Args:
@@ -85,6 +85,7 @@ class FullyConnectedModule(Module):
                      if name
                      else 'fcmodule{0}'.format(FullyConnectedModule.global_count))
         self.data_layout = data_layout
+        self.parallel_strategy = parallel_strategy
 
         # Initialize weights
         # Note: If weights are not provided, matrix weights are
@@ -122,11 +123,13 @@ class FullyConnectedModule(Module):
                               name=(name+'_fc' if self.activation else name),
                               data_layout=self.data_layout,
                               num_neurons=self.size,
-                              has_bias=self.bias)
+                              has_bias=self.bias,
+                              parallel_strategy=self.parallel_strategy)
         if self.activation:
             return self.activation(y,
                                    name=name+'_activation',
-                                   data_layout=self.data_layout)
+                                   data_layout=self.data_layout,
+                                   parallel_strategy=self.parallel_strategy)
         else:
             return y
 
@@ -142,7 +145,7 @@ class ConvolutionNdModule(Module):
     def __init__(self, num_dims,
                  out_channels, kernel_size,
                  stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=None):
+                 weights=[], activation=None, name=None, parallel_strategy={}):
         """Initialize convolution module.
 
         Args:
@@ -178,6 +181,7 @@ class ConvolutionNdModule(Module):
         self.name = (name
                      if name
                      else 'convmodule{0}'.format(ConvolutionNdModule.global_count))
+        self.parallel_strategy = parallel_strategy
 
         # Initialize weights
         # Note: If weights are not provided, kernel weights are
@@ -221,9 +225,11 @@ class ConvolutionNdModule(Module):
                            conv_strides_i=self.stride,
                            conv_dilations_i=self.dilation,
                            num_groups=self.groups,
-                           has_bias=self.bias)
+                           has_bias=self.bias,
+                           parallel_strategy=self.parallel_strategy)
         if self.activation:
-            return self.activation(y, name=name+'_activation')
+            return self.activation(y, name=name+'_activation',
+                                   parallel_strategy=self.parallel_strategy)
         else:
             return y
 
