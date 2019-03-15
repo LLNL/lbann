@@ -73,7 +73,6 @@
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
-#include "lbann/layers/transform/zero.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
@@ -101,6 +100,8 @@
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/mini_batch_index.hpp"
+#include "lbann/layers/misc/mini_batch_size.hpp"
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
@@ -109,7 +110,7 @@
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_mnist_siamese.hpp"
-#include "lbann/data_readers/data_reader_triplet.hpp"
+#include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"

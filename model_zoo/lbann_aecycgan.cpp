@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     model_3->copy_trained_weights_from(model2_weights);
     if(master) std::cout << " Save AE + cycleGAN" << std::endl;
     model_3->save_model();
-    if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
+    if(master) std::cout << " Evaluate cycleGAN model on pretrained autoencoder" << std::endl;
     model_3->evaluate(execution_mode::testing);
 
   } catch (std::exception& e) {

@@ -3,6 +3,8 @@ add_executable( lbann-bin lbann.cpp )
 target_link_libraries(lbann-bin lbann )
 set_target_properties(lbann-bin PROPERTIES OUTPUT_NAME lbann)
 
+add_executable( lbann-help lbann_help.cpp )
+target_link_libraries(lbann-help lbann )
 
 #this can be done simler - quick copy/paste hack //d hysom
 add_executable( lbann-bin2 lbann2.cpp )
@@ -28,6 +30,7 @@ set_target_properties(lbann-inf-bin PROPERTIES OUTPUT_NAME lbann_inf)
 # Install the binaries
 install(
   TARGETS lbann-bin lbann-bin2 lbann-gan-bin lbann-cycgan-bin lbann-aecycgan-bin
+  lbann-help
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

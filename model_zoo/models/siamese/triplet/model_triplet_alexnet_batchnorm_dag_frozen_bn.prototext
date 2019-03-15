@@ -580,7 +580,7 @@ model {
     children: "conv1_head0 conv1_head1 conv1_head2"
     data_layout: "data_parallel"
     slice {
-      slice_axis: 0
+      axis: 0
       slice_points: "0 3 6 9"
     }
   }
@@ -1552,7 +1552,6 @@ model {
   layer {
     parents: "fc9"
     name: "prob"
-    children: "target"
     data_layout: "data_parallel"
     softmax {}
   }

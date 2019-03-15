@@ -37,8 +37,8 @@ void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l)
     std::stringstream file;
     file << m_basename
          << "model" << m->get_comm()->get_trainer_rank() << "-"
-         << "epoch" << m->get_cur_epoch() << "-"
-         << "step" << m->get_cur_step() << "-"
+         << "epoch" << m->get_epoch() << "-"
+         << "step" << m->get_step() << "-"
          << l->get_name() << "-"
          << "ErrorSignals";
     if (l->get_num_parents() > 1) { file << i; }

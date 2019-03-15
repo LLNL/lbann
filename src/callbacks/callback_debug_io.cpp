@@ -52,23 +52,10 @@ void lbann::lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
 }
 
 void lbann::lbann_callback_debug_io::print_fp_start(model *m, generic_input_layer *input) {
-  int64_t step;
-  switch(m->get_execution_mode()) {
-  case execution_mode::training:
-    step = m->get_cur_step();
-    break;
-  case execution_mode::validation:
-    step = m->get_cur_validation_step();
-    break;
-  case execution_mode::testing:
-    step = m->get_cur_testing_step();
-    break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-  }
+  const auto& step = m->get_step();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
             << "." << m->get_comm()->get_rank_in_trainer()
-            << "] @" << m->get_cur_epoch() << "." << step
+            << "] @" << m->get_epoch() << "." << step
             << " Phase: " << _to_string(m->get_execution_mode())
             << " starting forward propagation for layer " << input->get_name()
             << " type: " << input->get_type()
@@ -97,17 +84,7 @@ void lbann::lbann_callback_debug_io::print_phase_start(model *m, execution_mode 
   }
   if (data_reader == nullptr) { return; }
 
-  int64_t step;
-  switch(mode) {
-  case execution_mode::training:
-    step = m->get_cur_step(); break;
-  case execution_mode::validation:
-    step = m->get_cur_validation_step(); break;
-  case execution_mode::testing:
-    step = m->get_cur_testing_step(); break;
-  default:
-    throw lbann_exception("Illegal execution mode in evaluate forward prop function");
-  }
+  const auto& step = m->get_step();
 
   if(data_reader->get_rank() < data_reader->get_num_parallel_readers()) {
     std::cout << "[" << m->get_comm()->get_trainer_rank()

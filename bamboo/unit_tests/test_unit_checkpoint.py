@@ -4,7 +4,9 @@ import tools
 import pytest
 import os
 
-def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_name):
+
+def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
+                                     compiler_name):
     if compiler_name not in executables:
       pytest.skip('default_exes[%s] does not exist' % compiler_name)
     exe = executables[compiler_name]
@@ -55,7 +57,8 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     os.system('rm -rf ckpt*')
     assert diff_test == 0
 
-def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compiler_name):
+def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
+                                          compiler_name):
      if compiler_name not in executables:
        pytest.skip('default_exes[%s] does not exist' % compiler_name)
      exe = executables[compiler_name]
@@ -106,25 +109,30 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
      os.system('rm -rf ckpt*')
      assert diff_test == 0
 
+
 def test_unit_checkpoint_lenet_clang4(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang4')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang4')
+
 
 def test_unit_checkpoint_lenet_gcc4(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'gcc4')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'gcc4')
 
+
 def test_unit_checkpoint_lenet_gcc7(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'gcc7')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'gcc7')
+
 
 def test_unit_checkpoint_lenet_intel18(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'intel18')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'intel18')
 
+
 # Run with python -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_exe' --exe=<executable>
 def test_unit_checkpoint_lenet_exe(cluster, dirname, exe):
-    if exe == None:
+    if exe is None:
         pytest.skip('Non-local testing')
     exes = {'exe' : exe}
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'exe')

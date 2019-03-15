@@ -55,7 +55,6 @@ public:
     return new lbann_callback_save_images(*this);
   }
   void on_epoch_end(model *m) override;
-  void on_phase_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "save images"; }
 

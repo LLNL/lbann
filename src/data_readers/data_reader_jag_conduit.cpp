@@ -542,11 +542,9 @@ void data_reader_jag_conduit::check_image_data() {
   conduit::Node n_imageset;
   load_conduit_node(first_idx, m_output_image_prefix, n_imageset);
   if (static_cast<size_t>(n_imageset.number_of_children()) == 0u) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image in data");
     return;
   }
   if (m_emi_image_keys.size() == 0u) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no image is selected");
     return;
   }
   for (const auto& emi_tag: m_emi_image_keys) {
@@ -758,8 +756,11 @@ void data_reader_jag_conduit::load() {
 
   /// Check the data that each rank loaded
   if (!m_is_data_loaded) {
-    std::cout << "Checking local data" << std::endl;
     m_is_data_loaded = true;
+
+    /// Open the first sample to make sure that all of the fields are correct
+    size_t data_id = (m_sample_list[0]).first;
+    m_sample_list.open_samples_hdf5_handle(data_id, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -772,6 +773,8 @@ void data_reader_jag_conduit::load() {
     check_input_keys();
 
     check_image_data();
+
+    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   }
 
   /// Merge all of the sample lists
@@ -1410,14 +1413,14 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_jag_store != nullptr && m_model->get_cur_epoch() > 0) {
+  if (m_jag_store != nullptr && m_model->get_epoch() > 0) {
     const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_jag_store != nullptr && m_model->get_cur_epoch() == 0) {
+  if (m_jag_store != nullptr && m_model->get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_jag_store != nullptr) {
       m_jag_store->set_conduit_node(data_id, node);
