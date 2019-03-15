@@ -7,13 +7,12 @@ from lbann.models import AlexNet
 from lbann.proto import lbann_pb2
 
 # Command-line arguments
+desc = ('Construct and run AlexNet on MNIST data. '
+        'Running the experiment is only supported on LC systems.')
 data_reader_prototext = join(dirname(dirname(abspath(__file__))),
                              'data_readers',
                              'data_reader_imagenet.prototext')
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    'file', nargs='?', default='model.prototext', type=str,
-    help='exported prototext file')
+parser = argparse.ArgumentParser(description=desc)
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -36,6 +35,31 @@ parser.add_argument(
     default=data_reader_prototext, type=str,
     help='data reader prototext file (default: ' + data_reader_prototext + ')',
     metavar='FILE')
+parser.add_argument(
+    '--imagenet-classes', action='store', type=int,
+    help='number of ImageNet-1K classes (availability of subsampled datasets may vary by system)',
+    metavar='NUM')
+parser.add_argument(
+    '--nodes', action='store', type=int,
+    help='number of compute nodes', metavar='NUM')
+parser.add_argument(
+    '--procs-per-node', action='store', type=int,
+    help='number of processes per compute node', metavar='NUM')
+parser.add_argument(
+    '--partition', action='store', type=str,
+    help='scheduler partition', metavar='NAME')
+parser.add_argument(
+    '--account', action='store', type=str,
+    help='scheduler account', metavar='NAME')
+parser.add_argument(
+    '--time-limit', action='store', type=int,
+    help='time limit (in minutes)', metavar='MIN')
+parser.add_argument(
+    '--prototext', action='store', type=str,
+    help='exported prototext file', metavar='FILE')
+parser.add_argument(
+    '--disable-run', action='store_true',
+    help='do not run experiment (e.g. if only the prototext is desired)')
 args = parser.parse_args()
 
 # Construct layer graph
@@ -91,7 +115,32 @@ with open(args.data_reader, 'r') as f:
   txtf.Merge(f.read(), data_reader_proto)
 data_reader_proto = data_reader_proto.data_reader
 
-# Save to file
-lp.save_prototext(args.file,
-                  model=model, optimizer=opt,
-                  data_reader=data_reader_proto)
+# Save prototext
+if args.prototext:
+    lp.save_prototext(args.prototext,
+                      model=model, optimizer=opt,
+                      data_reader=data_reader_proto)
+
+# Run experiment
+if not args.disable_run:
+    import lbann.lc
+    kwargs = {'job_name': 'lbann_alexnet'}
+    if args.nodes:          kwargs['nodes'] = args.nodes
+    if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
+    if args.partition:      kwargs['partition'] = args.partition
+    if args.account:        kwargs['account'] = args.account
+    if args.time_limit:     kwargs['time_limit'] = args.time_limit
+    if args.imagenet_classes:
+        classes = args.imagenet_classes
+        kwargs['lbann_args'] = (
+            '--data_filedir_train={} --data_filename_train={} '
+            '--data_filedir_test={} --data_filename_test={}'
+            .format(lbann.lc.imagenet_dir(data_set='train',
+                                          num_classes=classes),
+                    lbann.lc.imagenet_labels(data_set='train',
+                                             num_classes=classes),
+                    lbann.lc.imagenet_dir(data_set='val',
+                                          num_classes=classes),
+                    lbann.lc.imagenet_labels(data_set='val',
+                                             num_classes=classes)))
+    lbann.lc.run(model, data_reader_proto, opt, **kwargs)
