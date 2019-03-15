@@ -1,7 +1,7 @@
 model {
   name: "cycgan_model"
   shareable_training_data_reader:false 
-  serialize_background_io: true
+  serialize_io: true
   procs_per_trainer:0 
   objective_function {
     l2_weight_regularization {
