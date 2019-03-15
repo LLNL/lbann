@@ -5,26 +5,15 @@ basic building blocks for larger models.
 
 """
 
-import lbann.proto as lp
 from collections.abc import Iterable
 import warnings
 from math import sqrt
-
-def _make_iterable(obj):
-    """Convert to an iterable object.
-
-    Simply returns `obj` if it is alredy iterable. Otherwise returns a
-    1-tuple containing `obj`.
-
-    """
-    if isinstance(obj, Iterable):
-        return obj
-    else:
-        return (obj,)
+import lbann.proto as lp
+from lbann.utils import make_iterable
 
 def _str_list(l):
     """Convert an iterable object to a space-separated string."""
-    return ' '.join(str(i) for i in _make_iterable(l))
+    return ' '.join(str(i) for i in make_iterable(l))
 
 class Module:
     """Base class for neural network modules.
@@ -96,7 +85,7 @@ class FullyConnectedModule(Module):
         # Note: If weights are not provided, matrix weights are
         # initialized with He normal scheme and bias weights are
         # initialized with zeros.
-        self.weights = list(_make_iterable(weights))
+        self.weights = list(make_iterable(weights))
         if len(self.weights) > 2:
             raise ValueError('`FullyConnectedModule` has '
                              'at most two weights, '
@@ -181,7 +170,7 @@ class ConvolutionModule(Module):
         self.dilation = dilation
         self.groups = groups
         self.bias = bias
-        self.weights = list(_make_iterable(weights))
+        self.weights = list(make_iterable(weights))
         self.name = (name
                      if name
                      else 'convmodule{0}'.format(ConvolutionModule.global_count))
@@ -190,7 +179,7 @@ class ConvolutionModule(Module):
         # Note: If weights are not provided, kernel weights are
         # initialized with He normal scheme and bias weights are
         # initialized with zeros.
-        self.weights = list(_make_iterable(weights))
+        self.weights = list(make_iterable(weights))
         if len(self.weights) > 2:
             raise ValueError('`ConvolutionModule` has '
                              'at most two weights, '
@@ -295,7 +284,7 @@ class LSTMCell(Module):
                                      data_layout=self.data_layout)
 
         # Weights
-        self.weights = list(_make_iterable(weights))
+        self.weights = list(make_iterable(weights))
         if len(self.weights) > 2:
             raise ValueError('`LSTMCell` has at most two weights, '
                              'but got {0}'.format(len(self.weights)))

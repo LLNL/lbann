@@ -6,11 +6,9 @@ These are a convenience for developers and users at LLNL.
 
 import os, os.path
 import datetime
-import lbann.proto as lp
 from lbann.utils import lbann_dir
 from lbann.lc.systems import *
 from lbann.lc.paths import *
-import lbann.lc.slurm
 
 # ==============================================
 # Run experiments
@@ -75,13 +73,15 @@ def run(model, data_reader, optimizer,
 
     # Create experiment prototext file
     prototext_file = os.path.join(work_dir, 'experiment.prototext')
-    lp.save_prototext(prototext_file,
-                      model = model,
-                      data_reader = data_reader,
-                      optimizer = optimizer)
+    from lbann.proto import save_prototext
+    save_prototext(prototext_file,
+                   model = model,
+                   data_reader = data_reader,
+                   optimizer = optimizer)
 
     # Run experiment
     if scheduler() == 'slurm':
+        import lbann.lc.slurm
         slurm.run(prototext_file = prototext_file,
                   job_name = job_name,
                   work_dir = work_dir,

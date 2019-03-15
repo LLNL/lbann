@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import argparse
-from os.path import abspath, dirname, join
+import os.path
 import google.protobuf.text_format as txtf
 import lbann.proto as lp
 from lbann.models import LeNet
 from lbann.proto import lbann_pb2
+from lbann.utils import lbann_dir
 
 # Command-line arguments
 desc = ('Construct and run LeNet on MNIST data. '
@@ -56,9 +57,10 @@ model = lp.Model(mini_batch_size,
 opt = lp.SGD(learn_rate=0.01, momentum=0.9)
 
 # Load data reader from prototext
-data_reader_file = join(dirname(dirname(abspath(__file__))),
-                        'data_readers',
-                        'data_reader_mnist.prototext')
+data_reader_file = os.path.join(lbann_dir(),
+                                'model_zoo',
+                                'data_readers',
+                                'data_reader_mnist.prototext')
 data_reader_proto = lbann_pb2.LbannPB()
 with open(data_reader_file, 'r') as f:
     txtf.Merge(f.read(), data_reader_proto)

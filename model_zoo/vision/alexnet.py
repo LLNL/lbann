@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 import argparse
-from os.path import abspath, dirname, join
+from os.path import join
 import google.protobuf.text_format as txtf
 import lbann.proto as lp
 from lbann.models import AlexNet
 from lbann.proto import lbann_pb2
+from lbann.utils import lbann_dir
 
 # Command-line arguments
 desc = ('Construct and run AlexNet on MNIST data. '
         'Running the experiment is only supported on LC systems.')
-data_reader_prototext = join(dirname(dirname(abspath(__file__))),
+data_reader_prototext = join(lbann_dir(),
+                             'model_zoo',
                              'data_readers',
                              'data_reader_imagenet.prototext')
 parser = argparse.ArgumentParser(description=desc)
