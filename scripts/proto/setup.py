@@ -25,7 +25,7 @@ setup(
     license="Apache 2.0",
     packages=["lbann"],
     scripts=["scripts/plot/lbplot",
-             "scripts/viz/lbviz"],
+             "scripts/lbviz"],
     install_requires=["protobuf>=3.6.1",
                       "onnx>=1.3.0",
                       "numpy>=1.16.0",

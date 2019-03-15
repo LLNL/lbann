@@ -58,9 +58,9 @@ model::model(lbann_comm* comm,
              objective_function* obj_fn,
              optimizer* default_optimizer)
   : m_comm(comm),
+    m_max_mini_batch_size(mini_batch_size),
     m_default_optimizer(default_optimizer),
-    m_objective_function(obj_fn),
-    m_max_mini_batch_size(mini_batch_size) {
+    m_objective_function(obj_fn) {
 
   // Default model name
   static El::Int num_models = 0;
@@ -910,6 +910,30 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // =============================================
 
 
+//this is for data store functionality
+void model::collect_indices(execution_mode mode) {
+  reset_mode_and_model(mode);
+  while (true) {
+    get_layer(0).forward_prop();
+    bool finished = true;
+    finished = get_layer(0).update() && finished;
+    if (finished) {
+      break;
+    }
+  }
+  //this may not be necessary, but shouldn't hurt
+  reset_epoch_statistics(mode);
+}
+
+void model::collect_background_data_fetch(execution_mode mode) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    if (input != nullptr) {
+      input->collect_background_data_fetch(mode);
+    }
+  }
+}
+
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
 void model::reset_mode(observing_ptr<execution_context> context, execution_mode mode) {
@@ -926,16 +950,6 @@ void model::reset_epoch_statistics(execution_mode mode) {
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
   }
-}
-
-void training_algorithm::collect_background_data_fetch(execution_mode mode) {
-  for (const auto& layer : m_layers) {
-    auto *input = dynamic_cast<generic_input_layer*>(layer);
-    if (input != nullptr) {
-      input->collect_background_data_fetch(mode);
-    }
-  }
-  return;
 }
 
 void model::evaluate_metrics(execution_mode mode, size_t current_mini_batch_size) {
@@ -1212,6 +1226,7 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 struct lbann_model_header {
   uint32_t execution_mode;
   uint32_t terminate_training;
+  uint32_t callback_type;;
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {

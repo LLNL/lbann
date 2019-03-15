@@ -8,6 +8,7 @@ basic building blocks for larger models.
 import lbann.proto as lp
 from collections.abc import Iterable
 import warnings
+from math import sqrt
 
 def _make_iterable(obj):
     """Convert to an iterable object.
@@ -20,6 +21,10 @@ def _make_iterable(obj):
         return obj
     else:
         return (obj,)
+
+def _str_list(l):
+    """Convert an iterable object to a space-separated string."""
+    return ' '.join(str(i) for i in _make_iterable(l))
 
 class Module:
     """Base class for neural network modules.
@@ -69,9 +74,10 @@ class FullyConnectedModule(Module):
             activation (type): Layer class for activation function.
             bias (bool): Whether to apply bias after linearity.
             weights (`Weights` or iterator of `Weights`): Weights in
-                fully-connected layer. There are at most two: the matrix
-                and the bias. If weights are not provided, LBANN will
-                initialize them with default settings.
+                fully-connected layer. There are at most two: the
+                matrix and the bias. If weights are not provided, the
+                matrix will be initialized with He normal
+                initialization and the bias with zeros.
             name (str): Default name is in the form 'fcmodule<index>'.
             data_layout (str): Data layout.
 
@@ -130,8 +136,8 @@ class FullyConnectedModule(Module):
         else:
             return y
 
-class ConvolutionNdModule(Module):
-    """Basic block for ND convolutional neural networks.
+class ConvolutionModule(Module):
+    """Basic block for convolutional neural networks.
 
     Applies a convolution and a nonlinear activation function.
 
@@ -158,13 +164,14 @@ class ConvolutionNdModule(Module):
                 convolution.
             weights (`Weights` or iterator of `Weights`): Weights in
                 convolution layer. There are at most two: the kernel
-                and the bias. If weights are not provided, LBANN will
-                initialize them with default settings.
+                and the bias. If weights are not provided, the kernel
+                will be initialized with He normal initialization and
+                the bias with zeros.
             name (str): Default name is in the form 'convmodule<index>'.
 
         """
         super().__init__()
-        ConvolutionNdModule.global_count += 1
+        ConvolutionModule.global_count += 1
         self.instance = 0
         self.num_dims = num_dims
         self.out_channels = out_channels
@@ -177,7 +184,7 @@ class ConvolutionNdModule(Module):
         self.weights = list(_make_iterable(weights))
         self.name = (name
                      if name
-                     else 'convmodule{0}'.format(ConvolutionNdModule.global_count))
+                     else 'convmodule{0}'.format(ConvolutionModule.global_count))
 
         # Initialize weights
         # Note: If weights are not provided, kernel weights are
@@ -185,7 +192,7 @@ class ConvolutionNdModule(Module):
         # initialized with zeros.
         self.weights = list(_make_iterable(weights))
         if len(self.weights) > 2:
-            raise ValueError('`ConvolutionNdModule` has '
+            raise ValueError('`ConvolutionModule` has '
                              'at most two weights, '
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
@@ -227,22 +234,142 @@ class ConvolutionNdModule(Module):
         else:
             return y
 
-class Convolution2dModule(ConvolutionNdModule):
+class Convolution2dModule(ConvolutionModule):
     """Basic block for 2D convolutional neural networks.
 
     Applies a convolution and a nonlinear activation function.
-    This is a wrapper class for ConvolutionNdModule.
+    This is a wrapper class for ConvolutionModule.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(2, *args, **kwargs)
 
-class Convolution3dModule(ConvolutionNdModule):
+class Convolution3dModule(ConvolutionModule):
     """Basic block for 3D convolutional neural networks.
 
     Applies a convolution and a nonlinear activation function.
-    This is a wrapper class for ConvolutionNdModule.
+    This is a wrapper class for ConvolutionModule.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(3, *args, **kwargs)
+
+class LSTMCell(Module):
+    """Long short-term memory cell."""
+
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(self, size, bias = True,
+                 weights=[], name=None, data_layout='data_parallel'):
+        """Initialize LSTM cell.
+
+        Args:
+            size (int): Size of output tensor.
+            bias (bool): Whether to apply biases after linearity.
+            weights (`Weights` or iterator of `Weights`): Weights in
+                fully-connected layer. There are at most two - a
+                matrix ((4*size) x (input_size+size) dimensions) and a
+                bias (4*size entries). If weights are not provided,
+                the matrix and bias will be initialized in a similar
+                manner as PyTorch (uniform random values from
+                [-1/sqrt(size), 1/sqrt(size)]).
+            name (str): Default name is in the form 'lstmcell<index>'.
+            data_layout (str): Data layout.
+
+        """
+        super().__init__()
+        LSTMCell.global_count += 1
+        self.step = 0
+        self.size = size
+        self.name = (name
+                     if name
+                     else 'lstmcell{0}'.format(LSTMCell.global_count))
+        self.data_layout = data_layout
+
+        # Initial state
+        self.last_output = lp.Constant(value=0.0, num_neurons=str(size),
+                                       name=self.name + '_init_output',
+                                       data_layout=self.data_layout)
+        self.last_cell = lp.Constant(value=0.0, num_neurons=str(size),
+                                     name=self.name + '_init_cell',
+                                     data_layout=self.data_layout)
+
+        # Weights
+        self.weights = list(_make_iterable(weights))
+        if len(self.weights) > 2:
+            raise ValueError('`LSTMCell` has at most two weights, '
+                             'but got {0}'.format(len(self.weights)))
+        if len(self.weights) == 0:
+            self.weights.append(
+                lp.Weights(initializer=lp.UniformInitializer(min=-1/sqrt(self.size),
+                                                             max=-1/sqrt(self.size)),
+                           name=self.name+'_matrix'))
+        if len(self.weights) == 1:
+            self.weights.append(
+                lp.Weights(initializer=lp.UniformInitializer(min=-1/sqrt(self.size),
+                                                             max=-1/sqrt(self.size)),
+                           name=self.name+'_bias'))
+
+        # Linearity
+        self.fc = FullyConnectedModule(4*size, bias=bias,
+                                       weights=self.weights,
+                                       name=self.name + '_fc',
+                                       data_layout=self.data_layout)
+
+    def forward(self, x):
+        """Perform LSTM step.
+
+        State from previous steps is used to compute output.
+
+        """
+        self.step += 1
+        name = '{0}_step{1}'.format(self.name, self.step)
+
+        # Apply linearity
+        input_concat = lp.Concatenation([x, self.last_output],
+                                        name=name + '_input',
+                                        data_layout=self.data_layout)
+        fc = self.fc(input_concat)
+
+        # Get gates and cell update
+        slice = lp.Slice(fc,
+                         slice_points=_str_list([0, self.size, 4*self.size]),
+                         name=name + '_fc_slice',
+                         data_layout=self.data_layout)
+        cell_update = lp.Tanh(slice,
+                              name=name + '_cell_update',
+                              data_layout=self.data_layout)
+        sigmoid = lp.Sigmoid(slice,
+                             name=name + '_sigmoid',
+                             data_layout=self.data_layout)
+        slice = lp.Slice(sigmoid,
+                         slice_points=_str_list([0, self.size, 2*self.size, 3*self.size]),
+                         name=name + '_sigmoid_slice',
+                         data_layout=self.data_layout)
+        f = lp.Identity(slice, name=name + '_forget_gate',
+                        data_layout=self.data_layout)
+        i = lp.Identity(slice, name=name + '_input_gate',
+                        data_layout=self.data_layout)
+        o = lp.Identity(slice, name=name + '_output_gate',
+                        data_layout=self.data_layout)
+
+        # Cell state
+        cell_forget = lp.Multiply([f, self.last_cell],
+                                  name=name + '_cell_forget',
+                                  data_layout=self.data_layout)
+        cell_input = lp.Multiply([i, cell_update],
+                                 name=name + '_cell_input',
+                                 data_layout=self.data_layout)
+        cell = lp.Add([cell_forget, cell_input], name=name + '_cell',
+                      data_layout=self.data_layout)
+
+        # Output
+        cell_act = lp.Tanh(cell, name=name + '_cell_activation',
+                      data_layout=self.data_layout)
+        output = lp.Multiply([o, cell_act], name=name,
+                             data_layout=self.data_layout)
+
+        # Update state and return output
+        self.last_cell = cell
+        self.last_output = output
+        return output

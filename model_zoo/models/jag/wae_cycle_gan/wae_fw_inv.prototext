@@ -1,0 +1,923 @@
+#Augumented version of ae_cyc.prototext so we can we ae_loss, fw_latent_loss and fw_out_loss all in the same file instead of 3 files, a request from MLSI ML team. This augmentation involves replicating blocks for fw_model from cycle gan and encode from autoencoder.
+model {
+  name: "wae_fw_inv_model"
+  shareable_training_data_reader:false 
+  serialize_background_io: true
+  data_layout: "data_parallel"
+  mini_batch_size: 256 
+  block_size: 4096
+  num_epochs: 1
+  num_parallel_readers: 0
+  procs_per_trainer: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    layer_term { layer: "mean_squared_error" }
+    #layer_term { layer: "kl_divergence" }
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    layer_metric {
+      name: "wae_loss"
+      #layer: "mean_squared_error"
+      layer: "ae_loss"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "fw_latent_loss"
+      layer: "fw_latent_loss"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "fw_out_loss"
+      layer: "fw_out_loss"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "inv_loss"
+      layer: "inv_loss"
+    }
+  }
+  metric {
+    layer_metric {
+      name: "L_cyc_x_loss"
+      layer: "L_cyc_x"
+    }
+  }
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback { timer {} }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  ######################
+  # Data
+  ######################
+  #Layer from cycle GAN
+  layer {
+    input {
+      io_buffer: "partitioned"
+      target_mode: "N/A"
+    }
+    name: "data"
+    data_layout: "data_parallel"
+    parents: " "
+  }
+  layer {
+    name: "slice_data"
+    data_layout: "data_parallel"
+    parents: "data"
+    children: "image_data_id param_data_id"
+    slice {
+      #slice_points: "0 16384 16389"
+      get_slice_points_from_reader: "independent"
+    }
+  }
+  layer {
+    identity {
+    }
+    name: "image_data_id"
+    data_layout: "data_parallel"
+    parents: "slice_data"
+  }
+  layer {
+    identity {
+    }
+    name: "param_data_id"
+    data_layout: "data_parallel"
+    parents: "slice_data"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 64
+      #num_neurons: 256
+      has_bias: true
+    }
+    name: "gen1fc1"
+    data_layout: "data_parallel"
+    weights: "gen1fc1linearity gen1fc1bias"
+    parents: "param_data_id"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen1leaky_relu1_1"
+    data_layout: "data_parallel"
+    parents: "gen1fc1"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 2048
+      num_neurons: 512
+      has_bias: true
+    }
+    name: "gen1fc2"
+    data_layout: "data_parallel"
+    weights: "gen1fc2linearity gen1fc2bias"
+    parents: "gen1leaky_relu1_1"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen1leaky_relu2_1"
+    data_layout: "data_parallel"
+    parents: "gen1fc2"
+  }
+  layer {
+    dropout {
+      keep_prob: 0.8
+    }
+    name: "gen1dropout1_1"
+    data_layout: "data_parallel"
+    parents: "gen1leaky_relu2_1"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 8192
+      num_neurons: 2048
+      has_bias: true
+    }
+    name: "gen1fc3"
+    data_layout: "data_parallel"
+    weights: "gen1fc3linearity gen1fc3bias"
+    parents: "gen1dropout1_1"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen1leaky_relu3_1"
+    data_layout: "data_parallel"
+    parents: "gen1fc3"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 16384
+      #latent_dim
+      num_neurons: 20
+      has_bias: true
+    }
+    name: "gen1fc4"
+    data_layout: "data_parallel"
+    weights: "gen1fc4linearity gen1fc4bias"
+    parents: "gen1leaky_relu3_1"
+  }
+  
+  weights {
+    name: "gen1fc1linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen1fc1bias"
+  }
+  weights {
+    name: "gen1fc2linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen1fc2bias"
+  }
+  weights {
+    name: "gen1fc3linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen1fc3bias"
+  }
+  weights {
+    name: "gen1fc4linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen1fc4bias"
+  }
+
+  ###Encoder from WAE
+  #########################
+  layer {
+    fully_connected {
+      #num_neurons: 32
+      num_neurons: 1024
+      has_bias: true
+    }
+    name: "encodefc1"
+    data_layout: "data_parallel"
+    freeze: true
+    #weights: "encodefc1linearity"
+    parents: "image_data_id"
+  }
+  layer {
+    elu {
+    }
+    name: "encodeleaky_relu1"
+    data_layout: "data_parallel"
+    parents: "encodefc1"
+  }
+  layer {
+    parents: "encodeleaky_relu1"
+    name: "encodefc1_bn"
+    data_layout: "data_parallel"
+    freeze: true
+    batch_normalization {
+      epsilon: 1e-3
+    }
+  }
+  layer {
+    fully_connected {
+      num_neurons: 256
+      has_bias: true
+    }
+    name: "encodefc2"
+    data_layout: "data_parallel"
+    freeze: true
+    #weights: "encodefc2linearity"
+    parents: "encodefc1_bn"
+  }
+  layer {
+    tanh {
+    }
+    name: "encodeleaky_relu2"
+    data_layout: "data_parallel"
+    parents: "encodefc2"
+  }
+  layer {
+    parents: "encodeleaky_relu2"
+    name: "encodefc2_bn"
+    data_layout: "data_parallel"
+    freeze: true
+    batch_normalization {
+      epsilon: 1e-3
+    }
+  }
+  layer {
+    fully_connected {
+      num_neurons: 32
+      has_bias: true
+    }
+    name: "encodefc3"
+    data_layout: "data_parallel"
+    freeze: true
+    #weights: "encodefc3linearity"
+    parents: "encodefc2_bn"
+  }
+  layer {
+    tanh {
+    }
+    name: "encodeleaky_relu3"
+    data_layout: "data_parallel"
+    parents: "encodefc3"
+  }
+  layer {
+    parents: "encodeleaky_relu3"
+    name: "encodefc3_bn"
+    data_layout: "data_parallel"
+    freeze: true
+    batch_normalization {
+      epsilon: 1e-3
+    }
+  }
+  layer {
+    fully_connected {
+      #gen output is latent dim
+      num_neurons: 20
+      has_bias: true
+    }
+    #z_sample
+    name: "encodefc4"
+    data_layout: "data_parallel"
+    #weights: "encodefc4linearity"
+    freeze: true
+    parents: "encodefc3_bn"
+  }
+  #####################
+
+  layer {
+    parents: "encodefc4"
+    #name: "sample"
+    ###This is actually sample in latent space, call image_data_dummy for legacy
+    name: "image_data_dummy"
+    data_layout: "data_parallel"
+    identity {}
+  }
+  ####output of encoder goes to decoder and cycGAN duplicates 
+  ######################
+  # Decoder for foward output loss
+
+  # decode3
+  layer {
+    parents: "gen1fc4"
+    name: "decode3"
+    data_layout: "data_parallel"
+    weights: "decode3linearity decode3bias"
+    fully_connected {
+      num_neurons: 32
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode3"
+    name: "decode3_tanh"
+    data_layout: "data_parallel"
+    elu {}
+  }
+  layer {
+    parents: "decode3_tanh"
+    name: "decode3_dropout"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 1.0
+    }
+  }
+
+  # decode2
+  layer {
+    parents: "decode3_dropout"
+    name: "decode2"
+    data_layout: "data_parallel"
+    weights: "decode2linearity decode2bias"
+    fully_connected {
+      num_neurons: 256
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode2"
+    name: "decode2_tanh"
+    data_layout: "data_parallel"
+    tanh {}
+  }
+  layer {
+    parents: "decode2_tanh"
+    name: "decode2_dropout"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 1.0
+    }
+  }
+
+  # decode1
+  layer {
+    parents: "decode2_dropout"
+    name: "decode1"
+    data_layout: "data_parallel"
+    weights: "decode1linearity decode1bias"
+    fully_connected {
+      num_neurons: 1024
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "decode1"
+    name: "decode1_elu"
+    data_layout: "data_parallel"
+    tanh {
+    }
+  }
+  layer {
+    parents: "decode1_elu"
+    name: "decode1_dropout"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 1.0
+    }
+  }
+
+  # decode0
+  layer {
+    parents: "decode1_dropout"
+    name: "decode0"
+    data_layout: "data_parallel"
+    weights: "decode0linearity decode0bias"
+    fully_connected {
+      #num_neurons: 16384
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
+      has_bias: true
+    }
+  }
+
+  ######################
+ #Need this?
+  #layer {
+  #  parents: "decode0"
+  #  name: "sigmoid"
+  #  data_layout: "data_parallel"
+  #  sigmoid {}
+  #}
+
+  ######################
+  # Reconstruction
+  ######################
+
+  layer {
+    #parents: "sigmoid"
+    parents: "decode0"
+    name: "reconstruction"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "reconstruction image_data_id"
+    #name: "binary_cross_entropy"
+    name: "mean_squared_error"
+    data_layout: "data_parallel"
+    #binary_cross_entropy {}
+    mean_squared_error {}
+  }
+  layer {
+    parents: "reconstruction image_data_id"
+    name: "fw_out_loss"
+    data_layout: "data_parallel"
+    mean_squared_error {}
+  }
+
+  ####Decoder weights
+  weights {
+    name: "decode0linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "decode0bias"
+  }
+
+  weights {
+    name: "decode1linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "decode1bias"
+  }
+  weights {
+    name: "decode2linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "decode2bias"
+  }
+  weights {
+    name: "decode3linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "decode3bias"
+  }
+
+#Decoder duplicated for ae_loss
+  # decode3
+  layer {
+    parents: "image_data_dummy"
+    name: "ae_decode3"
+    data_layout: "data_parallel"
+    weights: "decode3linearity decode3bias"
+    fully_connected {
+      num_neurons: 32 
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "ae_decode3"
+    name: "ae_decode3_tanh"
+    data_layout: "data_parallel"
+    elu {}
+  }
+  layer {
+    parents: "ae_decode3_tanh"
+    name: "ae_decode3_dropout"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 1.0
+    }
+  }
+
+  # decode2
+  layer {
+    parents: "ae_decode3_dropout"
+    name: "ae_decode2"
+    data_layout: "data_parallel"
+    weights: "decode2linearity decode2bias"
+    fully_connected {
+      num_neurons: 256
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "ae_decode2"
+    name: "ae_decode2_tanh"
+    data_layout: "data_parallel"
+    tanh {}
+  }
+  layer {
+    parents: "ae_decode2_tanh"
+    name: "ae_decode2_dropout"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 1.0
+    }
+  }
+
+  # decode1
+  layer {
+    parents: "ae_decode2_dropout"
+    name: "ae_decode1"
+    data_layout: "data_parallel"
+    weights: "decode1linearity decode1bias"
+    fully_connected {
+      num_neurons: 1024
+      has_bias: true
+    }
+  }
+  layer {
+    parents: "ae_decode1"
+    name: "ae_decode1_elu"
+    data_layout: "data_parallel"
+    tanh {
+    }
+  }
+  layer {
+    parents: "ae_decode1_elu"
+    name: "ae_decode1_dropout"
+    data_layout: "data_parallel"
+    dropout {
+      keep_prob: 1.0
+    }
+  }
+
+  # decode0
+  layer {
+    parents: "ae_decode1_dropout"
+    name: "ae_decode0"
+    data_layout: "data_parallel"
+    weights: "decode0linearity decode0bias"
+    fully_connected {
+      #num_neurons: 16384
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
+      has_bias: true
+    }
+  }
+
+  #layer {
+  #  parents: "ae_decode0"
+  #  name: "ae_sigmoid"
+  #  data_layout: "data_parallel"
+  #  sigmoid {}
+  #}
+
+  ######################
+  # Reconstruction
+  ######################
+
+  layer {
+    parents: "ae_decode0"
+    #parents: "ae_sigmoid"
+    name: "ae_reconstruction"
+    data_layout: "data_parallel"
+    split {}
+  }
+  layer {
+    parents: "ae_reconstruction image_data_id"
+    name: "ae_loss"
+    data_layout: "data_parallel"
+    mean_squared_error {}
+  }
+
+  ###Cycle GAN duplicated for latent loss dump
+  #Takes output of encoder as input
+  layer {
+    fully_connected {
+      num_neurons: 64
+      #num_neurons: 256
+      has_bias: true
+    }
+    name: "latent_gen1fc1"
+    data_layout: "data_parallel"
+    weights: "gen1fc1linearity gen1fc1bias"
+    parents: "param_data_id"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "latent_gen1leaky_relu1_1"
+    data_layout: "data_parallel"
+    parents: "latent_gen1fc1"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 2048
+      num_neurons: 512
+      has_bias: true
+    }
+    name: "latent_gen1fc2"
+    data_layout: "data_parallel"
+    weights: "gen1fc2linearity gen1fc2bias"
+    parents: "latent_gen1leaky_relu1_1"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "latent_gen1leaky_relu2_1"
+    data_layout: "data_parallel"
+    parents: "latent_gen1fc2"
+  }
+  layer {
+    dropout {
+      keep_prob: 0.8
+    }
+    name: "latent_gen1dropout1_1"
+    data_layout: "data_parallel"
+    parents: "latent_gen1leaky_relu2_1"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 8192
+      num_neurons: 2048
+      has_bias: true
+    }
+    name: "latent_gen1fc3"
+    data_layout: "data_parallel"
+    weights: "gen1fc3linearity gen1fc3bias"
+    parents: "latent_gen1dropout1_1"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "latent_gen1leaky_relu3_1"
+    data_layout: "data_parallel"
+    parents: "latent_gen1fc3"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 16384
+      #latent_dim
+      num_neurons: 20
+      has_bias: true
+    }
+    name: "latent_gen1fc4"
+    data_layout: "data_parallel"
+    weights: "gen1fc4linearity gen1fc4bias"
+    parents: "latent_gen1leaky_relu3_1"
+  }
+  
+  layer {
+    name: "gsample_minus_latentsample"
+    data_layout: "data_parallel"
+    parents: "latent_gen1fc4 image_data_dummy"
+    weighted_sum {
+      scaling_factors: "1 -1"
+    }
+  }
+  layer {
+    name: "fw_latent_loss"
+    data_layout: "data_parallel"
+    l2_norm2 {
+    }
+    parents: "gsample_minus_latentsample"
+  }
+  
+  #####Inverse loss from cycle GAN
+  #### latent space (image_data_dummy) -> pred X'(gen2fc4)
+  layer {
+    fully_connected {
+      num_neurons: 16
+      has_bias: true
+    }
+    name: "gen2fc1"
+    data_layout: "data_parallel"
+    weights: "gen2fc1linearity gen2fc1bias"
+    parents: "image_data_dummy"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen2leaky_relu1"
+    data_layout: "data_parallel"
+    parents: "gen2fc1"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "gen2fc2"
+    data_layout: "data_parallel"
+    weights: "gen2fc2linearity gen2fc2bias"
+    parents: "gen2leaky_relu1"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen2leaky_relu2"
+    data_layout: "data_parallel"
+    parents: "gen2fc2"
+  }
+  layer {
+    fully_connected {
+      num_neurons: 512
+      has_bias: true
+    }
+    name: "gen2fc3"
+    data_layout: "data_parallel"
+    weights: "gen2fc3linearity gen2fc3bias"
+    parents: "gen2leaky_relu2"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen2leaky_relu3"
+    data_layout: "data_parallel"
+    parents: "gen2fc3"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 11
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
+      has_bias: true
+    }
+    name: "gen2fc4"
+    data_layout: "data_parallel"
+    weights: "gen2fc4linearity gen2fc4bias"
+    parents: "gen2leaky_relu3"
+  }
+  
+
+  #layer {
+  #  name: "gsample2_minus_x"
+  #  data_layout: "data_parallel"
+  #  parents: "gen2fc4 param_data_id"
+  #  weighted_sum {
+  #    scaling_factors: "1 -1"
+  #  }
+  #}
+  ### ||X-X'||
+  layer {
+    #name: "l_l2_x"
+    name: "inv_loss"
+    data_layout: "data_parallel"
+    #l2_norm2 {
+    #}
+    mean_absolute_error{ }
+    parents: "gen2fc4 param_data_id"
+    #parents: "gsample2_minus_x"
+  }
+  #layer {
+  #  name: "abs_inv_loss"
+  #  data_layout: "data_parallel"
+  #  abs {
+  #  }
+  #  parents: "gsample2_minus_x"
+  #}
+  ##########X cyclic loss, input to this path is Y_fake (gen1fc4) from fw model
+  #### Shares weight with path that takes real/encoder (latent) image
+  layer {
+    fully_connected {
+      #num_neurons: 64
+      num_neurons: 16
+      has_bias: true
+    }
+    name: "gen2fc1_cyclic"
+    data_layout: "data_parallel"
+    weights: "gen2fc1linearity gen2fc1bias"
+    parents: "gen1fc4"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen2leaky_relu1_cyclic"
+    data_layout: "data_parallel"
+    parents: "gen2fc1_cyclic"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 512
+      num_neurons: 128
+      has_bias: true
+    }
+    name: "gen2fc2_cyclic"
+    data_layout: "data_parallel"
+    weights: "gen2fc2linearity gen2fc2bias"
+    parents: "gen2leaky_relu1"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen2leaky_relu2_cyclic"
+    data_layout: "data_parallel"
+    parents: "gen2fc2_cyclic"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 2048
+      num_neurons: 512
+      has_bias: true
+    }
+    name: "gen2fc3_cyclic"
+    data_layout: "data_parallel"
+    weights: "gen2fc3linearity gen2fc3bias"
+    parents: "gen2leaky_relu2_cyclic"
+  }
+  layer {
+    leaky_relu {
+    }
+    name: "gen2leaky_relu3_cyclic"
+    data_layout: "data_parallel"
+    parents: "gen2fc3_cyclic"
+  }
+  layer {
+    fully_connected {
+      #num_neurons: 11
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 2 ]
+      has_bias: true
+    }
+    name: "gen2fc4_cyclic"
+    data_layout: "data_parallel"
+    weights: "gen2fc4linearity gen2fc4bias"
+    parents: "gen2leaky_relu3_cyclic"
+  }
+  layer {
+    name: "L_cyc_x"
+    data_layout: "data_parallel"
+    mean_absolute_error{
+    }
+    parents: "gen2fc4_cyclic param_data_id"
+  }
+
+  ####For metric, loss per individual sample
+  layer {
+    name: "ae_latent_out_losses"
+    data_layout: "data_parallel"
+    parents: "param_data_id encodefc4 ae_loss fw_latent_loss fw_out_loss inv_loss L_cyc_x"
+    concatenation {
+    }
+  }
+  callback {
+    save_model {
+      dir: "model1"
+      disable_save_after_training: true
+    }
+  }
+  weights {
+    name: "gen2fc1linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc2linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc3linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc4linearity"
+    he_normal_initializer {
+    }
+  }
+  weights {
+    name: "gen2fc1bias"
+  }
+  weights {
+    name: "gen2fc2bias"
+  }
+  weights {
+    name: "gen2fc3bias"
+  }
+  weights {
+    name: "gen2fc4bias"
+  }
+  ###################################################
+  # end of layers
+  ###################################################
+}

@@ -34,6 +34,7 @@ message Reader {
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
+
   //for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
@@ -357,46 +358,45 @@ message LayerMetric {
 // Optimizers
 //========================================================================
 message Optimizer {
-  // An Optimizer should contain exactly one of the following
-  // (this may or may not be properly checked for in proto_common.cpp)
-  Adagrad adagrad = 1;
-  Rmsprop rmsprop = 2;
-  Adam adam = 3;
-  HypergradientAdam hypergradient_adam = 4;
-  Sgd sgd = 5;
+  oneof optimizer_type {
+    AdaGrad adagrad = 1;
+    Adam adam = 2;
+    HypergradientAdam hypergradient_adam = 3;
+    RMSprop rmsprop = 4;
+    SGD sgd = 5;
+  }
 }
 
-message Adagrad {
+message AdaGrad {
   double learn_rate = 1;
-  double eps = 2;  //default: 1e-8
+  double eps = 2;           // Suggested: 1e-8
 }
 
 message Adam {
   double learn_rate = 1;
-  double beta1 = 6;    //default: 0.9
-  double beta2 = 7;    //default: 0.99
-  double eps = 8;      //default: 1e-8
+  double beta1 = 6;         // Suggested: 0.9
+  double beta2 = 7;         // Suggested: 0.99
+  double eps = 8;           // Suggested: 1e-8
 }
 
 message HypergradientAdam {
   double init_learning_rate = 1;
-  double hyper_learning_rate = 2; //default: 1e-7
-  double beta1 = 6;    //default: 0.9
-  double beta2 = 7;    //default: 0.99
-  double eps = 8;      //default: 1e-8
+  double hyper_learning_rate = 2;   // Suggested: 1e-7
+  double beta1 = 6;                 // Suggested: 0.9
+  double beta2 = 7;                 // Suggested: 0.99
+  double eps = 8;                   // Suggested: 1e-8
 }
 
-message Rmsprop {
+message RMSprop {
   double learn_rate = 1;
   double decay_rate = 2;
-  double eps = 3; //default: 1e-8
+  double eps = 3;           // Suggested: 1e-8
 }
 
-message Sgd {
+message SGD {
   double learn_rate = 1;
-  double momentum = 2;     //default: 0
-  double decay_rate = 3;   //default: 0
-  bool nesterov = 4;       //default: false
+  double momentum = 2;      // Set to zero for vanilla SGD
+  bool nesterov = 4;
 }
 
 
@@ -477,6 +477,7 @@ message CallbackSaveImages {
 
 message CallbackPrint {
   int64 interval = 1; //default in lbann_callback_print.hpp is 1
+  bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
 }
 
 message CallbackProfiler {
@@ -1100,12 +1101,12 @@ message Unpooling {
 
 
 message Concatenation {
-  int64 concatenation_axis = 2;
+  int64 axis = 1;
 }
 
 message Slice {
-  int64 slice_axis = 2;
-  string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+  int64 axis = 1;
+  string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
   //the following is for jag_conduit_hdf5;
   string get_slice_points_from_reader = 4;
   bool get_slice_points_from_reader_bool = 5;
