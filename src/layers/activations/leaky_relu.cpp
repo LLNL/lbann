@@ -100,4 +100,49 @@ void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
            get_local_error_signals());
 }
 
+#ifdef LBANN_HAS_DISTCONV
+using namespace dc;
+
+template <>
+void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
+setup_tensors_fwd(const std::array<Dist, dc::num_dists> &dists) {
+  Layer::setup_tensors_fwd(dists);
+  if (!distconv_enabled()) return;
+  setup_prev_activations_tensor(dists);
+  setup_activations_tensor(dists);
+  setup_activations_copyout_tensor(dists);
+}
+
+template <>
+void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
+setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists)  {
+  Layer::setup_tensors_bwd(dists);
+  if (!distconv_enabled()) return;
+  setup_prev_error_signals_tensor(dists);
+  setup_error_signals_tensor(dists);
+  setup_error_signals_copyout_tensor(dists);
+  m_leaky_relu = new LeakyReLU(get_backend());
+}
+
+template <>
+void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
+fp_compute_distconv() {
+  MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
+  assert_always(distconv_enabled());
+  m_leaky_relu->forward(m_prev_activations_t, m_negative_slope, m_activations_t);
+  copy_out_activations();
+}
+
+template <>
+void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
+bp_compute_distconv() {
+  MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
+  assert_always(distconv_enabled());
+  m_leaky_relu->backward(m_prev_activations_t, m_prev_error_signals_t,
+                         m_negative_slope, m_error_signals_t);
+  copy_out_error_signals();
+}
+
+#endif // LBANN_HAS_DISTCONV
+
 } // namespace lbann

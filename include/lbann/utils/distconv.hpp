@@ -97,6 +97,7 @@ using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
+using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 using Convolution = ::distconv::Convolution<Backend, num_dims, DataType>;
 using Pooling = ::distconv::Pooling<Backend, num_dims, DataType>;
 using BatchNormalization = ::distconv::BatchNormalization<Backend, num_dims, DataType>;
