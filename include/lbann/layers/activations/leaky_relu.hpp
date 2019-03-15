@@ -28,6 +28,9 @@
 #define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif
 
 namespace lbann {
 
@@ -74,6 +77,19 @@ private:
   /** Function slope in negative region. */
   DataType m_negative_slope;
 
+#ifdef LBANN_HAS_DISTCONV
+ protected:
+  dc::LeakyReLU *m_leaky_relu;
+  void fp_compute_distconv();
+  void bp_compute_distconv();
+ public:
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
+    Layer::setup_tensors_fwd(dists);
+  }
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+  }
+#endif // LBANN_HAS_DISTCONV
 };
 
 } // namespace lbann
