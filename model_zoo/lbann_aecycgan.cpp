@@ -92,6 +92,8 @@ int main(int argc, char *argv[]) {
     //Evaluate on pretrained autoencoder
     if(master) std::cout << " Copy trained weights from cycle GAN" << std::endl;
     model_3->copy_trained_weights_from(model2_weights);
+    if(master) std::cout << " Save AE + cycleGAN" << std::endl;
+    model_3->save_model();
     if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
     model_3->evaluate(execution_mode::testing);
 
