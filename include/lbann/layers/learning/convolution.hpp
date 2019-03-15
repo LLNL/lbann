@@ -516,13 +516,6 @@ protected:
           << "Unsupported as padding does not match the kernel size";
       return false;
     }
-    char *env = getenv("DISTCONV_DISABLE");
-    if (env) {
-      std::string s(env);
-      if (s.find(this->get_name()) != std::string::npos) {
-        return false;
-      }
-    }
     return true;
   }
 
