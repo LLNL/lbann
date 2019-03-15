@@ -78,7 +78,7 @@ endif ()
 if (DOXYGEN_FOUND)
   set(DOXYGEN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_CURRENT_SOURCE_DIR}/README
     )
 
   # Setup Dot support
