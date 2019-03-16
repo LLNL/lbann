@@ -6,13 +6,13 @@ import lbann.proto as lp
 from lbann.models import LeNet
 from lbann.proto import lbann_pb2
 from lbann.utils import lbann_dir
-import lbann.lc
+import lbann.contrib.args
 
 # Command-line arguments
 desc = ('Construct and run LeNet on MNIST data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.lc.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
     '--prototext', action='store', type=str,
     help='exported prototext file', metavar='FILE')
@@ -61,6 +61,7 @@ if args.prototext:
 
 # Run experiment
 if not args.disable_run:
+    import lbann.lc
     kwargs = {}
     if args.nodes:          kwargs['nodes'] = args.nodes
     if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node

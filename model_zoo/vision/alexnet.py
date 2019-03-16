@@ -6,7 +6,7 @@ import lbann.proto as lp
 from lbann.models import AlexNet
 from lbann.proto import lbann_pb2
 from lbann.utils import lbann_dir
-import lbann.lc
+import lbann.contrib.args
 
 # Command-line arguments
 desc = ('Construct and run AlexNet on MNIST data. '
@@ -16,6 +16,7 @@ data_reader_prototext = join(lbann_dir(),
                              'data_readers',
                              'data_reader_imagenet.prototext')
 parser = argparse.ArgumentParser(description=desc)
+lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -42,7 +43,6 @@ parser.add_argument(
     '--imagenet-classes', action='store', type=int,
     help='number of ImageNet-1K classes (availability of subsampled datasets may vary by system)',
     metavar='NUM')
-lbann.lc.add_scheduler_arguments(parser)
 parser.add_argument(
     '--prototext', action='store', type=str,
     help='exported prototext file', metavar='FILE')
@@ -112,6 +112,7 @@ if args.prototext:
 
 # Run experiment
 if not args.disable_run:
+    import lbann.lc
     kwargs = {}
     if args.nodes:          kwargs['nodes'] = args.nodes
     if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
@@ -132,5 +133,5 @@ if not args.disable_run:
                     lbann.lc.imagenet_labels(data_set='val',
                                              num_classes=classes)))
     lbann.lc.run(model, data_reader_proto, opt,
-                 job_name = 'lbann_alexnet'
+                 job_name = 'lbann_alexnet',
                  **kwargs)
