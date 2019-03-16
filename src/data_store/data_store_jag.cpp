@@ -449,6 +449,19 @@ void data_store_jag::compute_super_node_overhead() {
   }
 }
 
+const conduit::Node & data_store_jag::get_random_node() const {
+  size_t sz = m_data.size();
+
+  // Deal with edge case
+  if (sz == 0) {
+    LBANN_ERROR("can't return random node since we have no data (set_conduit_node has never been called");
+  }
+
+  int offset = random() % sz;
+  auto it = std::next(m_data.begin(), offset);
+  return it->second;
+}
+
 }  // namespace lbann
 
 #endif //#ifdef LBANN_HAS_CONDUIT

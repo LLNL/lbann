@@ -64,6 +64,8 @@ class data_store_jag : public generic_data_store {
 
   void set_conduit_node(int data_id, conduit::Node &node);
 
+  const conduit::Node & get_random_node() const;
+
 protected :
 
   bool m_super_node;
