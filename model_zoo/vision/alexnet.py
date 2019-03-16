@@ -6,6 +6,7 @@ import lbann.proto as lp
 from lbann.models import AlexNet
 from lbann.proto import lbann_pb2
 from lbann.utils import lbann_dir
+import lbann.lc
 
 # Command-line arguments
 desc = ('Construct and run AlexNet on MNIST data. '
@@ -41,21 +42,7 @@ parser.add_argument(
     '--imagenet-classes', action='store', type=int,
     help='number of ImageNet-1K classes (availability of subsampled datasets may vary by system)',
     metavar='NUM')
-parser.add_argument(
-    '--nodes', action='store', type=int,
-    help='number of compute nodes', metavar='NUM')
-parser.add_argument(
-    '--procs-per-node', action='store', type=int,
-    help='number of processes per compute node', metavar='NUM')
-parser.add_argument(
-    '--partition', action='store', type=str,
-    help='scheduler partition', metavar='NAME')
-parser.add_argument(
-    '--account', action='store', type=str,
-    help='scheduler account', metavar='NAME')
-parser.add_argument(
-    '--time-limit', action='store', type=int,
-    help='time limit (in minutes)', metavar='MIN')
+lbann.lc.add_scheduler_arguments(parser)
 parser.add_argument(
     '--prototext', action='store', type=str,
     help='exported prototext file', metavar='FILE')
@@ -125,8 +112,7 @@ if args.prototext:
 
 # Run experiment
 if not args.disable_run:
-    import lbann.lc
-    kwargs = {'job_name': 'lbann_alexnet'}
+    kwargs = {}
     if args.nodes:          kwargs['nodes'] = args.nodes
     if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
     if args.partition:      kwargs['partition'] = args.partition
@@ -145,4 +131,6 @@ if not args.disable_run:
                                           num_classes=classes),
                     lbann.lc.imagenet_labels(data_set='val',
                                              num_classes=classes)))
-    lbann.lc.run(model, data_reader_proto, opt, **kwargs)
+    lbann.lc.run(model, data_reader_proto, opt,
+                 job_name = 'lbann_alexnet'
+                 **kwargs)

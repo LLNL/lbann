@@ -6,26 +6,13 @@ import lbann.proto as lp
 from lbann.models import LeNet
 from lbann.proto import lbann_pb2
 from lbann.utils import lbann_dir
+import lbann.lc
 
 # Command-line arguments
 desc = ('Construct and run LeNet on MNIST data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-parser.add_argument(
-    '--nodes', action='store', type=int,
-    help='number of compute nodes', metavar='NUM')
-parser.add_argument(
-    '--procs-per-node', action='store', type=int,
-    help='number of processes per compute node', metavar='NUM')
-parser.add_argument(
-    '--partition', action='store', type=str,
-    help='scheduler partition', metavar='NAME')
-parser.add_argument(
-    '--account', action='store', type=str,
-    help='scheduler account', metavar='NAME')
-parser.add_argument(
-    '--time-limit', action='store', type=int,
-    help='time limit (in minutes)', metavar='MIN')
+lbann.lc.add_scheduler_arguments(parser)
 parser.add_argument(
     '--prototext', action='store', type=str,
     help='exported prototext file', metavar='FILE')
@@ -74,11 +61,12 @@ if args.prototext:
 
 # Run experiment
 if not args.disable_run:
-    import lbann.lc
-    kwargs = {'job_name': 'lbann_lenet'}
+    kwargs = {}
     if args.nodes:          kwargs['nodes'] = args.nodes
     if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
     if args.partition:      kwargs['partition'] = args.partition
     if args.account:        kwargs['account'] = args.account
     if args.time_limit:     kwargs['time_limit'] = args.time_limit
-    lbann.lc.run(model, data_reader_proto, opt, **kwargs)
+    lbann.lc.run(model, data_reader_proto, opt,
+                 job_name = 'lbann_lenet',
+                 **kwargs)
