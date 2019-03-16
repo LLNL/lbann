@@ -317,10 +317,17 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   sample_file_id_t id = s.first;
   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
-    const std::string& file_name = m_sample_list.get_samples_filename(id);
+   const conduit::Node obj = m_jag_store->get_random_node(path);
+   node.set(obj);
+   const std::string& file_name = m_sample_list.get_samples_filename(id);
+   std::cerr << get_type() + ":: failed to open file " << file_name 
+            << " for sample " << sample_name <<"; replacing with random node\n";
+   return true;
+   /*
     LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
                 " for sample "+ sample_name);
     return false;
+    */
   }
 
   conduit::relay::io::hdf5_read(h, path, node);

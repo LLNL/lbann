@@ -462,6 +462,15 @@ const conduit::Node & data_store_jag::get_random_node() const {
   return it->second;
 }
 
+const conduit::Node & data_store_jag::get_random_node(const std::string &field) const {
+  auto node = get_random_node();
+  if (node[field].schema().dtype().is_empty()) {
+    LBANN_ERROR("Unable to find field " + field
+                        + " in conduit node");
+  }
+  return node[field];
+}
+
 }  // namespace lbann
 
 #endif //#ifdef LBANN_HAS_CONDUIT
