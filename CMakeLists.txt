@@ -118,6 +118,9 @@ option(LBANN_WITH_VTUNE
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
 
+option(LBANN_WITH_PYTHON
+  "Enable Python/C API for Python extension and embedding" OFF)
+
 # Enable parallel random matrix generation, if possible
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
@@ -289,6 +292,17 @@ if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
 
+if (LBANN_WITH_PYTHON)
+  if (LBANN_PYTHON_INCLUDE_DIR)
+    set(PYTHON_INCLUDE_DIR ${LBANN_PYTHON_INCLUDE_DIR})
+  endif (LBANN_PYTHON_INCLUDE_DIR)
+  if (LBANN_PYTHON_LIBRARY)
+    set(PYTHON_LIBRARY ${LBANN_PYTHON_LIBRARY})
+  endif (LBANN_PYTHON_LIBRARY)
+  find_package(PythonLibs REQUIRED)
+  set(LBANN_HAS_PYTHON ${PYTHONLIBS_FOUND})
+endif (LBANN_WITH_PYTHON)
+
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
 
@@ -451,6 +465,10 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
+if (LBANN_HAS_PYTHON)
+  target_include_directories(lbann PUBLIC ${PYTHON_INCLUDE_DIRS})
+endif ()
+
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC cereal)
@@ -479,6 +497,10 @@ endif ()
 
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
+endif ()
+
+if (LBANN_HAS_PYTHON)
+  target_link_libraries(lbann PUBLIC ${PYTHON_LIBRARIES})
 endif ()
 
 if (TARGET LBANN_CXX_FLAGS_werror)
@@ -653,7 +675,8 @@ append_str_tf(_str
   LBANN_HAS_DOXYGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_ALUMINUM
-  LBANN_HAS_CONDUIT)
+  LBANN_HAS_CONDUIT
+  LBANN_HAS_PYTHON)
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 
