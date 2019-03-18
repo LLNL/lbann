@@ -446,6 +446,11 @@ void init_data_readers(
           }
         } else {
           reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+          const std::string role = "validate";
+          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+          reader_jag_conduit->set_role(role);
+          leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
 #endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
