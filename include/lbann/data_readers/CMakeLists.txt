@@ -24,6 +24,7 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_moving_mnist.hpp
   data_reader_nci.hpp
   data_reader_numpy.hpp
+  data_reader_numpy_npz.hpp
   data_reader_pilot2_molecular.hpp
   data_reader_synthetic.hpp
   image_preprocessor.hpp
