@@ -28,7 +28,7 @@ if read_the_docs_build:
 # -- Project information -----------------------------------------------------
 
 project = 'LBANN'
-copyright = '2018, LLNL'
+copyright = '2014-2019, LLNL'
 author = 'LBANN Dev Team'
 
 # The short X.Y version

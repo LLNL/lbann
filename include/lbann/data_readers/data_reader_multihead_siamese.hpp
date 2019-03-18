@@ -23,15 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_triplet .hpp .cpp - data reader to use triplet patches
+// data_reader_multihead_siamese .hpp .cpp - data reader to use m patches
 //                                 generated offline.
-//
-// Depreciated and replaced by data_reader_multihead_siamese .hpp .cpp.
-// Kept here just for reference.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef DATA_READER_TRIPLET_HPP
-#define DATA_READER_TRIPLET_HPP
+#ifndef DATA_READER_MULTIHEAD_SIAMESE_HPP
+#define DATA_READER_MULTIHEAD_SIAMESE_HPP
 
 #include "data_reader_multi_images.hpp"
 #include "cv_process.hpp"
@@ -42,22 +39,24 @@
 #include <iostream>
 
 namespace lbann {
-class data_reader_triplet : public data_reader_multi_images {
+class data_reader_multihead_siamese : public data_reader_multi_images {
  public:
   using label_t = offline_patches_npz::label_t;
   using sample_t = offline_patches_npz::sample_t;
 
-  data_reader_triplet(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
-  data_reader_triplet(const data_reader_triplet&);
-  data_reader_triplet& operator=(const data_reader_triplet&);
-  ~data_reader_triplet() override;
+  data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, unsigned int nimages, bool shuffle = true);
+  data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
 
-  data_reader_triplet* copy() const override {
-    return new data_reader_triplet(*this);
+  data_reader_multihead_siamese(const data_reader_multihead_siamese&);
+  data_reader_multihead_siamese& operator=(const data_reader_multihead_siamese&);
+  ~data_reader_multihead_siamese() override;
+
+  data_reader_multihead_siamese* copy() const override {
+    return new data_reader_multihead_siamese(*this);
   }
 
   std::string get_type() const override {
-    return "data_reader_triplet";
+    return "data_reader_multihead_siamese";
   }
 
   /** Set up imagenet specific input parameters
@@ -92,4 +91,4 @@ class data_reader_triplet : public data_reader_multi_images {
 
 }  // namespace lbann
 
-#endif  // DATA_READER_TRIPLET_HPP
+#endif  // DATA_READER_MULTIHEAD_SIAMESE_HPP

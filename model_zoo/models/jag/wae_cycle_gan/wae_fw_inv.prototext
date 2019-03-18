@@ -2,10 +2,10 @@
 model {
   name: "wae_fw_inv_model"
   shareable_training_data_reader:false 
-  serialize_background_io: true
+  serialize_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 256 
-  block_size: 4096
+  mini_batch_size: 16384 
+  block_size: 256
   num_epochs: 1
   num_parallel_readers: 0
   procs_per_trainer: 0
@@ -15,8 +15,7 @@ model {
   ###################################################
 
   objective_function {
-    layer_term { layer: "mean_squared_error" }
-    #layer_term { layer: "kl_divergence" }
+    layer_term { layer: "fw_out_loss" }
     l2_weight_regularization {
       scale_factor: 1e-4
     }
@@ -29,7 +28,6 @@ model {
   metric {
     layer_metric {
       name: "wae_loss"
-      #layer: "mean_squared_error"
       layer: "ae_loss"
     }
   }
@@ -101,6 +99,34 @@ model {
     data_layout: "data_parallel"
     parents: "slice_data"
   }
+  ## separate predicted scalar from image
+  layer {
+    name: "slice_image_data_id"
+    data_layout: "data_parallel"
+    parents: "image_data_id"
+    #parents: "reconstruction"
+    children: "image scalar"
+    slice {
+      slice_points: "0 49152 49167"
+    }
+  }
+  #image --not used
+  layer {
+    identity {
+    }
+    name: "image"
+    data_layout: "data_parallel"
+    parents: "slice_image_data_id"
+  }
+  #scalar --used in dump outputs
+  layer {
+    identity {
+    }
+    name: "scalar"
+    data_layout: "data_parallel"
+    parents: "slice_image_data_id"
+  }
+
   layer {
     identity {
     }
@@ -440,14 +466,14 @@ model {
     data_layout: "data_parallel"
     split {}
   }
-  layer {
-    parents: "reconstruction image_data_id"
+  #layer {
+  #  parents: "reconstruction image_data_id"
     #name: "binary_cross_entropy"
-    name: "mean_squared_error"
-    data_layout: "data_parallel"
+  #  name: "mean_squared_error"
+  #  data_layout: "data_parallel"
     #binary_cross_entropy {}
-    mean_squared_error {}
-  }
+  #  mean_squared_error {}
+  #}
   layer {
     parents: "reconstruction image_data_id"
     name: "fw_out_loss"
@@ -686,20 +712,22 @@ model {
     parents: "latent_gen1leaky_relu3_1"
   }
   
-  layer {
-    name: "gsample_minus_latentsample"
-    data_layout: "data_parallel"
-    parents: "latent_gen1fc4 image_data_dummy"
-    weighted_sum {
-      scaling_factors: "1 -1"
-    }
-  }
+  #layer {
+  #  name: "gsample_minus_latentsample"
+  #  data_layout: "data_parallel"
+  #  parents: "latent_gen1fc4 image_data_dummy"
+  #  weighted_sum {
+  #    scaling_factors: "1 -1"
+  #  }
+  #}
   layer {
     name: "fw_latent_loss"
     data_layout: "data_parallel"
-    l2_norm2 {
-    }
-    parents: "gsample_minus_latentsample"
+    #l2_norm2 {
+    #}
+    mean_absolute_error { }
+    #parents: "gsample_minus_latentsample"
+    parents: "latent_gen1fc4 image_data_dummy"
   }
   
   #####Inverse loss from cycle GAN
@@ -873,15 +901,24 @@ model {
 
   ####For metric, loss per individual sample
   layer {
-    name: "ae_latent_out_losses"
+    name: "param_scalar_latentdim_losses"
     data_layout: "data_parallel"
-    parents: "param_data_id encodefc4 ae_loss fw_latent_loss fw_out_loss inv_loss L_cyc_x"
+    parents: "param_data_id scalar encodefc4 ae_loss fw_latent_loss fw_out_loss L_cyc_x"
     concatenation {
     }
   }
+  #callback {
+  #  dump_outputs {
+      #directory: "loss/"
+      #batch_interval: 3000
+      #layers: "data_latentdim_losses"
+  #    execution_modes: "test"
+  #    format: "npy"
+  #  }
+  #}
   callback {
     save_model {
-      dir: "model1"
+      dir: "model"
       disable_save_after_training: true
     }
   }
