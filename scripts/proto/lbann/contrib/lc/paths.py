@@ -1,7 +1,7 @@
 """Useful file paths on LC systems."""
 import os.path
 from lbann.utils import make_iterable, lbann_dir
-from lbann.lc.systems import *
+from lbann.contrib.lc.systems import system
 
 # ==============================================
 # File paths

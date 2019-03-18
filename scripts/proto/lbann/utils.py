@@ -8,7 +8,7 @@ def make_iterable(obj):
     1-tuple containing `obj`.
 
     """
-    if isinstance(obj, Iterable):
+    if isinstance(obj, Iterable) and not isinstance(obj, str):
         return obj
     else:
         return (obj,)

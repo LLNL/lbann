@@ -61,13 +61,13 @@ if args.prototext:
 
 # Run experiment
 if not args.disable_run:
-    import lbann.lc
+    from lbann.contrib.lc.launcher import run
     kwargs = {}
     if args.nodes:          kwargs['nodes'] = args.nodes
     if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
     if args.partition:      kwargs['partition'] = args.partition
     if args.account:        kwargs['account'] = args.account
     if args.time_limit:     kwargs['time_limit'] = args.time_limit
-    lbann.lc.run(model, data_reader_proto, opt,
-                 job_name = 'lbann_lenet',
-                 **kwargs)
+    run(model, data_reader_proto, opt,
+        job_name = 'lbann_lenet',
+        **kwargs)

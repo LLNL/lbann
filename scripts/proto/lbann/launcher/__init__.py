@@ -1,37 +1,33 @@
-"""Utility functions for LC systems.
-
-These are a convenience for developers and users at LLNL.
-
-"""
-
 import os, os.path
 import datetime
+from lbann.proto import save_prototext
 from lbann.utils import lbann_dir
-from lbann.lc.systems import *
-from lbann.lc.paths import *
-import lbann.lc.slurm
+import lbann.launcher.slurm
 
 # ==============================================
 # Run experiments
 # ==============================================
 
-def run(model, data_reader, optimizer,
-        experiment_dir = None,
-        lbann_exe = lbann_exe(),
+def run(lbann_exe, model, data_reader, optimizer,
         lbann_args = '',
-        job_name = 'lbann',
+        experiment_dir = None,
         nodes = 1,
-        procs_per_node = procs_per_node(),
-        system = system(),
-        partition = partition(),
-        account = account(),
-        time_limit = time_limit(),
+        procs_per_node = 1,
+        time_limit = 60,
+        scheduler = 'slurm',
+        job_name = 'lbann',
+        system = None,
+        partition = None,
+        account = None,
+        launcher_args = '',
+        environment = {},
         setup_only = False):
     """Run LBANN experiment.
 
-    This will either submit a batch job to the scheduler (if on a
-    login node) or run LBANN with the current node allocation (if on a
-    compute node). Behavior may vary across systems and schedulers.
+    This is intended to interface with job schedulers on HPC
+    clusters. It will either submit a batch job (if on a login node)
+    or run with an existing node allocation (if on a compute
+    node). Behavior may vary across schedulers.
 
     If an experiment directory is not provided, a timestamped
     directory is created (by default in `lbann/experiments`). The
@@ -39,23 +35,28 @@ def run(model, data_reader, optimizer,
     the environment variable `LBANN_EXPERIMENT_DIR`.
 
     Args:
+        lbann_exe (str): LBANN executable.
         model (lbann.proto.Model or lbann_pb2.Model): Neural network
             model.
         data_reader (lbann_pb2.DataReader): Data reader.
         optimizer (lbann.proto.Model or lbann_pb2.Optimizer): Default
             optimizer for model.
-        experiment_dir (str, optional): Experiment directory.
-        lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
-        job_name (str, optional): Batch job name.
+        experiment_dir (str, optional): Experiment directory.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
             node.
+        time_limit (int, optional): Job time limit, in minutes.
+        scheduler (str, optional): Job scheduler.
+        job_name (str, optional): Batch job name.
         system (str, optional): Target system.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
-        time_limit (int, optional): Job time limit, in minutes.
+        launcher_args (str, optional): Command-line arguments to
+            launcher.
+        environment (dict of {str: str}, optional): Environment
+            variables.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
 
@@ -73,14 +74,13 @@ def run(model, data_reader, optimizer,
         while os.path.lexists(experiment_dir):
             i += 1
             experiment_dir = os.path.join(
-                experiment_dir,
+                os.path.dirname(experiment_dir),
                 '{}_{}_{}'.format(timestamp, job_name, i))
     experiment_dir = os.path.abspath(experiment_dir)
     os.makedirs(experiment_dir, exist_ok=True)
 
     # Create experiment prototext file
     prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
-    from lbann.proto import save_prototext
     save_prototext(prototext_file,
                    model = model,
                    data_reader = data_reader,
@@ -88,17 +88,18 @@ def run(model, data_reader, optimizer,
     lbann_args += ' --prototext=' + prototext_file
 
     # Run experiment
-    if scheduler() == 'slurm':
+    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
         slurm.run(experiment_dir = experiment_dir,
-                  exe = lbann_exe,
-                  exe_args = lbann_args,
+                  command = '{} {}'.format(lbann_exe, lbann_args),
                   nodes = nodes,
                   procs_per_node = procs_per_node,
+                  time_limit = time_limit,
                   job_name = job_name,
                   partition = partition,
                   account = account,
-                  time_limit = time_limit,
+                  srun_args = launcher_args,
+                  environment = environment,
                   setup_only = setup_only)
     else:
         raise RuntimeError('unsupported job scheduler ({})'
-                           .format(scheduler()))
+                           .format(scheduler))

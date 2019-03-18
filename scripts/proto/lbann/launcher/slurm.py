@@ -1,22 +1,18 @@
-"""Utility functions for Slurm on LC systems."""
-import os
-import os.path
+"""Utility functions for Slurm."""
+import os, os.path
 import subprocess
-from lbann.lc.systems import (system, partition, account, has_gpu,
-                              procs_per_node, time_limit)
-from lbann.lc.paths import lbann_exe
+from lbann.utils import make_iterable
 
-def run(experiment_dir = os.getcwd(),
-        exe = lbann_exe(),
-        exe_args = '',
-        srun_args = '',
-        job_name = 'lbann',
+def run(command,
+        experiment_dir = os.getcwd(),
         nodes = 1,
-        procs_per_node = procs_per_node(),
-        system = system(),
-        partition = partition(),
-        account = account(),
-        time_limit = time_limit(),
+        procs_per_node = 1,
+        time_limit = -1,
+        job_name = None,
+        partition = None,
+        account = None,
+        srun_args = '',
+        environment = {},
         setup_only = False):
     """Run executable with Slurm.
 
@@ -25,18 +21,20 @@ def run(experiment_dir = os.getcwd(),
     directly. Otherwise, the script is submitted to sbatch.
 
     Args:
+        command (str): Program to run under Slurm, i.e. an executable
+            and its command-line arguments.
         experiment_dir (str, optional): Experiment directory.
-        exe (str, optional): Executable.
-        exe_args (str, optional): Command-line arguments to executable.
-        srun_args (str, optional): Command-line arguments to srun.
-        job_name (str, optional): Batch job name.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
             node.
-        system (str, optional): Target system.
+        time_limit (int, optional): Job time limit, in minutes. A
+            negative value implies the system-default time limit.
+        job_name (str, optional): Batch job name.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
-        time_limit (int, optional): Job time limit, in minutes.
+        srun_args (str, optional): Command-line arguments to srun.
+        environment (dict of {str: str}, optional): Environment
+            variables.
         setup_only (bool, optional): If true, the experiment is not
             run after the batch script is created.
 
@@ -59,12 +57,6 @@ def run(experiment_dir = os.getcwd(),
     err_file = os.path.join(experiment_dir, 'err.log')
     nodes_file = os.path.join(experiment_dir, 'nodes.txt')
 
-    # srun command-line arguments
-    if has_gpu(system):
-        srun_args += ' --mpibind=off --nvidia_compute_mode=default'
-    if system == 'pascal' and procs_per_node == 2:
-        srun_args += ' --cpu_bind=mask_cpu:0x000001ff,0x0003fe00'
-
     # Write batch script
     with open(batch_file, 'w') as f:
         f.write('#!/bin/sh\n')
@@ -81,33 +73,34 @@ def run(experiment_dir = os.getcwd(),
         f.write('#SBATCH --output={}\n'.format(out_file))
         f.write('#SBATCH --error={}\n'.format(err_file))
         if time_limit >= 0:
+            seconds = int((time_limit % 1) * 60)
             hours, minutes = divmod(int(time_limit), 60)
             days, hours = divmod(hours, 24)
-            f.write('#SBATCH --time={}-{:02d}:{:02d}:00\n'
-                    .format(days, hours, minutes))
-        f.write('\n')
+            f.write('#SBATCH --time={}-{:02d}:{:02d}:{:02d}\n'
+                    .format(days, hours, minutes, seconds))
 
         # Set environment
-        f.write('# ==== Environment ====\n')
-        f.write('export MV2_USE_RDMA_CM=0\n')
-        if system == 'pascal':
-            f.write('export OMP_NUM_THREADS=8\n')
-            f.write('export AL_PROGRESS_RANKS_PER_NUMA_NODE=2\n')
-        f.write('\n')
+        if environment:
+            f.write('\n')
+            f.write('# ==== Environment ====\n')
+            for variable, value in environment.items():
+                f.write('export {}={}\n'.format(variable, value))
 
         # Display time and node list
+        f.write('\n')
         f.write('# ==== Useful info ====\n')
         f.write('date\n')
         f.write('srun --nodes={0} --ntasks={0} hostname > {1}\n'
                 .format(nodes, nodes_file))
         f.write('sort --unique --output={0} {0}\n'.format(nodes_file))
-        f.write('\n')
 
         # Run experiment
+        f.write('\n')
         f.write('# ==== Experiment ====\n')
-        f.write('srun {} --nodes={} --ntasks={} {} {}\n'
-                .format(srun_args, nodes, nodes * procs_per_node,
-                        exe, exe_args))
+        for cmd in make_iterable(command):
+            f.write('srun {} --nodes={} --ntasks={} {}\n'
+                    .format(srun_args, nodes, nodes * procs_per_node,
+                            cmd))
 
     # Make batch script executable
     os.chmod(batch_file, 0o755)

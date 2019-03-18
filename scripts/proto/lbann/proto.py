@@ -19,7 +19,7 @@ try:
     import lbann_pb2
 except ImportError:
     from os.path import join
-    from lbann.lc.paths import install_dir
+    from lbann.contrib.lc.paths import install_dir
     sys.path.append(join(install_dir(), 'share', 'python'))
     import lbann_pb2
 

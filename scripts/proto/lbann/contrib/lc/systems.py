@@ -84,7 +84,3 @@ def procs_per_node(system = system()):
         return gpus_per_node(system)
     else:
         return 2
-
-def time_limit(system = system()):
-    """Default job time limit (in minutes)."""
-    return 60

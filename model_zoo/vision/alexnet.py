@@ -112,7 +112,8 @@ if args.prototext:
 
 # Run experiment
 if not args.disable_run:
-    import lbann.lc
+    from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
+    from lbann.contrib.lc.launcher import run
     kwargs = {}
     if args.nodes:          kwargs['nodes'] = args.nodes
     if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
@@ -124,14 +125,10 @@ if not args.disable_run:
         kwargs['lbann_args'] = (
             '--data_filedir_train={} --data_filename_train={} '
             '--data_filedir_test={} --data_filename_test={}'
-            .format(lbann.lc.imagenet_dir(data_set='train',
-                                          num_classes=classes),
-                    lbann.lc.imagenet_labels(data_set='train',
-                                             num_classes=classes),
-                    lbann.lc.imagenet_dir(data_set='val',
-                                          num_classes=classes),
-                    lbann.lc.imagenet_labels(data_set='val',
-                                             num_classes=classes)))
-    lbann.lc.run(model, data_reader_proto, opt,
-                 job_name = 'lbann_alexnet',
-                 **kwargs)
+            .format(imagenet_dir(data_set='train', num_classes=classes),
+                    imagenet_labels(data_set='train', num_classes=classes),
+                    imagenet_dir(data_set='val', num_classes=classes),
+                    imagenet_labels(data_set='val', num_classes=classes)))
+    run(model, data_reader_proto, opt,
+        job_name = 'lbann_alexnet',
+        **kwargs)
