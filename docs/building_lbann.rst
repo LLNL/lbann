@@ -189,6 +189,9 @@ Hydrogen, and LBANN separately, by whatever means they choose.
 1.  Establish a Spack environment and install software dependencies.
     Note that there are four environments to pick from along two axes:
 
+    .. note:: This spack environment has to be setup once each time
+              you create a new build directory.
+
     1. developers or users
     2. x86_64 and ppc64le
 
