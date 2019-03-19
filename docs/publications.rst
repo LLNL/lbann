@@ -1,4 +1,4 @@
-LBANN Publications
+Papers and Presentations
 =================================
 
 Publications about or related to using LBANN
@@ -36,7 +36,10 @@ Publications about or related to using LBANN
 + Brian Van Essen, Hyojin Kim, Roger Pearce, Kofi Boakye, Barry
   Chen. ```LBANN: Livermore Big Artificial Neural Network HPC
   Toolkit'' <https://dl.acm.org/citation.cfm?id=2834897>`_, in
-  Proceedings of the Workshop on Machine Learning in High-Performance
-  Computing Environments (MLHPC '15), pages 5:1-6, Nov. 2015. DOI:
+  *Proceedings of the Workshop on Machine Learning in High-Performance
+  Computing Environments (MLHPC '15)*, pages 5:1-6, Nov. 2015. DOI:
   `10.1145/2834892.2834897 <https://doi.org/10.1145/2834892.2834897>`_
 
+Presentations highlighting LBANN and its impact on science applications
+
+.. note:: Presentations and links to be added

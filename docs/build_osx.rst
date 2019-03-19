@@ -60,6 +60,35 @@ Setup Homebrew
 
        source $(brew --prefix lmod)/init/$(basename $SHELL)
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Building & Installing LBANN as a developer
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1.  Establish a Spack environment and install software dependencies.
+
+    .. note:: This spack environment has to be setup once each time
+              you create a new build directory.
+
+    .. code-block:: bash
+
+        export LBANN_HOME=/path/to/lbann/git/repo
+        export LBANN_BUILD_DIR=/path/to/a/build/directory
+        export LBANN_INSTALL_DIR=/path/to/an/install/directory
+        cd ${LBANN_BUILD_DIR}
+        spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_osx_spack.yaml
+        spack install
+        spack env loads # Spack creates a file named loads that has all of the correct modules
+        source loads
+        unset LIBRARY_PATH
+
+
+2.  Build LBANN locally from source and build Hydrogen and Aluminum
+    using the superbuild. See :ref:`here <building-with-the-superbuild>`
+    for a list and descriptions of all CMake flags known to LBANN's
+    "Superbuild" build system. A representative CMake command line
+    that expects :bash:`LBANN_HOME`, :bash:`LBANN_BUILD_DIR`,
+    :bash:`LBANN_INSTALL_DIR` environment variables might be:
+
     .. code-block:: console
 
         cd ${LBANN_BUILD_DIR}
