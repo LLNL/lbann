@@ -23,6 +23,9 @@ if (SPHINX_FOUND)
       build_spack_extra_config.rst
       build_with_cmake.rst
       build_with_superbuild.rst
+      build_osx.rst
+      publications.rst
+      lbann.rst
       callbacks.rst
       data_readers.rst
       data_store.rst

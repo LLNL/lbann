@@ -33,11 +33,17 @@ methods.
    building_lbann
    running_lbann
 
+.. toctree::
+   :maxdepth: 1
+   :caption: Publications
+
+   publications
 
 .. toctree::
    :maxdepth: 2
    :caption: Developer Documentation
 
+   lbann
    callbacks
    data_readers
    data_store
@@ -56,7 +62,3 @@ methods.
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-CMakeLists.txt
-Elemental_extensions.cpp      comm.cpp   base.cpp   data_distributions       io    models    proto    weights

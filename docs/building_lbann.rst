@@ -129,7 +129,7 @@ Setup Spack and local base tools
 Building & Installing LBANN as a user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning:: This section is still underdevelopment and being
+.. warning:: This section is still under development and being
              tested. It contains known issues. This warning will be
              removed when it is believed to be generally usable.
 
@@ -287,6 +287,7 @@ Advanced build methods
 .. toctree::
    :maxdepth: 1
 
+   build_osx
    build_with_cmake
    build_with_superbuild
    build_containers
