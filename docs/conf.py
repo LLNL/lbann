@@ -87,6 +87,7 @@ html_theme_options = {
 }
 
 breathe_projects_source = {
+  "lbann"           : ( "../include/lbann/", [""]),
   "callback"        : ( "../include/lbann/callbacks/", [""]),
   "data_readers"    : ( "../include/lbann/data_readers/", [""]),
   "data_store"      : ( "../include/lbann/data_store/", [""]),
