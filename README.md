@@ -52,6 +52,10 @@ the MPI launcher.
 More details about running LBANN are documented
 [here](https://lbann.readthedocs.io/en/latest/running_lbann.html).
 
+## Publications
+
+A list of publications, presentations and posters are shown
+[here](https://lbann.readthedocs.io/en/latest/publications.html).
 
 ## Reporting issues
 Issues, questions, and bugs can be raised on the [Github issue
