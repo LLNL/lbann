@@ -9,7 +9,7 @@ Publications about or related to using LBANN:
   <https://arxiv.org/abs/1903.06681>`_, to appear in *IEEE
   International Parallel & Distributed Processing Symposium*, 2019.
 
-  + `IPDPS'19 <http://www.ipdps.org/ipdps2019/2019-advance-program.html>`
+  + `IPDPS'19 <http://www.ipdps.org/ipdps2019/2019-advance-program.html>`_
 
 + Nikoli Dryden, Naoya Maruyama, Tim Moon, Tom Benson, Andy Yoo, Marc
   Snir, Brian Van Essen. `"Aluminum: An Asynchronous, GPU-Aware
