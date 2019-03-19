@@ -134,17 +134,44 @@ void local_bp(DataType negative_slope,
 template <>
 void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
        ::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    fp_compute_distconv();
+    if (!early_terminate_last_iteration()) {
+      return;
+    }
+    // fall through the normal code path to obtain reference results
+  }
+#endif
   local_fp(m_negative_slope,
            get_local_prev_activations(),
            get_local_activations());
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled() && early_terminate_last_iteration()) {
+    dump_reference_activations();
+  }
+#endif // LBANN_HAS_DISTCONV
 }
 template <>
 void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    bp_compute_distconv();
+    if (!early_terminate_last_iteration()) {
+      return;
+    }
+  }
+#endif // LBANN_HAS_DISTCONV
   local_bp(m_negative_slope,
            get_local_prev_activations(),
            get_local_prev_error_signals(),
            get_local_error_signals());
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled() && early_terminate_last_iteration()) {
+    dump_reference_error_signals();
+  }
+#endif // LBANN_HAS_DISTCONV
 }
 template <>
 void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
