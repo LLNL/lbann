@@ -1,6 +1,6 @@
 model {
   random_init_models_differently: true
-  serialize_background_io: true
+  serialize_io: true
   name: "wae_model"
   objective_function {
     l2_weight_regularization {

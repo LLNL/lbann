@@ -1,10 +1,6 @@
 import lbann.proto as lp
 import lbann.modules as lm
 
-# ==============================================
-# LeNet module
-# ==============================================
-
 class LeNet(lm.Module):
     """LeNet neural network.
 
@@ -60,54 +56,3 @@ class LeNet(lm.Module):
                        pool_mode='max',
                        name='{0}_pool2_instance{1}'.format(self.name,self.instance))
         return self.fc3(self.fc2(self.fc1(x)))
-
-# ==============================================
-# Export prototext
-# ==============================================
-
-if __name__ == '__main__':
-
-    # Options
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'file',
-        nargs='?', default='model.prototext', type=str,
-        help='exported prototext file')
-    parser.add_argument(
-        '--num-labels', action='store', default=10, type=int,
-        help='number of data classes (default: 10)')
-    args = parser.parse_args()
-
-    # Construct layer graph.
-    input = lp.Input()
-    images = lp.Identity(input)
-    labels = lp.Identity(input)
-    preds = LeNet(args.num_labels)(images)
-    softmax = lp.Softmax(preds)
-    ce = lp.CrossEntropy([softmax, labels])
-    top1 = lp.CategoricalAccuracy([softmax, labels])
-    top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
-    layers = list(lp.traverse_layer_graph(input))
-
-    # Setup objective function
-    weights = set()
-    for l in layers:
-        weights.update(l.weights)
-    l2_reg = lp.L2WeightRegularization(weights=weights, scale=1e-4)
-    obj = lp.ObjectiveFunction([ce, l2_reg])
-
-    # Setup model
-    mini_batch_size = 256
-    num_epochs = 20
-    metrics = [lp.Metric(top1, name='categorical accuracy', unit='%'),
-               lp.Metric(top5, name='top-5 categorical accuracy', unit='%')]
-    callbacks = [lp.CallbackPrint(),
-                 lp.CallbackTimer()]
-    model = lp.Model(mini_batch_size, num_epochs,
-                     layers=layers, weights=weights,
-                     objective_function=obj,
-                     metrics=metrics, callbacks=callbacks)
-
-    # Export model to file
-    model.save_proto(args.file)
