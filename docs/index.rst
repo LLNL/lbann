@@ -39,13 +39,24 @@ methods.
    :caption: Developer Documentation
 
    callbacks
+   data_readers
+   data_store
+   io_utils
    layers
    metrics
+   models
    objective_functions
    optimizers
+   proto
+   utils
+   weights
 
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+CMakeLists.txt
+Elemental_extensions.cpp      comm.cpp   base.cpp   data_distributions       io    models    proto    weights

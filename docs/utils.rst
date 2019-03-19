@@ -1,5 +1,7 @@
-I/O Layers
+Utils
 =================================
 
+Utility functions.
+
 .. autodoxygenindex::
- :project: io
+  :project: utils

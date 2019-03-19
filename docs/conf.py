@@ -88,16 +88,24 @@ html_theme_options = {
 
 breathe_projects_source = {
   "callback"        : ( "../include/lbann/callbacks/", [""]),
+  "data_readers"    : ( "../include/lbann/data_readers/", [""]),
+  "data_store"      : ( "../include/lbann/data_store/", [""]),
+  "data_buffers"    : ( "../include/lbann/io/data_buffers/", [""]),
   "layer"           : ( "../include/lbann/layers/", [""]),
   "activations"     : ( "../include/lbann/layers/activations", [""]),
+  "io_utils"        : ( "../include/lbann/io", [""]),
   "io"              : ( "../include/lbann/layers/io", [""]),
   "learning"        : ( "../include/lbann/layers/learning", [""]),
   "regularizers"    : ( "../include/lbann/layers/regularizers", [""]),
   "transform"       : ( "../include/lbann/layers/transform", [""]),
   "metrics"         : ( "../include/lbann/metrics", [""]),
+  "models"          : ( "../include/lbann/models/", [""]),
   "obj_functions"   : ( "../include/lbann/objective_functions", [""]),
   "loss_functions"  : ( "../include/lbann/objective_functions/loss_functions", [""]),
+  "proto"           : ( "../include/lbann/proto/", [""]),
   "weight_reg"      : ( "../include/lbann/objective_functions/weight_regularization", [""]),
+  "utils"           : ( "../include/lbann/utils/", [""]),
+  "weights"         : ( "../include/lbann/weights/", [""]),
   "optimizers"      : ( "../include/lbann/optimizers", [""])
 }
 

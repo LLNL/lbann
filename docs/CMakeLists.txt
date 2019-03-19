@@ -24,18 +24,25 @@ if (SPHINX_FOUND)
       build_with_cmake.rst
       build_with_superbuild.rst
       callbacks.rst
+      data_readers.rst
+      data_store.rst
+      data_buffers.rst
       index.rst
       io.rst
+      io_utils.rst
       layers.rst
       learning.rst
       loss_functions.rst
       metrics.rst
+      model.rsl
       objective_functions.rst
       optimizers.rst
+      proto.rst
       regularizers.rst
       running_lbann.rst
       transform.rst
       weight_regularization.rst
+      weights.rst
       sphinx_requirements.txt
       )
 
