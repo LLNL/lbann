@@ -1,0 +1,36 @@
+
+before_script:
+  - echo "=== before_script section ==="
+
+after_script:
+  - echo "=== after_script section ==="
+
+stages:
+  - compiler
+  - integration
+  - unit
+
+compilerQuartz:
+  stage: compiler
+  tags:
+    - quartz
+    - shell
+  script:
+    - echo "=== compilerQuartz section ==="
+
+integrationQuartz:
+  stage: compiler
+  tags:
+    - quartz
+    - shell
+  script:
+    - echo "=== integrationQuartz section ==="
+
+unitQuartz:
+  stage: compiler
+  tags:
+    - quartz
+    - shell
+  script:
+    - echo "=== unitQuartz section ==="
+    - echo "FINISHED"
