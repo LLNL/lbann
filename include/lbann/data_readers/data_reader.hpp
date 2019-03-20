@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_set>
 
 
 #define NOT_IMPLEMENTED(n) { \
@@ -712,6 +713,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void post_update() {}
 
  protected:
+
+  // For use with conduit when samples are corrupt.
+  std::unordered_set<int> m_using_random_node;
 
   /**
    * Return the absolute number of data samples that will be used for training

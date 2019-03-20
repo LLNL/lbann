@@ -68,9 +68,9 @@ void data_store_jag::setup(int mini_batch_size) {
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
     if (m_super_node) {
-      std::cerr << "mode: exchange_data via super nodes\n";
+      std::cout << "mode: exchange_data via super nodes\n";
     } else {
-      std::cerr << "mode: exchange_data via individual samples\n";
+      std::cout << "mode: exchange_data via individual samples\n";
     }
   }
 
@@ -208,6 +208,9 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
     if(m_compacted_sample_size == 0) {
       m_compacted_sample_size = n2.total_bytes_compact();
     }else if(m_compacted_sample_size != n2.total_bytes_compact()) {
+    std::cout << "BAD:\n";
+    n2.print();
+
       LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
                   + " is not the same size as existing nodes in the data_store "
                   + std::to_string(m_compacted_sample_size) + " != "
@@ -441,7 +444,7 @@ void data_store_jag::compute_super_node_overhead() {
       m_super_node_overhead = 2*first - n3.total_bytes_compact();
       m_compacted_sample_size = first - m_super_node_overhead;
       if (m_master) {
-        std::cerr << "m_super_node_overhead: " << m_super_node_overhead
+        std::cout << "m_super_node_overhead: " << m_super_node_overhead
                   << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
       }
       return;
@@ -450,24 +453,33 @@ void data_store_jag::compute_super_node_overhead() {
 }
 
 const conduit::Node & data_store_jag::get_random_node() const {
+std::cout << "\nstarting data_store_jag::get_random_node()\n";
   size_t sz = m_data.size();
 
   // Deal with edge case
   if (sz == 0) {
-    LBANN_ERROR("can't return random node since we have no data (set_conduit_node has never been called");
+    LBANN_ERROR("can't return random node since we have no data (set_conduit_node has never been called)");
   }
 
   int offset = random() % sz;
   auto it = std::next(m_data.begin(), offset);
+  //debug statement; can go away
+  std::cout << "P_" << m_rank << " :: data_store_jag::get_random_node, returning data_id: " << it->first << "\n";
   return it->second;
 }
 
 const conduit::Node & data_store_jag::get_random_node(const std::string &field) const {
   auto node = get_random_node();
+  /*
   if (node[field].schema().dtype().is_empty()) {
+  node.print();
     LBANN_ERROR("Unable to find field " + field
                         + " in conduit node");
   }
+  */
+  //debug statement; can go away
+  std::cout << "P_" << m_rank << " :: data_store_jag::get_random_node(field) returning node for field: " << field << "\n";
+  //return node;
   return node[field];
 }
 
