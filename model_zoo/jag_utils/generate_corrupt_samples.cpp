@@ -30,7 +30,7 @@
 #ifdef LBANN_HAS_CONDUIT
 
 #include "conduit/conduit.hpp"
-#include "conduit_relay_io_handle.hpp"
+#include "conduit/conduit_relay_io_handle.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
