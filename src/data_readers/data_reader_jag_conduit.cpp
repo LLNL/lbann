@@ -1291,11 +1291,11 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
         } else {
           sample = n_input;
         }
-        const input_t val_raw = static_cast<input_t>(sample[conduit_obj].value());
-        const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
-        inputs.push_back(val);
-        tr ++;
       }
+      const input_t val_raw = static_cast<input_t>(sample[conduit_obj].value());
+      const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
+      inputs.push_back(val);
+      tr ++;
     }
   } else {
     for(const auto key: m_input_keys) {
