@@ -1,7 +1,7 @@
 """Utility functions for Slurm."""
 import os, os.path
 import subprocess
-from lbann.utils import make_iterable
+from lbann.util import make_iterable
 
 def run(command,
         experiment_dir = os.getcwd(),

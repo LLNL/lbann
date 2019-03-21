@@ -5,7 +5,7 @@ import google.protobuf.text_format as txtf
 import lbann.proto as lp
 from lbann.models import AlexNet
 from lbann.proto import lbann_pb2
-from lbann.utils import lbann_dir
+from lbann.util import lbann_dir
 import lbann.contrib.args
 
 # Command-line arguments

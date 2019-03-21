@@ -15,4 +15,4 @@ def make_iterable(obj):
 
 def lbann_dir():
     """LBANN root directory."""
-    return dirname(dirname(dirname(abspath(__file__))))
+    return dirname(dirname(dirname(dirname(abspath(__file__)))))

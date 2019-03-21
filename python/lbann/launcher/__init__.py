@@ -1,7 +1,7 @@
 import os, os.path
 import datetime
 from lbann.proto import save_prototext
-from lbann.utils import lbann_dir
+from lbann.util import lbann_dir
 import lbann.launcher.slurm
 
 # ==============================================

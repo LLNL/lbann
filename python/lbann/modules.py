@@ -9,7 +9,7 @@ from collections.abc import Iterable
 import warnings
 from math import sqrt
 import lbann.proto as lp
-from lbann.utils import make_iterable
+from lbann.util import make_iterable
 
 def _str_list(l):
     """Convert an iterable object to a space-separated string."""
