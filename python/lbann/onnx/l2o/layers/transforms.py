@@ -75,8 +75,3 @@ class LbannLayerParser_reduction(LbannLayerParser):
 class LbannLayerParser_evaluation(LbannLayerParser):
     def parse(self):
         self.appendOperator("LbannEvaluation")
-
-@parserDescriptor(stub=True)
-class LbannLayerParser_zero(LbannLayerParser):
-    def parse(self):
-        raise NotImplementedError()

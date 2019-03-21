@@ -87,7 +87,7 @@ class TestLbann2Onnx(unittest.TestCase):
                    {"image": [width*width]},
                    [("reconstruction", [MB_PLACEHOLDER, width*width])])
 
-    @unittest.skip("This model contains a zero layer, which is not supported in l2o.")
+    @unittest.skip("Skipped since some tensor shapes cannot be inferred.")
     def test_l2o_vae_mnist(self):
         width = 28
         self._test("{}/autoencoder_mnist/vae_mnist.prototext".format(LBANN_MODEL_ROOT),
@@ -118,7 +118,7 @@ class TestLbann2Onnx(unittest.TestCase):
                    [("act5", [MB_PLACEHOLDER, 256, 4, 4, 4]),
                     ("drop3", [MB_PLACEHOLDER, secrets])])
 
-    @unittest.skip("This model contains a zero layer, which is not supported in l2o.")
+    @unittest.skip("This model contains a 'not' layer, which is not implemented yet.")
     def test_l2o_gan_mnist_adversarial(self):
         width = 28
         classes = 2
@@ -127,16 +127,7 @@ class TestLbann2Onnx(unittest.TestCase):
                    [("fc4_tanh", [1, width*width]),
                     ("prob", [MB_PLACEHOLDER, 2])])
 
-    @unittest.skip("This model contains a zero layer, which is not supported in l2o.")
-    def test_l2o_gan_mnist_discriminator(self):
-        width = 28
-        classes = 2
-        self._test("{}/gan/mnist/discriminator_model.prototext".format(LBANN_MODEL_ROOT),
-                   {"data": [width, width], "label": [classes]},
-                   [("fc4_tanh", [1, width*width]),
-                    ("prob", [MB_PLACEHOLDER, 2])])
-
-    @unittest.skip("This model contains a zero layer, which is not supported in l2o.")
+    @unittest.skip("This model contains a 'not' layer, which is not implemented yet.")
     def test_l2o_gan_mnist_discriminator(self):
         width = 28
         classes = 2
