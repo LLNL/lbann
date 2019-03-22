@@ -203,6 +203,8 @@ class sample_list_jag {
           LBANN_WARNING(" :: trying to open the file " + conduit_file_path + " and got " + e.what());
           retry = true;
           retry_cnt++;
+        }catch (...) {
+          LBANN_ERROR("trying to open the file " + conduit_file_path + " and got an unknown exception");
         }
       }while(retry && retry_cnt < 3);
 
