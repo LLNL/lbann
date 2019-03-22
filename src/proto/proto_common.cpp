@@ -337,11 +337,9 @@ void init_data_readers(
                   "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_PYTHON
     } else {
-      if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
             << name;
         throw lbann_exception(err.str());
-      }
     }
     reader->set_comm(comm);
 
