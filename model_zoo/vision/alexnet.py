@@ -2,16 +2,12 @@
 import argparse
 from os.path import join
 import google.protobuf.text_format as txtf
-import lbann
-from lbann.util import lbann_dir
-import lbann.models
-import lbann.proto
-import lbann.contrib.args
+import lbann, lbann.models, lbann.proto, lbann.contrib.args
 
 # Command-line arguments
 desc = ('Construct and run AlexNet on MNIST data. '
         'Running the experiment is only supported on LC systems.')
-data_reader_prototext = join(lbann_dir(),
+data_reader_prototext = join(lbann.lbann_dir(),
                              'model_zoo',
                              'data_readers',
                              'data_reader_imagenet.prototext')
