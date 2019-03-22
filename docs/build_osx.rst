@@ -1,9 +1,9 @@
 .. role:: bash(code)
           :language: bash
 
-====================
+=========================
 Building LBANN on OS X
-====================
+=========================
 
 .. warning:: This section is still under development and being
              tested. It contains known issues. This warning will be
@@ -13,6 +13,8 @@ Building LBANN on OS X
 --------------------
 Getting Started
 --------------------
+
+.. _osx-setup-spack:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Setup Spack and local base tools
@@ -59,6 +61,8 @@ Setup Homebrew
     .. code-block:: bash
 
        source $(brew --prefix lmod)/init/$(basename $SHELL)
+
+.. _osx-build-install-as-developer:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Building & Installing LBANN as a developer

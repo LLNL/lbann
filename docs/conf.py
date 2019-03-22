@@ -16,14 +16,15 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+import subprocess, os, runpy
 
-import subprocess, os
+rebuild_doxygen = not os.path.isdir("doxy_out/xml")
 
-read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
+if rebuild_doxygen:
+    subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
 
-if read_the_docs_build:
-
-    subprocess.call('doxygen Doxyfile.in', shell=True)
+#exec(open("./BuildRSTDocs.py").read())
+runpy.run_path("BuildRSTDocs.py")
 
 # -- Project information -----------------------------------------------------
 
@@ -86,29 +87,6 @@ html_theme_options = {
   "collapse_navigation" : False
 }
 
-breathe_projects_source = {
-  "lbann"           : ( "../include/lbann/", [""]),
-  "callback"        : ( "../include/lbann/callbacks/", [""]),
-  "data_readers"    : ( "../include/lbann/data_readers/", [""]),
-  "data_store"      : ( "../include/lbann/data_store/", [""]),
-  "data_buffers"    : ( "../include/lbann/io/data_buffers/", [""]),
-  "layer"           : ( "../include/lbann/layers/", [""]),
-  "activations"     : ( "../include/lbann/layers/activations", [""]),
-  "io_utils"        : ( "../include/lbann/io", [""]),
-  "io"              : ( "../include/lbann/layers/io", [""]),
-  "learning"        : ( "../include/lbann/layers/learning", [""]),
-  "regularizers"    : ( "../include/lbann/layers/regularizers", [""]),
-  "transform"       : ( "../include/lbann/layers/transform", [""]),
-  "metrics"         : ( "../include/lbann/metrics", [""]),
-  "models"          : ( "../include/lbann/models/", [""]),
-  "obj_functions"   : ( "../include/lbann/objective_functions", [""]),
-  "loss_functions"  : ( "../include/lbann/objective_functions/loss_functions", [""]),
-  "proto"           : ( "../include/lbann/proto/", [""]),
-  "weight_reg"      : ( "../include/lbann/objective_functions/weight_regularization", [""]),
-  "utils"           : ( "../include/lbann/utils/", [""]),
-  "weights"         : ( "../include/lbann/weights/", [""]),
-  "optimizers"      : ( "../include/lbann/optimizers", [""])
-}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -129,14 +107,13 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+#html_sidebars = {}
 html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'lbanndoc'
-
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -188,8 +165,9 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
+
+breathe_default_project = "lbann"
 breathe_projects = {
     "lbann":"doxy_out/xml/",
-    }
-extensions = [ "m2r", "breathe", 'sphinx.ext.mathjax' ]
-m2r_parse_relative_links = True
+}
+extensions = [ 'breathe', 'sphinx.ext.mathjax' ]

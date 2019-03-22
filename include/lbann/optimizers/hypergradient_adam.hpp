@@ -31,17 +31,21 @@
 
 namespace lbann {
 
-/** Hypergradient Adam optimizer.
-
+/** @class hypergradient_adam
+ *  @brief Hypergradient Adam optimizer.
+ *
  *  Reference:
-
+ *
  *  Baydin et al. "Online Learning Rate Adaptation with Hypergradient
  *  Descent", 2017.
  */
 class hypergradient_adam : public optimizer {
 public:
 
-  /** @param init_learning_rate     Initial Adam learning rate (0.001 is
+  /** @brief Construct a Hypergradient Adam optimizer object
+   *
+   *  @param comm                   Communication context for this object
+   *  @param init_learning_rate     Initial Adam learning rate (0.001 is
    *                                reasonable).
    *  @param hyper_learning_rate    Hypergradient learning rate.
    *  @param beta1                  Decay rate for the first moment
@@ -62,44 +66,46 @@ public:
   ~hypergradient_adam() override = default;
   hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
 
-  /** Human-readable type name. */
+  /** @brief Human-readable type name. */
   std::string get_type() const override { return "hypergradient Adam"; }
-  /** Human-readable description. */
+  /** @brief Human-readable description. */
   description get_description() const override;
 
   void setup(weights* w = nullptr) override;
 
 protected:
 
-  /** Computation for an optimization step. */
+  /** @brief Computation for an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
 
 private:
 
-  /** Hypergradient learning rate. */
+  /** @brief Hypergradient learning rate. */
   DataType m_hyper_learning_rate;
-  /** Update factor for first moment estimate. */
+  /** @brief Update factor for first moment estimate. */
   DataType m_beta1;
-  /** Update factor for second moment estimate. */
+  /** @brief Update factor for second moment estimate. */
   DataType m_beta2;
-  /** Small factor to avoid division by zero. */
+  /** @brief Small factor to avoid division by zero. */
   DataType m_eps;
-  /** beta1 ^ iteration. */
+  /** @brief beta1 ^ iteration. */
   DataType m_current_beta1;
-  /** beta2 ^ iteration. */
+  /** @brief beta2 ^ iteration. */
   DataType m_current_beta2;
-  /** First moment estimates. */
+  /** @brief First moment estimates. */
   std::unique_ptr<AbsDistMat> m_moment1;
-  /** Second moment estimates. */
+  /** @brief Second moment estimates. */
   std::unique_ptr<AbsDistMat> m_moment2;
-  /** Gradient estimate from the prior step (for hypergradient). */
+  /** @brief Gradient estimate from the prior step (for hypergradient). */
   std::unique_ptr<AbsDistMat> m_old_gradient;
 
   // ===========================================
   // Checkpointing
   // ===========================================
 
-  /* struct used to serialize mode fields in file and MPI transfer */
+  /** @struct packing_header
+   *  @brief Used to serialize mode fields in file and MPI transfer
+   */
   struct packing_header {
     DataType hyper_learning_rate;
     DataType beta1;

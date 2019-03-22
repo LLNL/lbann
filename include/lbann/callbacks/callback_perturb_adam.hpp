@@ -62,7 +62,7 @@ public:
    *  @param batch_interval Number of training mini-batch steps between
    *                        perturbations. Only used if
    *                        @c perturb_during_training is @c true.
-   *  @param weights_name   Names of weights with Adam optimizers. If
+   *  @param weights_names  Names of weights with Adam optimizers. If
    *                        empty, all Adam optimizers in the model are
    *                        perturbed.
    */

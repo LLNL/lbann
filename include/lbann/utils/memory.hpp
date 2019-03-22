@@ -12,7 +12,9 @@ using std::make_unique;
 
 #else
 
-/** \brief Local definition of make_unique for non-C++14 compilers */
+/** @brief Local definition of make_unique for non-C++14 compilers.
+ *  @ingroup stl_wrappers
+ */
 template <typename T, typename... Ts>
 std::unique_ptr<T> make_unique(Ts&&... params)
 {

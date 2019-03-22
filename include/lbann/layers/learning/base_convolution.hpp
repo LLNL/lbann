@@ -49,7 +49,7 @@ protected:
 
   int m_output_channels;
   /** @brief Spatial dimensions for convolution kernel.
-   *  @detailed Excludes number of input and output channels.
+   *  @details Excludes number of input and output channels.
    */
   std::vector<int> m_conv_dims;
   /** Convolution padding. */
@@ -95,9 +95,9 @@ protected:
 #endif // LBANN_HAS_CUDNN
 
 public:
-
+  /** @todo Remove num_data_dims from arg list */
   base_convolution_layer(lbann_comm* comm,
-                         int num_data_dims, /// @todo Remove
+                         int num_data_dims,
                          int output_channels,
                          std::vector<int> conv_dims,
                          std::vector<int> pads,

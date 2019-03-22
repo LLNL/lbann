@@ -44,12 +44,15 @@ class lbann_callback_save_model : public lbann_callback {
  public:
   /**
    * @param dir directory to save model
-   * @param file extension e.g., model, state ......
+   * @param disable_save_after_training Don't save after training
+   * @param extension file extension e.g., model, state ......
    */
   lbann_callback_save_model(std::string dir,
                             bool disable_save_after_training,
                             std::string extension="prototext") :
-    lbann_callback(), m_dir(std::move(dir)), m_disable_save_after_training(disable_save_after_training), m_extension(std::move(extension))
+    lbann_callback(), m_dir(std::move(dir)),
+    m_disable_save_after_training(disable_save_after_training),
+    m_extension(std::move(extension))
     {}
   lbann_callback_save_model(const lbann_callback_save_model&) = default;
   lbann_callback_save_model& operator=(

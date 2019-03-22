@@ -70,13 +70,13 @@ protected:
 private:
 
   /** @brief Decay rate for gradient accumulation.
-   *  @detailed A momentum of zero corresponds to vanilla SGD.
+   *  @details A momentum of zero corresponds to vanilla SGD.
    */
   DataType m_momentum;
   /** Whether to apply Nesterov acceleration. */
   bool m_nesterov;
   /** @brief Accumulated gradients.
-   *  @detailed Not used for vanilla SGD.
+   *  @details Not used for vanilla SGD.
    */
   std::unique_ptr<AbsDistMat> m_velocity;
 

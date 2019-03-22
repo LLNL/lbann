@@ -7,60 +7,60 @@
 
 namespace lbann {
 
-/** \class type_erased_function
- *  \brief A move-only callable type for wrapping functions
+/** @class type_erased_function
+ *  @brief A move-only callable type for wrapping functions
  */
 class type_erased_function {
 public:
 
-  /** \brief Erase the type of input function F */
+  /** @brief Erase the type of input function F */
   template <typename FunctionT>
   type_erased_function(FunctionT&& F)
     : held_function_(make_unique<Function<FunctionT>>(std::move(F))) {}
 
-  /** \brief Move constructor */
+  /** @brief Move constructor */
   type_erased_function(type_erased_function&& other) = default;
 
-  /** \brief Move assignment */
+  /** @brief Move assignment */
   type_erased_function& operator=(type_erased_function&& other) = default;
 
-  /** \brief Make the function callable */
+  /** @brief Make the function callable */
   void operator()() { held_function_->call_held(); }
 
-  /** \name Deleted functions */
+  /** @name Deleted functions */
   ///@{
 
-  /** \brief Deleted constructor */
+  /** @brief Deleted constructor */
   type_erased_function() = delete;
 
-  /** \brief Deleted copy constructor */
+  /** @brief Deleted copy constructor */
   type_erased_function(const type_erased_function& other) = delete;
 
-  /** \brief Deleted copy assignment */
+  /** @brief Deleted copy assignment */
   type_erased_function& operator=(const type_erased_function& other) = delete;
 
   ///@}
 
 private:
-  /** \name Type erasure template types */
+  /** @name Type erasure template types */
   ///@{
 
-  /** \class FunctionHolder
-   *  \brief Simple function object holder
+  /** @class FunctionHolder
+   *  @brief Simple function object holder
    */
   struct FunctionHolder
   {
-    /** \brief Destructor */
+    /** @brief Destructor */
     virtual ~FunctionHolder() = default;
 
-    /** \brief Call the held function */
+    /** @brief Call the held function */
     virtual void call_held() = 0;
   };
 
-  /** \class Function
-   *  \brief A wrapper for a specific type of function
+  /** @class Function
+   *  @brief A wrapper for a specific type of function
    *
-   *  \tparam FunctionT Must be MoveConstructible and Callable
+   *  @tparam FunctionT Must be MoveConstructible and Callable
    */
   template <typename FunctionT>
   struct Function : FunctionHolder
@@ -68,22 +68,22 @@ private:
     static_assert(std::is_move_constructible<FunctionT>::value,
                   "Given type is not move constructible!");
 
-    /** \brief Construct by moving from the input function type */
+    /** @brief Construct by moving from the input function type */
     Function(FunctionT&& f)
       : F__(std::move(f)) {}
 
-    /** \brief Destructor */
+    /** @brief Destructor */
     ~Function() = default;
 
-    /** \brief Call the held function */
+    /** @brief Call the held function */
     void call_held() override { F__(); }
 
-    /** \brief The held function */
+    /** @brief The held function */
     FunctionT F__;
   };
   ///@}
 
-  /** \brief A type-erased function */
+  /** @brief A type-erased function */
   std::unique_ptr<FunctionHolder> held_function_;
 };// class type_erased_function
 

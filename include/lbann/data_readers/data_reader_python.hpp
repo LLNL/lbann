@@ -46,7 +46,7 @@ public:
   /** Get singleton instance. */
   static manager& get_instance();
   /** @brief Construct singleton instance.
-   *  @detailed If there is already an instance, it is destroyed.
+   *  @details If there is already an instance, it is destroyed.
    */
   static void create();
   /** Destroy singleton instance. */
