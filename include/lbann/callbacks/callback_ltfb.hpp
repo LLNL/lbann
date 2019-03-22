@@ -103,7 +103,7 @@ public:
     checkpoint_file
   };
 
-  /** @brief
+  /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
    *  @param metric_name    Metric for tournament evaluation.
@@ -112,6 +112,7 @@ public:
    *  @param low_score_wins Whether low-scoring or high-scoring models
    *                        survive a tournament.
    *  @param comm_algo      Inter-trainer communication scheme.
+   *  @param summarizer     The summarizer to use for this callback
    */
   lbann_callback_ltfb(El::Int batch_interval,
                       std::string metric_name,

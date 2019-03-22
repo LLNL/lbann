@@ -37,7 +37,7 @@ namespace lbann {
 /**
  * Record a timeline of training runtime on each rank and output it to a
  * logfile for external processing.
- * The logfile is named timeline.m<model-rank>.<rank>.txt.
+ * The logfile is named timeline.m\<model-rank\>.\<rank\>.txt.
  * Each line is a separate event, written as name:start-time:end-time.
  * Times are relative to the beginning of training.
  */
