@@ -463,22 +463,11 @@ std::cout << "\nstarting data_store_jag::get_random_node()\n";
 
   int offset = random() % sz;
   auto it = std::next(m_data.begin(), offset);
-  //debug statement; can go away
-  std::cout << "P_" << m_rank << " :: data_store_jag::get_random_node, returning data_id: " << it->first << "\n";
   return it->second;
 }
 
 const conduit::Node & data_store_jag::get_random_node(const std::string &field) const {
   auto node = get_random_node();
-  /*
-  if (node[field].schema().dtype().is_empty()) {
-  node.print();
-    LBANN_ERROR("Unable to find field " + field
-                        + " in conduit node");
-  }
-  */
-  //debug statement; can go away
-  std::cout << "P_" << m_rank << " :: data_store_jag::get_random_node(field) returning node for field: " << field << "\n";
   //return node;
   return node[field];
 }
