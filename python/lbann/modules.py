@@ -8,7 +8,7 @@ basic building blocks for larger models.
 from collections.abc import Iterable
 import warnings
 from math import sqrt
-import lbann.proto as lp
+import lbann as lb
 from lbann.util import make_iterable
 
 def _str_list(l):
@@ -92,11 +92,11 @@ class FullyConnectedModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.HeNormalInitializer(),
+                lb.Weights(initializer=lb.HeNormalInitializer(),
                            name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
+                lb.Weights(initializer=lb.ConstantInitializer(value=0.0),
                            name=self.name+'_bias'))
 
         # Initialize activation layer
@@ -106,13 +106,13 @@ class FullyConnectedModule(Module):
                 self.activation = activation
             else:
                 self.activation = type(activation)
-            if not issubclass(self.activation, lp.Layer):
+            if not issubclass(self.activation, lb.Layer):
                 raise ValueError('activation must be a layer')
 
     def forward(self, x):
         self.instance += 1
         name = '{0}_instance{1}'.format(self.name, self.instance)
-        y = lp.FullyConnected(x,
+        y = lb.FullyConnected(x,
                               weights=self.weights,
                               name=(name+'_fc' if self.activation else name),
                               data_layout=self.data_layout,
@@ -186,11 +186,11 @@ class ConvolutionModule(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.HeNormalInitializer(),
+                lb.Weights(initializer=lb.HeNormalInitializer(),
                            name=self.name+'_kernel'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
+                lb.Weights(initializer=lb.ConstantInitializer(value=0.0),
                            name=self.name+'_bias'))
 
         # Initialize activation layer
@@ -200,13 +200,13 @@ class ConvolutionModule(Module):
                 self.activation = activation
             else:
                 self.activation = type(activation)
-            if not issubclass(self.activation, lp.Layer):
+            if not issubclass(self.activation, lb.Layer):
                 raise ValueError('activation must be a layer')
 
     def forward(self, x):
         self.instance += 1
         name = '{0}_instance{1}'.format(self.name, self.instance)
-        y = lp.Convolution(x,
+        y = lb.Convolution(x,
                            weights=self.weights,
                            name=(name+'_conv' if self.activation else name),
                            num_dims=self.num_dims,
@@ -276,10 +276,10 @@ class LSTMCell(Module):
         self.data_layout = data_layout
 
         # Initial state
-        self.last_output = lp.Constant(value=0.0, num_neurons=str(size),
+        self.last_output = lb.Constant(value=0.0, num_neurons=str(size),
                                        name=self.name + '_init_output',
                                        data_layout=self.data_layout)
-        self.last_cell = lp.Constant(value=0.0, num_neurons=str(size),
+        self.last_cell = lb.Constant(value=0.0, num_neurons=str(size),
                                      name=self.name + '_init_cell',
                                      data_layout=self.data_layout)
 
@@ -290,12 +290,12 @@ class LSTMCell(Module):
                              'but got {0}'.format(len(self.weights)))
         if len(self.weights) == 0:
             self.weights.append(
-                lp.Weights(initializer=lp.UniformInitializer(min=-1/sqrt(self.size),
+                lb.Weights(initializer=lb.UniformInitializer(min=-1/sqrt(self.size),
                                                              max=-1/sqrt(self.size)),
                            name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
-                lp.Weights(initializer=lp.UniformInitializer(min=-1/sqrt(self.size),
+                lb.Weights(initializer=lb.UniformInitializer(min=-1/sqrt(self.size),
                                                              max=-1/sqrt(self.size)),
                            name=self.name+'_bias'))
 
@@ -315,47 +315,47 @@ class LSTMCell(Module):
         name = '{0}_step{1}'.format(self.name, self.step)
 
         # Apply linearity
-        input_concat = lp.Concatenation([x, self.last_output],
+        input_concat = lb.Concatenation([x, self.last_output],
                                         name=name + '_input',
                                         data_layout=self.data_layout)
         fc = self.fc(input_concat)
 
         # Get gates and cell update
-        slice = lp.Slice(fc,
+        slice = lb.Slice(fc,
                          slice_points=_str_list([0, self.size, 4*self.size]),
                          name=name + '_fc_slice',
                          data_layout=self.data_layout)
-        cell_update = lp.Tanh(slice,
+        cell_update = lb.Tanh(slice,
                               name=name + '_cell_update',
                               data_layout=self.data_layout)
-        sigmoid = lp.Sigmoid(slice,
+        sigmoid = lb.Sigmoid(slice,
                              name=name + '_sigmoid',
                              data_layout=self.data_layout)
-        slice = lp.Slice(sigmoid,
+        slice = lb.Slice(sigmoid,
                          slice_points=_str_list([0, self.size, 2*self.size, 3*self.size]),
                          name=name + '_sigmoid_slice',
                          data_layout=self.data_layout)
-        f = lp.Identity(slice, name=name + '_forget_gate',
+        f = lb.Identity(slice, name=name + '_forget_gate',
                         data_layout=self.data_layout)
-        i = lp.Identity(slice, name=name + '_input_gate',
+        i = lb.Identity(slice, name=name + '_input_gate',
                         data_layout=self.data_layout)
-        o = lp.Identity(slice, name=name + '_output_gate',
+        o = lb.Identity(slice, name=name + '_output_gate',
                         data_layout=self.data_layout)
 
         # Cell state
-        cell_forget = lp.Multiply([f, self.last_cell],
+        cell_forget = lb.Multiply([f, self.last_cell],
                                   name=name + '_cell_forget',
                                   data_layout=self.data_layout)
-        cell_input = lp.Multiply([i, cell_update],
+        cell_input = lb.Multiply([i, cell_update],
                                  name=name + '_cell_input',
                                  data_layout=self.data_layout)
-        cell = lp.Add([cell_forget, cell_input], name=name + '_cell',
+        cell = lb.Add([cell_forget, cell_input], name=name + '_cell',
                       data_layout=self.data_layout)
 
         # Output
-        cell_act = lp.Tanh(cell, name=name + '_cell_activation',
+        cell_act = lb.Tanh(cell, name=name + '_cell_activation',
                       data_layout=self.data_layout)
-        output = lp.Multiply([o, cell_act], name=name,
+        output = lb.Multiply([o, cell_act], name=name,
                              data_layout=self.data_layout)
 
         # Update state and return output

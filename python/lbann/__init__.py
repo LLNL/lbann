@@ -16,3 +16,11 @@ except ImportError:
     from lbann.contrib.lc.paths import install_dir
     sys.path.append(join(install_dir(), 'share', 'python'))
     import lbann_pb2
+
+from lbann.callback import *
+from lbann.layer import *
+from lbann.metric import *
+from lbann.model import *
+from lbann.objective_function import *
+from lbann.optimizer import *
+from lbann.weights import *

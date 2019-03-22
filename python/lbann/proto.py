@@ -4,15 +4,6 @@ import google.protobuf.text_format
 import google.protobuf.message
 from lbann import lbann_pb2
 
-# TODO: remove these imports or move to __init__.py
-from lbann.callback import *
-from lbann.layer import *
-from lbann.metric import *
-from lbann.model import *
-from lbann.objective_function import *
-from lbann.optimizer import *
-from lbann.weights import *
-
 def save_prototext(filename, **kwargs):
     """Save a prototext file.
 
