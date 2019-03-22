@@ -16,7 +16,7 @@ import lbann.onnx
 import lbann.onnx.o2l
 from lbann.onnx.util import lbannList2List
 from lbann.onnx.tests.util import getLbannVectorField
-import lbann.proto as lp
+import lbann
 
 def makeFloatTensorVI(name, shape):
     return onnx.helper.make_tensor_value_info(
@@ -91,8 +91,8 @@ class TestOnnx2LbannLayer(unittest.TestCase):
     def _test_o2l_layer_Gemm(self, hasBias):
         M, N, K = (100, 200, 300)
 
-        lbannFC = lp.FullyConnected(
-            lp.Input(),
+        lbannFC = lbann.FullyConnected(
+            lbann.Input(),
             num_neurons=N,
             has_bias=hasBias
         )
@@ -128,8 +128,8 @@ class TestOnnx2LbannLayer(unittest.TestCase):
         K, P, S, D = (3, 1, 1, 1)
         G = 1
 
-        lbannConv = lp.Convolution(
-            lp.Input(),
+        lbannConv = lbann.Convolution(
+            lbann.Input(),
             num_dims=numDims,
             num_output_channels=C_out,
             has_vectors=False,
@@ -180,8 +180,8 @@ class TestOnnx2LbannLayer(unittest.TestCase):
         N, C, H = (256, 3, 224)
         K, P, S = (3, 1, 1)
 
-        lbannPooling = lp.Pooling(
-            lp.Input(),
+        lbannPooling = lbann.Pooling(
+            lbann.Input(),
             num_dims=numDims,
             has_vectors=False,
             pool_dims_i=K,
@@ -225,8 +225,8 @@ class TestOnnx2LbannLayer(unittest.TestCase):
         decay = 0.95
         epsilon = 1e-6
 
-        lbannBN = lp.BatchNormalization(
-            lp.Input(),
+        lbannBN = lbann.BatchNormalization(
+            lbann.Input(),
             decay=decay, epsilon=epsilon,
         )
 
@@ -254,8 +254,8 @@ class TestOnnx2LbannLayer(unittest.TestCase):
     def test_o2l_layer_Relu(self):
         N, C, H, W = (100,200,300,400)
 
-        lbannRelu = lp.Relu(
-            lp.Input(),
+        lbannRelu = lbann.Relu(
+            lbann.Input(),
         )
 
         node = onnx.helper.make_node(

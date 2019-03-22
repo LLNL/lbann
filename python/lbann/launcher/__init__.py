@@ -1,6 +1,6 @@
 import os, os.path
 import datetime
-from lbann.proto import save_prototext
+import lbann.proto
 from lbann.util import lbann_dir
 import lbann.launcher.slurm
 
@@ -36,10 +36,10 @@ def run(lbann_exe, model, data_reader, optimizer,
 
     Args:
         lbann_exe (str): LBANN executable.
-        model (lbann.proto.Model or lbann_pb2.Model): Neural network
+        model (lbann.model.Model or lbann_pb2.Model): Neural network
             model.
         data_reader (lbann_pb2.DataReader): Data reader.
-        optimizer (lbann.proto.Model or lbann_pb2.Optimizer): Default
+        optimizer (lbann.model.Model or lbann_pb2.Optimizer): Default
             optimizer for model.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
@@ -81,10 +81,10 @@ def run(lbann_exe, model, data_reader, optimizer,
 
     # Create experiment prototext file
     prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
-    save_prototext(prototext_file,
-                   model = model,
-                   data_reader = data_reader,
-                   optimizer = optimizer)
+    lbann.proto.save_prototext(prototext_file,
+                               model = model,
+                               data_reader = data_reader,
+                               optimizer = optimizer)
     lbann_args += ' --prototext=' + prototext_file
 
     # Run experiment

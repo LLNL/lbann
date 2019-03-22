@@ -1,8 +1,7 @@
-import abc
 from lbann import lbann_pb2
 import lbann.util.class_generator
 
-class Optimizer(abc.ABC):
+class Optimizer:
     def export_proto(self):
         """Construct and return a protobuf message."""
         return lbann_pb2.Optimizer()

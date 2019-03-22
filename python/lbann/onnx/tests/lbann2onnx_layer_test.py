@@ -16,8 +16,8 @@ import onnx
 
 from lbann.onnx.l2o import parseLbannLayer
 from lbann.onnx.util import list2LbannList, getNodeAttributeByName
-import lbann.proto as lp
-from lbann.proto import lbann_pb2
+import lbann
+from lbann import lbann_pb2
 
 class TestLbann2OnnxLayer(unittest.TestCase):
     def _assertFields(self, l, o):
@@ -64,8 +64,8 @@ class TestLbann2OnnxLayer(unittest.TestCase):
             group=G
         )
 
-        layer = lp.Convolution(
-            lp.Input(name="x"),
+        layer = lbann.Convolution(
+            lbann.Input(name="x"),
             num_dims=numDims,
             num_output_channels=C_out,
             has_vectors=False,
@@ -105,8 +105,8 @@ class TestLbann2OnnxLayer(unittest.TestCase):
             strides=[S]*numDims,
         )
 
-        layer = lp.Pooling(
-            lp.Input(name="x"),
+        layer = lbann.Pooling(
+            lbann.Input(name="x"),
             num_dims=numDims,
             has_vectors=False,
             pool_dims_i=K,
@@ -144,8 +144,8 @@ class TestLbann2OnnxLayer(unittest.TestCase):
             spatial=1
         )
 
-        layer = lp.BatchNormalization(
-            lp.Input(name="x"),
+        layer = lbann.BatchNormalization(
+            lbann.Input(name="x"),
             decay=decay, epsilon=epsilon,
         )
         lbannBN = parseLbannLayer(layer.export_proto(), {"x_0": (N, C, H, W)})["nodes"]
@@ -161,8 +161,8 @@ class TestLbann2OnnxLayer(unittest.TestCase):
             outputs=["y"],
         )
 
-        layer = lp.Relu(
-            lp.Input(name="x"),
+        layer = lbann.Relu(
+            lbann.Input(name="x"),
         )
         lbannRelu = parseLbannLayer(layer.export_proto(), {"x_0": (N, C, H, W)})["nodes"]
 

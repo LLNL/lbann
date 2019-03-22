@@ -2,7 +2,7 @@
 from re import sub
 from enum import Enum
 from graphviz import Digraph
-from lbann.proto import lbann_pb2, Model
+from lbann import lbann_pb2, Model
 
 def visualize_layer_graph(model, filename,
                           file_format='pdf',
@@ -11,8 +11,8 @@ def visualize_layer_graph(model, filename,
     """Visualize a model's layer graph and save to file.
 
     Args:
-        model (`lbann_pb2.Model` or `lbann.proto.Model`): Neural network
-            model.
+        model (`lbann_pb2.Model` or `lbann.model.Model`): Neural
+            network model.
         filename (`str`): Output file.
         file_format (`str`): Output file format.
         label_format (`str`): Displayed layer information (options:
@@ -28,7 +28,7 @@ def visualize_layer_graph(model, filename,
          proto = model.export_proto()
     else:
         raise TypeError('expected `model` to be an '
-                        '`lbann_pb2.Model` or a `lbann.proto.Model`')
+                        '`lbann_pb2.Model` or a `lbann.model.Model`')
 
     # Strip extension from filename
     if filename.endswith('.' + file_format):
