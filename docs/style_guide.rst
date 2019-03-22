@@ -61,6 +61,32 @@ of the following:
   conditions on objects in the case of member functions. Repeat this
   directive for each postcondition.
 
+Some hypothetical examples of appropriately marked up functions are:
+
+.. code-block:: c++
+
+    /** @brief Does a foo.
+     *
+     *  These are details.
+     *
+     *  @tparam T The type of parameter. Must implement `operator+=`
+     *  @param param This is a parameter. It says how to foo.
+     *  @throws crazy_error If a crazy error occurs.
+     *  @pre param is not foo'd yet
+     *  @post param has been foo'd
+     */
+    template <typename T>
+    void foo(T& param);
+
+    /** @brief Computes a result.
+     *  @details The algorithm is simple @f$ret=A+B@f$.
+     *  @param A the first value
+     *  @param B the second value
+     *  @returns The output of the complicated algorithm
+     */
+    int compute_result(int A, int B) noexcept;
+
+
 Documentation of Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -83,4 +109,5 @@ the following:
   into named sections.
 
 Member functions are functions and should be documented as
-:ref:`above<sg-doc-functions>`.
+:ref:`above<sg-doc-functions>`. An example of a completely marked up
+file is `include/lbann/utils/any.hpp`.
