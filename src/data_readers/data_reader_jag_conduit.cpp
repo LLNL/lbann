@@ -51,7 +51,7 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-#define SAMPLE_ID_PAD 7
+#define SAMPLE_ID_PAD 9
 
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
@@ -329,16 +329,17 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
       const std::string cur_child = child_names[0];
       const std::string new_child = pad(std::to_string(i), SAMPLE_ID_PAD, '0');
       node.rename_child(cur_child, new_child);
+      m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
       const std::string& file_name = m_sample_list.get_samples_filename(id);
-      std::cout << get_type() + ":: replacing with random node, since failed to open file " 
-                << file_name << " for sample " << sample_name 
+      std::cout << get_type() + ":: replacing with random node, since failed to open file "
+                << file_name << " for sample " << sample_name
                 <<" and key: " << key << "\n";
       return false;
-    } 
-    
+    }
+
     // this block fires if we cannot load a conduit node, either from file
     // or from the data_store
-    else {  
+    else {
       const std::string& file_name = m_sample_list.get_samples_filename(id);
       if (h <= static_cast<hid_t>(0)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
@@ -808,12 +809,13 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  std::stringstream s;
-  std::string basename = get_basename_without_ext(sample_list_file);
-  std::string ext = get_ext_name(sample_list_file);
-  s << "r" << m_comm->get_rank_in_trainer() << "_per_rank_" << basename << "." << ext;
-  m_sample_list.write(s.str());
-
+  if (is_master()) {
+    std::stringstream s;
+    std::string basename = get_basename_without_ext(sample_list_file);
+    std::string ext = get_ext_name(sample_list_file);
+    s << basename << "." << ext;
+    m_sample_list.write(s.str());
+  }
   m_shuffled_indices.resize(m_sample_list.size());
 
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);

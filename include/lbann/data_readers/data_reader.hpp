@@ -715,7 +715,7 @@ class generic_data_reader : public lbann_image_preprocessor {
  protected:
 
   // For use with conduit when samples are corrupt.
-  std::unordered_set<int> m_using_random_node;
+  mutable std::unordered_set<int> m_using_random_node;
 
   /**
    * Return the absolute number of data samples that will be used for training
