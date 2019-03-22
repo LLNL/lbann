@@ -170,4 +170,4 @@ breathe_default_project = "lbann"
 breathe_projects = {
     "lbann":"doxy_out/xml/",
 }
-extensions = [ 'breathe', 'sphinx.ext.mathjax', 'sphinx.ext.autosectionlabel' ]
+extensions = [ 'breathe', 'sphinx.ext.mathjax' ]

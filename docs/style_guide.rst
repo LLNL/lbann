@@ -16,6 +16,7 @@ between C-style Doxygen and C++-style source-only documentation.
           :code:`@details`, *not* :code:`@brief`, even for one-line
           comments. Be sure to add :code:`@brief` when appropriate.
 
+.. _sg-doc-functions:
 
 Documentation of Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -82,4 +83,4 @@ the following:
   into named sections.
 
 Member functions are functions and should be documented as
-:ref:`above<Documentation of Classes>`.
+:ref:`above<sg-doc-functions>`.
