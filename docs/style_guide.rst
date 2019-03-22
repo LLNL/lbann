@@ -9,7 +9,7 @@ In-source documentation should be written using `Doxygen
 comments (:code:`/** @brief A short comment */`) and with ampersats
 (:code:`@details`) instead of backslashes to denote directives. The
 aim is maximal :code:`grep`-ability and readability of the source
-code. Usinc C-style comments for Doxygen helps differentiate quickly
+code. Using C-style comments for Doxygen helps differentiate quickly
 between C-style Doxygen and C++-style source-only documentation.
 
 .. note:: C-style comments on classes and functions default to
