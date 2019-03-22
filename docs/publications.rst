@@ -1,5 +1,5 @@
 Papers, Presentations, and Posters
-=================================
+======================================
 
 Publications about or related to using LBANN:
 
