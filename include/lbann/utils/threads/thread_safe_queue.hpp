@@ -8,23 +8,25 @@
 
 namespace lbann {
 
-/** \class thread_safe_queue
- *  \brief A queue that is safe for multiple threads to push to or
- *  pull from "simultaneously". This version uses locks.
+/** @class thread_safe_queue
+ *  @brief A queue that is safe for multiple threads to push to or
+ *  pull from "simultaneously".
+ *
+ *  This version uses locks.
  *
  *  This is essentially a fancy linked-list implementation that
  *  enables finer-grained locks than simply wrapping an
  *  std::queue. The trade-off is two locks, one for the front and one
  *  for the back of the list.
  *
- *  \tparam T A move- or copy-constructible type
+ *  @tparam T A move- or copy-constructible type
  */
 template <typename T>
 class thread_safe_queue {
 private:
 
-  /** \class _Node
-   *  \brief A data value in the thread-safe FIFO queue
+  /** @class _Node
+   *  @brief A data value in the thread-safe FIFO queue
    */
   struct _Node
   {
@@ -34,10 +36,12 @@ private:
 
 public:
 
-  /** \brief Default constructor; creates an empty queue */
-  thread_safe_queue() : head_(make_unique<_Node>()), tail_(head_.get()), m_stop_threads(false) {}
+  /** @brief Default constructor; creates an empty queue */
+  thread_safe_queue()
+    : head_(make_unique<_Node>()), tail_(head_.get()), m_stop_threads(false)
+  {}
 
-  /** \brief Adds a value to back of the queue */
+  /** @brief Adds a value to back of the queue */
   void push(T value)
   {
     // Make the new data outside of the lock to minimize lock time
@@ -67,9 +71,9 @@ public:
   /// Allow the thread pool to set / reset the flags
   void set_stop_threads(bool flag) { m_stop_threads = flag; }
 
-  /** \brief Try to remove the first value from the queue
+  /** @brief Try to remove the first value from the queue
    *
-   *  \return nullptr if empty(); otherwise return a value
+   *  @return nullptr if empty(); otherwise return a value
    */
   std::unique_ptr<T> try_pop()
   {
@@ -83,7 +87,7 @@ public:
     return std::move(popped_head->data_);
   }
 
-  /** \brief Wait for data and then return it */
+  /** @brief Wait for data and then return it */
   std::unique_ptr<T> wait_and_pop()
   {
     std::unique_lock<std::mutex> lk(head_mtx_);
@@ -104,7 +108,7 @@ public:
     return std::move(popped_head->data_);
   }
 
-  /** Check if queue is empty */
+  /** @brief Check if queue is empty */
   bool empty() const
   {
     std::lock_guard<std::mutex> lk(head_mtx_);
@@ -113,7 +117,7 @@ public:
 
 private:
 
-  /** \brief Get the tail pointer */
+  /** @brief Get the tail pointer */
   _Node* do_get_tail_() const
   {
     std::lock_guard<std::mutex> lk(tail_mtx_);
@@ -122,19 +126,19 @@ private:
 
 private:
 
-  /** \brief The mutex protecting the head of the list */
+  /** @brief The mutex protecting the head of the list */
   mutable std::mutex head_mtx_;
 
-  /** \brief The mutex protecting the tail of the list */
+  /** @brief The mutex protecting the tail of the list */
   mutable std::mutex tail_mtx_;
 
-  /** \brief The first node in the list */
+  /** @brief The first node in the list */
   std::unique_ptr<_Node> head_;
 
-  /** \brief The last node in the list */
+  /** @brief The last node in the list */
   _Node* tail_;
 
-  /** \brief Condition variable tripped when data added */
+  /** @brief Condition variable tripped when data added */
   std::condition_variable data_available_;
 
   bool m_stop_threads;

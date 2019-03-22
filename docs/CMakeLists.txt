@@ -15,20 +15,20 @@ if (SPHINX_FOUND)
       "Please install breathe (e.g., \"pip install breathe\") and reconfigure.")
   else ()
     set_full_path(SPHINX_SOURCES
+      Makefile
       conf.py
-      callbacks.rst
-      getting_started.rst
+      build_containers.rst
+      building_lbann.rst
+      build_llnl_idiosyncracies.rst
+      build_spack_extra_config.rst
+      build_with_cmake.rst
+      build_with_superbuild.rst
+      build_osx.rst
+      publications.rst
       index.rst
-      io.rst
-      layers.rst
-      learning.rst
-      loss_functions.rst
-      metrics.rst
-      objective_functions.rst
-      optimizers.rst
-      regularizers.rst
-      transform.rst
-      weight_regularization.rst)
+      running_lbann.rst
+      sphinx_requirements.txt
+      )
 
     if (NOT SPHINX_BUILDER)
       set(SPHINX_BUILDER "html")
@@ -69,7 +69,7 @@ endif ()
 if (DOXYGEN_FOUND)
   set(DOXYGEN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+    ${CMAKE_SOURCE_DIR}/README.md
     )
 
   # Setup Dot support

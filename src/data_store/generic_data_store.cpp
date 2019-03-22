@@ -130,7 +130,7 @@ void generic_data_store::get_my_datastore_indices() {
   }
 }
 
-void generic_data_store::setup() {
+void generic_data_store::setup(int mini_batch_size) {
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
@@ -211,7 +211,7 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
-if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_cur_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
+if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
 }
 

@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_set>
 
 
 #define NOT_IMPLEMENTED(n) { \
@@ -691,7 +692,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// sets up a data_store.
-  virtual void setup_data_store(model *m);
+  virtual void setup_data_store(model *m, int mini_batch_size);
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -712,6 +713,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void post_update() {}
 
  protected:
+
+  // For use with conduit when samples are corrupt.
+  mutable std::unordered_set<int> m_using_random_node;
 
   /**
    * Return the absolute number of data samples that will be used for training

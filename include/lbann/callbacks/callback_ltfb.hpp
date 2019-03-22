@@ -103,7 +103,7 @@ public:
     checkpoint_file
   };
 
-  /** @brief
+  /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
    *  @param metric_name    Metric for tournament evaluation.
@@ -112,13 +112,15 @@ public:
    *  @param low_score_wins Whether low-scoring or high-scoring models
    *                        survive a tournament.
    *  @param comm_algo      Inter-trainer communication scheme.
+   *  @param summarizer     The summarizer to use for this callback
    */
-  lbann_callback_ltfb(El::Int batch_interval,
-                      std::string metric_name,
-                      std::set<std::string> weights_names = {},
-                      bool low_score_wins = false,
-                      communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
-                      lbann_summary *summarizer = nullptr);
+  lbann_callback_ltfb(
+    El::Int batch_interval,
+    std::string metric_name,
+    std::set<std::string> weights_names = std::set<std::string>(),
+    bool low_score_wins = false,
+    communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
+    lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
   lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }

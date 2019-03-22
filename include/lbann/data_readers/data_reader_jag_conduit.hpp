@@ -240,7 +240,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  void setup_data_store(model *m, int mini_batch_size) override;
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// A untiliy function to convert the pointer to image data into an opencv image
@@ -354,7 +354,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
   /** Load the conduit node with the data of the sample i identified by key
-   *  from the file that contains the sample.
+   *  from the file that contains the sample, and returm true. Upon failure
+   *  to load from file, attempt to retrieve a random conduit node from
+   *  the data_store (if --use_data_store) and return false.
    */
   bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
   /// Check if a key exist for sample i

@@ -207,10 +207,10 @@ void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
     std::string mode_string;
     switch (mode) {
     case execution_mode::training:
-      mode_string = "train-epoch" + std::to_string(m.get_cur_epoch());
+      mode_string = "train-epoch" + std::to_string(m.get_epoch());
       break;
     case execution_mode::validation:
-      mode_string = "validation-epoch" + std::to_string(m.get_cur_epoch());
+      mode_string = "validation-epoch" + std::to_string(m.get_epoch());
       break;
     case execution_mode::testing:
       mode_string = "test";

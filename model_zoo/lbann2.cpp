@@ -35,44 +35,40 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
-
-#ifdef EL_USE_CUBLAS
-  El::GemmUseGPU(32,32,32);
-#endif
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  const bool master = comm->am_world_master();
 
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();
     opts->init(argc, argv);
     if (opts->has_string("h") or opts->has_string("help") or argc == 1) {
-      print_help(comm);
-      finalize(comm);
-      return 0;
+      print_help(*comm);
+      return EXIT_SUCCESS;
     }
 
-    std::stringstream err;
+    std::ostringstream err;
 
     // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
 
-    std::vector<lbann_data::LbannPB *> pbs;
-    protobuf_utils::load_prototext(master, argc, argv, pbs);
+    auto pbs = protobuf_utils::load_prototext(master, argc, argv);
 
-    model *model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm, io_thread_pool, true);
-    model *model_2 = nullptr;
+    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
+                                                comm.get(), io_thread_pool, true);
+    std::unique_ptr<model> model_2;
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm, io_thread_pool, false);
+                                           comm.get(), io_thread_pool, false);
     }
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), model_1);
+      lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), model_1.get());
     }
     // Train model
-    if (master)  std::cerr << "\nSTARTING train - model 1\n\n";
+    if (master) {
+      std::cerr << "\nSTARTING train - model 1\n\n";
+    }
     const lbann_data::Model pb_model = pbs[0]->model();
 
     // When using checkpoint states, skip training as those could be the result
@@ -91,34 +87,29 @@ int main(int argc, char *argv[]) {
       for(size_t l2=0; l2 < layers2.size(); l2++) {
         for(size_t l1=0; l1 < layers1.size(); l1++) {
            if(layers2[l2]->get_name() == layers1[l1]->get_name()){
-             if(master) std::cout << "Model 1 Layer " << layers1[l1]->get_name();
+             if(master) {
+               std::cout << "Model 1 Layer " << layers1[l1]->get_name();
+             }
              layers2[l2]->replace_weights(layers1[l1]);
-             if(master) std::cout << " copied to Model2 Layer " << std::endl;
+             if(master) {
+               std::cout << " copied to Model2 Layer " << std::endl;
+             }
            }
          }
        }
 
-      if (master) std::cerr << "\n STARTING train - model 2\n\n";
+      if (master) {
+        std::cerr << "\n STARTING train - model 2\n\n";
+      }
       const lbann_data::Model pb_model_2 = pbs[1]->model();
       model_2->train( pb_model_2.num_epochs() );
       model_2->evaluate(execution_mode::testing);
     }
 
-    delete model_1;
-    if (model_2 != nullptr) {
-      delete model_2;
-    }
-    for (auto t : pbs) {
-      delete t;
-    }
-
   } catch (std::exception& e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
-  // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }

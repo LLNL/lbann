@@ -29,6 +29,9 @@
 
 #include "lbann/callbacks/callback.hpp"
 
+#include <set>
+#include <string>
+
 namespace lbann {
 
 /** @brief Dump layer output tensors to files.
@@ -50,7 +53,9 @@ namespace lbann {
 class lbann_callback_dump_outputs : public lbann_callback {
 public:
 
-  /** @param layer_names    Names of layers with output dumps
+  /** @brief Construct a callback to dump outputs.
+   *
+   *  @param layer_names    Names of layers with output dumps
    *                        (default: dump outputs for all layers).
    *  @param modes          Execution modes with output dumps
    *                        (default: dump outputs for all modes).
@@ -61,11 +66,13 @@ public:
    *  @param file_format    Output file format. Options are csv, tsv,
    *                        npy, npz (default: csv).
    */
-  lbann_callback_dump_outputs(std::set<std::string> layer_names = {},
-                              std::set<execution_mode> modes = {},
-                              El::Int batch_interval = 0,
-                              std::string directory = "",
-                              std::string file_format = "");
+  lbann_callback_dump_outputs(
+    std::set<std::string> layer_names = std::set<std::string>(),
+    std::set<execution_mode> modes = std::set<std::string>(),
+    El::Int batch_interval = 0,
+    std::string directory = "",
+    std::string file_format = "");
+
   lbann_callback_dump_outputs* copy() const override {
     return new lbann_callback_dump_outputs(*this);
   }

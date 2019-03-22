@@ -172,7 +172,7 @@ lbann::DataType absolute_error(lbann::CPUMat& approx_val, lbann::CPUMat& true_va
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   elemerr = true_val;
-  elemerr -= approx_val;
+  El::Axpy(lbann::DataType{-1}, approx_val, elemerr);
   lbann::DataType abs_err = El::EntrywiseNorm(elemerr, 1);
   El::EntrywiseMap(elemerr, std::function<lbann::DataType(const lbann::DataType&)>(
   [](const lbann::DataType& x) {

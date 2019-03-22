@@ -704,20 +704,20 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::setup_data_store(model *m) {
+void generic_data_reader::setup_data_store(model *m, int mini_batch_size) {
   m_data_store = nullptr;
 }
 
 bool generic_data_reader::data_store_active() const {
   return (m_data_store != nullptr
           && (m_model->get_execution_mode() == execution_mode::training)
-          && m_model->get_cur_epoch() > 0);
+          && m_model->get_epoch() > 0);
 }
 
 bool generic_data_reader::priming_data_store() const {
   return (m_data_store != nullptr
           && (m_model->get_execution_mode() == execution_mode::training)
-          && m_model->get_cur_epoch() == 0);
+          && m_model->get_epoch() == 0);
 }
 
 void generic_data_reader::set_data_store(generic_data_store *g) {

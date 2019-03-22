@@ -49,7 +49,7 @@ data_store_jag::data_store_jag(
 
 data_store_jag::~data_store_jag() {}
 
-void data_store_jag::setup() {
+void data_store_jag::setup(int mini_batch_size) {
   double tm1 = get_time();
   std::stringstream err;
 
@@ -62,15 +62,15 @@ void data_store_jag::setup() {
     LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
   }
 
-  generic_data_store::setup();
-  build_owner_map();
+  generic_data_store::setup(mini_batch_size);
+  build_owner_map(mini_batch_size);
 
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
     if (m_super_node) {
-      std::cerr << "mode: exchange_data via super nodes\n";
+      std::cout << "mode: exchange_data via super nodes\n";
     } else {
-      std::cerr << "mode: exchange_data via individual samples\n";
+      std::cout << "mode: exchange_data via individual samples\n";
     }
   }
 
@@ -208,6 +208,9 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
     if(m_compacted_sample_size == 0) {
       m_compacted_sample_size = n2.total_bytes_compact();
     }else if(m_compacted_sample_size != n2.total_bytes_compact()) {
+    std::cout << "BAD:\n";
+    n2.print();
+
       LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
                   + " is not the same size as existing nodes in the data_store "
                   + std::to_string(m_compacted_sample_size) + " != "
@@ -245,7 +248,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   if (t2 == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_cur_epoch()));
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_epoch()));
   }
 
   return t2->second;
@@ -380,7 +383,7 @@ int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
-    if (i % m_np == m_rank) {
+    if ((i % mb_size) % m_np == m_rank) {
       int owner = m_owner[index];
       m_indices_to_recv[owner].insert(index);
       k++;
@@ -397,7 +400,7 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[i % m_np].insert(index);
+      m_indices_to_send[(i % mb_size) % m_np].insert(index);
 
       // Sanity check
       if (m_owner[index] != m_rank) {
@@ -411,11 +414,14 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   return k;
 }
 
-void data_store_jag::build_owner_map() {
+void data_store_jag::build_owner_map(int mini_batch_size) {
   m_owner.clear();
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
     auto index = (*m_shuffled_indices)[i];
-    m_owner[index] = i % m_np;
+    /// To compute the owner index first find its position inside of
+    /// the mini-batch (mod mini-batch size) and then find how it is
+    /// striped across the ranks in the trainer
+    m_owner[index] = (i % mini_batch_size) % m_np;
   }
 }
 
@@ -438,12 +444,32 @@ void data_store_jag::compute_super_node_overhead() {
       m_super_node_overhead = 2*first - n3.total_bytes_compact();
       m_compacted_sample_size = first - m_super_node_overhead;
       if (m_master) {
-        std::cerr << "m_super_node_overhead: " << m_super_node_overhead
+        std::cout << "m_super_node_overhead: " << m_super_node_overhead
                   << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
       }
       return;
     }
   }
+}
+
+const conduit::Node & data_store_jag::get_random_node() const {
+std::cout << "\nstarting data_store_jag::get_random_node()\n";
+  size_t sz = m_data.size();
+
+  // Deal with edge case
+  if (sz == 0) {
+    LBANN_ERROR("can't return random node since we have no data (set_conduit_node has never been called)");
+  }
+
+  int offset = random() % sz;
+  auto it = std::next(m_data.begin(), offset);
+  return it->second;
+}
+
+const conduit::Node & data_store_jag::get_random_node(const std::string &field) const {
+  auto node = get_random_node();
+  //return node;
+  return node[field];
 }
 
 }  // namespace lbann

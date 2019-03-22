@@ -66,8 +66,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
 
   if (proto_cb.has_print()) {
-    const auto& interval = proto_cb.print().interval();
-    return new lbann_callback_print(interval);
+    const auto& params = proto_cb.print();
+    return new lbann_callback_print(params.interval(),
+                                    params.print_global_stat_only());
   }
   if (proto_cb.has_timer()) {
     return new lbann_callback_timer(summarizer);
@@ -260,7 +261,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                       params.mat_interval());
   }
   if (proto_cb.has_profiler()) {
-    return new lbann_callback_profiler(proto_cb.profiler().sync());
+    return new lbann_callback_profiler(proto_cb.profiler().sync(),
+                                       proto_cb.profiler().skip_init());
   }
   if (proto_cb.has_sync_layers()) {
     const auto& params = proto_cb.sync_layers();

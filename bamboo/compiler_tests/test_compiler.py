@@ -1,14 +1,14 @@
+# import sys
+# sys.path.insert(0, '../common_python')
+# import tools
 import pytest
 import os, re, subprocess
 
-def build_script(cluster, dirname, compiler, debug):
-    if debug:
-        build = 'debug'
-    else:
-        build = 'release'
-    output_file_name = '%s/bamboo/compiler_tests/output/%s_%s_%s_output.txt' % (dirname, cluster, compiler, build)
-    error_file_name = '%s/bamboo/compiler_tests/error/%s_%s_%s_error.txt' % (dirname, cluster, compiler, build)
-    command = '%s/bamboo/compiler_tests/build_script.sh --compiler %s %s> %s 2> %s' % (dirname, compiler, debug, output_file_name, error_file_name)
+
+def test_compiler_build_script(dirname):
+    output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
+    error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
+    command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (dirname, output_file_name, error_file_name)
     return_code = os.system(command)
     if return_code != 0:
         output_file = open(output_file_name, 'r')
@@ -19,55 +19,62 @@ def build_script(cluster, dirname, compiler, debug):
             print('%s: %s' % (error_file_name, line))
     assert return_code == 0
 
+
 def test_compiler_clang4_release(cluster, dirname):
-    #skeleton_clang4(cluster, dirname, False)
-    if cluster in ['ray', 'catalyst']:
-        build_script(cluster, dirname, 'clang', '')
-    else:
-        pytest.skip('Unsupported Cluster %s' % cluster)
+    try:
+        skeleton_clang4(cluster, dirname, False)
+    except AssertionError:
+        build_script(cluster, dirname, 'clang', False)
+
 
 def test_compiler_clang4_debug(cluster, dirname):
-    #skeleton_clang4(cluster, dirname, True)
-    if cluster in ['ray', 'catalyst']:
-        build_script(cluster, dirname, 'clang', '--debug')
-    else:
-        pytest.skip('Unsupported Cluster %s' % cluster)
+    try:
+        skeleton_clang4(cluster, dirname, True)
+    except AssertionError:
+        build_script(cluster, dirname, 'clang', True)
+
 
 def test_compiler_gcc4_release(cluster, dirname):
-    #skeleton_gcc4(cluster, dirname, False)
-    build_script(cluster, dirname, 'gcc4', '')
+    try:
+        skeleton_gcc4(cluster, dirname, False)
+    except AssertionError:
+        build_script(cluster, dirname, 'gcc4', False)
+
 
 def test_compiler_gcc4_debug(cluster, dirname):
-    #skeleton_gcc4(cluster, dirname, True)
-    build_script(cluster, dirname, 'gcc4', '--debug')
+    try:
+        skeleton_gcc4(cluster, dirname, True)
+    except AssertionError:
+        build_script(cluster, dirname, 'gcc4', True)
+
 
 def test_compiler_gcc7_release(cluster, dirname):
-    #skeleton_gcc7(cluster, dirname, False)
-    if cluster == 'catalyst':
-        build_script(cluster, dirname, 'gcc7', '')
-    else:
-        pytest.skip('Unsupported Cluster %s' % cluster)
+    try:
+        skeleton_gcc7(cluster, dirname, False)
+    except AssertionError:
+        build_script(cluster, dirname, 'gcc7', False)
+
 
 def test_compiler_gcc7_debug(cluster, dirname):
-    #skeleton_gcc7(cluster, dirname, True)
-    if cluster == 'catalyst':
-        build_script(cluster, dirname, 'gcc7', '--debug')
-    else:
-        pytest.skip('Unsupported Cluster %s' % cluster)
+    try:
+        skeleton_gcc7(cluster, dirname, True)
+    except AssertionError:
+        build_script(cluster, dirname, 'gcc7', True)
+
 
 def test_compiler_intel18_release(cluster, dirname):
-    #skeleton_intel18(cluster, dirname, False)
-    if cluster == 'catalyst':
-        build_script(cluster, dirname, 'intel', '')
-    else:
-        pytest.skip('Unsupported Cluster %s' % cluster)
+    try:
+        skeleton_intel18(cluster, dirname, False)
+    except AssertionError:
+        build_script(cluster, dirname, 'intel18', False)
+
 
 def test_compiler_intel18_debug(cluster, dirname):
-    #skeleton_intel18(cluster, dirname, True)
-    if cluster == 'catalyst':
-        build_script(cluster, dirname, 'intel', '--debug')
-    else:
-        pytest.skip('Unsupported Cluster %s' % cluster)
+    try:
+        skeleton_intel18(cluster, dirname, True)
+    except AssertionError:
+        build_script(cluster, dirname, 'intel18', True)
+
 
 def skeleton_clang4(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst', 'quartz']:
@@ -76,11 +83,12 @@ def skeleton_clang4(cluster, dir_name, debug, should_log=False):
     else:
         pytest.skip('Unsupported Cluster %s' % cluster)
 
+
 def skeleton_gcc4(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst', 'quartz', 'ray']:
-        if cluster in ['catalyst','quartz']:
+        if cluster in ['catalyst', 'quartz']:
             mpi = 'mvapich2@2.2'
-        elif cluster in  ['pascal', 'surface']:
+        elif cluster in ['pascal', 'surface']:
             mpi = 'mvapich2@2.2+cuda'
         elif cluster == 'ray':
             mpi = 'spectrum-mpi@2018.04.27'
@@ -91,6 +99,7 @@ def skeleton_gcc4(cluster, dir_name, debug, should_log=False):
     else:
         pytest.skip('Unsupported Cluster %s' % cluster)
 
+
 def skeleton_gcc7(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst', 'quartz']:
         spack_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug, should_log)
@@ -98,12 +107,14 @@ def skeleton_gcc7(cluster, dir_name, debug, should_log=False):
     else:
         pytest.skip('Unsupported Cluster %s' % cluster)
 
+
 def skeleton_intel18(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst', 'quartz']:
         spack_skeleton(dir_name, 'intel@18.0.0', 'mvapich2@2.2', debug, should_log)
         build_skeleton(dir_name, 'intel@18.0.0', debug, should_log)
     else:
         pytest.skip('Unsupported Cluster %s' % cluster)
+
 
 def spack_skeleton(dir_name, compiler, mpi_lib, debug, should_log):
     compiler_underscored = re.sub('[@\.]', '_', compiler)
@@ -130,6 +141,7 @@ def spack_skeleton(dir_name, compiler, mpi_lib, debug, should_log):
             print('%s: %s' % (error_file_name, line))
     assert return_code == 0
 
+
 def build_skeleton(dir_name, compiler, debug, should_log):
     compiler_underscored = re.sub('[@\.]', '_', compiler)
     if debug:
@@ -142,7 +154,8 @@ def build_skeleton(dir_name, compiler, debug, should_log):
     #mpi_lib = mpi_lib.replace('@', '-')
     cluster = re.sub('[0-9]+', '', subprocess.check_output('hostname'.split()).strip())
     # For reference:
-    # Commenting out for now. These additions to path name will likely return one day, so I am not removing them entirely
+    # Commenting out for now. These additions to path name will likely return
+    # one day, so I am not removing them entirely.
     # x86_64 <=> catalyst, pascal, quartz, surface
     # ppc64le <=> ray
     #architecture = subprocess.check_output('uname -m'.split()).strip()
@@ -157,6 +170,36 @@ def build_skeleton(dir_name, compiler, debug, should_log):
     return_code = os.system(command)
     os.chdir('../..')
     if should_log or (return_code != 0):
+        output_file = open(output_file_name, 'r')
+        for line in output_file:
+            print('%s: %s' % (output_file_name, line))
+        error_file = open(error_file_name, 'r')
+        for line in error_file:
+            print('%s: %s' % (error_file_name, line))
+    assert return_code == 0
+
+
+def build_script(cluster, dirname, compiler, debug):
+    # We can't ensure the build_script tests will be run after the spack
+    # tests...
+    # exes = tools.get_spack_exes(dirname, cluster)
+    # if os.path.exists(exes[compiler]):
+    #     # Spack executable exists. That means the Spack test passed.
+    #     pytest.skip(('Spack test passed. Ignoring build_script for'
+    #                  ' compiler={compiler}.').format(compiler=compiler))
+    print(('Running build_script for cluster={cluster},'
+           ' compiler={compiler}.').format(cluster=cluster, compiler=compiler))
+    if debug:
+        build = 'debug'
+        debug_flag = '--debug'
+    else:
+        build = 'release'
+        debug_flag = ''
+    output_file_name = '%s/bamboo/compiler_tests/output/%s_%s_%s_build_script_output.txt' % (dirname, cluster, compiler, build)
+    error_file_name = '%s/bamboo/compiler_tests/error/%s_%s_%s__build_script_error.txt' % (dirname, cluster, compiler, build)
+    command = '%s/bamboo/compiler_tests/build_script_specific.sh --compiler %s %s> %s 2> %s' % (dirname, compiler, debug_flag, output_file_name, error_file_name)
+    return_code = os.system(command)
+    if return_code != 0:
         output_file = open(output_file_name, 'r')
         for line in output_file:
             print('%s: %s' % (output_file_name, line))

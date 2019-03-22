@@ -41,8 +41,9 @@ template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
 public:
 
+  /** @todo Accept a vector for output_size */
   fully_connected_layer(lbann_comm *comm,
-                        int output_size,  /// @todo Accept a vector
+                        int output_size,
                         bool transpose = false,
                         weights* weight = nullptr,
                         bool has_bias = true)

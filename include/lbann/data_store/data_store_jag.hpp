@@ -57,12 +57,15 @@ class data_store_jag : public generic_data_store {
   //! dtor
   ~data_store_jag() override;
 
-  void setup() override;
+  void setup(int mini_batch_size) override;
 
   /// returns the conduit node
   const conduit::Node & get_conduit_node(int data_id) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
+
+  const conduit::Node & get_random_node() const;
+  const conduit::Node & get_random_node(const std::string &field) const;
 
 protected :
 
@@ -125,7 +128,7 @@ protected :
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
-  void build_owner_map();
+  void build_owner_map(int mini_batch_size);
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to send. (formerly called "proc_to_indices)
