@@ -1,7 +1,4 @@
-.. lbann documentation master file, created by
-   sphinx-quickstart on Tue Apr 24 09:57:24 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. lbann documentation master file
 
 LBANN: Livermore Big Artificial Neural Network Toolkit
 ============================================================
@@ -43,22 +40,9 @@ methods.
    :maxdepth: 2
    :caption: Developer Documentation
 
-   lbann
-   callbacks
-   data_readers
-   data_store
-   io_utils
-   layers
-   metrics
-   models
-   objective_functions
-   optimizers
-   proto
-   utils
-   weights
+   lbann/lbann
+   style_guide
 
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
