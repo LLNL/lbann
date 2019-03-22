@@ -1,6 +1,6 @@
 from lbann.onnx.o2l.layers import OnnxLayerParser
 from lbann.onnx.parserDescriptor import parserDescriptor
-from lbann.proto import lbann_pb2
+from lbann import lbann_pb2
 
 @parserDescriptor(["local_response_normalization"])
 class parse_LRN(OnnxLayerParser):

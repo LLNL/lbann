@@ -4,7 +4,7 @@ import onnx
 import onnx.numpy_helper
 import google.protobuf.text_format as txtf
 
-from lbann.proto import lbann_pb2
+from lbann import lbann_pb2
 import lbann.onnx.util
 from lbann.onnx.o2l.layers import PARSERS
 from lbann.onnx.l2o import getStaticTensorShapes

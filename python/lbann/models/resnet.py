@@ -1,11 +1,10 @@
-import lbann.proto as lp
-import lbann.modules as lm
+import lbann, lbann.modules
 
 # ==============================================
 # Helper modules
 # ==============================================
 
-class ConvBNRelu(lm.Module):
+class ConvBNRelu(lbann.modules.Module):
     """Convolution -> Batch normalization -> ReLU
 
     Basic unit for ResNets. Assumes image data in NCHW format.
@@ -36,17 +35,20 @@ class ConvBNRelu(lm.Module):
         self.instance = 0
 
         # Initialize convolution
-        self.conv = lm.Convolution2dModule(out_channels, kernel_size,
-                                           stride=stride, padding=padding,
-                                           bias=False,
-                                           name=self.name + '_conv')
+        self.conv = lbann.modules.Convolution2dModule(
+            out_channels, kernel_size,
+            stride=stride, padding=padding,
+            bias=False,
+            name=self.name + '_conv')
 
         # Initialize batch normalization
         bn_scale_init = 0.0 if bn_zero_init else 1.0
-        bn_scale = lp.Weights(initializer=lp.ConstantInitializer(value=bn_scale_init),
-                              name=self.name + '_bn_scale')
-        bn_bias = lp.Weights(initializer=lp.ConstantInitializer(value=0.0),
-                             name=self.name + '_bn_bias')
+        bn_scale = lbann.Weights(
+            initializer=lbann.ConstantInitializer(value=bn_scale_init),
+            name=self.name + '_bn_scale')
+        bn_bias = lbann.Weights(
+            initializer=lbann.ConstantInitializer(value=0.0),
+            name=self.name + '_bn_bias')
         self.bn_weights = [bn_scale, bn_bias]
         self.bn_stats_aggregation = bn_stats_aggregation
 
@@ -56,15 +58,17 @@ class ConvBNRelu(lm.Module):
     def forward(self, x):
         self.instance += 1
         conv = self.conv(x)
-        bn = lp.BatchNormalization(conv, weights=self.bn_weights,
-                                   stats_aggregation=self.bn_stats_aggregation,
-                                   name='{0}_bn_instance{1}'.format(self.name,self.instance))
+        bn = lbann.BatchNormalization(
+            conv, weights=self.bn_weights,
+            stats_aggregation=self.bn_stats_aggregation,
+            name='{0}_bn_instance{1}'.format(self.name,self.instance))
         if self.relu:
-            return lp.Relu(bn, name='{0}_relu_instance{1}'.format(self.name,self.instance))
+            return lbann.Relu(
+                bn, name='{0}_relu_instance{1}'.format(self.name,self.instance))
         else:
             return bn
 
-class BasicBlock(lm.Module):
+class BasicBlock(lbann.modules.Module):
     """Residual block without bottlenecking.
 
     The number of output channels is the same as the number of
@@ -121,11 +125,11 @@ class BasicBlock(lm.Module):
         self.instance += 1
         y1 = self.branch1(x) if self.branch1 else x
         y2 = self.branch2b(self.branch2a(x))
-        z = lp.Add([y1, y2],
-                   name='{0}_sum_instance{1}'.format(self.name,self.instance))
-        return lp.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
+        z = lbann.Add([y1, y2],
+                      name='{0}_sum_instance{1}'.format(self.name,self.instance))
+        return lbann.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
 
-class BottleneckBlock(lm.Module):
+class BottleneckBlock(lbann.modules.Module):
     """Residual block with bottlenecking.
 
     The number of output channels is four times the number of internal
@@ -185,15 +189,15 @@ class BottleneckBlock(lm.Module):
         self.instance += 1
         y1 = self.branch1(x) if self.branch1 else x
         y2 = self.branch2c(self.branch2b(self.branch2a(x)))
-        z = lp.Add([y1, y2],
-                   name='{0}_sum_instance{1}'.format(self.name,self.instance))
-        return lp.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
+        z = lbann.Add([y1, y2],
+                      name='{0}_sum_instance{1}'.format(self.name,self.instance))
+        return lbann.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
 
 # ==============================================
 # ResNet modules
 # ==============================================
 
-class ResNet(lm.Module):
+class ResNet(lbann.modules.Module):
     """Residual neural network.
 
     A ResNet is comprised of residual blocks, which are small
@@ -254,19 +258,19 @@ class ResNet(lm.Module):
                           bn_stats_aggregation,
                           '{0}_layer{1}_block{2}'.format(self.name, layer, i))
                 self.blocks.append(b)
-        self.fc = lm.FullyConnectedModule(output_size, bias=False,
-                                          name=self.name + '_fc')
+        self.fc = lbann.modules.FullyConnectedModule(
+            output_size, bias=False, name=self.name + '_fc')
 
     def forward(self, x):
         self.instance += 1
         x = self.conv1(x)
-        x = lp.Pooling(x, num_dims=2, has_vectors=False,
-                       pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
-                       pool_mode='max',
-                       name='{0}_pool1_instance{1}'.format(self.name,self.instance))
+        x = lbann.Pooling(x, num_dims=2, has_vectors=False,
+                          pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
+                          pool_mode='max',
+                          name='{0}_pool1_instance{1}'.format(self.name,self.instance))
         for b in self.blocks:
             x = b(x)
-        x = lp.ChannelwiseMean(x, name='{0}_avgpool_instance{1}'.format(self.name,self.instance))
+        x = lbann.ChannelwiseMean(x, name='{0}_avgpool_instance{1}'.format(self.name,self.instance))
         return self.fc(x)
 
 class ResNet18(ResNet):
@@ -514,36 +518,37 @@ if __name__ == '__main__':
         bn_stats_aggregation=args.bn_stats_aggregation)
 
     # Construct layer graph.
-    input = lp.Input()
-    images = lp.Identity(input)
-    labels = lp.Identity(input)
-    softmax = lp.Softmax(resnet(images))
-    ce = lp.CrossEntropy([softmax, labels])
-    top1 = lp.CategoricalAccuracy([softmax, labels])
-    top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
-    layers = list(lp.traverse_layer_graph(input))
+    input = lbann.Input()
+    images = lbann.Identity(input)
+    labels = lbann.Identity(input)
+    softmax = lbann.Softmax(resnet(images))
+    ce = lbann.CrossEntropy([softmax, labels])
+    top1 = lbann.CategoricalAccuracy([softmax, labels])
+    top5 = lbann.TopKCategoricalAccuracy([softmax, labels], k=5)
+    layers = list(lbann.traverse_layer_graph(input))
 
     # Setup objective function
     l2_reg_weights = set()
     for l in layers:
-        if type(l) == lp.Convolution or type(l) == lp.FullyConnected:
+        if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
             l2_reg_weights.update(l.weights)
-    l2_reg = lp.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
-    obj = lp.ObjectiveFunction([ce, l2_reg])
+    l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights,
+                                          scale=1e-4)
+    obj = lbann.ObjectiveFunction([ce, l2_reg])
 
     # Set up metrics and callbacks
-    metrics = [lp.Metric(top1, name='categorical accuracy', unit='%'),
-               lp.Metric(top5, name='top-5 categorical accuracy', unit='%')]
-    callbacks = [lp.CallbackPrint(),
-                 lp.CallbackTimer(),
-                 lp.CallbackDropFixedLearningRate(
+    metrics = [lbann.Metric(top1, name='categorical accuracy', unit='%'),
+               lbann.Metric(top5, name='top-5 categorical accuracy', unit='%')]
+    callbacks = [lbann.CallbackPrint(),
+                 lbann.CallbackTimer(),
+                 lbann.CallbackDropFixedLearningRate(
                      drop_epoch=[30, 60, 80], amt=0.1)]
     if args.warmup:
-        callbacks.append(lp.CallbackLinearGrowthLearningRate(
+        callbacks.append(lbann.CallbackLinearGrowthLearningRate(
             target=0.1*args.mbsize / 256, num_epochs=5))
 
     # Export model to file
-    model = lp.Model(args.mbsize, args.epochs,
-                     layers=layers, objective_function=obj,
-                     metrics=metrics, callbacks=callbacks)
+    model = lbann.Model(args.mbsize, args.epochs,
+                        layers=layers, objective_function=obj,
+                        metrics=metrics, callbacks=callbacks)
     model.save_proto(args.file)

@@ -2,10 +2,10 @@
 import argparse
 from os.path import join
 import google.protobuf.text_format as txtf
-import lbann.proto as lp
-from lbann.models import AlexNet
-from lbann.proto import lbann_pb2
-from lbann.utils import lbann_dir
+import lbann
+from lbann.util import lbann_dir
+import lbann.models
+import lbann.proto
 import lbann.contrib.args
 
 # Command-line arguments
@@ -52,63 +52,63 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Construct layer graph
-input = lp.Input()
-images = lp.Identity(input)
-labels = lp.Identity(input)
-preds = AlexNet(args.num_labels)(images)
-softmax = lp.Softmax(preds)
-ce = lp.CrossEntropy([softmax, labels])
-top1 = lp.CategoricalAccuracy([softmax, labels])
-top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
-layers = list(lp.traverse_layer_graph(input))
+input = lbann.Input()
+images = lbann.Identity(input)
+labels = lbann.Identity(input)
+preds = lbann.models.AlexNet(args.num_labels)(images)
+softmax = lbann.Softmax(preds)
+ce = lbann.CrossEntropy([softmax, labels])
+top1 = lbann.CategoricalAccuracy([softmax, labels])
+top5 = lbann.TopKCategoricalAccuracy([softmax, labels], k=5)
+layers = list(lbann.traverse_layer_graph(input))
 
 # Setup objective function
 weights = set()
 for l in layers:
     weights.update(l.weights)
-    l2_reg = lp.L2WeightRegularization(weights=weights, scale=5e-4)
-    obj = lp.ObjectiveFunction([ce, l2_reg])
+    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
+    obj = lbann.ObjectiveFunction([ce, l2_reg])
 
 # Setup model
-metrics = [lp.Metric(top1, name='top-1 accuracy', unit='%'),
-           lp.Metric(top5, name='top-5 accuracy', unit='%')]
-callbacks = [lp.CallbackPrint(),
-             lp.CallbackTimer(),
-             lp.CallbackDropFixedLearningRate(
+metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
+           lbann.Metric(top5, name='top-5 accuracy', unit='%')]
+callbacks = [lbann.CallbackPrint(),
+             lbann.CallbackTimer(),
+             lbann.CallbackDropFixedLearningRate(
                  drop_epoch=[20,40,60], amt=0.1)]
-model = lp.Model(args.mini_batch_size,
-                 args.num_epochs,
-                 layers=layers,
-                 weights=weights,
-                 objective_function=obj,
-                 metrics=metrics,
-                 callbacks=callbacks)
+model = lbann.Model(args.mini_batch_size,
+                    args.num_epochs,
+                    layers=layers,
+                    weights=weights,
+                    objective_function=obj,
+                    metrics=metrics,
+                    callbacks=callbacks)
 
 # Setup optimizer
 lr = args.optimizer_learning_rate
-opt = lp.Optimizer()
+opt = lbann.Optimizer()
 if args.optimizer == 'momentum':
-    opt = lp.SGD(learn_rate=lr, momentum=0.9)
+    opt = lbann.SGD(learn_rate=lr, momentum=0.9)
 elif args.optimizer == 'sgd':
-    opt = lp.SGD(learn_rate=lr)
+    opt = lbann.SGD(learn_rate=lr)
 elif args.optimizer == 'adam':
-    opt = lp.Adam(learn_rate=lr, beta1=0.9, beta2=0.99, eps=1e-8)
+    opt = lbann.Adam(learn_rate=lr, beta1=0.9, beta2=0.99, eps=1e-8)
 elif args.optimizer == 'adagrad':
-    opt = lp.AdaGrad(learn_rate=lr, eps=1e-8)
+    opt = lbann.AdaGrad(learn_rate=lr, eps=1e-8)
 elif args.optimizer == 'rmsprop':
-    opt = lp.RMSprop(learn_rate=lr, decay_rate=0.99, eps=1e-8)
+    opt = lbann.RMSprop(learn_rate=lr, decay_rate=0.99, eps=1e-8)
 
 # Load data reader from prototext
-data_reader_proto = lbann_pb2.LbannPB()
+data_reader_proto = lbann.lbann_pb2.LbannPB()
 with open(args.data_reader, 'r') as f:
   txtf.Merge(f.read(), data_reader_proto)
 data_reader_proto = data_reader_proto.data_reader
 
 # Save prototext
 if args.prototext:
-    lp.save_prototext(args.prototext,
-                      model=model, optimizer=opt,
-                      data_reader=data_reader_proto)
+    lbann.proto.save_prototext(args.prototext,
+                               model=model, optimizer=opt,
+                               data_reader=data_reader_proto)
 
 # Run experiment
 if not args.disable_run:

@@ -2,10 +2,10 @@
 import argparse
 import os.path
 import google.protobuf.text_format as txtf
-import lbann.proto as lp
-from lbann.models import LeNet
-from lbann.proto import lbann_pb2
-from lbann.utils import lbann_dir
+import lbann
+from lbann.util import lbann_dir
+import lbann.models
+import lbann.proto
 import lbann.contrib.args
 
 # Command-line arguments
@@ -22,42 +22,42 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Construct layer graph
-input = lp.Input()
-images = lp.Identity(input)
-labels = lp.Identity(input)
-preds = LeNet(10)(images)
-softmax = lp.Softmax(preds)
-loss = lp.CrossEntropy([softmax, labels])
-acc = lp.CategoricalAccuracy([softmax, labels])
+input = lbann.Input()
+images = lbann.Identity(input)
+labels = lbann.Identity(input)
+preds = lbann.models.LeNet(10)(images)
+softmax = lbann.Softmax(preds)
+loss = lbann.CrossEntropy([softmax, labels])
+acc = lbann.CategoricalAccuracy([softmax, labels])
 
 # Setup model
 mini_batch_size = 64
 num_epochs = 20
-model = lp.Model(mini_batch_size,
-                 num_epochs,
-                 layers=lp.traverse_layer_graph(input),
-                 objective_function=loss,
-                 metrics=[lp.Metric(acc, name='accuracy', unit='%')],
-                 callbacks=[lp.CallbackPrint(), lp.CallbackTimer()])
+model = lbann.Model(mini_batch_size,
+                    num_epochs,
+                    layers=lbann.traverse_layer_graph(input),
+                    objective_function=loss,
+                    metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
+                    callbacks=[lbann.CallbackPrint(), lbann.CallbackTimer()])
 
 # Setup optimizer
-opt = lp.SGD(learn_rate=0.01, momentum=0.9)
+opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
 # Load data reader from prototext
 data_reader_file = os.path.join(lbann_dir(),
                                 'model_zoo',
                                 'data_readers',
                                 'data_reader_mnist.prototext')
-data_reader_proto = lbann_pb2.LbannPB()
+data_reader_proto = lbann.lbann_pb2.LbannPB()
 with open(data_reader_file, 'r') as f:
     txtf.Merge(f.read(), data_reader_proto)
 data_reader_proto = data_reader_proto.data_reader
 
 # Save prototext
 if args.prototext:
-    lp.save_prototext(args.prototext,
-                      model=model, optimizer=opt,
-                      data_reader=data_reader_proto)
+    lbann.proto.save_prototext(args.prototext,
+                               model=model, optimizer=opt,
+                               data_reader=data_reader_proto)
 
 # Run experiment
 if not args.disable_run:
