@@ -50,6 +50,9 @@ class any
 {
 public:
 
+  /** @name Constructors and destructor */
+  ///@{
+
   /** @brief Default construct an empty "any" */
   any() noexcept = default;
 
@@ -69,6 +72,10 @@ public:
   /** @brief Default destructor */
   ~any() = default;
 
+  ///@}
+  /** @name Assignment operator */
+  ///@{
+
   /** @brief Copy assign from another container
    *
    *  Makes a deep copy of the held object.
@@ -78,6 +85,7 @@ public:
   /** @brief Move assign from another container */
   any& operator=(any&& other) noexcept = default;
 
+  ///@}
   /** @name Modifiers */
   ///@{
 
