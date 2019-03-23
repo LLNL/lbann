@@ -44,7 +44,7 @@ class data_store_jag : public generic_data_store {
  public:
 
   //! ctor
-  data_store_jag(generic_data_reader *reader, model *m);
+  data_store_jag(generic_data_reader *reader);
 
   //! copy ctor
   data_store_jag(const data_store_jag&) = default;

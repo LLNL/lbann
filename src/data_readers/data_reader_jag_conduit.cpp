@@ -807,6 +807,14 @@ void data_reader_jag_conduit::load() {
     m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   }
 
+  // there is probably a better way to do this -- we're going to load
+  // all the samples into a vector in this class; we'll set them in
+  // the data_store during the first call to fetch_datum(). The reason 
+  // is that the data_store isn't instantiated until after this method
+  // (data_reader_jag_conduit::load) has finished
+  if (options::get()->has_bool("preload_data_store")) {
+  }
+
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (is_master()) {
@@ -1489,7 +1497,7 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 
 void data_reader_jag_conduit::setup_data_store(model *m, int mini_batch_size) {
   if (m_data_store != nullptr) {
-    delete m_data_store;
+    return;
   }
   m_jag_store = new data_store_jag(this, m);  // *data_store_jag
   m_data_store = m_jag_store;                 // *generic_data_store

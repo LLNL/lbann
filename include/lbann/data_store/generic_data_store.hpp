@@ -39,7 +39,6 @@ namespace lbann {
 
 class generic_data_reader;
 class lbann_comm;
-class model;
 
 /**
  * todo
@@ -49,7 +48,7 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(generic_data_reader *reader, model *m);
+  generic_data_store(generic_data_reader *reader);
 
   //! copy ctor
   generic_data_store(const generic_data_store&) = default;
@@ -209,8 +208,6 @@ protected :
   bool m_master;
 
   const std::vector<int> *m_shuffled_indices;
-
-  model *m_model;
 
   /// base directory for data
   std::string m_dir;

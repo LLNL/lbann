@@ -33,14 +33,13 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
-#include "lbann/models/model.hpp"
 #include <unordered_set>
 
 namespace lbann {
 
 data_store_jag::data_store_jag(
-  generic_data_reader *reader, model *m) :
-  generic_data_store(reader, m),
+  generic_data_reader *reader) :
+  generic_data_store(reader),
   m_super_node(false),
   m_super_node_overhead(0),
   m_compacted_sample_size(0) {
@@ -248,7 +247,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   if (t2 == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_epoch()));
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
   }
 
   return t2->second;
