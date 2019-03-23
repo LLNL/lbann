@@ -704,7 +704,7 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::setup_data_store(model *m, int mini_batch_size) {
+void generic_data_reader::setup_data_store(int mini_batch_size) {
   m_data_store = nullptr;
 }
 
