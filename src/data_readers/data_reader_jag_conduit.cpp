@@ -1495,12 +1495,9 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
-void data_reader_jag_conduit::setup_data_store(model *m, int mini_batch_size) {
-  if (m_data_store != nullptr) {
-    return;
-  }
-  m_jag_store = new data_store_jag(this, m);  // *data_store_jag
-  m_data_store = m_jag_store;                 // *generic_data_store
+void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
+  m_jag_store = new data_store_jag(this);  // *data_store_jag
+  m_data_store = m_jag_store;              // *generic_data_store
   m_data_store->setup(mini_batch_size);
 }
 
