@@ -858,6 +858,7 @@ void data_reader_jag_conduit::load() {
 
 void data_reader_jag_conduit::preload_data_store() {
   //TODO
+  m_data_store_was_preloaded = true;
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {

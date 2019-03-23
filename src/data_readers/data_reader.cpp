@@ -709,12 +709,18 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
+  if (m_data_store_was_preloaded) {
+    return true;
+  }
   return (m_data_store != nullptr
           && (m_model->get_execution_mode() == execution_mode::training)
           && m_model->get_epoch() > 0);
 }
 
 bool generic_data_reader::priming_data_store() const {
+  if (m_data_store_was_preloaded) {
+    return false;
+  }
   return (m_data_store != nullptr
           && (m_model->get_execution_mode() == execution_mode::training)
           && m_model->get_epoch() == 0);
