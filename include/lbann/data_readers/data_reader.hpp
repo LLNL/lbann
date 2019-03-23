@@ -373,6 +373,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Set the mini batch size
   void set_mini_batch_size(const int s) {
     m_mini_batch_size = s;
+    if (m_data_store != nullptr) {
+      m_data_store->setup(s);
+    }
   }
   /// Get the mini batch size
   int get_mini_batch_size() const {

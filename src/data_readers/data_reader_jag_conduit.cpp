@@ -807,12 +807,34 @@ void data_reader_jag_conduit::load() {
     m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   }
 
-  // there is probably a better way to do this -- we're going to load
-  // all the samples into a vector in this class; we'll set them in
-  // the data_store during the first call to fetch_datum(). The reason 
-  // is that the data_store isn't instantiated until after this method
-  // (data_reader_jag_conduit::load) has finished
-  if (options::get()->has_bool("preload_data_store")) {
+
+  // need to resize and init shuffled indices here, since it's needed in 
+  // preload_data_store, which must be called before merging the sample lists
+  int sz = m_sample_list.size();
+  int global_index_count = m_comm->trainer_all_reduce<int>(sz);
+  if (is_master) {
+    std::cout << "master's local index count: " << sz << " global: " 
+              << global_index_count << std::endl;
+  }
+  m_shuffled_indices.resize(global_index_count);
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+
+  if (options::get()->has_bool("use_data_store")) {
+    if (is_master()) {
+      std:cout << "\nUSING DATA_STORE\n\n";
+    }
+    m_jag_store = new data_store_jag(this);  // *data_store_jag
+    m_data_store = m_jag_store;              // *generic_data_store
+    // note: m_data_store->setup(minibatch_sz) will be called
+    //       later, since we don't know the mb_size as of now
+    if (options::get()->has_bool("preload_data_store")) {
+      preload_data_store();
+    }
+  } else {
+    // these should already be set; in the future there will only 
+    // be one of these (when data_store_conduit is completed)
+    m_jag_store = nullptr;
+    m_data_store = nullptr;
   }
 
   /// Merge all of the sample lists
@@ -824,11 +846,18 @@ void data_reader_jag_conduit::load() {
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
-  m_shuffled_indices.resize(m_sample_list.size());
 
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  if (m_sample_list.size() != global_index_count) {
+    LBANN_ERROR("m_sample_list.size() != global_index_count; code is buggy");
+  }
+  //m_shuffled_indices.resize(m_sample_list.size());
 
   select_subset_of_data();
+}
+
+
+void data_reader_jag_conduit::preload_data_store() {
+  //TODO
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
@@ -1495,11 +1524,6 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
-void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
-  m_jag_store = new data_store_jag(this);  // *data_store_jag
-  m_data_store = m_jag_store;              // *generic_data_store
-  m_data_store->setup(mini_batch_size);
-}
 
 void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);

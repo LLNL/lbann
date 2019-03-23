@@ -257,7 +257,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
+
   data_store_jag *m_jag_store;
+
+  void preload_data_store();
 
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);

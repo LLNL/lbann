@@ -134,9 +134,9 @@ void generic_data_store::setup(int mini_batch_size) {
               << m_reader->get_role() << "\n";
   }
 
-  if (is_subsidiary_store()) {
-    return;
-  }
+//  if (is_subsidiary_store()) {
+//    return;
+//  }
 
   #if 0
   // get the set of global indices used by this processor in

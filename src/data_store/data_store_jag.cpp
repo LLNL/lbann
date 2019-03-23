@@ -52,13 +52,10 @@ void data_store_jag::setup(int mini_batch_size) {
   double tm1 = get_time();
   std::stringstream err;
 
+  // TODO: if preloading and role is validation, this is almost 
+  //       certainly wrong; figure out hw to fix this later
   if (m_master) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
-  }
-
-  // I suspect we'll never go out-of-memory ...
-  if (! m_in_memory) {
-    LBANN_ERROR("out-of-memory mode for data_store_jag has not been implemented");
   }
 
   generic_data_store::setup(mini_batch_size);
