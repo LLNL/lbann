@@ -58,7 +58,14 @@ void data_store_jag::setup(int mini_batch_size) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
 
-  generic_data_store::setup(mini_batch_size);
+  //set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
+  //set_num_global_indices();
+
+  // don't think this is used
+  //m_num_readers = m_reader->get_num_parallel_readers();
+
+
+  //generic_data_store::setup(mini_batch_size);
   build_owner_map(mini_batch_size);
 
   m_super_node = options::get()->get_bool("super_node");
@@ -78,6 +85,8 @@ void data_store_jag::setup(int mini_batch_size) {
   if (jag_reader == nullptr) {
     LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
   }
+
+  m_is_setup = true;
 
   if (m_master) {
     std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
@@ -101,6 +110,10 @@ void data_store_jag::setup_data_store_buffers() {
 //       handle things ourselves. TODO: possibly modify conduit to
 //       handle non-blocking comms
 void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
+
+  if (! m_is_setup) {
+    LBANN_ERROR("setup(mb_size) has not been called");
+  }
 
   if (m_n == 0) {
     setup_data_store_buffers();
@@ -287,6 +300,10 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
 }
 
 void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
+  if (! m_is_setup) {
+    LBANN_ERROR("setup(mb_size) has not been called");
+  }
+
   int num_send_req = build_indices_i_will_send(current_pos, mb_size);
   int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
 
