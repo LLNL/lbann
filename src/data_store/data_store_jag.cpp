@@ -201,8 +201,36 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
 }
 
 void data_store_jag::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
-  //@TODO
+  // note: at this point m_data[data_id] = node
+  // note: if running in super_node mode, nothing to do
+  if (!m_super_node) {
+    conduit::Node n2 = node;
+    build_node_for_sending(n2, m_data[data_id]);
+    error_check_compacted_node(m_data[data_id];
+  }
 }
+
+void data_store_jag::error_check_compacted_node(const conduit::Node &nd) {
+  const conduit::Node& n2 = m_data[data_id];
+  if(m_compacted_sample_size == 0) {
+    m_compacted_sample_size = n2.total_bytes_compact();
+  } else if(m_compacted_sample_size != n2.total_bytes_compact()) {
+    LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
+                + " is not the same size as existing nodes in the data_store "
+                + std::to_string(m_compacted_sample_size) + " != "
+                + std::to_string(n2.total_bytes_compact()));
+  }
+  if(!m_data[data_id].is_contiguous()) {
+    LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
+  }
+  if(m_data[data_id].data_ptr() == nullptr) {
+    LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid data pointer");
+  }
+  if(m_data[data_id].contiguous_data_ptr() == nullptr) {
+    LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid contiguous data pointer");
+  }
+}
+
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   if (m_data.find(data_id) != m_data.end()) {
@@ -217,28 +245,8 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 
   if (! m_super_node) {
     build_node_for_sending(node, m_data[data_id]);
-    const conduit::Node& n2 = m_data[data_id];
-    if(m_compacted_sample_size == 0) {
-      m_compacted_sample_size = n2.total_bytes_compact();
-    }else if(m_compacted_sample_size != n2.total_bytes_compact()) {
-    std::cout << "BAD:\n";
-    n2.print();
-
-      LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
-                  + " is not the same size as existing nodes in the data_store "
-                  + std::to_string(m_compacted_sample_size) + " != "
-                  + std::to_string(n2.total_bytes_compact()));
-    }
-    if(!m_data[data_id].is_contiguous()) {
-      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
-    }
-    if(m_data[data_id].data_ptr() == nullptr) {
-      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid data pointer");
-    }
-    if(m_data[data_id].contiguous_data_ptr() == nullptr) {
-      LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid contiguous data pointer");
-    }
-  }
+    error_check_compacted_node(m_data[data_id];
+  }  
 
   else {
     m_data[data_id] = node;

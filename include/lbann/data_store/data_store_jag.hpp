@@ -150,6 +150,7 @@ protected :
   /// that will be received
   int build_indices_i_will_recv(int current_pos, int mb_size);
 
+  void error_check_compacted_node(const conduit::Node &nd);
 };
 
 }  // namespace lbann
