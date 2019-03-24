@@ -485,6 +485,12 @@ const conduit::Node & data_store_jag::get_random_node(const std::string &field) 
   return node[field];
 }
 
+void data_store_jag::get_empty_node(int data_id, conduit::Node &node) {
+  if (m_data.find(data_id) != m_dat.end()) {
+    LBANN_ERROR("we already have a node with data_id= " + std::to_string(data_id));
+  }
+}
+
 }  // namespace lbann
 
 #endif //#ifdef LBANN_HAS_CONDUIT
