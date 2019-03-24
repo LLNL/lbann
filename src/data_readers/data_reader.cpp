@@ -747,4 +747,11 @@ void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, 
   m_my_partition = m_comm->get_trainer_rank();
 }
 
+void generic_data_reader::set_mini_batch_size(const int s) {
+  m_mini_batch_size = s;
+  if (m_data_store != nullptr) {
+    m_data_store->setup(s);
+  }
+}
+
 }  // namespace lbann

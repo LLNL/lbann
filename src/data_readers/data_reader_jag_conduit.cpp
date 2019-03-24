@@ -815,8 +815,8 @@ void data_reader_jag_conduit::load() {
   // need to resize and init shuffled indices here, since it's needed in 
   // preload_data_store, which must be called before merging the sample lists
   int sz = m_sample_list.size();
-  int global_index_count = m_comm->trainer_all_reduce<int>(sz);
-  if (is_master) {
+  int global_index_count = m_comm->trainer_allreduce<int>(sz);
+  if (is_master()) {
     std::cout << "master's local index count: " << sz << " global: " 
               << global_index_count << std::endl;
   }
@@ -825,7 +825,7 @@ void data_reader_jag_conduit::load() {
 
   if (options::get()->has_bool("use_data_store")) {
     if (is_master()) {
-      std:cout << "\nUSING DATA_STORE\n\n";
+      std::cout << "\nUSING DATA_STORE\n\n";
     }
     m_jag_store = new data_store_jag(this);  // *data_store_jag
     m_data_store = m_jag_store;              // *generic_data_store
@@ -851,7 +851,7 @@ void data_reader_jag_conduit::load() {
     m_sample_list.write(s.str());
   }
 
-  if (m_sample_list.size() != global_index_count) {
+  if (m_sample_list.size() != (size_t)global_index_count) {
     LBANN_ERROR("m_sample_list.size() != global_index_count; code is buggy");
   }
   //m_shuffled_indices.resize(m_sample_list.size());
@@ -862,10 +862,14 @@ void data_reader_jag_conduit::load() {
 
 void data_reader_jag_conduit::preload_data_store() {
   m_data_store_was_preloaded = true;
+  m_data_store->set_shuffled_indices(&m_shuffled_indices);
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
-  for (size_t idx=rank; idx < m_shuffled_indices.size(); idx++) {
+// debug - should go away
+std::cout << "my rank: " << m_rank << "\n";
+
+  for (size_t idx=m_rank; idx < m_shuffled_indices.size(); idx++) {
     work.reset();
     load_conduit_node(idx, key, work);
     const std::vector<std::string> &sample_names = work.child_names();
@@ -878,8 +882,8 @@ void data_reader_jag_conduit::preload_data_store() {
       }
       LBANN_ERROR(err.str());
     }
-    conduit::Node & node = m_jag_reader.get_empty_node(idx);
-    const std::string padded_idx = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0');
+    conduit::Node & node = m_jag_store->get_empty_node(idx);
+    const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
     node[padded_idx] = work[sample_names[0]];
 
     //debugging: for development, must go away
@@ -887,7 +891,7 @@ void data_reader_jag_conduit::preload_data_store() {
     std::cout << "\n\ndata_reader_jag_conduit::preload_data_store: here is the first node:\n\n";
     exit(0);
 
-    m_jag_store->set_preloaded_conduit_node(data_id, node);
+    m_jag_store->set_preloaded_conduit_node(idx, node);
   }
 }
 

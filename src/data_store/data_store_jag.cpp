@@ -52,8 +52,6 @@ void data_store_jag::setup(int mini_batch_size) {
   double tm1 = get_time();
   std::stringstream err;
 
-  // TODO: if preloading and role is validation, this is almost 
-  //       certainly wrong; figure out hw to fix this later
   if (m_master) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
@@ -206,27 +204,26 @@ void data_store_jag::set_preloaded_conduit_node(int data_id, conduit::Node &node
   if (!m_super_node) {
     conduit::Node n2 = node;
     build_node_for_sending(n2, m_data[data_id]);
-    error_check_compacted_node(m_data[data_id];
+    error_check_compacted_node(m_data[data_id], data_id);
   }
 }
 
-void data_store_jag::error_check_compacted_node(const conduit::Node &nd) {
-  const conduit::Node& n2 = m_data[data_id];
+void data_store_jag::error_check_compacted_node(const conduit::Node &nd, int data_id) {
   if(m_compacted_sample_size == 0) {
-    m_compacted_sample_size = n2.total_bytes_compact();
-  } else if(m_compacted_sample_size != n2.total_bytes_compact()) {
+    m_compacted_sample_size = nd.total_bytes_compact();
+  } else if(m_compacted_sample_size != nd.total_bytes_compact()) {
     LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
                 + " is not the same size as existing nodes in the data_store "
                 + std::to_string(m_compacted_sample_size) + " != "
-                + std::to_string(n2.total_bytes_compact()));
+                + std::to_string(nd.total_bytes_compact()));
   }
-  if(!m_data[data_id].is_contiguous()) {
+  if(!nd.is_contiguous()) {
     LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
   }
-  if(m_data[data_id].data_ptr() == nullptr) {
+  if(nd.data_ptr() == nullptr) {
     LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid data pointer");
   }
-  if(m_data[data_id].contiguous_data_ptr() == nullptr) {
+  if(nd.contiguous_data_ptr() == nullptr) {
     LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid contiguous data pointer");
   }
 }
@@ -245,7 +242,7 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 
   if (! m_super_node) {
     build_node_for_sending(node, m_data[data_id]);
-    error_check_compacted_node(m_data[data_id];
+    error_check_compacted_node(m_data[data_id], data_id);
   }  
 
   else {
@@ -498,7 +495,7 @@ const conduit::Node & data_store_jag::get_random_node(const std::string &field) 
 }
 
 conduit::Node & data_store_jag::get_empty_node(int data_id) {
-  if (m_data.find(data_id) != m_dat.end()) {
+  if (m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("we already have a node with data_id= " + std::to_string(data_id));
   }
   return m_data[data_id];
