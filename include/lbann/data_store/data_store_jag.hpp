@@ -63,9 +63,13 @@ class data_store_jag : public generic_data_store {
   const conduit::Node & get_conduit_node(int data_id) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
+  void set_preloaded_conduit_node(int data_id, conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
   const conduit::Node & get_random_node(const std::string &field) const;
+
+  /// returns an empty node
+  conduit::Node & get_empty_node(int data_id);
 
 protected :
 

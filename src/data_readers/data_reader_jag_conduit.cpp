@@ -323,18 +323,22 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     if (m_data_store != nullptr) {
-      const conduit::Node obj = m_jag_store->get_random_node();
-      node = obj["data"];
-      const std::vector<std::string>& child_names = node.child_names();
-      const std::string cur_child = child_names[0];
-      const std::string new_child = pad(std::to_string(i), SAMPLE_ID_PAD, '0');
-      node.rename_child(cur_child, new_child);
-      m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
-      std::cout << get_type() + ":: replacing with random node, since failed to open file "
-                << file_name << " for sample " << sample_name
-                <<" and key: " << key << "\n";
-      return false;
+      if (! m_data_store_was_preloaded) {
+        const conduit::Node obj = m_jag_store->get_random_node();
+        node = obj["data"];
+        const std::vector<std::string>& child_names = node.child_names();
+        const std::string cur_child = child_names[0];
+        const std::string new_child = pad(std::to_string(i), SAMPLE_ID_PAD, '0');
+        node.rename_child(cur_child, new_child);
+        m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
+        const std::string& file_name = m_sample_list.get_samples_filename(id);
+        std::cout << get_type() + ":: replacing with random node, since failed to open file "
+                  << file_name << " for sample " << sample_name
+                  <<" and key: " << key << "\n";
+        return false;
+      } else {
+        LBANN_ERROR("failed to get file handle whilst preloading data_store");
+      }
     }
 
     // this block fires if we cannot load a conduit node, either from file
@@ -857,8 +861,34 @@ void data_reader_jag_conduit::load() {
 
 
 void data_reader_jag_conduit::preload_data_store() {
-  //TODO
   m_data_store_was_preloaded = true;
+  conduit::Node work;
+  const std::string key; // key = "" is intentional
+
+  for (size_t idx=rank; idx < m_shuffled_indices.size(); idx++) {
+    work.reset();
+    load_conduit_node(idx, key, work);
+    const std::vector<std::string> &sample_names = work.child_names();
+    if (sample_names.size() != 1) {
+      std::stringstream err;
+      err << "the loaded node should have a single child, which is the sample "
+          << "name; but it contains the following children: ";
+      for (auto t : sample_names) {
+        err << t << " ";
+      }
+      LBANN_ERROR(err.str());
+    }
+    conduit::Node & node = m_jag_reader.get_empty_node(idx);
+    const std::string padded_idx = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0');
+    node[padded_idx] = work[sample_names[0]];
+
+    //debugging: for development, must go away
+    node.print();
+    std::cout << "\n\ndata_reader_jag_conduit::preload_data_store: here is the first node:\n\n";
+    exit(0);
+
+    m_jag_store->set_preloaded_conduit_node(data_id, node);
+  }
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
