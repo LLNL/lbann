@@ -104,6 +104,26 @@ void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
 using namespace dc;
 
 template <>
+void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::setup_tensor_distribution_init(
+    std::map<const Layer*, std::array<Dist, dc::num_dists>> &dists,
+    std::map<Dist*, std::set<Dist*>> &invariants,
+    std::set<Dist*> &updated,
+    std::set<Dist*> &fixed)  {
+  Layer::setup_tensor_distribution_init(dists, invariants, updated, fixed);
+  if (!distconv_enabled()) return;
+  auto &layer_dists = dists[this];
+  // x == y
+  invariants[&layer_dists[0]].insert(&layer_dists[1]);
+  invariants[&layer_dists[1]].insert(&layer_dists[0]);
+  // x == dx
+  invariants[&layer_dists[0]].insert(&layer_dists[2]);
+  invariants[&layer_dists[2]].insert(&layer_dists[0]);
+  // dx == dy
+  invariants[&layer_dists[2]].insert(&layer_dists[3]);
+  invariants[&layer_dists[3]].insert(&layer_dists[2]);
+}
+
+template <>
 void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
 setup_tensors_fwd(const std::array<Dist, dc::num_dists> &dists) {
   Layer::setup_tensors_fwd(dists);
