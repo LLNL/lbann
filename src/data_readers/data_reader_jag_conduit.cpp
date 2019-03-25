@@ -366,7 +366,6 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
-  const std::string& file_name = m_sample_list.get_samples_filename(id);
   const std::string& sample_name = s.second;
   const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
   const std::string path = sample_name + key;
@@ -863,7 +862,7 @@ void data_reader_jag_conduit::load() {
 
 void data_reader_jag_conduit::preload_data_store() {
   m_data_store_was_preloaded = true;
-  m_data_store_jag->set_preload();
+  m_jag_store->set_preload();
   m_data_store->set_shuffled_indices(&m_shuffled_indices);
   conduit::Node work;
   const std::string key; // key = "" is intentional
