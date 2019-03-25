@@ -434,12 +434,18 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
 
 void data_store_jag::build_owner_map(int mini_batch_size) {
   m_owner.clear();
-  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// To compute the owner index first find its position inside of
-    /// the mini-batch (mod mini-batch size) and then find how it is
-    /// striped across the ranks in the trainer
-    m_owner[index] = (i % mini_batch_size) % m_np;
+  if (m_preload) {
+    for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+      m_owner[i] = (i % mini_batch_size) % m_np;
+    }
+  } else {
+    for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+      auto index = (*m_shuffled_indices)[i];
+      /// To compute the owner index first find its position inside of
+      /// the mini-batch (mod mini-batch size) and then find how it is
+      /// striped across the ranks in the trainer
+      m_owner[index] = (i % mini_batch_size) % m_np;
+    }
   }
 }
 

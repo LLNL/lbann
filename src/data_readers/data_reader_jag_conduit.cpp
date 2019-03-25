@@ -46,7 +46,8 @@
 #include "lbann/utils/glob.hpp"
 #include "lbann/utils/peek_map.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
+#include "conduit/conduit_relay_io_handle.hpp"
+
 
 #include <cereal/archives/binary.hpp>
 #include <sstream>
@@ -368,9 +369,9 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
   const std::string& file_name = m_sample_list.get_samples_filename(id);
   const std::string& sample_name = s.second;
   const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
-
   const std::string path = sample_name + key;
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+    const std::string& file_name = m_sample_list.get_samples_filename(id);
     _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
                                         " for sample "+ sample_name);
     return false;
@@ -812,12 +813,12 @@ void data_reader_jag_conduit::load() {
   }
 
 
-  // need to resize and init shuffled indices here, since it's needed in 
+  // need to resize and init shuffled indices here, since it's needed in
   // preload_data_store, which must be called before merging the sample lists
   int sz = m_sample_list.size();
   int global_index_count = m_comm->trainer_allreduce<int>(sz);
   if (is_master()) {
-    std::cout << "master's local index count: " << sz << " global: " 
+    std::cout << "master's local index count: " << sz << " global: "
               << global_index_count << std::endl;
   }
   m_shuffled_indices.resize(global_index_count);
@@ -835,7 +836,7 @@ void data_reader_jag_conduit::load() {
       preload_data_store();
     }
   } else {
-    // these should already be set; in the future there will only 
+    // these should already be set; in the future there will only
     // be one of these (when data_store_conduit is completed)
     m_jag_store = nullptr;
     m_data_store = nullptr;
@@ -862,6 +863,7 @@ void data_reader_jag_conduit::load() {
 
 void data_reader_jag_conduit::preload_data_store() {
   m_data_store_was_preloaded = true;
+  m_data_store_jag->set_preload();
   m_data_store->set_shuffled_indices(&m_shuffled_indices);
   conduit::Node work;
   const std::string key; // key = "" is intentional
@@ -1523,6 +1525,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
+  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   return ok;
 }
 
