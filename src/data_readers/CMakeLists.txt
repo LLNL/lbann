@@ -38,6 +38,7 @@ set_full_path(THIS_DIR_SOURCES
   offline_patches_npz.cpp
   image_preprocessor.cpp
   image_utils.cpp
+  sample_list_jag.cpp
   )
 
 # Add the subdirectories
