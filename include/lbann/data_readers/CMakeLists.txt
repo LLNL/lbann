@@ -30,7 +30,6 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_synthetic.hpp
   image_preprocessor.hpp
   image_utils.hpp
-  lbann_data_generator.hpp
   opencv.hpp
   opencv_extensions.hpp
   data_reader_multihead_siamese.hpp
