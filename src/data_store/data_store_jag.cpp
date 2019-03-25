@@ -40,6 +40,7 @@ namespace lbann {
 data_store_jag::data_store_jag(
   generic_data_reader *reader) :
   generic_data_store(reader),
+  m_preload(false),
   m_super_node(false),
   m_super_node_overhead(0),
   m_compacted_sample_size(0) {

@@ -71,7 +71,11 @@ class data_store_jag : public generic_data_store {
   /// returns an empty node
   conduit::Node & get_empty_node(int data_id);
 
+  void set_preload() { m_preload = true; }
+
 protected :
+
+  bool m_preload;
 
   bool m_super_node;
 
