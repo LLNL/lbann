@@ -2,7 +2,10 @@
 import argparse
 from os.path import join
 import google.protobuf.text_format as txtf
-import lbann, lbann.models, lbann.proto, lbann.contrib.args
+import lbann
+import lbann.models
+import lbann.proto
+import lbann.contrib.args
 
 # Command-line arguments
 desc = ('Construct and run AlexNet on MNIST data. '

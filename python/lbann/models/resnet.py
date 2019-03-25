@@ -1,4 +1,5 @@
-import lbann, lbann.modules
+import lbann
+import lbann.modules
 
 # ==============================================
 # Helper modules

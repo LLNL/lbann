@@ -1,6 +1,7 @@
 import os, os.path
 import datetime
-import lbann, lbann.proto
+import lbann
+import lbann.proto
 import lbann.launcher.slurm
 
 # ==============================================
