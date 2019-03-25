@@ -49,19 +49,14 @@ data_store_jag::data_store_jag(
 data_store_jag::~data_store_jag() {}
 
 void data_store_jag::setup(int mini_batch_size) {
-  double tm1 = get_time();
-  std::stringstream err;
+  if (m_is_setup) {
+    LBANN_ERROR("data_store_jag::setup was called previously. Note that this is called from data_reader::set_mini_batch_size, so this may not be an error. Please consult with Brian Van Essen and Dave Hysom is you think multiple calls to data_reader::set_mini_batch_size are permissible");
+  }
 
+  double tm1 = get_time();
   if (m_master) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
-
-  //set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
-  //set_num_global_indices();
-
-  // don't think this is used
-  //m_num_readers = m_reader->get_num_parallel_readers();
-
 
   //generic_data_store::setup(mini_batch_size);
   build_owner_map(mini_batch_size);
