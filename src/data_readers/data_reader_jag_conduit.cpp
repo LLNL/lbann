@@ -809,7 +809,8 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  if (is_master()) {
+  options *opts = options::get();
+  if (opts->has_string("write_sample_list") && is_master()) {
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
