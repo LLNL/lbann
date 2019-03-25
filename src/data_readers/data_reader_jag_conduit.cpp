@@ -358,7 +358,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     }
   }
 
-  h.read(path, node);
+  conduit::relay::io::hdf5_read(h, path, node);
 
   return true;
 }
@@ -366,16 +366,18 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
+  const std::string& file_name = m_sample_list.get_samples_filename(id);
   const std::string& sample_name = s.second;
-  const sample_list_jag::io_t h = m_sample_list.get_samples_handle(id);
-  if (!h.is_open()) {
+  const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  const std::string path = sample_name + key;
+  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
     _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
                                         " for sample "+ sample_name);
     return false;
   }
 
-  return h.has_path(std::string("/") + sample_name + key);
+  return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
 }
 
 
@@ -773,7 +775,7 @@ void data_reader_jag_conduit::load() {
 
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
     // The following member variables of the leadering reader should have been
-    // copied when this was copy-constructed: m_sample_list, and m_open_files
+    // copied when this was copy-constructed: m_sample_list, and m_open_hdf5_files
     return;
   }
 
@@ -793,7 +795,7 @@ void data_reader_jag_conduit::load() {
 
     /// Open the first sample to make sure that all of the fields are correct
     size_t data_id = (m_sample_list[0]).first;
-    m_sample_list.open_samples_handle(data_id, true);
+    m_sample_list.open_samples_hdf5_handle(data_id, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -807,16 +809,16 @@ void data_reader_jag_conduit::load() {
 
     check_image_data();
 
-    m_sample_list.close_if_done_samples_handle(data_id);
+    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   }
 
 
-  // need to resize and init shuffled indices here, since it's needed in 
+  // need to resize and init shuffled indices here, since it's needed in
   // preload_data_store, which must be called before merging the sample lists
   int sz = m_sample_list.size();
   int global_index_count = m_comm->trainer_allreduce<int>(sz);
   if (is_master()) {
-    std::cout << "master's local index count: " << sz << " global: " 
+    std::cout << "master's local index count: " << sz << " global: "
               << global_index_count << std::endl;
   }
   m_shuffled_indices.resize(global_index_count);
@@ -834,7 +836,7 @@ void data_reader_jag_conduit::load() {
       preload_data_store();
     }
   } else {
-    // these should already be set; in the future there will only 
+    // these should already be set; in the future there will only
     // be one of these (when data_store_conduit is completed)
     m_jag_store = nullptr;
     m_data_store = nullptr;
@@ -1508,7 +1510,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }else {
-    m_sample_list.open_samples_handle(data_id);
+    m_sample_list.open_samples_hdf5_handle(data_id);
   }
 
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
@@ -1523,7 +1525,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
-  m_sample_list.close_if_done_samples_handle(data_id);
+  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   return ok;
 }
 
