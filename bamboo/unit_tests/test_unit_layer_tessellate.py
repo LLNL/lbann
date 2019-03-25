@@ -15,7 +15,7 @@ def skeleton_layer_tessellate(cluster, executables, dir_name, compiler_name):
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1,
         num_processes=2, dir_name=dir_name,
-        data_filedir_default='', data_reader_name='synthetic',
+        data_reader_name='synthetic',
         model_folder='tests/layer_tests', model_name='tessellate',
         optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)

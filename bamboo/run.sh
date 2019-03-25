@@ -5,7 +5,7 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 echo "run.sh CLUSTER="
 echo $CLUSTER
 
-if [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ]; then
+if [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'lassen' ]; then
     PYTHON=python
 fi
 
