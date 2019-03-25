@@ -46,7 +46,7 @@
 #include "lbann/utils/glob.hpp"
 #include "lbann/utils/peek_map.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_handle.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 
 
 #include <cereal/archives/binary.hpp>
