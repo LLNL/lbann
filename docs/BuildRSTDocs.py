@@ -168,12 +168,11 @@ def write_class_rst_file(class_name, breathe_project_name, *args, **kwargs):
         else:
             f.write('\n')
         f.write('.. doxygenclass:: ' + full_class_name + '\n')
-        f.write('    :project: ' + breathe_project_name + '\n')
-        f.write('    :members:\n\n')
+        f.write('    :project: ' + breathe_project_name + '\n\n')
+        #f.write('    :members:\n\n')
         if len(subclasses) > 0:
-            f.write('.. toctree::\n')
-            f.write('    :maxdepth: 1\n')
-            f.write('    :caption: Derived Classes\n\n')
+            f.write('Derived Classes\n')
+            f.write('--------------------\n\n')
             for sc, sc_out_dir in subclasses.items():
                 sc_no_ns = strip_namespace(sc)
                 if sc_out_dir == output_dir:
@@ -182,7 +181,20 @@ def write_class_rst_file(class_name, breathe_project_name, *args, **kwargs):
                     sc_rst_path = os.path.join(
                         os.path.relpath(sc_out_dir, output_dir),
                         sc_no_ns);
-                f.write('    ' + sc_no_ns + ' <' + sc_rst_path + '>\n')
+                f.write('+ :any:`'+sc_no_ns+' <' + sc_rst_path + '>`\n')
+
+            f.write('\n')
+            f.write('.. toctree::\n')
+            f.write('    :hidden:\n\n')
+            for sc, sc_out_dir in subclasses.items():
+                sc_no_ns = strip_namespace(sc)
+                if sc_out_dir == output_dir:
+                    sc_rst_path = sc_no_ns
+                else:
+                    sc_rst_path = os.path.join(
+                        os.path.relpath(sc_out_dir, output_dir),
+                        sc_no_ns);
+                f.write('    ' + sc_rst_path + '\n')
     return
 
 # Adds things from rhs into lhs. Keys are anything, values are lists
@@ -330,10 +342,20 @@ for d in all_dirs:
         if flavor_text is not None:
             f.write(flavor_text+'\n')
 
+        if len(subdirs) > 0:
+            f.write('\n')
+            f.write('.. toctree::'+'\n')
+            f.write('    :maxdepth: 1'+'\n')
+            f.write('    :titlesonly:\n')
+            f.write('    :caption: Subdirectories\n\n')
+            for sdir in subdirs:
+                f.write('    '+sdir+'/'+sdir+'_dir\n')
+
         if len(abstract_classes) > 0:
             f.write('\n')
             f.write('.. toctree::'+'\n')
             f.write('    :maxdepth: 1'+'\n')
+            f.write('    :titlesonly:\n')
             f.write('    :caption: Abstract Classes\n\n')
             for cls in abstract_classes:
                 f.write('    class '+cls+' <'+cls+'>\n')
@@ -342,14 +364,7 @@ for d in all_dirs:
             f.write('\n')
             f.write('.. toctree::'+'\n')
             f.write('    :maxdepth: 1'+'\n')
+            f.write('    :titlesonly:\n')
             f.write('    :caption: Concrete Classes\n\n')
             for cls in concrete_classes:
                 f.write('    class '+cls+' <'+cls+'>\n')
-
-        if len(subdirs) > 0:
-            f.write('\n')
-            f.write('.. toctree::'+'\n')
-            f.write('    :maxdepth: 1'+'\n')
-            f.write('    :caption: Subdirectories\n\n')
-            for sdir in subdirs:
-                f.write('    '+sdir+'/'+sdir+'_dir\n')

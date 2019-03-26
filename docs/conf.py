@@ -6,6 +6,18 @@
 # full list see the documentation:
 # http://www.sphinx-doc.org/en/master/config
 
+# This builds the automatic parts of the documentation
+import subprocess
+import os
+import runpy
+
+rebuild_doxygen = not os.path.isdir("doxy_out/xml")
+
+if rebuild_doxygen:
+    subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
+
+runpy.run_path("BuildRSTDocs.py")
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -16,26 +28,17 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import subprocess, os, runpy
-
-rebuild_doxygen = not os.path.isdir("doxy_out/xml")
-
-if rebuild_doxygen:
-    subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
-
-#exec(open("./BuildRSTDocs.py").read())
-runpy.run_path("BuildRSTDocs.py")
 
 # -- Project information -----------------------------------------------------
 
 project = 'LBANN'
-copyright = '2014-2019, LLNL'
+copyright = '2019, LBANN Dev Team'
 author = 'LBANN Dev Team'
 
 # The short X.Y version
-version = ''
+version = '0.99'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = '0.99.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -47,6 +50,11 @@ release = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+extensions = [
+    'breathe',
+    'sphinx.ext.todo',
+    'sphinx.ext.mathjax',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -54,8 +62,8 @@ templates_path = ['_templates']
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
 #
-source_suffix = ['.rst', '.md']
-# source_suffix = '.rst'
+# source_suffix = ['.rst', '.md']
+source_suffix = '.rst'
 
 # The master toctree document.
 master_doc = 'index'
@@ -69,11 +77,11 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path .
+# This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = None
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -83,21 +91,19 @@ pygments_style = 'sphinx'
 #
 html_theme = 'sphinx_rtd_theme'
 
-html_theme_options = {
-  "collapse_navigation" : False
-}
-
-
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {}
+
+html_theme_options = { 'collapse_navigation': False,
+                       'includehidden': False,
+                       'titles_only': False }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+#
+# html_static_path = ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -107,13 +113,14 @@ html_theme_options = {
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-#html_sidebars = {}
-html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'] }
+# html_sidebars = {}
+
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'lbanndoc'
+htmlhelp_basename = 'LBANNdoc'
+
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -139,7 +146,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'lbann.tex', 'LBANN Documentation',
+    (master_doc, 'LBANN.tex', 'LBANN Documentation',
      'LBANN Dev Team', 'manual'),
 ]
 
@@ -149,7 +156,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'LBANN', 'LBANN Documentation',
+    (master_doc, 'lbann', 'LBANN Documentation',
      [author], 1)
 ]
 
@@ -166,8 +173,33 @@ texinfo_documents = [
 ]
 
 
-breathe_default_project = "lbann"
-breathe_projects = {
-    "lbann":"doxy_out/xml/",
-}
-extensions = [ 'breathe', 'sphinx.ext.mathjax' ]
+# -- Options for Epub output -------------------------------------------------
+
+# Bibliographic Dublin Core info.
+epub_title = project
+
+# The unique identifier of the text. This can be a ISBN number
+# or the project homepage.
+#
+# epub_identifier = ''
+
+# A unique identification for the text.
+#
+# epub_uid = ''
+
+# A list of files that should not be packed into the epub file.
+epub_exclude_files = ['search.html']
+
+
+# -- Extension configuration -------------------------------------------------
+
+# -- Options for todo extension ----------------------------------------------
+
+# If true, `todo` and `todoList` produce output, else they produce nothing.
+todo_include_todos = True
+
+# -- Options for breathe extension -------------------------------------------
+
+breathe_projects = { 'lbann': 'doxy_out/xml/' }
+breathe_default_project = 'lbann'
+breathe_default_members = ('members', 'undoc-members')
