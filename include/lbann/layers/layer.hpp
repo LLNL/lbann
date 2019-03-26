@@ -334,11 +334,11 @@ public:
   /** Get input tensor dimensions. */
   std::vector<int> get_input_dims(int input_index = 0) const;
   /** Get input tensor size. */
-  int get_input_size(int input_index = 0) const;
+  El::Int get_input_size(int input_index = 0) const;
   /** Get output tensor dimensions. */
   std::vector<int> get_output_dims(int output_index = 0) const;
   /** Get output tensor size. */
-  int get_output_size(int output_index = 0) const;
+  El::Int get_output_size(int output_index = 0) const;
 
   /** Set output tensor dimensions. */
   void set_output_dims(std::vector<int> dims, int output_index = 0);

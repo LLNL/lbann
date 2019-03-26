@@ -442,13 +442,13 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
 
 }
 
-int Layer::get_input_size(int input_index) const {
+El::Int Layer::get_input_size(int input_index) const {
   const auto& dims = get_input_dims(input_index);
   if (dims.empty()) {
     return 0;
   } else {
     return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
+                           std::multiplies<El::Int>());
   }
 }
 
@@ -471,13 +471,13 @@ std::vector<int> Layer::get_output_dims(int output_index) const {
   return m_output_dims_list[output_index];
 }
 
-int Layer::get_output_size(int output_index) const {
+El::Int Layer::get_output_size(int output_index) const {
   const auto& dims = get_output_dims(output_index);
   if (dims.empty()) {
     return 0;
   } else {
     return std::accumulate(dims.begin(), dims.end(), 1,
-                           std::multiplies<int>());
+                           std::multiplies<El::Int>());
   }
 }
 
