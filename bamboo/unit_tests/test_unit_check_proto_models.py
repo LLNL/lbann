@@ -7,7 +7,9 @@ import os
 
 def skeleton_models(cluster, dir_name, executables, compiler_name):
     if compiler_name not in executables:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+        e = 'skeleton_models: default_exes[%s] does not exist' % compiler_name
+        print('Skip - ' + e)
+        pytest.skip(e)
     opt = 'sgd'
     node_count = 1
     time_limit = 1
@@ -17,17 +19,14 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
         for file_name in files:
             if file_name.endswith('.prototext') and "model" in file_name:
                 model_path = subdir + '/' + file_name
-                print('Attempting model setup for: ' + file_name )
+                print('Attempting model setup for: ' + file_name)
                 data_filedir_default = None
                 data_filedir_train_default=None
                 data_filename_train_default=None
                 data_filedir_test_default=None
                 data_filename_test_default=None
                 data_reader_path=None
-                if 'motif' in file_name:
-                    print('Skipping %s because motifs are deprecated' % model_path)
-                    continue
-                elif 'mnist' in file_name:
+                if 'mnist' in file_name:
                     data_filedir_default = '/p/lscratchh/brainusr/datasets/MNIST'
                     data_reader_name = 'mnist'
                 elif 'adversarial' in file_name:
@@ -39,9 +38,9 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_reader_path = '%s/model_zoo/models/gan/mnist/discriminator_data.prototext' % (dir_name)
                     data_reader_name = None
                 elif 'triplet' in file_name:
-                    if (cluster == 'catalyst') and (compiler_name == 'clang4'):
-                        # Skipping this test.
-                        continue
+                    # Disabling triplet test.
+                    print('Skipping triplet tests.')
+                    continue
                     data_filedir_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
                     data_filename_train_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/train/train_list_8h.nfl.npz'
                     data_filedir_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/patches_84h_110x110_13x13-blur-ab_compact/'
@@ -62,7 +61,7 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_filename_test_default = '/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt'
                     data_reader_name = 'imagenet'
                     node_count = 2
-                    if(cluster == 'ray'):
+                    if cluster == 'ray':
                         time_limit = 3
                     if 'resnet50' in file_name:
                         node_count = 8
@@ -74,7 +73,9 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                     data_filedir_default = '/p/lscratchh/brainusr/datasets/tinyshakespeare/'
                     data_reader_name = 'ascii'
                 else:
-                    print("Shared lbannusr account doesn't have access to dataset this model requires")
+                    print(
+                        "No access to dataset that model={m} requires.".format(
+                            m=file_name))
                     continue
                 if (cluster == 'ray') and \
                         (data_reader_name in ['cifar10', 'ascii']):
@@ -122,10 +123,6 @@ def test_unit_models_clang4(cluster, dirname, exes):
 
 
 def test_unit_models_gcc4(cluster, dirname, exes):
-    if cluster in ['surface']:
-        pytest.skip('FIXME')
-        # Surface Errors:
-        # assert 8 == 0
     skeleton_models(cluster, dirname, exes, 'gcc4')
 
 
@@ -140,6 +137,8 @@ def test_unit_models_intel18(cluster, dirname, exes):
 # Run with python -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
 def test_unit_models_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
+        e = 'test_unit_models_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
     exes = {'exe' : exe}
     skeleton_models(cluster, dirname, exes, 'exe')
