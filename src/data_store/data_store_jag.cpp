@@ -60,7 +60,7 @@ void data_store_jag::setup(int mini_batch_size) {
   }
 
   //generic_data_store::setup(mini_batch_size);
-  build_owner_map(mini_batch_size);
+  //  build_owner_map(mini_batch_size);
 
   m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
@@ -71,9 +71,9 @@ void data_store_jag::setup(int mini_batch_size) {
     }
   }
 
-  if (m_master) {
-    std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
-  }
+  // if (m_master) {
+  //   std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
+  // }
 
   data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
   if (jag_reader == nullptr) {
@@ -239,7 +239,7 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   if (! m_super_node) {
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
-  }  
+  }
 
   else {
     m_data[data_id] = node;
@@ -432,20 +432,26 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   return k;
 }
 
+void data_store_jag::build_preloaded_owner_map(const std::vector<int>& local_list_sizes) {
+  m_owner.clear();
+  int owning_rank = 0;
+  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+    const auto local_list_size = local_list_sizes[owning_rank];
+    if((i % local_list_size == 0) && (i / local_list_size > 0)) {
+      ++owning_rank;
+    }
+    m_owner[i] = owning_rank;
+  }
+}
+
 void data_store_jag::build_owner_map(int mini_batch_size) {
   m_owner.clear();
-  if (m_preload) {
-    for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
-      m_owner[i] = (i % mini_batch_size) % m_np;
-    }
-  } else {
-    for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
-      auto index = (*m_shuffled_indices)[i];
-      /// To compute the owner index first find its position inside of
-      /// the mini-batch (mod mini-batch size) and then find how it is
-      /// striped across the ranks in the trainer
-      m_owner[index] = (i % mini_batch_size) % m_np;
-    }
+  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
+    auto index = (*m_shuffled_indices)[i];
+    /// To compute the owner index first find its position inside of
+    /// the mini-batch (mod mini-batch size) and then find how it is
+    /// striped across the ranks in the trainer
+    m_owner[index] = (i % mini_batch_size) % m_np;
   }
 }
 

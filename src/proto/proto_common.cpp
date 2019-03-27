@@ -401,6 +401,14 @@ void init_data_readers(
 
     reader->set_master(master);
 
+    //  under development; experimental
+    if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+      if (master) {
+        std::cout << "\nUSING DATA STORE!\n\n";
+      }
+      reader->setup_data_store(reader->get_mini_batch_size());
+    }
+
     reader->load();
 
     if (readme.role() == "train") {

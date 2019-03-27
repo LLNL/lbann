@@ -233,6 +233,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
+  void setup_data_store(int mini_batch_size);
+
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
   /// A untiliy function to convert the pointer to image data into an opencv image

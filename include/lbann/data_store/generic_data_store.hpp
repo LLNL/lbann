@@ -215,10 +215,11 @@ protected :
   /// conduct extensive testing
   bool m_extended_testing;
 
+public:
   /// returns the processor that owns the data associated
   /// with the index
   int get_index_owner(int idx);
-
+protected:
   /// maps an index to the processor that owns the associated data
   std::unordered_map<int, int> m_owner;
 

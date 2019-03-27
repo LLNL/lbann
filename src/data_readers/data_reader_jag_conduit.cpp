@@ -324,6 +324,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   hid_t h = m_sample_list.get_samples_hdf5_handle(id);
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     if (m_data_store != nullptr) {
+      const std::string& file_name = m_sample_list.get_samples_filename(id);
       if (! m_data_store_was_preloaded) {
         const conduit::Node obj = m_jag_store->get_random_node();
         node = obj["data"];
@@ -332,13 +333,14 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
         const std::string new_child = pad(std::to_string(i), SAMPLE_ID_PAD, '0');
         node.rename_child(cur_child, new_child);
         m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
-        const std::string& file_name = m_sample_list.get_samples_filename(id);
         std::cout << get_type() + ":: replacing with random node, since failed to open file "
                   << file_name << " for sample " << sample_name
                   <<" and key: " << key << "\n";
         return false;
       } else {
-        LBANN_ERROR("failed to get file handle whilst preloading data_store");
+        LBANN_ERROR("failed to get file handle for file " + file_name + \
+                    " whilst preloading data_store with sample " + sample_name + \
+                    " and key " + key);
       }
     }
 
@@ -815,31 +817,13 @@ void data_reader_jag_conduit::load() {
   // need to resize and init shuffled indices here, since it's needed in
   // preload_data_store, which must be called before merging the sample lists
   int sz = m_sample_list.size();
-  int global_index_count = m_comm->trainer_allreduce<int>(sz);
-  if (is_master()) {
-    std::cout << "master's local index count: " << sz << " global: "
-              << global_index_count << std::endl;
-  }
-  m_shuffled_indices.resize(global_index_count);
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-
-  if (options::get()->has_bool("use_data_store")) {
-    if (is_master()) {
-      std::cout << "\nUSING DATA_STORE\n\n";
-    }
-    m_jag_store = new data_store_jag(this);  // *data_store_jag
-    m_data_store = m_jag_store;              // *generic_data_store
-    // note: m_data_store->setup(minibatch_sz) will be called
-    //       later, since we don't know the mb_size as of now
-    if (options::get()->has_bool("preload_data_store")) {
-      preload_data_store();
-    }
-  } else {
-    // these should already be set; in the future there will only
-    // be one of these (when data_store_conduit is completed)
-    m_jag_store = nullptr;
-    m_data_store = nullptr;
-  }
+  // int global_index_count = m_comm->trainer_allreduce<int>(sz);
+  // if (is_master()) {
+  //   std::cout << "master's local index count: " << sz << " global: "
+  //             << global_index_count << std::endl;
+  // }
+  std::vector<int> local_list_sizes(m_comm->get_procs_per_trainer());
+  m_comm->trainer_all_gather(sz, local_list_sizes);
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
@@ -850,28 +834,64 @@ void data_reader_jag_conduit::load() {
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
+  m_shuffled_indices.resize(m_sample_list.size());
+  //  m_shuffled_indices.resize(global_index_count);
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
-  if (m_sample_list.size() != (size_t)global_index_count) {
-    LBANN_ERROR("m_sample_list.size() != global_index_count; code is buggy");
+  if (options::get()->has_bool("use_data_store")) {
+    if (is_master()) {
+      std::cout << "\nUSING DATA_STORE\n\n";
+    }
+    // m_jag_store = new data_store_jag(this);  // *data_store_jag
+    // m_data_store = m_jag_store;              // *generic_data_store
+    // note: m_data_store->setup(minibatch_sz) will be called
+    //       later, since we don't know the mb_size as of now
+    m_data_store->set_shuffled_indices(&m_shuffled_indices);
+    if (options::get()->has_bool("preload_data_store")) {
+      m_jag_store->build_preloaded_owner_map(local_list_sizes);
+      preload_data_store();
+    }
+  } else {
+    // these should already be set; in the future there will only
+    // be one of these (when data_store_conduit is completed)
+    m_jag_store = nullptr;
+    m_data_store = nullptr;
   }
+
+  // if (m_sample_list.size() != (size_t)global_index_count) {
+  //   LBANN_ERROR("m_sample_list.size() != global_index_count; code is buggy");
+  // }
   //m_shuffled_indices.resize(m_sample_list.size());
 
   select_subset_of_data();
+
+  if (options::get()->has_bool("use_data_store") && !options::get()->has_bool("preload_data_store")) {
+    m_jag_store->build_owner_map(get_mini_batch_size());
+  }
 }
 
 
 void data_reader_jag_conduit::preload_data_store() {
   m_data_store_was_preloaded = true;
   m_jag_store->set_preload();
-  m_data_store->set_shuffled_indices(&m_shuffled_indices);
+  //  m_data_store->set_shuffled_indices(&m_shuffled_indices);
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
+  /// @todo BVE FIXME this
+  m_rank_in_model = get_comm()->get_rank_in_trainer();
 // debug - should go away
-std::cout << "my rank: " << m_rank << "\n";
+std::cout << "my rank: " << m_rank_in_model << "\n";
 
-  for (size_t idx=m_rank; idx < m_shuffled_indices.size(); idx++) {
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+      continue;
+    }
     work.reset();
+    size_t data_id = (m_sample_list[idx]).first;
+    const std::string& file_name = m_sample_list.get_samples_filename(data_id);
+    m_sample_list.open_samples_hdf5_handle(data_id, true);
+    std::cout << "Rank " << m_rank_in_model << " is loading " << idx << " data id " << data_id << " filename " << file_name << " which is owned by " << m_data_store->get_index_owner(idx) << std::endl;
     load_conduit_node(idx, key, work);
     const std::vector<std::string> &sample_names = work.child_names();
     if (sample_names.size() != 1) {
@@ -881,7 +901,7 @@ std::cout << "my rank: " << m_rank << "\n";
       for (auto t : sample_names) {
         err << t << " ";
       }
-      LBANN_ERROR(err.str());
+      //      LBANN_ERROR(err.str());
     }
     conduit::Node & node = m_jag_store->get_empty_node(idx);
     const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
@@ -893,6 +913,7 @@ std::cout << "my rank: " << m_rank << "\n";
     exit(0);
 
     m_jag_store->set_preloaded_conduit_node(idx, node);
+    //    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   }
 }
 
@@ -1561,6 +1582,14 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
+void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
+   if (m_data_store != nullptr) {
+     delete m_data_store;
+   }
+   m_jag_store = new data_store_jag(this);  // *data_store_jag
+   m_data_store = m_jag_store;                 // *generic_data_store
+   m_data_store->setup(mini_batch_size);
+}
 
 void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
   internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);

@@ -372,7 +372,7 @@ class generic_data_reader : public lbann_image_preprocessor {
             && (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
-  void set_mini_batch_size(const int s); 
+  void set_mini_batch_size(const int s);
   /// Get the mini batch size
   int get_mini_batch_size() const {
     return m_mini_batch_size;
@@ -712,7 +712,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void post_update() {}
 
  protected:
- 
+
   bool m_data_store_was_preloaded;
 
   // For use with conduit when samples are corrupt.
@@ -736,7 +736,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  int m_rank;
+  //  int m_rank;
 
   generic_data_store *m_data_store;
 
