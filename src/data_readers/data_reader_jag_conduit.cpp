@@ -838,7 +838,7 @@ void data_reader_jag_conduit::load() {
   //  m_shuffled_indices.resize(global_index_count);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
-  if (options::get()->has_bool("use_data_store")) {
+  if (options::get()->has_bool("use_data_store") || options::get()->has_bool("preload_data_store")) {
     if (is_master()) {
       std::cout << "\nUSING DATA_STORE\n\n";
     }
