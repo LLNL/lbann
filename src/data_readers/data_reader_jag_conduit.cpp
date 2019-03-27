@@ -338,9 +338,14 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
                   <<" and key: " << key << "\n";
         return false;
       } else {
-        LBANN_ERROR("failed to get file handle for file " + file_name + \
-                    " whilst preloading data_store with sample " + sample_name + \
-                    " and key " + key);
+        if (h <= static_cast<hid_t>(0) ) {
+          LBANN_ERROR("failed to get file handle for file " + file_name);
+        } else if (!conduit::relay::io::hdf5_has_path(h, path)) {
+          LBANN_ERROR("got file handle for file " + file_name + \
+                      " but the path doesn't exist in the file: " + path);
+        } else {
+          LBANN_ERROR("it should not be possible to be here");
+        }
       }
     }
 
@@ -867,7 +872,8 @@ void data_reader_jag_conduit::load() {
 
   //if (options::get()->has_bool("use_data_store") && !options::get()->has_bool("preload_data_store")) {
   // note:  !options::get()->has_bool("preload_data_store") is true if there's
-  //        no --preload_data_store flag
+  //        no --preload_data_store flag. For clarity I'll start a PR
+  //        to delete the options::has_bool method.
   //
   if (options::get()->get_bool("use_data_store") && !options::get()->get_bool("preload_data_store")) {
     m_jag_store->build_owner_map(get_mini_batch_size());
