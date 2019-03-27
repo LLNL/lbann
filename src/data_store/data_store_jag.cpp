@@ -232,7 +232,7 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 
   if (m_owner[data_id] != m_rank) {
     std::stringstream s;
-    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank << "\n";
+    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank << "; data reader role: " << m_reader->get_role() << "\n";
     LBANN_ERROR(s.str());
   }
 
