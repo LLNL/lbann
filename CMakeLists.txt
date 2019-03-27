@@ -418,7 +418,7 @@ if (LBANN_WITH_CONDUIT)
     "${_conduit_interface_link_libs}")
 
   set(CONDUIT_LIBRARIES conduit::conduit)
-  set(LBANN_HAS_CONDUIT ${CONDUIT_FOUND})
+  set(LBANN_HAS_CONDUIT ${Conduit_FOUND})
 endif (LBANN_WITH_CONDUIT)
 
 if (LBANN_WITH_UNIT_TESTING)
