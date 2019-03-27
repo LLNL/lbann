@@ -232,7 +232,7 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 
   if (m_owner[data_id] != m_rank) {
     std::stringstream s;
-    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank;
+    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank << "\n";
     LBANN_ERROR(s.str());
   }
 
@@ -445,6 +445,10 @@ void data_store_jag::build_preloaded_owner_map(const std::vector<int>& local_lis
 }
 
 void data_store_jag::build_owner_map(int mini_batch_size) {
+  if (m_master) std::cout << "starting data_store_jag::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << "\n";
+  if (mini_batch_size == 0) {
+    LBANN_ERROR("mini_batch_size == 0; can't build owner_map");
+  }
   m_owner.clear();
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
     auto index = (*m_shuffled_indices)[i];

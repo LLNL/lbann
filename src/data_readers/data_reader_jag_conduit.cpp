@@ -865,7 +865,11 @@ void data_reader_jag_conduit::load() {
 
   select_subset_of_data();
 
-  if (options::get()->has_bool("use_data_store") && !options::get()->has_bool("preload_data_store")) {
+  //if (options::get()->has_bool("use_data_store") && !options::get()->has_bool("preload_data_store")) {
+  // note:  !options::get()->has_bool("preload_data_store") is true if there's
+  //        no --preload_data_store flag
+  //
+  if (options::get()->get_bool("use_data_store") && !options::get()->get_bool("preload_data_store")) {
     m_jag_store->build_owner_map(get_mini_batch_size());
   }
 }
