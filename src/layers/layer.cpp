@@ -1005,8 +1005,6 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
 
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_input()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit fp_setup_inputs\n";
     return;
   }
 #endif
@@ -1066,8 +1064,6 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_output()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit fp_setup_outputs\n";
     return;
   }
 #endif
@@ -1091,8 +1087,6 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_output()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit bp_setup_gradient_wrt_outputs\n";
     return;
   }
 #endif
@@ -1146,9 +1140,7 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 
 void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_input() || is_first_layer()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit bp_setup_gradient_wrt_inputs\n";
+  if (!keep_original_input() || skip_first_layer_bp()) {
     return;
   }
 #endif
@@ -1707,8 +1699,8 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
                                 dists[2],
                                 m_prev_activations_t.get_local_shape());
-  if (is_first_layer()) {
-    MPIPrintStreamDebug()
+  if (skip_first_layer_bp()) {
+    MPIPrintStreamInfo()
         << get_name() << ": skipping allocation of error signals";
   } else {
     assert0(m_error_signals_t.allocate());
@@ -1729,7 +1721,7 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
                                       input_local_shape);
-  if (m_parent_copy_in_required && !is_first_layer()) {
+  if (m_parent_copy_in_required && !skip_first_layer_bp()) {
     m_error_signals_shuffler = get_tensor_shuffler(
         m_error_signals_t, m_error_signals_copyout);
     for (int i = 0; i < 3; ++i) {
@@ -1814,7 +1806,8 @@ void Layer::bp_setup_distconv(int mini_batch_size) {
   m_error_signals_copyout.set_outermost_dimension(mini_batch_size);
   assert_eq((int)m_error_signals_copyout.get_shape()[-1],
             mini_batch_size);
-  if (keep_original_input() && m_error_signals_copyout.is_split_root()) {
+  if (keep_original_input() && !skip_first_layer_bp()
+      && m_error_signals_copyout.is_split_root()) {
     assert_eq((int)m_error_signals_copyout.get_local_shape()[-1],
               get_error_signals().LocalWidth());
   }
@@ -1923,7 +1916,7 @@ void Layer::ensure_prev_error_signals() {
 void Layer::copy_out_error_signals() {
   if (!m_parent_copy_in_required) return;
 
-  if (is_first_layer()) {
+  if (skip_first_layer_bp()) {
     // No need to copy back when the parent is an input layer
     MPIPrintStreamDebug()
         << "Skipping copy back as this layer is the first layer";
@@ -1962,7 +1955,8 @@ const dc::Shape Layer::get_output_tensor_shape() const {
   return dc::Shape(output_tensor_shape_v);
 }
 
-bool Layer::is_first_layer() const {
+bool Layer::skip_first_layer_bp() const {
+  if (!distconv_enabled()) return false;
   const auto &parents = get_parent_layers();
   if (parents.size() != 1) {
     return false;

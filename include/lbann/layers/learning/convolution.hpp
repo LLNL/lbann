@@ -198,6 +198,13 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
+        // Only weight gradients need to be computed
+        if (this->skip_first_layer_bp()) {
+          dc::MPIRootPrintStreamDebug() << "Skipping bp data for "
+                                        << this->get_name();
+          compute_gradients_distconv();
+          return;
+        }
         if (m_conv->is_overlap_bwd_halo_exchange_enabled()) {
           m_conv->backward_data_exchange_halo(this->m_prev_error_signals_t);
         }
@@ -488,7 +495,7 @@ protected:
                   pads, strides, dilations, this->m_num_groups,
                   m_fwd_algo, m_bwd_data_algo,
                   m_bwd_filter_algo,
-                  ws_size);
+                  ws_size, this->skip_first_layer_bp());
   }
 
  protected:
