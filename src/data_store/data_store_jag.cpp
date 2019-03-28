@@ -426,6 +426,18 @@ void data_store_jag::build_owner_map(int mini_batch_size) {
     /// striped across the ranks in the trainer
     m_owner[index] = (i % mini_batch_size) % m_np;
   }
+
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  std::cout << "owner_map; mini_batch_size: " << mini_batch_size << "\n";
+  //build map, so we can output in sorted order
+  std::map<int,int> m;
+  for (auto t : m_owner) {
+    m[t.first] = t.second;
+  }
+  for (auto t : m) std::cout << t.first << " -> " << t.second << "\n";
+  std::cout << "END_SECTION\n\n"; 
+  #endif
 }
 
 void data_store_jag::compute_super_node_overhead() {
