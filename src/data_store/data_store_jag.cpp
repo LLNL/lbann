@@ -66,18 +66,19 @@ void data_store_jag::setup(int mini_batch_size) {
 
   if (m_master) {
     if (m_super_node) {
-      std::cout << "mode: exchange_data via super nodes\n";
+      std::cout << "data store mode: exchange_data via super nodes\n";
     } else {
-      std::cout << "mode: exchange_data via individual samples\n";
+      std::cout << "data store mode: exchange_data via individual samples\n";
     }
   }
 
+  options *opts = options::get();
+
   double tm1 = get_time();
-  if (m_master) {
+  if (m_master && !options::get()->has_bool("preload_data_store")) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
 
-  options *opts = options::get();
   if (!opts->get_bool("preload_data_store")) {
     // generic_data_store::setup(mini_batch_size);
     build_owner_map(mini_batch_size);
@@ -85,7 +86,7 @@ void data_store_jag::setup(int mini_batch_size) {
 
   m_is_setup = true;
 
-  if (m_master) {
+  if (m_master && !options::get()->has_bool("preload_data_store")) {
     std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
   }
 }
