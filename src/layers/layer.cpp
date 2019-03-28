@@ -1343,17 +1343,17 @@ bool Layer::early_terminate_last_iteration() const {
 void Layer::setup_inter_layer_adaptation() {
   if (!distconv_enabled()) return;
 
-  MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout\n";
+  MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout";
   const auto &child_layers = get_child_layers();
-  MPIPrintStreamDebug() << ": number of children: "
-                            << child_layers.size()
-                            << ", child name: " << (child_layers.size() > 0 ? child_layers[0]->get_name() : "not available")
-                            << "\n";
+  MPIPrintStreamDebug()
+      << ": number of children: " << child_layers.size()
+      << ", child name: "
+      << (child_layers.size() > 0 ? child_layers[0]->get_name() : "not available");
+
   const auto &parent_layers = get_parent_layers();
-  MPIPrintStreamDebug() << ": number of parents: "
-                            << parent_layers.size()
-                            << ", parent name: " << (parent_layers.size() > 0 ? parent_layers[0]->get_name() : "not available")
-                            << "\n";
+  MPIPrintStreamDebug()
+      << ": number of parents: " << parent_layers.size()
+      << ", parent name: " << (parent_layers.size() > 0 ? parent_layers[0]->get_name() : "not available");
 
   const auto &ps = get_parallel_strategy();
   m_parent_copy_in_required = false;
@@ -1370,8 +1370,7 @@ void Layer::setup_inter_layer_adaptation() {
   MPIRootPrintStreamInfo() << "m_parent_copy_in_required: "
                            << m_parent_copy_in_required
                            << ", m_parent_shuffle_required: "
-                           << m_parent_shuffle_required
-                           << "\n";
+                           << m_parent_shuffle_required;
 
   m_child_copy_out_required = false;
   m_child_shuffle_required = false;
@@ -1387,8 +1386,7 @@ void Layer::setup_inter_layer_adaptation() {
   MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
                            << m_child_copy_out_required
                            << ", m_child_shuffle_required: "
-                           << m_child_shuffle_required
-                           << "\n";
+                           << m_child_shuffle_required;
 }
 
 void Layer::setup_keep_original_tensors() {
@@ -1406,7 +1404,7 @@ void Layer::setup_tensor_distribution_init(
     std::set<dc::Dist*> &fixed) {
   auto &ps = get_parallel_strategy();
   MPIRootPrintStreamInfo() << "Parallel Strategy for layer " << get_name()
-                           << ": " << ps << "\n";
+                           << ": " << ps;
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
@@ -1432,7 +1430,7 @@ void Layer::setup_tensor_distribution_init(
   }
   if (distconv_enabled()) {
     if (c != f) {
-      MPIRootPrintStreamError() << "The numbers of channel and filter decomposition should be the same.\n";
+      MPIRootPrintStreamError() << "The numbers of channel and filter decomposition should be the same.";
       throw lbann_exception();
     }
     if (c != 1 || f != 1) {
@@ -1440,9 +1438,8 @@ void Layer::setup_tensor_distribution_init(
       throw lbann_exception();
     }
     if (n * c * spatial_prod > np) {
-      MPIRootPrintStreamError() <<
-          "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: "
-                            << ps << "\n";
+      MPIRootPrintStreamError()
+          << "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: " << ps;
       throw lbann_exception();
     }
     // Put the remaining factor into the outer-most process dimension
@@ -1450,9 +1447,8 @@ void Layer::setup_tensor_distribution_init(
     n *= rem;
     ps.sample_splits *= rem;
     if (n * c * spatial_prod != np) {
-      MPIRootPrintStreamError() <<
-          "Can't determine factorization of the number of MPI ranks for parallel strategy: "
-                            << ps << "\n";
+      MPIRootPrintStreamError()
+          << "Can't determine factorization of the number of MPI ranks for parallel strategy: " << ps;
       throw lbann_exception();
     }
     std::string xd_array, xd_array_names;
@@ -1464,7 +1460,7 @@ void Layer::setup_tensor_distribution_init(
     xd_array_names = "NxCxHxW";
 #endif // LBANN_DISTCONV_HAS_DEPTH
     MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
-                             << xd_array << "\n";
+                             << xd_array;
   }
 
   assert_always(!distconv_enabled() || (
