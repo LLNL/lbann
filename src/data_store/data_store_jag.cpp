@@ -44,25 +44,26 @@ data_store_jag::data_store_jag(
   m_super_node(false),
   m_super_node_overhead(0),
   m_compacted_sample_size(0) {
+
   set_name("data_store_jag");
+  m_super_node = options::get()->get_bool("super_node");
+
+  data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
+  if (jag_reader == nullptr) {
+    LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
+  }
+
 }
 
 data_store_jag::~data_store_jag() {}
 
 void data_store_jag::setup(int mini_batch_size) {
+  generic_data_store::setup(mini_batch_size);
+
   if (m_is_setup) {
     LBANN_ERROR("data_store_jag::setup was called previously. Note that this is called from data_reader::set_mini_batch_size, so this may not be an error. Please consult with Brian Van Essen and Dave Hysom is you think multiple calls to data_reader::set_mini_batch_size are permissible");
   }
 
-  double tm1 = get_time();
-  if (m_master) {
-    std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
-  }
-
-  //generic_data_store::setup(mini_batch_size);
-  //  build_owner_map(mini_batch_size);
-
-  m_super_node = options::get()->get_bool("super_node");
   if (m_master) {
     if (m_super_node) {
       std::cout << "mode: exchange_data via super nodes\n";
@@ -71,13 +72,15 @@ void data_store_jag::setup(int mini_batch_size) {
     }
   }
 
-  // if (m_master) {
-  //   std::cout << "num shuffled_indices: " << m_shuffled_indices->size() << "\n";
-  // }
+  double tm1 = get_time();
+  if (m_master) {
+    std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
+  }
 
-  data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
-  if (jag_reader == nullptr) {
-    LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
+  options *opts = options::get();
+  if (!opts->get_bool("preload_data_store")) {
+    // generic_data_store::setup(mini_batch_size);
+    build_owner_map(mini_batch_size);
   }
 
   m_is_setup = true;
@@ -432,13 +435,15 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   return k;
 }
 
-void data_store_jag::build_preloaded_owner_map(const std::vector<int>& local_list_sizes) {
+void data_store_jag::build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes) {
   m_owner.clear();
   int owning_rank = 0;
+  size_t per_rank_list_range_start = 0;
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
-    const auto local_list_size = local_list_sizes[owning_rank];
-    if((i % local_list_size == 0) && (i / local_list_size > 0)) {
+    const auto per_rank_list_size = per_rank_list_sizes[owning_rank];
+    if(i == (per_rank_list_range_start + per_rank_list_size)) {
       ++owning_rank;
+      per_rank_list_range_start += per_rank_list_size;
     }
     m_owner[i] = owning_rank;
   }

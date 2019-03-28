@@ -136,7 +136,7 @@ protected :
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
 public:
-  void build_preloaded_owner_map(const std::vector<int>& local_list_sizes);
+  void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);
 protected:

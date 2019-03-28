@@ -37,7 +37,7 @@
 namespace lbann {
 
 generic_data_store::generic_data_store(generic_data_reader *reader) :
-m_n(0),
+    m_n(0),
     m_reader(reader),
     m_my_minibatch_indices(nullptr),
     m_in_memory(true),
@@ -51,46 +51,7 @@ m_n(0),
     LBANN_ERROR(" m_reader is nullptr");
   }
 
-  m_comm = m_reader->get_comm();
-  if (m_comm == nullptr) {
-    LBANN_ERROR(" m_comm is nullptr");
-  }
-
-  m_master = m_comm->am_world_master();
-  m_rank = m_comm->get_rank_in_trainer();
-  m_np = m_comm->get_procs_per_trainer();
-  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
-
-  m_dir = m_reader->get_file_dir();
-
   set_name("generic_data_store");
-
-  if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
-  options *opts = options::get();
-  if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
-    m_extended_testing = true;
-  }
-
-  if (opts->has_bool("local_disk") && opts->get_bool("local_disk")) {
-    if (m_master) std::cerr << "running in out-of-memory mode\n";
-    m_in_memory = false;
-  }
-
-  if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
-    m_verbose = true;
-  }
-
-  if (opts->has_string("use_tarball")) {
-    m_dir = m_reader->get_local_file_dir();
-  }
-
-  if (m_comm->get_num_trainers() != 1) {
-    if (m_master) {
-      std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
-                << "a single model; please ask Dave Hysom to fix!\n\n";
-    }
-    exit(9);
-  }
 }
 
 void generic_data_store::get_minibatch_index_vector() {
@@ -125,6 +86,45 @@ void generic_data_store::get_my_datastore_indices() {
 }
 
 void generic_data_store::setup(int mini_batch_size) {
+  m_comm = m_reader->get_comm();
+  if (m_comm == nullptr) {
+    LBANN_ERROR(" m_comm is nullptr");
+  }
+
+  m_master = m_comm->am_world_master();
+  m_rank = m_comm->get_rank_in_trainer();
+  m_np = m_comm->get_procs_per_trainer();
+  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
+
+  m_dir = m_reader->get_file_dir();
+
+  if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
+  options *opts = options::get();
+  if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
+    m_extended_testing = true;
+  }
+
+  if (opts->has_bool("local_disk") && opts->get_bool("local_disk")) {
+    if (m_master) std::cerr << "running in out-of-memory mode\n";
+    m_in_memory = false;
+  }
+
+  if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
+    m_verbose = true;
+  }
+
+  if (opts->has_string("use_tarball")) {
+    m_dir = m_reader->get_local_file_dir();
+  }
+
+  if (m_comm->get_num_trainers() != 1) {
+    if (m_master) {
+      std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
+                << "a single model; please ask Dave Hysom to fix!\n\n";
+    }
+    exit(9);
+  }
+
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();

@@ -190,6 +190,17 @@ std::unique_ptr<model> build_model_from_prototext(
     ret_model->allow_background_io_activity(false);
   }
 
+  // under development; experimental
+  if (opts->get_bool("use_data_store")) {
+    if (master) {
+      std::cout << "\nUSING DATA STORE!\n\n";
+    }
+    for (auto&& r : data_readers) {
+      if (!r.second) continue;
+      r.second->setup_data_store(pb_model->mini_batch_size());
+    }
+  }
+
   // restart model from checkpoint if we have one
   //@todo
   //model->restartShared();

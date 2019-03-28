@@ -156,6 +156,13 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
+
+  // Initialize the data store
+  options *opts = options::get();
+  if (opts->get_bool("use_data_store")) {
+    m_jag_store = new data_store_jag(this);  // *data_store_jag
+    m_data_store = m_jag_store;                 // *generic_data_store
+  }
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
@@ -209,6 +216,11 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_sample_list = rhs.m_sample_list;
   m_list_per_trainer = rhs.m_list_per_trainer;
   m_list_per_model = rhs.m_list_per_model;
+
+  if(rhs.m_data_store != nullptr || rhs.m_jag_store != nullptr) {
+    m_jag_store = new data_store_jag(this);  // *data_store_jag
+    m_data_store = m_jag_store;                 // *generic_data_store
+  }
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -365,6 +377,8 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     }
   }
 
+  /// @todo explore the possibility of putting the sample name in
+  /// node's hierarchy, e.g. node[sample_name]
   conduit::relay::io::hdf5_read(h, path, node);
 
   return true;
@@ -800,8 +814,7 @@ void data_reader_jag_conduit::load() {
     m_is_data_loaded = true;
 
     /// Open the first sample to make sure that all of the fields are correct
-    size_t data_id = (m_sample_list[0]).first;
-    m_sample_list.open_samples_hdf5_handle(data_id, true);
+    m_sample_list.open_samples_hdf5_handle(0, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -815,7 +828,7 @@ void data_reader_jag_conduit::load() {
 
     check_image_data();
 
-    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
+    m_sample_list.close_if_done_samples_hdf5_handle(0);
   }
 
 
@@ -863,67 +876,46 @@ void data_reader_jag_conduit::load() {
     m_data_store = nullptr;
   }
 
-  // if (m_sample_list.size() != (size_t)global_index_count) {
-  //   LBANN_ERROR("m_sample_list.size() != global_index_count; code is buggy");
-  // }
-  //m_shuffled_indices.resize(m_sample_list.size());
-
   select_subset_of_data();
-
-  //if (options::get()->has_bool("use_data_store") && !options::get()->has_bool("preload_data_store")) {
-  // note:  !options::get()->has_bool("preload_data_store") is true if there's
-  //        no --preload_data_store flag. For clarity I'll start a PR
-  //        to delete the options::has_bool method.
-  //
-  if (options::get()->get_bool("use_data_store") && !options::get()->get_bool("preload_data_store")) {
-    m_jag_store->build_owner_map(get_mini_batch_size());
-  }
 }
 
 
 void data_reader_jag_conduit::preload_data_store() {
   m_data_store_was_preloaded = true;
   m_jag_store->set_preload();
-  //  m_data_store->set_shuffled_indices(&m_shuffled_indices);
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
   /// @todo BVE FIXME this
   m_rank_in_model = get_comm()->get_rank_in_trainer();
-// debug - should go away
-std::cout << "my rank: " << m_rank_in_model << "\n";
+
+  double tm1 = get_time();
+  if (get_comm()->am_trainer_master()) {
+    std::cout << "data_store_jag::preload_data_store() for role: " << get_role() << " starting preload\n";
+  }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
       continue;
     }
     work.reset();
-    size_t data_id = (m_sample_list[idx]).first;
-    const std::string& file_name = m_sample_list.get_samples_filename(data_id);
-    m_sample_list.open_samples_hdf5_handle(data_id, true);
-    std::cout << "Rank " << m_rank_in_model << " is loading " << idx << " data id " << data_id << " filename " << file_name << " which is owned by " << m_data_store->get_index_owner(idx) << std::endl;
+    m_sample_list.open_samples_hdf5_handle(idx, true);
     load_conduit_node(idx, key, work);
-    const std::vector<std::string> &sample_names = work.child_names();
-    if (sample_names.size() != 1) {
-      std::stringstream err;
-      err << "the loaded node should have a single child, which is the sample "
-          << "name; but it contains the following children: ";
-      for (auto t : sample_names) {
-        err << t << " ";
-      }
-      //      LBANN_ERROR(err.str());
-    }
     conduit::Node & node = m_jag_store->get_empty_node(idx);
     const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
-    node[padded_idx] = work[sample_names[0]];
-
-    //debugging: for development, must go away
-    node.print();
-    std::cout << "\n\ndata_reader_jag_conduit::preload_data_store: here is the first node:\n\n";
-    exit(0);
+    node[padded_idx] = work;
 
     m_jag_store->set_preloaded_conduit_node(idx, node);
-    //    m_sample_list.close_if_done_samples_hdf5_handle(data_id);
+  }
+  /// Once all of the data has been preloaded, close all of the file handles
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+      continue;
+    }
+    m_sample_list.close_if_done_samples_hdf5_handle(idx);
+  }
+  if (get_comm()->am_trainer_master()) {
+    std::cout << "data_store_jag::preload_data_store() loading data for role: " << get_role() << " took " << get_time() - tm1 << "s\n";
   }
 }
 
@@ -1594,11 +1586,8 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 
 void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
    if (m_data_store != nullptr) {
-     delete m_data_store;
+     m_data_store->setup(mini_batch_size);
    }
-   m_jag_store = new data_store_jag(this);  // *data_store_jag
-   m_data_store = m_jag_store;                 // *generic_data_store
-   m_data_store->setup(mini_batch_size);
 }
 
 void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
