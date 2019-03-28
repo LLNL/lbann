@@ -590,6 +590,8 @@ protected:
     m_distconv_enabled = false;
   }
 
+  bool skip_first_layer_bp() const;
+
  protected:
   virtual bool keep_original_input() const { return m_keep_original_input; }
   virtual bool keep_original_output() const { return m_keep_original_output; }

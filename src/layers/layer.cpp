@@ -1005,8 +1005,6 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
 
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_input()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit fp_setup_inputs\n";
     return;
   }
 #endif
@@ -1066,8 +1064,6 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_output()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit fp_setup_outputs\n";
     return;
   }
 #endif
@@ -1091,8 +1087,6 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
   if (!keep_original_output()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit bp_setup_gradient_wrt_outputs\n";
     return;
   }
 #endif
@@ -1146,9 +1140,7 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 
 void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_input()) {
-    dc::MPIPrintStreamDebug()
-        << get_name() << ": omit bp_setup_gradient_wrt_inputs\n";
+  if (!keep_original_input() || skip_first_layer_bp()) {
     return;
   }
 #endif
@@ -1343,17 +1335,17 @@ bool Layer::early_terminate_last_iteration() const {
 void Layer::setup_inter_layer_adaptation() {
   if (!distconv_enabled()) return;
 
-  MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout\n";
+  MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout";
   const auto &child_layers = get_child_layers();
-  MPIPrintStreamDebug() << ": number of children: "
-                            << child_layers.size()
-                            << ", child name: " << (child_layers.size() > 0 ? child_layers[0]->get_name() : "not available")
-                            << "\n";
+  MPIPrintStreamDebug()
+      << ": number of children: " << child_layers.size()
+      << ", child name: "
+      << (child_layers.size() > 0 ? child_layers[0]->get_name() : "not available");
+
   const auto &parent_layers = get_parent_layers();
-  MPIPrintStreamDebug() << ": number of parents: "
-                            << parent_layers.size()
-                            << ", parent name: " << (parent_layers.size() > 0 ? parent_layers[0]->get_name() : "not available")
-                            << "\n";
+  MPIPrintStreamDebug()
+      << ": number of parents: " << parent_layers.size()
+      << ", parent name: " << (parent_layers.size() > 0 ? parent_layers[0]->get_name() : "not available");
 
   const auto &ps = get_parallel_strategy();
   m_parent_copy_in_required = false;
@@ -1370,8 +1362,7 @@ void Layer::setup_inter_layer_adaptation() {
   MPIRootPrintStreamInfo() << "m_parent_copy_in_required: "
                            << m_parent_copy_in_required
                            << ", m_parent_shuffle_required: "
-                           << m_parent_shuffle_required
-                           << "\n";
+                           << m_parent_shuffle_required;
 
   m_child_copy_out_required = false;
   m_child_shuffle_required = false;
@@ -1387,8 +1378,7 @@ void Layer::setup_inter_layer_adaptation() {
   MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
                            << m_child_copy_out_required
                            << ", m_child_shuffle_required: "
-                           << m_child_shuffle_required
-                           << "\n";
+                           << m_child_shuffle_required;
 }
 
 void Layer::setup_keep_original_tensors() {
@@ -1406,7 +1396,7 @@ void Layer::setup_tensor_distribution_init(
     std::set<dc::Dist*> &fixed) {
   auto &ps = get_parallel_strategy();
   MPIRootPrintStreamInfo() << "Parallel Strategy for layer " << get_name()
-                           << ": " << ps << "\n";
+                           << ": " << ps;
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
@@ -1432,7 +1422,7 @@ void Layer::setup_tensor_distribution_init(
   }
   if (distconv_enabled()) {
     if (c != f) {
-      MPIRootPrintStreamError() << "The numbers of channel and filter decomposition should be the same.\n";
+      MPIRootPrintStreamError() << "The numbers of channel and filter decomposition should be the same.";
       throw lbann_exception();
     }
     if (c != 1 || f != 1) {
@@ -1440,9 +1430,8 @@ void Layer::setup_tensor_distribution_init(
       throw lbann_exception();
     }
     if (n * c * spatial_prod > np) {
-      MPIRootPrintStreamError() <<
-          "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: "
-                            << ps << "\n";
+      MPIRootPrintStreamError()
+          << "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: " << ps;
       throw lbann_exception();
     }
     // Put the remaining factor into the outer-most process dimension
@@ -1450,9 +1439,8 @@ void Layer::setup_tensor_distribution_init(
     n *= rem;
     ps.sample_splits *= rem;
     if (n * c * spatial_prod != np) {
-      MPIRootPrintStreamError() <<
-          "Can't determine factorization of the number of MPI ranks for parallel strategy: "
-                            << ps << "\n";
+      MPIRootPrintStreamError()
+          << "Can't determine factorization of the number of MPI ranks for parallel strategy: " << ps;
       throw lbann_exception();
     }
     std::string xd_array, xd_array_names;
@@ -1464,7 +1452,7 @@ void Layer::setup_tensor_distribution_init(
     xd_array_names = "NxCxHxW";
 #endif // LBANN_DISTCONV_HAS_DEPTH
     MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
-                             << xd_array << "\n";
+                             << xd_array;
   }
 
   assert_always(!distconv_enabled() || (
@@ -1711,8 +1699,13 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
                                 dists[2],
                                 m_prev_activations_t.get_local_shape());
-  assert0(m_error_signals_t.allocate());
-  m_error_signals_t.zero();
+  if (skip_first_layer_bp()) {
+    MPIPrintStreamInfo()
+        << get_name() << ": skipping allocation of error signals";
+  } else {
+    assert0(m_error_signals_t.allocate());
+    m_error_signals_t.zero();
+  }
   MPIPrintStreamDebug() << get_name() << "; "
                         << "error signals: " << m_error_signals_t;
 }
@@ -1728,7 +1721,7 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
                                       input_local_shape);
-  if (m_parent_copy_in_required) {
+  if (m_parent_copy_in_required && !skip_first_layer_bp()) {
     m_error_signals_shuffler = get_tensor_shuffler(
         m_error_signals_t, m_error_signals_copyout);
     for (int i = 0; i < 3; ++i) {
@@ -1813,7 +1806,8 @@ void Layer::bp_setup_distconv(int mini_batch_size) {
   m_error_signals_copyout.set_outermost_dimension(mini_batch_size);
   assert_eq((int)m_error_signals_copyout.get_shape()[-1],
             mini_batch_size);
-  if (keep_original_input() && m_error_signals_copyout.is_split_root()) {
+  if (keep_original_input() && !skip_first_layer_bp()
+      && m_error_signals_copyout.is_split_root()) {
     assert_eq((int)m_error_signals_copyout.get_local_shape()[-1],
               get_error_signals().LocalWidth());
   }
@@ -1853,7 +1847,7 @@ void Layer::ensure_prev_activations() {
 
   if (m_parent_copy_in_required) {
     MPIPrintStreamDebug()
-        << "Copying previous activations from sample decomposition\n";
+        << "Copying previous activations from sample decomposition";
     assert0(dc::tensor::View(
         m_prev_activations_const_view,
         get_prev_activations().LockedBuffer()));
@@ -1879,7 +1873,7 @@ void Layer::copy_out_activations() {
   this->m_model->clock_end();
 
   MPIPrintStreamDebug()
-      << "Copying activations back to sample decomposition\n";
+      << "Copying activations back to sample decomposition";
   assert0(dc::tensor::View(
       m_activations_copyout, get_activations().Buffer()));
   TensorShuffler *shuffler =
@@ -1900,7 +1894,7 @@ void Layer::ensure_prev_error_signals() {
 
   if (m_child_copy_out_required) {
     MPIPrintStreamDebug()
-        << "Copying previous error signals from sample decomposition\n";
+        << "Copying previous error signals from sample decomposition";
     assert0(dc::tensor::View(
         m_prev_error_signals_const_view,
         get_prev_error_signals().LockedBuffer()));
@@ -1922,27 +1916,19 @@ void Layer::ensure_prev_error_signals() {
 void Layer::copy_out_error_signals() {
   if (!m_parent_copy_in_required) return;
 
-  const auto &parents = get_parent_layers();
-  assert_always(parents.size() == 1);
-  const Layer *parent = parents[0];
-
-  // Traverse the graph while skipping split nodes
-  while (parent->get_type() == "split") {
-    parent = parent->get_parent_layers()[0];
-  }
-
-  if (parent->get_type().find("input") == 0) {
+  if (skip_first_layer_bp()) {
     // No need to copy back when the parent is an input layer
     MPIPrintStreamDebug()
-        << "Skipping copy back as the parent is an input layer\n";
+        << "Skipping copy back as this layer is the first layer";
     return;
   }
+
   // No need to copy back as the original layer compute function
   // will be called
   if (m_exit_count == 0) return;
 
   MPIPrintStreamDebug()
-      << "Copying error signals back to sample decomposition\n";
+      << "Copying error signals back to sample decomposition";
   assert0(dc::tensor::View(
       m_error_signals_copyout, get_error_signals().Buffer()));
   TensorShuffler *shuffler =
@@ -1967,6 +1953,24 @@ const dc::Shape Layer::get_output_tensor_shape() const {
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
   output_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return dc::Shape(output_tensor_shape_v);
+}
+
+bool Layer::skip_first_layer_bp() const {
+  if (!distconv_enabled()) return false;
+  const auto &parents = get_parent_layers();
+  if (parents.size() != 1) {
+    return false;
+  }
+  const auto *parent = parents[0];
+  // Traverse the graph while skipping split nodes
+  while (parent->get_type() == "split") {
+    parent = parent->get_parent_layers()[0];
+  }
+  if (parent->get_type().find("input") == 0) {
+    // No need to copy back when the parent is an input layer
+    return true;
+  }
+  return false;
 }
 
 #endif
