@@ -801,6 +801,9 @@ void data_reader_jag_conduit::load() {
 
   m_shuffled_indices.clear();
 
+  if(is_master()) {
+    std::cout << "starting load" << std::endl;
+  }
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
 
@@ -808,6 +811,9 @@ void data_reader_jag_conduit::load() {
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+  if(is_master()) {
+    std::cout << "Finished sample list, check data" << std::endl;
+  }
 
   /// Check the data that each rank loaded
   if (!m_is_data_loaded) {
@@ -830,22 +836,25 @@ void data_reader_jag_conduit::load() {
 
     m_sample_list.close_if_done_samples_hdf5_handle(0);
   }
+  if(is_master()) {
+    std::cout << "Done with data checking" << std::endl;
+  }
 
 
   // need to resize and init shuffled indices here, since it's needed in
   // preload_data_store, which must be called before merging the sample lists
   int sz = m_sample_list.size();
-  // int global_index_count = m_comm->trainer_allreduce<int>(sz);
-  // if (is_master()) {
-  //   std::cout << "master's local index count: " << sz << " global: "
-  //             << global_index_count << std::endl;
-  // }
   std::vector<int> local_list_sizes(m_comm->get_procs_per_trainer());
   m_comm->trainer_all_gather(sz, local_list_sizes);
 
+  if(is_master()) {
+    std::cout << "We now have the proper size" << std::endl;
+  }
+
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  if (is_master()) {
+  options *opts = options::get();
+  if (opts->has_string("write_sample_list") && is_master()) {
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
@@ -853,27 +862,37 @@ void data_reader_jag_conduit::load() {
     m_sample_list.write(s.str());
   }
   m_shuffled_indices.resize(m_sample_list.size());
-  //  m_shuffled_indices.resize(global_index_count);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
-  if (options::get()->has_bool("use_data_store") || options::get()->has_bool("preload_data_store")) {
+  if(is_master()) {
+    std::cout << "Lists have been gathered" << std::endl;
+  }
+
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
     if (is_master()) {
       std::cout << "\nUSING DATA_STORE\n\n";
     }
-    // m_jag_store = new data_store_jag(this);  // *data_store_jag
-    // m_data_store = m_jag_store;              // *generic_data_store
-    // note: m_data_store->setup(minibatch_sz) will be called
-    //       later, since we don't know the mb_size as of now
     m_data_store->set_shuffled_indices(&m_shuffled_indices);
-    if (options::get()->has_bool("preload_data_store")) {
+    if (opts->get_bool("preload_data_store")) {
+      if(is_master()) {
+        std::cout << "Starting the preload" << std::endl;
+      }
       m_jag_store->build_preloaded_owner_map(local_list_sizes);
       preload_data_store();
+      if(is_master()) {
+        std::cout << "preload complete" << std::endl;
+      }
+
     }
   } else {
     // these should already be set; in the future there will only
     // be one of these (when data_store_conduit is completed)
     m_jag_store = nullptr;
     m_data_store = nullptr;
+  }
+
+  if(is_master()) {
+    std::cout << "Setting up the data store is complete" << std::endl;
   }
 
   select_subset_of_data();
