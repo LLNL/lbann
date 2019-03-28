@@ -1728,7 +1728,7 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
 
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
                                       input_local_shape);
-  if (m_parent_copy_in_required) {
+  if (m_parent_copy_in_required && !is_first_layer()) {
     m_error_signals_shuffler = get_tensor_shuffler(
         m_error_signals_t, m_error_signals_copyout);
     for (int i = 0; i < 3; ++i) {
@@ -1853,7 +1853,7 @@ void Layer::ensure_prev_activations() {
 
   if (m_parent_copy_in_required) {
     MPIPrintStreamDebug()
-        << "Copying previous activations from sample decomposition\n";
+        << "Copying previous activations from sample decomposition";
     assert0(dc::tensor::View(
         m_prev_activations_const_view,
         get_prev_activations().LockedBuffer()));
@@ -1879,7 +1879,7 @@ void Layer::copy_out_activations() {
   this->m_model->clock_end();
 
   MPIPrintStreamDebug()
-      << "Copying activations back to sample decomposition\n";
+      << "Copying activations back to sample decomposition";
   assert0(dc::tensor::View(
       m_activations_copyout, get_activations().Buffer()));
   TensorShuffler *shuffler =
@@ -1900,7 +1900,7 @@ void Layer::ensure_prev_error_signals() {
 
   if (m_child_copy_out_required) {
     MPIPrintStreamDebug()
-        << "Copying previous error signals from sample decomposition\n";
+        << "Copying previous error signals from sample decomposition";
     assert0(dc::tensor::View(
         m_prev_error_signals_const_view,
         get_prev_error_signals().LockedBuffer()));
@@ -1922,27 +1922,19 @@ void Layer::ensure_prev_error_signals() {
 void Layer::copy_out_error_signals() {
   if (!m_parent_copy_in_required) return;
 
-  const auto &parents = get_parent_layers();
-  assert_always(parents.size() == 1);
-  const Layer *parent = parents[0];
-
-  // Traverse the graph while skipping split nodes
-  while (parent->get_type() == "split") {
-    parent = parent->get_parent_layers()[0];
-  }
-
-  if (parent->get_type().find("input") == 0) {
+  if (is_first_layer()) {
     // No need to copy back when the parent is an input layer
     MPIPrintStreamDebug()
-        << "Skipping copy back as the parent is an input layer\n";
+        << "Skipping copy back as this layer is the first layer";
     return;
   }
+
   // No need to copy back as the original layer compute function
   // will be called
   if (m_exit_count == 0) return;
 
   MPIPrintStreamDebug()
-      << "Copying error signals back to sample decomposition\n";
+      << "Copying error signals back to sample decomposition";
   assert0(dc::tensor::View(
       m_error_signals_copyout, get_error_signals().Buffer()));
   TensorShuffler *shuffler =
@@ -1967,6 +1959,23 @@ const dc::Shape Layer::get_output_tensor_shape() const {
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
   output_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return dc::Shape(output_tensor_shape_v);
+}
+
+bool Layer::is_first_layer() const {
+  const auto &parents = get_parent_layers();
+  if (parents.size() != 1) {
+    return false;
+  }
+  const auto *parent = parents[0];
+  // Traverse the graph while skipping split nodes
+  while (parent->get_type() == "split") {
+    parent = parent->get_parent_layers()[0];
+  }
+  if (parent->get_type().find("input") == 0) {
+    // No need to copy back when the parent is an input layer
+    return true;
+  }
+  return false;
 }
 
 #endif
