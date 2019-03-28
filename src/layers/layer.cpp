@@ -1146,7 +1146,7 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 
 void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_input()) {
+  if (!keep_original_input() || is_first_layer()) {
     dc::MPIPrintStreamDebug()
         << get_name() << ": omit bp_setup_gradient_wrt_inputs\n";
     return;
