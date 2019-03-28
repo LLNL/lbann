@@ -213,8 +213,9 @@ class sample_list_jag {
       }
       auto& e = m_file_id_stats_map[id];
       std::get<1>(e) = h;
+      /// If a new file is opened, place it in the priority queue
+      manage_open_hdf5_handles(id, pre_open_fd);
     }
-    manage_open_hdf5_handles(id, pre_open_fd);
     return h;
   }
 
