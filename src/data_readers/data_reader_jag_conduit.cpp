@@ -788,6 +788,8 @@ void data_reader_jag_conduit::load() {
     m_num_labels=2;
   }
 
+  options *opts = options::get();
+
   if (is_master()) {
     std::cout << "JAG load GAN m_gan_labelling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
@@ -856,7 +858,7 @@ void data_reader_jag_conduit::load() {
   //  m_shuffled_indices.resize(global_index_count);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
-  if (options::get()->has_bool("use_data_store") || options::get()->has_bool("preload_data_store")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
     if (is_master()) {
       std::cout << "\nUSING DATA_STORE\n\n";
     }
@@ -865,7 +867,7 @@ void data_reader_jag_conduit::load() {
     // note: m_data_store->setup(minibatch_sz) will be called
     //       later, since we don't know the mb_size as of now
     m_data_store->set_shuffled_indices(&m_shuffled_indices);
-    if (options::get()->has_bool("preload_data_store")) {
+    if (opts->get_bool("preload_data_store")) {
       m_jag_store->build_preloaded_owner_map(local_list_sizes);
       preload_data_store();
     }
