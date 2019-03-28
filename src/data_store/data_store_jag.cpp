@@ -29,6 +29,9 @@
 
 #ifdef LBANN_HAS_CONDUIT
 
+//#undef DEBUG
+#define DEBUG
+
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
