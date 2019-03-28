@@ -736,8 +736,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  //  int m_rank;
-
   generic_data_store *m_data_store;
 
   lbann_comm *m_comm;

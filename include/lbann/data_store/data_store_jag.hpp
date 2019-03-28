@@ -73,6 +73,9 @@ class data_store_jag : public generic_data_store {
 
   void set_preload() { m_preload = true; }
 
+  /// fills in m_owner, which maps index -> owning processor
+  void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
+
 protected :
 
   bool m_preload;
@@ -135,11 +138,9 @@ protected :
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
-public:
-  void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);
-protected:
+
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to send. (formerly called "proc_to_indices)
   std::vector<std::unordered_set<int>> m_indices_to_send;
