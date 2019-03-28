@@ -1707,8 +1707,13 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
   m_error_signals_t = TensorDev(input_tensor_shape, loc,
                                 dists[2],
                                 m_prev_activations_t.get_local_shape());
-  assert0(m_error_signals_t.allocate());
-  m_error_signals_t.zero();
+  if (is_first_layer()) {
+    MPIPrintStreamDebug()
+        << get_name() << ": skipping allocation of error signals";
+  } else {
+    assert0(m_error_signals_t.allocate());
+    m_error_signals_t.zero();
+  }
   MPIPrintStreamDebug() << get_name() << "; "
                         << "error signals: " << m_error_signals_t;
 }
