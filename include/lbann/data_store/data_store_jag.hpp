@@ -106,17 +106,19 @@ protected :
   std::vector<conduit::Node> m_recv_buffer;
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
-
+/*
   /// overhead incurred by the super_node; this is constant,
   /// regardless of the number of samples contained in the super_node;
   /// assumes the super_node contains at least two samples
   int m_super_node_overhead;
+*/
 
   /// size of a compacted conduit::Node that contains a single sample
   int m_compacted_sample_size;
-
+/*
   /// assigns values to m_super_node_overhead and m_compacted_sample_size
   void compute_super_node_overhead();
+*/
 
   /// used in exchange_data_by_super_node(); contains the super_nodes,
   /// after they have been converted from compacted format

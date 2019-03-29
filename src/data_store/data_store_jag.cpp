@@ -45,7 +45,7 @@ data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
   m_super_node(false),
-  m_super_node_overhead(0),
+  //m_super_node_overhead(0),
   m_compacted_sample_size(0) {
   set_name("data_store_jag");
 }
@@ -241,6 +241,10 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 
 const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
   std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+  #ifdef DEBUG
+  std::cout << "get_conduit_node, requested id: " << data_id << "\n";
+  #endif
+
   if (t != m_data.end()) {
     if(m_super_node) {
       return t->second;
@@ -309,6 +313,15 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   size_t ss = 0;
   for (int p=0; p<m_np; p++) {
     const std::unordered_set<int> &indices = m_indices_to_send[p];
+    #ifdef DEBUG
+    std::cout << "\nSECTION\n"; 
+    std::cout << "sending to P_" <<  p << " :: ";
+    std::set<int> m2;
+    for (auto index : indices) { m2.insert(index); }
+    for (auto t : m2) std::cout << t << " ";
+    std::cout << "\n";
+    std::cout << "END_SECTION\n\n"; 
+    #endif
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
         LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
@@ -337,8 +350,18 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   ss = 0;
   for (int p=0; p<m_np; p++) {
     const std::unordered_set<int> &indices = m_indices_to_recv[p];
+    #ifdef DEBUG
+    std::cout << "\nSECTION\n"; 
+    std::cout << "receiving from P_" << p << " :: ";
+    std::set<int> m3;
+    for (auto index : indices) { m3.insert(index); }
+    for (auto t : m3) { std::cout << t << " "; }
+    std::cout << "\n";
+    std::cout << "END_SECTION\n\n"; 
+    #endif
     for (auto index : indices) {
       m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
+
       El::byte *r = reinterpret_cast<El::byte*>(m_recv_buffer[ss].data_ptr());
       m_comm->nb_tagged_recv<El::byte>(r, m_compacted_sample_size, p, index, m_recv_requests[ss], m_comm->get_trainer_comm());
       m_recv_data_ids[ss] = index;
@@ -378,6 +401,15 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
     int data_id = m_recv_data_ids[j];
     m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  std::cout << "I have the following indices for the current mb: ";
+  std::set<int> m4;
+  for (auto t : m_minibatch_data) { m4.insert(t.first); }
+  for (auto t2 : m4) { std::cout << t2 << " "; }
+  std::cout << "\n";
+  std::cout << "END_SECTION\n\n"; 
+  #endif
 }
 
 int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
@@ -440,6 +472,8 @@ void data_store_jag::build_owner_map(int mini_batch_size) {
   #endif
 }
 
+
+#if 0
 void data_store_jag::compute_super_node_overhead() {
   if (m_super_node_overhead != 0) {
     return;
@@ -466,6 +500,7 @@ void data_store_jag::compute_super_node_overhead() {
     }
   }
 }
+#endif
 
 const conduit::Node & data_store_jag::get_random_node() const {
 std::cout << "\nstarting data_store_jag::get_random_node()\n";
