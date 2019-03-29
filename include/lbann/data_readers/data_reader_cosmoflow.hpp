@@ -70,7 +70,8 @@ class cosmoflow_reader : public generic_data_reader {
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
-  int prepare_npz_file(const int data_id);
+  std::pair<cnpy::NpyArray, int> prepare_npz_file(const int data_id,
+                                                  const std::string key);
 
   /// Number of samples.
   int m_num_samples_total = 0;
