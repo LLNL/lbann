@@ -166,6 +166,55 @@ bool is_p2p_shuffle_feasible(const TensorDev &tensor) {
   }
   return true;
 }
+
+void *shuffler_src_buf = nullptr;
+size_t shuffler_src_buf_size = 0;
+void *shuffler_dst_buf = nullptr;
+size_t shuffler_dst_buf_size = 0;
+TensorDev::data_type *get_shuffler_src_buf(const TensorDev &tensor) {
+  // Allocate if null
+  if (shuffler_src_buf == nullptr) {
+    shuffler_src_buf_size = TensorShuffler::get_buf_size(tensor);
+    MPIPrintStreamInfo() << "Allocating shared shuffler buffer of size "
+                         << shuffler_src_buf_size;
+    DISTCONV_CUDA_MALLOC(&shuffler_src_buf, shuffler_src_buf_size);
+  }
+  // Returns the pre-allocated memory if it's large enough
+  size_t required_size = TensorShuffler::get_buf_size(tensor);
+  if (required_size <= shuffler_src_buf_size) {
+    MPIPrintStreamInfo() << "Using shared shuffler buffer";
+    return static_cast<TensorDev::data_type*>(shuffler_src_buf);
+  } else {
+    return nullptr;
+  }
+}
+TensorDev::data_type *get_shuffler_dst_buf(const TensorDev &tensor) {
+  // Allocate if null
+  if (shuffler_dst_buf == nullptr) {
+    shuffler_dst_buf_size = TensorShuffler::get_buf_size(tensor);
+    MPIPrintStreamInfo() << "Allocating shared shuffler buffer of size "
+                         << shuffler_src_buf_size;
+    DISTCONV_CUDA_MALLOC(&shuffler_dst_buf, shuffler_dst_buf_size);
+  }
+  size_t required_size = TensorShuffler::get_buf_size(tensor);
+  // Returns the pre-allocated memory if it's large enough
+  if (required_size <= shuffler_dst_buf_size) {
+    MPIPrintStreamInfo() << "Using shared shuffler buffer";
+    return static_cast<TensorDev::data_type*>(shuffler_dst_buf);
+  } else {
+    return nullptr;
+  }
+}
+void delete_shuffler_buffers() {
+  if (shuffler_src_buf) {
+    CHECK_CUDA(cudaFree(shuffler_src_buf));
+    shuffler_src_buf = nullptr;
+  }
+  if (shuffler_dst_buf) {
+    CHECK_CUDA(cudaFree(shuffler_dst_buf));
+    shuffler_dst_buf = nullptr;
+  }
+}
 } // namespace
 
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm) {
@@ -211,6 +260,7 @@ void finalize() {
     delete backend_instance;
     backend_instance = nullptr;
     initialized = false;
+    delete_shuffler_buffers();
   }
 }
 
@@ -310,7 +360,9 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
   if (opt_tensor_shuffler == "AL") {
     return new TensorShufflerAL(src, dst, get_mpicuda());
   } else if (opt_tensor_shuffler == "HYBRID") {
-    return new TensorShufflerHybrid(src, dst, get_p2p(), get_mpicuda());
+    return new TensorShufflerHybrid(src, dst, get_p2p(), get_mpicuda(),
+                                    get_shuffler_src_buf(src),
+                                    get_shuffler_dst_buf(dst));
   } else if (opt_tensor_shuffler == "P2P") {
     bool src_feasible = is_p2p_shuffle_feasible(src);
     bool dst_feasible = is_p2p_shuffle_feasible(dst);
@@ -324,7 +376,9 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
     }
     if (src_feasible && dst_feasible) {
       MPIRootPrintStreamInfo() << "Using P2P shuffler";
-      return new TensorShufflerP2P(src, dst, get_p2p());
+      return new TensorShufflerP2P(src, dst, get_p2p(),
+                                   get_shuffler_src_buf(src),
+                                   get_shuffler_dst_buf(dst));
     } else {
       MPIRootPrintStreamInfo() << "P2P shuffler requested but not possible as inter-node communication is required";
     }
