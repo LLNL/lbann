@@ -86,14 +86,6 @@ class cosmoflow_reader : public generic_data_reader {
   /// samples have the same shape.
   std::vector<int> m_data_dims;
 
-  /**
-   * Underlying numpy data.
-   * Note raw data is managed with shared smart pointer semantics (relevant
-   * for copying).
-   */
-  cnpy::NpyArray m_current_data, m_current_responses;
-  int m_current_idx = -1;
-
   // Paths to .npz files.
   std::vector<std::string> m_npz_paths;
 

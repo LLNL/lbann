@@ -171,17 +171,20 @@ bool cosmoflow_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   const auto offset = data_offset.second;
 
   void *responses = NULL;
-  if (m_current_responses.word_size == 4) {
+  if (data.word_size == 4) {
     responses = (void *) (data.data<float>()
                           + offset * m_num_response_features);
-  } else if (m_current_responses.word_size == 8) {
+  } else if (data.word_size == 8) {
     responses = (void *) (data.data<double>()
                           + offset * m_num_response_features);
+  } else {
+    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
+                          " cosmoflow_reader::fetch_response() - invalid word size : " +
+                          std::to_string(data.word_size));
   }
   Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
   std::memcpy(Y_v.Buffer(), responses,
-              m_num_response_features * m_current_responses.word_size);
-
+              m_num_response_features * data.word_size);
   return true;
 }
 
