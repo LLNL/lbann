@@ -69,6 +69,9 @@ class data_store_jag : public generic_data_store {
 
 protected :
 
+  // hack to identify errors in exchange_data
+  int m_full_mb_size;
+
   bool m_super_node;
 
   /// this is pure virtual in generic_data_reader, so must include it for
@@ -76,6 +79,10 @@ protected :
   void exchange_data() override {}
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) override {
+    // hack
+    if (m_full_mb_size == 0) {
+      m_full_mb_size = mb_size;
+    }
     if (m_super_node) {
       exchange_data_by_super_node(current_pos, mb_size);
     } else {

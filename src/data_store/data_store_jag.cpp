@@ -32,6 +32,8 @@
 //#undef DEBUG
 #define DEBUG
 
+//#define HACK
+
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
@@ -44,6 +46,7 @@ namespace lbann {
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
+  m_full_mb_size(0), 
   m_super_node(false),
   //m_super_node_overhead(0),
   m_compacted_sample_size(0) {
@@ -451,7 +454,12 @@ int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
+
+    #ifdef HACK
+    if ((i % m_full_mb_size) % m_np == m_rank) {
+    #else
     if ((i % mb_size) % m_np == m_rank) {
+    #endif
       int owner = m_owner[index];
       #ifdef DEBUG
       std::cout << "i: " << i << " inv: " << m_inv_indices[index] << " index: " << index << "\n";
@@ -474,7 +482,11 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
+      #ifdef HACK
+      m_indices_to_send[(i % m_full_mb_size) % m_np].insert(index);
+      #else
       m_indices_to_send[(i % mb_size) % m_np].insert(index);
+      #endif
 
       // Sanity check
       if (m_owner[index] != m_rank) {
