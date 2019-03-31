@@ -239,23 +239,33 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   }
 }
 
-const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
-  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+const conduit::Node & data_store_jag::get_conduit_node(int data_id) { //const {
   #ifdef DEBUG
-  std::cout << "get_conduit_node, requested id: " << data_id << "\n";
+  std::cout << "get_conduit_node, equested id: " << m_inv_indices[data_id] << "; role: " << m_reader->get_role() << "\n";
   #endif
 
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+  /*
+  /// dah: commenting this out since it gives a false positive for test
+  ///      case with unshuffled indices. Since we currently send samples
+  ///      to ourselves, they should be in m_minibatch_data. The following
+  ///      block is only useful if, at some future time, we do not send
+  ///      indices to ourself
   if (t != m_data.end()) {
     if(m_super_node) {
       return t->second;
     } else {
+  #ifdef DEBUG
+  std::cout << "returnint, daa_id: " << data_id << " inv: " << m_inv_indices[data_id] << "; role: " << m_reader->get_role() << "\n";
+  #endif
       return t->second["data"];
     }
   }
+  */
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   if (t2 == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_epoch()));
+    LBANN_ERROR("failed to find data_id: " + std::to_string(m_inv_indices[data_id]) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()) + "; epoch:"  + std::to_string(m_model->get_epoch()));
   }
 
   return t2->second;
@@ -306,21 +316,33 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   m_recv_buffer.resize(num_recv_req);
   m_recv_data_ids.resize(num_recv_req);
 
+
   //========================================================================
   //part 2: exchange the actual data
+  /*
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  std::cout << "shuffled indices for current minibatch for role: " << m_reader->get_role() << "\n";
+  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
+    std::cout << j<<", "<< m_inv_indices[(*m_shuffled_indices)[j]] << "\n";
+  }
+  std::cout << "\nEND_SECTION\n\n"; 
+  #endif
+  */
 
   // start sends for outgoing data
   size_t ss = 0;
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  #endif
   for (int p=0; p<m_np; p++) {
     const std::unordered_set<int> &indices = m_indices_to_send[p];
     #ifdef DEBUG
-    std::cout << "\nSECTION\n"; 
     std::cout << "sending to P_" <<  p << " :: ";
     std::set<int> m2;
-    for (auto index : indices) { m2.insert(index); }
+    for (auto index : indices) { m2.insert(m_inv_indices[index]); }
     for (auto t : m2) std::cout << t << " ";
     std::cout << "\n";
-    std::cout << "END_SECTION\n\n"; 
     #endif
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
@@ -340,6 +362,9 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
       m_comm->nb_tagged_send(s, m_compacted_sample_size, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
     }
   }
+  #ifdef DEBUG
+  std::cout << "END_SECTION\n\n"; 
+  #endif
 
   // sanity checks
   if (ss != m_send_requests.size()) {
@@ -348,16 +373,17 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
 
   // start recvs for incoming data
   ss = 0;
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  #endif
   for (int p=0; p<m_np; p++) {
     const std::unordered_set<int> &indices = m_indices_to_recv[p];
     #ifdef DEBUG
-    std::cout << "\nSECTION\n"; 
     std::cout << "receiving from P_" << p << " :: ";
     std::set<int> m3;
-    for (auto index : indices) { m3.insert(index); }
+    for (auto index : indices) { m3.insert(m_inv_indices[index]); }
     for (auto t : m3) { std::cout << t << " "; }
     std::cout << "\n";
-    std::cout << "END_SECTION\n\n"; 
     #endif
     for (auto index : indices) {
       m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
@@ -368,6 +394,9 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
       ++ss;
     }
   }
+  #ifdef DEBUG
+  std::cout << "END_SECTION\n\n"; 
+  #endif
 
   // sanity checks
   if (ss != m_recv_buffer.size()) {
@@ -403,9 +432,9 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   }
   #ifdef DEBUG
   std::cout << "\nSECTION\n"; 
-  std::cout << "I have the following indices for the current mb: ";
+  std::cout << "I have the following indices for the current mb for role: " << m_reader->get_role() << "\n";
   std::set<int> m4;
-  for (auto t : m_minibatch_data) { m4.insert(t.first); }
+  for (auto t : m_minibatch_data) { m4.insert(m_inv_indices[t.first]); }
   for (auto t2 : m4) { std::cout << t2 << " "; }
   std::cout << "\n";
   std::cout << "END_SECTION\n\n"; 
@@ -415,15 +444,25 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
 int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   m_indices_to_recv.clear();
   m_indices_to_recv.resize(m_np);
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  std::cout << "data_store_jag::build_indices_i_will_recv; current_pos: " << current_pos << " mb_size: " << mb_size << "\n";
+  #endif
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
     if ((i % mb_size) % m_np == m_rank) {
       int owner = m_owner[index];
+      #ifdef DEBUG
+      std::cout << "i: " << i << " inv: " << m_inv_indices[index] << " index: " << index << "\n";
+      #endif
       m_indices_to_recv[owner].insert(index);
       k++;
     }
   }
+  #ifdef DEBUG
+  std::cout << "END_SECTION\n\n"; 
+  #endif
   return k;
 }
 
@@ -461,46 +500,27 @@ void data_store_jag::build_owner_map(int mini_batch_size) {
 
   #ifdef DEBUG
   std::cout << "\nSECTION\n"; 
-  std::cout << "owner_map; mini_batch_size: " << mini_batch_size << "\n";
+  std::cout << "shuffled indices for owner map: ";
+  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
+    std::cout << "("<<j<<","<<(*m_shuffled_indices)[j] << ") ";
+  }
+  std::cout << "\nEND_SECTION\n\n"; 
+  #endif
+
+  #ifdef DEBUG
+  std::cout << "\nSECTION\n"; 
+  std::cout << "owner_map; mini_batch_size: " << mini_batch_size << " role: " << m_reader->get_role() << "\n";
   //build map, so we can output in sorted order
+  construct_inverse_indices();
   std::map<int,int> m;
   for (auto t : m_owner) {
     m[t.first] = t.second;
   }
-  for (auto t : m) std::cout << t.first << " -> " << t.second << "\n";
+  for (auto t : m) std::cout << t.first << " (" << m_inv_indices[t.first] << ") -> " << t.second << "\n";
   std::cout << "END_SECTION\n\n"; 
   #endif
 }
 
-
-#if 0
-void data_store_jag::compute_super_node_overhead() {
-  if (m_super_node_overhead != 0) {
-    return;
-  }
-  if (m_data.size() < 2) {
-    LBANN_ERROR("m_data must contain at least two sample nodes");
-  }
-  conduit::Node n2;
-  conduit::Node n3;
-  int first = 0;
-  for (auto &t : m_data) {
-    n2.update_external(t.second);
-    build_node_for_sending(n2, n3);
-    if (first == 0) {
-      first = n3.total_bytes_compact();
-    } else {
-      m_super_node_overhead = 2*first - n3.total_bytes_compact();
-      m_compacted_sample_size = first - m_super_node_overhead;
-      if (m_master) {
-        std::cout << "m_super_node_overhead: " << m_super_node_overhead
-                  << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
-      }
-      return;
-    }
-  }
-}
-#endif
 
 const conduit::Node & data_store_jag::get_random_node() const {
 std::cout << "\nstarting data_store_jag::get_random_node()\n";
@@ -520,6 +540,13 @@ const conduit::Node & data_store_jag::get_random_node(const std::string &field) 
   auto node = get_random_node();
   //return node;
   return node[field];
+}
+
+void data_store_jag::construct_inverse_indices() {
+  m_inv_indices.clear();
+  for (size_t j=0; j<m_shuffled_indices->size(); j++) {
+    m_inv_indices[(*m_shuffled_indices)[j]] = j;
+  }
 }
 
 }  // namespace lbann

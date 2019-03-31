@@ -60,7 +60,7 @@ class data_store_jag : public generic_data_store {
   void setup(int mini_batch_size) override;
 
   /// returns the conduit node
-  const conduit::Node & get_conduit_node(int data_id) const;
+  const conduit::Node & get_conduit_node(int data_id); // const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
 
@@ -148,6 +148,8 @@ protected :
   /// that will be received
   int build_indices_i_will_recv(int current_pos, int mb_size);
 
+  void construct_inverse_indices();
+  std::unordered_map<int,int> m_inv_indices;
 };
 
 }  // namespace lbann
