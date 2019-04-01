@@ -72,6 +72,7 @@ class data_store_jag : public generic_data_store {
   conduit::Node & get_empty_node(int data_id);
 
   void set_preload() { m_preload = true; }
+  bool preloaded() { return m_preload; }
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);

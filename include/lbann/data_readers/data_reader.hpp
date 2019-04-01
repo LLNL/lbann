@@ -72,7 +72,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * ctor
    */
   generic_data_reader(bool shuffle = true) :
-    m_data_store_was_preloaded(false),
     m_data_store(nullptr),
     m_comm(nullptr),
     m_mini_batch_size(0), m_current_pos(0),
@@ -712,8 +711,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void post_update() {}
 
  protected:
-
-  bool m_data_store_was_preloaded;
 
   // For use with conduit when samples are corrupt.
   mutable std::unordered_set<int> m_using_random_node;

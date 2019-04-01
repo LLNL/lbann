@@ -73,21 +73,21 @@ void data_store_jag::setup(int mini_batch_size) {
     }
   }
 
-  options *opts = options::get();
-
   double tm1 = get_time();
-  if (m_master && !options::get()->has_bool("preload_data_store")) {
+  if (m_master && !m_preload) {
     std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
   }
 
-  if (!opts->get_bool("preload_data_store")) {
+  if (!m_preload) {
     // generic_data_store::setup(mini_batch_size);
     build_owner_map(mini_batch_size);
+  }else {
+    m_owner_map_mb_size = mini_batch_size;
   }
 
   m_is_setup = true;
 
-  if (m_master && !options::get()->has_bool("preload_data_store")) {
+  if (m_master && !m_preload) {
     std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
   }
 }

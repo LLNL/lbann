@@ -217,6 +217,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_list_per_trainer = rhs.m_list_per_trainer;
   m_list_per_model = rhs.m_list_per_model;
 
+  /// @todo FIXME should we do a deep copy if the data store was preloaded
   if(rhs.m_data_store != nullptr || rhs.m_jag_store != nullptr) {
     m_jag_store = new data_store_jag(this);  // *data_store_jag
     m_data_store = m_jag_store;                 // *generic_data_store
@@ -337,7 +338,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     if (m_data_store != nullptr) {
       const std::string& file_name = m_sample_list.get_samples_filename(id);
-      if (! m_data_store_was_preloaded) {
+      if (! m_data_store->preloaded()) {
         const conduit::Node obj = m_jag_store->get_random_node();
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();
@@ -900,7 +901,6 @@ void data_reader_jag_conduit::load() {
 
 
 void data_reader_jag_conduit::preload_data_store() {
-  m_data_store_was_preloaded = true;
   m_jag_store->set_preload();
   conduit::Node work;
   const std::string key; // key = "" is intentional

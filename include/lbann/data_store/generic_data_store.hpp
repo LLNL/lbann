@@ -142,6 +142,10 @@ class generic_data_store {
   /// returns the processor that owns the data associated
   /// with the index
   int get_index_owner(int idx);
+
+  virtual void set_preload() {};
+  virtual bool preloaded() { return false; };
+
 protected :
 
   // number of times exchange_data is called

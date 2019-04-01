@@ -709,7 +709,7 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
-  if (m_data_store_was_preloaded) {
+  if (m_data_store != nullptr && m_data_store->preloaded()) {
     return true;
   }
   return (m_data_store != nullptr
@@ -718,7 +718,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  if (m_data_store_was_preloaded) {
+  if (m_data_store != nullptr && m_data_store->preloaded()) {
     return false;
   }
   return (m_data_store != nullptr
