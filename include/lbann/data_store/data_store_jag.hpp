@@ -80,6 +80,12 @@ protected :
 
   bool m_preload;
 
+  /// The size of the mini-batch that was used to calculate ownership
+  /// of samples when building the owner map.  This size has to be
+  /// used consistently when computing the indices that will be sent
+  /// and received.
+  int m_owner_map_mb_size;
+
   bool m_super_node;
 
   /// this is pure virtual in generic_data_reader, so must include it for

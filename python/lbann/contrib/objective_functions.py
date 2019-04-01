@@ -4,8 +4,9 @@ These are mostly unsupported.
 
 """
 
-import lbann, lbann.modules
 from collections.abc import Iterable
+import lbann
+import lbann.modules
 
 class CrossEntropyWithUncertainty(lbann.modules.Module):
     def forward(self, inputs):

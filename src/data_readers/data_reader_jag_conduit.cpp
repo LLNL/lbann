@@ -816,7 +816,7 @@ void data_reader_jag_conduit::load() {
   }
 
   /// Check the data that each rank loaded
-  if (!m_is_data_loaded) {
+  if (!m_is_data_loaded && !m_sample_list.empty()) {
     m_is_data_loaded = true;
 
     /// Open the first sample to make sure that all of the fields are correct
@@ -853,7 +853,8 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  if (is_master()) {
+  options *opts = options::get();
+  if (opts->has_string("write_sample_list") && is_master()) {
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);

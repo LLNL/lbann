@@ -7,7 +7,9 @@ import os
 
 def skeleton_mnist_conv_graph(cluster, executables, dir_name, compiler_name):
     if compiler_name not in executables:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+      e = 'skeleton_mnist_conv_graph: default_exes[%s] does not exist' % compiler_name
+      print('Skip - ' + e)
+      pytest.skip(e)
     output_file_name = '%s/bamboo/unit_tests/output/mnist_conv_graph_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/mnist_conv_graph_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
@@ -26,20 +28,25 @@ def skeleton_mnist_conv_graph(cluster, executables, dir_name, compiler_name):
 
 def test_unit_mnist_conv_graph_clang4(cluster, exes, dirname):
     if cluster == 'catalyst':
+        # Error: cross entropy layer "cross_entropy" has input tensors
+        # with different dimensions (layer "prob" outputs 10 x 1 x 1,
+        # layer "labels" outputs 10)
         pytest.skip('FIXME')
     skeleton_mnist_conv_graph(cluster, exes, dirname, 'clang4')
 
 
 def test_unit_mnist_conv_graph_gcc4(cluster, exes, dirname):
-    if cluster in ['surface']:
-        pytest.skip('FIXME')
-        # Surface Errors:
-        # assert 35584 == 0
     skeleton_mnist_conv_graph(cluster, exes, dirname, 'gcc4')
 
 
 def test_unit_mnist_conv_graph_gcc7(cluster, exes, dirname):
     if cluster in ['catalyst', 'pascal']:
+        # Catalyst Error: cross entropy layer "cross_entropy" has input tensors
+        # with different dimensions (layer "prob" outputs 10 x 1 x 1,
+        # layer "labels" outputs 10)
+        # Pascal Error: cross entropy layer "cross_entropy" has input tensors
+        # with different dimensions (layer "prob" outputs 10 x 1 x 1,
+        # layer "labels" outputs 10)
         pytest.skip('FIXME')
     skeleton_mnist_conv_graph(cluster, exes, dirname, 'gcc7')
 
@@ -51,6 +58,8 @@ def test_unit_mnist_conv_graph_intel18(cluster, exes, dirname):
 # Run with python -m pytest -s test_unit_conv_graph.py -k 'test_unit_mnist_conv_graph_exe' --exe=<executable>
 def test_unit_mnist_conv_graph_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
+        e = 'test_unit_mnist_conv_graph_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
     exes = {'exe': exe}
     skeleton_mnist_conv_graph(cluster, exes, dirname, 'exe')

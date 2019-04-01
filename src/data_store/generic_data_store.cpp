@@ -215,6 +215,7 @@ void generic_data_store::exchange_mb_counts() {
 }
 
 void generic_data_store::exchange_mb_indices() {
+  LBANN_ERROR("comm calls are incorrect. I didn't think this method was used any longer");
   exchange_mb_counts();
   //setup data structures to exchange minibatch indices with all processors
   //displacement vector
@@ -327,6 +328,7 @@ std::pair<std::string, std::string> generic_data_store::get_pathname_and_prefix(
 }
 
 void generic_data_store::create_dirs(std::string s) {
+  LBANN_ERROR("broken; obsolete");
   if (m_comm->get_rank_in_node() == 0) {
     if (s.back() != '/') {
       s += '/';
@@ -384,6 +386,7 @@ int generic_data_store::get_index_owner(int idx) {
 }
 
 void generic_data_store::build_index_owner() {
+  LBANN_ERROR("broken; obsolete");
   m_owner.clear();
   int num_indices = m_my_datastore_indices.size();
   if (num_indices == 0) {

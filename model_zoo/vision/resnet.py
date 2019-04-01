@@ -17,6 +17,16 @@ data_reader_prototext = join(lbann.lbann_dir(),
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
+    '--resnet', action='store', default=50, type=int,
+    choices=(18, 34, 50, 101, 152),
+    help='ResNet variant (default: 50)')
+parser.add_argument(
+    '--bn-stats-aggregation', action='store', default='local', type=str,
+    help=('aggregation mode for batch normalization statistics '
+          '(default: "local")'))
+parser.add_argument(
+    '--warmup', action='store_true', help='use a linear warmup')
+parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
 parser.add_argument(
@@ -43,11 +53,21 @@ parser.add_argument(
     help='do not run experiment (e.g. if only the prototext is desired)')
 args = parser.parse_args()
 
+# Choose ResNet variant
+resnet_variant_dict = {18: lbann.models.ResNet18,
+                       34: lbann.models.ResNet34,
+                       50: lbann.models.ResNet50,
+                       101: lbann.models.ResNet101,
+                       152: lbann.models.ResNet152}
+resnet = resnet_variant_dict[args.resnet](
+    args.num_labels,
+    bn_stats_aggregation=args.bn_stats_aggregation)
+
 # Construct layer graph
 input = lbann.Input()
 images = lbann.Identity(input)
 labels = lbann.Identity(input)
-preds = lbann.models.AlexNet(args.num_labels)(images)
+preds = resnet(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy([probs, labels])
 top1 = lbann.CategoricalAccuracy([probs, labels])
@@ -55,10 +75,11 @@ top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
 layers = list(lbann.traverse_layer_graph(input))
 
 # Setup objective function
-weights = set()
+l2_reg_weights = set()
 for l in layers:
-    weights.update(l.weights)
-l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
+    if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
+        l2_reg_weights.update(l.weights)
+l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
 obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 
 # Setup model
@@ -67,11 +88,14 @@ metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
              lbann.CallbackDropFixedLearningRate(
-                 drop_epoch=[20,40,60], amt=0.1)]
+                 drop_epoch=[30, 60, 80], amt=0.1)]
+if args.warmup:
+    callbacks.append(
+        lbann.CallbackLinearGrowthLearningRate(
+            target=0.1 * args.mini_batch_size / 256, num_epochs=5))
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
                     layers=layers,
-                    weights=weights,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks)
@@ -111,5 +135,5 @@ if not args.disable_run:
                     imagenet_dir(data_set='val', num_classes=classes),
                     imagenet_labels(data_set='val', num_classes=classes)))
     lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
-                                  job_name = 'lbann_alexnet',
+                                  job_name = 'lbann_resnet',
                                   **kwargs)

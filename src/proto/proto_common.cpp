@@ -876,6 +876,8 @@ void print_help(std::ostream& os)
        "      Enables the data store in-memory structure\n"
        "  --super_node \n"
        "      Enables the data store in-memory structure to use the supernode exchange structure\n"
+       "  --write_sample_list \n"
+       "      Writes out the sample list that was loaded into the current directory\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"
