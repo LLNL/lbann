@@ -191,7 +191,7 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 
   //under development; experimental
-  if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+  if (opts->get_bool("use_data_store")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }

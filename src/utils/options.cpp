@@ -245,13 +245,6 @@ bool options::has_int(std::string option)
   return false;
 }
 
-bool options::has_bool(std::string option)
-{
-  int test;
-  if (m_test_int(option, test)) return true;
-  return false;
-}
-
 bool options::has_string(std::string option) {
   std::string test;
   if (m_test_string(option, test)) return true;
