@@ -868,12 +868,12 @@ void data_reader_jag_conduit::load() {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
-  if (options::get()->has_bool("use_data_store") || options::get()->has_bool("preload_data_store")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
     if (is_master()) {
       std::cout << "\nUSING DATA_STORE\n\n";
     }
     m_data_store->set_shuffled_indices(&m_shuffled_indices);
-    if (options::get()->has_bool("preload_data_store")) {
+    if (opts->get_bool("preload_data_store")) {
       if(is_master()) {
         std::cout << "Starting the preload" << std::endl;
       }
