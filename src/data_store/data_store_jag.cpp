@@ -41,6 +41,7 @@ namespace lbann {
 data_store_jag::data_store_jag(
   generic_data_reader *reader, model *m) :
   generic_data_store(reader, m),
+  m_owner_map_mb_size(0),
   m_super_node(false),
   m_super_node_overhead(0),
   m_compacted_sample_size(0) {
@@ -237,6 +238,12 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
 }
 
 const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
+  /**
+   * dah: commenting this out since it gives a false positive for test
+   *      case with unshuffled indices. Since we currently send samples
+   *      to ourselves, they should be in m_minibatch_data. The following
+   *      block is only useful if, at some future time, we do not send
+   *      indices to ourself
   std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
   if (t != m_data.end()) {
     if(m_super_node) {
@@ -245,6 +252,7 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
       return t->second["data"];
     }
   }
+  */
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   if (t2 == m_minibatch_data.end()) {
@@ -383,7 +391,7 @@ int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
-    if ((i % mb_size) % m_np == m_rank) {
+    if ((i % m_owner_map_mb_size) % m_np == m_rank) {
       int owner = m_owner[index];
       m_indices_to_recv[owner].insert(index);
       k++;
@@ -400,7 +408,7 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[(i % mb_size) % m_np].insert(index);
+      m_indices_to_send[(i % m_owner_map_mb_size) % m_np].insert(index);
 
       // Sanity check
       if (m_owner[index] != m_rank) {
@@ -416,12 +424,13 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
 
 void data_store_jag::build_owner_map(int mini_batch_size) {
   m_owner.clear();
+  m_owner_map_mb_size = mini_batch_size;
   for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
     auto index = (*m_shuffled_indices)[i];
     /// To compute the owner index first find its position inside of
     /// the mini-batch (mod mini-batch size) and then find how it is
     /// striped across the ranks in the trainer
-    m_owner[index] = (i % mini_batch_size) % m_np;
+    m_owner[index] = (i % m_owner_map_mb_size) % m_np;
   }
 }
 

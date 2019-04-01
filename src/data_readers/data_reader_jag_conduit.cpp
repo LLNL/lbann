@@ -785,7 +785,7 @@ void data_reader_jag_conduit::load() {
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
 
   /// Check the data that each rank loaded
-  if (!m_is_data_loaded) {
+  if (!m_is_data_loaded && !m_sample_list.empty()) {
     m_is_data_loaded = true;
 
     /// Open the first sample to make sure that all of the fields are correct
