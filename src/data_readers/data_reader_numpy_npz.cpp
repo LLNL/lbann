@@ -174,7 +174,7 @@ numpy_npz_reader::numpy_npz_reader(const bool shuffle, const bool placeholder)
 
     if (m_data.word_size == 2) {
       // Convert int16 to DataType.
-      const short *data = m_data.data<short>() + data_id * m_num_features;
+      const short *data = m_data.data<short>() + (size_t) data_id * m_num_features;
       DataType *dest = X_v.Buffer();
 
       // OPTIMIZE
@@ -185,11 +185,11 @@ numpy_npz_reader::numpy_npz_reader(const bool shuffle, const bool placeholder)
     } else {
       void *data = NULL;
       if (m_data.word_size == 4) {
-        data = (void *) (m_data.data<float>() + data_id * m_num_features);
+        data = (void *) (m_data.data<float>() + (size_t) data_id * m_num_features);
       } else if (m_data.word_size == 8) {
-        data = (void *) (m_data.data<double>() + data_id * m_num_features);
+        data = (void *) (m_data.data<double>() + (size_t) data_id * m_num_features);
       }
-      std::memcpy(X_v.Buffer(), data, m_num_features * m_data.word_size);
+      std::memcpy(X_v.Buffer(), data, (size_t) m_num_features * m_data.word_size);
     }
     return true;
   }
