@@ -276,7 +276,7 @@ class generic_input_layer : public io_layer {
         if(!get_data_reader()->position_is_overrun()) {
           std::stringstream err;
           err << "I/O buffer does not contain valid samples ("<< num_samples_in_batch << ")";
-          LBANN_ERROR(err.str());
+          // LBANN_ERROR(err.str());
         }
     }
 
