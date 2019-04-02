@@ -47,10 +47,11 @@
 
 #include "distconv/distconv.hpp"
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
-#include "distconv/tensor/shuffle.hpp"
-#include "distconv/tensor/shuffle_p2p.hpp"
-#include "distconv/tensor/shuffle_al.hpp"
-#include "distconv/tensor/shuffle_hybrid.hpp"
+#include "distconv/tensor/shuffle_mpi.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda_p2p.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
+#include "distconv/tensor/shuffle_mpi_cuda_hybrid.hpp"
 #include "distconv/tensor/algorithms.hpp"
 #include "distconv/util/util.hpp"
 #include "p2p/p2p.hpp"
@@ -72,11 +73,14 @@ using Shape = ::distconv::tensor::Shape;
 
 using TensorHost = ::distconv::tensor::Tensor<
   DataType, ::distconv::tensor::LocaleMPI,
-  ::distconv::tensor::CUDAAllocator>;
+  ::distconv::tensor::BaseAllocator>;
 
 using TensorDev = ::distconv::tensor::Tensor<
   DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
+
+using TensorHostShuffler = ::distconv::tensor::TensorMPIShuffler<
+  DataType, ::distconv::tensor::BaseAllocator>;
 
 using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<DataType>;
 using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<DataType>;

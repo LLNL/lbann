@@ -35,6 +35,10 @@
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif
+
 #include <future>
 
 namespace lbann {
@@ -308,6 +312,13 @@ class generic_input_layer : public io_layer {
       next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       next_io_buffer->set_fetch_data_in_background(true, mode);
     }
+
+#ifdef LBANN_HAS_DISTCONV
+    // When enabled, shuffle the input samples and copy them to a device tensor
+    if (this->distconv_enabled()) {
+      fp_compute_distconv();
+    }
+#endif
   }
 
   void setup_next_io_buffer(generic_io_buffer* io_buffer) {
@@ -912,6 +923,104 @@ class generic_input_layer : public io_layer {
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
   bool m_data_set_processed;
   std::mutex dr_mutex;
+
+#ifdef LBANN_HAS_DISTCONV
+ public:
+  void setup_tensors_fwd(
+      const std::array<dc::Dist, dc::num_dists> &dists) override {
+    using namespace dc;
+    Layer::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    const auto input_tensor_shape = get_input_tensor_shape();
+    const LocaleMPI loc(dc::get_mpi_comm(), false);
+    const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
+    auto input_local_shape = input_tensor_shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    input_local_shape[dc::get_sample_dim()] = 0;
+
+    // Create a view to the host Elemental matrix
+    MPIPrintStreamDebug() << this->get_name()
+                          << ": Create a host view tensor";
+     m_input_view = TensorHost(input_tensor_shape, loc,
+                              sample_dist, input_local_shape);
+
+    // Create a Distconv tensor at host memory. Note that the host
+    // shuffler does not support overlapped tensors.
+    auto non_overlapped_dist = dists[0];
+    non_overlapped_dist.clear_overlap();
+    m_input_t = TensorHost(input_tensor_shape, loc, non_overlapped_dist);
+    assert0(m_input_t.allocate());
+
+    // Setup the shuffler
+    size_t shuffler_src_size = dc::TensorHostShuffler::get_buf_size(m_input_view);
+    m_input_shuffler_src_buf.reset(
+        static_cast<DataType*>(dc::util::aligned_malloc(shuffler_src_size)));
+    size_t shuffler_dst_size = dc::TensorHostShuffler::get_buf_size(m_input_t);
+    m_input_shuffler_dst_buf.reset(
+        static_cast<DataType*>(dc::util::aligned_malloc(shuffler_dst_size)));
+
+    m_input_shuffler.reset(
+        new dc::TensorHostShuffler(m_input_view, m_input_t,
+                                   m_input_shuffler_src_buf.get(),
+                                   m_input_shuffler_dst_buf.get()));
+
+    // Setup device tensors as usual
+    setup_activations_tensor(dists);
+    setup_activations_copyout_tensor(dists);
+  }
+
+  void setup_tensors_bwd(
+      const std::array<dc::Dist, dc::num_dists> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    // Nothing to do as this is an input layer
+  }
+
+  void fp_setup_distconv(int mini_batch_size) {
+    if (!distconv_enabled()) return;
+    // Nothing to do here as everything is done in fp_compute_distconv.
+  }
+
+ protected:
+  /** View to Elemental matrix of input samples */
+  dc::TensorHost m_input_view;
+  /** Tensor in the DC format */
+  dc::TensorHost m_input_t;
+  std::unique_ptr<dc::TensorHostShuffler> m_input_shuffler;
+  std::unique_ptr<DataType> m_input_shuffler_src_buf;
+  std::unique_ptr<DataType> m_input_shuffler_dst_buf;
+
+  void fp_compute_distconv() {
+    // The input samples are loaded as usual by LBANN. Shuffle them
+    // and copy them to device.
+
+    // Setup view
+    dc::MPIPrintStreamDebug() << this->get_name()
+                              << ": Set a view to the input sample";
+    assert0(dc::tensor::View(
+        m_input_view,
+        get_activations().LockedBuffer()));
+
+    dc::MPIPrintStreamDebug() << this->get_name()
+                              << ": Shuffle the input LBANN tensor to Distconv tensor";
+    m_input_shuffler->shuffle_forward(
+        m_input_view.get_const_base_ptr(),
+        m_input_t.get_base_ptr());
+
+    dc::MPIPrintStreamDebug() << this->get_name()
+                              << ": Copy the host tensor to device tensor";
+    // This should not incur communication as the distributions should
+    // be the same except for overlapping width. Device copy should be
+    // done with cudaMemcpy3D.
+    assert0(dc::tensor::Copy(m_activations_t, m_input_t));
+
+    this->copy_out_activations();
+  }
+
+#endif // LBANN_HAS_DISTCONV
 };
 
 template<typename T> inline void generic_input_layer::initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
