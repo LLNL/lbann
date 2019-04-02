@@ -79,17 +79,36 @@ void manager::check_error(bool force_error) const {
         err << " (" << msg << ")";
       }
     }
+
+    // Print Python traceback if available
     if (traceback != nullptr) {
-      auto tb_module = PyImport_ImportModule("traceback");
-      auto tb_message = PyObject_CallMethod(tb_module,
-                                            "format_exc",
-                                            nullptr);
-      const char* tb_str = PyUnicode_AsUTF8(tb_message);
-      if (tb_str != nullptr) {
-        err << "\n\n" << tb_str;
+
+      // Format traceback
+      auto module = PyImport_ImportModule("traceback");
+      auto func = PyObject_GetAttrString(module, "format_tb");
+      auto args = PyTuple_New(1);
+      PyTuple_SetItem(args, 0, traceback);
+      traceback = nullptr;  // Reference has been "stolen" by args
+      auto message = PyObject_CallObject(func, args);
+
+      // Print traceback
+      err << "\n\n" << "Python traceback:";
+      auto iter = PyObject_GetIter(message);
+      for (auto line = PyIter_Next(iter);
+           line != nullptr;
+           line = PyIter_Next(iter)) {
+        const char* line_ = PyUnicode_AsUTF8(line);
+        err << "\n" << (line_ ? line_ : "");
+        Py_DECREF(line);
       }
-      Py_XDECREF(tb_module);
-      Py_XDECREF(tb_message);
+
+      // Clean up
+      Py_XDECREF(iter);
+      Py_XDECREF(message);
+      Py_XDECREF(args);
+      Py_XDECREF(func);
+      Py_XDECREF(module);
+
     }
 
     // Clean up and throw exception
