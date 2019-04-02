@@ -809,7 +809,6 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
 }
 
 void Layer::setup_data() {
-
   // Get mini-batch size
   const auto& mini_batch_size = m_model->get_max_mini_batch_size();
 
@@ -1264,6 +1263,9 @@ bool Layer::using_distconv() const {
   const auto &ps = get_parallel_strategy();
   ParallelStrategy default_zero_ps;
   if (ps == default_zero_ps) {
+    MPIRootPrintStreamInfo()
+        << "Disable " << get_name()
+        << " as it does not have a parallel strategy.";
     return false;
   }
 
