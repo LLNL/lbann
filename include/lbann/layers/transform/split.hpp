@@ -89,6 +89,24 @@ protected:
   void fp_compute_distconv() {}
 
  public:
+
+  void setup_tensor_distribution_init(
+      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::set<dc::Dist*> &updated,
+      std::set<dc::Dist*> &fixed) {
+    Layer::setup_tensor_distribution_init(
+        dists, invariants, updated, fixed);
+    if (!distconv_enabled()) return;
+    auto &layer_dists = dists[this];
+    // x == y
+    invariants[&layer_dists[0]].insert(&layer_dists[1]);
+    invariants[&layer_dists[1]].insert(&layer_dists[0]);
+    // dx == dy
+    invariants[&layer_dists[2]].insert(&layer_dists[3]);
+    invariants[&layer_dists[3]].insert(&layer_dists[2]);
+  }
+
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
