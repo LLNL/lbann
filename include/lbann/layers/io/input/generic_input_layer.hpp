@@ -37,6 +37,7 @@
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
+//#define LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
 #endif
 
 #include <future>
@@ -238,6 +239,11 @@ class generic_input_layer : public io_layer {
     std::lock_guard<std::mutex> guard(dr_mutex);
     setup_next_io_buffer(io_buffer);
     io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
+#ifdef LBANN_HAS_DISTCONV
+#ifdef LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
+    fp_compute_distconv_background(active_buffer, mode);
+#endif // LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
+#endif // LBANN_HAS_DISTCONV
     return;
   }
 
@@ -257,6 +263,8 @@ class generic_input_layer : public io_layer {
     increment_active_buffer_idx(mode);
 
     generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+
+    dc::MPIPrintStreamInfo() << "Num IO buffers: " << m_io_buffers.size();
 
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
@@ -314,10 +322,12 @@ class generic_input_layer : public io_layer {
     }
 
 #ifdef LBANN_HAS_DISTCONV
+#ifndef LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
     // When enabled, shuffle the input samples and copy them to a device tensor
     if (this->distconv_enabled()) {
-      fp_compute_distconv();
+      fp_compute_distconv(get_active_buffer_idx(mode));
     }
+#endif // LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
 #endif
   }
 
@@ -932,26 +942,32 @@ class generic_input_layer : public io_layer {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
 
-    const auto input_tensor_shape = get_input_tensor_shape();
+    MPIPrintStreamInfo() << "Num IO buffers: " << m_io_buffers.size();
+
+    const auto tensor_shape = get_output_tensor_shape();
     const LocaleMPI loc(dc::get_mpi_comm(), false);
     const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
-    auto input_local_shape = input_tensor_shape;
+    auto local_shape = tensor_shape;
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
-    input_local_shape[dc::get_sample_dim()] = 0;
+    local_shape[dc::get_sample_dim()] = 0;
+
+    MPIPrintStreamInfo() << this->get_name()
+                         << ": dists[1]: " << dists[1];
 
     // Create a view to the host Elemental matrix
-    MPIPrintStreamDebug() << this->get_name()
-                          << ": Create a host view tensor";
-     m_input_view = TensorHost(input_tensor_shape, loc,
-                              sample_dist, input_local_shape);
+    MPIPrintStreamInfo() << this->get_name()
+                         << ": Create a host view tensor";
+    m_input_view = TensorHost(tensor_shape, loc,
+                              sample_dist, local_shape);
 
     // Create a Distconv tensor at host memory. Note that the host
     // shuffler does not support overlapped tensors.
-    auto non_overlapped_dist = dists[0];
+    auto non_overlapped_dist = dists[1];
     non_overlapped_dist.clear_overlap();
-    m_input_t = TensorHost(input_tensor_shape, loc, non_overlapped_dist);
+    m_input_t = TensorHost(tensor_shape, loc, non_overlapped_dist);
     assert0(m_input_t.allocate());
+    dc::MPIPrintStreamInfo() << "view created";
 
     // Setup the shuffler
     size_t shuffler_src_size = dc::TensorHostShuffler::get_buf_size(m_input_view);
@@ -960,15 +976,40 @@ class generic_input_layer : public io_layer {
     size_t shuffler_dst_size = dc::TensorHostShuffler::get_buf_size(m_input_t);
     m_input_shuffler_dst_buf.reset(
         static_cast<DataType*>(dc::util::aligned_malloc(shuffler_dst_size)));
+    dc::MPIPrintStreamInfo() << "shuffler created";
+    // Layer::setup_activations_tensor does not work as it assumes
+    // prev_activations_tensor is already
+    // setup. prev_activations_tensor is not necessary for input.
+    m_activations_t = TensorDev(tensor_shape, loc, dists[1]);
+    dc::MPIPrintStreamInfo() << "Tensor created";
+    assert0(m_activations_t.allocate());
+    m_activations_t.zero();
+    dc::MPIPrintStreamInfo() << "activation created";
 
-    m_input_shuffler.reset(
-        new dc::TensorHostShuffler(m_input_view, m_input_t,
-                                   m_input_shuffler_src_buf.get(),
-                                   m_input_shuffler_dst_buf.get()));
+#ifdef LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
+    if (this->m_model->background_io_activity_allowed()) {
+      dc::MPIPrintStreamInfo() << "background I/O setup";
+      m_input_shuffler_src_buf_bg.resize(m_io_buffers.size());
+      m_input_shuffler_dst_buf_bg.resize(m_io_buffers.size());
+      m_input_shuffler_bg.resize(m_io_buffers.size());
+      for (size_t i = 0; i < m_io_buffers.size(); ++i) {
+        m_input_view_bg.push_back(TensorHost(tensor_shape, loc,
+                                             sample_dist, local_shape));
+        auto t = TensorHost(tensor_shape, loc, non_overlapped_dist);
+        assert0(t.allocate());
+        m_input_t_bg.push_back(t);
+        m_input_shuffler_src_buf_bg.at(i).reset(
+            static_cast<DataType*>(dc::util::aligned_malloc(shuffler_src_size)));
+        m_input_shuffler_dst_buf_bg.at(i).reset(
+            static_cast<DataType*>(dc::util::aligned_malloc(shuffler_dst_size)));
+        m_input_shuffler_bg.at(i).reset(
+            new dc::TensorHostShuffler(m_input_view_bg.at(i), m_input_t_bg.at(i),
+                                       m_input_shuffler_src_buf_bg.at(i).get(),
+                                       m_input_shuffler_dst_buf_bg.at(i).get()));
+      }
+    }
+#endif
 
-    // Setup device tensors as usual
-    setup_activations_tensor(dists);
-    setup_activations_copyout_tensor(dists);
   }
 
   void setup_tensors_bwd(
@@ -985,41 +1026,134 @@ class generic_input_layer : public io_layer {
   }
 
  protected:
+
   /** View to Elemental matrix of input samples */
   dc::TensorHost m_input_view;
   /** Tensor in the DC format */
   dc::TensorHost m_input_t;
   std::unique_ptr<dc::TensorHostShuffler> m_input_shuffler;
+  // 3 last-MB shufflers for training/validation/testing
+  std::array<std::unique_ptr<dc::TensorHostShuffler>, 3> m_input_shuffler_last_mb;
   std::unique_ptr<DataType> m_input_shuffler_src_buf;
   std::unique_ptr<DataType> m_input_shuffler_dst_buf;
+#ifdef LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
+  std::vector<dc::TensorHost> m_input_view_bg;
+  std::vector<dc::TensorHost> m_input_t_bg;
+  std::vector<std::unique_ptr<dc::TensorHostShuffler>> m_input_shuffler_bg;
+  std::vector<std::unique_ptr<DataType>> m_input_shuffler_src_buf_bg;
+  std::vector<std::unique_ptr<DataType>> m_input_shuffler_dst_buf_bg;
+#endif
 
-  void fp_compute_distconv() {
+  dc::TensorHostShuffler &get_shuffler(const dc::TensorHost &src,
+                                       const dc::TensorHost &dst) {
+    if (this->get_model()->get_max_mini_batch_size() ==
+        this->get_model()->get_current_mini_batch_size()) {
+      if (m_input_shuffler == nullptr) {
+        dc::MPIPrintStreamInfo() << "Creating shuffler: "
+                                 << src << ", "
+                                 << dst;
+        m_input_shuffler.reset(
+            new dc::TensorHostShuffler(src, dst,
+                                       m_input_shuffler_src_buf.get(),
+                                       m_input_shuffler_dst_buf.get()));
+      }
+      return *m_input_shuffler;
+    } else {
+      // The last remaining mini-batches for the train, validation, and
+      // testing modes
+      int shfl_idx = static_cast<int>(
+          this->get_model()->get_execution_mode());
+      assert_always(shfl_idx >= 0 && shfl_idx < 3);
+      if (m_input_shuffler_last_mb.at(shfl_idx) == nullptr) {
+        dc::MPIPrintStreamInfo() << "Creating shuffler: "
+                                 << src << ", "
+                                 << dst;
+        m_input_shuffler_last_mb.at(shfl_idx).reset(
+            new dc::TensorHostShuffler(src, dst,
+                                       m_input_shuffler_src_buf.get(),
+                                       m_input_shuffler_dst_buf.get()));
+      }
+      return *m_input_shuffler_last_mb.at(shfl_idx);
+    }
+  }
+
+  void fp_compute_distconv(int active_buffer) {
+    if (!distconv_enabled()) return;
+
+    int mb_size = this->get_model()->get_current_mini_batch_size();
+    m_input_view.set_outermost_dimension(mb_size);
+    m_input_t.set_outermost_dimension(mb_size);
+    m_activations_t.set_outermost_dimension(mb_size);
+
+#ifdef LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
+    if (this->m_model->background_io_activity_allowed()) {
+      assert0(dc::tensor::Copy(m_activations_t, m_input_t_bg.at(active_buffer),
+                               dc::get_stream()));
+      return;
+    }
+#endif
+
     // The input samples are loaded as usual by LBANN. Shuffle them
     // and copy them to device.
 
     // Setup view
-    dc::MPIPrintStreamDebug() << this->get_name()
-                              << ": Set a view to the input sample";
     assert0(dc::tensor::View(
         m_input_view,
         get_activations().LockedBuffer()));
 
-    dc::MPIPrintStreamDebug() << this->get_name()
-                              << ": Shuffle the input LBANN tensor to Distconv tensor";
-    m_input_shuffler->shuffle_forward(
+    dc::MPIPrintStreamInfo() << this->get_name()
+                             << ": Shuffle the input LBANN tensor to Distconv tensor";
+    get_shuffler(m_input_view, m_input_t).shuffle_forward(
         m_input_view.get_const_base_ptr(),
         m_input_t.get_base_ptr());
 
-    dc::MPIPrintStreamDebug() << this->get_name()
-                              << ": Copy the host tensor to device tensor";
+    dc::MPIPrintStreamInfo() << this->get_name()
+                             << ": Copy the host tensor to device tensor";
     // This should not incur communication as the distributions should
     // be the same except for overlapping width. Device copy should be
     // done with cudaMemcpy3D.
-    assert0(dc::tensor::Copy(m_activations_t, m_input_t));
+    assert0(dc::tensor::Copy(m_activations_t, m_input_t, dc::get_stream()));
 
-    this->copy_out_activations();
+    // Note: no copy out for activation is necessary as the original
+    // LBANN tensor is valid.
   }
 
+#ifdef LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
+  void fp_compute_distconv_background(int active_buffer, execution_mode mode) {
+    if (!distconv_enabled()) return;
+    dc::MPIPrintStreamInfo() << "fetch dc background with " << active_buffer;
+    assert_always(this->m_model->background_io_activity_allowed());
+
+    // Assumes partitioned_io_buffer
+    partitioned_io_buffer *io_buffer =
+        dynamic_cast<partitioned_io_buffer*>(m_io_buffers[active_buffer]);
+    assert_always(io_buffer != nullptr);
+    auto buf = io_buffer->get_data_buffer(mode);
+    assert_always(buf != nullptr);
+
+    auto &view_tensor = m_input_view_bg.at(active_buffer);
+    auto &dc_tensor = m_input_t_bg.at(active_buffer);
+    auto &shuffler = m_input_shuffler_bg.at(active_buffer);
+
+    // Setup view
+    assert0(dc::tensor::View(
+        view_tensor,
+        buf->m_input_buffers[0]->LockedBuffer()));
+
+    dc::MPIPrintStreamInfo() << this->get_name()
+                             << ": Shuffle the input LBANN tensor to Distconv tensor (bg)";
+    shuffler->shuffle_forward(
+        view_tensor.get_const_base_ptr(),
+        dc_tensor.get_base_ptr());
+
+    dc::MPIPrintStreamInfo() << this->get_name()
+                             << ": Copy the host tensor to device tensor (bg)";
+    // This should not incur communication as the distributions should
+    // be the same except for overlapping width. Device copy should be
+    // done with cudaMemcpy3D.
+    assert0(dc::tensor::Copy(m_activations_t, m_input_t, dc::get_stream()));
+  }
+#endif // LBANN_DISTCONV_BACKGRAOUND_SHUFFLE
 #endif // LBANN_HAS_DISTCONV
 };
 
