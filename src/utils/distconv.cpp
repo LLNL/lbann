@@ -357,6 +357,10 @@ HaloExchangeMethod get_halo_exchange_method() {
 
 TensorShuffler *get_tensor_shuffler(const TensorDev &src,
                                     const TensorDev &dst) {
+  dc::MPIPrintStreamDebug()
+      << "Available memory: " <<
+      cuda::get_available_memory_capacity() / 1024.0 / 1024.0
+      << " MB";
   if (opt_tensor_shuffler == "AL") {
     return new TensorShufflerAL(src, dst, get_mpicuda());
   } else if (opt_tensor_shuffler == "HYBRID") {

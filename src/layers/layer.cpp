@@ -809,7 +809,6 @@ std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
 }
 
 void Layer::setup_data() {
-
   // Get mini-batch size
   const auto& mini_batch_size = m_model->get_max_mini_batch_size();
 
@@ -1264,6 +1263,9 @@ bool Layer::using_distconv() const {
   const auto &ps = get_parallel_strategy();
   ParallelStrategy default_zero_ps;
   if (ps == default_zero_ps) {
+    MPIRootPrintStreamInfo()
+        << "Disable " << get_name()
+        << " as it does not have a parallel strategy.";
     return false;
   }
 
@@ -1336,17 +1338,6 @@ void Layer::setup_inter_layer_adaptation() {
   if (!distconv_enabled()) return;
 
   MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout";
-  const auto &child_layers = get_child_layers();
-  MPIPrintStreamDebug()
-      << ": number of children: " << child_layers.size()
-      << ", child name: "
-      << (child_layers.size() > 0 ? child_layers[0]->get_name() : "not available");
-
-  const auto &parent_layers = get_parent_layers();
-  MPIPrintStreamDebug()
-      << ": number of parents: " << parent_layers.size()
-      << ", parent name: " << (parent_layers.size() > 0 ? parent_layers[0]->get_name() : "not available");
-
   const auto &ps = get_parallel_strategy();
   m_parent_copy_in_required = false;
   m_parent_shuffle_required = false;
@@ -1540,8 +1531,7 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
   }
 }
 
-namespace {
-Dist get_hydrogen_matrix_distribution() {
+Dist Layer::get_hydrogen_matrix_distribution() {
   using ::distconv::index_t;
   // When rank stride is 1, the distribution is just sample
   // distribution. When it's greater than 1, multiple consecutive
@@ -1558,7 +1548,6 @@ Dist get_hydrogen_matrix_distribution() {
       (sample_locale_shape, sample_split_shape);
   return sample_dist;
 }
-} // namespace
 
 size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists) {
   if (!distconv_enabled()) {

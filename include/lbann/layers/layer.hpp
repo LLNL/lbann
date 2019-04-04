@@ -556,6 +556,7 @@ protected:
   void setup_inter_layer_adaptation();
   void setup_early_termination();
   void setup_keep_original_tensors();
+  static dc::Dist get_hydrogen_matrix_distribution();
   virtual void setup_tensor_distribution_init(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
@@ -565,6 +566,9 @@ protected:
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
   virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
+  /** Return Distconv-related shapes. */
+  const dc::Shape get_input_tensor_shape() const;
+  const dc::Shape get_output_tensor_shape() const;
   virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual dc::Shape get_activations_tensor_local_shape() const;
@@ -684,10 +688,6 @@ private:
   const AbsDistMat& get_activations(const Layer& child) const;
   /** Get error signal tensor corresponding to parent layer. */
   const AbsDistMat& get_error_signals(const Layer& parent) const;
-
-  /** Return Distconv-related shapes. */
-  const dc::Shape get_input_tensor_shape() const;
-  const dc::Shape get_output_tensor_shape() const;
 
   // ===========================================================
   // Private class members
