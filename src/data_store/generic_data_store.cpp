@@ -157,6 +157,7 @@ void generic_data_store::setup(int mini_batch_size) {
     m_dir = m_reader->get_local_file_dir();
   }
 
+/*
   if (m_comm->get_num_trainers() != 1) {
     if (m_master) {
       std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
@@ -164,6 +165,7 @@ void generic_data_store::setup(int mini_batch_size) {
     }
     exit(9);
   }
+*/
 
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
