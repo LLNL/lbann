@@ -31,36 +31,68 @@
 
 namespace lbann {
 
-/** Stochastic gradient descent optimizer.
- *
- *  Supports momentum and Nesterov acceleration.
+/** @brief Stochastic gradient descent optimizer.
+ *  @details Supports momentum and Nesterov acceleration.
  *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
 class sgd : public optimizer {
 
 public:
 
+  /** @name Life cycle functions */
+  ///@{
+
   sgd(lbann_comm *comm,
       DataType learning_rate,
       DataType momentum = 0,
       bool nesterov = false);
-
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
   ~sgd() override = default;
   sgd* copy() const override { return new sgd(*this); }
+
+  ///@}
+
+  /** @name Descriptions */
+  ///@{
 
   /** Human-readable type name. */
   std::string get_type() const override { return "SGD"; }
   /** Human-readable description. */
   description get_description() const override;
 
+  ///@}
+
+  /** @name Access functions */
+  ///@{
+
+  /** @brief Decay rate for gradient accumulation.
+   *  @details A momentum of zero corresponds to vanilla SGD.
+   */
+  DataType get_momentum() const noexcept { return m_momentum; }
+  /** @brief Decay rate for gradient accumulation.
+   *  @details A momentum of zero corresponds to vanilla SGD.
+   */
+  void set_momentum(DataType momentum) { m_momentum = momentum; }
+
+  /** Whether Nesterov acceleration is applied. */
+  bool is_using_nesterov() const noexcept { return m_nesterov; }
+  /** Whether Nesterov acceleration is applied. */
+  void set_using_nesterov(bool using_nesterov) { m_nesterov = using_nesterov; }
+
   /** Accumulated gradients for momentum optimizer. */
   const AbsDistMat& get_velocity() const;
   /** Accumulated gradients for momentum optimizer. */
   AbsDistMat& get_velocity();
 
+  ///@}
+
+  /** @name Setup */
+  ///@{
+
   void setup(weights* w = nullptr) override;
+
+  ///@}
 
 protected:
 
@@ -73,7 +105,7 @@ private:
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
   DataType m_momentum;
-  /** Whether to apply Nesterov acceleration. */
+  /** Whether Nesterov acceleration is used. */
   bool m_nesterov;
   /** @brief Accumulated gradients.
    *  @details Not used for vanilla SGD.
@@ -87,9 +119,8 @@ private:
   void momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient);
 #endif // LBANN_HAS_CUDA
 
-  // ===========================================
-  // Checkpointing
-  // ===========================================
+  /** @name Checkpointing */
+  ///@{
 
   struct packing_header {
     DataType momentum;
@@ -118,6 +149,8 @@ private:
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
+
+  ///@}
 
 };
 
