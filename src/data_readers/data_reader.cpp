@@ -720,8 +720,10 @@ bool generic_data_reader::data_store_active() const {
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() != execution_mode::testing)
-          && m_model->get_epoch() > 0);
+          && (((m_model->get_execution_mode() == execution_mode::training)
+               && m_model->get_epoch() > 0)
+              || ((m_model->get_execution_mode() == execution_mode::validation)
+                  && m_model->get_epoch() > 1)));
 }
 
 bool generic_data_reader::priming_data_store() const {
@@ -731,8 +733,10 @@ bool generic_data_reader::priming_data_store() const {
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() != execution_mode::testing)
-          && m_model->get_epoch() == 0);
+          && (((m_model->get_execution_mode() == execution_mode::training)
+               && m_model->get_epoch() == 0)
+              || ((m_model->get_execution_mode() == execution_mode::validation)
+                  && m_model->get_epoch() == 1)));
 }
 
 void generic_data_reader::set_data_store(generic_data_store *g) {
