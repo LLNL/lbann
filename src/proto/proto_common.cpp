@@ -502,6 +502,14 @@ void init_data_readers(
 
       reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
+      if(reader_validation->get_data_store_ptr() != nullptr) {
+        reader_validation->get_data_store_ptr()->compact_nodes();
+      }
+      /// At this point clean up any unused samples from the main data store
+      if(reader->get_data_store_ptr() != nullptr) {
+        auto&& data_store = reader->get_data_store_ptr();
+        data_store->purge_unused_samples(reader->get_unused_indices());
+      }
 
       if (master) {
         size_t num_train = reader->get_num_data();

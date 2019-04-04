@@ -63,6 +63,53 @@ inline sample_list_jag::~sample_list_jag() {
   m_open_fd_pq.clear();
 }
 
+inline sample_list_jag::sample_list_jag(const sample_list_jag& rhs) {
+  copy_members(rhs);
+}
+
+inline sample_list_jag& sample_list_jag::operator=(const sample_list_jag& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+inline sample_list_jag& sample_list_jag::copy(const sample_list_jag& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+inline void sample_list_jag::copy_members(const sample_list_jag& rhs) {
+  m_header = rhs.m_header;
+  m_sample_list = rhs.m_sample_list;
+  m_file_id_stats_map = rhs.m_file_id_stats_map;
+  m_file_map = rhs.m_file_map;
+  m_max_open_files = rhs.m_max_open_files;
+
+  /// Keep track of existing filenames but do not copy any file
+  /// descriptor information
+  for(auto&& e : m_file_id_stats_map) {
+    if(std::get<1>(e) > 0) {
+      std::get<1>(e) = 0;
+    }
+    std::get<2>(e).clear();
+  }
+
+  /// Do not copy the open file descriptor priority queue
+  /// File handle ownership is not transfered in the copy
+  m_open_fd_pq.clear();
+}
+
 inline void sample_list_jag::load(const std::string& samplelist_file, size_t stride, size_t offset) {
   std::ifstream istr(samplelist_file);
   get_samples_per_file(istr, samplelist_file, stride, offset);

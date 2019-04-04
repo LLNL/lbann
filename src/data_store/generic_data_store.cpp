@@ -28,7 +28,6 @@
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/options.hpp"
-#include "lbann/models/model.hpp"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -37,12 +36,11 @@
 
 namespace lbann {
 
-generic_data_store::generic_data_store(generic_data_reader *reader, model *m) :
-m_n(0),
+generic_data_store::generic_data_store(generic_data_reader *reader) :
+    m_n(0),
     m_reader(reader),
     m_my_minibatch_indices(nullptr),
     m_in_memory(true),
-    m_model(m),
     m_extended_testing(false),
     m_is_subsidiary_store(false),
     m_cur_minibatch(1000000),
@@ -53,52 +51,47 @@ m_n(0),
     LBANN_ERROR(" m_reader is nullptr");
   }
 
-  if (m_model == nullptr) {
-    LBANN_ERROR(" m_model is nullptr");
-  }
-
-  m_comm = m_model->get_comm();
-  if (m_comm == nullptr) {
-    LBANN_ERROR(" m_comm is nullptr");
-  }
-
-  m_master = m_comm->am_world_master();
-  m_rank = m_comm->get_rank_in_trainer();
-  m_np = m_comm->get_procs_per_trainer();
-  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
-
-  m_dir = m_reader->get_file_dir();
-
   set_name("generic_data_store");
+}
 
-  if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
-  options *opts = options::get();
-  if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
-    m_extended_testing = true;
-  }
+generic_data_store::generic_data_store(const generic_data_store& rhs) {
+  copy_members(rhs);
+}
 
-  if (opts->has_bool("local_disk") && opts->get_bool("local_disk")) {
-    if (m_master) std::cerr << "running in out-of-memory mode\n";
-    m_in_memory = false;
+generic_data_store& generic_data_store::operator=(const generic_data_store& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
   }
+  //  generic_data_store::operator=(rhs);
 
-  if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
-    m_verbose = true;
-  }
+  copy_members(rhs);
 
-  if (opts->has_string("use_tarball")) {
-    m_dir = m_reader->get_local_file_dir();
-  }
+  return (*this);
+}
 
-/*
-  if (m_comm->get_num_trainers() != 1) {
-    if (m_master) {
-      std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
-                << "a single model; please ask Dave Hysom to fix!\n\n";
-    }
-    exit(9);
-  }
-*/
+void generic_data_store::copy_members(const generic_data_store& rhs) {
+  m_comm = rhs.m_comm;
+  m_n = rhs.m_n;
+  m_my_minibatch_indices = rhs.m_my_minibatch_indices;
+  m_in_memory = rhs.m_in_memory;
+  m_extended_testing = rhs.m_extended_testing;
+  m_is_subsidiary_store = rhs.m_is_subsidiary_store;
+  m_cur_minibatch = rhs.m_cur_minibatch;
+  m_is_setup = rhs.m_is_setup;
+  m_verbose = rhs.m_verbose;
+  m_name = rhs.m_name;
+  m_num_readers = rhs.m_num_readers;
+  m_rank = rhs.m_rank;
+  m_np = rhs.m_np;
+  m_dir = rhs.m_dir;
+  m_master = rhs.m_master;
+
+  m_owner = rhs.m_owner;
+
+  /// Clear the pointer to the data reader, this cannot be copied
+  m_reader = nullptr;
+  m_shuffled_indices = nullptr;
 }
 
 void generic_data_store::get_minibatch_index_vector() {
@@ -133,6 +126,45 @@ void generic_data_store::get_my_datastore_indices() {
 }
 
 void generic_data_store::setup(int mini_batch_size) {
+  m_comm = m_reader->get_comm();
+  if (m_comm == nullptr) {
+    LBANN_ERROR(" m_comm is nullptr");
+  }
+
+  m_master = m_comm->am_world_master();
+  m_rank = m_comm->get_rank_in_trainer();
+  m_np = m_comm->get_procs_per_trainer();
+  m_mpi_comm = m_comm->get_trainer_comm().GetMPIComm();
+
+  m_dir = m_reader->get_file_dir();
+
+  if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
+  options *opts = options::get();
+  if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
+    m_extended_testing = true;
+  }
+
+  if (opts->has_bool("local_disk") && opts->get_bool("local_disk")) {
+    if (m_master) std::cerr << "running in out-of-memory mode\n";
+    m_in_memory = false;
+  }
+
+  if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
+    m_verbose = true;
+  }
+
+  if (opts->has_string("use_tarball")) {
+    m_dir = m_reader->get_local_file_dir();
+  }
+
+  if (m_comm->get_num_trainers() != 1) {
+    if (m_master) {
+      std::cerr << "\nFATAL ERROR: data store classes currently assume there is\n"
+                << "a single model; please ask Dave Hysom to fix!\n\n";
+    }
+    exit(9);
+  }
+
   set_shuffled_indices( &(m_reader->get_shuffled_indices()) );
   set_num_global_indices();
   m_num_readers = m_reader->get_num_parallel_readers();
@@ -142,9 +174,9 @@ void generic_data_store::setup(int mini_batch_size) {
               << m_reader->get_role() << "\n";
   }
 
-  if (is_subsidiary_store()) {
-    return;
-  }
+//  if (is_subsidiary_store()) {
+//    return;
+//  }
 
   #if 0
   // get the set of global indices used by this processor in
@@ -213,7 +245,6 @@ size_t generic_data_store::get_file_size(std::string dir, std::string fn) {
 }
 
 void generic_data_store::set_shuffled_indices(const std::vector<int> *indices, bool exchange_indices) {
-if (m_master)std::cerr<<"starting set_shuffled_indices; epoch: "<<m_model->get_epoch()<<" role: " << m_reader->get_role()<<";  n: " << m_n << "\n";
   m_shuffled_indices = indices;
 }
 

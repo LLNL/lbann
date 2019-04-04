@@ -237,11 +237,6 @@ public:
   /** @brief Train model. */
   virtual void train(int num_epochs, int num_batches=0);
 
-  /** @brief Run one epoch using only the input layer; this supports
-   *  data_store functionality
-   */
-  void collect_indices(execution_mode mode);
-
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
   virtual void collect_background_data_fetch(execution_mode mode);
