@@ -95,9 +95,11 @@ using LocaleMPI = ::distconv::tensor::LocaleMPI;
 using MPIPrintStreamDebug = ::distconv::util::MPIPrintStreamDebug;
 using MPIPrintStreamError = ::distconv::util::MPIPrintStreamError;
 using MPIPrintStreamInfo = ::distconv::util::MPIPrintStreamInfo;
+using MPIPrintStreamWarning = ::distconv::util::MPIPrintStreamWarning;
 using MPIRootPrintStreamDebug = ::distconv::util::MPIRootPrintStreamDebug;
 using MPIRootPrintStreamError = ::distconv::util::MPIRootPrintStreamError;
 using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
+using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;

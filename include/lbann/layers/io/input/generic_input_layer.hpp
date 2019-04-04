@@ -239,11 +239,10 @@ class generic_input_layer : public io_layer {
     setup_next_io_buffer(io_buffer);
     auto num_samples =
         io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
-    dc::MPIPrintStreamInfo() << "#fetched samples: " << num_samples
-                             << ", active_buffer: " << active_buffer
-                             << ", mode: " << (int)mode;
-    assert_ne(num_samples, 0);
 #ifdef LBANN_HAS_DISTCONV
+    dc::MPIPrintStreamDebug() << "#fetched samples: " << num_samples
+                              << ", active_buffer: " << active_buffer
+                              << ", mode: " << (int)mode;
     fp_compute_distconv_background(active_buffer, mode);
 #endif // LBANN_HAS_DISTCONV
     return;
@@ -265,8 +264,6 @@ class generic_input_layer : public io_layer {
     increment_active_buffer_idx(mode);
 
     generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
-
-    dc::MPIPrintStreamInfo() << "Num IO buffers: " << m_io_buffers.size();
 
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
@@ -942,9 +939,24 @@ class generic_input_layer : public io_layer {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
 
+    // TODO: Is this always 2? How is the buffer vector set?
     const int num_buffers = m_io_buffers.size();
-
-
+    if (this->m_model->background_io_activity_allowed()) {
+      // TODO: Is this always 2 when background IO is alloed? How is
+      // the buffer vector set?
+      if (num_buffers != 2) {
+        dc::MPIPrintStreamWarning()
+            << "Number of input buffers is not 2: "
+            << num_buffers;
+      }
+    } else {
+      // When background I/O is disabled, do we only have one buffer?
+      if (num_buffers != 1) {
+        dc::MPIPrintStreamWarning()
+            << "Number of input buffers is not 1 even though background I/O is not enabled: "
+            << num_buffers;
+      }
+    }
     const auto tensor_shape = get_output_tensor_shape();
     const LocaleMPI loc(dc::get_mpi_comm(), false);
     const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
@@ -1049,7 +1061,6 @@ class generic_input_layer : public io_layer {
 
   void fp_compute_distconv(int active_buffer) {
     if (!distconv_enabled()) return;
-    dc::MPIPrintStreamInfo() << this->get_name() << ": " << __FUNCTION__;
 
     const int mb_size = this->get_model()->get_current_mini_batch_size();
     auto &input_view = m_input_views.at(active_buffer);
