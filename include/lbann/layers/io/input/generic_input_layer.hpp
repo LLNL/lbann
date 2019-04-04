@@ -34,6 +34,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
@@ -237,8 +238,10 @@ class generic_input_layer : public io_layer {
     generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dr_mutex);
     setup_next_io_buffer(io_buffer);
+    prof_region_begin("fetch_sample", prof_colors[0], false);
     auto num_samples =
         io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
+    prof_region_end("fetch_sample", false);
 #ifdef LBANN_HAS_DISTCONV
     dc::MPIPrintStreamDebug() << "#fetched samples: " << num_samples
                               << ", active_buffer: " << active_buffer
@@ -1073,8 +1076,10 @@ class generic_input_layer : public io_layer {
                                 << ": Copy the host tensor to device tensor"
                                 << ", mb_size: " << mb_size;
       assert_eq(mb_size, input_tensor.get_shape()[dc::get_sample_dim()]);
+      prof_region_begin("copy-to-device", prof_colors[1], false);
       assert0(dc::tensor::Copy(m_activations_t, input_tensor,
                                dc::get_stream()));
+      prof_region_end("copy-to-device", false);
       return;
     }
 
@@ -1097,7 +1102,9 @@ class generic_input_layer : public io_layer {
     // This should not incur communication as the distributions should
     // be the same except for overlapping width. Device copy should be
     // done with cudaMemcpy3D.
+    prof_region_begin("copy-to-device", prof_colors[1], false);
     assert0(dc::tensor::Copy(m_activations_t, input_tensor, dc::get_stream()));
+    prof_region_end("copy-to-device", false);
     // Note: no copy out for activation is necessary as the original
     // LBANN tensor is valid.
   }
