@@ -328,7 +328,8 @@ void init_data_readers(
     } else if (name == "python") {
 #ifdef LBANN_HAS_PYTHON
       const auto& params = readme.python();
-      reader = new python_reader(params.script(),
+      reader = new python_reader(params.module(),
+                                 params.module_dir(),
                                  params.sample_function(),
                                  params.num_samples_function(),
                                  params.sample_dims_function());
@@ -490,7 +491,8 @@ void init_data_readers(
       } else if (name == "python") {
 #ifdef LBANN_HAS_PYTHON
         const auto& params = readme.python();
-        reader_validation = new python_reader(params.script(),
+        reader_validation = new python_reader(params.module(),
+                                              params.module_dir(),
                                               params.sample_function(),
                                               params.num_samples_function(),
                                               params.sample_dims_function());

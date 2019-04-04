@@ -28,6 +28,7 @@
 #include "lbann/data_readers/data_reader_python.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
+#include <algorithm>
 
 namespace lbann {
 
@@ -70,6 +71,11 @@ void manager::check_error(bool force_error) const {
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
 
+    // Print directly to stderr if we didn't get any information
+    if (value == nullptr && traceback == nullptr) {
+      PyErr_Print();
+    }
+
     // Construct error message
     std::ostringstream err;
     err << "detected Python error";
@@ -86,9 +92,7 @@ void manager::check_error(bool force_error) const {
       // Format traceback
       auto module = PyImport_ImportModule("traceback");
       auto func = PyObject_GetAttrString(module, "format_tb");
-      auto args = PyTuple_New(1);
-      PyTuple_SetItem(args, 0, traceback);
-      traceback = nullptr;  // Reference has been "stolen" by args
+      auto args = PyTuple_Pack(1, traceback);
       auto message = PyObject_CallObject(func, args);
 
       // Print traceback
@@ -163,40 +167,35 @@ object::~object() {
 
 } // namespace python
 
-python_reader::python_reader(std::string script,
+python_reader::python_reader(std::string module,
+                             std::string module_dir,
                              std::string sample_function,
                              std::string num_samples_function,
                              std::string sample_dims_function)
   : generic_data_reader(true) {
-  int status;
 
-  // Execute Python script
+  // Acquire mutex for Python session
   auto& manager = python::manager::get_instance();
   const auto lock = manager.get_mutex_guard();
-  auto&& f = std::fopen(script.c_str(), "r");
-  if (f == nullptr) {
-    LBANN_ERROR("failed to open file (" + script + ")");
+
+  // Import Python module
+  if (!module_dir.empty()) {
+    auto path = PySys_GetObject("path");  // Borrowed reference
+    PyList_Append(path, python::object(module_dir));
+    manager.check_error();
   }
-  status = PyRun_SimpleFile(f, script.c_str());
-  if (status) {
-    manager.check_error(status);
-  }
-  status = std::fclose(f);
-  if (status) {
-    LBANN_ERROR("failed to close file (" + script + ")");
-  }
-  python::object module = PyImport_ImportModule("__main__");
+  python::object module_obj = PyImport_ImportModule(module.c_str());
 
   // Get number of samples
   python::object num_func
-    = PyObject_GetAttrString(module, num_samples_function.c_str());
+    = PyObject_GetAttrString(module_obj, num_samples_function.c_str());
   python::object num = PyObject_CallObject(num_func, nullptr);
   m_num_samples = PyLong_AsLong(num);
   manager.check_error();
 
   // Get sample dimensions
   python::object dims_func
-    = PyObject_GetAttrString(module, sample_dims_function.c_str());
+    = PyObject_GetAttrString(module_obj, sample_dims_function.c_str());
   python::object dims = PyObject_CallObject(dims_func, nullptr);
   dims = PyObject_GetIter(dims);
   for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
@@ -206,8 +205,8 @@ python_reader::python_reader(std::string script,
   manager.check_error();
 
   // Get sample function
-  m_sample_function
-    = PyObject_GetAttrString(module, sample_function.c_str());
+  m_sample_function = PyObject_GetAttrString(module_obj,
+                                             sample_function.c_str());
 
 }
 
