@@ -74,6 +74,11 @@ class sample_list_jag {
 
   sample_list_jag();
   ~sample_list_jag();
+  sample_list_jag(const sample_list_jag& rhs);
+  sample_list_jag& operator=(const sample_list_jag& rhs);
+  sample_list_jag& copy(const sample_list_jag& rhs);
+
+  void copy_members(const sample_list_jag& rhs);
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);

@@ -54,6 +54,46 @@ generic_data_store::generic_data_store(generic_data_reader *reader) :
   set_name("generic_data_store");
 }
 
+generic_data_store::generic_data_store(const generic_data_store& rhs) {
+  copy_members(rhs);
+}
+
+generic_data_store& generic_data_store::operator=(const generic_data_store& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+  //  generic_data_store::operator=(rhs);
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+void generic_data_store::copy_members(const generic_data_store& rhs) {
+  m_comm = rhs.m_comm;
+  m_n = rhs.m_n;
+  m_my_minibatch_indices = rhs.m_my_minibatch_indices;
+  m_in_memory = rhs.m_in_memory;
+  m_extended_testing = rhs.m_extended_testing;
+  m_is_subsidiary_store = rhs.m_is_subsidiary_store;
+  m_cur_minibatch = rhs.m_cur_minibatch;
+  m_is_setup = rhs.m_is_setup;
+  m_verbose = rhs.m_verbose;
+  m_name = rhs.m_name;
+  m_num_readers = rhs.m_num_readers;
+  m_rank = rhs.m_rank;
+  m_np = rhs.m_np;
+  m_dir = rhs.m_dir;
+  m_master = rhs.m_master;
+
+  m_owner = rhs.m_owner;
+
+  /// Clear the pointer to the data reader, this cannot be copied
+  m_reader = nullptr;
+  m_shuffled_indices = nullptr;
+}
+
 void generic_data_store::get_minibatch_index_vector() {
   size_t s2 = 0;
   for (auto t1 : (*m_my_minibatch_indices)) {

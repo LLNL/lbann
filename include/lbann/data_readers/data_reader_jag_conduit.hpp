@@ -89,6 +89,14 @@ class data_reader_jag_conduit : public generic_data_reader {
     return "data_reader_jag_conduit";
   }
 
+  /// returns the data store
+  const data_store_jag& get_jag_store() const {
+    if (m_jag_store == nullptr) {
+      LBANN_ERROR("m_data_store is nullptr");
+    }
+    return *m_jag_store;
+  }
+
   /// Choose which data to use for independent variable
   void set_independent_variable_type(const std::vector< std::vector<variable_t> >& independent);
   /// Choose which data to use for dependent variable

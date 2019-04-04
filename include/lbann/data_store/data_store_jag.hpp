@@ -47,15 +47,17 @@ class data_store_jag : public generic_data_store {
   data_store_jag(generic_data_reader *reader);
 
   //! copy ctor
-  data_store_jag(const data_store_jag&) = default;
+  data_store_jag(const data_store_jag&);
 
   //! operator=
-  data_store_jag& operator=(const data_store_jag&) = default;
+  data_store_jag& operator=(const data_store_jag&);
 
   data_store_jag * copy() const override { return new data_store_jag(*this); }
 
   //! dtor
   ~data_store_jag() override;
+
+  void copy_members(const data_store_jag& rhs);
 
   void setup(int mini_batch_size) override;
 
@@ -76,6 +78,13 @@ class data_store_jag : public generic_data_store {
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
+
+  /// Removed nodes corresponding from the indices vector from the
+  /// data store
+  void purge_unused_samples(const std::vector<int>& indices) override;
+
+  /// Recompact the nodes because they are not copied properly
+  void compact_nodes() override;
 
 protected :
 

@@ -58,11 +58,40 @@ data_store_jag::data_store_jag(
 
 data_store_jag::~data_store_jag() {}
 
+data_store_jag::data_store_jag(const data_store_jag& rhs)
+  : generic_data_store(rhs) {
+  copy_members(rhs);
+}
+
+data_store_jag& data_store_jag::operator=(const data_store_jag& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+  generic_data_store::operator=(rhs);
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+void data_store_jag::copy_members(const data_store_jag& rhs) {
+  generic_data_store::copy_members(rhs);
+  m_preload = rhs.m_preload;
+  m_owner_map_mb_size = rhs.m_owner_map_mb_size;
+  m_super_node = rhs.m_super_node;
+  m_super_node_overhead = rhs.m_super_node;
+  m_compacted_sample_size = rhs.m_compacted_sample_size;
+  m_name = rhs.m_name;
+
+  m_data = rhs.m_data;
+}
+
 void data_store_jag::setup(int mini_batch_size) {
   generic_data_store::setup(mini_batch_size);
 
   if (m_is_setup) {
-    LBANN_ERROR("data_store_jag::setup was called previously. Note that this is called from data_reader::set_mini_batch_size, so this may not be an error. Please consult with Brian Van Essen and Dave Hysom is you think multiple calls to data_reader::set_mini_batch_size are permissible");
+    LBANN_ERROR("data_store_jag::setup was called previously. Note that this is called from lbann_library::build_model_from_prototext, so this may not be an error. Please consult with Brian Van Essen and Dave Hysom is you think multiple calls to data_reader::set_mini_batch_size are permissible");
   }
 
   if (m_master) {
@@ -526,6 +555,29 @@ conduit::Node & data_store_jag::get_empty_node(int data_id) {
     LBANN_ERROR("we already have a node with data_id= " + std::to_string(data_id));
   }
   return m_data[data_id];
+}
+
+void data_store_jag::purge_unused_samples(const std::vector<int>& indices) {
+  /// Remove unused indices from the data and owner maps
+  for(auto&& i : indices) {
+    if(m_data.find(i) != m_data.end()){
+      m_data.erase(i);
+    }
+    if(m_owner.find(i) != m_owner.end()) {
+      m_owner.erase(i);
+    }
+  }
+}
+
+void data_store_jag::compact_nodes() {
+  for(auto&& j : *m_shuffled_indices) {
+    if(m_data.find(j) != m_data.end()){
+      /// Repack the nodes because they don't seem to copy correctly
+      conduit::Node node = m_data[j]["data"];
+      m_data.erase(j);
+      build_node_for_sending(node, m_data[j]);
+    }
+  }
 }
 
 }  // namespace lbann

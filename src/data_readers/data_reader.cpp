@@ -557,6 +557,11 @@ void generic_data_reader::select_subset_of_data() {
 
 void generic_data_reader::use_unused_index_set() {
   m_shuffled_indices.swap(m_unused_indices);
+  if(m_data_store != nullptr) {
+    /// Update the data store's pointer to the shuffled indices
+    m_data_store->set_shuffled_indices(&m_shuffled_indices);
+    m_data_store->purge_unused_samples(m_unused_indices);
+  }
   m_unused_indices.clear();
   std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
 }
@@ -712,8 +717,10 @@ bool generic_data_reader::data_store_active() const {
   if (m_data_store != nullptr && m_data_store->preloaded()) {
     return true;
   }
+  /// Use the data store for all modes except testing
+  /// i.e. training, validation, tournament
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() == execution_mode::training)
+          && (m_model->get_execution_mode() != execution_mode::testing)
           && m_model->get_epoch() > 0);
 }
 
@@ -721,8 +728,10 @@ bool generic_data_reader::priming_data_store() const {
   if (m_data_store != nullptr && m_data_store->preloaded()) {
     return false;
   }
+  /// Use the data store for all modes except testing
+  /// i.e. training, validation, tournament
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() == execution_mode::training)
+          && (m_model->get_execution_mode() != execution_mode::testing)
           && m_model->get_epoch() == 0);
 }
 

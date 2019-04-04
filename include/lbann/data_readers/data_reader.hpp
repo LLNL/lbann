@@ -529,6 +529,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   int *get_unused_data() {
     return &m_unused_indices[0];
   }
+  const std::vector<int>& get_unused_indices() {
+    return m_unused_indices;
+  }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
@@ -681,11 +684,15 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
   }
 
-  /// returns the data store
-  generic_data_store * get_data_store() const {
+  /// returns a const ref to the data store
+  virtual const generic_data_store& get_data_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
+    return *m_data_store;
+  }
+
+  generic_data_store* get_data_store_ptr() const {
     return m_data_store;
   }
 

@@ -51,15 +51,19 @@ class generic_data_store {
   generic_data_store(generic_data_reader *reader);
 
   //! copy ctor
-  generic_data_store(const generic_data_store&) = default;
+  generic_data_store(const generic_data_store&);
 
   //! operator=
-  generic_data_store& operator=(const generic_data_store&) = default;
+  generic_data_store& operator=(const generic_data_store&);
 
   //! dtor
   virtual ~generic_data_store() {}
 
   virtual generic_data_store * copy() const = 0;
+
+  virtual void copy_members(const generic_data_store& rhs);
+
+  void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
 
   /// called by generic_data_reader::setup_data_store
   virtual void setup(int mini_batch_size);
@@ -145,6 +149,12 @@ class generic_data_store {
 
   virtual void set_preload() {};
   virtual bool preloaded() { return false; };
+
+  /// Removed nodes corresponding from the indices vector from the
+  /// data store
+  virtual void purge_unused_samples(const std::vector<int>& indices) {};
+    /// Recompact the nodes because they are not copied properly
+  virtual void compact_nodes() {};
 
 protected :
 

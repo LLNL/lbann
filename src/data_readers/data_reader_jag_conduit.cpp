@@ -213,14 +213,14 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_scalar_normalization_params = rhs.m_scalar_normalization_params;
   m_input_normalization_params = rhs.m_input_normalization_params;
 
-  m_sample_list = rhs.m_sample_list;
+  m_sample_list.copy(rhs.m_sample_list);
   m_list_per_trainer = rhs.m_list_per_trainer;
   m_list_per_model = rhs.m_list_per_model;
 
-  /// @todo FIXME should we do a deep copy if the data store was preloaded
   if(rhs.m_data_store != nullptr || rhs.m_jag_store != nullptr) {
-    m_jag_store = new data_store_jag(this);  // *data_store_jag
-    m_data_store = m_jag_store;                 // *generic_data_store
+    m_jag_store = new data_store_jag(rhs.get_jag_store());
+    m_jag_store->set_data_reader_ptr(this);
+    m_data_store = m_jag_store;
   }
 }
 
@@ -243,6 +243,9 @@ data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_ja
 }
 
 data_reader_jag_conduit::~data_reader_jag_conduit() {
+  // if (m_jag_store != nullptr) {
+  //   delete m_jag_store;
+  // }
 }
 
 void data_reader_jag_conduit::set_defaults() {
