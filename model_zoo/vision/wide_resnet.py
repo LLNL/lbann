@@ -89,7 +89,7 @@ def make_group(input, in_channels, mid_channels, out_channels, stride, num_block
                        in_channels if block == 0 else out_channels,
                        mid_channels,
                        out_channels,
-                       stride)
+                       stride if block == 0 else 1)
     return y
 
 # Input data
