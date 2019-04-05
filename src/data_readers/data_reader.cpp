@@ -50,7 +50,7 @@ void generic_data_reader::shuffle_indices(rng_gen& gen) {
   }
 }
 
-  void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
   m_stride_to_next_mini_batch = 0;
@@ -557,6 +557,11 @@ void generic_data_reader::select_subset_of_data() {
 
 void generic_data_reader::use_unused_index_set() {
   m_shuffled_indices.swap(m_unused_indices);
+  if(m_data_store != nullptr) {
+    /// Update the data store's pointer to the shuffled indices
+    m_data_store->set_shuffled_indices(&m_shuffled_indices);
+    m_data_store->purge_unused_samples(m_unused_indices);
+  }
   m_unused_indices.clear();
   std::vector<int>().swap(m_unused_indices); // Trick to force memory reallocation
 }
@@ -704,20 +709,34 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::setup_data_store(model *m, int mini_batch_size) {
+void generic_data_reader::setup_data_store(int mini_batch_size) {
   m_data_store = nullptr;
 }
 
 bool generic_data_reader::data_store_active() const {
+  if (m_data_store != nullptr && m_data_store->preloaded()) {
+    return true;
+  }
+  /// Use the data store for all modes except testing
+  /// i.e. training, validation, tournament
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() == execution_mode::training)
-          && m_model->get_epoch() > 0);
+          && (((m_model->get_execution_mode() == execution_mode::training)
+               && m_model->get_epoch() > 0)
+              || ((m_model->get_execution_mode() == execution_mode::validation)
+                  && m_model->get_epoch() > 1)));
 }
 
 bool generic_data_reader::priming_data_store() const {
+  if (m_data_store != nullptr && m_data_store->preloaded()) {
+    return false;
+  }
+  /// Use the data store for all modes except testing
+  /// i.e. training, validation, tournament
   return (m_data_store != nullptr
-          && (m_model->get_execution_mode() == execution_mode::training)
-          && m_model->get_epoch() == 0);
+          && (((m_model->get_execution_mode() == execution_mode::training)
+               && m_model->get_epoch() == 0)
+              || ((m_model->get_execution_mode() == execution_mode::validation)
+                  && m_model->get_epoch() == 1)));
 }
 
 void generic_data_reader::set_data_store(generic_data_store *g) {
@@ -739,6 +758,10 @@ void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, 
   m_procs_per_partition = m_comm->get_procs_per_trainer();
   m_num_partitions = m_comm->get_num_trainers();
   m_my_partition = m_comm->get_trainer_rank();
+}
+
+void generic_data_reader::set_mini_batch_size(const int s) {
+  m_mini_batch_size = s;
 }
 
 }  // namespace lbann

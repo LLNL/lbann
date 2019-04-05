@@ -67,8 +67,8 @@ public:
    *                        npy, npz (default: csv).
    */
   lbann_callback_dump_outputs(
-    std::set<std::string> layer_names = std::set<std::string>(),
-    std::set<execution_mode> modes = std::set<execution_mode>(),
+    std::set<std::string> layer_names,// = std::set<std::string>(),
+    std::set<execution_mode> modes, // = std::set<std::string>(),
     El::Int batch_interval = 0,
     std::string directory = "",
     std::string file_format = "");

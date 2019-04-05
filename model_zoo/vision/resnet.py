@@ -8,7 +8,7 @@ import lbann.proto
 import lbann.contrib.args
 
 # Command-line arguments
-desc = ('Construct and run AlexNet on MNIST data. '
+desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 data_reader_prototext = join(lbann.lbann_dir(),
                              'model_zoo',
