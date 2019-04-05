@@ -82,11 +82,6 @@ public:
   /** Small factor to avoid division by zero. */
   void set_eps(DataType eps) { m_eps = eps; }
 
-  /** beta1 ^ iteration. */
-  DataType& get_current_beta1() { return m_current_beta1; }
-  /** beta2 ^ iteration. */
-  DataType& get_current_beta2() { return m_current_beta2; }
-
   /** First moment estimates. */
   const AbsDistMat& get_moment1() const;
   /** First moment estimates. */
@@ -95,6 +90,23 @@ public:
   const AbsDistMat& get_moment2() const;
   /** Second moment estimates. */
   AbsDistMat& get_moment2();
+
+  /** beta1 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  DataType get_current_beta1() const noexcept { return m_current_beta1; }
+  /** beta1 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  void set_current_beta1(DataType current_beta1) { m_current_beta1 = current_beta1; }
+  /** beta2 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  DataType get_current_beta2() const noexcept { return m_current_beta2; }
+  /** beta2 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  void set_current_beta2(DataType current_beta2) { m_current_beta2 = current_beta2; }
 
   ///@}
 

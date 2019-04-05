@@ -76,9 +76,9 @@ public:
   void set_momentum(DataType momentum) { m_momentum = momentum; }
 
   /** Whether Nesterov acceleration is applied. */
-  bool is_using_nesterov() const noexcept { return m_nesterov; }
+  bool using_nesterov() const noexcept { return m_nesterov; }
   /** Whether Nesterov acceleration is applied. */
-  void set_using_nesterov(bool using_nesterov) { m_nesterov = using_nesterov; }
+  void set_nesterov(bool nesterov) { m_nesterov = nesterov; }
 
   /** Accumulated gradients for momentum optimizer. */
   const AbsDistMat& get_velocity() const;

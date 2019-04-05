@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <tuple>
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/random.hpp"
@@ -126,6 +127,19 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       const auto* send_sgd = dynamic_cast<const sgd*>(send_opt);
       auto* recv_sgd = dynamic_cast<sgd*>(recv_opt);
       if (send_sgd != nullptr && recv_sgd != nullptr) {
+        using hyperparameters_type = std::tuple<DataType, DataType, bool>;
+        hyperparameters_type hyperparameters(send_sgd->get_learning_rate(),
+                                             send_sgd->get_momentum(),
+                                             send_sgd->using_nesterov());
+        El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
+                          sizeof(hyperparameters_type),
+                          partner_rank_in_world,
+                          partner_rank_in_world,
+                          comm.get_world_comm(),
+                          El::SyncInfo<El::Device::CPU>{});
+        recv_sgd->set_learning_rate(std::get<0>(hyperparameters));
+        recv_sgd->set_momentum(std::get<1>(hyperparameters));
+        recv_sgd->set_nesterov(std::get<2>(hyperparameters));
         El::SendRecv(send_sgd->get_velocity().LockedMatrix(),
                      recv_sgd->get_velocity().Matrix(),
                      comm.get_world_comm(),
@@ -135,6 +149,25 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       const auto* send_adam = dynamic_cast<const adam*>(send_opt);
       auto* recv_adam = dynamic_cast<adam*>(recv_opt);
       if (send_adam != nullptr && recv_adam != nullptr) {
+        using hyperparameters_type = std::tuple<DataType, DataType, DataType, DataType, DataType, DataType>;
+        hyperparameters_type hyperparameters(send_adam->get_learning_rate(),
+                                             send_adam->get_beta1(),
+                                             send_adam->get_beta2(),
+                                             send_adam->get_eps(),
+                                             send_adam->get_current_beta1(),
+                                             send_adam->get_current_beta2());
+        El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
+                          sizeof(hyperparameters_type),
+                          partner_rank_in_world,
+                          partner_rank_in_world,
+                          comm.get_world_comm(),
+                          El::SyncInfo<El::Device::CPU>{});
+        recv_adam->set_learning_rate(std::get<0>(hyperparameters));
+        recv_adam->set_beta1(std::get<1>(hyperparameters));
+        recv_adam->set_beta2(std::get<2>(hyperparameters));
+        recv_adam->set_eps(std::get<3>(hyperparameters));
+        recv_adam->set_current_beta1(std::get<4>(hyperparameters));
+        recv_adam->set_current_beta2(std::get<5>(hyperparameters));
         El::SendRecv(send_adam->get_moment1().LockedMatrix(),
                      recv_adam->get_moment1().Matrix(),
                      comm.get_world_comm(),
