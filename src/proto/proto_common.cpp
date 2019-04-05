@@ -769,7 +769,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
   }
-  if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
+  if (opts->get_bool("no_im_comm")) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
       lbann_data::Callback *c = model->mutable_callback(j);
@@ -793,13 +793,13 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
-  if (opts->has_bool("disable_cuda")) {
+  if (opts->get_bool("disable_cuda")) {
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
   if (opts->has_int("random_seed")) {
     model->set_random_seed(opts->get_int("random_seed"));
   }
-  if(opts->has_bool("serialize_io")) {
+  if(opts->get_bool("serialize_io")) {
     model->set_serialize_io(opts->get_bool("serialize_io"));
   }
 

@@ -31,7 +31,6 @@ public :
   //@{
   /** Returns true if the database contains the option */
   bool has_int(std::string option);
-  bool has_bool(std::string option);
   bool has_string(std::string option);
   bool has_float(std::string option) { return has_double(option); }
   bool has_double(std::string option);

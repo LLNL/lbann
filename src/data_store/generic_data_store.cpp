@@ -140,16 +140,16 @@ void generic_data_store::setup(int mini_batch_size) {
 
   if (m_master) std::cerr << "generic_data_store::generic_data_store; np: " << m_np << "\n";
   options *opts = options::get();
-  if (opts->has_bool("extended_testing") && opts->get_bool("extended_testing")) {
+  if (opts->get_bool("extended_testing")) {
     m_extended_testing = true;
   }
 
-  if (opts->has_bool("local_disk") && opts->get_bool("local_disk")) {
+  if (opts->get_bool("local_disk")) {
     if (m_master) std::cerr << "running in out-of-memory mode\n";
     m_in_memory = false;
   }
 
-  if (opts->has_bool("verbose") && opts->get_bool("verbose")) {
+  if (opts->get_bool("verbose")) {
     m_verbose = true;
   }
 

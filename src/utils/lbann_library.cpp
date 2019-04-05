@@ -190,7 +190,6 @@ std::unique_ptr<model> build_model_from_prototext(
     ret_model->allow_background_io_activity(false);
   }
 
-  // under development; experimental
   if (opts->get_bool("use_data_store")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
