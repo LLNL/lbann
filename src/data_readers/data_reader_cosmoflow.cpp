@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_cosmoflow.hpp"
+#include "lbann/utils/profiling.hpp"
 #include <cstdio>
 #include <string>
 #include <unordered_set>
@@ -80,7 +81,9 @@ void cosmoflow_reader::load() {
     }
 
     if(m_num_features == 0) {
+      prof_region_begin("load", prof_colors[0], false);
       const cnpy::NpyArray data = cnpy::npz_load(infile, NPZ_KEY_DATA);
+      prof_region_end("load", false);
       m_data_dims = std::vector<int>(data.shape.begin()+1, data.shape.end());
       m_num_features = std::accumulate(m_data_dims.begin(),
                                        m_data_dims.end(),
@@ -122,9 +125,9 @@ std::pair<cnpy::NpyArray, int> cosmoflow_reader::prepare_npz_file(const int data
     if(data_id < *i) {
       const auto position = std::distance(m_num_samples_prefix.begin(), i);
       const auto offset = data_id - (position == 0 ? 0 : *(i-1));
-
+      prof_region_begin("npz_load", prof_colors[0], false);
       const cnpy::npz_t npz = cnpy::npz_load(m_npz_paths[position]);
-
+      prof_region_end("npz_load", false);
       const auto safe_find =
           [](const cnpy::npz_t z, const std::string k) {
             const auto t = z.find(k);
@@ -147,6 +150,8 @@ std::pair<cnpy::NpyArray, int> cosmoflow_reader::prepare_npz_file(const int data
 }
 
 bool cosmoflow_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+  prof_region_begin("fetch_datum", prof_colors[0], false);
+
   auto data_offset = prepare_npz_file(data_id, NPZ_KEY_DATA);
   auto data_npy = data_offset.first;
   const auto offset = data_offset.second;
@@ -161,11 +166,12 @@ bool cosmoflow_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   LBANN_OMP_PARALLEL_FOR
       for(int j = 0; j < m_num_features; j++)
         dest[j] = data[j] * m_scaling_factor_int16;
-
+  prof_region_end("fetch_datum", false);
   return true;
 }
 
 bool cosmoflow_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+  prof_region_begin("fetch_response", prof_colors[0], false);
   auto data_offset = prepare_npz_file(data_id, NPZ_KEY_RESPONSES);
   auto data = data_offset.first;
   const auto offset = data_offset.second;
@@ -185,6 +191,7 @@ bool cosmoflow_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
   std::memcpy(Y_v.Buffer(), responses,
               m_num_response_features * data.word_size);
+  prof_region_end("fetch_response", false);
   return true;
 }
 

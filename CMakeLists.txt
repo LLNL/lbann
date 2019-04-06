@@ -149,6 +149,8 @@ option(LBANN_WITH_P2P
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
 
+option(LBANN_IO_DISABLE_ZEROS "Disable zero-clearing of matrices at data loading" ON)
+
 #
 # Initialize build
 #
