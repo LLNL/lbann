@@ -126,20 +126,8 @@ std::pair<cnpy::NpyArray, int> cosmoflow_reader::prepare_npz_file(const int data
       const auto position = std::distance(m_num_samples_prefix.begin(), i);
       const auto offset = data_id - (position == 0 ? 0 : *(i-1));
       prof_region_begin("npz_load", prof_colors[0], false);
-      const cnpy::npz_t npz = cnpy::npz_load(m_npz_paths[position]);
+      cnpy::NpyArray data = cnpy::npz_load(m_npz_paths[position], key);
       prof_region_end("npz_load", false);
-      const auto safe_find =
-          [](const cnpy::npz_t z, const std::string k) {
-            const auto t = z.find(k);
-            if(t != z.end()) {
-              return t->second;
-            } else {
-              throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-                                    " numpy_npz_reader::prepare_npz_file() - can't find npz key : " + k);
-            }
-          }; // TODO: unfold
-
-      cnpy::NpyArray data = safe_find(npz, key);
       return std::make_pair(data, offset);
     }
   }
