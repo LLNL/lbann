@@ -26,6 +26,7 @@
 
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/profiling.hpp"
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers) {
@@ -83,14 +84,19 @@ void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_t
 int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
+  prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
   data_buffer *buf = get_data_buffer(mode);
   buf->m_num_samples_fetched = 0;
   if (m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
+#ifndef LBANN_IO_DISABLE_ZEROS
+    prof_region_begin("fetch_to_local_matrix_zeros", prof_colors[3], false);
     for(auto& m : buf->m_input_buffers) {
       El::Zeros_seq(*m, m->Height(), m->Width());
     }
+    prof_region_end("fetch_to_local_matrix_zeros", false);
+#endif // LBANN_IO_DISABLE_ZEROS
 
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
@@ -104,6 +110,7 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
       //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
     }
   }
+  prof_region_end("fetch_to_local_matrix", false);
   return buf->m_num_samples_fetched;
 }
 
