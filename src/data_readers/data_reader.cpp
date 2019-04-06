@@ -29,6 +29,7 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/generic_data_store.hpp"
 #include "lbann/utils/omp_pragma.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
 #include <future>
@@ -108,6 +109,7 @@ void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool>
 
 bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
   std::string error_message;
+  prof_region_begin("fetch_data_block", prof_colors[0], false);
   for (int s = thread_id; s < mb_size; s+=m_io_thread_pool->get_num_threads()) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
@@ -120,6 +122,7 @@ bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, 
     if (!error_message.empty()) { LBANN_ERROR(error_message); }
     indices_fetched.Set(s, 0, index);
   }
+  prof_region_end("fetch_data_block", false);
   return true;
 }
 
@@ -137,14 +140,20 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   }
   #endif
 
+  prof_region_begin("fetch_data", prof_colors[0], false);
+
   int loaded_batch_size = get_loaded_mini_batch_size();
 
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
 
+#ifndef LBANN_IO_DISABLE_ZEROS
+  prof_region_begin("fetch_data_zeros", prof_colors[0], false);
   El::Zeros_seq(X, X.Height(), X.Width());
   El::Zeros_seq(indices_fetched, mb_size, 1);
+  prof_region_end("fetch_data_zeros", false);
+#endif // LBANN_IO_DISABLE_ZEROS
 
   /// Make sure that every rank participates in the data store prior
   /// to seeing if the local rank's position is valid.  Note that
@@ -163,18 +172,20 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     }
   }
 
+  prof_region_begin("fetch_data_preprocess", prof_colors[0], false);
   /// Allow each thread to perform any preprocessing necessary on the
   /// data source prior to fetching data
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     preprocess_data_source(t);
   }
+  prof_region_end("fetch_data_preprocess", false);
 
   static bool fix_jag = true;
   if (m_jag_partitioned && fix_jag) {
     fix_jag = false;
     set_jag_variables(mb_size);
   }
-
+  prof_region_begin("fetch_data_submit", prof_colors[0], false);
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     // Queue up work into other threads and then finish off the
     // mini-batch in the active thread
@@ -186,6 +197,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
                   mb_size, std::ref(indices_fetched)));
     }
   }
+  prof_region_end("fetch_data_submit", false);
   fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
 
   // Wait for all of the threads to finish
@@ -196,7 +208,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     postprocess_data_source(t);
   }
-
+  prof_region_end("fetch_data", false);
   return mb_size;
 }
 
