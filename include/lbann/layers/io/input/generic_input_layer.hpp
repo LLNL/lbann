@@ -973,10 +973,22 @@ class generic_input_layer : public io_layer {
       // Create a view to the host Elemental matrix
       m_input_views.push_back(TensorHost(tensor_shape, loc,
                                            sample_dist, local_shape));
-      // Create a Distconv tensor at host memory. Note that the host
-      // shuffler does not support overlapped tensors.
-      m_input_tensors.push_back(TensorHost(tensor_shape, loc, non_overlapped_dist));
+      // Create a Distconv tensor at host memory.
+      m_input_tensors.push_back(TensorHost(tensor_shape, loc, dist));
+      // TODO: This is a temporary hack. Should use
+      // CUDAHostPooledAllocator, but the shuffler is
+      // only specialized for BaseAllocator.
+#if 0
       assert0(m_input_tensors.back().allocate());
+#else
+      size_t buf_size = m_input_tensors.back().get_local_real_size()
+          * sizeof(DataType);
+      dc::MPIPrintStreamInfo() << "buf size: " << buf_size;
+      DataType *buf = nullptr;
+      CHECK_CUDA(cudaMallocHost(&buf, buf_size));
+      // Note buf should be deallocated.
+      dc::tensor::View(m_input_tensors.back(), buf);
+#endif
     }
 
     // Setup the shuffle buffers
