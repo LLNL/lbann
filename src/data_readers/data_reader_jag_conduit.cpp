@@ -911,23 +911,31 @@ void data_reader_jag_conduit::preload_data_store() {
   /// @todo BVE FIXME this
   m_rank_in_model = get_comm()->get_rank_in_trainer();
 
+  options *opts = options::get();
   double tm1 = get_time();
-  if (get_comm()->am_trainer_master()) {
-    std::cout << "data_store_jag::preload_data_store() for role: " << get_role() << " starting preload\n";
+  if (get_comm()->am_world_master() ||
+      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+    std::stringstream msg;
+    msg << " for role: " << get_role() << " starting preload";
+    log_msg(msg.str().c_str());
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
       continue;
     }
-    work.reset();
-    m_sample_list.open_samples_hdf5_handle(idx, true);
-    load_conduit_node(idx, key, work);
-    conduit::Node & node = m_jag_store->get_empty_node(idx);
-    const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
-    node[padded_idx] = work;
+    try {
+      work.reset();
+      m_sample_list.open_samples_hdf5_handle(idx, true);
+      load_conduit_node(idx, key, work);
+      conduit::Node & node = m_jag_store->get_empty_node(idx);
+      const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
+      node[padded_idx] = work;
 
-    m_jag_store->set_preloaded_conduit_node(idx, node);
+      m_jag_store->set_preloaded_conduit_node(idx, node);
+    }catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node " + std::to_string(idx) + " with key " + key + " and got " + e.what());
+    }
   }
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
@@ -936,8 +944,11 @@ void data_reader_jag_conduit::preload_data_store() {
     }
     m_sample_list.close_if_done_samples_hdf5_handle(idx);
   }
-  if (get_comm()->am_trainer_master()) {
-    std::cout << "data_store_jag::preload_data_store() loading data for role: " << get_role() << " took " << get_time() - tm1 << "s\n";
+  if (get_comm()->am_world_master() ||
+      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+    std::stringstream msg;
+    msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
+    log_msg(msg.str().c_str());
   }
 }
 
