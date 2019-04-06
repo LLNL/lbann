@@ -79,6 +79,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
+  data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
@@ -268,8 +269,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
-  virtual void copy_members(const data_reader_jag_conduit& rhs);
-
+  virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);

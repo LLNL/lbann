@@ -49,6 +49,9 @@ class data_store_jag : public generic_data_store {
   //! copy ctor
   data_store_jag(const data_store_jag&);
 
+  //! copy / split ctor
+  data_store_jag(const data_store_jag&, const std::vector<int>&);
+
   //! operator=
   data_store_jag& operator=(const data_store_jag&);
 
@@ -56,8 +59,6 @@ class data_store_jag : public generic_data_store {
 
   //! dtor
   ~data_store_jag() override;
-
-  void copy_members(const data_store_jag& rhs);
 
   void setup(int mini_batch_size) override;
 
@@ -87,6 +88,8 @@ class data_store_jag : public generic_data_store {
   void compact_nodes() override;
 
 protected :
+
+  void copy_members(const data_store_jag& rhs, const std::vector<int>& = std::vector<int>());
 
   bool m_preload;
 
@@ -119,7 +122,7 @@ protected :
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
-  std::unordered_map<int, conduit::Node> m_data;
+  mutable std::unordered_map<int, conduit::Node> m_data;
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()

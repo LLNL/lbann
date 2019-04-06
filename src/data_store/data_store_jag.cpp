@@ -63,6 +63,11 @@ data_store_jag::data_store_jag(const data_store_jag& rhs)
   copy_members(rhs);
 }
 
+data_store_jag::data_store_jag(const data_store_jag& rhs, const std::vector<int>& ds_sample_move_list)
+  : generic_data_store(rhs, ds_sample_move_list) {
+  copy_members(rhs, ds_sample_move_list);
+}
+
 data_store_jag& data_store_jag::operator=(const data_store_jag& rhs) {
   // check for self-assignment
   if (this == &rhs) {
@@ -75,8 +80,7 @@ data_store_jag& data_store_jag::operator=(const data_store_jag& rhs) {
   return (*this);
 }
 
-void data_store_jag::copy_members(const data_store_jag& rhs) {
-  generic_data_store::copy_members(rhs);
+void data_store_jag::copy_members(const data_store_jag& rhs, const std::vector<int>& ds_sample_move_list) {
   m_preload = rhs.m_preload;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_super_node = rhs.m_super_node;
@@ -84,7 +88,19 @@ void data_store_jag::copy_members(const data_store_jag& rhs) {
   m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_name = rhs.m_name;
 
-  m_data = rhs.m_data;
+  if(ds_sample_move_list.size() == 0) {
+    m_data = rhs.m_data;
+  }else {
+    /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
+    for(auto&& i : ds_sample_move_list) {
+      if(rhs.m_data.find(i) != rhs.m_data.end()){
+        conduit::Node node = rhs.m_data[i]["data"];
+        rhs.m_data.erase(i);
+        /// Repack the nodes because they don't seem to copy correctly
+        build_node_for_sending(node, m_data[i]);
+      }
+    }
+  }
 }
 
 void data_store_jag::setup(int mini_batch_size) {
@@ -572,10 +588,12 @@ void data_store_jag::purge_unused_samples(const std::vector<int>& indices) {
 void data_store_jag::compact_nodes() {
   for(auto&& j : *m_shuffled_indices) {
     if(m_data.find(j) != m_data.end()){
-      /// Repack the nodes because they don't seem to copy correctly
-      conduit::Node node = m_data[j]["data"];
-      m_data.erase(j);
-      build_node_for_sending(node, m_data[j]);
+      if(!m_data[j].is_contiguous()) {
+        /// Repack the nodes because they don't seem to copy correctly
+        conduit::Node node = m_data[j]["data"];
+        m_data.erase(j);
+        build_node_for_sending(node, m_data[j]);
+      }
     }
   }
 }

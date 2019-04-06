@@ -165,7 +165,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   }
 }
 
-void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
+void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -218,7 +218,11 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_list_per_model = rhs.m_list_per_model;
 
   if(rhs.m_data_store != nullptr || rhs.m_jag_store != nullptr) {
-    m_jag_store = new data_store_jag(rhs.get_jag_store());
+    if(ds_sample_move_list.size() == 0) {
+      m_jag_store = new data_store_jag(rhs.get_jag_store());
+    } else {
+      m_jag_store = new data_store_jag(rhs.get_jag_store(), ds_sample_move_list);
+    }
     m_jag_store->set_data_reader_ptr(this);
     m_data_store = m_jag_store;
   }
@@ -227,6 +231,11 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
   : generic_data_reader(rhs) {
   copy_members(rhs);
+}
+
+data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
+  : generic_data_reader(rhs) {
+  copy_members(rhs, ds_sample_move_list);
 }
 
 data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {

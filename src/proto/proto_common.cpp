@@ -454,7 +454,7 @@ void init_data_readers(
             reader_jag_conduit->set_leading_reader(leader);
           }
         } else {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader), reader->get_unused_indices());
           const std::string role = "validate";
           auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
           reader_jag_conduit->set_leading_reader(reader_jag_conduit);
