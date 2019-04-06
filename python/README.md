@@ -122,7 +122,8 @@ A simple (and not very good) convolutional neural network for MNIST
 data:
 
 ```py
-import lbann, lbann.proto
+import lbann
+import lbann.proto
 
 # ----------------------------------------------------------
 # Construct layer graph
@@ -178,7 +179,7 @@ callbacks = [
 ]
 model = lbann.Model(
     mini_batch_size, num_epochs,
-    layers=traverse_layer_graph(input), # Get layers connected to input
+    layers=lbann.traverse_layer_graph(input),   # Layers connected to input
     objective_function=obj,
     metrics=metrics,
     callbacks=callbacks)

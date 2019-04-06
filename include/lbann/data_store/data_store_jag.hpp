@@ -44,18 +44,20 @@ class data_store_jag : public generic_data_store {
  public:
 
   //! ctor
-  data_store_jag(generic_data_reader *reader, model *m);
+  data_store_jag(generic_data_reader *reader);
 
   //! copy ctor
-  data_store_jag(const data_store_jag&) = default;
+  data_store_jag(const data_store_jag&);
 
   //! operator=
-  data_store_jag& operator=(const data_store_jag&) = default;
+  data_store_jag& operator=(const data_store_jag&);
 
   data_store_jag * copy() const override { return new data_store_jag(*this); }
 
   //! dtor
   ~data_store_jag() override;
+
+  void copy_members(const data_store_jag& rhs);
 
   void setup(int mini_batch_size) override;
 
@@ -63,11 +65,36 @@ class data_store_jag : public generic_data_store {
   const conduit::Node & get_conduit_node(int data_id) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
+  void set_preloaded_conduit_node(int data_id, conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
   const conduit::Node & get_random_node(const std::string &field) const;
 
+  /// returns an empty node
+  conduit::Node & get_empty_node(int data_id);
+
+  void set_preload() { m_preload = true; }
+  bool preloaded() { return m_preload; }
+
+  /// fills in m_owner, which maps index -> owning processor
+  void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
+
+  /// Removed nodes corresponding from the indices vector from the
+  /// data store
+  void purge_unused_samples(const std::vector<int>& indices) override;
+
+  /// Recompact the nodes because they are not copied properly
+  void compact_nodes() override;
+
 protected :
+
+  bool m_preload;
+
+  /// The size of the mini-batch that was used to calculate ownership
+  /// of samples when building the owner map.  This size has to be
+  /// used consistently when computing the indices that will be sent
+  /// and received.
+  int m_owner_map_mb_size;
 
   bool m_super_node;
 
@@ -146,6 +173,7 @@ protected :
   /// that will be received
   int build_indices_i_will_recv(int current_pos, int mb_size);
 
+  void error_check_compacted_node(const conduit::Node &nd, int data_id);
 };
 
 }  // namespace lbann

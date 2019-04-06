@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 import argparse
-from os.path import join
+import os.path
 import google.protobuf.text_format as txtf
 import lbann
-import lbann.models
-import lbann.proto
+import lbann.modules
 import lbann.contrib.args
 
+# ----------------------------------
 # Command-line arguments
-desc = ('Construct and run AlexNet on ImageNet-1K data. '
+# ----------------------------------
+
+desc = ('Construct and run WRN-50-2 on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
-data_reader_prototext = join(lbann.lbann_dir(),
-                             'model_zoo',
-                             'data_readers',
-                             'data_reader_imagenet.prototext')
+data_reader_prototext = os.path.join(lbann.lbann_dir(),
+                                     'model_zoo',
+                                     'data_readers',
+                                     'data_reader_imagenet.prototext')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
+parser.add_argument(
+    '--bn-stats-aggregation', action='store', default='local', type=str,
+    help=('aggregation mode for batch normalization statistics '
+          '(default: "local")'))
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -43,35 +49,100 @@ parser.add_argument(
     help='do not run experiment (e.g. if only the prototext is desired)')
 args = parser.parse_args()
 
+# ----------------------------------
 # Construct layer graph
+# ----------------------------------
+
+def make_block(input, in_channels, mid_channels, out_channels, stride):
+    """Bottleneck residual block."""
+
+    # Convolution branch
+    y1 = input
+    y1 = lbann.modules.Convolution2dModule(mid_channels, 1, bias=False)(y1)
+    y1 = lbann.BatchNormalization(y1, stats_aggregation=args.bn_stats_aggregation)
+    y1 = lbann.Relu(y1)
+    y1 = lbann.modules.Convolution2dModule(mid_channels, 3,
+                                           stride=stride,
+                                           padding=1,
+                                           bias=False)(y1)
+    y1 = lbann.BatchNormalization(y1, stats_aggregation=args.bn_stats_aggregation)
+    y1 = lbann.Relu(y1)
+    y1 = lbann.modules.Convolution2dModule(out_channels, 1, bias=False)(y1)
+    y1 = lbann.BatchNormalization(y1, stats_aggregation=args.bn_stats_aggregation)
+
+    # Shortcut branch
+    y2 = input
+    if in_channels != out_channels or stride != 1:
+        y2 = lbann.modules.Convolution2dModule(out_channels, 1,
+                                               stride=stride,
+                                               bias=False)(y2)
+        y2 = lbann.BatchNormalization(y2, stats_aggregation=args.bn_stats_aggregation)
+
+    # Output is sum of convolution and shortcut branches
+    return lbann.Relu(lbann.Add([y1, y2]))
+
+def make_group(input, in_channels, mid_channels, out_channels, stride, num_blocks):
+    """Stacked residual blocks."""
+    y = input
+    for block in range(num_blocks):
+        y = make_block(y,
+                       in_channels if block == 0 else out_channels,
+                       mid_channels,
+                       out_channels,
+                       stride if block == 0 else 1)
+    return y
+
+# Input data
 input = lbann.Input()
 images = lbann.Identity(input)
 labels = lbann.Identity(input)
-preds = lbann.models.AlexNet(args.num_labels)(images)
-probs = lbann.Softmax(preds)
+
+# WRN-50-2-bottleneck
+x = lbann.modules.Convolution2dModule(64, 7,
+                                      bias=False,
+                                      stride=2,
+                                      padding=3)(images)
+x = lbann.BatchNormalization(x, stats_aggregation=args.bn_stats_aggregation)
+x = lbann.Relu(x)
+x = lbann.Pooling(x, num_dims=2, has_vectors=False,
+                  pool_dims_i=3, pool_pads_i=1, pool_strides_i=2,
+                  pool_mode='max')
+x = make_group(x, 64, 128, 256, 1, 3)
+x = make_group(x, 256, 256, 512, 2, 4)
+x = make_group(x, 512, 512, 1024, 2, 6)
+x = make_group(x, 1024, 1024, 2048, 2, 3)
+x = lbann.ChannelwiseMean(x)
+x = lbann.modules.FullyConnectedModule(1000)(x)
+
+# Evaluation
+probs = lbann.Softmax(x)
 cross_entropy = lbann.CrossEntropy([probs, labels])
 top1 = lbann.CategoricalAccuracy([probs, labels])
 top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
+
+# Get list of layers
 layers = list(lbann.traverse_layer_graph(input))
 
+# ----------------------------------
+# Setup experiment
+# ----------------------------------
+
 # Setup objective function
-weights = set()
+l2_reg_weights = set()
 for l in layers:
-    weights.update(l.weights)
-l2_reg = lbann.L2WeightRegularization(weights=weights, scale=5e-4)
+    if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
+        l2_reg_weights.update(l.weights)
+l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
 obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 
 # Setup model
 metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
            lbann.Metric(top5, name='top-5 accuracy', unit='%')]
 callbacks = [lbann.CallbackPrint(),
-             lbann.CallbackTimer(),
-             lbann.CallbackDropFixedLearningRate(
-                 drop_epoch=[20,40,60], amt=0.1)]
+             lbann.CallbackTimer()]
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
                     layers=layers,
-                    weights=weights,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks)
@@ -80,18 +151,23 @@ model = lbann.Model(args.mini_batch_size,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Load data reader from prototext
+# Load data reader from prototext
 data_reader_proto = lbann.lbann_pb2.LbannPB()
 with open(args.data_reader, 'r') as f:
   txtf.Merge(f.read(), data_reader_proto)
 data_reader_proto = data_reader_proto.data_reader
 
-# Save prototext
+# Save prototext if needed
 if args.prototext:
     lbann.proto.save_prototext(args.prototext,
                                model=model, optimizer=opt,
                                data_reader=data_reader_proto)
 
+# ----------------------------------
 # Run experiment
+# ----------------------------------
+# Note: Use `lbann.run` instead for non-LC systems.
+
 if not args.disable_run:
     from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
     import lbann.contrib.lc.launcher
@@ -111,5 +187,5 @@ if not args.disable_run:
                     imagenet_dir(data_set='val', num_classes=classes),
                     imagenet_labels(data_set='val', num_classes=classes)))
     lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
-                                  job_name = 'lbann_alexnet',
+                                  job_name = 'lbann_wide_resnet',
                                   **kwargs)

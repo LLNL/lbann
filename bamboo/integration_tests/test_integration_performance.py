@@ -19,20 +19,28 @@ def error_if(f, f_symbol, data_field, actual_values, expected_values,
       actual_value = d[model_id][epoch_id]
       expected_value = expected_values[model_name + frequency_str][data_field]
 
-      if actual_value == None:
-        errors.append('d[%s][%s] == None' % (model_id, epoch_id))
-      if expected_value == None:
-        errors.append('d[%s]([%s] == None' % (model_id, epoch_id))
+      if actual_value is None:
+        errors.append('actual_value: d[%s][%s] is None' % (model_id, epoch_id))
+      else:
+        print('actual_value={av}'.format(av=actual_value))
+      if expected_value is None:
+        errors.append(
+          'expected_value: d[%s]([%s] is None' % (model_id, epoch_id))
+      else:
+        print('expected_value={ev}'.format(ev=expected_value))
 
-      if f(actual_value, expected_value):
-        errors.append('%f %s %f %s Model %s Epoch %s %s' % (
-          actual_value, f_symbol, expected_value, model_name, model_id,
-          epoch_id, data_field))
-      all_values.append('%f %s Model %s Epoch %s %s' % (
-        actual_value, model_name, model_id, epoch_id, data_field))
+      if (actual_value is not None) and (expected_value is not None):
+        if f(actual_value, expected_value):
+          errors.append('%f %s %f %s Model %s Epoch %s %s' % (
+            actual_value, f_symbol, expected_value, model_name, model_id,
+            epoch_id, data_field))
+        all_values.append('%f %s Model %s Epoch %s %s' % (
+          actual_value, model_name, model_id, epoch_id, data_field))
 
-      if f(actual_value, archive_value):
-        archive_value = actual_value
+        if f(actual_value, archive_value):
+          archive_value = actual_value
+      else:
+        print('archiving: either actual_value or expected_value is None.')
   return archive_value
 
 
@@ -45,21 +53,23 @@ def run_tests(actual_performance, model_name, dir_name, should_log,
   greater_than = operator.gt
   less_than = operator.lt
   max_run_time = error_if(greater_than, '>', 'training_run_time', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
-  max_mean = error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
-  max_max = error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
-  max_min = error_if(greater_than, '>', 'training_min', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
-  max_stdev = error_if(greater_than, '>', 'training_stdev', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_mean     = error_if(greater_than, '>', 'training_mean', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_max      = error_if(greater_than, '>', 'training_max', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_min      = error_if(greater_than, '>', 'training_min', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
+  max_stdev    = error_if(greater_than, '>', 'training_stdev', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
   min_accuracy = error_if(less_than, '<', 'test_accuracy', actual_performance, expected_performance, model_name, errors, all_values, frequency_str)
 
+  archival_string = '%s, %f, %f, %f, %f, %f, %f\n' % (
+    os.environ['bamboo_buildNumber'], max_run_time, max_mean, max_max, max_min,
+    max_stdev, min_accuracy)
+  print('archival_string: ' + archival_string)
   if os.environ['LOGNAME'] == 'lbannusr':
     key = 'bamboo_planKey'
     if key in os.environ:
       plan = os.environ[key]
       if plan in ['LBANN-NIGHTD', 'LBANN-WD']:
         archive_file = '/usr/workspace/wsb/lbannusr/archives/%s/%s/%s/performance_%s.txt' % (plan, cluster, compiler_name, model_name)
-        archival_string = '%s, %f, %f, %f, %f, %f, %f\n' % (os.environ['bamboo_buildNumber'], max_run_time, max_mean, max_max, max_min, max_stdev, min_accuracy)
         print('Archive file: ' + archive_file)
-        print('Archiving: ' + archival_string)
         with open(archive_file, 'a') as archive:
           print('Archiving to file.')
           archive.write(archival_string)
@@ -93,7 +103,9 @@ DATA_FIELDS = [
 def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
                                      compiler_name):
   if compiler_name not in executables:
-    pytest.skip('default_exes[%s] does not exist' % compiler_name)
+    e = 'skeleton_performance_lenet_mnist: default_exes[%s] does not exist' % compiler_name
+    print('Skip - ' + e)
+    pytest.skip(e)
   executable = executables[compiler_name]
   model_name = 'lenet_mnist'
   model_folder = 'models/' + model_name
@@ -104,10 +116,13 @@ def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
   run_tests(actual_performance, model_name, dir_name, should_log,
             compiler_name, cluster)
 
+
 def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
                                  weekly):
   if compiler_name not in executables:
-    pytest.skip('default_exes[%s] does not exist' % compiler_name)
+    e = 'skeleton_performance_alexnet: default_exes[%s] does not exist' % compiler_name
+    print('Skip - ' + e)
+    pytest.skip(e)
   executable = executables[compiler_name]
   model_name = 'alexnet'
   model_folder = 'models/' + model_name
@@ -121,12 +136,17 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
   run_tests(actual_performance, model_name, dir_name, should_log,
             compiler_name, cluster, frequency_str)
 
+
 def skeleton_performance_full_alexnet(cluster, dir_name, executables,
                                       compiler_name, weekly):
   if not weekly:
-    pytest.skip('Not doing weekly testing')
+    e = 'skeleton_performance_full_alexnet: Non-local testing'
+    print('Skip - ' + e)
+    pytest.skip(e)
   if compiler_name not in executables:
-    pytest.skip('default_exes[%s] does not exist' % compiler_name)
+    e = 'skeleton_performance_full_alexnet: default_exes[%s] does not exist' % compiler_name
+    print('Skip - ' + e)
+    pytest.skip(e)
   executable = executables[compiler_name]
   if not os.path.exists(executable):
     pytest.skip('Executable does not exist: %s' % executable)
@@ -137,7 +157,9 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
   if cluster in ['catalyst', 'surface']:
     command = 'salloc %s/bamboo/integration_tests/%s.sh > %s' % (dir_name, model_name, output_file_name)
   elif cluster == 'ray':
-    pytest.skip('Ray is unsupported for skeleton_performance_full_alexnet')
+    e = 'skeleton_performance_full_alexnet: Ray is unsupported for skeleton_performance_full_alexnet'
+    print('Skip - ' + e)
+    pytest.skip(e)
   else:
     raise Exception('Unsupported Cluster %s' % cluster)
   common_code.run_lbann(command, model_name, output_file_name, error_file_name,
@@ -149,11 +171,6 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
 
 
 def test_integration_performance_lenet_mnist_clang4(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.104416 > 0.090000 lenet_mnist Model 0 Epoch 0 training_max
-    # 98.770000 < 98.960000 lenet_mnist Model 0 Epoch overall test_accuracy
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang4')
 
 
@@ -167,24 +184,10 @@ def test_integration_performance_full_alexnet_clang4(cluster, dirname, exes,
 
 
 def test_integration_performance_lenet_mnist_gcc4(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz', 'surface']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 15.634300 > 15.610000 lenet_mnist Model 0 Epoch 3 training_run_time
-    # 15.655200 > 15.610000 lenet_mnist Model 0 Epoch 4 training_run_time
-    # 98.770000 < 98.960000 lenet_mnist Model 0 Epoch overall test_accuracy
-    # Surface Errors:
-    # [surface145:mpi_rank_0][error_sighandler] Caught error: Segmentation fault (signal 11)
-    # srun: error: surface145: task 0: Segmentation fault (core dumped)
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc4')
 
 
 def test_integration_performance_alexnet_gcc4(cluster, dirname, exes, weekly):
-  if cluster in ['surface']:
-    pytest.skip('FIXME')
-    # Surface Errors:
-    # [surface59:mpi_rank_0][error_sighandler] Caught error: Segmentation fault (signal 11)
-    # srun: error: surface59: task 0: Segmentation fault (core dumped)
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc4', weekly)
 
 
@@ -193,19 +196,10 @@ def test_integration_performance_full_alexnet_gcc4(cluster, dirname, exes, weekl
 
 
 def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 15.522700 > 15.510000 lenet_mnist Model 0 Epoch 4 training_run_time
-    # 98.950000 < 99.000000 lenet_mnist Model 0 Epoch overall test_accuracy
   skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc7')
 
 
 def test_integration_performance_alexnet_gcc7(cluster, dirname, exes, weekly):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.546884 > 0.510000 alexnet Model 0 Epoch 17 training_stdev
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc7', weekly)
 
 
@@ -231,22 +225,28 @@ def test_integration_performance_full_alexnet_intel18(cluster, dirname, exes,
 # Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>
 def test_integration_performance_lenet_mnist_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
-    exes = {'exe' : exe}
+      e = 'test_integration_performance_lenet_mnist_exe: Non-local testing'
+      print('Skip - ' + e)
+      pytest.skip(e)
+    exes = {'exe': exe}
     skeleton_performance_lenet_mnist(cluster, dirname, exes, 'exe')
 
 
 # Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_alexnet_exe' --exe=<executable>
 def test_integration_performance_alexnet_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
-    exes = {'exe' : exe}
+      e = 'stest_integration_performance_alexnet_exe: Non-local testing'
+      print('Skip - ' + e)
+      pytest.skip(e)
+    exes = {'exe': exe}
     skeleton_performance_alexnet(cluster, dirname, exes, 'exe', True)
 
 
 # Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_full_alexnet_exe' --exe=<executable>
 def test_integration_performance_full_alexnet_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
-    exes = {'exe' : exe}
+      e = 'test_integration_performance_full_alexnet_exe: Non-local testing'
+      print('Skip - ' + e)
+      pytest.skip(e)
+    exes = {'exe': exe}
     skeleton_performance_full_alexnet(cluster, dirname, exes, 'exe', True)
