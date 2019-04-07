@@ -53,6 +53,9 @@ class generic_data_store {
   //! copy ctor
   generic_data_store(const generic_data_store&);
 
+  //! copy / split ctor
+  generic_data_store(const generic_data_store&, const std::vector<int>&);
+
   //! operator=
   generic_data_store& operator=(const generic_data_store&);
 
@@ -60,8 +63,6 @@ class generic_data_store {
   virtual ~generic_data_store() {}
 
   virtual generic_data_store * copy() const = 0;
-
-  virtual void copy_members(const generic_data_store& rhs);
 
   void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
 
@@ -158,6 +159,8 @@ class generic_data_store {
 
 protected :
 
+  void copy_members(const generic_data_store& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
+
   // number of times exchange_data is called
   int m_n;
 
@@ -234,7 +237,7 @@ protected :
   bool m_extended_testing;
 
   /// maps an index to the processor that owns the associated data
-  std::unordered_map<int, int> m_owner;
+  mutable std::unordered_map<int, int> m_owner;
 
   /// fills in m_owner
   virtual void build_index_owner();

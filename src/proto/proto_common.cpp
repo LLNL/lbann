@@ -455,7 +455,7 @@ void init_data_readers(
             reader_jag_conduit->set_leading_reader(leader);
           }
         } else {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader), reader->get_unused_indices());
           const std::string role = "validate";
           auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
           reader_jag_conduit->set_leading_reader(reader_jag_conduit);
@@ -884,10 +884,14 @@ void print_help(std::ostream& os)
        "      display information on how OpenMP threads are provisioned\n"
        "  --use_data_store \n"
        "      Enables the data store in-memory structure\n"
+       "  --preload_data_store \n"
+       "      Preloads the data store in-memory structure during data reader load time\n"
        "  --super_node \n"
        "      Enables the data store in-memory structure to use the supernode exchange structure\n"
        "  --write_sample_list \n"
        "      Writes out the sample list that was loaded into the current directory\n"
+       "  --ltfb_verbose \n"
+       "      Increases number of per-trainer messages that are reported\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

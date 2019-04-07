@@ -58,6 +58,10 @@ generic_data_store::generic_data_store(const generic_data_store& rhs) {
   copy_members(rhs);
 }
 
+generic_data_store::generic_data_store(const generic_data_store& rhs, const std::vector<int>& ds_sample_move_list) {
+  copy_members(rhs, ds_sample_move_list);
+}
+
 generic_data_store& generic_data_store::operator=(const generic_data_store& rhs) {
   // check for self-assignment
   if (this == &rhs) {
@@ -70,7 +74,7 @@ generic_data_store& generic_data_store::operator=(const generic_data_store& rhs)
   return (*this);
 }
 
-void generic_data_store::copy_members(const generic_data_store& rhs) {
+void generic_data_store::copy_members(const generic_data_store& rhs, const std::vector<int>& ds_sample_move_list) {
   m_comm = rhs.m_comm;
   m_n = rhs.m_n;
   m_my_minibatch_indices = rhs.m_my_minibatch_indices;
@@ -87,7 +91,18 @@ void generic_data_store::copy_members(const generic_data_store& rhs) {
   m_dir = rhs.m_dir;
   m_master = rhs.m_master;
 
-  m_owner = rhs.m_owner;
+  if(ds_sample_move_list.size() == 0) {
+    m_owner = rhs.m_owner;
+  }else {
+    /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
+    for(auto&& i : ds_sample_move_list) {
+      /// Removed migrated nodes from the original data store's owner list
+      if(rhs.m_owner.find(i) != rhs.m_owner.end()) {
+        m_owner[i] = rhs.m_owner[i];
+        rhs.m_owner.erase(i);
+      }
+    }
+  }
 
   /// Clear the pointer to the data reader, this cannot be copied
   m_reader = nullptr;
