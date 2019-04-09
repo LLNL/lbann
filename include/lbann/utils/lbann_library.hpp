@@ -47,8 +47,6 @@ void print_lbann_configuration(
     lbann_data::Model *pb_model, lbann_comm *comm,
     int io_threads_per_process, int io_threads_offset);
 
-void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
-
 } // namespace lbann
 
 #endif // LBANN_LIBRARY_HPP
