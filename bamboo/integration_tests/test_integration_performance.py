@@ -109,7 +109,7 @@ def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
   executable = executables[compiler_name]
   model_name = 'lenet_mnist'
   model_folder = 'models/' + model_name
-  should_log = False
+  should_log = True
   actual_performance = common_code.skeleton(
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
     should_log, compiler_name=compiler_name)
@@ -126,7 +126,7 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
   executable = executables[compiler_name]
   model_name = 'alexnet'
   model_folder = 'models/' + model_name
-  should_log = False
+  should_log = True
   actual_performance = common_code.skeleton(
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
     should_log, compiler_name=compiler_name, weekly=weekly)
@@ -151,7 +151,7 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
   if not os.path.exists(executable):
     pytest.skip('Executable does not exist: %s' % executable)
   model_name = 'full_alexnet'
-  should_log = False
+  should_log = True
   output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
   error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
   if cluster in ['catalyst', 'surface']:
