@@ -32,7 +32,6 @@
 
 #ifdef LBANN_HAS_CONDUIT
 
-#include "lbann/data_store/generic_data_store.hpp"
 #include "conduit/conduit_relay_io.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
@@ -40,7 +39,7 @@
 
 namespace lbann {
 
-class data_store_jag : public generic_data_store {
+class data_store_jag {
  public:
 
   //! ctor
@@ -62,36 +61,79 @@ class data_store_jag : public generic_data_store {
 
   void setup(int mini_batch_size) override;
 
+  void copy_members(const data_store_jag& rhs);
+
+  /// normally not needed, since reader is passed to ctor. But may
+  /// be useful in some cases
+  void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
+
+  void set_shuffled_indices(const std::vector<int> *indices) { m_shuffled_indices = indices; }
+
+  void setup(int mini_batch_size);
+
+  /*
+   * dah - may be needed in the future, but not needed for bare-bones squashing
+  void set_is_subsidiary_store() {
+    m_is_subsidiary_store = true;
+  }
+
+  bool is_subsidiary_store() const {
+    return m_is_subsidiary_store;
+  }
+  */
+
   /// returns the conduit node
   const conduit::Node & get_conduit_node(int data_id) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
+
   void set_preloaded_conduit_node(int data_id, conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
+
   const conduit::Node & get_random_node(const std::string &field) const;
 
   /// returns an empty node
   conduit::Node & get_empty_node(int data_id);
 
+  /// As of this writing, will be called if cmd line includes: --preload_data_store
+  /// This may change in the future; TODO revisit
   void set_preload() { m_preload = true; }
-  bool preloaded() { return m_preload; }
+  bool is_preloaded() { return m_preload; }
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
-  /// Removed nodes corresponding from the indices vector from the
-  /// data store
-  void purge_unused_samples(const std::vector<int>& indices) override;
+  /// Removed nodes corresponding from the indices vector from the data store
+  void purge_unused_samples(const std::vector<int>& indices);
 
-  /// Recompact the nodes because they are not copied properly
-  void compact_nodes() override;
+  /// Recompact the nodes because they are not copied properly when instantiating
+  /// a validation reader using the train reader copy constructor
+  void compact_nodes();
 
 protected :
 
   void copy_members(const data_store_jag& rhs, const std::vector<int>& = std::vector<int>());
 
+  lbann_comm *m_comm;
+
+  /// rank in the trainer; convenience handle
+  int  m_rank_in_trainer;
+
+  /// number of procs in the trainer; convenience handle
+  int  m_np_in_trainer;
+
+  /// convenience handle
+  bool m_world_master;
+
+  /// convenience handle
+  bool m_trainer_master;
+
+  /// set to true if data_store is preloaded
   bool m_preload;
+
+  /// convenience handle
+  const std::vector<int> *m_shuffled_indices;
 
   /// The size of the mini-batch that was used to calculate ownership
   /// of samples when building the owner map.  This size has to be
@@ -99,11 +141,9 @@ protected :
   /// and received.
   int m_owner_map_mb_size;
 
+  /// if true, use exchange_data_by_super_node, else use 
+  /// exchange_data_by_sample; default if false
   bool m_super_node;
-
-  /// this is pure virtual in generic_data_reader, so must include it for
-  /// now. May go away when we refactore/revise all of data_store
-  void exchange_data() override {}
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) override {
     if (m_super_node) {
@@ -115,7 +155,6 @@ protected :
   }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
-
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
@@ -137,16 +176,8 @@ protected :
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
-  /// overhead incurred by the super_node; this is constant,
-  /// regardless of the number of samples contained in the super_node;
-  /// assumes the super_node contains at least two samples
-  int m_super_node_overhead;
-
   /// size of a compacted conduit::Node that contains a single sample
   int m_compacted_sample_size;
-
-  /// assigns values to m_super_node_overhead and m_compacted_sample_size
-  void compute_super_node_overhead();
 
   /// used in exchange_data_by_super_node(); contains the super_nodes,
   /// after they have been converted from compacted format

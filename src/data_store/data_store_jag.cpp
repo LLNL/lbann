@@ -519,33 +519,6 @@ void data_store_jag::build_owner_map(int mini_batch_size) {
   }
 }
 
-void data_store_jag::compute_super_node_overhead() {
-  if (m_super_node_overhead != 0) {
-    return;
-  }
-  if (m_data.size() < 2) {
-    LBANN_ERROR("m_data must contain at least two sample nodes");
-  }
-  conduit::Node n2;
-  conduit::Node n3;
-  int first = 0;
-  for (auto &t : m_data) {
-    n2.update_external(t.second);
-    build_node_for_sending(n2, n3);
-    if (first == 0) {
-      first = n3.total_bytes_compact();
-    } else {
-      m_super_node_overhead = 2*first - n3.total_bytes_compact();
-      m_compacted_sample_size = first - m_super_node_overhead;
-      if (m_master) {
-        std::cout << "m_super_node_overhead: " << m_super_node_overhead
-                  << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
-      }
-      return;
-    }
-  }
-}
-
 const conduit::Node & data_store_jag::get_random_node() const {
 std::cout << "\nstarting data_store_jag::get_random_node()\n";
   size_t sz = m_data.size();
