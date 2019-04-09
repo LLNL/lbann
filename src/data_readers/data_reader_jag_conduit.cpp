@@ -822,12 +822,16 @@ void data_reader_jag_conduit::load() {
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
-  if (m_comm->get_trainer_rank() == 0) {
-    check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
+    if (m_comm->get_trainer_rank() == 0) {
+      m_jag_store->check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+    }  
+
+    // unsure if this will always work; the intent is that no trainer
+    // should start loading data until the check has completed
+    m_comm->global_barrier();
   }  
-  //if (opts->get_bool("check_mem_capacity")) {
-  //  check_mem_capacity(m_comm, sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-  //}
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models

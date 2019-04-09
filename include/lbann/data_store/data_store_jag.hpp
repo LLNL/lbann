@@ -60,6 +60,8 @@ class data_store_jag : public generic_data_store {
   //! dtor
   ~data_store_jag() override;
 
+  void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
+
   void setup(int mini_batch_size) override;
 
   /// returns the conduit node
