@@ -18,9 +18,9 @@ Dependencies
 
 The following packages and tools are required to build LBANN. All
 packages listed below may be installed using `Spack
-<https://github.com/llnl/spack>`_. See :ref:`below
-<building-with-spack>` for more details on using Spack to build a
-complete LBANN environment.
+<https://github.com/llnl/spack>`_. See :ref:`the detailed instructions
+below <building-with-spack>` for more details on using Spack to build
+a complete LBANN environment.
 
 The following basic tools are **required**.
 
@@ -99,8 +99,9 @@ Setup Spack and local base tools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1.  Download and install `Spack <https://github.com/llnl/spack>`_.
-    Additionally setup shell support as discussed
-    `here <https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_.
+    Additionally, users should consult `Spack shell setup instructions
+    <https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_
+    before proceeding.
 
     .. code-block:: bash
 
@@ -217,7 +218,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
       Alternatively, you can create baseline versions of the
       user-level Spack configuration files and remove the externals
       and compilers from the :code:`spack.yaml` file. More details are
-      provided :ref:`here <setup-spack-env>`.
+      provided in :ref:`the basic Spack environment setup
+      documentation <setup-spack-env>`.
 
     + Note that the initial build of all of the standard packages in Spack
       will take a while.
@@ -236,11 +238,12 @@ Hydrogen, and LBANN separately, by whatever means they choose.
                 ...
 
 2.  Build LBANN locally from source and build Hydrogen and Aluminum
-    using the superbuild. See :ref:`here <building-with-the-superbuild>`
-    for a list and descriptions of all CMake flags known to LBANN's
-    "Superbuild" build system. A representative CMake command line
-    that expects :bash:`LBANN_HOME`, :bash:`LBANN_BUILD_DIR`,
-    :bash:`LBANN_INSTALL_DIR` environment variables might be:
+    using the superbuild. See :ref:`the LBANN superbuild instructions
+    <building-with-the-superbuild>` for a list and descriptions of all
+    CMake flags known to LBANN's "Superbuild" build system. A
+    representative CMake command line that expects :bash:`LBANN_HOME`,
+    :bash:`LBANN_BUILD_DIR`, :bash:`LBANN_INSTALL_DIR` environment
+    variables might be:
 
     .. code-block:: console
 

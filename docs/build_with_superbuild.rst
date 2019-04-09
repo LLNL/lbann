@@ -96,8 +96,8 @@ by running, e.g.,
 
 Several significant CMake flags are automatically forwarded from the
 superbuild CMake to subprojects. These are generally "typical" CMake
-flags (but not all; if something is missing, open please
-`an issue <https://github.com/llnl/lbann/issues)>`_. Some examples are
+flags (but not all; if something is missing, `please open an issue
+<https://github.com/llnl/lbann/issues)>`_). Some examples are
 
 + :code:`CMAKE_INSTALL_PREFIX`
 + :code:`CMAKE_BUILD_TYPE`

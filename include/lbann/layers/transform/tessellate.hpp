@@ -61,7 +61,8 @@ template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = E
 class tessellate_layer : public Layer {
 public:
 
-  tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})
+  tessellate_layer(lbann_comm *comm,
+                   std::vector<int> dims = std::vector<int>())
     : Layer(comm) {
     set_output_dims(dims);
   }
