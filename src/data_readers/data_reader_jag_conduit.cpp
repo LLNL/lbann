@@ -822,7 +822,7 @@ void data_reader_jag_conduit::load() {
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
-  if (m_comm->get_trainer_rank == 0) {
+  if (m_comm->get_trainer_rank() == 0) {
     check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
   }  
   //if (opts->get_bool("check_mem_capacity")) {
