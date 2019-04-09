@@ -12,9 +12,13 @@ def skeleton_mnist_conv_graph(cluster, executables, dir_name, compiler_name):
       pytest.skip(e)
     output_file_name = '%s/bamboo/unit_tests/output/mnist_conv_graph_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/mnist_conv_graph_%s_error.txt' % (dir_name, compiler_name)
+    if compiler_name == 'gcc7':
+        tl = 240
+    else:
+        tl = None
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name],
-        num_nodes=1, num_processes=1,
+        num_nodes=1, time_limit=tl, num_processes=1,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist', model_folder='tests',
@@ -27,11 +31,6 @@ def skeleton_mnist_conv_graph(cluster, executables, dir_name, compiler_name):
 
 
 def test_unit_mnist_conv_graph_clang4(cluster, exes, dirname):
-    if cluster == 'catalyst':
-        # Error: cross entropy layer "cross_entropy" has input tensors
-        # with different dimensions (layer "prob" outputs 10 x 1 x 1,
-        # layer "labels" outputs 10)
-        pytest.skip('FIXME')
     skeleton_mnist_conv_graph(cluster, exes, dirname, 'clang4')
 
 
@@ -40,14 +39,6 @@ def test_unit_mnist_conv_graph_gcc4(cluster, exes, dirname):
 
 
 def test_unit_mnist_conv_graph_gcc7(cluster, exes, dirname):
-    if cluster in ['catalyst', 'pascal']:
-        # Catalyst Error: cross entropy layer "cross_entropy" has input tensors
-        # with different dimensions (layer "prob" outputs 10 x 1 x 1,
-        # layer "labels" outputs 10)
-        # Pascal Error: cross entropy layer "cross_entropy" has input tensors
-        # with different dimensions (layer "prob" outputs 10 x 1 x 1,
-        # layer "labels" outputs 10)
-        pytest.skip('FIXME')
     skeleton_mnist_conv_graph(cluster, exes, dirname, 'gcc7')
 
 
