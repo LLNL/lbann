@@ -277,6 +277,9 @@ void data_store_jag::error_check_compacted_node(const conduit::Node &nd, int dat
 
 void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   if (m_data.find(data_id) != m_data.end()) {
+    if (m_reader->get_role() == "validate") {
+      return;
+    }
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
   }
 
