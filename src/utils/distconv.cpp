@@ -43,8 +43,8 @@ Backend *backend_instance = nullptr;
 std::shared_ptr<El::mpi::Comm> spatial_comm;
 
 bool options_set = false;
-std::string opt_halo_exchange = "P2P";
-std::string opt_tensor_shuffler = "P2P";
+std::string opt_halo_exchange = "HYBRID";
+std::string opt_tensor_shuffler = "HYBRID";
 int opt_rank_stride = 1;
 bool opt_enable_profile = false;
 bool opt_evaluate_performance = false;
