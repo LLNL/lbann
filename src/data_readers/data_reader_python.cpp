@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #include "lbann/data_readers/data_reader_python.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
@@ -34,7 +33,9 @@ namespace lbann {
 
 namespace python {
 
+// Static variables
 std::unique_ptr<manager> manager::m_instance;
+std::mutex global_interpreter_lock::m_mutex;
 
 manager& manager::get_instance() {
   if (m_instance == nullptr) { create(); }
@@ -51,7 +52,20 @@ void manager::destroy() {
 
 manager::manager() {
   if (!Py_IsInitialized()) {
+
+    // Hack to display output from Python
+    // Note: Python outputs didn't appear because MPI intercepts
+    // stdout and stderr. See
+    // https://stackoverflow.com/questions/29352485/python-print-not-working-when-embedded-into-mpi-program
+    Py_UnbufferedStdioFlag = 1;
+
+    // Initialize embedded Python session
     Py_Initialize();
+    PyEval_InitThreads();
+
+    // Release GIL
+    m_thread_state = PyEval_SaveThread();
+
   }
   if (!Py_IsInitialized()) {
     LBANN_ERROR("error creating embedded Python session");
@@ -60,6 +74,9 @@ manager::manager() {
 
 manager::~manager() {
   if (Py_IsInitialized()) {
+    if (m_thread_state != nullptr) {
+      PyEval_RestoreThread(m_thread_state);
+    }
     Py_Finalize();
   }
 }
@@ -71,10 +88,9 @@ void manager::check_error(bool force_error) const {
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
 
-    // Print directly to stderr if we didn't get any information
-    if (value == nullptr && traceback == nullptr) {
-      PyErr_Print();
-    }
+    // Print error directly to stderr
+    // Note: Python C API doesn't always give error message
+    PyErr_Print();
 
     // Construct error message
     std::ostringstream err;
@@ -124,8 +140,11 @@ void manager::check_error(bool force_error) const {
   }
 }
 
-manager::mutex_guard_type manager::get_mutex_guard() {
-  return mutex_guard_type(m_mutex);
+global_interpreter_lock::global_interpreter_lock(const manager&)
+  : m_mutex_lock(m_mutex), m_gil_state(PyGILState_Ensure()) {}
+
+global_interpreter_lock::~global_interpreter_lock() {
+  PyGILState_Release(m_gil_state);
 }
 
 object::object(PyObject* ptr) : m_ptr(ptr) {
@@ -176,7 +195,7 @@ python_reader::python_reader(std::string module,
 
   // Acquire mutex for Python session
   auto& manager = python::manager::get_instance();
-  const auto lock = manager.get_mutex_guard();
+  python::global_interpreter_lock gil(manager);
 
   // Import Python module
   if (!module_dir.empty()) {
@@ -233,7 +252,7 @@ bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
 
   // Lock mutex for the scope of this function
   auto& manager = python::manager::get_instance();
-  const auto lock = manager.get_mutex_guard();
+  python::global_interpreter_lock gil(manager);
 
   // Get sample with Python
   python::object args = Py_BuildValue("(i)", data_id);
@@ -246,7 +265,7 @@ bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
     python::object val = PyIter_Next(sample);
     X(row, col) = PyFloat_AsDouble(val);
   }
-  if (PyErr_Occurred()) { LBANN_ERROR("Python error detected"); }
+  manager.check_error();
 
   return true;
 }

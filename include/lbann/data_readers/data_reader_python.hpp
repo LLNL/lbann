@@ -36,14 +36,14 @@ namespace lbann {
 
 namespace python {
 
-/** Singleton class to manage embedded Python session.
+/** @brief Singleton class to manage embedded Python session.
  *
  *  This is very experimental. Be warned.
  */
 class manager {
 public:
 
-  /** Get singleton instance. */
+  /** @brief Get singleton instance. */
   static manager& get_instance();
   /** @brief Construct singleton instance.
    *  @details If there is already an instance, it is destroyed.
@@ -52,7 +52,7 @@ public:
   /** Destroy singleton instance. */
   static void destroy();
 
-  /** Check if a Python error has occurred.
+  /** @brief Check if a Python error has occurred.
    *
    *  Throw an exception if an error is detected.
    *
@@ -60,43 +60,48 @@ public:
    */
   void check_error(bool force_error = false) const;
 
-  /** RAII-style mutex wrapper.
-   *
-   *  Python session is not thread-safe.
-   *
-   *  @c std::lock_guard would be better than @c std::unique_lock, but
-   *  it can't be returned from a function since it is non-copyable
-   *  (guaranteed copy elision is C++17). @c std::scoped_lock is
-   *  supposed to be strictly better than @c std::lock_guard, but it
-   *  is C++17.
-   */
-  using mutex_guard_type = std::unique_lock<std::mutex>;
-  /** RAII-style mutex wrapper.
-   *
-   *  Python session is not thread-safe.
-   *
-   *  A mutex is locked when this function is called and it is
-   *  unlocked when the guard is destructed.
-   */
-  mutex_guard_type get_mutex_guard();
-
   ~manager();
 
 private:
 
-  /** Singleton instance. */
+  /** @brief Singleton instance. */
   static std::unique_ptr<manager> m_instance;
-  /** Python session is not thread-safe. */
-  std::mutex m_mutex;
+
+  /** @brief State on main Python thread. */
+  PyThreadState* m_thread_state = nullptr;
 
   // Lifetime functions
   manager();
   manager(const manager&) = delete;
-  manager operator=(const manager&) = delete;
+  manager& operator=(const manager&) = delete;
 
 };
 
-/** Convenience wrapper around @c PyObject pointer.
+/** @brief RAII wrapper for Python GIL.
+ *
+ *  The Python interpreter is not thread-safe, so a thread must own
+ *  the "global interpreter lock" to execute Python.
+ *
+ *  This is very experimental. Be warned.
+ */
+class global_interpreter_lock {
+public:
+
+  global_interpreter_lock(const manager&);
+  ~global_interpreter_lock();
+
+private:
+
+  global_interpreter_lock(const global_interpreter_lock&) = delete;
+  global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
+
+  static std::mutex m_mutex;
+  std::lock_guard<std::mutex> m_mutex_lock;
+  PyGILState_STATE m_gil_state;
+
+};
+
+/** @brief Convenience wrapper around @c PyObject pointer.
  *
  *  This is very experimental. Be warned.
  */
