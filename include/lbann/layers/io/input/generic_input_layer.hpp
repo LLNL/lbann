@@ -983,9 +983,9 @@ class generic_input_layer : public io_layer {
       assert0(m_input_tensors.back().allocate());
 #else
       size_t buf_size = m_input_tensors.back().get_local_real_size()
-          * sizeof(DataType);
+          * sizeof(InputType);
       dc::MPIPrintStreamInfo() << "buf size: " << buf_size;
-      DataType *buf = nullptr;
+      InputType *buf = nullptr;
       CHECK_CUDA(cudaMallocHost(&buf, buf_size));
       // Note buf should be deallocated.
       dc::tensor::View(m_input_tensors.back(), buf);
@@ -1000,11 +1000,11 @@ class generic_input_layer : public io_layer {
         m_input_tensors[0]);
     for (int i = 0; i < num_buffers; ++i) {
       m_input_shuffler_src_bufs.push_back(
-          std::unique_ptr<DataType>(
-              static_cast<DataType*>(dc::util::aligned_malloc(shuffler_src_size))));
+          std::unique_ptr<InputType>(
+              static_cast<InputType*>(dc::util::aligned_malloc(shuffler_src_size))));
       m_input_shuffler_dst_bufs.push_back(
-          std::unique_ptr<DataType>(
-              static_cast<DataType*>(dc::util::aligned_malloc(shuffler_dst_size))));
+          std::unique_ptr<InputType>(
+              static_cast<InputType*>(dc::util::aligned_malloc(shuffler_dst_size))));
     }
 
     // Layer::setup_activations_tensor does not work as it assumes
@@ -1014,6 +1014,11 @@ class generic_input_layer : public io_layer {
     m_activations_t = TensorDev(tensor_shape, loc, dist);
     assert0(m_activations_t.allocate());
     m_activations_t.zero();
+
+    // Keeps the same input type and convert to float on GPU
+    m_input_dev = TensorDevInput(tensor_shape, loc, dist);
+    assert0(m_input_dev.allocate());
+    m_input_dev.zero();
   }
 
   void setup_tensors_bwd(
@@ -1031,19 +1036,24 @@ class generic_input_layer : public io_layer {
 
  protected:
 
-  using TensorHost = dc::TensorHost<DataType>;
-  using TensorShuffler = dc::TensorHostShuffler<DataType>;
+  // Cosmoflow samples are stored in int16
+  using InputType = float;
+
+  using TensorHost = dc::TensorHost<InputType>;
+  using TensorShuffler = dc::TensorHostShuffler<InputType>;
   using TensorDevInput = ::distconv::tensor::Tensor<
-    DataType, ::distconv::tensor::LocaleMPI,
+    InputType, ::distconv::tensor::LocaleMPI,
     ::distconv::tensor::CUDAAllocator>;
 
   // 3 last-MB shufflers for training/validation/testing
   std::array<std::unique_ptr<TensorShuffler>, 3> m_input_shuffler_last_mb;
-  std::vector<dc::TensorHost<DataType>> m_input_views;
-  std::vector<dc::TensorHost<DataType>> m_input_tensors;
+  std::vector<dc::TensorHost<InputType>> m_input_views;
+  std::vector<dc::TensorHost<InputType>> m_input_tensors;
   std::vector<std::unique_ptr<TensorShuffler>> m_input_shufflers;
-  std::vector<std::unique_ptr<DataType>> m_input_shuffler_src_bufs;
-  std::vector<std::unique_ptr<DataType>> m_input_shuffler_dst_bufs;
+  std::vector<std::unique_ptr<InputType>> m_input_shuffler_src_bufs;
+  std::vector<std::unique_ptr<InputType>> m_input_shuffler_dst_bufs;
+
+  TensorDevInput m_input_dev;
 
   TensorShuffler &get_shuffler(const TensorHost &src,
                                const TensorHost &dst,
@@ -1094,9 +1104,13 @@ class generic_input_layer : public io_layer {
                                 << ", mb_size: " << mb_size;
       assert_eq(mb_size, input_tensor.get_shape()[dc::get_sample_dim()]);
       prof_region_begin("copy-to-device", prof_colors[1], false);
-      assert0(dc::tensor::Copy(m_activations_t, input_tensor,
+      assert0(dc::tensor::Copy(m_input_dev, input_tensor,
                                dc::get_stream()));
       prof_region_end("copy-to-device", false);
+      prof_region_begin("cast-from-int16", prof_colors[1], false);
+      dc::tensor::Cast(m_activations_t, m_input_dev,
+                       dc::get_stream());
+      prof_region_end("copy-from-int16", false);
       return;
     }
 
