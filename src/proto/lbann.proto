@@ -55,7 +55,7 @@ message Reader {
   int64 num_neighbors = 112; // pilot2_molecular_reader
   int64 max_neighborhood = 113; // pilot2_molecular_reader
   int32 num_image_srcs = 114; // data_reader_multi_images
-  float scaling_factor_int16 = 116; // only for numpy_npz_reader with int16 data
+  float scaling_factor_int16 = 116; // for numpy_npz_reader with int16 data
 
   int32 max_files_to_load = 1000;
 
