@@ -30,7 +30,6 @@
 #include "data_reader.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <Python.h>
-#include <mutex>
 
 namespace lbann {
 
@@ -79,8 +78,14 @@ private:
 
 /** @brief RAII wrapper for Python GIL.
  *
- *  The Python interpreter is not thread-safe, so a thread must own
- *  the "global interpreter lock" to execute Python.
+ *  The Python interpreter is not thread-safe, so it uses the "global
+ *  interpreter lock" to ensure only one thread is executing at a
+ *  time. Multithreading is achieved by periodically transferring
+ *  control of the GIL between threads. This makes it hard to get
+ *  meaningful speedups from simple multithreading. Certain
+ *  operations, e.g. I/O and numerical kernels in NumPy, can be
+ *  efficiently parallelized because they yield control of the GIL
+ *  while working.
  *
  *  This is very experimental. Be warned.
  */
@@ -95,8 +100,6 @@ private:
   global_interpreter_lock(const global_interpreter_lock&) = delete;
   global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
 
-  static std::mutex m_mutex;
-  std::lock_guard<std::mutex> m_mutex_lock;
   PyGILState_STATE m_gil_state;
 
 };
@@ -157,6 +160,7 @@ private:
   std::vector<El::Int> m_sample_dims;
   El::Int m_num_samples;
   python::object m_sample_function;
+  python::object m_process_pool_apply_function;
 
 };
 

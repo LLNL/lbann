@@ -35,7 +35,6 @@ namespace python {
 
 // Static variables
 std::unique_ptr<manager> manager::m_instance;
-std::mutex global_interpreter_lock::m_mutex;
 
 manager& manager::get_instance() {
   if (m_instance == nullptr) { create(); }
@@ -82,6 +81,7 @@ manager::~manager() {
 }
 
 void manager::check_error(bool force_error) const {
+  global_interpreter_lock gil(*this);
   if (force_error || PyErr_Occurred()) {
 
     // Get error information from Python session
@@ -138,10 +138,12 @@ void manager::check_error(bool force_error) const {
 }
 
 global_interpreter_lock::global_interpreter_lock(const manager&)
-  : m_mutex_lock(m_mutex), m_gil_state(PyGILState_Ensure()) {}
+  : m_gil_state(PyGILState_Ensure()) {}
 
 global_interpreter_lock::~global_interpreter_lock() {
-  PyGILState_Release(m_gil_state);
+  if (Py_IsInitialized()) {
+    PyGILState_Release(m_gil_state);
+  }
 }
 
 object::object(PyObject* ptr) : m_ptr(ptr) {
@@ -178,7 +180,9 @@ object& object::operator=(object&& other) {
 }
 
 object::~object() {
-  Py_XDECREF(m_ptr);
+  if (Py_IsInitialized()) {
+    Py_XDECREF(m_ptr);
+  }
 }
 
 } // namespace python
@@ -190,28 +194,28 @@ python_reader::python_reader(std::string module,
                              std::string sample_dims_function)
   : generic_data_reader(true) {
 
-  // Acquire mutex for Python session
+  // Acquire Python GIL
   auto& manager = python::manager::get_instance();
   python::global_interpreter_lock gil(manager);
 
-  // Import Python module
+  // Import Python module for data
   if (!module_dir.empty()) {
     auto path = PySys_GetObject("path");  // Borrowed reference
     PyList_Append(path, python::object(module_dir));
     manager.check_error();
   }
-  python::object module_obj = PyImport_ImportModule(module.c_str());
+  python::object data_module = PyImport_ImportModule(module.c_str());
 
   // Get number of samples
   python::object num_func
-    = PyObject_GetAttrString(module_obj, num_samples_function.c_str());
+    = PyObject_GetAttrString(data_module, num_samples_function.c_str());
   python::object num = PyObject_CallObject(num_func, nullptr);
   m_num_samples = PyLong_AsLong(num);
   manager.check_error();
 
   // Get sample dimensions
   python::object dims_func
-    = PyObject_GetAttrString(module_obj, sample_dims_function.c_str());
+    = PyObject_GetAttrString(data_module, sample_dims_function.c_str());
   python::object dims = PyObject_CallObject(dims_func, nullptr);
   dims = PyObject_GetIter(dims);
   for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
@@ -221,8 +225,19 @@ python_reader::python_reader(std::string module,
   manager.check_error();
 
   // Get sample function
-  m_sample_function = PyObject_GetAttrString(module_obj,
+  m_sample_function = PyObject_GetAttrString(data_module,
                                              sample_function.c_str());
+
+  // Initialize multiprocessing
+  /** @todo Dedicated process for each IO thread, with proper
+   *  processor affinity.
+   */
+  python::object multiprocessing_module
+    = PyImport_ImportModule("multiprocessing");
+  python::object process_pool
+    = PyObject_CallMethod(multiprocessing_module, "Pool", nullptr);
+  m_process_pool_apply_function
+    = PyObject_GetAttrString(process_pool, "apply");
 
 }
 
@@ -247,16 +262,20 @@ int python_reader::get_linearized_label_size() const {
 
 bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
 
-  // Lock mutex for the scope of this function
+  // Acquire Python GIL
   auto& manager = python::manager::get_instance();
   python::global_interpreter_lock gil(manager);
 
   // Get sample with Python
-  python::object args = Py_BuildValue("(i)", data_id);
-  python::object sample = PyObject_CallObject(m_sample_function, args);
-  sample = PyObject_GetIter(sample);
+  // Note: The actual computation is dispatched to a process pool.
+  python::object args = PyTuple_New(2);
+  Py_INCREF(m_sample_function);
+  PyTuple_SetItem(args, 0, m_sample_function);
+  PyTuple_SetItem(args, 1, Py_BuildValue("(i)", data_id));
+  python::object sample = PyObject_CallObject(m_process_pool_apply_function, args);
 
   // Extract sample entries from Python iterator
+  sample = PyObject_GetIter(sample);
   const El::Int sample_size = get_linearized_data_size();
   for (El::Int row = 0; row < sample_size; ++row) {
     python::object val = PyIter_Next(sample);
