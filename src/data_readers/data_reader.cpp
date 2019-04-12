@@ -32,7 +32,6 @@
 #include "lbann/models/model.hpp"
 #include <omp.h>
 #include <future>
-#include <cassert>
 
 namespace lbann {
 
@@ -46,44 +45,12 @@ void generic_data_reader::shuffle_indices() {
 void generic_data_reader::shuffle_indices(rng_gen& gen) {
   // Shuffle the data
   if (m_shuffle) {
-    if(!m_local_shuffle) {
-      std::shuffle(m_shuffled_indices.begin(),
-                   m_shuffled_indices.end(),
-                   gen);
-    } else {
-      assert(get_type() == "data_reader_merge_samples");
-      assert(m_comm->get_num_trainers() == 1);
-      const int proc_rank = m_comm->get_rank_in_trainer();
-      const int proc_size = m_comm->get_procs_per_trainer();
-
-      // Create a local list of indices. Each data reader fetch all of
-      // the indices in the list.
-      assert((get_num_data() % proc_size) == 0);
-      // The number of samples each process actually holds
-      const int local_size = get_num_data() / proc_size;
-      std::vector<int> local_indices(local_size);
-      std::iota(local_indices.begin(), local_indices.end(), 0);
-      for(auto i = local_indices.begin(); i != local_indices.end(); ++i)
-        *i = local_size*proc_rank + std::distance(local_indices.begin(), i);
-      std::shuffle(local_indices.begin(), local_indices.end(), gen);
-
-      // Set m_shuffled_indices like [0,-1,-1,-1, 1,-1,-1,-1, ...]
-      // (see the header file for more details). If all of the
-      // conditions below are met, the data reader should use only
-      // `proc_size*i + proc_rank` indices.
-      assert((int) m_shuffled_indices.size() == get_num_data());
-      assert((m_shuffled_indices.size() % proc_size) == 0);
-      std::fill(m_shuffled_indices.begin(), m_shuffled_indices.end(), -1);
-      for(auto i = local_indices.begin(); i != local_indices.end(); ++i) {
-        m_shuffled_indices[std::distance(local_indices.begin(), i)* proc_size + proc_rank] = *i;
-      }
-    }
-  } else {
-    assert(!m_local_shuffle);
+    std::shuffle(m_shuffled_indices.begin(), m_shuffled_indices.end(),
+                 gen);
   }
 }
 
-void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+  void generic_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
   m_stride_to_next_mini_batch = 0;
@@ -111,8 +78,6 @@ bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, 
   for (int s = thread_id; s < mb_size; s+=m_io_thread_pool->get_num_threads()) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
-    assert(index >= 0);
-
     bool valid = fetch_datum(X, index, s);
     if (!valid) {
       error_message = "invalid datum (index " + std::to_string(index) + ")";

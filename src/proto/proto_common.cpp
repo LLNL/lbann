@@ -226,25 +226,7 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
           reader_numpy->set_has_responses(!readme.disable_responses());
           npy_readers.push_back(reader_numpy);
         } else if (readme.format() == "numpy_npz") {
-          bool placeholder = false;
-          if(readme.local_shuffle()) {
-            assert(comm->get_num_trainers() == 1);
-            const int proc_rank = comm->get_rank_in_trainer();
-            const int proc_size = comm->get_procs_per_trainer();
-            const int npz_rank = std::distance(paths.begin(), i);
-            const int npz_size = paths.size();
-
-            if(npz_size >= proc_size) {
-              assert(npz_size % proc_size == 0);
-              placeholder = !(npz_rank >= npz_size/proc_size*proc_rank
-                              && npz_rank < npz_size/proc_size*(proc_rank+1));
-            } else {
-              assert(proc_size % npz_size == 0);
-              placeholder = !(proc_rank >= proc_size/npz_size*npz_rank
-                              && proc_rank < proc_size/npz_size*(npz_rank+1));
-            }
-          }
-          auto* reader_numpy_npz = new numpy_npz_reader(false, placeholder);
+          auto* reader_numpy_npz = new numpy_npz_reader(false, false);
           reader_numpy_npz->set_data_filename(path);
           reader_numpy_npz->set_has_labels(!readme.disable_labels());
           reader_numpy_npz->set_has_responses(!readme.disable_responses());
@@ -350,7 +332,6 @@ void init_data_readers(lbann_comm *comm, const lbann_data::LbannPB& p, std::map<
       }
     }
 
-    reader->set_local_shuffle(readme.local_shuffle());
     reader->set_comm(comm);
 
     if (readme.data_filename() != "") {
