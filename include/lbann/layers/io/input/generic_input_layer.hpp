@@ -961,7 +961,6 @@ class generic_input_layer : public io_layer {
       }
     }
     const auto tensor_shape = get_output_tensor_shape();
-    const LocaleMPI loc(dc::get_mpi_comm(), false);
     const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
     auto local_shape = tensor_shape;
     // Set the sample dimension as 0 so that its actual value is
@@ -970,6 +969,8 @@ class generic_input_layer : public io_layer {
     const auto &dist = dists[1];
 
     for (int i = 0; i < num_buffers; ++i) {
+      // Use different communicators for different buffers
+      const LocaleMPI loc(dc::get_mpi_comm(), false);
       // Create a view to the host Elemental matrix
       m_input_views.push_back(TensorHost(tensor_shape, loc,
                                            sample_dist, local_shape));
@@ -1009,6 +1010,7 @@ class generic_input_layer : public io_layer {
     // Layer::setup_activations_tensor does not work as it assumes
     // prev_activations_tensor is already
     // setup. prev_activations_tensor is not necessary for input.
+    const LocaleMPI loc(dc::get_mpi_comm(), false);
     m_activations_t = TensorDev(tensor_shape, loc, dist);
     assert0(m_activations_t.allocate());
     m_activations_t.zero();
@@ -1031,8 +1033,6 @@ class generic_input_layer : public io_layer {
 
   // 3 last-MB shufflers for training/validation/testing
   std::array<std::unique_ptr<dc::TensorHostShuffler>, 3> m_input_shuffler_last_mb;
-  //std::unique_ptr<DataType> m_input_shuffler_src_buf;
-  //std::unique_ptr<DataType> m_input_shuffler_dst_buf;
   std::vector<dc::TensorHost> m_input_views;
   std::vector<dc::TensorHost> m_input_tensors;
   std::vector<std::unique_ptr<dc::TensorHostShuffler>> m_input_shufflers;
