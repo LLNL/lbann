@@ -92,10 +92,10 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// returns the data store
   const data_store_jag& get_jag_store() const {
-    if (m_jag_store == nullptr) {
+    if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
-    return *m_jag_store;
+    return *m_data_store;
   }
 
   /// Choose which data to use for independent variable
@@ -263,7 +263,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
-  data_store_jag *m_jag_store;
 
   void preload_data_store();
 
@@ -371,12 +370,12 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool data_store_active() const {
     bool flag = generic_data_reader::data_store_active();
-    return (m_jag_store != nullptr && flag);
+    return (m_data_store != nullptr && flag);
   }
 
   bool priming_data_store() const {
     bool flag = generic_data_reader::priming_data_store();
-    return (m_jag_store != nullptr && flag);
+    return (m_data_store != nullptr && flag);
   }
 
  protected:

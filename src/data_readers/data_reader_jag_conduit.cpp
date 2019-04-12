@@ -160,8 +160,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   // Initialize the data store
   options *opts = options::get();
   if (opts->get_bool("use_data_store")) {
-    m_jag_store = new data_store_jag(this);  // *data_store_jag
-    m_data_store = m_jag_store;                 // *generic_data_store
+    m_data_store = new data_store_jag(this);  // *data_store_jag
   }
 }
 
@@ -217,14 +216,13 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_list_per_trainer = rhs.m_list_per_trainer;
   m_list_per_model = rhs.m_list_per_model;
 
-  if(rhs.m_data_store != nullptr || rhs.m_jag_store != nullptr) {
+  if(rhs.m_data_store != nullptr || rhs.m_data_store != nullptr) {
     if(ds_sample_move_list.size() == 0) {
-      m_jag_store = new data_store_jag(rhs.get_jag_store());
+      m_data_store = new data_store_jag(rhs.get_jag_store());
     } else {
-      m_jag_store = new data_store_jag(rhs.get_jag_store(), ds_sample_move_list);
+      m_data_store = new data_store_jag(rhs.get_jag_store(), ds_sample_move_list);
     }
-    m_jag_store->set_data_reader_ptr(this);
-    m_data_store = m_jag_store;
+    m_data_store->set_data_reader_ptr(this);
   }
 }
 
@@ -252,13 +250,13 @@ data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_ja
 }
 
 data_reader_jag_conduit::~data_reader_jag_conduit() {
-  // if (m_jag_store != nullptr) {
-  //   delete m_jag_store;
+  // if (m_data_store != nullptr) {
+  //   delete m_data_store;
   // }
 }
 
 void data_reader_jag_conduit::set_defaults() {
-  m_jag_store = nullptr;
+  m_data_store = nullptr;
   m_independent.clear();
   m_independent_groups.clear();
   m_dependent.clear();
@@ -350,8 +348,8 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
     if (m_data_store != nullptr) {
       const std::string& file_name = m_sample_list.get_samples_filename(id);
-      if (! m_data_store->preloaded()) {
-        const conduit::Node obj = m_jag_store->get_random_node();
+      if (! m_data_store->is_preloaded()) {
+        const conduit::Node obj = m_data_store->get_random_node();
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();
         const std::string cur_child = child_names[0];
@@ -890,7 +888,7 @@ void data_reader_jag_conduit::load() {
       if(is_master()) {
         std::cout << "Starting the preload" << std::endl;
       }
-      m_jag_store->build_preloaded_owner_map(local_list_sizes);
+      m_data_store->build_preloaded_owner_map(local_list_sizes);
       preload_data_store();
       if(is_master()) {
         std::cout << "preload complete" << std::endl;
@@ -900,7 +898,6 @@ void data_reader_jag_conduit::load() {
   } else {
     // these should already be set; in the future there will only
     // be one of these (when data_store_conduit is completed)
-    m_jag_store = nullptr;
     m_data_store = nullptr;
   }
 
@@ -913,7 +910,7 @@ void data_reader_jag_conduit::load() {
 
 
 void data_reader_jag_conduit::preload_data_store() {
-  m_jag_store->set_preload();
+  m_data_store->set_preload();
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
@@ -937,11 +934,11 @@ void data_reader_jag_conduit::preload_data_store() {
       work.reset();
       m_sample_list.open_samples_hdf5_handle(idx, true);
       load_conduit_node(idx, key, work);
-      conduit::Node & node = m_jag_store->get_empty_node(idx);
+      conduit::Node & node = m_data_store->get_empty_node(idx);
       const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
       node[padded_idx] = work;
 
-      m_jag_store->set_preloaded_conduit_node(idx, node);
+      m_data_store->set_preloaded_conduit_node(idx, node);
     }catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node " + std::to_string(idx) + " with key " + key + " and got " + e.what());
     }
@@ -1571,7 +1568,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   // Create a node to hold all of the data
   conduit::Node node;
   if (data_store_active()) {
-    const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
+    const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }else {
     m_sample_list.open_samples_hdf5_handle(data_id);
@@ -1584,7 +1581,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   if (priming_data_store()) {
     // Once the node has been populated save it in the data store
-    m_jag_store->set_conduit_node(data_id, node);
+    m_data_store->set_conduit_node(data_id, node);
   }
 
   m_sample_list.close_if_done_samples_hdf5_handle(data_id);
@@ -1600,17 +1597,17 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_jag_store != nullptr && m_model->get_epoch() > 0) {
-    const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
+  if (m_data_store != nullptr && m_model->get_epoch() > 0) {
+    const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_jag_store != nullptr && m_model->get_epoch() == 0) {
+  if (m_data_store != nullptr && m_model->get_epoch() == 0) {
     // Once the node has been populated save it in the data store
-    if (m_jag_store != nullptr) {
-      m_jag_store->set_conduit_node(data_id, node);
+    if (m_data_store != nullptr) {
+      m_data_store->set_conduit_node(data_id, node);
     }
   }
   return ok;

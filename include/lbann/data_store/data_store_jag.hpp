@@ -32,14 +32,21 @@
 
 #ifdef LBANN_HAS_CONDUIT
 
+#include "lbann/base.hpp"
+#include "lbann/comm.hpp"
 #include "conduit/conduit_relay_io.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
 #include "conduit/conduit_relay_mpi.hpp"
 #include <unordered_map>
+#include <unordered_set>
+
 
 namespace lbann {
 
+class generic_data_reader;
+
 class data_store_jag {
+
  public:
 
   //! ctor
@@ -54,14 +61,10 @@ class data_store_jag {
   //! operator=
   data_store_jag& operator=(const data_store_jag&);
 
-  data_store_jag * copy() const override { return new data_store_jag(*this); }
+  data_store_jag * copy() const { return new data_store_jag(*this); }
 
   //! dtor
-  ~data_store_jag() override;
-
-  void setup(int mini_batch_size) override;
-
-  void copy_members(const data_store_jag& rhs);
+  ~data_store_jag();
 
   /// normally not needed, since reader is passed to ctor. But may
   /// be useful in some cases
@@ -111,9 +114,27 @@ class data_store_jag {
   /// a validation reader using the train reader copy constructor
   void compact_nodes();
 
+  /// returns the processor that owns the data associated
+  /// with the index
+  int get_index_owner(int idx);
+
+  void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+    if (m_super_node) {
+      exchange_data_by_super_node(current_pos, mb_size);
+    } else {
+      exchange_data_by_sample(current_pos, mb_size);
+    }
+    ++m_n;
+  }
+
 protected :
 
+  int m_n;
+
+  bool m_is_setup;
+
   void copy_members(const data_store_jag& rhs, const std::vector<int>& = std::vector<int>());
+  generic_data_reader *m_reader;
 
   lbann_comm *m_comm;
 
@@ -132,6 +153,12 @@ protected :
   /// set to true if data_store is preloaded
   bool m_preload;
 
+  /// maps an index to the processor that owns the associated data
+  mutable std::unordered_map<int, int> m_owner;
+
+  /// fills in m_owner
+  void build_index_owner();
+
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
@@ -145,14 +172,6 @@ protected :
   /// exchange_data_by_sample; default if false
   bool m_super_node;
 
-  void exchange_mini_batch_data(size_t current_pos, size_t mb_size) override {
-    if (m_super_node) {
-      exchange_data_by_super_node(current_pos, mb_size);
-    } else {
-      exchange_data_by_sample(current_pos, mb_size);
-    }
-    ++m_n;
-  }
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
