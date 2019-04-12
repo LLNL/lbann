@@ -994,9 +994,9 @@ class generic_input_layer : public io_layer {
 
     // Setup the shuffle buffers
     m_input_shufflers.resize(num_buffers);
-    size_t shuffler_src_size = dc::TensorHostShuffler::get_buf_size(
+    size_t shuffler_src_size = TensorShuffler::get_buf_size(
         m_input_views[0]);
-    size_t shuffler_dst_size = dc::TensorHostShuffler::get_buf_size(
+    size_t shuffler_dst_size = TensorShuffler::get_buf_size(
         m_input_tensors[0]);
     for (int i = 0; i < num_buffers; ++i) {
       m_input_shuffler_src_bufs.push_back(
@@ -1031,24 +1031,30 @@ class generic_input_layer : public io_layer {
 
  protected:
 
+  using TensorHost = dc::TensorHost<DataType>;
+  using TensorShuffler = dc::TensorHostShuffler<DataType>;
+  using TensorDevInput = ::distconv::tensor::Tensor<
+    DataType, ::distconv::tensor::LocaleMPI,
+    ::distconv::tensor::CUDAAllocator>;
+
   // 3 last-MB shufflers for training/validation/testing
-  std::array<std::unique_ptr<dc::TensorHostShuffler>, 3> m_input_shuffler_last_mb;
-  std::vector<dc::TensorHost> m_input_views;
-  std::vector<dc::TensorHost> m_input_tensors;
-  std::vector<std::unique_ptr<dc::TensorHostShuffler>> m_input_shufflers;
+  std::array<std::unique_ptr<TensorShuffler>, 3> m_input_shuffler_last_mb;
+  std::vector<dc::TensorHost<DataType>> m_input_views;
+  std::vector<dc::TensorHost<DataType>> m_input_tensors;
+  std::vector<std::unique_ptr<TensorShuffler>> m_input_shufflers;
   std::vector<std::unique_ptr<DataType>> m_input_shuffler_src_bufs;
   std::vector<std::unique_ptr<DataType>> m_input_shuffler_dst_bufs;
 
-  dc::TensorHostShuffler &get_shuffler(const dc::TensorHost &src,
-                                       const dc::TensorHost &dst,
-                                       int bg_idx=0) {
+  TensorShuffler &get_shuffler(const TensorHost &src,
+                               const TensorHost &dst,
+                               int bg_idx=0) {
     int cur_mb_size = src.get_shape()[dc::get_sample_dim()];
     if (cur_mb_size == this->get_model()->get_max_mini_batch_size()) {
       auto &shfl = m_input_shufflers.at(bg_idx);
       if (shfl == nullptr) {
         dc::MPIPrintStreamDebug() << "Creating host shuffler: "
                                   << src << " -> " << dst;
-        shfl.reset(new dc::TensorHostShuffler(
+        shfl.reset(new TensorShuffler(
             src, dst,
             m_input_shuffler_src_bufs.at(bg_idx).get(),
             m_input_shuffler_dst_bufs.at(bg_idx).get()));
@@ -1064,7 +1070,7 @@ class generic_input_layer : public io_layer {
       if (shfl == nullptr) {
         dc::MPIPrintStreamDebug() << "Creating host last-mb shuffler: "
                                   << src << " -> " << dst;
-        shfl.reset(new dc::TensorHostShuffler(
+        shfl.reset(new TensorShuffler(
             src, dst,
             m_input_shuffler_src_bufs.at(bg_idx).get(),
             m_input_shuffler_dst_bufs.at(bg_idx).get()));
