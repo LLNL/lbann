@@ -1,5 +1,5 @@
 Model_name,      training_run_time, training_mean, training_max, training_min, training_stdev, test_accuracy
-alexnet_nightly, 71.14,             1.43,          3.20,         0.98,         0.51,           0.00
-alexnet_weekly,  691.96,            1.40,          4.53,         1.09,         0.22,           1.05
-cache_alexnet,   623.30,            1.27,          4.98,         0.66,         2.24,           0.57
-lenet_mnist,     15.51,             0.02,          0.06,         0.02,         0.01,           99.00
+alexnet_nightly, 57.00,             1.11,          4.80,        0.37,         1.20,           0.00
+alexnet_weekly,  0.00,              0.00,          0.00,        0.00,         0.00,           100.00
+cache_alexnet,   0.00,              0.00,          0.00,        0.00,         0.00,           100.00
+lenet_mnist,     64.00,             0.10,          0.40,        0.08,         0.04,           98.92

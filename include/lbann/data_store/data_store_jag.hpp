@@ -44,13 +44,16 @@ class data_store_jag : public generic_data_store {
  public:
 
   //! ctor
-  data_store_jag(generic_data_reader *reader, model *m);
+  data_store_jag(generic_data_reader *reader);
 
   //! copy ctor
-  data_store_jag(const data_store_jag&) = default;
+  data_store_jag(const data_store_jag&);
+
+  //! copy / split ctor
+  data_store_jag(const data_store_jag&, const std::vector<int>&);
 
   //! operator=
-  data_store_jag& operator=(const data_store_jag&) = default;
+  data_store_jag& operator=(const data_store_jag&);
 
   data_store_jag * copy() const override { return new data_store_jag(*this); }
 
@@ -63,11 +66,38 @@ class data_store_jag : public generic_data_store {
   const conduit::Node & get_conduit_node(int data_id) const;
 
   void set_conduit_node(int data_id, conduit::Node &node);
+  void set_preloaded_conduit_node(int data_id, conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
   const conduit::Node & get_random_node(const std::string &field) const;
 
+  /// returns an empty node
+  conduit::Node & get_empty_node(int data_id);
+
+  void set_preload() { m_preload = true; }
+  bool preloaded() { return m_preload; }
+
+  /// fills in m_owner, which maps index -> owning processor
+  void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
+
+  /// Removed nodes corresponding from the indices vector from the
+  /// data store
+  void purge_unused_samples(const std::vector<int>& indices) override;
+
+  /// Recompact the nodes because they are not copied properly
+  void compact_nodes() override;
+
 protected :
+
+  void copy_members(const data_store_jag& rhs, const std::vector<int>& = std::vector<int>());
+
+  bool m_preload;
+
+  /// The size of the mini-batch that was used to calculate ownership
+  /// of samples when building the owner map.  This size has to be
+  /// used consistently when computing the indices that will be sent
+  /// and received.
+  int m_owner_map_mb_size;
 
   bool m_super_node;
 
@@ -92,7 +122,7 @@ protected :
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
-  std::unordered_map<int, conduit::Node> m_data;
+  mutable std::unordered_map<int, conduit::Node> m_data;
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
@@ -146,6 +176,7 @@ protected :
   /// that will be received
   int build_indices_i_will_recv(int current_pos, int mb_size);
 
+  void error_check_compacted_node(const conduit::Node &nd, int data_id);
 };
 
 }  // namespace lbann

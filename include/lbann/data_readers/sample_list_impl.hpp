@@ -116,6 +116,61 @@ inline sample_list<file_handle_t, sample_name_t>::~sample_list() {
 }
 
 template <typename file_handle_t, typename sample_name_t>
+inline sample_list<file_handle_t, sample_name_t>
+::sample_list(const sample_list& rhs) {
+  copy_members(rhs);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline sample_list<file_handle_t, sample_name_t>& sample_list<file_handle_t, sample_name_t>
+::operator=(const sample_list& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline sample_list<file_handle_t, sample_name_t>& sample_list<file_handle_t, sample_name_t>
+::copy(const sample_list& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+inline void sample_list<file_handle_t, sample_name_t>
+::copy_members(const sample_list& rhs) {
+  m_header = rhs.m_header;
+  m_sample_list = rhs.m_sample_list;
+  m_file_id_stats_map = rhs.m_file_id_stats_map;
+  m_file_map = rhs.m_file_map;
+  m_max_open_files = rhs.m_max_open_files;
+
+  /// Keep track of existing filenames but do not copy any file
+  /// descriptor information
+  for(auto&& e : m_file_id_stats_map) {
+    if(std::get<1>(e) > 0) {
+      std::get<1>(e) = 0;
+    }
+    std::get<2>(e).clear();
+  }
+
+  /// Do not copy the open file descriptor priority queue
+  /// File handle ownership is not transfered in the copy
+  m_open_fd_pq.clear();
+}
+
+template <typename file_handle_t, typename sample_name_t>
 inline void sample_list<file_handle_t, sample_name_t>
 ::load(const std::string& samplelist_file,
        size_t stride, size_t offset) {

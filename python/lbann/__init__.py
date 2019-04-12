@@ -12,11 +12,14 @@ if sys.version_info[0] != 3:
 try:
     import lbann_pb2
 except ImportError:
-    from os.path import join
-    from lbann.contrib.lc.paths import install_dir
-    sys.path.append(join(install_dir(), 'share', 'python'))
+    import os.path
+    import lbann.contrib.lc.paths
+    sys.path.append(os.path.join(lbann.contrib.lc.paths.install_dir(),
+                                 'share', 'python'))
     import lbann_pb2
 
+# Import core functionality into lbann namespace
+from lbann.util import lbann_dir
 from lbann.callback import *
 from lbann.layer import *
 from lbann.metric import *
@@ -24,3 +27,4 @@ from lbann.model import *
 from lbann.objective_function import *
 from lbann.optimizer import *
 from lbann.weights import *
+from lbann.launcher import run

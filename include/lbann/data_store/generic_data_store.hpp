@@ -39,7 +39,6 @@ namespace lbann {
 
 class generic_data_reader;
 class lbann_comm;
-class model;
 
 /**
  * todo
@@ -49,18 +48,23 @@ class generic_data_store {
  public:
 
   //! ctor
-  generic_data_store(generic_data_reader *reader, model *m);
+  generic_data_store(generic_data_reader *reader);
 
   //! copy ctor
-  generic_data_store(const generic_data_store&) = default;
+  generic_data_store(const generic_data_store&);
+
+  //! copy / split ctor
+  generic_data_store(const generic_data_store&, const std::vector<int>&);
 
   //! operator=
-  generic_data_store& operator=(const generic_data_store&) = default;
+  generic_data_store& operator=(const generic_data_store&);
 
   //! dtor
   virtual ~generic_data_store() {}
 
   virtual generic_data_store * copy() const = 0;
+
+  void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
 
   /// called by generic_data_reader::setup_data_store
   virtual void setup(int mini_batch_size);
@@ -139,7 +143,23 @@ class generic_data_store {
 
   virtual void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {};
   virtual void setup_data_store_buffers() {};
+
+  /// returns the processor that owns the data associated
+  /// with the index
+  int get_index_owner(int idx);
+
+  virtual void set_preload() {};
+  virtual bool preloaded() { return false; };
+
+  /// Removed nodes corresponding from the indices vector from the
+  /// data store
+  virtual void purge_unused_samples(const std::vector<int>& indices) {};
+    /// Recompact the nodes because they are not copied properly
+  virtual void compact_nodes() {};
+
 protected :
+
+  void copy_members(const generic_data_store& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   // number of times exchange_data is called
   int m_n;
@@ -210,20 +230,14 @@ protected :
 
   const std::vector<int> *m_shuffled_indices;
 
-  model *m_model;
-
   /// base directory for data
   std::string m_dir;
 
   /// conduct extensive testing
   bool m_extended_testing;
 
-  /// returns the processor that owns the data associated
-  /// with the index
-  int get_index_owner(int idx);
-
   /// maps an index to the processor that owns the associated data
-  std::unordered_map<int, int> m_owner;
+  mutable std::unordered_map<int, int> m_owner;
 
   /// fills in m_owner
   virtual void build_index_owner();

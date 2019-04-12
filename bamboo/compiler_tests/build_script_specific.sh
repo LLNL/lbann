@@ -32,12 +32,12 @@ while :; do
     shift
 done
 
-if [ "${COMPILER}" == 'clang' ]; then
+if [ "${COMPILER}" == 'clang4' ]; then
     module load clang/4.0.0
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler clang ${DEBUG} --reconfigure
 fi
 
-if [ "${COMPILER}" == 'intel' ]; then
+if [ "${COMPILER}" == 'intel18' ]; then
     module load intel/18.0.0
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler intel ${DEBUG} --reconfigure
 fi

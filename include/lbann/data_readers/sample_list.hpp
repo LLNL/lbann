@@ -74,6 +74,11 @@ class sample_list {
 
   sample_list();
   virtual ~sample_list();
+  sample_list(const sample_list& rhs);
+  sample_list& operator=(const sample_list& rhs);
+  sample_list& copy(const sample_list& rhs);
+
+  void copy_members(const sample_list& rhs);
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);

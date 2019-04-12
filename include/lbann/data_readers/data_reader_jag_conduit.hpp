@@ -82,6 +82,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
+  data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
@@ -90,6 +91,14 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   std::string get_type() const override {
     return "data_reader_jag_conduit";
+  }
+
+  /// returns the data store
+  const data_store_jag& get_jag_store() const {
+    if (m_jag_store == nullptr) {
+      LBANN_ERROR("m_data_store is nullptr");
+    }
+    return *m_jag_store;
   }
 
   /// Choose which data to use for independent variable
@@ -238,10 +247,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// sets up a data_store.
-  void setup_data_store(model *m, int mini_batch_size) override;
-#endif // _JAG_OFFLINE_TOOL_MODE_
+  void setup_data_store(int mini_batch_size);
 
   /// A untiliy function to convert the pointer to image data into an opencv image
   static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
@@ -262,10 +268,11 @@ class data_reader_jag_conduit : public generic_data_reader {
  protected:
   data_store_jag *m_jag_store;
 
+  void preload_data_store();
+
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
-  virtual void copy_members(const data_reader_jag_conduit& rhs);
-
+  virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);

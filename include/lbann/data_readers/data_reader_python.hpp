@@ -123,7 +123,8 @@ private:
 
 class python_reader : public generic_data_reader {
 public:
-  python_reader(std::string script,
+  python_reader(std::string module,
+                std::string module_dir,
                 std::string sample_function,
                 std::string num_samples_function,
                 std::string sample_dims_function);

@@ -1,7 +1,7 @@
 import os, os.path
 import datetime
+import lbann
 import lbann.proto
-from lbann.util import lbann_dir
 import lbann.launcher.slurm
 
 # ==============================================
@@ -64,7 +64,7 @@ def run(lbann_exe, model, data_reader, optimizer,
 
     # Construct experiment directory if needed
     if not experiment_dir:
-        experiment_dir = os.path.join(lbann_dir(), 'experiments')
+        experiment_dir = os.path.join(lbann.lbann_dir(), 'experiments')
         if 'LBANN_EXPERIMENT_DIR' in os.environ:
             experiment_dir = os.environ['LBANN_EXPERIMENT_DIR']
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
