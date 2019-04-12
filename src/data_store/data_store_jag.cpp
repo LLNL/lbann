@@ -77,7 +77,17 @@ data_store_jag& data_store_jag::operator=(const data_store_jag& rhs) {
 }
 
 void data_store_jag::copy_members(const data_store_jag& rhs, const std::vector<int>& ds_sample_move_list) {
+  m_n = rhs.m_n;
+  m_is_setup = rhs.m_is_setup;
+  m_reader = rhs.m_reader;;
+  m_comm = rhs.m_comm;
+  m_rank_in_trainer = rhs.m_rank_in_trainer;
+  m_np_in_trainer = rhs.m_np_in_trainer;
+  m_world_master = rhs.m_world_master;
+  m_trainer_master = rhs.m_trainer_master;
   m_preload = rhs.m_preload;
+  m_owner = rhs.m_owner;
+  m_shuffled_indices = rhs.m_shuffled_indices;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_super_node = rhs.m_super_node;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
@@ -95,6 +105,21 @@ void data_store_jag::copy_members(const data_store_jag& rhs, const std::vector<i
       }
     }
   }
+
+  //these will probably zero-length, but I don't want to make assumptions
+  //as to state when copy_member is called
+  m_minibatch_data = rhs.m_minibatch_data;
+  m_send_buffer = rhs.m_send_buffer;
+  m_send_buffer_2 = rhs.m_send_buffer_2;
+  m_send_requests = rhs.m_send_requests;
+  m_recv_requests = rhs.m_recv_requests;
+  m_recv_buffer = rhs.m_recv_buffer;
+  m_outgoing_msg_sizes = rhs.m_outgoing_msg_sizes;
+  m_incoming_msg_sizes = rhs.m_incoming_msg_sizes;
+  m_compacted_sample_size = rhs.m_compacted_sample_size; 
+  m_reconstituted = rhs.m_reconstituted;
+  m_indices_to_send = rhs.m_indices_to_send;
+  m_indices_to_recv = rhs.m_indices_to_recv;
 }
 
 void data_store_jag::setup(int mini_batch_size) {
