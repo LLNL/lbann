@@ -88,18 +88,15 @@ void manager::check_error(bool force_error) const {
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
 
-    // Print error directly to stderr
-    // Note: Python C API doesn't always give error message
-    PyErr_Print();
-
     // Construct error message
     std::ostringstream err;
     err << "detected Python error";
     if (value != nullptr) {
-      const char* msg = PyUnicode_AsUTF8(value);
-      if (msg != nullptr) {
-        err << " (" << msg << ")";
-      }
+      auto msg = PyObject_Repr(value);
+      auto msg_str = PyUnicode_AsEncodedString(msg, "utf-8", "Error -");
+      err << " (" << PyBytes_AS_STRING(msg_str) << ")";
+      Py_XDECREF(msg_str);
+      Py_XDECREF(msg);
     }
 
     // Print Python traceback if available
