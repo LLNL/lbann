@@ -34,9 +34,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "conduit/conduit_relay_io.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
-#include "conduit/conduit_relay_mpi.hpp"
+#include "conduit/conduit_node.hpp"
 #include <unordered_map>
 #include <unordered_set>
 
