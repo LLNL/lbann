@@ -71,16 +71,18 @@ using IntVector = ::distconv::IntVector;
 using IndexVector = ::distconv::IndexVector;
 using Shape = ::distconv::tensor::Shape;
 
+template <typename DT>
 using TensorHost = ::distconv::tensor::Tensor<
-  DataType, ::distconv::tensor::LocaleMPI,
+  DT, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::BaseAllocator>;
 
 using TensorDev = ::distconv::tensor::Tensor<
   DataType, ::distconv::tensor::LocaleMPI,
   ::distconv::tensor::CUDAAllocator>;
 
+template <typename DT>
 using TensorHostShuffler = ::distconv::tensor::TensorMPIShuffler<
-  DataType, ::distconv::tensor::BaseAllocator>;
+  DT, ::distconv::tensor::BaseAllocator>;
 
 using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<DataType>;
 using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<DataType>;
