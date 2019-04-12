@@ -1097,6 +1097,7 @@ class generic_input_layer : public io_layer {
     auto &input_tensor = m_input_tensors.at(active_buffer);
 
     m_activations_t.set_outermost_dimension(mb_size);
+    m_input_dev.set_outermost_dimension(mb_size);
 
     if (this->m_model->background_io_activity_allowed()) {
       dc::MPIPrintStreamDebug() << this->get_name()
