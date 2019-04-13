@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_store/data_store_jag.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
@@ -739,7 +739,7 @@ bool generic_data_reader::priming_data_store() const {
                   && m_model->get_epoch() == 1)));
 }
 
-void generic_data_reader::set_data_store(data_store_jag *g) {
+void generic_data_reader::set_data_store(data_store_conduit *g) {
     if (m_data_store != nullptr) {
       delete m_data_store;
     }

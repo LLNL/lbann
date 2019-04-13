@@ -127,7 +127,7 @@
 #include "lbann/data_readers/data_reader_python.hpp"
 
 /// Data stores
-#include "lbann/data_store/data_store_jag.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

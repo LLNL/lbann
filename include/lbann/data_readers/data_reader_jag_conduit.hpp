@@ -44,7 +44,7 @@
 
 namespace lbann {
 
-class data_store_jag;
+class data_store_conduit;
 
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
@@ -91,7 +91,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   }
 
   /// returns the data store
-  const data_store_jag& get_jag_store() const {
+  const data_store_conduit& get_jag_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }

@@ -53,7 +53,7 @@
 
 namespace lbann {
 
-class data_store_jag;
+class data_store_conduit;
 class model;
 
 /**
@@ -685,14 +685,14 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// returns a const ref to the data store
-  virtual const data_store_jag& get_data_store() const {
+  virtual const data_store_conduit& get_data_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
     return *m_data_store;
   }
 
-  data_store_jag* get_data_store_ptr() const {
+  data_store_conduit* get_data_store_ptr() const {
     return m_data_store;
   }
 
@@ -705,7 +705,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
 
   /// support of data store functionality
-  void set_data_store(data_store_jag *g);
+  void set_data_store(data_store_conduit *g);
 
   virtual bool data_store_active() const;
 
@@ -740,7 +740,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  data_store_jag *m_data_store;
+  data_store_conduit *m_data_store;
 
   lbann_comm *m_comm;
 

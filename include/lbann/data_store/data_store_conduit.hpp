@@ -25,8 +25,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __DATA_STORE_JAG_HPP__
-#define __DATA_STORE_JAG_HPP__
+#ifndef __DATA_STORE_CONDUIT_HPP__
+#define __DATA_STORE_CONDUIT_HPP__
 
 #include "lbann_config.hpp"
 
@@ -43,31 +43,32 @@ namespace lbann {
 
 class generic_data_reader;
 
-class data_store_jag {
+class data_store_conduit {
 
  public:
 
   //! ctor
-  data_store_jag(generic_data_reader *reader);
+  data_store_conduit(generic_data_reader *reader);
 
   //! copy ctor
-  data_store_jag(const data_store_jag&);
+  data_store_conduit(const data_store_conduit&);
 
   //! copy / split ctor
-  data_store_jag(const data_store_jag&, const std::vector<int>&);
+  data_store_conduit(const data_store_conduit&, const std::vector<int>&);
 
   //! operator=
-  data_store_jag& operator=(const data_store_jag&);
+  data_store_conduit& operator=(const data_store_conduit&);
 
-  data_store_jag * copy() const { return new data_store_jag(*this); }
+  data_store_conduit * copy() const { return new data_store_conduit(*this); }
 
   //! dtor
-  ~data_store_jag();
+  ~data_store_conduit();
 
   /// normally not needed, since reader is passed to ctor. But may
   /// be useful in some cases
   void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
 
+  //! convenience handle
   void set_shuffled_indices(const std::vector<int> *indices) { m_shuffled_indices = indices; }
 
   void setup(int mini_batch_size);
@@ -100,6 +101,7 @@ class data_store_jag {
   /// As of this writing, will be called if cmd line includes: --preload_data_store
   /// This may change in the future; TODO revisit
   void set_preload() { m_preload = true; }
+
   bool is_preloaded() { return m_preload; }
 
   /// fills in m_owner, which maps index -> owning processor
@@ -109,7 +111,7 @@ class data_store_jag {
   void purge_unused_samples(const std::vector<int>& indices);
 
   /// Recompact the nodes because they are not copied properly when instantiating
-  /// a validation reader using the train reader copy constructor
+  /// using the copy constructor
   void compact_nodes();
 
   /// returns the processor that owns the data associated
@@ -127,11 +129,12 @@ class data_store_jag {
 
 protected :
 
+  /// records the number of times exchange_mini_batch_data has been called
   int m_n;
 
   bool m_is_setup;
 
-  void copy_members(const data_store_jag& rhs, const std::vector<int>& = std::vector<int>());
+  void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
   generic_data_reader *m_reader;
 
   lbann_comm *m_comm;

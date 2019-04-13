@@ -27,7 +27,7 @@
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
-#include "lbann/data_store/data_store_jag.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
@@ -160,7 +160,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   // Initialize the data store
   options *opts = options::get();
   if (opts->get_bool("use_data_store")) {
-    m_data_store = new data_store_jag(this);  // *data_store_jag
+    m_data_store = new data_store_conduit(this);  // *data_store_conduit
   }
 }
 
@@ -218,9 +218,9 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
 
   if(rhs.m_data_store != nullptr || rhs.m_data_store != nullptr) {
     if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_jag(rhs.get_jag_store());
+      m_data_store = new data_store_conduit(rhs.get_jag_store());
     } else {
-      m_data_store = new data_store_jag(rhs.get_jag_store(), ds_sample_move_list);
+      m_data_store = new data_store_conduit(rhs.get_jag_store(), ds_sample_move_list);
     }
     m_data_store->set_data_reader_ptr(this);
   }
