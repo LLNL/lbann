@@ -129,7 +129,7 @@ cv::Mat drop_2channels(const cv::Mat& _img) {
   // compute channel to remain
   pw_fp_t m[3] = {0.0 _f, 0.0 _f, 0.0 _f};
 
-  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  ::lbann::rng_gen& gen = ::lbann::get_io_generator();
 
   std::uniform_int_distribution<int> rg_ch(0, 2);
   const int chosenCh = rg_ch(gen);
