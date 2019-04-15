@@ -1079,6 +1079,12 @@ class generic_input_layer : public io_layer {
   void fp_compute_distconv(int active_buffer) {
     if (!distconv_enabled()) return;
 
+    // No need to use separate tensors when the shuffle is not done
+    // background
+    if (!m_background_shuffle) {
+      active_buffer = 0;
+    }
+
     const int mb_size = this->get_model()->get_current_mini_batch_size();
     auto &input_view = m_input_views.at(active_buffer);
     auto &input_tensor = m_input_tensors.at(active_buffer);
