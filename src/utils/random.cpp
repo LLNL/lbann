@@ -104,6 +104,7 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
   makedir(dirname.c_str());
   std::string rng_name;
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ofstream rng_seq(rng_name);
   rng_seq << ::data_seq_generator;
@@ -121,10 +122,12 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
     rank_in_world = std::to_string(comm->get_rank_in_world());
   }
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_io_generator_" + rank_in_world;
   std::ofstream rng_io(rng_name);
   rng_io << ::io_generator;
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_fast_io_generator_" + rank_in_world;
   std::ofstream rng_fast_io(rng_name);
   rng_fast_io << ::fast_io_generator;
@@ -158,6 +161,7 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
   rng_seq >> ::data_seq_generator;
@@ -175,10 +179,12 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
     rank_in_world = std::to_string(comm->get_rank_in_world());
   }
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_io_generator_" + rank_in_world;
   std::ifstream rng_io(rng_name);
   rng_io >> ::io_generator;
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_fast_io_generator_" + rank_in_world;
   std::ifstream rng_fast_io(rng_name);
   rng_fast_io >> ::fast_io_generator;

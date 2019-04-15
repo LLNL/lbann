@@ -55,22 +55,22 @@ fast_rng_gen& get_fast_generator();
 
 /**
  * Return a reference to the global LBANN random number generator used
- * for shuffling the data samples within each mini-bathc
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
+ * for shuffling the data samples within each mini-batch
+ * @note RThis is stored in a thread_local variable.
  */
 rng_gen& get_data_seq_generator();
 
 /**
  * Return a reference to the global LBANN random number generator used
  * for shuffling the data samples within each mini-batch
- * @note This is stored in a threadprivate variable.
+ * @note This is stored in a thread_local variable.
  */
 rng_gen& get_io_generator();
 
 /**
  * Return a reference to the fast global LBANN random number generator used
  * for the I/O threads
- * @note This is stored in a threadprivate variable.
+ * @note This is stored in a thread_local variable.
  */
 fast_rng_gen& get_fast_io_generator();
 
