@@ -107,6 +107,22 @@ std::unique_ptr<model> build_model_from_prototext(
     init_random(random_seed);
     init_data_seq_random(random_seed);
   }
+  // Set up the communicator and get the grid based on the first model's spec.
+  // We do not currently support splitting different models in different ways,
+  // as this implies different grids.
+  int procs_per_trainer = pb_model->procs_per_trainer();
+  if (procs_per_trainer == 0) {
+    procs_per_trainer = comm->get_procs_in_world();
+  }
+  if (first_model) {
+    comm->split_trainers(procs_per_trainer);
+    if (pb_model->num_parallel_readers() > procs_per_trainer) {
+      pb_model->set_num_parallel_readers(procs_per_trainer);
+    }
+  } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
+    LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
+  }
+
   // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
   if (pb_model->random_init_models_differently()) {
@@ -123,22 +139,6 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 #endif
-
-  // Set up the communicator and get the grid based on the first model's spec.
-  // We do not currently support splitting different models in different ways,
-  // as this implies different grids.
-  int procs_per_trainer = pb_model->procs_per_trainer();
-  if (procs_per_trainer == 0) {
-    procs_per_trainer = comm->get_procs_in_world();
-  }
-  if (first_model) {
-    comm->split_trainers(procs_per_trainer);
-    if (pb_model->num_parallel_readers() > procs_per_trainer) {
-      pb_model->set_num_parallel_readers(procs_per_trainer);
-    }
-  } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
-    LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
-  }
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
