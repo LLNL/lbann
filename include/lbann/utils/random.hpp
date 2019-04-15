@@ -56,7 +56,7 @@ fast_rng_gen& get_fast_generator();
 /**
  * Return a reference to the global LBANN random number generator used
  * for shuffling the data samples within each mini-batch
- * @note RThis is stored in a thread_local variable.
+ * @note This is stored in a thread_local variable.
  */
 rng_gen& get_data_seq_generator();
 
