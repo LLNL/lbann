@@ -216,7 +216,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_list_per_trainer = rhs.m_list_per_trainer;
   m_list_per_model = rhs.m_list_per_model;
 
-  if(rhs.m_data_store != nullptr || rhs.m_data_store != nullptr) {
+  if(rhs.m_data_store != nullptr) {
     if(ds_sample_move_list.size() == 0) {
       m_data_store = new data_store_conduit(rhs.get_jag_store());
     } else {

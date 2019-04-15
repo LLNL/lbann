@@ -157,9 +157,6 @@ protected :
   /// maps an index to the processor that owns the associated data
   mutable std::unordered_map<int, int> m_owner;
 
-  /// fills in m_owner
-  void build_index_owner();
-
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
@@ -169,7 +166,7 @@ protected :
   /// and received.
   int m_owner_map_mb_size;
 
-  /// if true, use exchange_data_by_super_node, else use 
+  /// if true, use exchange_data_by_super_node, else use
   /// exchange_data_by_sample; default if false
   bool m_super_node;
 

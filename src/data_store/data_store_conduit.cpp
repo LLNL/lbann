@@ -63,7 +63,7 @@ data_store_conduit::data_store_conduit(const data_store_conduit& rhs) {
 }
 
 data_store_conduit::data_store_conduit(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
-  
+
   copy_members(rhs, ds_sample_move_list);
 }
 
@@ -79,7 +79,7 @@ data_store_conduit& data_store_conduit::operator=(const data_store_conduit& rhs)
 void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
   m_n = rhs.m_n;
   m_is_setup = rhs.m_is_setup;
-  m_reader = rhs.m_reader;;
+  m_reader = rhs.m_reader;
   m_comm = rhs.m_comm;
   m_rank_in_trainer = rhs.m_rank_in_trainer;
   m_np_in_trainer = rhs.m_np_in_trainer;
@@ -116,7 +116,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_recv_buffer = rhs.m_recv_buffer;
   m_outgoing_msg_sizes = rhs.m_outgoing_msg_sizes;
   m_incoming_msg_sizes = rhs.m_incoming_msg_sizes;
-  m_compacted_sample_size = rhs.m_compacted_sample_size; 
+  m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_reconstituted = rhs.m_reconstituted;
   m_indices_to_send = rhs.m_indices_to_send;
   m_indices_to_recv = rhs.m_indices_to_recv;
