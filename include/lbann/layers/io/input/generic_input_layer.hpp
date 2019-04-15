@@ -239,8 +239,7 @@ class generic_input_layer : public io_layer {
     std::lock_guard<std::mutex> guard(dr_mutex);
     setup_next_io_buffer(io_buffer);
     prof_region_begin("fetch_sample", prof_colors[0], false);
-    auto num_samples =
-        io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
+    io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
     prof_region_end("fetch_sample", false);
 #ifdef LBANN_HAS_DISTCONV
     if (m_background_shuffle) {
