@@ -231,11 +231,13 @@ void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
 model* construct_model(lbann_comm* comm,
                        const std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
+                       const lbann_data::Trainer& proto_trainer,
                        const lbann_data::Model& proto_model) {
 
   // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
+                                            proto_trainer,
                                             proto_model);
   std::vector<Layer*> layer_pointers;
   layer_pointers.reserve(layer_list.size());

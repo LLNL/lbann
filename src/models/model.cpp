@@ -57,7 +57,8 @@ model::model(lbann_comm* comm,
              El::Int mini_batch_size,
              objective_function* obj_fn,
              optimizer* default_optimizer)
-  : m_comm(comm),
+  : m_execution_context(nullptr),
+    m_comm(comm),
     m_max_mini_batch_size(mini_batch_size),
     m_default_optimizer(default_optimizer),
     m_objective_function(obj_fn) {
@@ -70,6 +71,7 @@ model::model(lbann_comm* comm,
 }
 
 model::model(const model& other) :
+  m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
   m_max_mini_batch_size(other.m_max_mini_batch_size) {
@@ -117,6 +119,7 @@ model::model(const model& other) :
 model& model::operator=(const model& other) {
 
   // Delete objects
+  if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
   if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
@@ -128,6 +131,7 @@ model& model::operator=(const model& other) {
   m_max_mini_batch_size = other.m_max_mini_batch_size;
 
   // Deep copies
+  m_execution_context  = other.m_execution_context;
   m_objective_function = other.m_objective_function;
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
@@ -909,22 +913,6 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // Execution
 // =============================================
 
-
-//this is for data store functionality
-void model::collect_indices(execution_mode mode) {
-  reset_mode_and_model(mode);
-  while (true) {
-    get_layer(0).forward_prop();
-    bool finished = true;
-    finished = get_layer(0).update() && finished;
-    if (finished) {
-      break;
-    }
-  }
-  //this may not be necessary, but shouldn't hurt
-  reset_epoch_statistics(mode);
-}
-
 void model::collect_background_data_fetch(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
@@ -946,7 +934,7 @@ void model::reset_mode(observing_ptr<execution_context> context, execution_mode 
 
 // At the end of the epoch, clean up the objective function and metrics
 void model::reset_epoch_statistics(execution_mode mode) {
-  m_objective_function()->reset_statistics(mode);
+  get_objective_function()->reset_statistics(mode);
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
   }
@@ -1177,29 +1165,26 @@ void model::do_weight_optimize_end_cbs(weights *w) {
   }
 }
 
-inline model::lbann_comm *get_comm() const {
-  return m_trainee_ptr->get_comm();
-}
-
 // =============================================
 // Summarizer
 // =============================================
 
 void model::summarize_stats(lbann_summary& summarizer) {
+  const execution_context& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).summarize_stats(summarizer, get_step(execution_mode::training));
+    get_layer(i).summarize_stats(summarizer, c.get_step());
   }
   summarizer.reduce_scalar("objective",
-                           m_objective_function->get_mean_value(m_execution_mode),
-                           get_step(execution_mode::training));
+                           m_objective_function->get_mean_value(c.get_execution_mode()),
+                           c.get_step());
   summarizer.reduce_scalar(
     "objective_evaluation_time",
     m_objective_function->get_evaluation_time(),
-    get_step(execution_mode::training));
+    c.get_step());
   summarizer.reduce_scalar(
     "objective_differentiation_time",
     m_objective_function->get_differentiation_time(),
-    get_step(execution_mode::training));
+    c.get_step());
   m_objective_function->reset_counters();
   double total_metric_time = 0.0;
   for (auto&& m : m_metrics) {
@@ -1209,12 +1194,13 @@ void model::summarize_stats(lbann_summary& summarizer) {
   summarizer.reduce_scalar(
     "metric_evaluation_time",
     total_metric_time,
-    get_step(execution_mode::training));
+    c.get_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
+  const execution_context& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).summarize_matrices(summarizer, get_step(execution_mode::training));
+    get_layer(i).summarize_matrices(summarizer, c.get_step());
   }
 }
 
@@ -1230,10 +1216,11 @@ struct lbann_model_header {
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
+  const execution_context& c = get_execution_context();
   // write out fields we need to save for model
   if (p.get_cb_type() != callback_type::validation) {
     if (m_comm->am_trainer_master()) {
-      p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
+      p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) c.get_execution_mode());
       p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
     }
 
@@ -1271,6 +1258,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
 }
 
 bool model::load_from_checkpoint_shared(persist& p) {
+  execution_context& c = get_execution_context();
   // have rank 0 read the file
   // read state from file
   struct lbann_model_header header;
@@ -1297,8 +1285,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
   m_comm->trainer_broadcast(0, header);
   // set our member params from values read from disk
   if (p.get_cb_type() != callback_type::validation) {
-    m_execution_mode     = (execution_mode) header.execution_mode;
-    m_terminate_training = (bool)           header.terminate_training;
+    c.set_execution_mode((execution_mode) header.execution_mode);
+    c.set_terminate_training(header.terminate_training);
     // m_epoch              = (int)            header.epoch;
     // m_step[execution_mode::training] = (int) header.training_step;
     // if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
@@ -1334,10 +1322,11 @@ bool model::load_from_checkpoint_shared(persist& p) {
 }
 
 bool model::save_to_checkpoint_distributed(persist& p){
+  //  const execution_context& c = get_execution_context();
   // write out fields we need to save for model
   if (p.get_cb_type() != callback_type::validation) {
-    p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
-    p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
+    // p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
+    // p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
     // p.write_uint64(persist_type::train, "epoch",              (uint64_t) m_epoch);
     // p.write_uint64(persist_type::train, "training_step",      (uint64_t) get_step(execution_mode::training));
     // p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
@@ -1356,16 +1345,20 @@ bool model::save_to_checkpoint_distributed(persist& p){
         return false;
       }
     }
+    #if 0
     if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
        save_rng_to_checkpoint_shared(p, m_comm);
       for (const auto& m : m_metrics) {
         m->save_to_checkpoint_distributed(p);
       }
     }
+    #endif
   }
 
   else {
-    p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
+#if 0
+    p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) c.get_step());
+#endif
     save_rng_to_checkpoint_shared(p, m_comm);
 
     for (El::Int i = 0; i < get_num_layers(); ++i) {
@@ -1393,8 +1386,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
   // p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
   p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
 
-  m_execution_mode     = (execution_mode) header.execution_mode;
-  m_terminate_training = (bool)           header.terminate_training;
+  // m_execution_mode     = (execution_mode) header.execution_mode;
+  // m_terminate_training = (bool)           header.terminate_training;
   // m_epoch              = (int)            header.epoch;
   // m_step[execution_mode::training] = (int) header.training_step;
   // if(get_num_iterations_per_epoch(execution_mode::validation) != 0)

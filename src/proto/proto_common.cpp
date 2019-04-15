@@ -618,7 +618,7 @@ void set_data_readers_filenames(
       if (opts->has_string(s.str())) {
         r->set_data_filedir(opts->get_string(s.str()));
       }else {
-v        s.clear();
+        s.clear();
         s.str("");
         s << "data_filedir";
         if (opts->has_string(s.str())) {
@@ -702,6 +702,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   std::ostringstream err;
 
   options *opts = options::get();
+  lbann_data::Trainer *trainer = p.mutable_trainer();
   lbann_data::Model *model = p.mutable_model();
   lbann_data::DataReader *d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
@@ -752,13 +753,13 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     model->set_num_epochs(opts->get_int("num_epochs"));
   }
   if (opts->has_int("block_size")) {
-    model->set_block_size(opts->get_int("block_size"));
+    trainer->set_block_size(opts->get_int("block_size"));
   }
   if (opts->has_int("procs_per_trainer")) {
-    model->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
+    trainer->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
   }
   if (opts->has_int("num_parallel_readers")) {
-    model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
+    trainer->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
   if (opts->has_bool("disable_cuda")) {
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
@@ -778,8 +779,17 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
     return;
   }
 
-  const lbann_data::Traine &t = p.trainer();
+  const lbann_data::Trainer &t = p.trainer();
   const lbann_data::Model &m = p.model();
+
+  bool disable_cuda = m.disable_cuda();
+#ifndef LBANN_HAS_GPU
+  disable_cuda = false;
+#endif // LBANN_HAS_GPU
+  bool disable_cudnn = disable_cuda;
+#ifndef LBANN_HAS_CUDNN
+  disable_cudnn = false;
+#endif // LBANN_HAS_CUDNN
 
   std::cout << std::endl
             << "Running with these parameters:\n"
@@ -791,7 +801,8 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:    " << t.num_parallel_readers()  << std::endl
             << "  serialize_io:            " << m.serialize_io()  << std::endl
-            << "  disable_cuda:            " << t.disable_cuda()  << std::endl
+            << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
+            << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
             << "  random_seed:             " << m.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";

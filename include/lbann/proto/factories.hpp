@@ -34,21 +34,21 @@ namespace lbann {
 namespace proto {
 
 /** Construct a trainer specified with a prototext. */
-trainer* construct_trainer(lbann_comm* comm,
-                           const std::map<execution_mode, generic_data_reader*>& data_readers,
-                           const lbann_data::Optimizer& proto_opt,
-                           const lbann_data::Model& proto_model);
+std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
+                                           const lbann_data::Trainer& proto_trainer);
 
 /** Construct a model specified with a prototext. */
 model* construct_model(lbann_comm* comm,
                        const std::map<execution_mode, generic_data_reader*>& data_readers,
                        const lbann_data::Optimizer& proto_opt,
+                       const lbann_data::Trainer& proto_trainer,
                        const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
 std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Trainer& proto_trainer,
   const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */

@@ -32,58 +32,27 @@ namespace proto {
 
 namespace {
 
-/** Instantiate a model based on prototext. */
-trainer* instantiate_trainer(lbann_comm* comm,
-                           objective_function* obj,
-                           const lbann_data::Optimizer& proto_opt,
-                           const lbann_data::Model& proto_model) {
+/** Instantiate a trainer based on prototext. */
+std::unique_ptr<trainer> instantiate_trainer(lbann_comm* comm,
+                                             const lbann_data::Trainer& proto_trainer) {
   std::stringstream err;
 
-  // Default optimizer
-  auto&& opt = construct_optimizer(comm, proto_opt);
-
-  // Construct model
-  const auto& type = proto_model.type();
-  const auto& mini_batch_size = proto_model.mini_batch_size();
-  return new trainer(comm, mini_batch_size, obj, opt);
+  // Construct trainer
+  return make_unique<trainer>(comm);
 }
 
 } // namespace
 
-model* construct_trainer(lbann_comm* comm,
-                         const lbann_data::Trainer& proto_trainer,
-                         const lbann_data::Optimizer& proto_opt,
-                         const lbann_data::TrainingAlgorithm& proto_training_alg) {
-
-#if 0
-  /// BVE TODO FIXME this should be done somewhere else
-  // Construct objective function
-  const auto& proto_obj = proto_model.objective_function();
-  auto&& obj = construct_objective_function(proto_obj);
-#endif
-
-  // Construct callbacks
-  std::vector<lbann_callback*> callback_list;
-  auto&& summarizer = construct_summarizer(comm, proto_trainer);
-  for (int i=0; i<proto_model.callback_size(); i++) {
-    callback_list.push_back(construct_callback(comm,
-                                               proto_trainer.callback(i),
-                                               data_readers,
-                                               summarizer));
-  }
+std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
+                                           const lbann_data::Trainer& proto_trainer) {
 
   // Instantiate trainer
-  auto&& t = instantiate_trainer(comm, obj, proto_opt, proto_trainer);
-  for (auto&& cb  : callback_list) { t->add_callback(cb); }
+  auto&& t = instantiate_trainer(comm, proto_trainer);
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);
   }
-  // for (auto t : data_readers) {
-  //   t.second->set_model(m);
-  // }
-  return t;
-
+  return std::move(t);
 }
 
 } // namespace proto

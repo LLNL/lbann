@@ -116,7 +116,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
 
 // Checkpoint Shared/Distributed
 bool lbann_callback_checkpoint::checkpoint(model *m) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0 && m_per_rank_dir.length() == 0) {
     return false;
@@ -161,6 +161,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     p.open_checkpoint(epochdir.c_str());
     // Call top level save to checkpoint function in model, in turn calls save to checkpoint functions for other model classes (weights, layers)
     m->save_to_checkpoint_distributed(p);
+    c.save_to_checkpoint_distributed(p); /// @todo BVE FIXME do we need to save all contexts
     p.close_checkpoint();
     // Print latest checkpoint to file
     if (comm->am_trainer_master()) {
@@ -179,6 +180,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
     // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
     comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
     m->save_to_checkpoint_shared(p);
+    c.save_to_checkpoint_shared(p);
     // close our checkpoint
     p.close_checkpoint();
     if (comm->am_trainer_master()) {
@@ -211,6 +213,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
   }
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   constexpr unsigned int max_len_dirname = 1024;
   // get top level directory
   char dir[max_len_dirname];
@@ -291,6 +294,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   if(!shared){
     epochdir = get_distributed_checkpoint_dirname(m, dir, epoch, step);
     p.open_restart(epochdir.c_str());
+    c.load_from_checkpoint_distributed(p);
     m->load_from_checkpoint_distributed(p);
     p.close_restart();
   }
@@ -301,6 +305,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
     }
     // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+    c.load_from_checkpoint_shared(p);
     m->load_from_checkpoint_shared(p);
     if(comm->am_trainer_master())
       p.close_restart();

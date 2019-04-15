@@ -40,6 +40,22 @@ enum class persist_type {
   validate
 };
 
+static persist_type __attribute__((used)) execution_mode_to_persist_type(execution_mode m) {
+  switch(m) {
+  case execution_mode::training:
+    return persist_type::train;
+  case execution_mode::validation:
+    return persist_type::validate;
+  case execution_mode::testing:
+    return persist_type::validate;
+  case execution_mode::prediction:
+    return persist_type::validate;
+  case execution_mode::invalid:
+  default:
+    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+  }
+}
+
 enum class callback_type {
   batch,
   epoch,
@@ -47,6 +63,20 @@ enum class callback_type {
   inference,
   invalid
 };
+
+static persist_type __attribute__((used)) callback_type_to_persist_type(callback_type cb) {
+  switch(cb) {
+  case callback_type::batch:
+  case callback_type::epoch:
+    return persist_type::train;
+  case callback_type::validation:
+    return persist_type::validate;
+  case callback_type::inference:
+  case callback_type::invalid:
+  default:
+    throw("Invalid callback_type specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+  }
+}
 
 class persist {
  protected:

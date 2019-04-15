@@ -31,8 +31,7 @@
 
 namespace lbann {
 
-class sgd_termination_criteria : public termination_criteria {
-public:
+struct sgd_termination_criteria : public termination_criteria {
   El::Int num_epochs;
 };
 
@@ -84,6 +83,13 @@ public:
   inline void set_effective_mini_batch_size(int mini_batch_size) {
     m_effective_mini_batch_size = mini_batch_size;
   }
+
+  /** Checkpoint training_algorithm to given file descriptor, return number of bytes written */
+  virtual bool save_to_checkpoint_shared(persist& p);
+  /** Restore training_algorithm by reading checkpoint from given file descriptor, return number of bytes read */
+  virtual bool load_from_checkpoint_shared(persist& p);
+  virtual bool save_to_checkpoint_distributed(persist& p);
+  virtual bool load_from_checkpoint_distributed(persist& p);
 
 public:
   /** Number of times the training data set has been traversed. */

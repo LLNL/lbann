@@ -1409,20 +1409,21 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
+  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_jag_store != nullptr && m_model->get_execution_context().get_epoch() > 0) {
+  if (m_jag_store != nullptr && c.get_epoch() > 0) {
     const conduit::Node& ds_node = m_jag_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_jag_store != nullptr && m_model->get_execution_context().get_epoch() == 0) {
+  if (m_jag_store != nullptr && c.get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_jag_store != nullptr) {
       m_jag_store->set_conduit_node(data_id, node);

@@ -29,24 +29,15 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-// #include "lbann/layers/layer.hpp"
-// #include "lbann/utils/summary.hpp"
-// #include "lbann/utils/graph.hpp"
-// #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-// #include <lbann.pb.h>
-// #include <vector>
-// #include <string>
-// #include <unordered_map>
 
 namespace lbann {
 
 // Forward-declare this.
 class trainer;
 
-class termination_criteria {
-public:
+struct termination_criteria {
   El::Int num_steps;
 };
 
@@ -104,22 +95,17 @@ public:
     return m_trainer;
   }
 
-  //observing_ptr<thread_pool> get_io_thread_pool();
-
   observing_ptr<thread_pool> get_io_thread_pool() const;
 
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed();
 
-#if 0
   /** Checkpoint training_algorithm to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
   /** Restore training_algorithm by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
-
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
-#endif
 
 public:
   /** Pointer to the training context (execution environment) for the training algorithm */

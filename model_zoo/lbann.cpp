@@ -75,16 +75,17 @@ int main(int argc, char *argv[]) {
     // Optionally over-ride some values in prototext
     get_cmdline_overrides(*comm, pb);
 
-    const lbann_data::Trainer *pb_trainer = pb.trainer();
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm, pb_trainer, opts)
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
 
+    observing_ptr<thread_pool> io_thread_pool = trainer->get_io_thread_pool();
 
     lbann_data::Model *pb_model = pb.mutable_model();
 
-    auto model = build_model_from_prototext(argc, argv, pb,
-                                            comm.get(), io_thread_pool, true);
+    auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,
+                                            comm.get(), opts, io_thread_pool, true);
 
     if (opts->has_string("create_tarball")) {
       return EXIT_SUCCESS;
@@ -93,11 +94,11 @@ int main(int argc, char *argv[]) {
     if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
 
       // Train model
-      trainer->train(model, pb_model->num_epochs());
+      trainer->train(model.get(), pb_model->num_epochs());
       //      trainer->apply(SGD, execution_mode::training, model, lambdat ()(return pb_model->num_epochs()> 0));
 
       // Evaluate model on test set
-      trainer->evaluate(model, execution_mode::testing);
+      trainer->evaluate(model.get(), execution_mode::testing);
       //      trainer->apply(SGD, execution_mode::testing, model, pb_model->num_epochs());
 
       //has no affect unless option: --st_on was given

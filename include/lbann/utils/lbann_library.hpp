@@ -34,18 +34,24 @@ namespace lbann {
 
 const int lbann_default_random_seed = 42;
 
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm);
+std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
+                                           lbann_data::Trainer* pb_trainer,
+                                           options *opts);
+
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts);
 
 std::unique_ptr<model> build_model_from_prototext(
     int argc, char **argv,
+    const lbann_data::Trainer* pb_trainer,
     lbann_data::LbannPB &pb,
     lbann_comm *comm,
-    std::shared_ptr<thread_pool> io_thread_pool,
+    options *opts,
+    observing_ptr<thread_pool> io_thread_pool,
     bool first_model);
 
-void print_lbann_configuration(
-    lbann_data::Model *pb_model, lbann_comm *comm,
-    int io_threads_per_process, int io_threads_offset);
+void print_lbann_configuration(lbann_comm *comm,
+                               int io_threads_per_process,
+                               int io_threads_offset);
 
 } // namespace lbann
 

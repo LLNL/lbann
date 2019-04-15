@@ -127,9 +127,14 @@ public:
   }
 
   /** Get the model's comm. */
-  lbann_comm *get_comm() const;// {
-  //   return m_trainee_ptr->get_comm();
-  // }
+  inline lbann_comm *get_comm() const {
+    return m_comm;
+  }
+
+  /** Check to see if there is a valid training context for the model */
+  inline bool has_valid_execution_context() const {
+    return (m_execution_context != nullptr);
+  }
 
   /** Grab the training context of the model */
   inline const execution_context& get_execution_context() const {
@@ -390,6 +395,12 @@ private:
   /** @brief Trainable parameters. */
   std::vector<weights*> m_weights;
 
+  /** @details Maximum possible minibatch size supported by layers in
+   *  this model.  Note that this is local to the particular model,
+   *  not across multiple models.
+   */
+  int m_max_mini_batch_size;
+
   /** @detailed If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object
    *  is just used to create copies and is not actually used for
@@ -407,12 +418,6 @@ private:
 
   /** Current callbacks to process. */
   std::vector<lbann_callback*> m_callbacks;
-
-  /** @details Maximum possible minibatch size supported by layers in
-   *  this model.  Note that this is local to the particular model,
-   *  not across multiple models.
-   */
-  int m_max_mini_batch_size;
 
   /** Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed = true;

@@ -133,7 +133,6 @@ class generic_input_layer : public io_layer {
   description get_description() const override {
     auto&& desc = io_layer::get_description();
     desc.add("Buffer", m_io_buffers[0]->get_type());
-    desc.add("Background I/O", this->m_model->get_execution_context().background_io_activity_allowed());
     return desc;
   }
 
@@ -152,25 +151,6 @@ class generic_input_layer : public io_layer {
     for (int i = 0; i < get_num_children(); ++i) {
       auto& output = get_activations(i);
       output.Resize(output.Height(), max_mb_size);
-    }
-
-    /// @todo BVE FIXME We don't have proper support for accessing the
-    /// execution context during setup
-    const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-    auto num_io_threads = c.get_io_thread_pool()->get_num_threads();
-    /// BVE FIXME foreach data reader
-    // in case that target_layer gets initialized beforehand
-    if(m_data_readers[execution_mode::training] != nullptr) {
-      m_data_readers[execution_mode::training]->setup(num_io_threads, c.get_io_thread_pool());
-      m_data_readers[execution_mode::training]->set_rank(Layer::m_comm->get_rank_in_trainer());
-    }
-    if(m_data_readers[execution_mode::validation] != nullptr) {
-      m_data_readers[execution_mode::validation]->setup(num_io_threads, c.get_io_thread_pool());
-      m_data_readers[execution_mode::validation]->set_rank(Layer::m_comm->get_rank_in_trainer());
-    }
-    if(m_data_readers[execution_mode::testing] != nullptr) {
-      m_data_readers[execution_mode::testing]->setup(num_io_threads, c.get_io_thread_pool());
-      m_data_readers[execution_mode::testing]->set_rank(Layer::m_comm->get_rank_in_trainer());
     }
 
     if(io_layer::m_data_set_spans_models) {
@@ -205,24 +185,28 @@ class generic_input_layer : public io_layer {
    *  Sets up the effective (global) mini-batch size.
    */
   void fp_setup_outputs(El::Int mini_batch_size) override {
+    /// During model setup there is no valid execution context, but
+    /// during execution there is a context
+    if(this->m_model->has_valid_execution_context()) {
+      // Determine model mini-batch size and effective mini-batch size
+      // Note: If inter-model communication is activated, the effective
+      // mini-batch is equal to the global mini-batch size.
+      /// @todo This functionality should probably be moved elsewhere
+      mini_batch_size = get_current_mini_batch_size();
 
-    // Determine model mini-batch size and effective mini-batch size
-    // Note: If inter-model communication is activated, the effective
-    // mini-batch is equal to the global mini-batch size.
-    /// @todo This functionality should probably be moved elsewhere
-    mini_batch_size = get_current_mini_batch_size();
-    int effective_mini_batch_size = mini_batch_size;
-    for (auto&& cb : this->m_model->get_callbacks()) {
-      if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
-        effective_mini_batch_size = get_current_global_mini_batch_size();
-        break;
+      int effective_mini_batch_size = mini_batch_size;
+      for (auto&& cb : this->m_model->get_callbacks()) {
+        if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
+          effective_mini_batch_size = get_current_global_mini_batch_size();
+          break;
+        }
       }
-    }
 
-    sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-    // Set mini-batch size in model
-    c.set_current_mini_batch_size(mini_batch_size);
-    c.set_effective_mini_batch_size(effective_mini_batch_size);
+      sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+      // Set mini-batch size in model
+      c.set_current_mini_batch_size(mini_batch_size);
+      c.set_effective_mini_batch_size(effective_mini_batch_size);
+    }
 
     // Initialize matrices
     io_layer::fp_setup_outputs(mini_batch_size);
@@ -578,7 +562,12 @@ class generic_input_layer : public io_layer {
    * Get the dimensions of the underlying data.
    */
   const std::vector<int> get_data_dims(int child_index = 0) const override {
-    const generic_data_reader *dr = get_data_reader();
+    // Check the training and testing execution modes for data dimensions
+    const generic_data_reader *dr = get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      dr = get_data_reader(execution_mode::testing);
+    }
+    if(dr == nullptr) { LBANN_ERROR("unable to call get_data_dims -- no valid execution mode"); }
     //    dataset* ds = select_first_valid_dataset();
     if (dr) {
       if(child_index == 0) {
