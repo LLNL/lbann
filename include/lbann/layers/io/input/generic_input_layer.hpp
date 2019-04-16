@@ -1023,8 +1023,12 @@ class generic_input_layer : public io_layer {
 
   const bool m_background_shuffle = false;
 
-  // Cosmoflow samples are stored in int16
-  using InputType = float;
+#ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
+  // Cosmoflow samples are kept stored in int16
+  using InputType = short;
+#else
+  using InputType = DataType;
+#endif // LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
 
   using TensorHost = dc::TensorHost<InputType>;
   using TensorShuffler = dc::TensorHostShuffler<InputType>;
@@ -1113,8 +1117,16 @@ class generic_input_layer : public io_layer {
     input_tensor.set_outermost_dimension(mb_size);
 
     // Setup view
+#ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
     assert0(dc::tensor::View(
-        input_view, get_activations().LockedBuffer()));
+        input_view,
+        reinterpret_cast<const InputType*>(
+            get_activations().LockedBuffer())));
+#else
+    assert0(dc::tensor::View(
+        input_view,
+        get_activations().LockedBuffer()));
+#endif // LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
 
     dc::MPIPrintStreamDebug()
         << this->get_name()
@@ -1165,8 +1177,16 @@ class generic_input_layer : public io_layer {
     input_tensor.set_outermost_dimension(mb_size);
 
     // Setup view
+#ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
     assert0(dc::tensor::View(
-        input_view, buf->m_input_buffers[0]->LockedBuffer()));
+        input_view,
+        reinterpret_cast<const InputType*>(
+            buf->m_input_buffers[0]->LockedBuffer())));
+#else
+    assert0(dc::tensor::View(
+        input_view,
+        buf->m_input_buffers[0]->LockedBuffer()));
+#endif // LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
 
     dc::MPIPrintStreamDebug()
         << this->get_name()

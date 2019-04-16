@@ -145,6 +145,9 @@ set(LBANN_DISTCONV_NUM_DIMS 4 CACHE STRING "The number of tensor dimensions")
 option(LBANN_WITH_P2P
   "Enable P2P library" OFF)
 
+option(LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
+  "Keep Cosmoflow input samples in int16 as long as possible" OFF)
+
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")

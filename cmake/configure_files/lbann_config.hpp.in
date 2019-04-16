@@ -55,7 +55,9 @@
 #error Only 4 or 5 are supported for LBANN_DISTCONV_NUM_DIMS.
 #endif
 
-#endif
+#cmakedefine LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
+
+#endif // LBANN_HAS_DISTCONV
 
 // Define the LBANN datatype
 namespace lbann
