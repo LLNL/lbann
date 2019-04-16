@@ -125,8 +125,10 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
-                            m_bias_cudnn_desc);
+    if (other.m_bias_scaling_factor != DataType(0)) {
+      cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
+                              m_bias_cudnn_desc);
+    }
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
@@ -147,8 +149,10 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
-                            m_bias_cudnn_desc);
+    if (other.m_bias_scaling_factor != DataType(0)) {
+      cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
+                              m_bias_cudnn_desc);
+    }
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
@@ -328,7 +332,11 @@ public:
           << "found " << this->m_weights.size() << ")";
       LBANN_ERROR(err.str());
     }
-    this->m_weights.resize(2, nullptr);
+    if (m_bias_scaling_factor != DataType(0)) {
+      this->m_weights.resize(2, nullptr);
+    } else {
+      this->m_weights.resize(1, nullptr);
+    }
     if (this->m_weights[0] == nullptr) {
       auto* w = new weights(get_comm());
       std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
@@ -339,16 +347,7 @@ public:
       this->m_weights[0] = w;
       this->m_model->add_weights(w);
     }
-    if (this->m_weights[1] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_bias");
-      w->set_optimizer(opt);
-      this->m_weights[1] = w;
-      this->m_model->add_weights(w);
-    }
     auto& kernel_weights = *this->m_weights[0];
-    auto& bias_weights = *this->m_weights[1];
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -364,8 +363,21 @@ public:
     dist.rowDist = El::STAR;
     kernel_weights.set_dims(kernel_dims);
     kernel_weights.set_matrix_distribution(dist);
-    bias_weights.set_dims(output_dims[0]);
-    bias_weights.set_matrix_distribution(dist);
+
+    // Set up bias if needed.
+    if (m_bias_scaling_factor != DataType(0)) {
+      if (this->m_weights[1] == nullptr) {
+        auto* w = new weights(get_comm());
+        std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+        w->set_name(get_name() + "_bias");
+        w->set_optimizer(opt);
+        this->m_weights[1] = w;
+        this->m_model->add_weights(w);
+      }
+      auto& bias_weights = *this->m_weights[1];
+      bias_weights.set_dims(output_dims[0]);
+      bias_weights.set_matrix_distribution(dist);
+    }
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {
@@ -419,9 +431,11 @@ public:
                                               m_groups));
 
     // Set bias tensor descriptor
-    std::vector<int> bias_dims(output_dims.size() + 1, 1);
-    bias_dims[1] = output_dims[0];
-    cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
+    if (m_bias_scaling_factor != DataType(0)) {
+      std::vector<int> bias_dims(output_dims.size() + 1, 1);
+      bias_dims[1] = output_dims[0];
+      cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
+    }
 
 #endif // LBANN_HAS_CUDNN
   }
@@ -638,8 +652,9 @@ protected:
                                  && local_gradient_wrt_output.Width() > 0);
 
     // Compute bias gradient
-    optimizer* bias_optimizer = m_weights[1]->get_optimizer();
-    if (bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != DataType(0)
+        && m_weights[1]->get_optimizer() != nullptr) {
+      optimizer* bias_optimizer = m_weights[1]->get_optimizer();
       if (has_local_data) {
         DataType dst_scale = DataType(0);
         auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
@@ -927,8 +942,9 @@ protected:
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
-    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-    if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
+    if (m_bias_scaling_factor != DataType(0)
+        && this->m_weights[1]->get_optimizer() != nullptr) {
+      optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
       if (has_local_data) {
         DataType dst_scale = DataType(0);
         auto& bias_gradient = bias_optimizer->get_gradient_buffer(

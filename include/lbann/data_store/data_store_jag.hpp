@@ -60,6 +60,8 @@ class data_store_jag : public generic_data_store {
   //! dtor
   ~data_store_jag() override;
 
+  void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
+
   void setup(int mini_batch_size) override;
 
   /// returns the conduit node
@@ -155,7 +157,7 @@ protected :
   void setup_data_store_buffers();
 
   /// called by exchange_data
-  void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
+  static void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);

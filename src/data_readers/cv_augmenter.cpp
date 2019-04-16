@@ -120,7 +120,7 @@ bool cv_augmenter::determine_transform(const cv::Mat& image) {
     return false;
   }
 
-  rng_gen& gen = get_generator();
+  rng_gen& gen = get_io_generator();
 
   std::uniform_int_distribution<int> bool_dist(0, 1);
 
@@ -251,4 +251,3 @@ std::ostream& cv_augmenter::print(std::ostream& os) const {
 
 } // end of namespace lbann
 #endif // LBANN_HAS_OPENCV
-
