@@ -1,4 +1,3 @@
-////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
@@ -28,19 +27,23 @@
 #ifndef NUMPY_CONDUIT_CACHE_HPP
 #define NUMPY_CONDUIT_CACHE_HPP
 
-#include "lbann/base.hpp"
+#include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_CONDUIT
+
 #include <cnpy.h>
-
-
+#include "lbann/comm.hpp"
+#include <unordered_map>
+#include "conduit/conduit.hpp"
 
 namespace lbann {
-
 
 /**
  * A numpy_conduit_cache has functionality to read numpy files,
  * convert them to conduit, and return the conduit::Node
  * upon request.
  */
+
 class numpy_conduit_cache {
  public:
 
@@ -58,7 +61,7 @@ class numpy_conduit_cache {
   //! a single ndarray per file; this may change in the future
   void load(const std::string filename, int data_id);
 
-  const conduit::Node get_data(int data_id);
+  const conduit::Node & get_data(int data_id) const;
 
 protected :
 
@@ -68,11 +71,13 @@ protected :
 
   std::unordered_map<int, conduit::Node> m_data;
 
-  // we keep the numpy data to avoid copying it in m_data;
-  std::unordered_map<int, const npz_t> m_numpy;
+  // we keep the numpy data to avoid a deep copy in m_data;
+  std::unordered_map<int, std::map<std::string, cnpy::NpyArray> > m_numpy;
 
 };
 
 }  // namespace lbann
+
+#endif  // #ifdef LBANN_HAS_CONDUIT
 
 #endif  // NUMPY_CONDUIT_CACHE_HPP
