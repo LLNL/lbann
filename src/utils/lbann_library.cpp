@@ -213,21 +213,19 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (first_model) {
 #ifndef LBANN_DETERMINISTIC
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
+  // Under normal conditions, reinitialize the random number generator so
+  // that regularization techniques (e.g. dropout) generate unique patterns
+  // on different ranks.
+  init_random(random_seed + comm->get_rank_in_world());
 #else
-    if(comm->am_world_master()) {
-      std::cout <<
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
-#endif
+  if(comm->am_world_master()) {
+    std::cout <<
+      "--------------------------------------------------------------------------------\n"
+      "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+      "--------------------------------------------------------------------------------\n";
   }
+#endif
   return ret_model;
 }
 
