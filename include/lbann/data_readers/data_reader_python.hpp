@@ -160,7 +160,7 @@ private:
   std::vector<El::Int> m_sample_dims;
   El::Int m_num_samples;
   python::object m_sample_function;
-  python::object m_process_pool_apply_function;
+  python::object m_process_pool;
 
 };
 

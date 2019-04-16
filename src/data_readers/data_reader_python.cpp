@@ -228,16 +228,17 @@ python_reader::python_reader(std::string module,
   m_sample_function = PyObject_GetAttrString(data_module,
                                              sample_function.c_str());
 
-  // Initialize multiprocessing
-  /** @todo Dedicated process for each IO thread, with proper
-   *  processor affinity.
-   */
+  // Initialize Python process pool
+  El::Int num_procs = 1;
+  if (m_io_thread_pool != nullptr) {
+    num_procs = m_io_thread_pool->get_num_threads();
+  } else if (!m_thread_buffer.empty()) {
+    num_procs = m_thread_buffer.size();
+  }
   python::object multiprocessing_module
     = PyImport_ImportModule("multiprocessing");
-  python::object process_pool
-    = PyObject_CallMethod(multiprocessing_module, "Pool", nullptr);
-  m_process_pool_apply_function
-    = PyObject_GetAttrString(process_pool, "apply");
+  m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",
+                                       "(L)", num_procs);
 
 }
 
@@ -269,10 +270,12 @@ bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
   // Get sample with Python
   // Note: The actual computation is dispatched to a process pool.
   python::object args = PyTuple_New(2);
-  Py_INCREF(m_sample_function);
-  PyTuple_SetItem(args, 0, m_sample_function);
-  PyTuple_SetItem(args, 1, Py_BuildValue("(i)", data_id));
-  python::object sample = PyObject_CallObject(m_process_pool_apply_function, args);
+  python::object sample = PyObject_CallMethod(m_process_pool,
+                                              "apply",
+                                              "(O,O)",
+                                              m_sample_function.get(),
+                                              Py_BuildValue("(L)", data_id));
+
 
   // Extract sample entries from Python iterator
   sample = PyObject_GetIter(sample);
