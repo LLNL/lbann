@@ -228,22 +228,10 @@ python_reader::python_reader(std::string module,
   m_sample_function = PyObject_GetAttrString(data_module,
                                              sample_function.c_str());
 
-  // Initialize Python process pool
-  El::Int num_procs = 1;
-  if (m_io_thread_pool != nullptr) {
-    num_procs = m_io_thread_pool->get_num_threads();
-  } else if (!m_thread_buffer.empty()) {
-    num_procs = m_thread_buffer.size();
-  }
-  python::object multiprocessing_module
-    = PyImport_ImportModule("multiprocessing");
-  m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",
-                                       "(L)", num_procs);
-
 }
 
 python_reader::~python_reader() {
-  if (Py_IsInitialized()) {
+  if (Py_IsInitialized() && m_process_pool != nullptr) {
     PyObject_CallMethod(m_process_pool, "terminate", nullptr);
   }
 }
@@ -314,6 +302,20 @@ bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
 
 bool python_reader::fetch_label(CPUMat& Y, int data_id, int col) {
   return true;
+}
+
+void python_reader::setup(int num_io_threads,
+                          std::shared_ptr<thread_pool> io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
+
+  // Initialize Python process pool
+  auto& manager = python::manager::get_instance();
+  python::global_interpreter_lock gil(manager);
+  python::object multiprocessing_module
+    = PyImport_ImportModule("multiprocessing");
+  m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",
+                                       "(L)", num_io_threads);
+
 }
 
 void python_reader::load() {
