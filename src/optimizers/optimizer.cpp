@@ -201,6 +201,55 @@ void optimizer::clear_gradient() {
   m_gradient_sources.clear();
 }
 
+AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
+                                           bool allreduce_needed) {
+  if (m_gradient == nullptr) {
+    LBANN_ERROR("attempted to access gradient before it is set up");
+  }
+
+  // Complete outstanding allreduce.
+  if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
+    finish_gradient_allreduce();
+  }
+  // Determine scaling factor and transition state.
+  switch (m_gradient_status) {
+  case optimizer_gradient_status::ready:
+    buf_scale = DataType(1);
+    if (allreduce_needed) {
+      buf_scale /= m_gradient->RedundantSize();
+      m_gradient_status = optimizer_gradient_status::allreduce_needed;
+    }
+    break;
+  case optimizer_gradient_status::cleared:
+    buf_scale = DataType(0);
+    m_gradient_status = (allreduce_needed ?
+                         optimizer_gradient_status::allreduce_needed :
+                         optimizer_gradient_status::ready);
+    break;
+  case optimizer_gradient_status::allreduce_needed:
+    buf_scale = (allreduce_needed ?
+                 DataType(1) :
+                 DataType(1) / m_gradient->RedundantSize());
+    break;
+  case optimizer_gradient_status::allreduce_started:
+  default:
+    LBANN_ERROR("unexpected gradient status ("
+                + to_string(m_gradient_status) + ")");
+  }
+  return *m_gradient;
+}
+
+AbsDistMat& optimizer::get_gradient_buffer(bool allreduce_needed) {
+  DataType buf_scale;
+  auto& buf = get_gradient_buffer(buf_scale, allreduce_needed);
+  if (buf_scale == DataType(0)) {
+    El::Zero(buf);
+  } else if (buf_scale != DataType(1)) {
+    El::Scale(buf_scale, buf);
+  }
+  return buf;
+}
+
 El::Int optimizer::get_num_gradient_sources() const {
   return m_gradient_sources.size();
 }
