@@ -242,6 +242,12 @@ python_reader::python_reader(std::string module,
 
 }
 
+python_reader::~python_reader() {
+  if (Py_IsInitialized()) {
+    PyObject_CallMethod(m_process_pool, "terminate", nullptr);
+  }
+}
+
 const std::vector<int> python_reader::get_data_dims() const {
   std::vector<int> dims;
   for (const auto& d : m_sample_dims) {
@@ -261,31 +267,48 @@ int python_reader::get_linearized_label_size() const {
   return get_num_labels();
 }
 
-bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
+bool python_reader::fetch_data_block(CPUMat& X,
+                                     El::Int thread_id,
+                                     El::Int mb_size,
+                                     El::Matrix<El::Int>& indices_fetched) {
 
-  // Acquire Python GIL
+  // Acquire Python GIL on first IO thread
+  // Note: Do nothing on other IO threads.
+  if (thread_id != 0) { return true; }
   auto& manager = python::manager::get_instance();
   python::global_interpreter_lock gil(manager);
 
-  // Get sample with Python
-  // Note: The actual computation is dispatched to a process pool.
-  python::object args = PyTuple_New(2);
-  python::object sample = PyObject_CallMethod(m_process_pool,
-                                              "apply",
-                                              "(O,O)",
-                                              m_sample_function.get(),
-                                              Py_BuildValue("(L)", data_id));
-
-
-  // Extract sample entries from Python iterator
-  sample = PyObject_GetIter(sample);
-  const El::Int sample_size = get_linearized_data_size();
-  for (El::Int row = 0; row < sample_size; ++row) {
-    python::object val = PyIter_Next(sample);
-    X(row, col) = PyFloat_AsDouble(val);
+  // Get sample indices
+  python::object indices = PyList_New(0);
+  for (El::Int i = 0; i < mb_size; ++i) {
+    El::Int index = m_shuffled_indices[m_current_pos + i * m_sample_stride];
+    PyList_Append(indices, python::object(index));
+    indices_fetched.Set(i, 0, index);
   }
-  manager.check_error();
 
+  // Get samples using Python process pool
+  python::object samples = PyObject_CallMethod(m_process_pool,
+                                               "map",
+                                               "(O,O)",
+                                               m_sample_function.get(),
+                                               indices.get());
+
+  // Extract sample entries from Python objects
+  const El::Int sample_size = get_linearized_data_size();
+  samples = PyObject_GetIter(samples);
+  for (El::Int col = 0; col < mb_size; ++col) {
+    python::object sample = PyIter_Next(samples);
+    sample = PyObject_GetIter(sample);
+    for (El::Int row = 0; row < sample_size; ++row) {
+      python::object val = PyIter_Next(sample);
+      X(row, col) = PyFloat_AsDouble(val);
+    }
+  }
+
+  return true;
+}
+
+bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
   return true;
 }
 

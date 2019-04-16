@@ -138,7 +138,7 @@ public:
                 std::string sample_dims_function);
   python_reader(const python_reader&) = default;
   python_reader& operator=(const python_reader&) = default;
-  ~python_reader() override = default;
+  ~python_reader() override;
   python_reader* copy() const override { return new python_reader(*this); }
 
   std::string get_type() const override {
@@ -153,6 +153,10 @@ public:
   void load() override;
 
 protected:
+  bool fetch_data_block(CPUMat& X,
+                        El::Int thread_id,
+                        El::Int mb_size,
+                        El::Matrix<El::Int>& indices_fetched) override;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
