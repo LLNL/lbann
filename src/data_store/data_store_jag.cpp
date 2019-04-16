@@ -606,7 +606,7 @@ void data_store_jag::check_mem_capacity(lbann_comm *comm, const std::string samp
     std::ifstream in("/proc/meminfo");
     std::string line;
     std::string units;
-    size_t a_mem = 0;
+    double a_mem = 0;
     while (getline(in, line)) {
       if (line.find("MemAvailable:")) {
         std::stringstream s3(line);
@@ -727,6 +727,8 @@ void data_store_jag::check_mem_capacity(lbann_comm *comm, const std::string samp
       << "Estimated memory requirements for JAG samples:\n"
       << "Memory for one sample:             " <<  bytes_per_sample << " kB\n"
       << "Total mem for a single rank:       " << mem_this_proc << " kB\n"
+      << "Samples per proc:                  " << my_sample_count << "\n"
+      << "Procs per node:                    " << procs_per_node << "\n"
       << "Total mem for all ranks on a node: " << mem_this_node << " kB\n"
       << "Available memory: " << a_mem << " kB (RAM only; not virtual)\n";
     if (mem_this_node > static_cast<double>(a_mem)) {
