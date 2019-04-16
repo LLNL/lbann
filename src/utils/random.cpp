@@ -27,6 +27,7 @@
 #include <omp.h>
 #include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
+#include <thread>
 
 namespace {
 #ifdef __ICC
