@@ -25,25 +25,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/trainers/trainer.hpp"
-#include "lbann/callbacks/callback.hpp"
-//#include "lbann/callbacks/callback_save_training_algorithm.hpp"
-// #include "lbann/io/persist.hpp"
-// #include "lbann/layers/io/input/generic_input_layer.hpp"
-// #include "lbann/layers/transform/dummy.hpp"
-// #include "lbann/layers/transform/split.hpp"
-// #include "lbann/layers/transform/evaluation.hpp"
-// #include "lbann/objective_functions/layer_term.hpp"
-// #include "lbann/metrics/layer_metric.hpp"
-// #include "lbann/utils/random.hpp"
-// #include "lbann/utils/omp_diagnostics.hpp"
-// #include "lbann/utils/description.hpp"
-#include <string>
-#include <unistd.h>
-#include <iomanip>
-#include <queue>
-#include <unordered_set>
-#include <lbann.pb.h>
 
 #include "mpi.h"
 
