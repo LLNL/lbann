@@ -219,9 +219,9 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
 
   if(rhs.m_data_store != nullptr) {
     if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_conduit(rhs.get_jag_store());
+      m_data_store = new data_store_conduit(rhs.get_data_store());
     } else {
-      m_data_store = new data_store_conduit(rhs.get_jag_store(), ds_sample_move_list);
+      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
     }
     m_data_store->set_data_reader_ptr(this);
   }
@@ -823,13 +823,13 @@ void data_reader_jag_conduit::load() {
 
   if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
     if (m_comm->get_trainer_rank() == 0) {
-      m_jag_store->check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-    }  
+      m_data_store->check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+    }
 
     // unsure if this will always work; the intent is that no trainer
     // should start loading data until the check has completed
     m_comm->global_barrier();
-  }  
+  }
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models

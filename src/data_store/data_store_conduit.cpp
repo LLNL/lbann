@@ -616,7 +616,7 @@ int data_store_conduit::get_index_owner(int idx) {
   return m_owner[idx];
 }
 
-void data_store_jag::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
+void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
   if (comm->am_world_master()) {
     // note: we only estimate memory required by the data reader/store
 
