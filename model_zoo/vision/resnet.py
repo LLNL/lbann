@@ -30,12 +30,12 @@ parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
 parser.add_argument(
-    '--num-epochs', action='store', default=100, type=int,
-    help='number of epochs (default: 100)', metavar='NUM')
+    '--num-epochs', action='store', default=90, type=int,
+    help='number of epochs (default: 90)', metavar='NUM')
 parser.add_argument(
     '--num-labels', action='store', default=1000, type=int,
     help='number of data classes (default: 1000)', metavar='NUM')
-lbann.contrib.args.add_optimizer_arguments(parser)
+lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 parser.add_argument(
     '--data-reader', action='store',
     default=data_reader_prototext, type=str,
