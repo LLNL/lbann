@@ -98,7 +98,8 @@ class sample_list {
   /// Clear internal states
   void clear();
 
-  template <class Archive> void serialize( Archive & ar );
+  template <class Archive> void save( Archive & ar ) const;
+  template <class Archive> void load( Archive & ar );
 
   /// Check if a sample index is in the valid range
   bool check_index(size_t idx) const;
@@ -140,6 +141,8 @@ class sample_list {
 
   void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 
+  virtual bool is_file_handle_valid(const file_handle_t& h) const;
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
@@ -171,7 +174,6 @@ class sample_list {
            (((left.second).first == (right.second).first) &&
             ((left.second).second < (right.second).second)); }
 
-  virtual bool is_file_handle_valid(const file_handle_t& h) const;
   virtual file_handle_t open_file_handle_for_read(const std::string& file_path);
   virtual void close_file_handle(file_handle_t& h);
   virtual void clear_file_handle(file_handle_t& h);
@@ -196,6 +198,9 @@ class sample_list {
 };
 
 void handle_mpi_error(int ierr);
+
+template<typename T>
+inline T uninitialized_file_handle();
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
 template <typename file_handle_t, typename sample_name_t>

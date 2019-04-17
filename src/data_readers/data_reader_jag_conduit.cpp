@@ -128,6 +128,8 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
     return;
   }
   generic_data_reader::shuffle_indices(gen);
+std::cout << "data reader role : " << m_role << std::endl;
+std::cout << "shuffled_indieces size and minibatch size " << get_shuffled_indices().size() << ' ' << get_mini_batch_size() << std::endl;
   m_sample_list.compute_epochs_file_usage(get_shuffled_indices(), get_mini_batch_size(), *m_comm);
 }
 
@@ -332,6 +334,31 @@ bool data_reader_jag_conduit::replicate_processor(const cv_process& pp, const in
   return true;
 }
 
+#ifdef _USE_IO_HANDLE_
+bool data_reader_jag_conduit::has_path(const data_reader_jag_conduit::file_handle_t& h,
+                                       const std::string& path) const {
+  return m_sample_list.is_file_handle_valid(h) && h->has_path(path);
+}
+
+void data_reader_jag_conduit::read_node(const data_reader_jag_conduit::file_handle_t& h,
+                                        const std::string& path,
+                                        conduit::Node& n) const {
+  if (!h) {
+    return;
+  }
+  h->read(path, n);
+}
+#else
+bool data_reader_jag_conduit::has_path(const hid_t& h, const std::string& path) const {
+  return (m_sample_list.is_file_handle_valid(h) &&
+          conduit::relay::io::hdf5_has_path(h, path));
+}
+
+void data_reader_jag_conduit::read_node(const hid_t& h, const std::string& path, conduit::Node& n) const {
+  conduit::relay::io::hdf5_read(h, path, n);
+}
+#endif
+
 const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::Node& n_base, const std::string key) {
   return n_base[key];
 }
@@ -347,10 +374,10 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const std::string path = sample_name + key;
 
   sample_file_id_t id = s.first;
-  hid_t h = m_sample_list.get_samples_file_handle(id);
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+  auto h = m_sample_list.get_samples_file_handle(id);
+  if (!has_path(h, path)) {
+    const std::string& file_name = m_sample_list.get_samples_filename(id);
     if (m_data_store != nullptr) {
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
       if (! m_data_store->preloaded()) {
         const conduit::Node obj = m_jag_store->get_random_node();
         node = obj["data"];
@@ -364,13 +391,11 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
                   <<" and key: " << key << "\n";
         return false;
       } else {
-        if (h <= static_cast<hid_t>(0) ) {
+        if (!m_sample_list.is_file_handle_valid(h)) {
           LBANN_ERROR("failed to get file handle for file " + file_name);
-        } else if (!conduit::relay::io::hdf5_has_path(h, path)) {
+        } else {
           LBANN_ERROR("got file handle for file " + file_name + \
                       " but the path doesn't exist in the file: " + path);
-        } else {
-          LBANN_ERROR("it should not be possible to be here");
         }
       }
     }
@@ -378,22 +403,19 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     // this block fires if we cannot load a conduit node, either from file
     // or from the data_store
     else {
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
-      if (h <= static_cast<hid_t>(0)) {
+      if (!m_sample_list.is_file_handle_valid(h)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
                     " for sample "+ sample_name);
         return false;
       } else {
-          LBANN_ERROR(get_type() + ":: could not find path in file " + file_name + \
-                      " for sample "+ sample_name + "; path: " + path);
-          return false;
+        LBANN_ERROR(get_type() + ":: could not find path in file " + file_name + \
+                    " for sample "+ sample_name + "; path: " + path);
+        return false;
       }
     }
   }
 
-  /// @todo explore the possibility of putting the sample name in
-  /// node's hierarchy, e.g. node[sample_name]
-  conduit::relay::io::hdf5_read(h, path, node);
+  read_node(h, path, node);
 
   return true;
 }
@@ -402,16 +424,17 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
   const std::string& sample_name = s.second;
-  const hid_t h = m_sample_list.get_samples_file_handle(id);
+  const auto h = m_sample_list.get_samples_file_handle(id);
   const std::string path = sample_name + key;
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+  if (!has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
     _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
                                         " for sample "+ sample_name);
     return false;
   }
 
-  return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
+  return true;
+  //return has_path(h, std::string("/") + sample_name + key);
 }
 
 

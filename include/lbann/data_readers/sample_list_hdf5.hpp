@@ -12,6 +12,7 @@ namespace lbann {
 template <typename sample_name_t>
 class sample_list_hdf5 : public sample_list<hid_t, sample_name_t> {
  public:
+  using file_handle_t = hid_t;
   using typename sample_list<hid_t, sample_name_t>::sample_file_id_t;
   using typename sample_list<hid_t, sample_name_t>::sample_t;
   using typename sample_list<hid_t, sample_name_t>::samples_t;
@@ -22,9 +23,10 @@ class sample_list_hdf5 : public sample_list<hid_t, sample_name_t> {
   sample_list_hdf5();
   ~sample_list_hdf5() override;
 
+  bool is_file_handle_valid(const hid_t& h) const override;
+
  protected:
   void obtain_sample_names(hid_t& h, std::vector<std::string>& sample_names) const override;
-  bool is_file_handle_valid(const hid_t& h) const override;
   hid_t open_file_handle_for_read(const std::string& path) override;
   void close_file_handle(hid_t& h) override;
   void clear_file_handle(hid_t& h) override;
@@ -65,12 +67,16 @@ inline void sample_list_hdf5<sample_name_t>
   }
 }
 
+template <>
+inline hid_t uninitialized_file_handle<hid_t>() {
+  return static_cast<hid_t>(0);
+}
+
 template <typename sample_name_t>
 inline void sample_list_hdf5<sample_name_t>
 ::clear_file_handle(hid_t& h) {
-  h = static_cast<hid_t>(0);
+  h = uninitialized_file_handle<hid_t>();
 }
-
 
 } // end of namespace lbann
 

@@ -341,7 +341,7 @@ inline void sample_list<file_handle_t, sample_name_t>
     }
 
     sample_file_id_t index = m_file_id_stats_map.size();
-    m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
     set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
@@ -432,7 +432,7 @@ inline void sample_list<file_handle_t, sample_name_t>
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
     sample_file_id_t index = m_file_id_stats_map.size();
-    m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
     set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
@@ -516,7 +516,8 @@ inline void sample_list<file_handle_t, sample_name_t>
   all_samples.resize(static_cast<size_t>(total_packed_size));
 
   std::vector<El::byte> local_data(archive.begin(), archive.end());
-  std::vector<El::byte> packed_data(all_samples.begin(), all_samples.end());
+  //std::vector<El::byte> packed_data(all_samples.begin(), all_samples.end());
+  std::vector<El::byte> packed_data(all_samples.size() * sizeof(decltype(all_samples)::value_type));
   comm.trainer_all_gather(local_data,
                           packed_data,
                           packed_sizes,
@@ -574,8 +575,29 @@ inline void sample_list<file_handle_t, sample_name_t>
 template <typename file_handle_t, typename sample_name_t>
 template <class Archive>
 void sample_list<file_handle_t, sample_name_t>
-::serialize( Archive & ar ) {
-  ar(m_header, m_sample_list, m_file_id_stats_map);
+::save( Archive & ar ) const {
+  using ar_file_stats_t = std::tuple<std::string, std::deque<std::pair<int,int>>>;
+  std::vector<ar_file_stats_t> file_stats;
+  file_stats.reserve(m_file_id_stats_map.size());
+  for(auto&& e : m_file_id_stats_map) {
+    file_stats.emplace_back(std::make_tuple(std::get<0>(e), std::get<2>(e)));
+  }
+  ar(m_header, m_sample_list, file_stats);
+}
+
+template <typename file_handle_t, typename sample_name_t>
+template <class Archive>
+void sample_list<file_handle_t, sample_name_t>
+::load( Archive & ar ) {
+  using ar_file_stats_t = std::tuple<std::string, std::deque<std::pair<int,int>>>;
+  std::vector<ar_file_stats_t> file_stats;
+  ar(m_header, m_sample_list, file_stats);
+  m_file_id_stats_map.reserve(file_stats.size());
+  for(auto&& e : file_stats) {
+    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
+    m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::get<1>(e)));
+    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), file_handle_t(), std::get<1>(e)));
+  }
 }
 
 template <typename file_handle_t, typename sample_name_t>
@@ -766,7 +788,9 @@ inline void sample_list<file_handle_t, sample_name_t>
 ::all_gather_packed_lists(lbann_comm& comm) {
   int num_ranks = comm.get_procs_per_trainer();
   typename std::vector<samples_t> per_rank_samples(num_ranks);
-  typename std::vector<file_id_stats_v_t> per_rank_file_id_stats_map(num_ranks);
+  typename std::vector<std::vector<std::string>> per_rank_files(num_ranks);
+  std::vector<std::string> my_files;
+  my_files.reserve(m_file_id_stats_map.size());
   std::vector<std::unordered_map<std::string, size_t>> per_rank_file_map(num_ranks);
 
   // Close the existing open files
@@ -775,11 +799,12 @@ inline void sample_list<file_handle_t, sample_name_t>
     close_file_handle(h);
     clear_file_handle(h);
     std::get<2>(e).clear();
+    my_files.emplace_back(std::get<0>(e));
   }
   m_open_fd_pq.clear();
 
   size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
-  size_t num_ids = all_gather_field(m_file_id_stats_map, per_rank_file_id_stats_map, comm);
+  size_t num_ids = all_gather_field(my_files, per_rank_files, comm);
   size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
 
   m_sample_list.clear();
@@ -791,15 +816,15 @@ inline void sample_list<file_handle_t, sample_name_t>
 
   for(int r = 0; r < num_ranks; r++) {
     const samples_t& s_list = per_rank_samples[r];
-    const file_id_stats_v_t& file_id_stats_map = per_rank_file_id_stats_map[r];
+    const auto& files = per_rank_files[r];
     const std::unordered_map<std::string, size_t>& file_map = per_rank_file_map[r];
     for (const auto& s : s_list) {
       sample_file_id_t index = s.first;
-      const std::string& filename = std::get<0>(file_id_stats_map[index]);
+      const std::string& filename = files[index];
       if(index >= m_file_id_stats_map.size()
          || (std::get<0>(m_file_id_stats_map.back()) != filename)) {
         index = m_file_id_stats_map.size();
-        m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+        m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
         // Update the file map structure
         if(m_file_map.count(filename) == 0) {
           m_file_map[filename] = file_map.at(filename);
@@ -830,9 +855,12 @@ inline void sample_list<file_handle_t, sample_name_t>
     clear_file_handle(h);
     std::get<2>(e).clear();
   }
-
+std::cout << "cleaned m_file_id_stats_map" << std::endl;
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];
+if (m_sample_list.size() <= static_cast<size_t>(idx)) {
+  std::cout << "invalid sample_list index " << m_sample_list.size() << " <= " <<  static_cast<size_t>(idx) << std::endl;
+}
     const auto& s = m_sample_list[idx];
     sample_file_id_t index = s.first;
 
