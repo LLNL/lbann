@@ -342,6 +342,21 @@ void lbann_callback_ltfb::setup(model *m) {
 
 }
 
+void lbann_callback_ltfb::on_train_begin(model *m) {
+  auto&& comm = *m->get_comm();
+
+  if (comm.am_world_master()) {
+    std::cout << "starting synchronizing trainers...\n";
+  }
+  double tm1 = get_time();
+  /// Make sure that all of the trainers are ready to go before starting
+  comm.intertrainer_barrier();
+
+  if (comm.am_world_master()) {
+    std::cout << "synchronizing trainers... " << get_time()-tm1 <<"s\n";
+  }
+}
+
 void lbann_callback_ltfb::on_batch_begin(model *m) {
   const execution_context& c = m->get_execution_context();
   auto&& comm = *m->get_comm();

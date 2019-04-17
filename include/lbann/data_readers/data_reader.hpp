@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_set>
 
 
 #define NOT_IMPLEMENTED(n) { \
@@ -370,9 +371,7 @@ class generic_data_reader : public lbann_image_preprocessor {
             && (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
-  void set_mini_batch_size(const int s) {
-    m_mini_batch_size = s;
-  }
+  void set_mini_batch_size(const int s);
   /// Get the mini batch size
   int get_mini_batch_size() const {
     return m_mini_batch_size;
@@ -530,6 +529,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   int *get_unused_data() {
     return &m_unused_indices[0];
   }
+  const std::vector<int>& get_unused_indices() {
+    return m_unused_indices;
+  }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
@@ -682,16 +684,20 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
   }
 
-  /// returns the data store
-  generic_data_store * get_data_store() const {
+  /// returns a const ref to the data store
+  virtual const generic_data_store& get_data_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
+    return *m_data_store;
+  }
+
+  generic_data_store* get_data_store_ptr() const {
     return m_data_store;
   }
 
   /// sets up a data_store.
-  virtual void setup_data_store(model *m, int mini_batch_size);
+  virtual void setup_data_store(int mini_batch_size);
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -713,6 +719,9 @@ class generic_data_reader : public lbann_image_preprocessor {
 
  protected:
 
+  // For use with conduit when samples are corrupt.
+  mutable std::unordered_set<int> m_using_random_node;
+
   /**
    * Return the absolute number of data samples that will be used for training
    * or testing.
@@ -730,8 +739,6 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Return the percent of the dataset to be used for validation.
    */
   double get_validation_percent() const;
-
-  int m_rank;
 
   generic_data_store *m_data_store;
 

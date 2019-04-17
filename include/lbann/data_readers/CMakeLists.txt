@@ -26,10 +26,10 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_numpy.hpp
   data_reader_numpy_npz.hpp
   data_reader_pilot2_molecular.hpp
+  data_reader_python.hpp
   data_reader_synthetic.hpp
   image_preprocessor.hpp
   image_utils.hpp
-  lbann_data_generator.hpp
   opencv.hpp
   opencv_extensions.hpp
   data_reader_multihead_siamese.hpp

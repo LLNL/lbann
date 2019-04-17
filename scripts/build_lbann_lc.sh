@@ -73,6 +73,9 @@ WITH_CONDUIT=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
+WITH_PYTHON=OFF
+PYTHON_LIBRARY=/usr/tce/packages/python/python-3.6.4/lib/libpython3.6m.so
+PYTHON_INCLUDE_DIR=/usr/tce/packages/python/python-3.6.4/include/python3.6m
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -130,6 +133,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
+  ${C}--python${N}                Build with Python/C API.
 EOF
 }
 
@@ -274,6 +278,9 @@ while :; do
         --reconfigure)
             RECONFIGURE=1
             ;;
+        --python)
+            WITH_PYTHON=ON
+            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -319,7 +326,7 @@ if [ ${USE_MODULES} -ne 0 ]; then
         HDF5_CMAKE_EXE=$(which cmake)
     fi
     module load cmake/3.9.2
-    
+
     CMAKE_PATH=$(dirname $(which cmake))
 else
     use git
@@ -731,6 +738,9 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
     print_variable WITH_TOPO_AWARE
+    print_variable WITH_PYTHON
+    print_variable PYTHON_LIBRARY
+    print_variable PYTHON_INCLUDE_DIR
     echo ""
 fi
 
@@ -810,6 +820,9 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+-D LBANN_WITH_PYTHON=${WITH_PYTHON} \
+-D LBANN_PYTHON_LIBRARY=${PYTHON_LIBRARY} \
+-D LBANN_PYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR} \
 ${SUPERBUILD_DIR}
 EOF
 )

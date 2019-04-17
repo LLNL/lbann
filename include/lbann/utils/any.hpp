@@ -32,11 +32,19 @@ using std::make_any;
 
 #else
 
+/** @defgroup stl_wrappers C++ STL Wrappers
+ *
+ *  The `std::any` interface was not added to ISO C++ until the 2017
+ *  standard. However, it provides useful features and is
+ *  implementable in C++11. This fallback implementation should only
+ *  be used if C++17 is not available.
+ */
+
 /** @class any
  *  @brief Type-erasure class to store any object of copy-constructible type.
  *
- *  This class is (mostly) API-compatible with std::any. The most
- *  notable omission is the std::in_place_type_t overloads of the
+ *  This class is (mostly) API-compatible with std::any. The
+ *  most notable omission is the std::in_place_type_t overloads of the
  *  constructor (std::in_place_type_t is also C++17, and I don't want
  *  to implement the whole standard). For best results, do not attempt
  *  to use those in this code. For even better results (yes, better
@@ -45,10 +53,15 @@ using std::make_any;
  *  2019 > 2017, and that there are excellent free compilers in the
  *  world until they concede to updating to a modern compiler and this
  *  implementation can be banished to the depths.
+ *
+ *  @ingroup stl_wrappers
  */
 class any
 {
 public:
+
+  /** @name Constructors and destructor */
+  ///@{
 
   /** @brief Default construct an empty "any" */
   any() noexcept = default;
@@ -69,6 +82,10 @@ public:
   /** @brief Default destructor */
   ~any() = default;
 
+  ///@}
+  /** @name Assignment operator */
+  ///@{
+
   /** @brief Copy assign from another container
    *
    *  Makes a deep copy of the held object.
@@ -78,6 +95,7 @@ public:
   /** @brief Move assign from another container */
   any& operator=(any&& other) noexcept = default;
 
+  ///@}
   /** @name Modifiers */
   ///@{
 
@@ -196,7 +214,9 @@ inline void swap(any& lhs, any& rhs)
   lhs.swap(rhs);
 }
 
-/** @brief Create an any object of type T constructed with args */
+/** @brief Create an any object of type T constructed with args.
+ *  @ingroup stl_wrappers
+ */
 template <typename T, typename... Ts>
 any make_any(Ts&&... args)
 {
@@ -211,6 +231,8 @@ any make_any(Ts&&... args)
  *
  *  @return If obj is not null and holds a T, a pointer to
  *          the held object. Otherwise, nullptr.
+ *
+ *  @ingroup stl_wrappers
  */
 template <typename T>
 T* any_cast(any* obj) noexcept
@@ -228,6 +250,8 @@ T* any_cast(any* obj) noexcept
  *
  *  @return If obj is not null and holds a T, a pointer to
  *          the held object. Otherwise, nullptr.
+ *
+ *  @ingroup stl_wrappers
  */
 template <typename T>
 T const* any_cast(any const* obj) noexcept
@@ -253,9 +277,11 @@ T const* any_cast(any const* obj) noexcept
  *
  *  @param obj The any object.
  *
- *  @return static_cast<T>(*std::any_cast<T>(&operand)).
+ *  @return The held object.
  *
- *  @throws bad_any_cast If obj is not nullptr but does not hold a T.
+ *  @throws bad_any_cast If obj does not hold a T.
+ *
+ *  @ingroup stl_wrappers
  */
 template <typename T>
 T any_cast(any& obj)
@@ -269,6 +295,23 @@ T any_cast(any& obj)
   return *ret;
 }
 
+/** @brief Typesafe access to the held object.
+ *
+ *  This will move the held object into the returned object, if
+ *  appropriate.
+ *
+ *  @tparam T The type of the held object.
+ *
+ *  @param obj The any object.
+ *
+ *  @return The held object.
+ *
+ *  @throws bad_any_cast If obj does not hold a T.
+ *
+ *  @post The any obj holds a moved-from T
+ *
+ *  @ingroup stl_wrappers
+ */
 template <typename T>
 T any_cast(any&& obj)
 {
@@ -281,6 +324,18 @@ T any_cast(any&& obj)
   return std::move(*ret);
 }
 
+/** @brief Typesafe access to the held object.
+ *
+ *  @tparam T The type of the held object.
+ *
+ *  @param obj The any object.
+ *
+ *  @return The held object.
+ *
+ *  @throws bad_any_cast If obj does not hold a T.
+ *
+ *  @ingroup stl_wrappers
+ */
 template <typename T>
 T any_cast(any const& obj)
 {

@@ -180,6 +180,7 @@ std::unique_ptr<model> build_model_from_prototext(
     init_random(random_seed);
     init_data_seq_random(random_seed);
   }
+
   // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
   if (pb_model->random_init_models_differently()) {
@@ -244,14 +245,13 @@ std::unique_ptr<model> build_model_from_prototext(
   };
   ret_model->setup();
 
-  //under development; experimental
-  if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+  if (opts->get_bool("use_data_store")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }
     for (auto&& r : data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(ret_model.get(), pb_model->mini_batch_size());
+      r.second->setup_data_store(pb_model->mini_batch_size());
     }
   }
 
@@ -268,21 +268,19 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (first_model) {
 #ifndef LBANN_DETERMINISTIC
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
+  // Under normal conditions, reinitialize the random number generator so
+  // that regularization techniques (e.g. dropout) generate unique patterns
+  // on different ranks.
+  init_random(random_seed + comm->get_rank_in_world());
 #else
-    if(comm->am_world_master()) {
-      std::cout <<
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
-#endif
+  if(comm->am_world_master()) {
+    std::cout <<
+      "--------------------------------------------------------------------------------\n"
+      "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+      "--------------------------------------------------------------------------------\n";
   }
+#endif
   return ret_model;
 }
 

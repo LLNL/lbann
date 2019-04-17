@@ -1,7 +1,7 @@
 model {
   random_init_models_differently: true
   name: "wae_model"
-  serialize_background_io: true
+  serialize_io: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -698,18 +698,6 @@ model {
       batch_interval: 2
     }
   }
-  callback {
-    dump_outputs {
-      prefix: "newwae_100K/"
-      #prefix: "/dir/to/save/imgs"
-      #prefix:"/p/lustre2/jacobs32/EuroViz/ae_loss/"
-   #   prefix:"/p/lustre2/brainusr/EuroViz19/1Mtrain/1Minf/wae_loss/"
-   #   batch_interval: 1000
-      layers: "decode0 image_data_dummy param_data_id encodefc4 img_loss"
-      execution_modes: "test"
-      format: "npy"
-    }
-  }
   #callback {
   #  ltfb {
   #    batch_interval: 100
@@ -719,16 +707,7 @@ model {
   #    }
 
  # }
- # callback {
- #   dump_mb_indices {
- #     basename:"/p/lustre2/jacobs32/EuroViz19/losses/Feb221Mindices/wae/"
- #     interval: 1
- #   }
- # }
-
-
-
-  callback { save_model { dir: "model" } }
+  #callback { save_model { dir: "model" } }
   block_size: 256
   procs_per_model:0 
 }
