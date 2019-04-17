@@ -103,8 +103,18 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
         /// Repack the nodes because they don't seem to copy correctly
         build_node_for_sending(node, m_data[i]);
       }
+      /// Removed migrated nodes from the original data store's owner list
+      if(rhs.m_owner.find(i) != rhs.m_owner.end()) {
+        m_owner[i] = rhs.m_owner[i];
+        rhs.m_owner.erase(i);
+      }
     }
   }
+
+
+  /// Clear the pointer to the data reader, this cannot be copied
+  m_reader = nullptr;
+  m_shuffled_indices = nullptr;
 
   //these will probably zero-length, but I don't want to make assumptions
   //as to state when copy_member is called
