@@ -49,16 +49,21 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool
-      = construct_io_thread_pool(comm.get());
-
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    lbann_data::LbannPB pb = *(pbs[0]);
+    // Optionally over-ride some values in prototext
+    get_cmdline_overrides(*comm, pb);
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+
+    observing_ptr<thread_pool> io_thread_pool = trainer->get_io_thread_pool();
     std::vector<std::unique_ptr<model>> models;
     for(auto&& pb_model : pbs) {
       models.emplace_back(
-        build_model_from_prototext(argc, argv, *pb_model,
-                                   comm.get(), io_thread_pool, models.size() == 0));
+        build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
+                                   comm.get(), opts, io_thread_pool, models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given
@@ -75,7 +80,7 @@ int main(int argc, char *argv[]) {
     El::Int num_samples = models[0]->get_num_iterations_per_epoch(execution_mode::testing);
     for(El::Int s = 0; s < num_samples; s++) {
       for(auto&& m : models) {
-        m->evaluate(execution_mode::testing, 1);
+        trainer->evaluate(m.get(), execution_mode::testing, 1);
       }
     }
 
