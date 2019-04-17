@@ -130,7 +130,11 @@ protected:
           << "attempted to setup " << m_name << " with an invalid number of weights";
       throw lbann_exception(err.str());
     }
-    this->m_weights.resize(2, nullptr);
+    if (m_bias_scaling_factor != DataType(0)) {
+      this->m_weights.resize(2, nullptr);
+    } else {
+      this->m_weights.resize(1, nullptr);
+    }
     if (this->m_weights[0] == nullptr) {
       auto* w = new weights(get_comm());
       std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
@@ -141,16 +145,7 @@ protected:
       this->m_weights[0] = w;
       this->m_model->add_weights(w);
     }
-    if (this->m_weights[1] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_bias_weights");
-      w->set_optimizer(opt);
-      this->m_weights[1] = w;
-      this->m_model->add_weights(w);
-    }
     auto& linearity_weights = *this->m_weights[0];
-    auto& bias_weights = *this->m_weights[1];
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -174,19 +169,31 @@ protected:
     }
     linearity_weights.set_matrix_distribution(linearity_dist);
 
-    // Setup bias weights
-    auto bias_dist = get_activations().DistData();
-    bias_dist.rowDist = El::STAR;
-    bias_weights.set_dims(get_output_dims());
-    bias_weights.set_matrix_distribution(bias_dist);
-
     // Setup weight gradients
     El::Zeros(*m_linearity_gradient,
               linearity_weights.get_matrix_height(),
               linearity_weights.get_matrix_width());
-    El::Zeros(*this->m_bias_gradient,
+
+    // Set up bias if needed.
+    if (m_bias_scaling_factor != DataType(0)) {
+      if (this->m_weights[1] == nullptr) {
+        auto* w = new weights(get_comm());
+        std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+        w->set_name(get_name() + "_bias_weights");
+        w->set_optimizer(opt);
+        this->m_weights[1] = w;
+        this->m_model->add_weights(w);
+      }
+      auto& bias_weights = *this->m_weights[1];
+      // Setup bias weights
+      auto bias_dist = get_activations().DistData();
+      bias_dist.rowDist = El::STAR;
+      bias_weights.set_dims(get_output_dims());
+      bias_weights.set_matrix_distribution(bias_dist);
+      El::Zeros(*this->m_bias_gradient,
               bias_weights.get_matrix_height(),
               bias_weights.get_matrix_width());
+    }
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {

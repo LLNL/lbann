@@ -29,6 +29,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_jag.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/lbann_library.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -820,6 +821,18 @@ void data_reader_jag_conduit::load() {
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
 
+  options *opts = options::get();
+
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
+    if (m_comm->get_trainer_rank() == 0) {
+      m_jag_store->check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+    }  
+
+    // unsure if this will always work; the intent is that no trainer
+    // should start loading data until the check has completed
+    m_comm->global_barrier();
+  }  
+
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
@@ -866,7 +879,6 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  options *opts = options::get();
   if (opts->has_string("write_sample_list") && is_master()) {
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
