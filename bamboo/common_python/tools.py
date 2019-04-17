@@ -55,6 +55,11 @@ def get_command(cluster,
         raise Exception('Invalid character(s): %s' % ' , '.join(
             invalid_character_errors))
 
+    # Never give lbannusr an allocation for over 12 hours though.
+    strict_time_limit = 60*6  # 6 hours.
+    if time_limit > strict_time_limit:
+        time_limit = strict_time_limit
+
     # Check executable existence
     if check_executable_existence:
         process_executable_existence(executable, skip_no_exe)

@@ -84,6 +84,8 @@ class data_store_conduit {
   }
   */
 
+  void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
+
   /// returns the conduit node
   const conduit::Node & get_conduit_node(int data_id) const;
 
@@ -203,7 +205,7 @@ protected :
   void setup_data_store_buffers();
 
   /// called by exchange_data
-  void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
+  static void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);
