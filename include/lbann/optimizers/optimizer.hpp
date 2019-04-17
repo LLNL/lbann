@@ -129,18 +129,22 @@ public:
    *  directly summed into. This buffer should be considered ephemeral and not
    *  stored. The caller must also ensure the buffer has an appropriate
    *  distribution. buf_scale provides the caller with a scale factor that must
-   *  be applied to the gradient buffer before writing to it. Essentially, this
-   *  enables computations of the form
-   *  gradient = buf_scale*gradient + new_gradient
+   *  be applied to the gradient buffer before writing to it, and in_scale
+   *  provides a scaling factor that must be applied to the user's data.
+   *  Essentially, this enables computations of the form
+   *  gradient = buf_scale*gradient + in_scale*new_gradient
    *  This is an expert-mode function and is intended to help eliminate copies
    *  and facilitate kernel fusion.
    *
    *  @param buf_scale A scale factor provided to the caller to scale the
    *  returned buffer by.
+   *  @param in_scale A scale factor provided to the caller to scale their
+   *  gradient contributions by.
    *  @param allreduce_needed Whether this gradient contribution will need to
    *  be allreduced.
    */
   AbsDistMat& get_gradient_buffer(DataType& buf_scale,
+                                  DataType& in_scale,
                                   bool allreduce_needed = false);
 
   /** @brief Objects that are expected to contribute to the gradient. */

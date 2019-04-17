@@ -645,7 +645,6 @@ protected:
 
     // Useful constants
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
-    const DataType gradient_scale = DataType(1) / effective_mini_batch_size;
     const bool has_local_data = (local_input.Height() > 0
                                  && local_input.Width() > 0
                                  && local_gradient_wrt_output.Height() > 0
@@ -655,9 +654,10 @@ protected:
     if (m_bias_scaling_factor != DataType(0)
         && m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = m_weights[1]->get_optimizer();
-      DataType dst_scale = DataType(0);
-      auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
-                                                                true);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
       if (has_local_data) {
         CHECK_CUDNN(cudnnConvolutionBackwardBias(
                       cudnn::get_handle(),
@@ -675,9 +675,10 @@ protected:
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
-      DataType dst_scale = DataType(0);
-      auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(dst_scale,
-                                                                    true);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
       if (has_local_data) {
         // Initialize GPU workspace
         GPUMat workspace;
@@ -930,7 +931,6 @@ protected:
     const int num_output_channels = output_dims[0];
     const int num_per_output_channel = get_output_size() / num_output_channels;
     const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
-    const DataType gradient_scale = DataType(1) / effective_mini_batch_size;
     const auto& kernel_dims = get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
@@ -941,9 +941,10 @@ protected:
     if (m_bias_scaling_factor != DataType(0)
         && this->m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-      DataType dst_scale = DataType(0);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
-        dst_scale, true);
+        dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
       if (has_local_data) {
         auto& local_bias_gradient = bias_gradient.Matrix();
         LBANN_OMP_PARALLEL_FOR
@@ -985,9 +986,10 @@ protected:
                    get_output_size() / num_output_channels);
     DMat<Device> im2col_matrix(m, k);
 
-    DataType dst_scale = DataType(0);
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
-      dst_scale, true);
+      dst_scale, gradient_scale, true);
+    gradient_scale /= effective_mini_batch_size;
     if (has_local_data) {
       auto& local_kernel_gradient = kernel_gradient.Matrix();
       DMat<Device> kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);

@@ -202,6 +202,7 @@ void optimizer::clear_gradient() {
 }
 
 AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
+                                           DataType& in_scale,
                                            bool allreduce_needed) {
   if (m_gradient == nullptr) {
     LBANN_ERROR("attempted to access gradient before it is set up");
@@ -215,6 +216,7 @@ AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
   switch (m_gradient_status) {
   case optimizer_gradient_status::ready:
     buf_scale = DataType(1);
+    in_scale = DataType(1);
     if (allreduce_needed) {
       buf_scale /= m_gradient->RedundantSize();
       m_gradient_status = optimizer_gradient_status::allreduce_needed;
@@ -222,14 +224,16 @@ AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
     break;
   case optimizer_gradient_status::cleared:
     buf_scale = DataType(0);
+    in_scale = DataType(1);
     m_gradient_status = (allreduce_needed ?
                          optimizer_gradient_status::allreduce_needed :
                          optimizer_gradient_status::ready);
     break;
   case optimizer_gradient_status::allreduce_needed:
-    buf_scale = (allreduce_needed ?
-                 DataType(1) :
-                 DataType(1) / m_gradient->RedundantSize());
+    buf_scale = DataType(1);
+    in_scale = (allreduce_needed ?
+                DataType(1) :
+                DataType(1) / m_gradient->RedundantSize());
     break;
   case optimizer_gradient_status::allreduce_started:
   default:

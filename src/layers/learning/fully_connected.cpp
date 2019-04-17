@@ -113,7 +113,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
-  const DataType gradient_scale = DataType(1) / mini_batch_size;
 
   // Compute gradient w.r.t. bias if needed
   if (m_bias_scaling_factor != DataType(0)) {
@@ -132,10 +131,11 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
   // Note: Perform GEMMs independently if possible
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = DataType(0);
+    DataType dst_scale = DataType(0), gradient_scale = DataType(1);
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-        dst_scale, true);
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, local_input, local_gradient_wrt_output,
@@ -147,7 +147,8 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
       }
     } else {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-        dst_scale);
+        dst_scale, gradient_scale);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, input, gradient_wrt_output,
@@ -216,7 +217,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   const auto& local_input = get_local_prev_activations();
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
-  const DataType gradient_scale = DataType(1) / mini_batch_size;
 
   // Compute gradient w.r.t. bias if needed
   if (m_bias_scaling_factor != DataType(0)) {
@@ -234,9 +234,10 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   // Compute gradient w.r.t. linearity if needed
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = DataType(0);
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-      dst_scale, true);
+      dst_scale, gradient_scale, true);
+    gradient_scale /= mini_batch_size;
     if (m_transpose) {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, local_input, local_gradient_wrt_output,
@@ -300,15 +301,15 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   const auto& local_input = get_local_prev_activations();
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
-  const DataType gradient_scale = DataType(1) / mini_batch_size;
 
   // Compute gradient w.r.t. bias if needed
   if (m_bias_scaling_factor != DataType(0)) {
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      DataType dst_scale = DataType(0);
-      auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
-                                                                true);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
         El::Scale(dst_scale, bias_gradient);
@@ -329,9 +330,10 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   // Compute gradient w.r.t. linearity if needed
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = DataType(0);
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-      dst_scale, true);
+      dst_scale, gradient_scale, true);
+    gradient_scale /= mini_batch_size;
     if (m_transpose) {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, local_input, local_gradient_wrt_output,
@@ -405,16 +407,16 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
-  const DataType gradient_scale = DataType(1) / mini_batch_size;
 
   // Compute gradient w.r.t. bias if needed
   // Note: local GEMV is sufficient, no need for global row sum
   if (m_bias_scaling_factor != DataType(0)) {
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      DataType dst_scale = DataType(0);
-      auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
-                                                                true);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
         El::Scale(dst_scale, bias_gradient);
@@ -436,10 +438,11 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   // Note: Perform GEMMs independently if possible
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = DataType(0);
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-        dst_scale, true);
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, local_input, local_gradient_wrt_output,
@@ -451,7 +454,8 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
       }
     } else {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
-        dst_scale);
+        dst_scale, gradient_scale);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, input, gradient_wrt_output,
