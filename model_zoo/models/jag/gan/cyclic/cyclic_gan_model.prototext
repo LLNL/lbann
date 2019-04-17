@@ -1,5 +1,8 @@
-model {
+trainer {
+  block_size: 256
   procs_per_trainer:0
+}
+model {
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -714,5 +717,4 @@ model {
       batch_interval: 1
     }
   }
-  block_size: 256
 }

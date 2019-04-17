@@ -1,3 +1,6 @@
+trainer {
+  block_size: 256
+}
 model {
   objective_function {
     l2_weight_regularization {
@@ -541,7 +544,6 @@ model {
   #    execution_modes: "test"
   #  }
   #}
-  block_size: 256
   super_steps: 10000
   num_batches: 1
 }

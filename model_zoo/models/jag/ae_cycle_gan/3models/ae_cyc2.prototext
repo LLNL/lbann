@@ -1,15 +1,17 @@
 #Augumented version of ae_cyc.prototext so we can have ae_loss, fw_latent_loss and fw_out_loss all in the same file instead of 3 files, a request from MLSI ML team. This augmentation involves replicating blocks for fw_model from cycle gan and encode from autoencoder.
 #Streamlines inference to use of only 1 model checkpoint (saved by using this prototext in training). Weights are copied from autoencoder and cyclegan and saved after training.
+trainer {
+  block_size: 256
+  procs_per_trainer: 0
+}
 model {
   name: "ae_cycgan_model"
   shareable_training_data_reader:false
   serialize_io: true
   data_layout: "data_parallel"
   mini_batch_size: 256
-  block_size: 256
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function

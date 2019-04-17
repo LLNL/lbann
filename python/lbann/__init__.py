@@ -23,6 +23,7 @@ from lbann.util import lbann_dir
 from lbann.callback import *
 from lbann.layer import *
 from lbann.metric import *
+from lbann.trainer import *
 from lbann.model import *
 from lbann.objective_function import *
 from lbann.optimizer import *

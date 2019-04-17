@@ -1,3 +1,6 @@
+trainer {
+  block_size: 256
+}
 model {
   name: "dis_model"
   shareable_training_data_reader: true
@@ -760,7 +763,6 @@ model {
       disable_save_after_training: true
     }
   }
-  block_size: 256
   super_steps: 20000
   num_batches: 1
 }

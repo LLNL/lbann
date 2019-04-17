@@ -1,3 +1,6 @@
+trainer {
+  block_size: 256
+}
 model {
   random_init_models_differently: true
   name: "wae_model"
@@ -639,7 +642,7 @@ model {
     name: "decode3bias"
   }
 
-  
+
   #Discriminator (shared)
   weights {
     name: "wae_d1fc1linearity"
@@ -708,6 +711,5 @@ model {
 
  # }
   #callback { save_model { dir: "model" } }
-  block_size: 256
-  procs_per_model:0 
+  procs_per_model:0
 }

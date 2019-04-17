@@ -1,14 +1,16 @@
 #Augumented version of ae_cyc.prototext so we can we ae_loss, fw_latent_loss and fw_out_loss all in the same file instead of 3 files, a request from MLSI ML team. This augmentation involves replicating blocks for fw_model from cycle gan and encode from autoencoder.
+trainer {
+  block_size: 256
+  procs_per_trainer: 0
+}
 model {
   name: "wae_fw_inv_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 16384 
-  block_size: 256
+  mini_batch_size: 16384
   num_epochs: 1
   num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -208,7 +210,7 @@ model {
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "gen1leaky_relu3_1"
   }
-  
+
   weights {
     name: "gen1fc1linearity"
     he_normal_initializer {
@@ -349,7 +351,7 @@ model {
     data_layout: "data_parallel"
     identity {}
   }
-  ####output of encoder goes to decoder and cycGAN duplicates 
+  ####output of encoder goes to decoder and cycGAN duplicates
   ######################
   # Decoder for foward output loss
 
@@ -524,7 +526,7 @@ model {
     data_layout: "data_parallel"
     weights: "decode3linearity decode3bias"
     fully_connected {
-      num_neurons: 32 
+      num_neurons: 32
       has_bias: true
     }
   }
@@ -711,7 +713,7 @@ model {
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "latent_gen1leaky_relu3_1"
   }
-  
+
   #layer {
   #  name: "gsample_minus_latentsample"
   #  data_layout: "data_parallel"
@@ -729,7 +731,7 @@ model {
     #parents: "gsample_minus_latentsample"
     parents: "latent_gen1fc4 image_data_dummy"
   }
-  
+
   #####Inverse loss from cycle GAN
   #### latent space (image_data_dummy) -> pred X'(gen2fc4)
   layer {
@@ -795,7 +797,7 @@ model {
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3"
   }
-  
+
 
   #layer {
   #  name: "gsample2_minus_x"
