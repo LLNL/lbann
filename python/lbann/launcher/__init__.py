@@ -8,7 +8,7 @@ import lbann.launcher.slurm
 # Run experiments
 # ==============================================
 
-def run(lbann_exe, model, data_reader, optimizer,
+def run(lbann_exe, trainer, model, data_reader, optimizer,
         lbann_args = '',
         experiment_dir = None,
         nodes = 1,
@@ -36,6 +36,7 @@ def run(lbann_exe, model, data_reader, optimizer,
 
     Args:
         lbann_exe (str): LBANN executable.
+        trainer (lbann.Trainer): LBANN Trainer (resource manager).
         model (lbann.model.Model or lbann_pb2.Model): Neural network
             model.
         data_reader (lbann_pb2.DataReader): Data reader.
@@ -82,6 +83,7 @@ def run(lbann_exe, model, data_reader, optimizer,
     # Create experiment prototext file
     prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
+                               trainer = trainer,
                                model = model,
                                data_reader = data_reader,
                                optimizer = optimizer)

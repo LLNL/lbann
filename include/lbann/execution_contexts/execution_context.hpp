@@ -63,13 +63,13 @@ public:
     *  @detailed Step counts are abstract stages in the training
     *  algorithm's internal state
     */
-  virtual El::Int get_step() const noexcept { return m_step; }
+  El::Int get_step() const noexcept { return m_step; }
 
   /** @brief Increment the current step in the training algorithm
     *  @detailed Increment the step count in the training
     *  algorithm's internal state
     */
-  virtual void inc_step() noexcept { ++m_step; }
+  void inc_step() noexcept { ++m_step; }
 
   /** Get the mode that the trainer is currenting executing. */
   inline void set_execution_mode(execution_mode mode) noexcept {
@@ -97,6 +97,8 @@ public:
 
   observing_ptr<thread_pool> get_io_thread_pool() const;
 
+  observing_ptr<lbann_comm> get_comm() const { return m_comm; };
+
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed();
 
@@ -107,7 +109,7 @@ public:
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
 
-public:
+private:
   /** Pointer to the training context (execution environment) for the training algorithm */
   observing_ptr<trainer> m_trainer;
 

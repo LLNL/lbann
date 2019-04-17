@@ -35,6 +35,11 @@ struct sgd_termination_criteria : public termination_criteria {
   El::Int num_epochs;
 };
 
+
+/** @brief SGD Uses the step to track the Current mini-batch step for
+  *  execution mode.
+  *  @detailed Step counts are not reset after each epoch.
+  */
 class sgd_execution_context : public execution_context {
 public:
   /** Constructor. */
@@ -60,12 +65,7 @@ public:
     *  @detailed Increment the counter tracking the number of times
     *  that the data set has been traversed.
     */
-  virtual void inc_epoch() noexcept { ++m_epoch; }
-
-  /** @brief Current mini-batch step for execution mode.
-    *  @detailed Step counts are not reset after each epoch.
-    */
-  El::Int get_step() const noexcept { return execution_context::get_step(); }
+  void inc_epoch() noexcept { ++m_epoch; }
 
   /** Set the trainer's current mini-batch size. */
   inline void set_current_mini_batch_size(int mini_batch_size) {
@@ -91,7 +91,7 @@ public:
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
 
-public:
+private:
   /** Number of times the training data set has been traversed. */
   El::Int m_epoch = 0;
 
