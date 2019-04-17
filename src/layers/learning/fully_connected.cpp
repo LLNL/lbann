@@ -49,12 +49,14 @@ template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
+  deallocate_matrices();
 }
 
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
+  deallocate_matrices();
 }
 #endif // LBANN_HAS_GPU
 
@@ -304,14 +306,13 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   if (m_bias_scaling_factor != DataType(0)) {
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
+      DataType dst_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
+                                                                true);
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
-        // Ensure we participate in the allreduce.
-        bias_optimizer->get_gradient_buffer(true);
+        El::Scale(dst_scale, bias_gradient);
       } else {
-        DataType dst_scale = DataType(0);
-        auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
-                                                                  true);
         GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
         ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
@@ -411,14 +412,13 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   if (m_bias_scaling_factor != DataType(0)) {
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
+      DataType dst_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
+                                                                true);
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
-        // Ensure we participate in the allreduce.
-        bias_optimizer->get_gradient_buffer(true);
+        El::Scale(dst_scale, bias_gradient);
       } else {
-        DataType dst_scale = DataType(0);
-        auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
-                                                                  true);
         GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
         ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible

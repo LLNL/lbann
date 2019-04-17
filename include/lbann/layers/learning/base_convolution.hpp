@@ -655,10 +655,10 @@ protected:
     if (m_bias_scaling_factor != DataType(0)
         && m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+      DataType dst_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
+                                                                true);
       if (has_local_data) {
-        DataType dst_scale = DataType(0);
-        auto& bias_gradient = bias_optimizer->get_gradient_buffer(dst_scale,
-                                                                  true);
         CHECK_CUDNN(cudnnConvolutionBackwardBias(
                       cudnn::get_handle(),
                       &gradient_scale,
@@ -668,18 +668,17 @@ protected:
                       m_bias_cudnn_desc,
                       bias_gradient.Buffer()));
       } else {
-        // Ensure we participate in the allreduce.
-        bias_optimizer->get_gradient_buffer(true);
+        El::Scale(dst_scale, bias_gradient);
       }
     }
 
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
+      DataType dst_scale = DataType(0);
+      auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(dst_scale,
+                                                                    true);
       if (has_local_data) {
-        DataType dst_scale = DataType(0);
-        auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(dst_scale,
-                                                                      true);
         // Initialize GPU workspace
         GPUMat workspace;
 #ifdef HYDROGEN_HAVE_CUB
@@ -755,8 +754,7 @@ protected:
                         kernel_gradient.Buffer()));
         }
       } else {
-        // Ensure we participate in the allreduce.
-        kernel_optimizer->get_gradient_buffer(true);
+        El::Scale(dst_scale, kernel_gradient);
       }
     }
 
@@ -921,10 +919,8 @@ protected:
     // Local matrices
     const DMat<Device>& local_input = get_local_prev_activations();
     const DMat<Device>& local_gradient_wrt_output = get_local_prev_error_signals();
-    const bool has_local_data = (local_input.Height() > 0
-                                 && local_input.Width() > 0
-                                 && local_gradient_wrt_output.Height() > 0
-                                 && local_gradient_wrt_output.Width() > 0);
+    const bool has_local_data = (!local_input.IsEmpty()
+                                 && !local_gradient_wrt_output.IsEmpty());
 
     // Get convolution parameters
     const El::Int local_width = local_input.Width();
@@ -945,10 +941,10 @@ protected:
     if (m_bias_scaling_factor != DataType(0)
         && this->m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+      DataType dst_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, true);
       if (has_local_data) {
-        DataType dst_scale = DataType(0);
-        auto& bias_gradient = bias_optimizer->get_gradient_buffer(
-          dst_scale, true);
         auto& local_bias_gradient = bias_gradient.Matrix();
         LBANN_OMP_PARALLEL_FOR
         for (int channel = 0; channel < num_output_channels; ++channel) {
@@ -969,8 +965,7 @@ protected:
             + gradient_scale*sum;
         }
       } else {
-        // Ensure we participate in the allreduce.
-        bias_optimizer->get_gradient_buffer(true);
+        El::Scale(dst_scale, bias_gradient);
       }
     }
 
@@ -990,10 +985,10 @@ protected:
                    get_output_size() / num_output_channels);
     DMat<Device> im2col_matrix(m, k);
 
+    DataType dst_scale = DataType(0);
+    auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+      dst_scale, true);
     if (has_local_data) {
-      DataType dst_scale = DataType(0);
-      auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
-        dst_scale, true);
       auto& local_kernel_gradient = kernel_gradient.Matrix();
       DMat<Device> kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
 
@@ -1033,8 +1028,7 @@ protected:
         }
       }
     } else {
-      // Ensure we participate in the allreduce.
-      kernel_optimizer->get_gradient_buffer(true);
+      El::Scale(dst_scale, kernel_gradient);
     }
   }
 

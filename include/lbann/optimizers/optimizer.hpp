@@ -142,13 +142,6 @@ public:
    */
   AbsDistMat& get_gradient_buffer(DataType& buf_scale,
                                   bool allreduce_needed = false);
-  /**
-   *  @brief Get the gradient buffer.
-   *
-   *  This is the same as the other get_gradient_buffer, but does all needed
-   *  scaling of the gradient buffer. 
-   */
-  AbsDistMat& get_gradient_buffer(bool allreduce_needed = false);
 
   /** @brief Objects that are expected to contribute to the gradient. */
   El::Int get_num_gradient_sources() const;

@@ -239,17 +239,6 @@ AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
   return *m_gradient;
 }
 
-AbsDistMat& optimizer::get_gradient_buffer(bool allreduce_needed) {
-  DataType buf_scale;
-  auto& buf = get_gradient_buffer(buf_scale, allreduce_needed);
-  if (buf_scale == DataType(0)) {
-    El::Zero(buf);
-  } else if (buf_scale != DataType(1)) {
-    El::Scale(buf_scale, buf);
-  }
-  return buf;
-}
-
 El::Int optimizer::get_num_gradient_sources() const {
   return m_gradient_sources.size();
 }
