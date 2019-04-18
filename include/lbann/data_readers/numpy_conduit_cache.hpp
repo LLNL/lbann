@@ -41,7 +41,57 @@ namespace lbann {
 /**
  * A numpy_conduit_cache has functionality to read numpy files,
  * convert them to conduit, and return the conduit::Node
- * upon request.
+ * upon request. This is a genaral class that can handle all numpy_npz
+ * data. In general the schema is:
+ *
+ * {
+ *   data_id (int) :
+ *   // one or more of the following sections
+ *   {
+ *     section_name :
+ *     {
+ *       "word_size": <int>,
+ *       "fortran_order: <0|1>,
+ *       "num_vals": <int>,
+ *       "shape": <[ vector ]>,
+ *       "data": <char*>
+ *     }  
+ *   }  
+ * }  
+ *
+ * The following is the schema for cosmoflow data, where the data_id 
+ * (which is assigned by the data_reader) is 42:
+ *
+ * {
+ *  "42": 
+ *  {
+ *    "data": 
+ *    {
+ *      "word_size": 2,
+ *      "fortran_order": 0,
+ *      "num_vals": 8388608,
+ *      "shape": [1, 4, 128, 128, 128]
+ *      "data": //char*
+ *    },
+ *    "frm": 
+ *    {
+ *      "word_size": 4,
+ *      "fortran_order": 0,
+ *      "num_vals": 1,
+ *      "shape": [1, 1]
+ *      "data": //char*
+ *    },
+ *    "responses": 
+ *    {
+ *      "word_size": 4,
+ *      "fortran_order": 0,
+ *      "num_vals": 4,
+ *      "shape": [1, 4]
+ *      "data": //char*
+ *    }
+ *  }
+ *}
+ *
  */
 
 class numpy_conduit_cache {
@@ -61,7 +111,7 @@ class numpy_conduit_cache {
   //! a single ndarray per file; this may change in the future
   void load(const std::string filename, int data_id);
 
-  const conduit::Node & get_data(int data_id) const;
+  const conduit::Node & get_conduit_node(int data_id) const;
 
 protected :
 

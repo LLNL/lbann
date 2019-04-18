@@ -33,7 +33,6 @@
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -43,15 +42,51 @@
 
 using namespace lbann;
 
+// sample code that demonstrates use of the numpy_conduit_cache class
+
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
+  if (argc != 2) {
+    std::cerr << "usage: " << argv[0] << " numpy_npz_file_name\n"
+              << "Run with a single processor\n";
+    exit(9);
+  }
+
   try {
 
-  numpy_conduit_cache n(comm.get());
-  n.load("/g/g10/hysom/test.npz", 42);
+    numpy_conduit_cache n(comm.get());
+    n.load(argv[1], 42);
+  
+    conduit::Node cosmo_base = n.get_conduit_node(42);
+  
+    conduit::Node cosmo = cosmo_base["42"];
+    auto children = cosmo.children();
+    while (children.has_next()) {
+      conduit::Node &child = children.next();
+      size_t word_size = child["word_size"].value();
+      size_t num_vals = child["num_vals"].value();
+      auto shape = child["shape"].as_uint64_array();
+      int shape_num_elts = shape.number_of_elements();
+      char *data = child["data"].value();
+      std::cout 
+        << "\nnext child: " << child.name() << "\n"
+        << "  word_size: " << word_size << "\n"
+        << "  num_vals:  " << num_vals << "\n"
+        << "  shape:     ";
+      for (int k=0; k<shape_num_elts; k++) {
+        std::cout << shape[k] << " ";
+      }
+      std::cout << "\n  data:     " << data[0] << " ...\n";
+    }
+  
+    /*
+    std::cout << "\n=====================================================\n"
+              << "cosmo.print_detailed(): \n\n";
+    cosmo.print_detailed();
+    */
 
   } catch (std::exception const &e) {
     if (master) std::cerr << "caught exception: " << e.what() << "\n";

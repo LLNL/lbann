@@ -54,15 +54,16 @@ void numpy_conduit_cache::copy_members(const numpy_conduit_cache& rhs) {
 void numpy_conduit_cache::load(const std::string filename, int data_id) {
   try {
     m_numpy[data_id] = cnpy::npz_load(filename);
-
+    conduit::Node &n = m_data[data_id];
     std::map<std::string, cnpy::NpyArray> &a = m_numpy[data_id];
     for (auto &&t : a) {
-      std::cout << t.first << "\n";
       cnpy::NpyArray &b = t.second;
-      std::cout << "word size: " << b.word_size << "\n";
-      std::cout << "fortran order: " << b.fortran_order << "\n";
-      std::cout << "num_vals: " << b.num_vals << "\n";
-      std::cout << "\n";
+      n[std::to_string(data_id) + "/" + t.first + "/word_size"] = b.word_size;
+      n[std::to_string(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
+      n[std::to_string(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      n[std::to_string(data_id) + "/" + t.first + "/shape"] = b.shape;
+      std::shared_ptr<std::vector<char>> data = b.data_holder;
+      n[std::to_string(data_id) + "/" + t.first + "/data"].set_external_char_ptr(b.data_holder->data());
     }
   } catch (...) {
     //note: npz_load throws std::runtime_error, but I don't want to assume
@@ -71,7 +72,7 @@ void numpy_conduit_cache::load(const std::string filename, int data_id) {
   }
 }
 
-const conduit::Node & numpy_conduit_cache::get_data(int data_id) const {
+const conduit::Node & numpy_conduit_cache::get_conduit_node(int data_id) const {
   std::unordered_map<int, conduit::Node>::const_iterator it = m_data.find(data_id);
   if (it == m_data.end()) {
     LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data");
