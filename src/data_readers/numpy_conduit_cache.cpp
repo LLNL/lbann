@@ -33,25 +33,8 @@
 namespace lbann {
 
 
-numpy_conduit_cache::numpy_conduit_cache(const numpy_conduit_cache& rhs) {
-  copy_members(rhs);
-}
-
-numpy_conduit_cache& numpy_conduit_cache::operator=(const numpy_conduit_cache& rhs) {
-  // check for self-assignment
-  if (this == &rhs) {
-    return (*this);
-  }
-  copy_members(rhs);
-  return (*this);
-}
-
-void numpy_conduit_cache::copy_members(const numpy_conduit_cache& rhs) {
-  //TODO
-  LBANN_ERROR("needs to be impelemented");
-}
-
 void numpy_conduit_cache::load(const std::string filename, int data_id) {
+
   try {
     m_numpy[data_id] = cnpy::npz_load(filename);
     conduit::Node &n = m_data[data_id];

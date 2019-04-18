@@ -100,22 +100,20 @@ class numpy_conduit_cache {
   numpy_conduit_cache(lbann_comm *comm) : m_comm(comm)
   {}
 
-  numpy_conduit_cache(const numpy_conduit_cache&);
+  numpy_conduit_cache(const numpy_conduit_cache&) = default;
 
-  numpy_conduit_cache& operator=(const numpy_conduit_cache&);
+  numpy_conduit_cache& operator=(const numpy_conduit_cache&) = default;
 
   ~numpy_conduit_cache() {}
 
-  //! Load a numpy array from file; assign it the given data_id;
-  //! and cache it internally. For now we assume there is 
-  //! a single ndarray per file; this may change in the future
+  //! Load a zipped numpy array from file; assign it the given data_id
   void load(const std::string filename, int data_id);
 
   const conduit::Node & get_conduit_node(int data_id) const;
 
 protected :
 
-  void copy_members(const numpy_conduit_cache &rhs);
+  void load(const std::string filename, int data_id, bool is_npz);
 
   lbann_comm *m_comm;
 
