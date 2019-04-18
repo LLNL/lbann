@@ -80,7 +80,7 @@ class BasicBlock(lbann.modules.Module):
 
     def __init__(self, in_channels, mid_channels,
                  downsample, zero_init_residual,
-                 bn_stats_aggregation, name):
+                 bn_stats_aggregation, name, width=1):
         """Initialize residual block.
 
         Args:
@@ -93,11 +93,14 @@ class BasicBlock(lbann.modules.Module):
             bn_stats_aggregation (str): Aggregation mode for batch
                 normalization statistics.
             name (str): Module name.
+            width (float, optional): Width growth factor for 3x3
+                convolutions.
 
         """
         super().__init__()
         self.name = name
         self.instance = 0
+        mid_channels = int(mid_channels * width)
         self.out_channels = mid_channels
 
         # Skip connection
@@ -141,7 +144,7 @@ class BottleneckBlock(lbann.modules.Module):
 
     def __init__(self, in_channels, mid_channels,
                  downsample, zero_init_residual,
-                 bn_stats_aggregation, name):
+                 bn_stats_aggregation, name, width=1):
         """Initialize residual block.
 
         Args:
@@ -154,12 +157,16 @@ class BottleneckBlock(lbann.modules.Module):
             bn_stats_aggregation (str): Aggregation mode for batch
                 normalization statistics.
             name (str): Module name.
+            width (float, optional): Width growth factor for 3x3
+                convolutions.
 
         """
         super().__init__()
         self.name = name
         self.instance = 0
         self.out_channels = 4 * mid_channels
+        # Width factor does not grow the output channel size.
+        mid_channels = int(mid_channels * width)
 
         # Skip connection
         if downsample:
@@ -222,7 +229,7 @@ class ResNet(lbann.modules.Module):
     def __init__(self, block, output_size,
                  layer_sizes, layer_channels,
                  zero_init_residual, bn_stats_aggregation,
-                 name):
+                 name, width=1):
         """Initialize ResNet.
 
         Args:
@@ -238,6 +245,7 @@ class ResNet(lbann.modules.Module):
             bn_stats_aggregation (str): Aggregation mode for batch
                 normalization statistics.
             name (str): Module name.
+            width (float, optional): Width growth factor.
 
         """
         super().__init__()
@@ -257,7 +265,8 @@ class ResNet(lbann.modules.Module):
                 b = block(in_channels, mid_channels,
                           downsample, zero_init_residual,
                           bn_stats_aggregation,
-                          '{0}_layer{1}_block{2}'.format(self.name, layer, i))
+                          '{0}_layer{1}_block{2}'.format(self.name, layer, i),
+                          width=width)
                 self.blocks.append(b)
         self.fc = lbann.modules.FullyConnectedModule(
             output_size, bias=False, name=self.name + '_fc')
@@ -292,7 +301,7 @@ class ResNet18(ResNet):
     def __init__(self, output_size,
                  zero_init_residual=True,
                  bn_stats_aggregation='local',
-                 name=None):
+                 name=None, width=1):
         """Initialize ResNet-18.
 
         Args:
@@ -304,6 +313,7 @@ class ResNet18(ResNet):
                 batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet18_module<index>')
+            width (float, optional): Width growth factor.
 
         """
         ResNet18.global_count += 1
@@ -312,7 +322,7 @@ class ResNet18(ResNet):
         super().__init__(BasicBlock, output_size,
                          (2,2,2,2), (64,128,256,512),
                          zero_init_residual, bn_stats_aggregation,
-                         name)
+                         name, width=width)
 
 class ResNet34(ResNet):
     """ResNet-34 neural network.
@@ -332,7 +342,7 @@ class ResNet34(ResNet):
     def __init__(self, output_size,
                  zero_init_residual=True,
                  bn_stats_aggregation='local',
-                 name=None):
+                 name=None, width=1):
         """Initialize ResNet-34.
 
         Args:
@@ -344,6 +354,7 @@ class ResNet34(ResNet):
                 batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet34_module<index>')
+            width (float, optional): Width growth factor.
 
         """
         ResNet34.global_count += 1
@@ -352,7 +363,7 @@ class ResNet34(ResNet):
         super().__init__(BasicBlock, output_size,
                          (3,4,6,3), (64,128,256,512),
                          zero_init_residual, bn_stats_aggregation,
-                         name)
+                         name, width=width)
 
 class ResNet50(ResNet):
     """ResNet-50 neural network.
@@ -372,7 +383,7 @@ class ResNet50(ResNet):
     def __init__(self, output_size,
                  zero_init_residual=True,
                  bn_stats_aggregation='local',
-                 name=None):
+                 name=None, width=1):
         """Initialize ResNet-50.
 
         Args:
@@ -384,6 +395,7 @@ class ResNet50(ResNet):
                 batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet50_module<index>')
+            width (float, optional): Width growth factor.
 
         """
         ResNet50.global_count += 1
@@ -392,7 +404,7 @@ class ResNet50(ResNet):
         super().__init__(BottleneckBlock, output_size,
                          (3,4,6,3), (64,128,256,512),
                          zero_init_residual, bn_stats_aggregation,
-                         name)
+                         name, width=width)
 
 class ResNet101(ResNet):
     """ResNet-101 neural network.
@@ -412,7 +424,7 @@ class ResNet101(ResNet):
     def __init__(self, output_size,
                  zero_init_residual=True,
                  bn_stats_aggregation='local',
-                 name=None):
+                 name=None, width=1):
         """Initialize ResNet-101.
 
         Args:
@@ -424,6 +436,7 @@ class ResNet101(ResNet):
                 batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet101_module<index>')
+            width (float, optional): Width growth factor.
 
         """
         ResNet101.global_count += 1
@@ -432,7 +445,7 @@ class ResNet101(ResNet):
         super().__init__(BottleneckBlock, output_size,
                          (3,4,23,3), (64,128,256,512),
                          zero_init_residual, bn_stats_aggregation,
-                         name)
+                         name, width=width)
 
 class ResNet152(ResNet):
     """ResNet-152 neural network.
@@ -452,7 +465,7 @@ class ResNet152(ResNet):
     def __init__(self, output_size,
                  zero_init_residual=True,
                  bn_stats_aggregation='local',
-                 name=None):
+                 name=None, width=1):
         """Initialize ResNet-152.
 
         Args:
@@ -464,6 +477,7 @@ class ResNet152(ResNet):
                 batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet152_module<index>')
+            width (float, optional): Width growth factor.
 
         """
         ResNet152.global_count += 1
@@ -472,4 +486,4 @@ class ResNet152(ResNet):
         super().__init__(BottleneckBlock, output_size,
                          (3,8,36,3), (64,128,256,512),
                          zero_init_residual, bn_stats_aggregation,
-                         name)
+                         name, width=width)
