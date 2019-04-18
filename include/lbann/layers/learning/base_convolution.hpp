@@ -140,8 +140,10 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
-                            m_bias_cudnn_desc);
+    if (other.m_bias_scaling_factor != DataType(0)) {
+      cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
+                              m_bias_cudnn_desc);
+    }
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
   }
@@ -164,8 +166,10 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
-                            m_bias_cudnn_desc);
+    if (other.m_bias_scaling_factor != DataType(0)) {
+      cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
+                              m_bias_cudnn_desc);
+    }
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
@@ -345,7 +349,11 @@ public:
           << "found " << this->m_weights.size() << ")";
       LBANN_ERROR(err.str());
     }
-    this->m_weights.resize(2, nullptr);
+    if (m_bias_scaling_factor != DataType(0)) {
+      this->m_weights.resize(2, nullptr);
+    } else {
+      this->m_weights.resize(1, nullptr);
+    }
     if (this->m_weights[0] == nullptr) {
       auto* w = new weights(get_comm());
       std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
@@ -356,16 +364,7 @@ public:
       this->m_weights[0] = w;
       this->m_model->add_weights(w);
     }
-    if (this->m_weights[1] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_bias");
-      w->set_optimizer(opt);
-      this->m_weights[1] = w;
-      this->m_model->add_weights(w);
-    }
     auto& kernel_weights = *this->m_weights[0];
-    auto& bias_weights = *this->m_weights[1];
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -381,16 +380,29 @@ public:
     dist.rowDist = El::STAR;
     kernel_weights.set_dims(kernel_dims);
     kernel_weights.set_matrix_distribution(dist);
-    bias_weights.set_dims(output_dims[0]);
-    bias_weights.set_matrix_distribution(dist);
 
     // Initialize gradients
     El::Zeros(m_kernel_gradient,
               kernel_weights.get_matrix_height(),
               kernel_weights.get_matrix_width());
-    El::Zeros(m_bias_gradient,
-              bias_weights.get_matrix_height(),
-              bias_weights.get_matrix_width());
+
+    // Set up bias if needed.
+    if (m_bias_scaling_factor != DataType(0)) {
+      if (this->m_weights[1] == nullptr) {
+        auto* w = new weights(get_comm());
+        std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+        w->set_name(get_name() + "_bias");
+        w->set_optimizer(opt);
+        this->m_weights[1] = w;
+        this->m_model->add_weights(w);
+      }
+      auto& bias_weights = *this->m_weights[1];
+      bias_weights.set_dims(output_dims[0]);
+      bias_weights.set_matrix_distribution(dist);
+      El::Zeros(m_bias_gradient,
+                bias_weights.get_matrix_height(),
+                bias_weights.get_matrix_width());
+    }
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {
@@ -444,9 +456,11 @@ public:
                                               m_groups));
 
     // Set bias tensor descriptor
-    std::vector<int> bias_dims(output_dims.size() + 1, 1);
-    bias_dims[1] = output_dims[0];
-    cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
+    if (m_bias_scaling_factor != DataType(0)) {
+      std::vector<int> bias_dims(output_dims.size() + 1, 1);
+      bias_dims[1] = output_dims[0];
+      cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
+    }
 
 #endif // LBANN_HAS_CUDNN
   }
@@ -664,22 +678,26 @@ protected:
                                  && local_gradient_wrt_output.Width() > 0);
 
     // Compute bias gradient
-    optimizer* bias_optimizer = m_weights[1]->get_optimizer();
-    if (bias_optimizer != nullptr && m_bias_scaling_factor != DataType(0)) {
-      if (!has_local_data) {
-        El::Zero(m_bias_gradient);
-      } else {
-        CHECK_CUDNN(cudnnConvolutionBackwardBias(cudnn::get_handle(),
-                                                 &one,
-                                                 m_tensors_cudnn_desc.get_prev_error_signals(),
-                                                 local_gradient_wrt_output.LockedBuffer(),
-                                                 &zero,
-                                                 m_bias_cudnn_desc,
-                                                 m_bias_gradient.Buffer()));
+    if (m_bias_scaling_factor != DataType(0)) {
+      optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+      if (bias_optimizer != nullptr) {
+        if (!has_local_data) {
+          El::Zero(m_bias_gradient);
+        } else {
+          CHECK_CUDNN(cudnnConvolutionBackwardBias(
+                        cudnn::get_handle(),
+                        &one,
+                        m_tensors_cudnn_desc.get_prev_error_signals(),
+                        local_gradient_wrt_output.LockedBuffer(),
+                        &zero,
+                        m_bias_cudnn_desc,
+                        m_bias_gradient.Buffer()));
+        }
+        bias_optimizer->add_to_gradient(
+          m_bias_gradient,
+          m_bias_scaling_factor / effective_mini_batch_size,
+          true);
       }
-      bias_optimizer->add_to_gradient(m_bias_gradient,
-                                      m_bias_scaling_factor / effective_mini_batch_size,
-                                      true);
     }
 
     // Compute kernel gradient
@@ -933,7 +951,6 @@ protected:
     const DMat<Device>& local_input = get_local_prev_activations();
     const DMat<Device>& local_gradient_wrt_output = get_local_prev_error_signals();
     auto& local_kernel_gradient = m_kernel_gradient.Matrix();
-    auto& local_bias_gradient = m_bias_gradient.Matrix();
 
     // Get convolution parameters
     const El::Int local_width = local_input.Width();
@@ -950,27 +967,30 @@ protected:
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
-    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-    if (m_bias_scaling_factor != DataType(0) && bias_optimizer != nullptr) {
-      LBANN_OMP_PARALLEL_FOR
-      for (int channel = 0; channel < num_output_channels; ++channel) {
-        const El::Int row_start = channel * num_per_output_channel;
-        const El::Int row_end = (channel+1) * num_per_output_channel;
-        DataType sum = 0;
-        DataType correction = 0;
-        for (El::Int col = 0; col < local_width; ++col) {
-          for (El::Int row = row_start; row < row_end; ++row) {
-            DataType term = local_gradient_wrt_output(row, col);
-            term += correction;
-            const DataType next_sum = sum + term;
-            correction = term - (next_sum - sum);
-            sum = next_sum;
+    if (m_bias_scaling_factor != DataType(0)) {
+      optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+      if (bias_optimizer != nullptr) {
+        auto& local_bias_gradient = m_bias_gradient.Matrix();
+        LBANN_OMP_PARALLEL_FOR
+        for (int channel = 0; channel < num_output_channels; ++channel) {
+          const El::Int row_start = channel * num_per_output_channel;
+          const El::Int row_end = (channel+1) * num_per_output_channel;
+          DataType sum = 0;
+          DataType correction = 0;
+          for (El::Int col = 0; col < local_width; ++col) {
+            for (El::Int row = row_start; row < row_end; ++row) {
+              DataType term = local_gradient_wrt_output(row, col);
+              term += correction;
+              const DataType next_sum = sum + term;
+              correction = term - (next_sum - sum);
+              sum = next_sum;
+            }
           }
+          local_bias_gradient(channel, 0) = m_bias_scaling_factor * sum;
         }
-        local_bias_gradient(channel, 0) = m_bias_scaling_factor * sum;
+        const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
+        bias_optimizer->add_to_gradient(m_bias_gradient, bias_scale, true);
       }
-      const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
-      bias_optimizer->add_to_gradient(m_bias_gradient, bias_scale, true);
     }
 
     // Stop early if kernel is not being optimized

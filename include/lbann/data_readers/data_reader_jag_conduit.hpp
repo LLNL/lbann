@@ -44,7 +44,7 @@
 
 namespace lbann {
 
-class data_store_jag;
+class data_store_conduit;
 
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
@@ -79,6 +79,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
+  data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
@@ -87,14 +88,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   std::string get_type() const override {
     return "data_reader_jag_conduit";
-  }
-
-  /// returns the data store
-  const data_store_jag& get_jag_store() const {
-    if (m_jag_store == nullptr) {
-      LBANN_ERROR("m_data_store is nullptr");
-    }
-    return *m_jag_store;
   }
 
   /// Choose which data to use for independent variable
@@ -262,14 +255,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
-  data_store_jag *m_jag_store;
 
   void preload_data_store();
 
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
-  virtual void copy_members(const data_reader_jag_conduit& rhs);
-
+  virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);
@@ -371,12 +362,12 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool data_store_active() const {
     bool flag = generic_data_reader::data_store_active();
-    return (m_jag_store != nullptr && flag);
+    return (m_data_store != nullptr && flag);
   }
 
   bool priming_data_store() const {
     bool flag = generic_data_reader::priming_data_store();
-    return (m_jag_store != nullptr && flag);
+    return (m_data_store != nullptr && flag);
   }
 
  protected:

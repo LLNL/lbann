@@ -121,15 +121,16 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
   // Compute gradient w.r.t. bias if needed
-  optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-  if (m_bias_scaling_factor != DataType(0)
-      && bias_optimizer != nullptr) {
-    El::RowSum(local_gradient_wrt_output,
-               m_bias_gradient->Matrix());
-    bias_optimizer->add_to_gradient(
-      *m_bias_gradient,
-      m_bias_scaling_factor / mini_batch_size,
-      true);
+  if (m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+    if (bias_optimizer != nullptr) {
+      El::RowSum(local_gradient_wrt_output,
+                 m_bias_gradient->Matrix());
+      bias_optimizer->add_to_gradient(
+        *m_bias_gradient,
+        m_bias_scaling_factor / mini_batch_size,
+        true);
+    }
   }
 
   // Compute gradient w.r.t. linearity if needed
@@ -224,15 +225,16 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   auto& local_gradient_wrt_input = get_local_error_signals();
 
   // Compute gradient w.r.t. bias if needed
-  optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-  if (m_bias_scaling_factor != DataType(0)
-      && bias_optimizer != nullptr) {
-    El::RowSum(local_gradient_wrt_output,
-               m_bias_gradient->Matrix());
-    bias_optimizer->add_to_gradient(
-      *m_bias_gradient,
-      m_bias_scaling_factor / mini_batch_size,
-      true);
+  if (m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+    if (bias_optimizer != nullptr) {
+      El::RowSum(local_gradient_wrt_output,
+                 m_bias_gradient->Matrix());
+      bias_optimizer->add_to_gradient(
+        *m_bias_gradient,
+        m_bias_scaling_factor / mini_batch_size,
+        true);
+    }
   }
 
   // Compute gradient w.r.t. linearity if needed
@@ -307,27 +309,28 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   auto& local_gradient_wrt_input = get_local_error_signals();
 
   // Compute gradient w.r.t. bias if needed
-  optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-  if (m_bias_scaling_factor != DataType(0)
-      && bias_optimizer != nullptr) {
-    if (local_gradient_wrt_output.Height() < 1
-        || local_gradient_wrt_output.Width() < 1) {
-      El::Zero(*m_bias_gradient);
-    } else {
-      GPUMat ones;
+  if (m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+    if (bias_optimizer != nullptr) {
+      if (local_gradient_wrt_output.Height() < 1
+          || local_gradient_wrt_output.Width() < 1) {
+        El::Zero(*m_bias_gradient);
+      } else {
+        GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
-      ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+        ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
-      ones.Resize(local_gradient_wrt_output.Width(), 1);
-      El::Fill(ones, DataType(1));
-      El::Gemv(El::NORMAL,
-               m_bias_scaling_factor, local_gradient_wrt_output, ones,
-               DataType(0), m_bias_gradient->Matrix());
+        ones.Resize(local_gradient_wrt_output.Width(), 1);
+        El::Fill(ones, DataType(1));
+        El::Gemv(El::NORMAL,
+                 m_bias_scaling_factor, local_gradient_wrt_output, ones,
+                 DataType(0), m_bias_gradient->Matrix());
+      }
+      bias_optimizer->add_to_gradient(
+        *m_bias_gradient,
+        m_bias_scaling_factor / mini_batch_size,
+        true);
     }
-    bias_optimizer->add_to_gradient(
-      *m_bias_gradient,
-      m_bias_scaling_factor / mini_batch_size,
-      true);
   }
 
   // Compute gradient w.r.t. linearity if needed
@@ -413,27 +416,28 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
 
   // Compute gradient w.r.t. bias if needed
   // Note: local GEMV is sufficient, no need for global row sum
-  optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-  if (m_bias_scaling_factor != DataType(0)
-      && bias_optimizer != nullptr) {
-    if (local_gradient_wrt_output.Height() < 1
-        || local_gradient_wrt_output.Width() < 1) {
-      El::Zero(*m_bias_gradient);
-    } else {
-      GPUMat ones;
+  if (m_bias_scaling_factor != DataType(0)) {
+    optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+    if (bias_optimizer != nullptr) {
+      if (local_gradient_wrt_output.Height() < 1
+          || local_gradient_wrt_output.Width() < 1) {
+        El::Zero(*m_bias_gradient);
+      } else {
+        GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
-      ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
+        ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
-      ones.Resize(local_gradient_wrt_output.Width(), 1);
-      El::Fill(ones, DataType(1));
-      El::Gemv(El::NORMAL,
-               m_bias_scaling_factor, local_gradient_wrt_output, ones,
-               DataType(0), m_bias_gradient->Matrix());
+        ones.Resize(local_gradient_wrt_output.Width(), 1);
+        El::Fill(ones, DataType(1));
+        El::Gemv(El::NORMAL,
+                 m_bias_scaling_factor, local_gradient_wrt_output, ones,
+                 DataType(0), m_bias_gradient->Matrix());
+      }
+      bias_optimizer->add_to_gradient(
+        *m_bias_gradient,
+        m_bias_scaling_factor / mini_batch_size,
+        true);
     }
-    bias_optimizer->add_to_gradient(
-      *m_bias_gradient,
-      m_bias_scaling_factor / mini_batch_size,
-      true);
   }
 
   // Compute gradient w.r.t. linearity if needed
