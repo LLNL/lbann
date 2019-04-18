@@ -184,6 +184,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_poly_learning_rate(params.power(),
                                                  params.num_epochs(),
                                                  params.max_iter(),
+                                                 params.end_lr(),
                                                  selected_weights);
   }
 
