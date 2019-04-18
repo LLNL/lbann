@@ -162,6 +162,8 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   switch (m_gradient_status) {
   case optimizer_gradient_status::ready:
     if (allreduce_needed) {
+      // Properly scale contributions that have already been allreduced or that
+      // do not need allreduces.
       El::Scale(DataType(1) / m_gradient->RedundantSize(), *m_gradient);
       m_gradient_status = optimizer_gradient_status::allreduce_needed;
     }
@@ -176,6 +178,7 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
     break;
   case optimizer_gradient_status::allreduce_needed:
     {
+      // Properly scale data that does not need to be allreduced.
       const auto& scale_ = (allreduce_needed ?
                             scale :
                             scale / m_gradient->RedundantSize());
@@ -231,6 +234,7 @@ AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
     break;
   case optimizer_gradient_status::allreduce_needed:
     buf_scale = DataType(1);
+    // Properly scale data that does not need to be allreduced.
     in_scale = (allreduce_needed ?
                 DataType(1) :
                 DataType(1) / m_gradient->RedundantSize());
