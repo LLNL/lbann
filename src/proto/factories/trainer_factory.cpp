@@ -47,12 +47,12 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
                                            const lbann_data::Trainer& proto_trainer) {
 
   // Instantiate trainer
-  auto&& t = instantiate_trainer(comm, proto_trainer);
+  auto t = instantiate_trainer(comm, proto_trainer);
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);
   }
-  return std::move(t);
+  return t;
 }
 
 } // namespace proto

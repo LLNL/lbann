@@ -33,10 +33,10 @@ namespace proto {
 namespace {
 
 /** Instantiate a model based on prototext. */
-model* instantiate_model(lbann_comm* comm,
-                         objective_function* obj,
-                         const lbann_data::Optimizer& proto_opt,
-                         const lbann_data::Model& proto_model) {
+std::unique_ptr<model> instantiate_model(lbann_comm* comm,
+                                         objective_function* obj,
+                                         const lbann_data::Optimizer& proto_opt,
+                                         const lbann_data::Model& proto_model) {
   std::stringstream err;
 
   // Default optimizer
@@ -46,7 +46,7 @@ model* instantiate_model(lbann_comm* comm,
   const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
-    return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
+    return make_unique<directed_acyclic_graph_model>(comm, mini_batch_size, obj, opt);
   }
 
   // Throw error if model type is not supported
@@ -228,11 +228,11 @@ void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
 
 } // namespace
 
-model* construct_model(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       const lbann_data::Optimizer& proto_opt,
-                       const lbann_data::Trainer& proto_trainer,
-                       const lbann_data::Model& proto_model) {
+std::unique_ptr<model> construct_model(lbann_comm* comm,
+                                       const std::map<execution_mode, generic_data_reader*>& data_readers,
+                                       const lbann_data::Optimizer& proto_opt,
+                                       const lbann_data::Trainer& proto_trainer,
+                                       const lbann_data::Model& proto_model) {
 
   // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
@@ -283,7 +283,7 @@ model* construct_model(lbann_comm* comm,
   }
 
   // Instantiate model
-  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
+  auto m = instantiate_model(comm, obj, proto_opt, proto_model);
   for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
@@ -293,7 +293,7 @@ model* construct_model(lbann_comm* comm,
     m->set_name(name);
   }
   for (auto t : data_readers) {
-    t.second->set_model(m);
+    t.second->set_model(m.get());
   }
   return m;
 

@@ -86,9 +86,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     //    print_parameters(comm, pb);
 
     // Initalize trainer
-    std::unique_ptr<trainer> trainer{
-      proto::construct_trainer(comm,
-                               *pb_trainer)};
+    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
 
     trainer->setup(std::move(io_thread_pool));
 
@@ -236,13 +234,11 @@ std::unique_ptr<model> build_model_from_prototext(
   print_parameters(*comm, pb);
 
   // Initalize model
-  std::unique_ptr<model> ret_model{
-    proto::construct_model(comm,
-                           data_readers,
-                           pb.optimizer(),
-                           pb.trainer(),
-                           pb.model())
-  };
+  std::unique_ptr<model> ret_model = proto::construct_model(comm,
+                                                            data_readers,
+                                                            pb.optimizer(),
+                                                            pb.trainer(),
+                                                            pb.model());
   ret_model->setup();
 
   if (opts->get_bool("use_data_store")) {

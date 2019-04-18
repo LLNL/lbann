@@ -60,7 +60,7 @@ public:
   //  virtual execution_context* copy() const = default;
 
   /** @brief Current step in the training algorithm
-    *  @detailed Step counts are abstract stages in the training
+    *  @detailed Step counts the number of iterations in the training
     *  algorithm's internal state
     */
   El::Int get_step() const noexcept { return m_step; }
@@ -120,7 +120,7 @@ private:
   execution_mode m_execution_mode = execution_mode::training;
 
   /** @brief Current step in the training algorithm
-    *  @detailed Step counts are abstract stages in the training
+    *  @detailed Step counts the number of iterations in the training
     *  algorithm's internal state
     */
   El::Int m_step = 0;
