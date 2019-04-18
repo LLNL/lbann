@@ -26,7 +26,7 @@
 // data_reader_numpy_npz .hpp .cpp - generic_data_reader class for numpy .npz dataset
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/data_reader_numpy_npz.hpp"
+#include "lbann/data_readers/data_reader_numpy_npz_conduit.hpp"
 #include <cstdio>
 #include <string>
 #include <unordered_set>
