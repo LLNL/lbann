@@ -40,10 +40,12 @@ struct sgd_termination_criteria : public termination_criteria {
   *  execution mode.
   *  @detailed Step counts are not reset after each epoch.
   */
-class sgd_execution_context : public execution_context {
+class sgd_execution_context final : public execution_context {
 public:
   /** Constructor. */
   sgd_execution_context(observing_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode, int mini_batch_size);
+  /** Destructor. */
+  virtual ~sgd_execution_context() = default;
 
   /** Copy constructor. */
   sgd_execution_context(const sgd_execution_context& other) = default;
@@ -53,10 +55,8 @@ public:
   sgd_execution_context(sgd_execution_context&& other) = default;
   /** Move assignment operator. */
   sgd_execution_context& operator=(sgd_execution_context&& other) = default;
-  /** Destructor. */
-  virtual ~sgd_execution_context() = default;
   /** Copy sgd_execution_context. */
-  //  virtual sgd_execution_context* copy() const = default;
+  virtual std::unique_ptr<execution_context> copy_execution_context() const { return make_unique<sgd_execution_context>(*this); }
 
   /** Number of times the training set has been traversed. */
   inline El::Int get_epoch() const noexcept { return m_epoch; }

@@ -45,19 +45,15 @@ class execution_context {
 public:
   /** Constructor. */
   execution_context(observing_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode);
-
-  /** Copy constructor. */
-  execution_context(const execution_context& other) = default;
-  /** Copy assignment operator. */
-  execution_context& operator=(const execution_context& other) = default;
-  /** Move constructor. */
-  execution_context(execution_context&& other) = default;
-  /** Move assignment operator. */
-  execution_context& operator=(execution_context&& other) = default;
   /** Destructor. */
   virtual ~execution_context() = default;
+
   /** Copy execution_context. */
-  //  virtual execution_context* copy() const = default;
+  virtual std::unique_ptr<execution_context> copy_execution_context() const {
+    // Use explicit construction of unique pointer since copy
+    // constructor is protected and cannot be accessed in make_unique
+    return std::unique_ptr<execution_context>{new execution_context(*this)};
+  }
 
   /** @brief Current step in the training algorithm
     *  @detailed Step counts the number of iterations in the training
@@ -108,6 +104,16 @@ public:
   virtual bool load_from_checkpoint_shared(persist& p);
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
+
+protected:
+  /** Copy constructor. */
+  execution_context(const execution_context& other) = default;
+  /** Copy assignment operator. */
+  execution_context& operator=(const execution_context& other) = default;
+  /** Move constructor. */
+  execution_context(execution_context&& other) = default;
+  /** Move assignment operator. */
+  execution_context& operator=(execution_context&& other) = default;
 
 private:
   /** Pointer to the training context (execution environment) for the training algorithm */

@@ -66,7 +66,7 @@ public:
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
-  virtual model* copy() const { return new model(*this); }
+  virtual std::unique_ptr<model> copy_model() const { return make_unique<model>(*this); }
 
   // ===========================================
   // Access functions
