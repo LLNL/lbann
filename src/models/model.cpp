@@ -37,6 +37,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -1010,6 +1011,18 @@ void model::collect_background_data_fetch(execution_mode mode) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
       input->collect_background_data_fetch(mode);
+    }
+  }
+}
+
+void model::make_data_store_preloaded(execution_mode mode) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    if (input != nullptr) {
+      if(!input->get_data_reader(mode)->get_data_store_ptr()->is_preloaded()) {
+        std::cout << "I am going to mark the validation data reader as loaded" << std::endl;
+        input->get_data_reader(mode)->get_data_store_ptr()->set_preload();
+      }
     }
   }
 }
