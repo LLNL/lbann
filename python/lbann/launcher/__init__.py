@@ -3,6 +3,7 @@ import datetime
 import lbann
 import lbann.proto
 import lbann.launcher.slurm
+import lbann.launcher.lsf
 
 # ==============================================
 # Run experiments
@@ -100,6 +101,18 @@ def run(lbann_exe, model, data_reader, optimizer,
                   srun_args = launcher_args,
                   environment = environment,
                   setup_only = setup_only)
+    elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
+        lsf.run(experiment_dir=experiment_dir,
+                command='{} {}'.format(lbann_exe, lbann_args),
+                nodes=nodes,
+                procs_per_node=procs_per_node,
+                time_limit=time_limit,
+                job_name=job_name,
+                partition=partition,
+                account=account,
+                jsrun_args=launcher_args,
+                environment=environment,
+                setup_only=setup_only)
     else:
         raise RuntimeError('unsupported job scheduler ({})'
                            .format(scheduler))

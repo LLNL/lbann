@@ -46,6 +46,14 @@ def run(model, data_reader, optimizer,
         environment['OMP_NUM_THREADS'] = 8
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
+    # Magic default arguments to jsrun/etc.
+    if system in ('sierra', 'lassen'):
+        if scheduler == 'lsf':
+            launcher_args += ' -d packed -b "packed:10" -r 1 -c 40 -g 4'
+        environment['OMP_NUM_THREADS'] = 4
+        # Deal with topology mis-identification on Sierra/Lassen.
+        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
+
     # Run LBANN
     lbann.launcher.run(lbann_exe, model, data_reader, optimizer,
                        lbann_args = lbann_args,
