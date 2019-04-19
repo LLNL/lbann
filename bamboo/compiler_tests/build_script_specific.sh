@@ -34,20 +34,20 @@ done
 
 if [ "${COMPILER}" == 'clang4' ]; then
     module load clang/4.0.0
-    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler clang ${DEBUG} --reconfigure
+    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler clang ${DEBUG} --reconfigure --with-conduit
 fi
 
 if [ "${COMPILER}" == 'intel18' ]; then
     module load intel/18.0.0
-    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler intel ${DEBUG} --reconfigure
+    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler intel ${DEBUG} --reconfigure --with-conduit
 fi
 
 if [ "${COMPILER}" == 'gcc4' ]; then
     module load gcc/4.9.3
-    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler gnu ${DEBUG} --reconfigure
+    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler gnu ${DEBUG} --reconfigure --with-conduit
 fi
 
 if [ "${COMPILER}" == 'gcc7' ]; then
     module load gcc/7.1.0
-    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler gnu ${DEBUG} --reconfigure
+    ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler gnu ${DEBUG} --reconfigure --with-conduit
 fi
