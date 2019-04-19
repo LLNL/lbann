@@ -49,7 +49,7 @@ namespace lbann {
   numpy_npz_conduit_reader& operator=(const numpy_npz_conduit_reader&);
   ~numpy_npz_conduit_reader() override {}
 
-  numpy_npz_conduit_reader* copy() const override { return new numpy_npz_conduit_reader(*this); }
+  void copy_members(const numpy_npz_conduit_reader& rhs);
 
   std::string get_type() const override {
     return "numpy_npz_conduit_reader";
