@@ -51,6 +51,38 @@ void numpy_conduit_cache::copy_members(const numpy_conduit_cache& rhs) {
   LBANN_ERROR("needs to be impelemented");
 }
 
+//static
+void numpy_conduit_cache::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset_conduit_node) {
+
+  try {
+    if (reset_conduit_node) {
+      output.reset();
+    }
+    std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filename);
+    for (auto &&t : a) {
+      cnpy::NpyArray &b = t.second;
+      output[std::to_string(data_id) + "/" + t.first + "/word_size"] = b.word_size;
+      output[std::to_string(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
+      output[std::to_string(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[std::to_string(data_id) + "/" + t.first + "/shape"] = b.shape;
+      std::shared_ptr<std::vector<char>> data = b.data_holder;
+      output[std::to_string(data_id) + "/" + t.first + "/data"].set_external_char_ptr(b.data_holder->data());
+    }
+  } catch (...) {
+    //note: npz_load throws std::runtime_error, but I don't want to assume
+    //      that won't change in the future
+    LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
+  }
+}
+
+const conduit::Node & numpy_conduit_cache::get_conduit_node(int data_id) const {
+  std::unordered_map<int, conduit::Node>::const_iterator it = m_data.find(data_id);
+  if (it == m_data.end()) {
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data");
+  }
+  return it->second;
+}
+
 void numpy_conduit_cache::load(const std::string filename, int data_id) {
   try {
     m_numpy[data_id] = cnpy::npz_load(filename);
@@ -71,16 +103,6 @@ void numpy_conduit_cache::load(const std::string filename, int data_id) {
     LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
   }
 }
-
-const conduit::Node & numpy_conduit_cache::get_conduit_node(int data_id) const {
-  std::unordered_map<int, conduit::Node>::const_iterator it = m_data.find(data_id);
-  if (it == m_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data");
-  }
-  return it->second;
-}
-
-
 
 } // end of namespace lbann
 

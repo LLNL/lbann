@@ -113,6 +113,8 @@ class numpy_conduit_cache {
 
   const conduit::Node & get_conduit_node(int data_id) const;
 
+  static void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset_conduit_node = true);
+
 protected :
 
   void copy_members(const numpy_conduit_cache &rhs);

@@ -88,15 +88,18 @@ void numpy_npz_conduit_reader::load() {
   int rank = m_comm->get_rank_in_trainer();
   int np = m_comm->get_procs_per_trainer();
 
-  std::string npz_filename;
+
+  // note: in the following block "m_num_samples" plays the role of data_id
   m_num_samples = 0;
+
+  std::string npz_filename;
   bool first = true;
   std::unordered_set<int> label_classes;
   while (getline(ifs, npz_filename)) {
     if (npz_filename.size() > 2) {
       if (m_num_samples % np == rank) {
         conduit::Node &node = m_data_store->get_empty_node(m_num_samples);
-        numpy_conduit_cache::load_conduit_node(npz_filename, node, m_num_samples);
+        numpy_conduit_cache::load_conduit_node(npz_filename, m_num_samples, node);
 
         // things that only need to be node for a single sample
         if (first) {
@@ -123,7 +126,8 @@ void numpy_npz_conduit_reader::load() {
         }
 
         if (m_has_labels) {
-          int *label = const_cast<int*>(node[std::to_string(m_num_samples) + "/frm/data"].value());
+          char *char_data = node[std::to_string(m_num_samples) + "/frm/data"].value();
+          int *label = reinterpret_cast<int*>(char_data);
           label_classes.insert(*label);
         }
 
@@ -176,10 +180,11 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
   const std::string data_id_str = pad(std::to_string(data_id), SAMPLE_ID_PAD, '0');
   const char *char_data = node[data_id_str + "/data/data"].value();
+  char *char_data_2 = const_cast<char*>(char_data);
 
   if (m_data_word_size == 2) {
     // Convert int16 to DataType.
-    const short *data = const_cast<short*>(char_data);
+    short *data = reinterpret_cast<short*>(char_data_2);
     DataType *dest = X_v.Buffer();
 
     // OPTIMIZE
@@ -190,11 +195,13 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   } else {
     void *data = NULL;
     if (m_data_word_size == 4) {
-      const float *data = reinterpret_cast<float*>(char_data);
+      float *f = reinterpret_cast<float*>(char_data_2);
+      data = (void*)(f + data_id * m_num_features);
     } else if (m_data_word_size == 8) {
-      const double *data = const_cast<double*>(char_data);
+      double *d = reinterpret_cast<double*>(char_data_2);
+      data = (void*)(d + data_id * m_num_features);
     }
-    std::memcpy(X_v.Buffer(), data, m_num_features * m_data.word_size);
+    std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
   }
   return true;
 }
@@ -205,8 +212,9 @@ bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   }
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
   const std::string data_id_str = pad(std::to_string(data_id), SAMPLE_ID_PAD, '0');
-  char *char_data = node[data_id_str + "/data/data"].value();
-  int *label = const_cast<int*>(char_data);
+  const char *char_data = node[data_id_str + "/data/data"].value();
+  char *char_data_2 = const_cast<char*>(char_data);
+  int *label = reinterpret_cast<int*>(char_data_2);
   Y(*label, mb_idx) = 1;
   return true;
 }
