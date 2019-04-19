@@ -101,7 +101,10 @@ def imagenet_labels(system = system(), data_set = 'train',
 
     """
     label_dir = parallel_fs_base_path(system)
-    label_dir += 'brainusr/datasets/ILSVRC2012/labels/'
+    if system in ('lassen', 'sierra'):
+        label_dir += 'brainusr/datasets/ILSVRC2012/original/labels/'
+    else:
+        label_dir += 'brainusr/datasets/ILSVRC2012/labels/'
     suffixes = {1000: '', 10: '_c0-9', 100: '_c0-99',
                 200: '_c100-299', 300: '_c0-299'}
     if data_set.lower() in ('train', 'training'):
