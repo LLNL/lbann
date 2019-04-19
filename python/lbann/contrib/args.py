@@ -6,9 +6,9 @@ def add_scheduler_arguments(parser):
     """Add command-line arguments for common scheduler settings.
 
     Adds the following options: `--nodes`, `--procs-per-node`,
-    `--partition`, `--account`, `--time-limit`. The caller is
-    responsible for using them. `get_launcher_kwargs` can
-    assist with extracting them.
+    `--partition`, `--account`, `--time-limit`, `--reservation`.
+    The caller is responsible for using them.
+    `get_launcher_kwargs` can assist with extracting them.
 
     Args:
         parser (argparse.ArgumentParser): command-line argument
@@ -29,6 +29,9 @@ def add_scheduler_arguments(parser):
     parser.add_argument(
         '--account', action='store', type=str,
         help='scheduler account', metavar='NAME')
+    parser.add_argument(
+        '--reservation', action='store', type=str,
+        help='scheduler reservation', metavar='NAME')
     parser.add_argument(
         '--time-limit', action='store', type=int,
         help='time limit (in minutes)', metavar='MIN')
@@ -57,6 +60,7 @@ def get_launcher_kwargs(args):
         kwargs['procs_per_node'] = args.procs_per_node
     if args.partition: kwargs['partition'] = args.partition
     if args.account: kwargs['account'] = args.account
+    if args.reservation: kwargs['reservation'] = args.reservation
     if args.time_limit: kwargs['time_limit'] = args.time_limit
     if args.setup_only: kwargs['setup_only'] = True
     return kwargs

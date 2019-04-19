@@ -10,19 +10,20 @@ import lbann.launcher.lsf
 # ==============================================
 
 def run(lbann_exe, model, data_reader, optimizer,
-        lbann_args = '',
-        experiment_dir = None,
-        nodes = 1,
-        procs_per_node = 1,
-        time_limit = 60,
-        scheduler = 'slurm',
-        job_name = 'lbann',
-        system = None,
-        partition = None,
-        account = None,
-        launcher_args = '',
-        environment = {},
-        setup_only = False):
+        lbann_args='',
+        experiment_dir=None,
+        nodes=1,
+        procs_per_node=1,
+        time_limit=60,
+        scheduler='slurm',
+        job_name='lbann',
+        system=None,
+        partition=None,
+        account=None,
+        reservation=None,
+        launcher_args='',
+        environment={},
+        setup_only=False):
     """Run LBANN experiment.
 
     This is intended to interface with job schedulers on HPC
@@ -54,6 +55,7 @@ def run(lbann_exe, model, data_reader, optimizer,
         system (str, optional): Target system.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
+        reservation (str, optional): Reservation name (for DATs).
         launcher_args (str, optional): Command-line arguments to
             launcher.
         environment (dict of {str: str}, optional): Environment
@@ -90,17 +92,18 @@ def run(lbann_exe, model, data_reader, optimizer,
 
     # Run experiment
     if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
-        slurm.run(experiment_dir = experiment_dir,
-                  command = '{} {}'.format(lbann_exe, lbann_args),
-                  nodes = nodes,
-                  procs_per_node = procs_per_node,
-                  time_limit = time_limit,
-                  job_name = job_name,
-                  partition = partition,
-                  account = account,
-                  srun_args = launcher_args,
-                  environment = environment,
-                  setup_only = setup_only)
+        slurm.run(experiment_dir=experiment_dir,
+                  command='{} {}'.format(lbann_exe, lbann_args),
+                  nodes=nodes,
+                  procs_per_node=procs_per_node,
+                  time_limit=time_limit,
+                  job_name=job_name,
+                  partition=partition,
+                  account=account,
+                  reservation=reservation,
+                  srun_args=launcher_args,
+                  environment=environment,
+                  setup_only=setup_only)
     elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
         lsf.run(experiment_dir=experiment_dir,
                 command='{} {}'.format(lbann_exe, lbann_args),
@@ -110,6 +113,7 @@ def run(lbann_exe, model, data_reader, optimizer,
                 job_name=job_name,
                 partition=partition,
                 account=account,
+                reservation=reservation,
                 jsrun_args=launcher_args,
                 environment=environment,
                 setup_only=setup_only)

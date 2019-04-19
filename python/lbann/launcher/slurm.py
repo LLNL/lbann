@@ -4,16 +4,17 @@ import subprocess
 from lbann.util import make_iterable
 
 def run(command,
-        experiment_dir = os.getcwd(),
-        nodes = 1,
-        procs_per_node = 1,
-        time_limit = -1,
-        job_name = None,
-        partition = None,
-        account = None,
-        srun_args = '',
-        environment = {},
-        setup_only = False):
+        experiment_dir=os.getcwd(),
+        nodes=1,
+        procs_per_node=1,
+        time_limit=-1,
+        job_name=None,
+        partition=None,
+        account=None,
+        reservation=None,
+        srun_args='',
+        environment={},
+        setup_only=False):
     """Run executable with Slurm.
 
     Creates a Slurm batch script in the experiment directory. If a
@@ -32,6 +33,7 @@ def run(command,
         job_name (str, optional): Batch job name.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
+        reservation (str, optional): Reservation name.
         srun_args (str, optional): Command-line arguments to srun.
         environment (dict of {str: str}, optional): Environment
             variables.
@@ -69,6 +71,8 @@ def run(command,
             f.write('#SBATCH --partition={}\n'.format(partition))
         if account:
             f.write('#SBATCH --account={}\n'.format(account))
+        if reservation:
+            raise ValueError('Slurm reservations not supported')
         f.write('#SBATCH --workdir={}\n'.format(experiment_dir))
         f.write('#SBATCH --output={}\n'.format(out_file))
         f.write('#SBATCH --error={}\n'.format(err_file))

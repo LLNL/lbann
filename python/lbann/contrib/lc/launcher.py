@@ -3,20 +3,21 @@ from lbann.contrib.lc.paths import lbann_exe
 import lbann.launcher
 
 def run(model, data_reader, optimizer,
-        lbann_exe = lbann_exe(),
-        lbann_args = '',
-        experiment_dir = None,
-        nodes = 1,
-        procs_per_node = procs_per_node(),
-        time_limit = 60,
-        scheduler = scheduler(),
-        job_name = 'lbann',
-        system = system(),
-        partition = partition(),
-        account = account(),
-        launcher_args = '',
-        environment = {},
-        setup_only = False):
+        lbann_exe=lbann_exe(),
+        lbann_args='',
+        experiment_dir=None,
+        nodes=1,
+        procs_per_node=procs_per_node(),
+        time_limit=60,
+        scheduler=scheduler(),
+        job_name='lbann',
+        system=system(),
+        partition=partition(),
+        account=account(),
+        reservation=None,
+        launcher_args='',
+        environment={},
+        setup_only=False):
     """Run LBANN experiment with LC-specific optimizations.
 
     This is a convenience wrapper around the `lbann.launcher.run`
