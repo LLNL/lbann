@@ -85,13 +85,14 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_np_in_trainer = rhs.m_np_in_trainer;
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
-  m_preload = rhs.m_preload;
+  m_preload = false; //rhs.m_preload;
   m_owner = rhs.m_owner;
   m_shuffled_indices = rhs.m_shuffled_indices;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_super_node = rhs.m_super_node;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
 
+#if 0
   if(ds_sample_move_list.size() == 0) {
     m_data = rhs.m_data;
   } else {
@@ -110,7 +111,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
       }
     }
   }
-
+#endif
 
   /// Clear the pointer to the data reader, this cannot be copied
   m_reader = nullptr;
