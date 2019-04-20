@@ -85,7 +85,7 @@ if args.prototext:
                                data_reader=data_reader_proto)
 
 # Run experiment
-if not args.disable_run:
+if not args.prototext:
     from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
     import lbann.contrib.lc.launcher
     kwargs = lbann.contrib.args.get_launcher_kwargs(args)
