@@ -199,6 +199,60 @@ public:
   cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) override;
 };
 
+////////////////////////////////////////////////////////////
+// cuDNN algorithm selection
+////////////////////////////////////////////////////////////
+
+/**
+ * Select a forward convolution algorithm.
+ *
+ * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * provided via the pointer arguments.
+ *
+ * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param deterministic True to require deterministic algorithms.
+ */
+cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const void* filter,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& output_desc,
+  void* output,
+  size_t ws_size,
+  void* ws);
+
+/** Select a backward data convolution algorithm. */
+cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const void* filter,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const void* d_output,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& d_input_desc,
+  void* d_input,
+  size_t ws_size,
+  void* ws);
+
+/** Select a backward filter convolution algorithm. */
+cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const void* d_output,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnFilterDescriptor_t& d_filter_desc,
+  void* d_filter,
+  size_t ws_size,
+  void* ws);
+
 } // namespace cudnn
 } // namespace lbann
 

@@ -528,6 +528,330 @@ cudnnTensorDescriptor_t& entrywise_layer_tensor_manager::get_error_signals(int p
   return desc;
 }
 
+////////////////////////////////////////////////////////////
+// cuDNN algorithm selection
+////////////////////////////////////////////////////////////
+
+namespace {
+
+// Non-deterministic algorithms.
+std::vector<cudnnConvolutionFwdAlgo_t> nondet_fwd_algos = {};
+std::vector<cudnnConvolutionBwdDataAlgo_t> nondet_bwd_data_algos = {
+  CUDNN_CONVOLUTION_BWD_DATA_ALGO_0
+};
+std::vector<cudnnConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
+  CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0,
+  CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3
+};
+
+template <typename AlgoType, typename PerfType>
+AlgoType find_best_heuristic_algorithm(
+  const std::vector<PerfType>& perf_results,
+  const std::vector<AlgoType>& deterministic_algos,
+  bool deterministic,
+  size_t max_ws_size) {
+  std::vector<AlgoType> algos;
+  for (const auto& p : perf_results) {
+    if (p.status != CUDNN_STATUS_SUCCESS) {
+      continue;
+    }
+    if (deterministic &&
+        std::find(deterministic_algos.begin(), deterministic_algos.end(),
+                  p.algo) != deterministic_algos.end()) {
+      continue;
+    }
+    if (p.memory > max_ws_size) {
+      continue;
+    }
+    algos.push_back(p.algo);
+  }
+  if (algos.empty()) {
+    LBANN_ERROR("No valid convolution algorithms.");
+  }
+  return algos[0];
+}
+
+template <typename AlgoType, typename PerfType>
+AlgoType find_best_algorithm(
+  const std::vector<PerfType>& perf_results,
+  const std::vector<AlgoType>& deterministic_algos,
+  bool deterministic,
+  size_t max_ws_size) {
+  std::unordered_map<AlgoType, float> time_map;
+  for (const auto& p : perf_results) {
+    if (p.status != CUDNN_STATUS_SUCCESS) {
+      continue;
+    }
+    if (deterministic &&
+        std::find(deterministic_algos.begin(), deterministic_algos.end(),
+                  p.algo) != deterministic_algos.end()) {
+      continue;
+    }
+    if (p.memory > max_ws_size) {
+      continue;
+    }
+    if (time_map.count(p.algo) == 0) {
+      time_map[p.algo] = p.time;
+    } else {
+      time_map[p.algo] += p.time;
+    }
+  }
+  if (time_map.empty()) {
+    LBANN_ERROR("No valid convolution algorithms.");
+  }
+  AlgoType best_algo = time_map.begin()->first;
+  float min_time = std::numeric_limits<float>::max();
+  for (const auto& x : time_map) {
+    AlgoType algo = x.first;
+    float time = x.second;
+    if (time < min_time) {
+      min_time = time;
+      best_algo = algo;
+    }
+  }
+  return best_algo;
+}
+
+cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& output_desc,
+  size_t ws_size) {
+  int num_algos;
+  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
+                get_handle(), &num_algos));
+  std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  int num_tested_algos;
+  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm_v7(
+                get_handle(), input_desc, filter_desc, conv_desc, output_desc,
+                num_algos, &num_tested_algos, perf_results.data()));
+  return find_best_heuristic_algorithm(perf_results, nondet_fwd_algos,
+                                       deterministic, ws_size);
+}
+
+cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
+  bool deterministic,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& d_input_desc,
+  size_t ws_size) {
+  int num_algos;
+  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+                get_handle(), &num_algos));
+  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  int num_tested_algos;
+  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm_v7(
+                get_handle(), filter_desc, d_output_desc, conv_desc,
+                d_input_desc, num_algos, &num_tested_algos,
+                perf_results.data()));
+  return find_best_heuristic_algorithm(perf_results, nondet_bwd_data_algos,
+                                       deterministic, ws_size);
+}
+
+cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnFilterDescriptor_t& d_filter_desc,
+  size_t ws_size) {
+  int num_algos;
+  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
+                get_handle(), &num_algos));
+  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
+  int num_tested_algos;
+  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
+                get_handle(), input_desc, d_output_desc, conv_desc,
+                d_filter_desc, num_algos, &num_tested_algos,
+                perf_results.data()));
+  return find_best_heuristic_algorithm(perf_results, nondet_bwd_filter_algos,
+                                       deterministic, ws_size);
+}
+
+cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const void* filter,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& output_desc,
+  void* output,
+  size_t ws_size,
+  void* ws) {
+  constexpr int num_trials = 3;
+  constexpr int num_skip = 1;
+  int num_algos;
+  CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithmMaxCount(
+                get_handle(), &num_algos));
+  std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results_all;
+  std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
+  for (int trial = 0; trial < num_trials + num_skip; ++trial) {
+    int num_tested_algos;
+    CHECK_CUDNN(cudnnFindConvolutionForwardAlgorithmEx(
+                  get_handle(), input_desc, input, filter_desc, filter,
+                  conv_desc, output_desc, output, num_algos, &num_tested_algos,
+                  perf_results.data(), ws, ws_size));
+    if (trial > num_skip) {
+      for (const auto& p : perf_results) {
+        perf_results_all.push_back(p);
+      }
+    }
+  }
+  return find_best_algorithm(perf_results_all, nondet_fwd_algos,
+                             deterministic, ws_size);
+}
+
+cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
+  bool deterministic,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const void* filter,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const void* d_output,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& d_input_desc,
+  void* d_input,
+  size_t ws_size,
+  void* ws) {
+  constexpr int num_trials = 3;
+  constexpr int num_skip = 1;
+  int num_algos;
+  CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
+                get_handle(), &num_algos));
+  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results_all;
+  std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
+  for (int trial = 0; trial < num_trials + num_skip; ++trial) {
+    int num_tested_algos;
+    CHECK_CUDNN(cudnnFindConvolutionBackwardDataAlgorithmEx(
+                  get_handle(), filter_desc, filter, d_output_desc, d_output,
+                  conv_desc, d_input_desc, d_input, num_algos,
+                  &num_tested_algos, perf_results.data(), ws, ws_size));
+    if (trial > num_skip) {
+      for (const auto& p : perf_results) {
+        perf_results_all.push_back(p);
+      }
+    }
+  }
+  return find_best_algorithm(perf_results_all, nondet_bwd_data_algos,
+                             deterministic, ws_size);
+}
+
+cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const void* d_output,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnFilterDescriptor_t& d_filter_desc,
+  void* d_filter,
+  size_t ws_size,
+  void* ws) {
+  constexpr int num_trials = 3;
+  constexpr int num_skip = 1;
+  int num_algos;
+  CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
+                get_handle(), &num_algos));
+  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results_all;
+  std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
+  for (int trial = 0; trial < num_trials + num_skip; ++trial) {
+    int num_tested_algos;
+    CHECK_CUDNN(cudnnFindConvolutionBackwardFilterAlgorithmEx(
+                  get_handle(), input_desc, input, d_output_desc, d_output,
+                  conv_desc, d_filter_desc, d_filter, num_algos,
+                  &num_tested_algos, perf_results.data(), ws, ws_size));
+    if (trial > num_skip) {
+      for (const auto& p : perf_results) {
+        perf_results_all.push_back(p);
+      }
+    }
+  }
+  return find_best_algorithm(perf_results_all, nondet_bwd_filter_algos,
+                             deterministic, ws_size);
+}
+
+}  // namespace
+
+cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const void* filter,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& output_desc,
+  void* output,
+  size_t ws_size,
+  void* ws) {
+  if (autotune) {
+    return get_fwd_algo_autotune(deterministic,
+                                 input_desc, input,
+                                 filter_desc, filter,
+                                 conv_desc,
+                                 output_desc, output,
+                                 ws_size, ws);
+  } else {
+    return get_fwd_algo_heuristic(deterministic, input_desc, filter_desc,
+                                  conv_desc, output_desc, ws_size);
+  }
+}
+
+cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnFilterDescriptor_t& filter_desc,
+  const void* filter,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const void* d_output,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& d_input_desc,
+  void* d_input,
+  size_t ws_size,
+  void* ws) {
+  if (autotune) {
+    return get_bwd_data_algo_autotune(deterministic,
+                                      filter_desc, filter,
+                                      d_output_desc, d_output,
+                                      conv_desc,
+                                      d_input_desc, d_input,
+                                      ws_size, ws);
+  } else {
+    return get_bwd_data_algo_heuristic(deterministic, filter_desc,
+                                       d_output_desc, conv_desc,
+                                       d_input_desc, ws_size);
+  }
+}
+
+cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnTensorDescriptor_t& d_output_desc,
+  const void* d_output,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnFilterDescriptor_t& d_filter_desc,
+  void* d_filter,
+  size_t ws_size,
+  void* ws) {
+  if (autotune) {
+    return get_bwd_filter_algo_autotune(deterministic,
+                                        input_desc, input,
+                                        d_output_desc, d_output,
+                                        conv_desc,
+                                        d_filter_desc, d_filter,
+                                        ws_size, ws);
+  } else {
+    return get_bwd_filter_algo_heuristic(deterministic, input_desc,
+                                         d_output_desc, conv_desc,
+                                         d_filter_desc, ws_size);
+  }
+}
+
 } // namespace cudnn
 } // namespace lbann
 
