@@ -615,7 +615,7 @@ AlgoType find_best_algorithm(
 cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
   bool deterministic,
   const cudnnTensorDescriptor_t& input_desc,
-  const cudnnFilterDescriptor_t& filter_desc,
+  const cudnnFilterDescriptor_t& kernel_desc,
   const cudnnConvolutionDescriptor_t& conv_desc,
   const cudnnTensorDescriptor_t& output_desc,
   size_t ws_size) {
@@ -625,7 +625,7 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
   std::vector<cudnnConvolutionFwdAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
   CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm_v7(
-                get_handle(), input_desc, filter_desc, conv_desc, output_desc,
+                get_handle(), input_desc, kernel_desc, conv_desc, output_desc,
                 num_algos, &num_tested_algos, perf_results.data()));
   return find_best_heuristic_algorithm(perf_results, nondet_fwd_algos,
                                        deterministic, ws_size);
@@ -633,10 +633,10 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_heuristic(
 
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
   bool deterministic,
-  const cudnnFilterDescriptor_t& filter_desc,
-  const cudnnTensorDescriptor_t& d_output_desc,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
   const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& d_input_desc,
+  const cudnnTensorDescriptor_t& error_signal_desc,
   size_t ws_size) {
   int num_algos;
   CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithmMaxCount(
@@ -644,8 +644,8 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
   std::vector<cudnnConvolutionBwdDataAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
   CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm_v7(
-                get_handle(), filter_desc, d_output_desc, conv_desc,
-                d_input_desc, num_algos, &num_tested_algos,
+                get_handle(), kernel_desc, prev_error_signal_desc, conv_desc,
+                error_signal_desc, num_algos, &num_tested_algos,
                 perf_results.data()));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_data_algos,
                                        deterministic, ws_size);
@@ -654,9 +654,9 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_heuristic(
 cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
   bool deterministic,
   const cudnnTensorDescriptor_t& input_desc,
-  const cudnnTensorDescriptor_t& d_output_desc,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
   const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& d_filter_desc,
+  const cudnnFilterDescriptor_t& kernel_gradient_desc,
   size_t ws_size) {
   int num_algos;
   CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithmMaxCount(
@@ -664,8 +664,8 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_heuristic(
   std::vector<cudnnConvolutionBwdFilterAlgoPerf_t> perf_results(num_algos);
   int num_tested_algos;
   CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm_v7(
-                get_handle(), input_desc, d_output_desc, conv_desc,
-                d_filter_desc, num_algos, &num_tested_algos,
+                get_handle(), input_desc, prev_error_signal_desc, conv_desc,
+                kernel_gradient_desc, num_algos, &num_tested_algos,
                 perf_results.data()));
   return find_best_heuristic_algorithm(perf_results, nondet_bwd_filter_algos,
                                        deterministic, ws_size);
@@ -675,8 +675,8 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
   bool deterministic,
   const cudnnTensorDescriptor_t& input_desc,
   const void* input,
-  const cudnnFilterDescriptor_t& filter_desc,
-  const void* filter,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const void* kernel,
   const cudnnConvolutionDescriptor_t& conv_desc,
   const cudnnTensorDescriptor_t& output_desc,
   void* output,
@@ -692,7 +692,7 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
     CHECK_CUDNN(cudnnFindConvolutionForwardAlgorithmEx(
-                  get_handle(), input_desc, input, filter_desc, filter,
+                  get_handle(), input_desc, input, kernel_desc, kernel,
                   conv_desc, output_desc, output, num_algos, &num_tested_algos,
                   perf_results.data(), ws, ws_size));
     if (trial > num_skip) {
@@ -707,13 +707,13 @@ cudnnConvolutionFwdAlgo_t get_fwd_algo_autotune(
 
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
   bool deterministic,
-  const cudnnFilterDescriptor_t& filter_desc,
-  const void* filter,
-  const cudnnTensorDescriptor_t& d_output_desc,
-  const void* d_output,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const void* kernel,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const void* prev_error_signal,
   const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& d_input_desc,
-  void* d_input,
+  const cudnnTensorDescriptor_t& error_signal_desc,
+  void* error_signal,
   size_t ws_size,
   void* ws) {
   constexpr int num_trials = 3;
@@ -726,8 +726,9 @@ cudnnConvolutionBwdDataAlgo_t get_bwd_data_algo_autotune(
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
     CHECK_CUDNN(cudnnFindConvolutionBackwardDataAlgorithmEx(
-                  get_handle(), filter_desc, filter, d_output_desc, d_output,
-                  conv_desc, d_input_desc, d_input, num_algos,
+                  get_handle(), kernel_desc, kernel,
+                  prev_error_signal_desc, prev_error_signal,
+                  conv_desc, error_signal_desc, error_signal, num_algos,
                   &num_tested_algos, perf_results.data(), ws, ws_size));
     if (trial > num_skip) {
       for (const auto& p : perf_results) {
@@ -743,11 +744,11 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
   bool deterministic,
   const cudnnTensorDescriptor_t& input_desc,
   const void* input,
-  const cudnnTensorDescriptor_t& d_output_desc,
-  const void* d_output,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const void* prev_error_signal,
   const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& d_filter_desc,
-  void* d_filter,
+  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  void* kernel_gradient,
   size_t ws_size,
   void* ws) {
   constexpr int num_trials = 3;
@@ -760,8 +761,9 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algo_autotune(
   for (int trial = 0; trial < num_trials + num_skip; ++trial) {
     int num_tested_algos;
     CHECK_CUDNN(cudnnFindConvolutionBackwardFilterAlgorithmEx(
-                  get_handle(), input_desc, input, d_output_desc, d_output,
-                  conv_desc, d_filter_desc, d_filter, num_algos,
+                  get_handle(), input_desc, input,
+                  prev_error_signal_desc, prev_error_signal,
+                  conv_desc, kernel_gradient_desc, kernel_gradient, num_algos,
                   &num_tested_algos, perf_results.data(), ws, ws_size));
     if (trial > num_skip) {
       for (const auto& p : perf_results) {
@@ -780,8 +782,8 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
   bool deterministic,
   const cudnnTensorDescriptor_t& input_desc,
   const void* input,
-  const cudnnFilterDescriptor_t& filter_desc,
-  const void* filter,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const void* kernel,
   const cudnnConvolutionDescriptor_t& conv_desc,
   const cudnnTensorDescriptor_t& output_desc,
   void* output,
@@ -790,12 +792,12 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
   if (autotune) {
     return get_fwd_algo_autotune(deterministic,
                                  input_desc, input,
-                                 filter_desc, filter,
+                                 kernel_desc, kernel,
                                  conv_desc,
                                  output_desc, output,
                                  ws_size, ws);
   } else {
-    return get_fwd_algo_heuristic(deterministic, input_desc, filter_desc,
+    return get_fwd_algo_heuristic(deterministic, input_desc, kernel_desc,
                                   conv_desc, output_desc, ws_size);
   }
 }
@@ -803,26 +805,26 @@ cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
 cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
   bool autotune,
   bool deterministic,
-  const cudnnFilterDescriptor_t& filter_desc,
-  const void* filter,
-  const cudnnTensorDescriptor_t& d_output_desc,
-  const void* d_output,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const void* kernel,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const void* prev_error_signal,
   const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnTensorDescriptor_t& d_input_desc,
-  void* d_input,
+  const cudnnTensorDescriptor_t& error_signal_desc,
+  void* error_signal,
   size_t ws_size,
   void* ws) {
   if (autotune) {
     return get_bwd_data_algo_autotune(deterministic,
-                                      filter_desc, filter,
-                                      d_output_desc, d_output,
+                                      kernel_desc, kernel,
+                                      prev_error_signal_desc, prev_error_signal,
                                       conv_desc,
-                                      d_input_desc, d_input,
+                                      error_signal_desc, error_signal,
                                       ws_size, ws);
   } else {
-    return get_bwd_data_algo_heuristic(deterministic, filter_desc,
-                                       d_output_desc, conv_desc,
-                                       d_input_desc, ws_size);
+    return get_bwd_data_algo_heuristic(deterministic, kernel_desc,
+                                       prev_error_signal_desc, conv_desc,
+                                       error_signal_desc, ws_size);
   }
 }
 
@@ -831,24 +833,24 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   bool deterministic,
   const cudnnTensorDescriptor_t& input_desc,
   const void* input,
-  const cudnnTensorDescriptor_t& d_output_desc,
-  const void* d_output,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const void* prev_error_signal,
   const cudnnConvolutionDescriptor_t& conv_desc,
-  const cudnnFilterDescriptor_t& d_filter_desc,
-  void* d_filter,
+  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  void* kernel_gradient,
   size_t ws_size,
   void* ws) {
   if (autotune) {
     return get_bwd_filter_algo_autotune(deterministic,
                                         input_desc, input,
-                                        d_output_desc, d_output,
+                                        prev_error_signal_desc, prev_error_signal,
                                         conv_desc,
-                                        d_filter_desc, d_filter,
+                                        kernel_gradient_desc, kernel_gradient,
                                         ws_size, ws);
   } else {
     return get_bwd_filter_algo_heuristic(deterministic, input_desc,
-                                         d_output_desc, conv_desc,
-                                         d_filter_desc, ws_size);
+                                         prev_error_signal_desc, conv_desc,
+                                         kernel_gradient_desc, ws_size);
   }
 }
 

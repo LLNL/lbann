@@ -1122,8 +1122,8 @@ private:
     const int local_mini_batch_size,
     const cudnnTensorDescriptor_t& input_desc,
     const DataType* input,
-    const cudnnFilterDescriptor_t& filter_desc,
-    const DataType* filter,
+    const cudnnFilterDescriptor_t& kernel_desc,
+    const DataType* kernel,
     const cudnnConvolutionDescriptor_t& conv_desc,
     const cudnnTensorDescriptor_t& output_desc,
     DataType* output,
@@ -1139,7 +1139,7 @@ private:
         cudnn::get_fwd_algorithm(
           true, deterministic,
           input_desc, input,
-          filter_desc, filter,
+          kernel_desc, kernel,
           conv_desc,
           output_desc, output,
           ws_size, ws);
@@ -1150,13 +1150,13 @@ private:
   /** Get the cuDNN algorithm to use for backward-data. */
   cudnnConvolutionBwdDataAlgo_t get_backward_data_algo_cudnn(
     const int local_mini_batch_size,
-    const cudnnFilterDescriptor_t& filter_desc,
-    const DataType* filter,
-    const cudnnTensorDescriptor_t& d_output_desc,
-    const DataType* d_output,
+    const cudnnFilterDescriptor_t& kernel_desc,
+    const DataType* kernel,
+    const cudnnTensorDescriptor_t& prev_error_signal_desc,
+    const DataType* prev_error_signal,
     const cudnnConvolutionDescriptor_t& conv_desc,
-    const cudnnTensorDescriptor_t& d_input_desc,
-    DataType* d_input,
+    const cudnnTensorDescriptor_t& error_signal_desc,
+    DataType* error_signal,
     size_t ws_size,
     DataType* ws) {
     if (m_bwd_data_cudnn_algos.count(local_mini_batch_size) == 0) {
@@ -1168,10 +1168,10 @@ private:
       m_bwd_data_cudnn_algos[local_mini_batch_size] =
         cudnn::get_bwd_data_algorithm(
           true, deterministic,
-          filter_desc, filter,
-          d_output_desc, d_output,
+          kernel_desc, kernel,
+          prev_error_signal_desc, prev_error_signal,
           conv_desc,
-          d_input_desc, d_input,
+          error_signal_desc, error_signal,
           ws_size, ws);
     }
     return m_bwd_data_cudnn_algos[local_mini_batch_size];
@@ -1179,16 +1179,16 @@ private:
 
   /**
    * Get the cuDNN algorithm to use for backward-filter.
-   * Buffer space for d_filter is allocated via temporary workspace.
+   * Buffer space for kernel_gradient is allocated via temporary workspace.
    */
   cudnnConvolutionBwdFilterAlgo_t get_backward_filter_algo_cudnn(
     const int local_mini_batch_size,
     const cudnnTensorDescriptor_t& input_desc,
     const DataType* input,
-    const cudnnTensorDescriptor_t& d_output_desc,
-    const DataType* d_output,
+    const cudnnTensorDescriptor_t& prev_error_signal_desc,
+    const DataType* prev_error_signal,
     const cudnnConvolutionDescriptor_t& conv_desc,
-    const cudnnFilterDescriptor_t& d_filter_desc,
+    const cudnnFilterDescriptor_t& kernel_gradient_desc,
     size_t ws_size,
     DataType* ws) {
     if (m_bwd_filter_cudnn_algos.count(local_mini_batch_size) == 0) {
@@ -1198,19 +1198,19 @@ private:
       bool deterministic = false;
 #endif
       // Temporary filter gradient buffer.
-      GPUMat d_filter;
+      GPUMat kernel_gradient;
 #ifdef HYDROGEN_HAVE_CUB
-      d_filter.SetMemoryMode(1);
+      kernel_gradient.SetMemoryMode(1);
 #endif
-      d_filter.Resize(this->m_weights[0]->get_matrix_height(),
-                      this->m_weights[0]->get_matrix_width());
+      kernel_gradient.Resize(this->m_weights[0]->get_matrix_height(),
+                             this->m_weights[0]->get_matrix_width());
       m_bwd_filter_cudnn_algos[local_mini_batch_size] =
         cudnn::get_bwd_filter_algorithm(
           true, deterministic,
           input_desc, input,
-          d_output_desc, d_output,
+          prev_error_signal_desc, prev_error_signal,
           conv_desc,
-          d_filter_desc, d_filter.Buffer(),
+          kernel_gradient_desc, kernel_gradient.Buffer(),
           ws_size, ws);
     }
     return m_bwd_filter_cudnn_algos[local_mini_batch_size];
