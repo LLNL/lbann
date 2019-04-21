@@ -36,7 +36,6 @@ message Reader {
   //for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
-  ImagePreprocessor image_preprocessor = 13;
 
   int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
@@ -82,119 +81,6 @@ message PythonDataReader {
   string sample_function = 3;       // Function that gets data sample
   string num_samples_function = 4;  // Function that gets number of data samples
   string sample_dims_function = 5;  // Function that gets dimensions of data sample
-}
-
-message ImagePreprocessor {
-  string name = 1;
-  bool disable = 2;
-  int32 raw_width = 3;
-  int32 raw_height = 4;
-  int32 raw_num_channels = 5;
-
-  message Cropper {
-    string name = 1;
-    bool disable = 2;
-    bool crop_randomly = 3;
-    uint32 crop_width = 4;
-    uint32 crop_height = 5;
-    int32 resized_width = 6;
-    int32 resized_height = 7;
-    bool adaptive_interpolation = 8;
-  }
-
-  message Resizer {
-    string name = 1;
-    bool disable = 2;
-    int32 resized_width = 3;
-    int32 resized_height = 4;
-    bool adaptive_interpolation = 5;
-  }
-
-  message Augmenter {
-    string name = 1;
-    bool disable = 2;
-    bool horizontal_flip = 3;
-    bool vertical_flip = 4;
-    double rotation = 5;
-    double horizontal_shift = 6;
-    double vertical_shift = 7;
-    double shear_range = 8;
-  }
-
-  message Decolorizer {
-    string name = 1;
-    bool disable = 2;
-    bool pick_1ch = 3;
-  }
-
-  message Colorizer {
-    string name = 1;
-    bool disable = 2;
-  }
-
-  message Normalizer {
-    string name = 1;
-    bool disable = 2;
-    bool scale = 3;
-    bool subtract_mean = 4;
-    bool unit_variance = 5;
-    bool z_score = 6;
-  }
-
-  message Subtractor {
-    string name = 1;
-    bool disable = 2;
-    string image_to_sub = 3;
-    string image_to_div = 4;
-    repeated float channel_mean = 5 [packed = true];
-    repeated float channel_stddev = 6 [packed = true];
-  }
-
-  message PatchExtractor {
-    string name = 1;
-    bool disable = 2;
-    uint32 patch_width = 3;
-    uint32 patch_height = 4;
-    uint32 patch_gap = 5; // gap between patches
-    uint32 patch_jitter = 6; // max jittering amount for patch positions
-    uint32 centering_mode = 7; // center patch positioning mode
-    uint32 ca_correction_mode = 8; // chromatic abberation correction mode
-  }
-
-  message Noiser {
-    string name = 1;
-    bool disable = 2;
-    float factor = 3;
-  }
-
-  Cropper cropper = 6;
-  Resizer resizer = 7;
-  Augmenter augmenter = 8;
-  Decolorizer decolorizer = 9;
-  Colorizer colorizer = 10;
-  Subtractor subtractor = 11;
-  Normalizer normalizer = 12;
-  Noiser noiser = 13;
-  PatchExtractor patch_extractor = 14;
-
-  int32 early_normalization = 33; // for data_reader_jag only
-}
-
-// TODO: wrap El::Mat based normalization into a generic preprocessor
-message GenericPreprocessor {
-  string name = 1;
-  bool disable = 2;
-
-  message Normalizer {
-    string name = 1;
-    bool disable = 2;
-    bool scale = 3;
-    bool subtract_mean = 4;
-    bool unit_variance = 5;
-    bool z_score = 6;
-  }
-
-  Normalizer normalizer = 3;
 }
 
 //========================================================================
