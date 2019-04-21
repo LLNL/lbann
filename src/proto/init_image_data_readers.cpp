@@ -246,8 +246,6 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
   const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
   if (pb_preprocessor.disable()) return;
 
-  // data reader name
-  const std::string& name = pb_readme.name();
   // final size of image
   width = pb_preprocessor.raw_width();
   height = pb_preprocessor.raw_height();
@@ -279,32 +277,6 @@ void init_image_preprocessor(const lbann_data::Reader& pb_readme, const bool mas
     set_colorizer(pb_preprocessor, master, pp, channels);
   }
   set_normalizer(pb_preprocessor, master, pp);
-
-  // create a data reader
-  if (name == "imagenet_patches") {
-    std::shared_ptr<cv_process_patches> ppp = std::dynamic_pointer_cast<cv_process_patches>(pp);
-    if (pb_preprocessor.has_patch_extractor()) {
-      const lbann_data::ImagePreprocessor::PatchExtractor& pb_patch_extractor = pb_preprocessor.patch_extractor();
-      if (!pb_patch_extractor.disable()) {
-        const std::string patch_extractor_name = ((pb_patch_extractor.name() == "")? "default_patch_extractor" : pb_patch_extractor.name());
-        lbann::patchworks::patch_descriptor pi;
-        pi.set_sample_image(static_cast<unsigned int>(width),
-                            static_cast<unsigned int>(height));
-        pi.set_size(pb_patch_extractor.patch_width(), pb_patch_extractor.patch_height());
-        pi.set_gap(pb_patch_extractor.patch_gap());
-        pi.set_jitter(pb_patch_extractor.patch_jitter());
-        pi.set_mode_centering(pb_patch_extractor.centering_mode());
-        pi.set_mode_chromatic_aberration(pb_patch_extractor.ca_correction_mode());
-        pi.set_self_label();
-        pi.define_patch_set();
-        width = pb_patch_extractor.patch_width();
-        height = pb_patch_extractor.patch_height();
-        ppp->set_name(patch_extractor_name);
-        ppp->set_patch_descriptor(pi);
-        if (master) std::cout << "image processor: " << patch_extractor_name << " patch_extractor is set" << std::endl;
-      }
-    }
-  }
 }
 
 
@@ -322,8 +294,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
       (name == "multihead_siamese") ||
       (name == "multi_images") || (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
-  } else if (name == "imagenet_patches") {
-    pp = std::make_shared<cv_process_patches>();
   } else {
     if (master) {
       std::stringstream err;
@@ -340,10 +310,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   // setup preprocessor
   init_image_preprocessor(pb_readme, master, pp, width, height, channels);
 
-  if (name == "imagenet_patches") {
-    std::shared_ptr<cv_process_patches> ppp = std::dynamic_pointer_cast<cv_process_patches>(pp);
-    reader = new imagenet_reader_patches(ppp, shuffle);
-  } else if (name == "imagenet") {
+  if (name == "imagenet") {
     reader = new imagenet_reader(pp, shuffle);
   } else if (name == "multihead_siamese") {
     reader = new data_reader_multihead_siamese(pp, pb_readme.num_image_srcs(), shuffle);

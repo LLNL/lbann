@@ -97,7 +97,7 @@ void init_data_readers(
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_patches") ||
+    } else if ((name == "imagenet") ||
                (name == "multihead_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
@@ -421,8 +421,6 @@ void init_data_readers(
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "imagenet_patches") {
-        reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
       } else if (name == "multi_images") {
