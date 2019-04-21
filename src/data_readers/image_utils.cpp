@@ -160,33 +160,6 @@ bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Ty
   return ok2;
 }
 
-bool image_utils::process_image(cv::Mat& image, int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& out) {
-  std::vector<cv::Mat> patches;
-  bool ok1 = !image.empty() && pp.preprocess(image, patches);
-  bool ok2 = ok1 && (patches.size() != 0u) && (patches.size() == out.size());
-  bool ok3 = ok2;
-
-  for(size_t i=0u; ok3 && (i < patches.size()); ++i) {
-    ok3 = cv_utils::copy_cvMat_to_buf(patches[i], out[i], pp);
-  }
-  pp.disable_lazy_normalizer();
-
-  if (!ok3) {
-    throw lbann_exception(std::string("image_utils::process_image(): image ") +
-      (image.empty()? "is empty." :
-                      (ok1? (ok2? "copying failed." :
-                                  "extracted to invalid number of patches: " +
-                                   std::to_string(patches.size()) + " != " +
-                                   std::to_string(out.size())) :
-                            "preprocessing failed.")));
-  }
-
-  Width  = patches[0].cols;
-  Height = patches[0].rows;
-  Type   = patches[0].type();
-
-  return ok3;
-}
 #endif // LBANN_HAS_OPENCV
 
 /**
@@ -208,42 +181,6 @@ bool image_utils::load_image(const std::string& filename,
   _THROW_EXCEPTION_NO_OPENCV_();
   return false;
 #endif // LBANN_HAS_OPENCV
-}
-
-/**
- *  @param filename The name of the image file to read in
- *  @param Width    The width of a patch from the image read
- *  @param Height   The height of a patch from the image read
- *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
- *  @param pp       The pre-processing parameters
- *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
- *  @param buf      A thread safe buffer for local, temporary, image decoding
- */
-bool image_utils::load_image(const std::string& filename,
-                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& data, std::vector<char>& buf, cv::Mat* cv_buf) {
-#ifdef LBANN_HAS_OPENCV
-  cv::Mat image = cv_utils::lbann_imread(filename, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, buf, cv_buf);
-
-  return process_image(image, Width, Height, Type, pp, data);
-#else
-  _THROW_EXCEPTION_NO_OPENCV_();
-  return false;
-#endif // LBANN_HAS_OPENCV
-}
-
-//XX
-/**
- *  @param filename The name of the image file to read in
- *  @param Width    The width of a patch from the image read
- *  @param Height   The height of a patch from the image read
- *  @param Type     The type of the image patches (OpenCV code used for cv::Mat)
- *  @param pp       The pre-processing parameters
- *  @param data     The pre-processed image data to be stored in El::Matrix<DataType> format
- */
-bool image_utils::load_image(std::vector<unsigned char>& image_buf,
-                                    int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& data, cv::Mat* cv_buf) {
-
-  return import_image(image_buf, Width, Height, Type, pp, data, cv_buf);
 }
 
 /**
@@ -282,33 +219,6 @@ bool image_utils::save_image(const std::string& filename,
  */
 bool image_utils::import_image(cv::InputArray inbuf,
                                       int& Width, int& Height, int& Type, cv_process& pp, CPUMat& data, cv::Mat* cv_buf) {
-#ifdef LBANN_HAS_OPENCV
-  cv::Mat image;
-  if(cv_buf != nullptr) {
-    image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH, cv_buf);
-  }else {
-    image = cv::imdecode(inbuf, cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH);
-  }
-
-  return process_image(image, Width, Height, Type, pp, data);
-#else
-  _THROW_EXCEPTION_NO_OPENCV_();
-  return false;
-#endif // LBANN_HAS_OPENCV
-}
-
-/**
- *  @param inbuf   The buffer that contains the raw bytes read from an image file
- *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
- *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
- *  @param Width   The width of a patch from the image consturcted out of inbuf
- *  @param Height  The height of a patch from the image consructed
- *  @param Type    The type of the image patches (OpenCV code used for cv::Mat)
- *  @param pp      The pre-processing parameters
- *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
- */
-bool image_utils::import_image(cv::InputArray inbuf,
-                                      int& Width, int& Height, int& Type, cv_process_patches& pp, std::vector<CPUMat>& data, cv::Mat* cv_buf) {
 #ifdef LBANN_HAS_OPENCV
   cv::Mat image;
   if(cv_buf != nullptr) {

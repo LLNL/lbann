@@ -8,7 +8,6 @@ set_full_path(THIS_DIR_HEADERS
   cv_mean_extractor.hpp
   cv_normalizer.hpp
   cv_process.hpp
-  cv_process_patches.hpp
   cv_transform.hpp
   cv_utils.hpp
   data_reader.hpp
@@ -33,9 +32,6 @@ set_full_path(THIS_DIR_HEADERS
   opencv_extensions.hpp
   data_reader_multihead_siamese.hpp
   )
-
-# Add the subdirectories
-add_subdirectory(patchworks)
 
 # Propagate the files up the tree
 set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
