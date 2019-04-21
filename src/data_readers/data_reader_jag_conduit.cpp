@@ -41,7 +41,6 @@
 #include <type_traits>// is_same
 #include <set>
 #include <map>
-#include "lbann/data_readers/image_utils.hpp"
 #include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
@@ -1503,10 +1502,11 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
           std::to_string(images.size()) + "!=" + std::to_string(num_images));
       }
 
-      for(size_t i=0u; i < num_images; ++i) {
+      // TODO(pp): restore
+      /*for(size_t i=0u; i < num_images; ++i) {
         int width, height, img_type;
         image_utils::process_image(images[i], width, height, img_type, *(m_pps[tid]), X_v[i]);
-      }
+        }*/
       break;
     }
     case JAG_Scalar: {
