@@ -96,10 +96,11 @@ bool cifar10_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     X.Set(p-1, mb_idx, m_data[data_id][p]);
   }
 
-  auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  // TODO(pp): restore
+  /*auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
   normalize(pixel_col, m_image_num_channels);
-  pixel_noise(pixel_col); //add noise to image, disable by default
+  pixel_noise(pixel_col); //add noise to image, disable by default*/
   return true;
 }
 

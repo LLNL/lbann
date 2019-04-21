@@ -1642,7 +1642,8 @@ void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
 }
 
 void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-  internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
+  // TODO(pp): restore
+  //internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 }
 
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {

@@ -30,7 +30,6 @@
 #define IMAGE_DATA_READER_HPP
 
 #include "data_reader.hpp"
-#include "image_preprocessor.hpp"
 #include "cv_process.hpp"
 
 namespace lbann {
@@ -80,8 +79,9 @@ class image_data_reader : public generic_data_reader {
   }
 
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
-    internal_save_image(pixels, filename, m_image_height, m_image_width,
-                        m_image_num_channels, do_scale);
+    // TODO(pp): restore
+    /*internal_save_image(pixels, filename, m_image_height, m_image_width,
+      m_image_num_channels, do_scale);*/
   }
 
   /// Return the sample list of current minibatch

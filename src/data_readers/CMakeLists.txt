@@ -33,7 +33,6 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_multihead_siamese.cpp
   data_reader_python.cpp
   offline_patches_npz.cpp
-  image_preprocessor.cpp
   image_utils.cpp
   numpy_conduit_cache.cpp 
   )

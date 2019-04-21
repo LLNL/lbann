@@ -661,7 +661,8 @@ bool data_reader_jag::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 }
 
 void data_reader_jag::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-  internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
+  // TODO(pp): restore
+  //internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 }
 
 } // end of namespace lbann

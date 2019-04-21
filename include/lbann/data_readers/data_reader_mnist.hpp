@@ -30,7 +30,6 @@
 #define LBANN_DATA_READER_MNIST_HPP
 
 #include "data_reader_image.hpp"
-#include "image_preprocessor.hpp"
 
 namespace lbann {
 

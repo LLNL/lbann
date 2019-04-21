@@ -35,7 +35,6 @@
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include <cassert>
@@ -62,7 +61,7 @@ class model;
  * classes should implement load and the appropriate subset of fetch_datum,
  * fetch_label, and fetch_response.
  */
-class generic_data_reader : public lbann_image_preprocessor {
+class generic_data_reader {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
@@ -104,7 +103,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  ~generic_data_reader() override {}
+  virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
 
   /// set the comm object
@@ -298,8 +297,8 @@ class generic_data_reader : public lbann_image_preprocessor {
    * handling format detection, conversion, etc.
    */
   // TODO: This function needs to go away from here
-  void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) override {
+  virtual void save_image(Mat& pixels, const std::string filename,
+                          bool do_scale = true) {
     NOT_IMPLEMENTED("save_image");
   }
   /**

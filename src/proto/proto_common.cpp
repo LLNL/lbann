@@ -84,8 +84,6 @@ void init_data_readers(
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
-    // This is a temporary measure until we individually setup data reader specific preprocessors
-    bool set_up_generic_preprocessor = true;
 
     const std::string& name = readme.name();
 
@@ -96,11 +94,9 @@ void init_data_readers(
 
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
-      set_up_generic_preprocessor = false;
     } else if ((name == "imagenet") ||
                (name == "multihead_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      set_up_generic_preprocessor = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
 
@@ -140,7 +136,6 @@ void init_data_readers(
       reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
       reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
-      set_up_generic_preprocessor = false;
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
@@ -177,10 +172,8 @@ void init_data_readers(
           break;
         }
       }
-      set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      set_up_generic_preprocessor = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
@@ -236,7 +229,6 @@ void init_data_readers(
 #ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
-          set_up_generic_preprocessor = false;
           npy_readers.push_back(reader);
 #endif
         } else if (readme.format() == "pilot2_molecular_reader") {
@@ -377,10 +369,6 @@ void init_data_readers(
       reader->set_gan_label_value(readme.gan_label_value());
 
       reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
-
-      if (set_up_generic_preprocessor) {
-        init_generic_preprocessor(readme, master, reader);
-      }
     }
 
     if (readme.role() == "train") {

@@ -514,61 +514,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   }
 }
 
-
-void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* reader) {
-  if (!pb_readme.has_image_preprocessor()) return;
-
-  const lbann_data::ImagePreprocessor& pb_preprocessor = pb_readme.image_preprocessor();
-  if (pb_preprocessor.disable()) return;
-
-  // set up augmenter if necessary
-  if (pb_preprocessor.has_augmenter()) {
-    const lbann_data::ImagePreprocessor::Augmenter& pb_augmenter = pb_preprocessor.augmenter();
-    if (!pb_augmenter.disable() &&
-        (pb_augmenter.name() == "") &&
-        (pb_augmenter.horizontal_flip() ||
-         pb_augmenter.vertical_flip() ||
-         pb_augmenter.rotation() != 0.0 ||
-         pb_augmenter.horizontal_shift() != 0.0 ||
-         pb_augmenter.vertical_shift() != 0.0 ||
-         pb_augmenter.shear_range() != 0.0))
-    {
-      reader->horizontal_flip( pb_augmenter.horizontal_flip() );
-      reader->vertical_flip( pb_augmenter.vertical_flip() );
-      reader->rotation( pb_augmenter.rotation() );
-      reader->horizontal_shift( pb_augmenter.horizontal_shift() );
-      reader->vertical_shift( pb_augmenter.vertical_shift() );
-      reader->shear_range( pb_augmenter.shear_range() );
-      if (master) std::cout << "image processor: augmenter is set" << std::endl;
-    } else {
-      reader->disable_augmentation();
-    }
-  }
-
-  // set up the normalizer
-  if (pb_preprocessor.has_normalizer()) {
-    const lbann_data::ImagePreprocessor::Normalizer& pb_normalizer = pb_preprocessor.normalizer();
-    if (!pb_normalizer.disable() &&
-        (pb_normalizer.name() == "")) {
-      reader->subtract_mean( pb_normalizer.subtract_mean() );
-      reader->unit_variance( pb_normalizer.unit_variance() );
-      reader->scale( pb_normalizer.scale() );
-      reader->z_score( pb_normalizer.z_score() );
-      if (master) std::cout << "image processor: normalizer is set" << std::endl;
-    }
-  }
-
-  if (pb_preprocessor.has_noiser()) {
-    const lbann_data::ImagePreprocessor::Noiser& pb_noiser = pb_preprocessor.noiser();
-    if (!pb_noiser.disable() &&
-        (pb_noiser.name() == "")) {
-      reader->add_noise( pb_noiser.factor() );
-      if (master) std::cout << "image processor: noiser is set" << std::endl;
-    }
-  }
-}
-
-
 void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {
   // data reader name
   const std::string& name = pb_readme.name();
@@ -591,9 +536,6 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
       throw lbann_exception(err.str());
     }
   }
-
-  // setup preprocessor
-  init_generic_preprocessor(pb_readme, master, reader);
 }
 
 }

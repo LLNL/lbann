@@ -26,7 +26,6 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_pilot2_molecular.hpp
   data_reader_python.hpp
   data_reader_synthetic.hpp
-  image_preprocessor.hpp
   image_utils.hpp
   opencv.hpp
   opencv_extensions.hpp
