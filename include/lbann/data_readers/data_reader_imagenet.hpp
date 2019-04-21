@@ -30,13 +30,11 @@
 #define LBANN_DATA_READER_IMAGENET_HPP
 
 #include "data_reader_image.hpp"
-#include "cv_process.hpp"
 
 namespace lbann {
 class imagenet_reader : public image_data_reader {
  public:
-  imagenet_reader(bool shuffle) = delete;
-  imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  imagenet_reader(bool shuffle = true);
   imagenet_reader(const imagenet_reader&);
   imagenet_reader& operator=(const imagenet_reader&);
   ~imagenet_reader() override;
@@ -51,14 +49,8 @@ class imagenet_reader : public image_data_reader {
 
  protected:
   void set_defaults() override;
-  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-
- protected:
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-  std::unique_ptr<cv_process> m_master_pps;
 };
 
 }  // namespace lbann

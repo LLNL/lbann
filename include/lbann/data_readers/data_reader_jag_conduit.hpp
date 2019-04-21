@@ -30,17 +30,16 @@
 #include "lbann_config.hpp" // may define LBANN_HAS_CONDUIT
 
 #ifdef LBANN_HAS_CONDUIT
-#include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
-#include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
 #include <unordered_map>
 #include <map>
 #include <memory>
 #include "lbann/data_readers/sample_list_jag.hpp"
+#include <opencv2/core.hpp>
 
 namespace lbann {
 
@@ -76,8 +75,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type to define a prefix string and the minimum length requirement to filter out a key
   using prefix_t = std::pair<std::string, size_t>;
 
-  data_reader_jag_conduit(bool shuffle = true) = delete;
-  data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
   data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
@@ -259,7 +257,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   void preload_data_store();
 
   virtual void set_defaults();
-  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   /// add data type for independent variable
@@ -406,10 +403,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<std::string> m_scalar_keys;
   /// Keys to select a set of simulation input parameters to use. By default, use all.
   std::vector<std::string> m_input_keys;
-
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-  std::unique_ptr<cv_process> m_master_pps;
 
   /**
    * Set of keys that are associated with non_numerical values.

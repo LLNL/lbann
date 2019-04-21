@@ -31,27 +31,13 @@
 
 namespace lbann {
 
-imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shuffle)
+imagenet_reader::imagenet_reader(bool shuffle)
   : image_data_reader(shuffle) {
   set_defaults();
-
-  if (!pp) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
-    throw lbann_exception(err.str());
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*pp);
 }
 
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
   : image_data_reader(rhs) {
-  if (!rhs.m_master_pps) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
-    throw lbann_exception(err.str());
-  }
-  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 }
 
 imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
@@ -61,13 +47,6 @@ imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
   }
 
   image_data_reader::operator=(rhs);
-
-  if (!rhs.m_master_pps) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
-    throw lbann_exception(err.str());
-  }
-  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
   return (*this);
 }
 
@@ -84,38 +63,6 @@ void imagenet_reader::set_defaults() {
 
 void imagenet_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   image_data_reader::setup(num_io_threads, io_thread_pool);
-  replicate_processor(*m_master_pps, num_io_threads);
-}
-
-/// Replicate image processor for each I/O thread
-bool imagenet_reader::replicate_processor(const cv_process& pp, const int nthreads) {
-  m_pps.resize(nthreads);
-
-  // Construct thread private preprocessing objects out of a shared pointer
-  for (int i = 0; i < nthreads; ++i) {
-    m_pps[i] = lbann::make_unique<cv_process>(pp);
-  }
-
-  bool ok = true;
-  for (int i = 0; ok && (i < nthreads); ++i) {
-    if (!m_pps[i]) ok = false;
-  }
-
-  if (!ok || (nthreads <= 0)) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " cannot replicate image processor";
-    throw lbann_exception(err.str());
-    return false;
-  }
-
-  const std::vector<unsigned int> dims = pp.get_data_dims();
-  if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
-    m_image_width = static_cast<int>(dims[0]);
-    m_image_height = static_cast<int>(dims[1]);
-    set_linearized_image_size();
-  }
-
-  return true;
 }
 
 CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {

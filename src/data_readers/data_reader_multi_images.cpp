@@ -35,8 +35,8 @@
 
 namespace lbann {
 
-data_reader_multi_images::data_reader_multi_images(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : imagenet_reader(pp, shuffle) {
+data_reader_multi_images::data_reader_multi_images(bool shuffle)
+  : imagenet_reader(shuffle) {
   set_defaults();
 }
 

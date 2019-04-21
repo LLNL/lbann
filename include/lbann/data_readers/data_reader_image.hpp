@@ -30,7 +30,6 @@
 #define IMAGE_DATA_READER_HPP
 
 #include "data_reader.hpp"
-#include "cv_process.hpp"
 
 namespace lbann {
 class image_data_reader : public generic_data_reader {
@@ -114,7 +113,6 @@ class image_data_reader : public generic_data_reader {
   int m_image_num_channels; ///< number of image channels
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
-  std::vector<cv::Mat> m_thread_cv_buffer;
 };
 
 }  // namespace lbann

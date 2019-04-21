@@ -1,16 +1,5 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  cv_augmenter.cpp
-  cv_colorizer.cpp
-  cv_cropper.cpp
-  cv_decolorizer.cpp
-  cv_mean_extractor.cpp
-  cv_normalizer.cpp
-  cv_process.cpp
-  cv_resizer.cpp
-  cv_subtractor.cpp
-  cv_transform.cpp
-  cv_utils.cpp
   data_reader.cpp
   data_reader_ascii.cpp
   data_reader_cifar10.cpp

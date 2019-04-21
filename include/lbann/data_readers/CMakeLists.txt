@@ -1,15 +1,6 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   compound_data_reader.hpp
-  cv_augmenter.hpp
-  cv_colorizer.hpp
-  cv_decolorizer.hpp
-  cv_cropper.hpp
-  cv_mean_extractor.hpp
-  cv_normalizer.hpp
-  cv_process.hpp
-  cv_transform.hpp
-  cv_utils.hpp
   data_reader.hpp
   data_reader_ascii.hpp
   data_reader_cifar10.hpp
@@ -26,8 +17,6 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_pilot2_molecular.hpp
   data_reader_python.hpp
   data_reader_synthetic.hpp
-  opencv.hpp
-  opencv_extensions.hpp
   data_reader_multihead_siamese.hpp
   )
 

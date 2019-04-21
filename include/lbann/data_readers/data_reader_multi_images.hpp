@@ -31,7 +31,6 @@
 #define DATA_READER_MULTI_IMAGES_HPP
 
 #include "data_reader_imagenet.hpp"
-#include "cv_process.hpp"
 #include <vector>
 #include <string>
 #include <utility>
@@ -43,8 +42,7 @@ class data_reader_multi_images : public imagenet_reader {
   using img_src_t = std::vector<std::string>;
   using sample_t = std::pair<img_src_t, label_t>;
 
-  data_reader_multi_images(bool shuffle) = delete;
-  data_reader_multi_images(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_multi_images(bool shuffle = true);
   data_reader_multi_images(const data_reader_multi_images&);
   data_reader_multi_images& operator=(const data_reader_multi_images&);
   ~data_reader_multi_images() override;

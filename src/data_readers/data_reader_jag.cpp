@@ -34,6 +34,7 @@
 #include <numeric>    // accumulate
 #include <functional> // multiplies
 #include <type_traits>// is_same
+#include <opencv2/core.hpp>
 
 namespace lbann {
 
@@ -518,26 +519,6 @@ void data_reader_jag::normalize_image() {
 
 data_reader_jag::data_t* data_reader_jag::get_image_ptr(const size_t i) const {
   return (m_image_loaded? cnpy_utils::data_ptr<data_t>(m_images, {i}) : nullptr);
-}
-
-cv::Mat data_reader_jag::get_image(const size_t i) const {
-  using InputBuf_T = cv_image_type<data_t>;
-
-  data_t* const ptr = get_image_ptr(i);
-  if (ptr == nullptr) {
-    return cv::Mat();
-  }
-  // Construct a zero copying view to data
-  const cv::Mat img_org(m_linearized_image_size, 1, InputBuf_T::T(1u),
-                        reinterpret_cast<void*>(ptr));
-
-  cv::Mat img;
-  if (std::is_same<data_t, DataType>::value) {
-    img = img_org.clone();
-  } else {
-    img_org.convertTo(img, cv_image_type<DataType>::T(1u));
-  }
-  return img.reshape(0, m_image_height);
 }
 
 data_reader_jag::data_t data_reader_jag::get_image_max() const {

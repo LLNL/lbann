@@ -38,14 +38,14 @@
 
 namespace lbann {
 
-data_reader_multihead_siamese::data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, unsigned int nimages, bool shuffle) : data_reader_multi_images(pp, shuffle) {
+data_reader_multihead_siamese::data_reader_multihead_siamese(unsigned int nimages, bool shuffle) : data_reader_multi_images(shuffle) {
   set_defaults();
   m_num_img_srcs = nimages;
   m_samples = offline_patches_npz (m_num_img_srcs);
 }
 
-data_reader_multihead_siamese::data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : data_reader_multi_images(pp, shuffle) {
+data_reader_multihead_siamese::data_reader_multihead_siamese(bool shuffle)
+  : data_reader_multi_images(shuffle) {
   set_defaults();
 }
 

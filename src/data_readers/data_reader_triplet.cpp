@@ -37,8 +37,8 @@
 
 namespace lbann {
 
-data_reader_triplet::data_reader_triplet(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : data_reader_multi_images(pp, shuffle) {
+data_reader_triplet::data_reader_triplet(bool shuffle)
+  : data_reader_multi_images(shuffle) {
   set_defaults();
 }
 

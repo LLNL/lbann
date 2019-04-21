@@ -147,15 +147,9 @@ bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
   return true;
 }
 
-data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
+data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   : generic_data_reader(shuffle) {
   set_defaults();
-
-  if (!pp) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*pp);
 
   // Initialize the data store
   options *opts = options::get();
@@ -179,12 +173,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
-
-  if (!rhs.m_master_pps) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -298,35 +286,6 @@ void data_reader_jag_conduit::set_defaults() {
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
-  replicate_processor(*m_master_pps, num_io_threads);
-}
-
-/// Replicate image processor for each I/O thread
-bool data_reader_jag_conduit::replicate_processor(const cv_process& pp, const int nthreads) {
-  m_pps.resize(nthreads);
-
-  // Construct thread private preprocessing objects out of a shared pointer
-  for (int i = 0; i < nthreads; ++i) {
-    m_pps[i] = lbann::make_unique<cv_process>(pp);
-  }
-
-  bool ok = true;
-  for (int i = 0; ok && (i < nthreads); ++i) {
-    if (!m_pps[i]) ok = false;
-  }
-
-  if (!ok || (nthreads <= 0)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " cannot replicate image processor");
-    return false;
-  }
-
-  const std::vector<unsigned int> dims = pp.get_data_dims();
-  if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
-    m_image_width = static_cast<int>(dims[0]);
-    m_image_height = static_cast<int>(dims[1]);
-  }
-
-  return true;
 }
 
 const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::Node& n_base, const std::string key) {
