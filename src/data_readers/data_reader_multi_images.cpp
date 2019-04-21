@@ -96,13 +96,6 @@ std::vector<CPUMat> data_reader_multi_images::create_datum_views(CPUMat& X, cons
   return X_v;
 }
 
-bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  (void) X;
-  (void) data_id;
-  (void) mb_idx;
-  return true;
-}
-
 bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
   Y.Set(label, mb_idx, 1);

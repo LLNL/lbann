@@ -95,7 +95,7 @@ void init_data_readers(
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
     } else if ((name == "imagenet") ||
-               (name == "multihead_siamese") || (name == "multi_images")) {
+               (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
@@ -411,8 +411,6 @@ void init_data_readers(
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
-      } else if (name == "multi_images") {
-        reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);

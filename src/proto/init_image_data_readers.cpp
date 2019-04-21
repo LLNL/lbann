@@ -292,7 +292,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   // set up the image preprocessor
   if ((name == "imagenet") || (name == "jag_conduit") || 
       (name == "multihead_siamese") ||
-      (name == "multi_images") || (name == "moving_mnist")) {
+      (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else {
     if (master) {
@@ -314,8 +314,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = new imagenet_reader(pp, shuffle);
   } else if (name == "multihead_siamese") {
     reader = new data_reader_multihead_siamese(pp, pb_readme.num_image_srcs(), shuffle);
-  } else if (name == "multi_images") {
-    reader = new data_reader_multi_images(pp, shuffle);
   } else if (name == "moving_mnist") {
     reader = new moving_mnist_reader(7, 40, 40, 2);
 #ifdef LBANN_HAS_CONDUIT
@@ -493,25 +491,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   }
   if (master) std::cout << reader->get_type() << " is set" << std::endl;
 
-  // configure the data reader
-  if (name == "multi_images") {
-    const int n_img_srcs = pb_readme.num_image_srcs();
-    data_reader_multi_images* multi_image_dr_ptr
-      = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
-    if (multi_image_dr_ptr == nullptr) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " no data_reader_multi_images";
-      throw lbann_exception(err.str());
-    }
-    multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
-  } else if(name == "multihead_siamese") {
-    const int n_img_srcs = pb_readme.num_image_srcs();
-    data_reader_multi_images* multi_image_dr_ptr
-      = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
-    multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
-  } else {
-    image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
-  }
+  image_data_reader_ptr->set_input_params(width, height, channels, n_labels);
 }
 
 void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader) {

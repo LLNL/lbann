@@ -99,7 +99,6 @@ class data_reader_multi_images : public imagenet_reader {
  protected:
   void set_defaults() override;
   virtual std::vector<CPUMat> create_datum_views(CPUMat& X, const int mb_idx) const;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
   bool read_text_stream(std::istream& text_stream, std::vector<sample_t>& list);
