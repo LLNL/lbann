@@ -98,7 +98,7 @@ void init_data_readers(
       init_org_image_data_reader(readme, master, reader);
       set_up_generic_preprocessor = false;
     } else if ((name == "imagenet") || (name == "imagenet_patches") ||
-               (name == "multihead_siamese") || (name == "mnist_siamese") || (name == "multi_images")) {
+               (name == "multihead_siamese") || (name == "multi_images")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
     } else if (name == "jag") {
@@ -425,8 +425,6 @@ void init_data_readers(
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
-      } else if (name == "mnist_siamese") {
-        reader_validation = new data_reader_mnist_siamese(*dynamic_cast<const data_reader_mnist_siamese*>(reader));
       } else if (name == "multi_images") {
         reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
       } else if (name == "jag") {
