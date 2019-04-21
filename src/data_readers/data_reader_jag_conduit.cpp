@@ -1460,12 +1460,6 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
           std::to_string(images.size()) + "!=" + std::to_string(num_images));
       }
-
-      // TODO(pp): restore
-      /*for(size_t i=0u; i < num_images; ++i) {
-        int width, height, img_type;
-        image_utils::process_image(images[i], width, height, img_type, *(m_pps[tid]), X_v[i]);
-        }*/
       break;
     }
     case JAG_Scalar: {
