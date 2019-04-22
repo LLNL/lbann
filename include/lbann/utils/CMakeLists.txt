@@ -19,6 +19,7 @@ set_full_path(THIS_DIR_HEADERS
   mild_exception.hpp
   number_theory.hpp
   omp_diagnostics.hpp
+  opencv_utils.hpp
   options.hpp
   profiling.hpp
   prototext.hpp
