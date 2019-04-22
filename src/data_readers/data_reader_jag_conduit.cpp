@@ -30,6 +30,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/image_utils.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -1593,9 +1594,11 @@ void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
    }
 }
 
-void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-  // TODO(pp): restore
-  //internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
+void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool) {
+  lbann::save_image(filename, pixels,
+                    {1, 
+                     static_cast<size_t>(m_image_height),
+                     static_cast<size_t>(m_image_width)});
 }
 
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {

@@ -77,11 +77,7 @@ class image_data_reader : public generic_data_reader {
     return {m_image_num_channels, m_image_height, m_image_width};
   }
 
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override {
-    // TODO(pp): restore
-    /*internal_save_image(pixels, filename, m_image_height, m_image_width,
-      m_image_num_channels, do_scale);*/
-  }
+  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
   /// Return the sample list of current minibatch
   std::vector<sample_t> get_image_list_of_current_mb() const;

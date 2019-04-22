@@ -27,6 +27,7 @@
 
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/cnpy_utils.hpp"
+#include "lbann/utils/image_utils.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
@@ -639,9 +640,11 @@ bool data_reader_jag::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
-void data_reader_jag::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-  // TODO(pp): restore
-  //internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
+void data_reader_jag::save_image(Mat& pixels, const std::string filename, bool) {
+  lbann::save_image(filename, pixels,
+                    {1, 
+                     static_cast<size_t>(m_image_height),
+                     static_cast<size_t>(m_image_width)});
 }
 
 } // end of namespace lbann

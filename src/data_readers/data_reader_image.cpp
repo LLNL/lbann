@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/utils/image_utils.hpp"
 #include <fstream>
 
 namespace lbann {
@@ -144,6 +145,13 @@ std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_cu
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
   return ret;
+}
+
+void image_data_reader::save_image(Mat& pixels, const std::string filename, bool) {
+  lbann::save_image(filename, pixels,
+                    {static_cast<size_t>(m_image_num_channels),
+                     static_cast<size_t>(m_image_height),
+                     static_cast<size_t>(m_image_width)});
 }
 
 }  // namespace lbann
