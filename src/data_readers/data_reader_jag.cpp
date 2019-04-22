@@ -27,7 +27,6 @@
 
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/cnpy_utils.hpp"
-#include "lbann/data_readers/opencv_extensions.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
@@ -493,8 +492,7 @@ void data_reader_jag::normalize_image() {
   if (!m_image_loaded) {
     return;
   }
-  using depth_t = cv_image_type<data_t>;
-  const int type_code = depth_t::T(1u);
+  const int type_code = CV_MAKETYPE(cv::DataType<data_t>::depth, 1u);
 
   if (m_image_normalization == 1) {
     data_t* const ptr = get_image_ptr(0);

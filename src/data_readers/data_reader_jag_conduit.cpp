@@ -33,7 +33,6 @@
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
-#include "lbann/data_readers/opencv_extensions.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
 #include <numeric>    // accumulate
@@ -1252,8 +1251,8 @@ cv::Mat data_reader_jag_conduit::cast_to_cvMat(
   const ch_t* ptr = img.second;
 
   // add a zero copying view to data
-  using InputBuf_T = cv_image_type<ch_t>;
-  const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
+  const int type_code = CV_MAKETYPE(cv::DataType<ch_t>::depth, 1u);
+  const cv::Mat image(num_pixels, 1, type_code,
                       reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
   // reshape the image. Furter need to clone (deep-copy) the image
   // to preserve the constness of the original data
