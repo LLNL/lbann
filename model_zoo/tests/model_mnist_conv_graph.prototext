@@ -1,7 +1,9 @@
+trainer {
+  block_size: 257
+}
 model {
   data_layout: "data_parallel"
   mini_batch_size: 31
-  block_size: 257
   num_epochs: 4
 
   ###################################################
