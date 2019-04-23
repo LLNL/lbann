@@ -32,6 +32,7 @@
 
 namespace lbann {
 
+#if 0
 
 numpy_conduit_cache::numpy_conduit_cache(const numpy_conduit_cache& rhs) {
   copy_members(rhs);
@@ -50,6 +51,7 @@ void numpy_conduit_cache::copy_members(const numpy_conduit_cache& rhs) {
   //TODO
   LBANN_ERROR("needs to be impelemented");
 }
+#endif
 
 //static
 void numpy_conduit_cache::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset_conduit_node) {
@@ -74,6 +76,9 @@ void numpy_conduit_cache::load_conduit_node(const std::string filename, int data
     LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
   }
 }
+
+
+#if 0
 
 const conduit::Node & numpy_conduit_cache::get_conduit_node(int data_id) const {
   std::unordered_map<int, conduit::Node>::const_iterator it = m_data.find(data_id);
@@ -103,6 +108,7 @@ void numpy_conduit_cache::load(const std::string filename, int data_id) {
     LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
   }
 }
+#endif
 
 } // end of namespace lbann
 

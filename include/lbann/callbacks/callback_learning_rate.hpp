@@ -238,7 +238,7 @@ class lbann_callback_linear_growth_learning_rate :
 class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
  public:
   lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter);
-  lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter,
+  lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter, double endl_r,
     std::unordered_set<weights *> weights_list);
   lbann_callback_poly_learning_rate(
     const lbann_callback_poly_learning_rate&) = default;
@@ -259,6 +259,8 @@ class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
   uint64_t m_num_epochs;
   /// The maximum number of iterations until which the learning rate changes
   uint64_t m_max_iter;
+  /// The minimum learning rate
+  float m_end_lr;
   /// The current rate to scale the base learning rate
   float m_lr;
   /// The learning rate scale used at the end of the last epoch

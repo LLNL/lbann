@@ -4,8 +4,10 @@ from os.path import join
 import google.protobuf.text_format as txtf
 import lbann
 import lbann.models
+import lbann.models.resnet
 import lbann.proto
 import lbann.contrib.args
+import lbann.contrib.models.wide_resnet
 
 # Command-line arguments
 desc = ('Construct and run ResNet on ImageNet-1K data. '
@@ -21,6 +23,19 @@ parser.add_argument(
     choices=(18, 34, 50, 101, 152),
     help='ResNet variant (default: 50)')
 parser.add_argument(
+    '--width', action='store', default=1, type=float,
+    help='Wide ResNet width factor (default: 1)')
+parser.add_argument(
+    '--block-type', action='store', default=None, type=str,
+    choices=('basic', 'bottleneck'),
+    help='ResNet block type')
+parser.add_argument(
+    '--blocks', action='store', default=None, type=str,
+    help='ResNet block counts (comma-separated list)')
+parser.add_argument(
+    '--block-channels', action='store', default=None, type=str,
+    help='Internal channels in each ResNet block (comma-separated list)')
+parser.add_argument(
     '--bn-stats-aggregation', action='store', default='local', type=str,
     help=('aggregation mode for batch normalization statistics '
           '(default: "local")'))
@@ -30,12 +45,12 @@ parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
 parser.add_argument(
-    '--num-epochs', action='store', default=100, type=int,
-    help='number of epochs (default: 100)', metavar='NUM')
+    '--num-epochs', action='store', default=90, type=int,
+    help='number of epochs (default: 90)', metavar='NUM')
 parser.add_argument(
     '--num-labels', action='store', default=1000, type=int,
     help='number of data classes (default: 1000)', metavar='NUM')
-lbann.contrib.args.add_optimizer_arguments(parser)
+lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 parser.add_argument(
     '--data-reader', action='store',
     default=data_reader_prototext, type=str,
@@ -59,9 +74,42 @@ resnet_variant_dict = {18: lbann.models.ResNet18,
                        50: lbann.models.ResNet50,
                        101: lbann.models.ResNet101,
                        152: lbann.models.ResNet152}
-resnet = resnet_variant_dict[args.resnet](
-    args.num_labels,
-    bn_stats_aggregation=args.bn_stats_aggregation)
+wide_resnet_variant_dict = {50: lbann.contrib.models.wide_resnet.WideResNet50_2}
+block_variant_dict = {
+    'basic': lbann.models.resnet.BasicBlock,
+    'bottleneck': lbann.models.resnet.BottleneckBlock
+}
+
+if (any([args.block_type, args.blocks, args.block_channels])
+    and not all([args.block_type, args.blocks, args.block_channels])):
+    raise RuntimeError('Must specify all of --block-type, --blocks, --block-channels')
+if args.block_type and args.blocks and args.block_channels:
+    # Build custom ResNet.
+    resnet = lbann.models.ResNet(
+        block_variant_dict[args.block_type],
+        args.num_labels,
+        list(map(int, args.blocks.split(','))),
+        list(map(int, args.block_channels.split(','))),
+        zero_init_residual=True,
+        bn_stats_aggregation=args.bn_stats_aggregation,
+        name='custom_resnet',
+        width=args.width)
+elif args.width == 1:
+    # Vanilla ResNet.
+    resnet = resnet_variant_dict[args.resnet](
+        args.num_labels,
+        bn_stats_aggregation=args.bn_stats_aggregation)
+elif args.width == 2 and args.resnet == 50:
+    # Use pre-defined WRN-50-2.
+    resnet = wide_resnet_variant_dict[args.resnet](
+        args.num_labels,
+        bn_stats_aggregation=args.bn_stats_aggregation)
+else:
+    # Some other Wide ResNet.
+    resnet = resnet_variant_dict[args.resnet](
+        args.num_labels,
+        bn_stats_aggregation=args.bn_stats_aggregation,
+        width=args.width)
 
 # Construct layer graph
 input = lbann.Input()
