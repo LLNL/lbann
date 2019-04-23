@@ -1,11 +1,11 @@
 trainer {
   block_size: 256
   procs_per_trainer: 0
+  num_parallel_readers: 1
 }
 model {
   mini_batch_size: 1024
   num_epochs: 4
-  num_parallel_readers: 1
 
   ##############################################
   # Objective function

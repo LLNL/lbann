@@ -1,6 +1,7 @@
 trainer {
   block_size: 256
   procs_per_trainer: 0
+  num_parallel_readers: 0
 }
 model {
   data_layout: "data_parallel"
@@ -8,7 +9,6 @@ model {
   super_steps: 10000
   num_batches: 1
   num_epochs: 1
-  num_parallel_readers: 0
 
   ###################################################
   # Objective function

@@ -3,6 +3,7 @@
 trainer {
   block_size: 256
   procs_per_trainer: 0
+  num_parallel_readers: 0
 }
 model {
   name: "ae_cycgan_model"
@@ -11,7 +12,6 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 256
   num_epochs: 1
-  num_parallel_readers: 0
 
   ###################################################
   # Objective function

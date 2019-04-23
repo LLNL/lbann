@@ -15,7 +15,6 @@ class Model:
         # Scalar fields
         self.mini_batch_size = mini_batch_size
         self.epochs = epochs
-        self.num_parallel_readers = 0   # TODO: Make configurable
 
         # Get connected layers
         self.layers = list(lbann.layer.traverse_layer_graph(layers))
@@ -44,7 +43,6 @@ class Model:
         model = lbann_pb2.Model()
         model.mini_batch_size = self.mini_batch_size
         model.num_epochs = self.epochs
-        model.num_parallel_readers = self.num_parallel_readers
 
         # Add model components
         model.layer.extend([l.export_proto() for l in self.layers])

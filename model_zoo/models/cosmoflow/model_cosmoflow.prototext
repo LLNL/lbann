@@ -1,13 +1,13 @@
 trainer {
   block_size: 256
   procs_per_trainer: 0
+  num_parallel_readers: 0
 }
 model {
   type: "directed_acyclic_graph_model"
   data_layout: "data_parallel"
   mini_batch_size: 64
   num_epochs: 18
-  num_parallel_readers: 0
 
   objective_function {
     layer_term { layer: "mean_absolute_error" }
