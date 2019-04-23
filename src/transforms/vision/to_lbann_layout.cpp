@@ -67,7 +67,7 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
         const size_t dst_base = row + col*dims[1];
         dst_buf[dst_base] = src_buf[src_base] * scale;
         dst_buf[dst_base + size] = src_buf[src_base + 1] * scale;
-        dst_buf[dst_base + 2*size] = src_buf[src_base + 1] * scale;
+        dst_buf[dst_base + 2*size] = src_buf[src_base + 2] * scale;
       }
     }
   }
