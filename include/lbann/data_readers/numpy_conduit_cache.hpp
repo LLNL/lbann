@@ -97,6 +97,7 @@ namespace lbann {
 class numpy_conduit_cache {
  public:
 
+/*
   numpy_conduit_cache(lbann_comm *comm) : m_comm(comm)
   {}
 
@@ -110,11 +111,11 @@ class numpy_conduit_cache {
   void load(const std::string filename, int data_id);
 
   const conduit::Node & get_conduit_node(int data_id) const;
-
+*/
   static void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset_conduit_node = true);
 
 protected :
-
+/*
   void load(const std::string filename, int data_id, bool is_npz);
 
   lbann_comm *m_comm;
@@ -123,7 +124,7 @@ protected :
 
   // we keep the numpy data to avoid a deep copy in m_data;
   std::unordered_map<int, std::map<std::string, cnpy::NpyArray> > m_numpy;
-
+*/
 };
 
 }  // namespace lbann
