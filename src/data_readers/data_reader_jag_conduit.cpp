@@ -800,6 +800,11 @@ void data_reader_jag_conduit::load() {
     m_num_labels=2;
   }
 
+  for(const auto key: m_scalar_keys) {
+    m_scalar_min[key] = 100000.0;
+    m_scalar_max[key] = -100000.0;
+  }
+
   if (is_master()) {
     std::cout << "JAG load GAN m_gan_labelling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
@@ -1409,6 +1414,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
     const scalar_t val_raw = static_cast<scalar_t>(sample[conduit_obj].to_value());
     const scalar_t val = static_cast<scalar_t>(val_raw * tr->first + tr->second);
     scalars.push_back(val);
+
     tr ++;
   }
   return scalars;
@@ -1511,6 +1517,18 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
     }
     case JAG_Scalar: {
       const std::vector<scalar_t> scalars(get_scalars(data_id, sample));
+
+      int x = 0;
+      for(const auto key: m_scalar_keys) {
+        const scalar_t &z = scalars[x++];
+        if (z < m_scalar_min[key]) {
+          m_scalar_min[key] = z;
+        }
+        if (z > m_scalar_max[key]) {
+          m_scalar_max[key] = z;
+        }
+      }
+
       set_minibatch_item<scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
       break;
     }

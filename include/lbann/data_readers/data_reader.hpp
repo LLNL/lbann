@@ -717,6 +717,8 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// have identical shuffled indices
   virtual void post_update() {}
 
+  void print_scalar_min_max();
+
  protected:
 
   // For use with conduit when samples are corrupt.
@@ -849,6 +851,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
 
+
  protected :
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
@@ -892,6 +895,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// etc.
   void set_jag_variables(int mb_size);
   model *m_model;
+
+  std::unordered_map<std::string, double> m_scalar_min;
+  std::unordered_map<std::string, double> m_scalar_max;
 };
 
 template<typename T>

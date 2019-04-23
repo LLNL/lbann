@@ -35,6 +35,9 @@
 
 using namespace lbann;
 
+extern std::set<generic_data_reader *> Data_Readers;
+
+
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
@@ -93,6 +96,10 @@ int main(int argc, char *argv[]) {
 
       //has no affect unless option: --st_on was given
       stack_profiler::get()->print();
+
+      for (auto t : Data_Readers) {
+        t->print_scalar_min_max();
+      }
 
     } else {
       if (comm->am_world_master()) {

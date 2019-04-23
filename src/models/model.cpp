@@ -998,7 +998,8 @@ void model::train(int num_epochs, int num_batches) {
     reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
-    evaluate(execution_mode::validation);
+    evaluate(execution_mode::testing);
+    //evaluate(execution_mode::validation);
 
   }
   do_train_end_cbs();

@@ -27,6 +27,8 @@
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/callbacks/callback_checkpoint.hpp"
 
+std::set<lbann::generic_data_reader *> Data_Readers;
+
 namespace lbann {
 
 /// Setup I/O thread pool that is shared across all models
@@ -163,6 +165,10 @@ std::unique_ptr<model> build_model_from_prototext(
     is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
   }
   init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+
+  for (auto t : data_readers) {
+    Data_Readers.insert(t.second);
+  }
 
   // hack to prevent all data readers from loading identical data; instead,
   // share a single copy. See data_reader_jag_conduit_hdf5 for example

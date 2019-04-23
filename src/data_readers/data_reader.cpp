@@ -764,4 +764,20 @@ void generic_data_reader::set_mini_batch_size(const int s) {
   m_mini_batch_size = s;
 }
 
+void generic_data_reader::print_scalar_min_max() {
+  int rank = m_comm->get_rank_in_world();
+  std::stringstream s;
+  s << "scalars_min_max_" << get_role() << "_rank=" << rank << ".txt";
+  std::ofstream out(s.str().c_str());
+  if (!out) {
+    LBANN_ERROR("failed to open for output: " + s.str());
+  }  
+  for (auto t : m_scalar_min) {
+    const std::string &n = t.first;
+    out << n << " " << m_scalar_min[n] << " " << m_scalar_max[n] << "\n";
+  }
+  out.close();
+
+}
+
 }  // namespace lbann
