@@ -4,6 +4,7 @@ set_full_path(THIS_DIR_HEADERS
   colorize.hpp
   grayscale.hpp
   horizontal_flip.hpp
+  normalize_to_lbann_layout.hpp
   random_affine.hpp
   random_crop.hpp
   random_resized_aspect_ratio_crop.hpp

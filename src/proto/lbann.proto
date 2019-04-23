@@ -114,6 +114,11 @@ message Transform {
   message HorizontalFlip {
     float p = 1;
   }
+  // Fused Normalize + ToLBANNLayout.
+  message NormalizeToLBANNLayout {
+    string means = 1;
+    string stddevs = 2;
+  }
   // Apply a random affine transform.
   message RandomAffine {
     float rotate_min = 1;
@@ -176,14 +181,15 @@ message Transform {
     Colorize colorize = 101;
     Grayscale grayscale = 102;
     HorizontalFlip horizontal_flip = 103;
-    RandomAffine random_affine = 104;
-    RandomCrop random_crop = 105;
-    RandomResizedAspectRatioCrop random_resized_aspect_ratio_crop = 106;
-    RandomResizedCrop random_resized_crop = 107;
-    Resize resize = 108;
-    ResizedCenterCrop resized_center_crop = 109;
-    ToLBANNLayout to_lbann_layout = 110;
-    VerticalFlip vertical_flip = 111;
+    NormalizeToLBANNLayout normalize_to_lbann_layout = 104;
+    RandomAffine random_affine = 105;
+    RandomCrop random_crop = 106;
+    RandomResizedAspectRatioCrop random_resized_aspect_ratio_crop = 107;
+    RandomResizedCrop random_resized_crop = 108;
+    Resize resize = 109;
+    ResizedCenterCrop resized_center_crop = 110;
+    ToLBANNLayout to_lbann_layout = 111;
+    VerticalFlip vertical_flip = 112;
   }
 }
 

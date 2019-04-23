@@ -32,6 +32,7 @@
 #include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/colorize.hpp"
 #include "lbann/transforms/vision/horizontal_flip.hpp"
+#include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
 #include "lbann/transforms/vision/random_affine.hpp"
 #include "lbann/transforms/vision/random_crop.hpp"
 #include "lbann/transforms/vision/random_resized_aspect_ratio_crop.hpp"
@@ -67,6 +68,11 @@ std::unique_ptr<transform::transform> construct_transform(
   } else if (trans.has_horizontal_flip()) {
     return make_unique<transform::horizontal_flip>(
       trans.horizontal_flip().p());
+  } else if (trans.has_normalize_to_lbann_layout()) {
+    auto& pb_trans = trans.normalize_to_lbann_layout();
+    return make_unique<transform::normalize_to_lbann_layout>(
+      parse_list<float>(pb_trans.means()),
+      parse_list<float>(pb_trans.stddevs()));
   } else if (trans.has_random_affine()) {
     auto& pb_trans = trans.random_affine();
     return make_unique<transform::random_affine>(
