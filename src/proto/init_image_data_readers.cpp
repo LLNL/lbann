@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/init_image_data_readers.hpp"
+#include "lbann/proto/factories.hpp"
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -45,6 +46,31 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   // final size of image
   int width = 0, height = 0;
   int channels = 0;
+
+  // Ugly hack for now to extract dimensions.
+  for (int i = 0; i < pb_readme.transforms_size(); ++i) {
+    auto& trans = pb_readme.transforms(i);
+    if (trans.has_center_crop()) {
+      height = trans.center_crop().height();
+      width = trans.center_crop().width();
+    } else if (trans.has_grayscale()) { channels = 1; }
+    else if (trans.has_random_crop()) {
+      height = trans.random_crop().height();
+      width = trans.random_crop().width();
+    } else if (trans.has_random_resized_aspect_ratio_crop()) {
+      height = trans.random_resized_aspect_ratio_crop().height();
+      width = trans.random_resized_aspect_ratio_crop().width();
+    } else if (trans.has_random_resized_crop()) {
+      height = trans.random_resized_crop().crop_height();
+      width = trans.random_resized_crop().crop_width();
+    } else if (trans.has_resize()) {
+      height = trans.resize().height();
+      width = trans.resize().width();
+    } else if (trans.has_resized_center_crop()) {
+      height = trans.resized_center_crop().crop_height();
+      width = trans.resized_center_crop().crop_width();
+    }
+  }
 
   if (name == "imagenet") {
     reader = new imagenet_reader(shuffle);
