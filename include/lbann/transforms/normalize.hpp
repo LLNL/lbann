@@ -54,7 +54,11 @@ public:
 
   std::string get_type() const override { return "normalize"; }
 
+  bool supports_non_inplace() const { return true; }
+
   void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+  void apply(utils::type_erased_matrix& data, CPUMat& out,
+             std::vector<size_t>& dims) override;
 private:
   /** Channel-wise means. */
   std::vector<float> m_means;

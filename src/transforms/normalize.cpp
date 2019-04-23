@@ -60,5 +60,37 @@ void normalize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims
   }
 }
 
+void normalize::apply(utils::type_erased_matrix& data, CPUMat& out,
+                      std::vector<size_t>& dims) {
+  // Ensure we have the right number of channels.
+  if (dims.size() == 3 && m_means.size() != dims[0]) {
+    LBANN_ERROR("Normalize channels does not match data");
+  } else if (dims.size() != 3 && m_means.size() != 1) {
+    LBANN_ERROR("Transform data has no channels, cannot normalize with multiple channels");
+  }
+  const auto& src = data.template get<DataType>();
+  const DataType* __restrict__ src_buf = src.LockedBuffer();
+  DataType* __restrict__ dst_buf = out.Buffer();
+  if (m_means.size() == 1) {
+    const DataType mean = m_means[0];
+    const DataType std = m_stds[0];
+    const El::Int size = src.Height() * src.Width();
+    for (El::Int i = 0; i < size; ++i) {
+      dst_buf[i] = (src_buf[i] - mean) / std;
+    }
+  } else {
+    for (size_t channel = 0; channel < dims[0]; ++channel) {
+      const DataType mean = m_means[channel];
+      const DataType std = m_stds[channel];
+      const size_t size = dims[1] * dims[2];
+      const size_t channel_start = channel*size;
+      const size_t channel_end = channel_start + size;
+      for (size_t i = channel_start; i < channel_end; ++i) {
+        dst_buf[i] = (src_buf[i] - mean) / std;
+      }
+    }
+  }
+}
+
 }  // namespace transform
 }  // namespace lbann
