@@ -241,6 +241,9 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 #endif // LBANN_HAS_CONDUIT
   }
 
+  reader->set_transform_pipeline(
+    std::move(proto::construct_transform_pipeline(pb_readme)));
+
   if (channels == 0) {
     channels = 3;
   }
@@ -278,6 +281,9 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
       throw lbann_exception(err.str());
     }
   }
+
+  reader->set_transform_pipeline(
+    std::move(proto::construct_transform_pipeline(pb_readme)));
 }
 
 }

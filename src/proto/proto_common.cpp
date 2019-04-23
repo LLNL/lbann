@@ -4,6 +4,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/proto/init_image_data_readers.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
@@ -92,11 +93,15 @@ void init_data_readers(
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
+    bool set_transform_pipeline = true;
+
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
+      set_transform_pipeline = false;
     } else if ((name == "imagenet") ||
                (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      set_transform_pipeline = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
 
@@ -140,6 +145,7 @@ void init_data_readers(
 #ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
@@ -175,6 +181,7 @@ void init_data_readers(
       }
     } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      set_transform_pipeline = false;
 #endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
@@ -336,6 +343,11 @@ void init_data_readers(
         throw lbann_exception(err.str());
     }
     reader->set_comm(comm);
+
+    if (set_transform_pipeline) {
+      reader->set_transform_pipeline(
+        std::move(proto::construct_transform_pipeline(readme)));
+    }
 
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );

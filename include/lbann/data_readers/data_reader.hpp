@@ -37,6 +37,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -716,6 +717,11 @@ class generic_data_reader {
   /// have identical shuffled indices
   virtual void post_update() {}
 
+  /** Set the transform pipeline this data reader will use. */
+  void set_transform_pipeline(transform::transform_pipeline&& tp) {
+    m_transform_pipeline = std::move(tp);
+  }
+
  protected:
 
   // For use with conduit when samples are corrupt.
@@ -891,6 +897,9 @@ class generic_data_reader {
   /// etc.
   void set_jag_variables(int mb_size);
   model *m_model;
+
+  /** Transform pipeline for preprocessing data. */
+  transform::transform_pipeline m_transform_pipeline;
 };
 
 template<typename T>
