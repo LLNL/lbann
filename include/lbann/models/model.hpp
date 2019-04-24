@@ -241,6 +241,8 @@ public:
       mode requested */
   virtual void collect_background_data_fetch(execution_mode mode);
 
+  virtual void make_data_store_preloaded(execution_mode mode);
+
   // ===========================================
   // Summarizer
   // ===========================================
