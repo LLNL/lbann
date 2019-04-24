@@ -691,7 +691,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /// sets up a data_store.
-  virtual void setup_data_store(model *m);
+  virtual void setup_data_store(model *m, int mini_batch_size);
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;

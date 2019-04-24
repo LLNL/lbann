@@ -63,7 +63,7 @@ class generic_data_store {
   virtual generic_data_store * copy() const = 0;
 
   /// called by generic_data_reader::setup_data_store
-  virtual void setup();
+  virtual void setup(int mini_batch_size);
 
   /// called by generic_data_reader::update;
   /// this method calls exchange_data if m_epoch > 1

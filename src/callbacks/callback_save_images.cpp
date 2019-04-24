@@ -117,13 +117,13 @@ void save_image(std::string prefix,
 
       // Write image to file
       cv::imwrite(prefix + "-" + name + "." + format, img);
-        
+
     }
-      
+
   }
 #endif // LBANN_HAS_OPENCV
 }
-  
+
 } // namespace
 
 lbann_callback_save_images::lbann_callback_save_images(std::vector<std::string> layer_names,
@@ -139,14 +139,7 @@ lbann_callback_save_images::lbann_callback_save_images(std::vector<std::string> 
 }
 
 void lbann_callback_save_images::on_epoch_end(model *m) {
-  save_image(m_image_prefix + "epoch" + std::to_string(m->get_cur_epoch()),
-             m_image_format,
-             m->get_layers(),
-             m_layer_names);
-}
-
-void lbann_callback_save_images::on_phase_end(model *m) {
-  save_image(m_image_prefix + "phase" + std::to_string(m->get_current_phase()),
+  save_image(m_image_prefix + "epoch" + std::to_string(m->get_epoch()),
              m_image_format,
              m->get_layers(),
              m_layer_names);

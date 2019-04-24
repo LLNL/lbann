@@ -90,7 +90,7 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
     size_t hash = 1234;
     hash_combine(hash, data_id);
-    hash_combine(hash, m_model->get_cur_epoch());
+    hash_combine(hash, m_model->get_epoch());
     hash_combine(hash, obj);
     raw_image_indices[obj] = hash % m_num_raw_images;
   }
@@ -225,7 +225,7 @@ bool moving_mnist_reader::fetch_label(CPUMat& Y, int data_id, int col) {
   for (El::Int obj = 0; obj < m_num_objects; ++obj) {
     size_t hash = 1234;
     hash_combine(hash, data_id);
-    hash_combine(hash, m_model->get_cur_epoch());
+    hash_combine(hash, m_model->get_epoch());
     hash_combine(hash, obj);
     raw_image_indices[obj] = hash % m_num_raw_images;
   }

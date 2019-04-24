@@ -15,7 +15,7 @@ class parse_Softmax(OnnxLayerParser):
 @parserDescriptor(["concatenation"])
 class parse_Concat(OnnxLayerParser):
     def parse(self):
-        return {"concatenation": lbann_pb2.Concatenation(concatenation_axis = self.getNodeAttribute("axis"))}
+        return {"concatenation": lbann_pb2.Concatenation(axis = self.getNodeAttribute("axis"))}
 
 @parserDescriptor(["sum"])
 class parse_Sum(OnnxLayerParser):

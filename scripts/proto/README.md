@@ -142,12 +142,14 @@ top1 = lp.CategoricalAccuracy([softmax, labels])
 top5 = lp.TopKCategoricalAccuracy([softmax, labels], k=5)
 
 # ----------------------------------------------------------
-# Construct objective function, metrics, and callbacks.
+# Construct model.
 # ----------------------------------------------------------
 
+mini_batch_size = 256
+num_epochs = 10
 obj = lp.ObjectiveFunction([
     cross_entropy,
-    lp.L2WeightRegularization(scale_factor=1e-4)])  # L2 weight regularization
+    lp.L2WeightRegularization(scale_factor=1e-4)])
 ])
 metrics = [
     lp.Metric(top1, name='categorical accuracy', unit='%'),
@@ -157,19 +159,18 @@ callbacks = [
     lp.CallbackPrint(), # Print basic information every epoch.
     lp.CallbackTimer()  # Print timing information every epoch.
 ]
+model = lp.Model(
+    mini_batch_size, num_epochs,
+    layers=traverse_layer_graph(input), # Get layers connected to input
+    objective_function=obj,
+    metrics=metrics,
+    callbacks=callbacks)
 
 # ----------------------------------------------------------
 # Save the model to a prototext file.
 # ----------------------------------------------------------
 
-lp.save_model(
-    'test.prototext',   # Write to test.prototext.
-    256,                # Mini-batch size.
-    10,                 # Number of epochs for training.
-    layers=traverse_layer_graph(input), # Get all layers connected to input.
-    objective_function=obj,
-    metrics=metrics,
-    callbacks=callbacks)
+model.save_proto('test.prototext')
 
 ```
 

@@ -4,6 +4,7 @@ import sys
 import json
 import matplotlib.pyplot as plt
 import texttable as tt
+import pandas as pd
 
 # Local imports
 from . import parser
@@ -25,8 +26,14 @@ def _get_time_axis(time_list, units='hours'):
     return time_axis
 
 def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
-         plot_accuracy=True, merge_train_val=False, pretty_ylim=True):
+         plot_accuracy=True, merge_train_val=False, pretty_ylim=True, save_fig=None, save_csv=None, ylim=None,
+         test_loss=False):
     """Tabulate and plot stats from LBANN or PyTorch training in common format."""
+
+    if pretty_ylim and ylim is not None:
+        print('ERROR: pretty_ylim and ylim must not be set at the same time.')
+        sys.exit(1)
+
     ### Load stat dicts and print stat summary
     stat_dict_list = []
     # Get run names
@@ -41,14 +48,18 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         run_name_list = stat_name_list
     # Create table for comparing trials
     stat_table = tt.Texttable()
-    headings = ['Trial', 'Num Epochs', 'Avg. Train Time (s)', 'Avg. Val Time (s)']
+    headings = ['Trial', 'Num Procs', 'Num Nodes', 'Num Epochs', 'Avg. Train Time (s)', 'Avg. Val Time (s)']
     if plot_accuracy:
         headings += ['Peak Train Acc', 'Peak Val Acc']
 
     headings += ['Min. Train Loss', 'Min. Val Loss']
+    if test_loss:
+        headings += ['Min. Test Loss']
 
     stat_table.header(headings)
     # Loop through each trial
+    rows = []
+    row_names = []
     for run_name, stat_path in zip(run_name_list, stat_path_list):
         # Load stat file
         stat_ext = os.path.splitext(stat_path)[1]
@@ -64,21 +75,46 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
             print('ERROR: Invalid file extension: {} from {}\nPlease provide either an LBANN output file with .out or .txt extension or a PyTorch output file with .json extension.'.format(stat_ext, stat_path))
             sys.exit(1)
 
+        # Total number of processes
+        def parse_num(d, key):
+            if key in d.keys() and len(set(d[key])) == 1:
+                return d[key][0]
+            else:
+                return None
+
+        num_procs = parse_num(d, 'num_procs')
+        num_procs_on_node = parse_num(d, 'num_procs_on_node')
+        if num_procs is not None and num_procs_on_node is not None:
+            assert (num_procs % num_procs_on_node) == 0
+            num_nodes = int(num_procs / num_procs_on_node)
+        else :
+            num_nodes = None
+            print('WARNING: No process counts are provided from {}'.format(stat_path))
+
         # Total epochs of training
         total_epochs = len(d['val_time'])
 
         # Compute accuracy stats
         if plot_accuracy:
+            if len(d['train_acc']) == 0:
+                print('WARNING: No accuracy information is provided from {}'.format(stat_path))
+                continue
+
             peak_train_acc = max(d['train_acc'])
             peak_train_epoch = d['train_acc'].index(peak_train_acc)
             peak_val_acc = max(d['val_acc'])
             peak_val_epoch = d['val_acc'].index(peak_val_acc)
+
+        if len(d['train_loss']) == 0:
+            print('WARNING: No loss information is provided from {}'.format(stat_path))
+            continue
 
         # Compute loss stats
         min_train_loss = min(d['train_loss'])
         min_train_epoch = d['train_loss'].index(min_train_loss)
         min_val_loss = min(d['val_loss'])
         min_val_epoch = d['val_loss'].index(min_val_loss)
+        min_test_loss = d['test_loss'][0] if test_loss else None
 
         # Compute time stats
         avg_train_time = int(sum(d['train_time'])/len(d['train_time']))
@@ -100,9 +136,15 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         stat_dict_list.append((run_name, d))
 
         # Add row to stats table for current trial
-        stat_table.add_row([run_name, total_epochs, avg_train_time, avg_val_time] \
-                           + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
-                           + [min_train_loss, min_val_loss])
+        row = [run_name, num_procs, num_nodes, total_epochs, avg_train_time, avg_val_time] \
+            + ([peak_train_acc, peak_val_acc] if plot_accuracy else []) \
+            + [min_train_loss, min_val_loss] \
+            + ([min_test_loss] if test_loss else [])
+        rows.append(row)
+        row_names.append(run_name)
+
+    for row in rows:
+        stat_table.add_row(row)
 
     # Print the stats table
     print()
@@ -150,6 +192,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         plt.ylabel('Train Loss')
         if pretty_ylim:
             plt.ylim(0, PRETTY_YLIM_LOSS)
+        elif ylim is not None:
+            plt.ylim(*ylim)
 
         p, = plt.plot(stat_dict['train_axis'], stat_dict['train_loss'], label=run_name_train)
 
@@ -160,6 +204,8 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
         plt.ylabel('Val Loss')
         if pretty_ylim:
             plt.ylim(0, PRETTY_YLIM_LOSS)
+        elif ylim is not None:
+            plt.ylim(*ylim)
 
         kwargs = {} if not merge_train_val else {"color": p.get_color(), "linestyle": "dashed"}
         plt.plot(stat_dict['val_axis'], stat_dict['val_loss'], label=run_name_val, **kwargs)
@@ -167,5 +213,14 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
     # Legend position will likely only be good for the test example
     # plt.legend(loc=(0.25, 1.22))
     plt.legend()
-    # Show the plot
-    plt.show()
+
+    if save_fig is None:
+        # Show the plot
+        plt.show()
+    else:
+        plt.savefig(save_fig)
+
+    if save_csv is not None:
+        df = pd.DataFrame([dict(zip(headings, row)) for row in rows],
+                          index=row_names)
+        df.to_csv(save_csv)

@@ -83,15 +83,50 @@ model {
     split {}
   }
 
+  # Divide mini-batch samples into two halves
+  layer {
+    name: "mb_index"
+    mini_batch_index {}
+  }
+  layer {
+    name: "mb_size"
+    mini_batch_size {}
+  }
+  layer {
+    parents: "mb_index mb_size"
+    name: "mb_factor"
+    divide {}
+  }
+  layer {
+    parents: "mb_factor"
+    name: "in_second_half_scalar"
+    round {}
+  }
+  layer {
+    parents: "in_second_half_scalar"
+    name: "in_second_half_scalar3d"
+    reshape {
+      dims: "1 1 1"
+    }
+  }
+  layer {
+    parents: "in_second_half_scalar3d"
+    name: "in_second_half"
+    hint_layer: "data"
+    tessellate {}
+  }
+  layer {
+    parents: "in_second_half"
+    name: "in_first_half"
+    not {}
+  }
+
   #ZERO
   layer {
-    parents: "data"
+    parents: "data in_second_half"
     name: "zero_data"
     data_layout: "data_parallel"
-    zero {
-      first_half: false
-      second_half: true
-    }
+    multiply {}
   }
 
 
@@ -246,13 +281,10 @@ model {
 
   #ZERO
   layer {
-    parents: "reshape1"
+    parents: "reshape1 in_first_half"
     name: "zero_fake"
     data_layout: "data_parallel"
-    zero {
-      first_half:true
-      second_half:false
-    }
+    multiply {}
   }
 
   #SUM

@@ -293,7 +293,6 @@ __global__ void backprop2_kernel(
 
 } // namespace
 
-
 #ifdef LBANN_HAS_DISTCONV
 
 template <>
@@ -399,15 +398,17 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient_staging(
+    scale_optimizer->add_to_gradient(
         *m_scale_gradient,
-        DataType(1) / effective_mini_batch_size);
+        DataType(1) / effective_mini_batch_size,
+        true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient_staging(
+    bias_optimizer->add_to_gradient(
         *m_bias_gradient,
-        DataType(1) / effective_mini_batch_size);
+        DataType(1) / effective_mini_batch_size,
+        true);
   }
 
   m_bn->backward_stage2(m_prev_activations_t,
@@ -634,13 +635,15 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   }
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient_staging(*m_scale_gradient,
-                                             one / effective_mini_batch_size);
+    scale_optimizer->add_to_gradient(*m_scale_gradient,
+                                     one / effective_mini_batch_size,
+                                     true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient_staging(*m_bias_gradient,
-                                            one / effective_mini_batch_size);
+    bias_optimizer->add_to_gradient(*m_bias_gradient,
+                                    one / effective_mini_batch_size,
+                                    true);
   }
 
   // Compute error signal

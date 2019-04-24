@@ -21,9 +21,19 @@ methods.
 
 
 ## Building LBANN
-A few options for building LBANN are documented
-[here](docs/BuildingLBANN.md#top).
+The preferred method for LBANN users to install LBANN is to use
+[Spack](https://github.com/llnl/spack). After some system
+configuration, this should be as straightforward as
 
+```bash
+spack install lbann
+```
+
+More detailed instructions for installing LBANN with Spack are
+included [here](docs/BuildingLBANN.md#top).
+
+For developers or advanced users, the CMake build system and the
+"Superbuild" are documented [here](docs/BuildingLBANNWithCMake.md#top).
 
 ## Running LBANN
 The basic template for running LBANN is

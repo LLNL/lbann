@@ -32,6 +32,7 @@ message Reader {
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
   double percent_of_data_to_use = 12;
+
   //for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
@@ -263,7 +264,7 @@ message Model {
   int64 num_gpus = 53; //has no effect
   int64 evaluation_frequency = 54;
   int64 num_parallel_readers = 100;
-  bool  serialize_background_io = 101;
+  bool  serialize_io = 101;
 
   bool disable_cuda = 8;
 
@@ -436,6 +437,7 @@ message CallbackSaveImages {
 
 message CallbackPrint {
   int64 interval = 1; //default in lbann_callback_print.hpp is 1
+  bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
 }
 
 message CallbackProfiler {
@@ -796,7 +798,6 @@ message Layer {
    Unpooling unpooling = 304;
    Hadamard hadamard = 308;
    Constant constant = 309;
-   Zero zero = 315;
    Reduction reduction = 310;
    Evaluation evaluation = 311;
    Gaussian gaussian = 312;
@@ -907,6 +908,8 @@ message Layer {
    Covariance covariance = 600;
    Variance variance = 601;
    ChannelwiseMean channelwise_mean = 602;
+   MiniBatchIndex mini_batch_index = 603;
+   MiniBatchSize mini_batch_size = 604;
 
 }
 ///////////////////////
@@ -1081,12 +1084,12 @@ message Unpooling {
 
 
 message Concatenation {
-  int64 concatenation_axis = 2;
+  int64 axis = 1;
 }
 
 message Slice {
-  int64 slice_axis = 2;
-  string slice_points = 3; //should be space-separated list of ints, e.g, "2 6 7"
+  int64 axis = 1;
+  string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
   //the following is for jag_conduit_hdf5;
   string get_slice_points_from_reader = 4;
   bool get_slice_points_from_reader_bool = 5;
@@ -1108,12 +1111,6 @@ message Hadamard {
 message Constant {
   double value=1;
   string num_neurons=2;
-}
-
-
-message Zero {
-  bool first_half=1; //default: true
-  bool second_half=2; //default: true
 }
 
 message Reduction {
@@ -1264,3 +1261,5 @@ message Variance {
   bool biased = 1; //Whether to use a biased variance estimate
 }
 message ChannelwiseMean {}
+message MiniBatchIndex {}
+message MiniBatchSize {}

@@ -59,7 +59,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
   using sample_t = sample_list_jag::sample_t;
-  using sample_id_t = sample_list_jag::sample_id_t;
+  using sample_file_id_t = sample_list_jag::sample_file_id_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -237,7 +237,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// sets up a data_store.
-  void setup_data_store(model *m) override;
+  void setup_data_store(model *m, int mini_batch_size) override;
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// A untiliy function to convert the pointer to image data into an opencv image
