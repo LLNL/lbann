@@ -29,11 +29,9 @@ configuration, this should be as straightforward as
 spack install lbann
 ```
 
-More detailed instructions for installing LBANN with Spack are
-included [here](docs/BuildingLBANN.md#top).
-
-For developers or advanced users, the CMake build system and the
-"Superbuild" are documented [here](docs/BuildingLBANNWithCMake.md#top).
+More detailed instructions for building and installing LBANN are
+available at the [main LBANN
+documentation](https://lbann.readthedocs.io/en/latest/index.html).
 
 ## Running LBANN
 The basic template for running LBANN is
@@ -52,7 +50,7 @@ optimized for the case in which one assigns one GPU per MPI
 the MPI launcher.
 
 More details about running LBANN are documented
-[here](docs/RunningLBANN.md#top).
+[here](https://lbann.readthedocs.io/en/latest/running_lbann.html).
 
 
 ## Reporting issues

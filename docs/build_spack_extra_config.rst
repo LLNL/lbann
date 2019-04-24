@@ -1,8 +1,15 @@
-# Setting up Basic Spack Environment
+.. _setup-spack-env:
 
-## Setting up user's Spack environment
+========================================
+Setting up Basic Spack Environment
+========================================
 
-+ Copy the following text into ~/.spack/linux/compilers.yaml
+.. note:: These instructions are specific to LLNL's Livermore
+          Computing (LC) machines x86_64 machines. External users will
+          likely have to modify these paths to be specific to their
+          build platform.
+
++ Copy the following text into :code:`~/.spack/linux/compilers.yaml`: ::
 
         compilers:
         - compiler:
@@ -32,7 +39,7 @@
             spec: gcc@7.3.1
             target: ppc64le
 
-+ Copy the following text into ~/.spack/linux/packages.yaml
++ Copy the following text into :code:`~/.spack/linux/packages.yaml`: ::
 
         packages:
           all:

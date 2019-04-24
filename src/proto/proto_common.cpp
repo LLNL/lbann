@@ -710,7 +710,6 @@ void customize_data_readers_index_list(const lbann_comm& comm, lbann_data::Lbann
 
 void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
-  bool master = comm.am_world_master();
   std::ostringstream err;
 
   options *opts = options::get();
@@ -725,20 +724,6 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       readme->set_percent_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
-  }
-
-  if (opts->has_string("dag_model")) {
-    std::string sanity = model->type();
-    if (sanity != "dnn") {
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " the current network model is: " << model->type()
-          << "; you can only change the model to 'dag_model' if the current model is 'dnn'";
-      throw lbann_exception(err.str());
-    }
-    if (master) {
-      std::cout << "\nchanging model from " << model->type() << " to: dag\n\n";
-    }
-    model->set_type("dag_model");
   }
 
   if (opts->has_string("data_filedir")
@@ -796,65 +781,6 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     model->set_serialize_io(opts->get_bool("serialize_io"));
   }
 
-
-  if (opts->has_string("opt")) {
-    //defaults
-    double learn_rate = opts->has_float("learn_rate") ? opts->get_float("learn_rate") : 0.01;
-    double eps = opts->has_float("eps") ? opts->get_float("eps") : 1e-8;
-    double beta1 = opts->has_float("beta1") ? opts->get_float("beta1") : 0.9;
-    double beta2 = opts->has_float("beta2") ? opts->get_float("beta2") : 0.99;
-    double init_learning_rate = opts->has_float("init_learning_rate") ? opts->get_float("init_learning_rate") : 0.01;
-    double hyper_learning_rate = opts->has_float("hyper_learning_rate") ? opts->get_float("hyper_learning_rate") : 1e-7;
-    double momentum = opts->has_float("momentum") ? opts->get_float("momentum") : 0.9;
-    double decay_rate = opts->has_float("decay_rate") ? opts->get_float("decay_rate") : 0.5;
-    bool nesterov = opts->has_bool("nesterov") ? opts->get_float("nesterov") : false;
-
-    auto *opt = new lbann_data::Optimizer;
-
-    //construct the new optimizer
-    std::string opt_string = opts->get_string("opt");
-    if (opt_string == "adagrad") {
-      auto *a = new lbann_data::Adagrad;
-      a->set_learn_rate(learn_rate);
-      a->set_eps(eps);
-      opt->set_allocated_adagrad(a);
-    } else if (opt_string == "adam") {
-      auto *a = new lbann_data::Adam;
-      a->set_learn_rate(learn_rate);
-      a->set_eps(eps);
-      a->set_beta1(beta1);
-      a->set_beta2(beta2);
-      opt->set_allocated_adam(a);
-    } else if (opt_string == "hypergradient_adam") {
-      auto *a = new lbann_data::HypergradientAdam;
-      a->set_init_learning_rate(init_learning_rate);
-      a->set_hyper_learning_rate(hyper_learning_rate);
-      a->set_beta1(beta1);
-      a->set_beta2(beta2);
-      a->set_eps(eps);
-      opt->set_allocated_hypergradient_adam(a);
-    } else if (opt_string == "rmsprop") {
-      auto *a = new lbann_data::Rmsprop;
-      a->set_learn_rate(learn_rate);
-      a->set_decay_rate(decay_rate);
-      a->set_eps(eps);
-      opt->set_allocated_rmsprop(a);
-    } else if (opt_string == "sgd") {
-      if (master) std::cerr << "\n\nsetting: sgd\n\n";
-      auto *a = new lbann_data::Sgd;
-      a->set_learn_rate(learn_rate);
-      a->set_momentum(momentum);
-      a->set_decay_rate(decay_rate);
-      a->set_nesterov(nesterov);
-      opt->set_allocated_sgd(a);
-    } else {
-      err << __FILE__ << " " << __LINE__
-          << " :: unknown string for --optimizer: " << opt_string
-          << " should be on of: adagrad, adam, hypergradient_adam, rmsprop, sgd";
-      throw lbann_exception(err.str());
-    }
-    p.set_allocated_optimizer(opt);
-  }
 }
 
 void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
@@ -909,7 +835,6 @@ void print_help(std::ostream& os)
        "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
        "\n"
        "General:\n"
-       "  --dag_model\n"
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
        "  --block_size=<int>\n"
@@ -961,20 +886,7 @@ void print_help(std::ostream& os)
        "            used if the option is not specified on the cmd line.\n"
        "            If you specify an option that is not applicable to your choice\n"
        "            of optimizer, the option is ignored\n"
-       "\n"
-       "  --opt=<string>\n"
-       "     <string> must be one of:\n"
-       "         adagrad, adam, hypergradient_adam, rmsprop, sgd\n"
-       "\n"
-       "  --learn_rate=< 0.01 >          (all except hypergradient_adam)\n"
-       "  --eps=< 1e-8 >                 (all except sgd)\n"
-       "  --beta1=< 0.9 >                (adam, hypergradient_adam)\n"
-       "  --beta2=< 0.99 >               (adam, hypergradient_adam)\n"
-       "  --init_learning_rate=< 0.01 >  (hypergradient_adam)\n"
-       "  --hyper_learning_rate=< 1e-7 > (hypergradient_adam)\n"
-       "  --momentum=< 0.9 >             (sgd)\n"
-       "  --decay_rate=< 0.5 >           (sgd, rmsprop)\n"
-       "  --nesterov=< false >           (sgd)\n";
+       "\n";
 }
 
 void copy_file(std::string fn, std::ofstream &out)

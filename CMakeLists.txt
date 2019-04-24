@@ -351,15 +351,15 @@ if (LBANN_WITH_CONDUIT)
     message(STATUS "Found HDF5: ${HDF5_DIR}")
   endif ()
 
-  find_package(CONDUIT CONFIG QUIET
-    HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+  find_package(Conduit CONFIG QUIET
+    HINTS ${Conduit_DIR} $ENV{Conduit_DIR} ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
     NO_DEFAULT_PATH)
-  if (NOT CONDUIT_FOUND)
-    find_package(CONDUIT CONFIG QUIET REQUIRED
+  if (NOT Conduit_FOUND)
+    find_package(Conduit CONFIG QUIET REQUIRED
       PATH_SUFFIXES lib64/cmake lib/cmake)
   endif ()
-  message(STATUS "Found CONDUIT: ${CONDUIT_DIR}")
+  message(STATUS "Found CONDUIT: ${Conduit_DIR}")
 
   # Ugh. I don't like that this requires intimate knowledge of
   # specific targets that CONDUIT exports. It should support
