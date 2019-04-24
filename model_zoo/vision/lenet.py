@@ -4,7 +4,6 @@ import os.path
 import google.protobuf.text_format as txtf
 import lbann
 import lbann.contrib.lc.launcher
-import lbann.contrib.args
 
 # ----------------------------------
 # Command-line arguments
@@ -13,7 +12,12 @@ import lbann.contrib.args
 desc = ('Construct and run LeNet on MNIST data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
+parser.add_argument(
+    '--partition', action='store', type=str,
+    help='scheduler partition', metavar='NAME')
+parser.add_argument(
+    '--account', action='store', type=str,
+    help='scheduler account', metavar='NAME')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -97,7 +101,9 @@ data_reader_proto = data_reader_proto.data_reader
 # ----------------------------------
 # Note: Use `lbann.run` instead for non-LC systems.
 
-kwargs = lbann.contrib.args.get_launcher_kwargs(args)
+kwargs = {}
+if args.partition: kwargs['partition'] = args.partition
+if args.account: kwargs['account'] = args.account
 lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
                               job_name='lbann_lenet',
                               **kwargs)
