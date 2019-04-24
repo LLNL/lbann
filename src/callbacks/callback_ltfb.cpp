@@ -266,6 +266,10 @@ EvalType evaluate(model& m, const std::string& metric_name) {
     LBANN_ERROR(err.str());
   }
 
+  // Mark the data store as loaded - Note that this is a temporary fix
+  // for the current use of the tournament
+  m.make_data_store_preloaded(execution_mode::validation);
+
   // Clean up and return metric value
   m.set_execution_mode(original_mode);
   return metric_value;
