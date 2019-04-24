@@ -32,7 +32,8 @@ def add_scheduler_arguments(parser):
         '--time-limit', action='store', type=int,
         help='time limit (in minutes)', metavar='MIN')
 
-def add_optimizer_arguments(parser):
+def add_optimizer_arguments(parser, default_optimizer='momentum',
+                            default_learning_rate=0.01):
     """Add command-line arguments for optimizers.
 
     Adds the following options: `--optimizer`,
@@ -42,18 +43,21 @@ def add_optimizer_arguments(parser):
     Args:
         parser (argparse.ArgumentParser): command-line argument
             parser.
+        default_optimizer (str): default optimizer to use.
+        default_learning_rate (float): default learning rate.
 
     """
     if not isinstance(parser, argparse.ArgumentParser):
         raise TypeError('expected an argparse.ArgumentParser')
     parser.add_argument(
-        '--optimizer', action='store', default='momentum', type=str,
+        '--optimizer', action='store', default=default_optimizer, type=str,
         choices=('momentum', 'sgd', 'adam', 'adagrad', 'rmsprop'),
-        help='optimizer (default: momentum)')
+        help='optimizer (default: {})'.format(default_optimizer))
     parser.add_argument(
         '--optimizer-learning-rate',
-        action='store', default=0.01, type=float,
-        help='optimizer learning rate (default: 0.01)', metavar='VAL')
+        action='store', default=default_learning_rate, type=float,
+        help='optimizer learning rate (default: {})'.format(default_learning_rate),
+        metavar='VAL')
 
 def create_optimizer(args):
     """Create optimizer from command-line arguments.

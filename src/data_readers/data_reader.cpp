@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
@@ -714,7 +714,7 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
-  if (m_data_store != nullptr && m_data_store->preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return true;
   }
   /// Use the data store for all modes except testing
@@ -727,7 +727,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  if (m_data_store != nullptr && m_data_store->preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return false;
   }
   /// Use the data store for all modes except testing
@@ -739,7 +739,7 @@ bool generic_data_reader::priming_data_store() const {
                   && m_model->get_epoch() == 1)));
 }
 
-void generic_data_reader::set_data_store(generic_data_store *g) {
+void generic_data_reader::set_data_store(data_store_conduit *g) {
     if (m_data_store != nullptr) {
       delete m_data_store;
     }
