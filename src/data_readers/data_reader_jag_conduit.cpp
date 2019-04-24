@@ -1521,14 +1521,24 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       const std::vector<scalar_t> scalars(get_scalars(data_id, sample));
 
       int x = 0;
+      bool all_zeros = true;
       for(const auto key: m_scalar_keys) {
         const scalar_t &z = scalars[x++];
+        if (z != 0.0) {
+          all_zeros = false;
+        }
+        if (z == 0.0) {
+          std::cerr << "ZERO SCALAR for key: " << key << "\n";
+        }
         if (z < m_scalar_min[key]) {
           m_scalar_min[key] = z;
         }
         if (z > m_scalar_max[key]) {
           m_scalar_max[key] = z;
         }
+      }
+      if (all_zeros) {
+        std::cerr << "ALL SCALARS ARE ZERO\n";
       }
 
       set_minibatch_item<scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
