@@ -58,6 +58,7 @@ inline sample_list_jag::~sample_list_jag() {
       conduit::relay::io::hdf5_close_file(std::get<1>(f));
     }
     std::get<1>(f) = 0;
+    std::get<2>(f).clear();
   }
   m_file_id_stats_map.clear();
   m_open_fd_pq.clear();
@@ -563,8 +564,8 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
   for (auto&& e : m_file_id_stats_map) {
     if(std::get<1>(e) > 0) {
       conduit::relay::io::hdf5_close_file(std::get<1>(e));
-      std::get<1>(e) = 0;
     }
+    std::get<1>(e) = 0;
     std::get<2>(e).clear();
   }
   // Once all of the file handles are closed, clear the priority queue

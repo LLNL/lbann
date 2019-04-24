@@ -150,7 +150,6 @@ class sample_list_jag {
   void delete_hdf5_handle_pq_entry(sample_file_id_t id) {
     for (std::deque<fd_use_map_t>::iterator it = m_open_fd_pq.begin(); it!=m_open_fd_pq.end(); ++it) {
       if(it->first == id) {
-        std::cout << "I have found the entry for " << id << std::endl;
         it = m_open_fd_pq.erase(it);
         break;
       }
