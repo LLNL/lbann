@@ -103,7 +103,7 @@ data_reader_proto = data_reader_proto.data_reader
 
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition
-if args.account:   kwargs['account'] = args.account
+if args.account: kwargs['account'] = args.account
 lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
-                              job_name = 'lbann_lenet',
+                              job_name='lbann_lenet',
                               **kwargs)

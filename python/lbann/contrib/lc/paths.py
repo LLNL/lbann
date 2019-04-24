@@ -29,6 +29,13 @@ def lbann_exe(build_type = None, system = system()):
     """LBANN executable."""
     return os.path.join(install_dir(build_type, system), 'bin', 'lbann')
 
+def parallel_fs_base_path(system):
+    """Base path to parallel file system."""
+    if system in ('lassen', 'sierra'):
+        return '/p/gpfs1/'
+    else:
+        return '/p/lustre2/'
+
 # ==============================================
 # Data sets
 # ==============================================
@@ -42,7 +49,7 @@ def mnist_dir(system = system()):
     from http://yann.lecun.com/exdb/mnist/ and uncompressing.
 
     """
-    return '/p/lustre2/brainusr/datasets/MNIST'
+    return parallel_fs_base_path(system) + 'brainusr/datasets/MNIST'
 
 def imagenet_dir(system = system(), data_set = 'training',
                  num_classes = 1000):
@@ -63,12 +70,14 @@ def imagenet_dir(system = system(), data_set = 'training',
     subsampled data sets may vary by system.
 
     """
+    base_path = parallel_fs_base_path(system)
+    base_path += 'brainusr/datasets/ILSVRC2012/original/'
     if data_set.lower() in ('train', 'training'):
-        return '/p/lustre2/brainusr/datasets/ILSVRC2012/original/train/'
+        return base_path + 'train/'
     elif data_set.lower() in ('val', 'validation'):
-        return '/p/lustre2/brainusr/datasets/ILSVRC2012/original/val/'
+        return base_path + 'val/'
     elif data_set.lower() in ('test', 'testing'):
-        return '/p/lustre2/brainusr/datasets/ILSVRC2012/original/test/'
+        return base_path + 'test/'
     else:
         raise RuntimeError('unknown ImageNet data set (' + data_set + ')')
 
@@ -91,8 +100,11 @@ def imagenet_labels(system = system(), data_set = 'train',
     subsampled data sets may vary by system.
 
     """
-
-    label_dir = '/p/lustre2/brainusr/datasets/ILSVRC2012/labels/'
+    label_dir = parallel_fs_base_path(system)
+    if system in ('lassen', 'sierra'):
+        label_dir += 'brainusr/datasets/ILSVRC2012/original/labels/'
+    else:
+        label_dir += 'brainusr/datasets/ILSVRC2012/labels/'
     suffixes = {1000: '', 10: '_c0-9', 100: '_c0-99',
                 200: '_c100-299', 300: '_c0-299'}
     if data_set.lower() in ('train', 'training'):
