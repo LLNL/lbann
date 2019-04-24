@@ -72,60 +72,52 @@ template<> inline std::string to_sample_name_t<std::string>(const std::string& s
 }
 
 
-inline sample_list_header::sample_list_header()
+inline sample_list_no_open_file_header::sample_list_header()
   : m_is_exclusive(false), m_included_sample_count(0u),
     m_excluded_sample_count(0u), m_num_files(0u),
     m_file_dir("") {
 }
 
-inline bool sample_list_header::is_exclusive() const {
+inline bool sample_list_no_open_file_header::is_exclusive() const {
   return m_is_exclusive;
 }
 
-inline size_t sample_list_header::get_sample_count() const {
+inline size_t sample_list_no_open_file_header::get_sample_count() const {
   return m_included_sample_count;
 }
 
-inline size_t sample_list_header::get_num_files() const {
+inline size_t sample_list_no_open_file_header::get_num_files() const {
   return m_num_files;
 }
 
-inline const std::string& sample_list_header::get_sample_list_filename() const {
-  return m_sample_list_filename;
+inline const std::string& sample_list_no_open_file_header::get_sample_list_filename() const {
+  return m_sample_list_no_open_file_filename;
 }
 
-inline const std::string& sample_list_header::get_file_dir() const {
+inline const std::string& sample_list_no_open_file_header::get_file_dir() const {
   return m_file_dir;
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list<file_handle_t, sample_name_t>::sample_list() {
+inline sample_list_no_open_file<file_handle_t, sample_name_t>::sample_list() {
   m_max_open_files = getdtablesize() - LBANN_MAX_OPEN_FILE_MARGIN;
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list<file_handle_t, sample_name_t>::~sample_list() {
-#if 0 // put this block in the destructor of the derived class
-  // Close the existing open files
-  for(auto& f : m_file_id_stats_map) {
-    file_handle_t& h = std::get<1>(f);
-    close_file_handle(h);
-    clear_file_handle(h);
-  }
+inline sample_list_no_open_file<file_handle_t, sample_name_t>::~sample_list() {
   m_file_id_stats_map.clear();
-#endif
   m_open_fd_pq.clear();
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list<file_handle_t, sample_name_t>
-::sample_list(const sample_list& rhs) {
+inline sample_list_no_open_file<file_handle_t, sample_name_t>
+::sample_list_no_open_file(const sample_list& rhs) {
   copy_members(rhs);
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list<file_handle_t, sample_name_t>& sample_list<file_handle_t, sample_name_t>
-::operator=(const sample_list& rhs) {
+inline sample_list_no_open_file<file_handle_t, sample_name_t>& sample_list<file_handle_t, sample_name_t>
+::operator=(const sample_list_no_open_file& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -137,8 +129,8 @@ inline sample_list<file_handle_t, sample_name_t>& sample_list<file_handle_t, sam
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list<file_handle_t, sample_name_t>& sample_list<file_handle_t, sample_name_t>
-::copy(const sample_list& rhs) {
+inline sample_list_no_open_file<file_handle_t, sample_name_t>& sample_list<file_handle_t, sample_name_t>
+::copy(const sample_list_no_open_file& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -150,10 +142,10 @@ inline sample_list<file_handle_t, sample_name_t>& sample_list<file_handle_t, sam
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
-::copy_members(const sample_list& rhs) {
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
+::copy_members(const sample_list_no_open_file& rhs) {
   m_header = rhs.m_header;
-  m_sample_list = rhs.m_sample_list;
+  m_sample_list_no_open_file = rhs.m_sample_list;
   m_file_map = rhs.m_file_map;
   m_max_open_files = rhs.m_max_open_files;
 
@@ -161,7 +153,6 @@ inline void sample_list<file_handle_t, sample_name_t>
   /// descriptor information
   m_file_id_stats_map.assign(rhs.m_file_id_stats_map.size(),
                              std::make_tuple("",
-                                             uninitialized_file_handle<file_handle_t>(),
                                              std::deque<std::pair<int,int>>{}));
 
   for(size_t i = 0u; i < m_file_id_stats_map.size(); ++i) {
@@ -174,7 +165,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::load(const std::string& samplelist_file,
        size_t stride, size_t offset) {
   std::ifstream istr(samplelist_file);
@@ -183,33 +174,33 @@ inline void sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list_header sample_list<file_handle_t, sample_name_t>
+inline sample_list_no_open_file_header sample_list<file_handle_t, sample_name_t>
 ::load_header(const std::string& samplelist_file) const {
   std::ifstream istr(samplelist_file);
   return read_header(istr, samplelist_file);
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::load_from_string(const std::string& samplelist) {
   std::istringstream istr(samplelist);
   get_samples_per_file(istr, "<LOAD_FROM_STRING>", 1, 0);
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline size_t sample_list<file_handle_t, sample_name_t>
+inline size_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::size() const {
-  return m_sample_list.size();
+  return m_sample_list_no_open_file.size();
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline bool sample_list<file_handle_t, sample_name_t>
+inline bool sample_list_no_open_file<file_handle_t, sample_name_t>
 ::empty() const {
-  return m_sample_list.empty();
+  return m_sample_list_no_open_file.empty();
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline std::string sample_list<file_handle_t, sample_name_t>
+inline std::string sample_list_no_open_file<file_handle_t, sample_name_t>
 ::read_header_line(std::istream& istrm,
                    const std::string& filename,
                    const std::string& info) const {
@@ -231,12 +222,12 @@ inline std::string sample_list<file_handle_t, sample_name_t>
 
 
 template <typename file_handle_t, typename sample_name_t>
-inline sample_list_header sample_list<file_handle_t, sample_name_t>
+inline sample_list_no_open_file_header sample_list<file_handle_t, sample_name_t>
 ::read_header(std::istream& istrm,
               const std::string& filename) const {
-  sample_list_header hdr;
+  sample_list_no_open_file_header hdr;
 
-  hdr.m_sample_list_filename = filename;
+  hdr.m_sample_list_no_open_file_filename = filename;
 
   std::string line1 = read_header_line(istrm, filename, "the exclusiveness");
   std::stringstream header1(line1);
@@ -247,12 +238,12 @@ inline sample_list_header sample_list<file_handle_t, sample_name_t>
   std::string line3 = read_header_line(istrm, filename, "the data file directory");
   std::stringstream header3(line3);
 
-  std::string sample_list_type;
-  header1 >> sample_list_type;
-  std::for_each(sample_list_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
+  std::string sample_list_no_open_file_type;
+  header1 >> sample_list_no_open_file_type;
+  std::for_each(sample_list_no_open_file_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
 
   const std::string type_exclusive = sample_exclusion_list;
-  size_t found = sample_list_type.find(type_exclusive);
+  size_t found = sample_list_no_open_file_type.find(type_exclusive);
 
   if (found != std::string::npos) {
     hdr.m_is_exclusive = true;
@@ -275,7 +266,7 @@ inline sample_list_header sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::read_exclusive_list(std::istream& istrm,
                       size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
@@ -344,7 +335,7 @@ inline void sample_list<file_handle_t, sample_name_t>
     }
 
     sample_file_id_t index = m_file_id_stats_map.size();
-    m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, std::deque<std::pair<int,int>>{}));
     set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
@@ -353,7 +344,7 @@ inline void sample_list<file_handle_t, sample_name_t>
       if (found != excluded_sample_indices.cend()) {
         continue;
       }
-      m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(s));
+      m_sample_list_no_open_file.emplace_back(index, to_sample_name_t<sample_name_t>(s));
       valid_sample_count++;
     }
 
@@ -367,7 +358,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 
   if (m_header.get_num_files() != cnt_files) {
     LBANN_ERROR(std::string("Sample list ")
-                + m_header.get_sample_list_filename()
+                + m_header.get_sample_list_no_open_file_filename()
                 + std::string(": number of files requested ")
                 + std::to_string(m_header.get_num_files())
                 + std::string(" does not equal number of files loaded ")
@@ -379,7 +370,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::read_inclusive_list(std::istream& istrm,
                       size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
@@ -435,7 +426,7 @@ inline void sample_list<file_handle_t, sample_name_t>
     std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
     sample_file_id_t index = m_file_id_stats_map.size();
-    m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, std::deque<std::pair<int,int>>{}));
     set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
@@ -446,7 +437,7 @@ inline void sample_list<file_handle_t, sample_name_t>
       if (found == set_of_samples.cend()) {
         LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name_str);
       }
-      m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+      m_sample_list_no_open_file.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
       valid_sample_count++;
     }
     if(valid_sample_count != included_samples) {
@@ -467,12 +458,12 @@ inline void sample_list<file_handle_t, sample_name_t>
 
 
 template <typename file_handle_t, typename sample_name_t>
-inline size_t sample_list<file_handle_t, sample_name_t>
+inline size_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::get_samples_per_file(std::istream& istrm,
                        const std::string& filename,
                        size_t stride, size_t offset) {
   m_header = read_header(istrm, filename);
-  m_sample_list.reserve(m_header.get_sample_count());
+  m_sample_list_no_open_file.reserve(m_header.get_sample_count());
 
   if (m_header.is_exclusive()) {
     read_exclusive_list(istrm, stride, offset);
@@ -480,19 +471,19 @@ inline size_t sample_list<file_handle_t, sample_name_t>
     read_inclusive_list(istrm, stride, offset);
   }
 
-  if(stride == 1 && m_header.get_sample_count() != m_sample_list.size()) {
+  if(stride == 1 && m_header.get_sample_count() != m_sample_list_no_open_file.size()) {
     LBANN_ERROR(std::string("Sample list count ")
                 + std::to_string(m_header.get_sample_count())
                 + std::string(" does not equal sample list size ")
-                + std::to_string(m_sample_list.size()));
+                + std::to_string(m_sample_list_no_open_file.size()));
   }
 
-  return m_sample_list.size();
+  return m_sample_list_no_open_file.size();
 }
 
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
@@ -540,7 +531,7 @@ inline void sample_list<file_handle_t, sample_name_t>
 
 template <typename file_handle_t, typename sample_name_t>
 template <typename T>
-inline size_t sample_list<file_handle_t, sample_name_t>
+inline size_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::all_gather_field(T data,
                    std::vector<T>& gathered_data,
                    lbann_comm& comm) {
@@ -570,41 +561,40 @@ inline size_t sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::clear() {
-  m_sample_list.clear();
+  m_sample_list_no_open_file.clear();
 }
 
 template <typename file_handle_t, typename sample_name_t>
 template <class Archive>
-void sample_list<file_handle_t, sample_name_t>
+void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::save( Archive & ar ) const {
   using ar_file_stats_t = std::tuple<std::string, std::deque<std::pair<int,int>>>;
   std::vector<ar_file_stats_t> file_stats;
   file_stats.reserve(m_file_id_stats_map.size());
   for(auto&& e : m_file_id_stats_map) {
-    file_stats.emplace_back(std::make_tuple(std::get<0>(e), std::get<2>(e)));
+    file_stats.emplace_back(std::make_tuple(std::get<0>(e), std::get<1>(e)));
   }
-  ar(m_header, m_sample_list, file_stats);
+  ar(m_header, m_sample_list_no_open_file, file_stats);
 }
 
 template <typename file_handle_t, typename sample_name_t>
 template <class Archive>
-void sample_list<file_handle_t, sample_name_t>
+void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::load( Archive & ar ) {
   using ar_file_stats_t = std::tuple<std::string, std::deque<std::pair<int,int>>>;
   std::vector<ar_file_stats_t> file_stats;
-  ar(m_header, m_sample_list, file_stats);
+  ar(m_header, m_sample_list_no_open_file, file_stats);
   m_file_id_stats_map.reserve(file_stats.size());
   for(auto&& e : file_stats) {
-    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
-    m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), uninitialized_file_handle<file_handle_t>(), std::get<1>(e)));
-    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), file_handle_t(), std::get<1>(e)));
+    //m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), std::deque<std::pair<int,int>>{}));
+    m_file_id_stats_map.emplace_back(std::make_tuple(std::get<0>(e), std::get<1>(e)));
   }
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::write_header(std::string& sstr, size_t num_files) const {
   // The first line indicate if the list is exclusive or inclusive
   // The next line contains the number of samples and the number of files, which are the same in this caes
@@ -612,22 +602,22 @@ inline void sample_list<file_handle_t, sample_name_t>
 
   sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
   /// Include the number of invalid samples, which for an inclusive index list is always 0
-  sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(num_files) + '\n';
+  sstr += std::to_string(m_sample_list_no_open_file.size()) + " 0 " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
 
 
 template <typename file_handle_t, typename sample_name_t>
-inline bool sample_list<file_handle_t, sample_name_t>
+inline bool sample_list_no_open_file<file_handle_t, sample_name_t>
 ::to_string(std::string& sstr) const {
   std::map<std::string, std::template vector<sample_name_t>> tmp_file_map;
-  for (const auto& s : m_sample_list) {
+  for (const auto& s : m_sample_list_no_open_file) {
     std::string filename = std::get<0>(m_file_id_stats_map[s.first]);
     tmp_file_map[filename].emplace_back(s.second);
   }
 
-  typename samples_t::const_iterator it_begin = m_sample_list.cbegin();
-  typename samples_t::const_iterator it_end = m_sample_list.cbegin();
+  typename samples_t::const_iterator it_begin = m_sample_list_no_open_file.cbegin();
+  typename samples_t::const_iterator it_end = m_sample_list_no_open_file.cbegin();
 
   sstr.clear();
 
@@ -660,7 +650,7 @@ inline bool sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::write(const std::string filename) const {
   std::string dir, basename;
   parse_path(filename, dir, basename);
@@ -685,70 +675,63 @@ inline void sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline const typename sample_list<file_handle_t, sample_name_t>::samples_t&
-sample_list<file_handle_t, sample_name_t>::get_list() const {
-  return m_sample_list;
+inline const typename sample_list_no_open_file<file_handle_t, sample_name_t>::samples_t&
+sample_list_no_open_file<file_handle_t, sample_name_t>::get_list() const {
+  return m_sample_list_no_open_file;
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline const sample_list_header&
-sample_list<file_handle_t, sample_name_t>::get_header() const {
+inline const sample_list_no_open_file_header&
+sample_list_no_open_file<file_handle_t, sample_name_t>::get_header() const {
   return m_header;
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline const typename sample_list<file_handle_t, sample_name_t>::sample_t&
-sample_list<file_handle_t, sample_name_t>::operator[](size_t idx) const {
-  return m_sample_list[idx];
+inline const typename sample_list_no_open_file<file_handle_t, sample_name_t>::sample_t&
+sample_list_no_open_file<file_handle_t, sample_name_t>::operator[](size_t idx) const {
+  return m_sample_list_no_open_file[idx];
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline const std::string& sample_list<file_handle_t, sample_name_t>
+inline const std::string& sample_list_no_open_file<file_handle_t, sample_name_t>
 ::get_samples_filename(sample_file_id_t id) const {
   return std::get<0>(m_file_id_stats_map[id]);
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline   const std::string& sample_list<file_handle_t, sample_name_t>
+inline   const std::string& sample_list_no_open_file<file_handle_t, sample_name_t>
 ::get_samples_dirname() const {
   return m_header.get_file_dir();
 }
 
+// TODO remove or modify
 template <typename file_handle_t, typename sample_name_t>
-inline file_handle_t sample_list<file_handle_t, sample_name_t>
+inline file_handle_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::get_samples_file_handle(sample_file_id_t id) const {
-  file_handle_t h = std::get<1>(m_file_id_stats_map[id]);
+//  file_handle_t h = std::get<1>(m_file_id_stats_map[id]);
   return h;
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::set_samples_filename(sample_file_id_t id, const std::string& filename) {
   std::get<0>(m_file_id_stats_map[id]) = filename;
 }
 
+// TODO remove
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::set_files_handle(const std::string& filename, file_handle_t h) {
-  sample_file_id_t id = sample_file_id_t(0);
-  for (auto&& e : m_file_id_stats_map) {
-    if(std::get<0>(e) == filename) {
-      std::get<1>(e) = h;
-      break;
-    }
-    id++;
-  }
-  manage_open_file_handles(id, true);
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const {
   LBANN_ERROR(std::string{} + " :: base class does not implement this method");
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline file_handle_t sample_list<file_handle_t, sample_name_t>
+inline file_handle_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::get_bundled_sample_names(std::string file_path,
                            std::vector<std::string>& sample_names,
                            size_t included_samples,
@@ -787,7 +770,7 @@ inline file_handle_t sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::all_gather_packed_lists(lbann_comm& comm) {
   int num_ranks = comm.get_procs_per_trainer();
   typename std::vector<samples_t> per_rank_samples(num_ranks);
@@ -798,22 +781,19 @@ inline void sample_list<file_handle_t, sample_name_t>
 
   // Close the existing open files
   for(auto&& e : m_file_id_stats_map) {
-    auto& h = std::get<1>(e);
-    close_file_handle(h);
-    clear_file_handle(h);
-    std::get<2>(e).clear();
+    std::get<1>(e).clear();
     my_files.emplace_back(std::get<0>(e));
   }
   m_open_fd_pq.clear();
 
-  size_t num_samples = all_gather_field(m_sample_list, per_rank_samples, comm);
+  size_t num_samples = all_gather_field(m_sample_list_no_open_file, per_rank_samples, comm);
   size_t num_ids = all_gather_field(my_files, per_rank_files, comm);
   size_t num_files = all_gather_field(m_file_map, per_rank_file_map, comm);
 
-  m_sample_list.clear();
+  m_sample_list_no_open_file.clear();
   m_file_id_stats_map.clear();
 
-  m_sample_list.reserve(num_samples);
+  m_sample_list_no_open_file.reserve(num_samples);
   m_file_id_stats_map.reserve(num_ids);
   m_file_map.reserve(num_files);
 
@@ -827,7 +807,7 @@ inline void sample_list<file_handle_t, sample_name_t>
       if(index >= m_file_id_stats_map.size()
          || (std::get<0>(m_file_id_stats_map.back()) != filename)) {
         index = m_file_id_stats_map.size();
-        m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
+        m_file_id_stats_map.emplace_back(std::make_tuple(filename, std::deque<std::pair<int,int>>{}));
         // Update the file map structure
         if(m_file_map.count(filename) == 0) {
           m_file_map[filename] = file_map.at(filename);
@@ -840,7 +820,7 @@ inline void sample_list<file_handle_t, sample_name_t>
           }
         }
       }
-      m_sample_list.emplace_back(std::make_pair(index, s.second));
+      m_sample_list_no_open_file.emplace_back(std::make_pair(index, s.second));
     }
   }
 
@@ -848,46 +828,29 @@ inline void sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::compute_epochs_file_usage(const std::vector<int>& shuffled_indices,
                             int mini_batch_size,
                             const lbann_comm& comm) {
   for (auto&& e : m_file_id_stats_map) {
-    auto& h = std::get<1>(e);
-    close_file_handle(h);
-    clear_file_handle(h);
-    std::get<2>(e).clear();
+    std::get<1>(e).clear();
   }
-  // Once all of the file handles are closed, clear the priority queue
-  m_open_fd_pq.clear();
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];
-    const auto& s = m_sample_list[idx];
+    const auto& s = m_sample_list_no_open_file[idx];
     sample_file_id_t index = s.first;
 
     if((i % mini_batch_size) % comm.get_procs_per_trainer() == static_cast<size_t>(comm.get_rank_in_trainer())) {
       /// Enqueue the iteration step when the sample will get used
       int step = i / mini_batch_size;
       int substep = (i % mini_batch_size) / comm.get_procs_per_trainer();
-      std::get<2>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
+      std::get<1>(m_file_id_stats_map[index]).emplace_back(std::make_pair(step, substep));
     }
   }
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
-::delete_file_handle_pq_entry(sample_file_id_t id) {
-  for (std::deque<fd_use_map_t>::iterator it = m_open_fd_pq.begin(); it!=m_open_fd_pq.end(); ++it) {
-    if(it->first == id) {
-      it = m_open_fd_pq.erase(it);
-      break;
-    }
-  }
-  return;
-}
-
-template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::manage_open_file_handles(sample_file_id_t id, bool pre_open_fd) {
   /// When we enter this function the priority queue is either empty or a heap
   if(!m_open_fd_pq.empty()) {
@@ -929,9 +892,9 @@ inline void sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline file_handle_t sample_list<file_handle_t, sample_name_t>
+inline file_handle_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::open_samples_file_handle(const size_t i, bool pre_open_fd) {
-  const sample_t& s = m_sample_list[i];
+  const sample_t& s = m_sample_list_no_open_file[i];
   sample_file_id_t id = s.first;
   file_handle_t h = get_samples_file_handle(id);
   if (!is_file_handle_valid(h)) {
@@ -964,9 +927,9 @@ inline file_handle_t sample_list<file_handle_t, sample_name_t>
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::close_if_done_samples_file_handle(const size_t i) {
-  const sample_t& s = m_sample_list[i];
+  const sample_t& s = m_sample_list_no_open_file[i];
   sample_file_id_t id = s.first;
   auto h = get_samples_file_handle(id);
   if (!is_file_handle_valid(h)) {
@@ -976,33 +939,32 @@ inline void sample_list<file_handle_t, sample_name_t>
       auto& fh = std::get<1>(e);
       close_file_handle(fh);
       clear_file_handle(fh);
-      delete_file_handle_pq_entry(id);
     }
   }
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline bool sample_list<file_handle_t, sample_name_t>
+inline bool sample_list_no_open_file<file_handle_t, sample_name_t>
 ::is_file_handle_valid(const file_handle_t& h) const {
   LBANN_ERROR(std::string{} + " :: base class does not implement this method");
   return false;
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline file_handle_t sample_list<file_handle_t, sample_name_t>
+inline file_handle_t sample_list_no_open_file<file_handle_t, sample_name_t>
 ::open_file_handle_for_read(const std::string& file_path) {
   LBANN_ERROR(std::string{} + " :: base class does not implement this method");
   return file_handle_t();
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::close_file_handle(file_handle_t& h) {
   LBANN_ERROR(std::string{} + " :: base class does not implement this method");
 }
 
 template <typename file_handle_t, typename sample_name_t>
-inline void sample_list<file_handle_t, sample_name_t>
+inline void sample_list_no_open_file<file_handle_t, sample_name_t>
 ::clear_file_handle(file_handle_t& h) {
   LBANN_ERROR(std::string{} + " :: base class does not implement this method");
 }

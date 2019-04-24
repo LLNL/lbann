@@ -43,6 +43,7 @@ inline sample_list_conduit_io_handle<sample_name_t>::~sample_list_conduit_io_han
     file_handle_t& h = std::get<1>(f);
     close_file_handle(h);
     clear_file_handle(h);
+    std::get<2>(f).clear();
   }
   this->m_file_id_stats_map.clear();
 }

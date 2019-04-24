@@ -1,5 +1,5 @@
-#ifndef __SAMPLE_LIST_HPP__
-#define __SAMPLE_LIST_HPP__
+#ifndef __SAMPLE_LIST_NO_OPEN_FILE_HPP__
+#define __SAMPLE_LIST_NO_OPEN_FILE_HPP__
 
 #include <iostream>
 #include <string>
@@ -26,33 +26,8 @@
 
 namespace lbann {
 
-struct sample_list_header {
-  bool m_is_exclusive;
-  /// Number of included samples
-  size_t m_included_sample_count;
-  /// Number of excluded samples
-  size_t m_excluded_sample_count;
-  size_t m_num_files;
-  std::string m_file_dir;
-  std::string m_sample_list_filename;
-
-  sample_list_header();
-
-  bool is_exclusive() const;
-  size_t get_sample_count() const;
-  size_t get_num_files() const;
-  const std::string& get_sample_list_filename() const;
-  const std::string& get_file_dir() const;
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(m_is_exclusive, m_included_sample_count, m_excluded_sample_count, m_num_files, m_file_dir, m_sample_list_filename);
-  }
-};
-
-static const std::string sample_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
-static const std::string sample_inclusion_list = "CONDUIT_HDF5_INCLUSION";
-
 template <typename file_handle_t, typename sample_name_t>
-class sample_list {
+class sample_list_no_open_file {
  public:
   /// The type of the native identifier of a sample rather than an arbitrarily assigned index
   //using sample_name_t = std::string;
@@ -72,19 +47,19 @@ class sample_list {
   /// Type for the map of file descriptors to usage step and substep
   using fd_use_map_t = std::template pair<sample_file_id_t, std::pair<int,int>>;
 
-  sample_list();
-  virtual ~sample_list();
-  sample_list(const sample_list& rhs);
-  sample_list& operator=(const sample_list& rhs);
-  sample_list& copy(const sample_list& rhs);
+  sample_list_no_open_file();
+  virtual ~sample_list_no_open_file();
+  sample_list_no_open_file(const sample_list_no_open_file& rhs);
+  sample_list_no_open_file& operator=(const sample_list_no_open_file& rhs);
+  sample_list_no_open_file& copy(const sample_list_no_open_file& rhs);
 
-  void copy_members(const sample_list& rhs);
+  void copy_members(const sample_list_no_open_file& rhs);
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
 
   /// Load the header of a sample list file
-  sample_list_header load_header(const std::string& samplelist_file) const;
+  sample_list_no_open_file_header load_header(const std::string& samplelist_file) const;
 
   /// Extract a sample list from a serialized sample list in a string
   void load_from_string(const std::string& samplelist);
@@ -114,7 +89,7 @@ class sample_list {
   const samples_t& get_list() const;
 
   /// Allow the read-only access to the list header
-  const sample_list_header& get_header() const;
+  const sample_list_no_open_file_header& get_header() const;
 
   /// Allow read-only access to the metadata of the idx-th sample in the list
   const sample_t& operator[](size_t idx) const;
@@ -128,8 +103,6 @@ class sample_list {
   void set_samples_filename(sample_file_id_t id, const std::string& filename);
 
   void set_files_handle(const std::string& filename, file_handle_t h);
-
-  void delete_file_handle_pq_entry(sample_file_id_t id);
 
   void manage_open_file_handles(sample_file_id_t id, bool pre_open_fd = false);
 
@@ -151,7 +124,7 @@ class sample_list {
   std::string read_header_line(std::istream& ifs, const std::string& filename, const std::string& info) const;
 
   /// Reads the header of a sample list
-  sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
+  sample_list_no_open_file_header read_header(std::istream& istrm, const std::string& filename) const;
 
   /// Get the list of samples from a specific type of bundle file
   virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const;
@@ -185,10 +158,10 @@ class sample_list {
 
  private:
   /// header info of sample list
-  sample_list_header m_header;
+  sample_list_no_open_file_header m_header;
 
   /// List of all samples with a file identifier and sample name for each sample
-  samples_t m_sample_list;
+  samples_t m_sample_list_no_open_file;
 
   /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;
@@ -204,20 +177,8 @@ void handle_mpi_error(int ierr);
 template<typename T>
 inline T uninitialized_file_handle();
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
-template <typename file_handle_t, typename sample_name_t>
-void distribute_sample_list(const sample_list<file_handle_t, sample_name_t>& sn,
-                            std::string& my_samples,
-                            lbann_comm& comm);
-#else
-template <typename file_handle_t, typename sample_name_t>
-void distribute_sample_list(const sample_list<file_handle_t, sample_name_t>& sn,
-                            std::string& my_samples,
-                            MPI_Comm& comm);
-#endif
-
 } // end of namespace
 
-#include "sample_list_impl.hpp"
+#include "sample_list_no_open_file_impl.hpp"
 
-#endif // __SAMPLE_LIST_HPP__
+#endif // __SAMPLE_LIST_NO_OPEN_FILE_HPP__
