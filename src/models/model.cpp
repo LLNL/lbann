@@ -1021,7 +1021,6 @@ void model::make_data_store_preloaded(execution_mode mode) {
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
       if(data_store != nullptr && !data_store->is_preloaded()) {
-        std::cout << "I am going to mark the validation data reader as loaded" << std::endl;
         input->get_data_reader(mode)->get_data_store_ptr()->set_preload();
       }
     }
