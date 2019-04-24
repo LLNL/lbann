@@ -61,6 +61,10 @@ parser.add_argument(
     help='exported prototext file (do not run experiment)', metavar='FILE')
 args = parser.parse_args()
 
+# Due to a data reader limitation, the actual model realization must be
+# hardcoded to 1000 labels for ImageNet.
+imagenet_labels = 1000
+
 # Choose ResNet variant
 resnet_variant_dict = {18: lbann.models.ResNet18,
                        34: lbann.models.ResNet34,
@@ -80,7 +84,7 @@ if args.block_type and args.blocks and args.block_channels:
     # Build custom ResNet.
     resnet = lbann.models.ResNet(
         block_variant_dict[args.block_type],
-        args.num_labels,
+        imagenet_labels,
         list(map(int, args.blocks.split(','))),
         list(map(int, args.block_channels.split(','))),
         zero_init_residual=True,
@@ -90,17 +94,17 @@ if args.block_type and args.blocks and args.block_channels:
 elif args.width == 1:
     # Vanilla ResNet.
     resnet = resnet_variant_dict[args.resnet](
-        args.num_labels,
+        imagenet_labels,
         bn_stats_aggregation=args.bn_stats_aggregation)
 elif args.width == 2 and args.resnet == 50:
     # Use pre-defined WRN-50-2.
     resnet = wide_resnet_variant_dict[args.resnet](
-        args.num_labels,
+        imagenet_labels,
         bn_stats_aggregation=args.bn_stats_aggregation)
 else:
     # Some other Wide ResNet.
     resnet = resnet_variant_dict[args.resnet](
-        args.num_labels,
+        imagenet_labels,
         bn_stats_aggregation=args.bn_stats_aggregation,
         width=args.width)
 

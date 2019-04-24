@@ -36,11 +36,15 @@ parser.add_argument(
     help='exported prototext file', metavar='FILE')
 args = parser.parse_args()
 
+# Due to a data reader limitation, the actual model realization must be
+# hardcoded to 1000 labels for ImageNet.
+imagenet_labels = 1000
+
 # Construct layer graph
 input = lbann.Input()
 images = lbann.Identity(input)
 labels = lbann.Identity(input)
-preds = lbann.models.AlexNet(args.num_labels)(images)
+preds = lbann.models.AlexNet(imagenet_labels)(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy([probs, labels])
 top1 = lbann.CategoricalAccuracy([probs, labels])
