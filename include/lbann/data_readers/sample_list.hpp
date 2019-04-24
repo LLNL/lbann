@@ -178,15 +178,15 @@ class sample_list {
   virtual void close_file_handle(file_handle_t& h);
   virtual void clear_file_handle(file_handle_t& h);
 
+  /// Maps sample's file id to file names, file descriptors, and use counts
+  file_id_stats_v_t m_file_id_stats_map;
+
  private:
   /// header info of sample list
   sample_list_header m_header;
 
   /// List of all samples with a file identifier and sample name for each sample
   samples_t m_sample_list;
-
-  /// Maps sample's file id to file names, file descriptors, and use counts
-  file_id_stats_v_t m_file_id_stats_map;
 
   /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;

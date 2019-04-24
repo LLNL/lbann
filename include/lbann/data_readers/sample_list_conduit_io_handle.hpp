@@ -38,6 +38,13 @@ inline sample_list_conduit_io_handle<sample_name_t>::sample_list_conduit_io_hand
 
 template <typename sample_name_t>
 inline sample_list_conduit_io_handle<sample_name_t>::~sample_list_conduit_io_handle() {
+  // Close the existing open files
+  for(auto& f : this->m_file_id_stats_map) {
+    file_handle_t& h = std::get<1>(f);
+    close_file_handle(h);
+    clear_file_handle(h);
+  }
+  this->m_file_id_stats_map.clear();
 }
 
 template <typename sample_name_t>

@@ -105,6 +105,7 @@ inline sample_list<file_handle_t, sample_name_t>::sample_list() {
 
 template <typename file_handle_t, typename sample_name_t>
 inline sample_list<file_handle_t, sample_name_t>::~sample_list() {
+#if 0 // put this block in the destructor of the derived class
   // Close the existing open files
   for(auto& f : m_file_id_stats_map) {
     file_handle_t& h = std::get<1>(f);
@@ -112,6 +113,7 @@ inline sample_list<file_handle_t, sample_name_t>::~sample_list() {
     clear_file_handle(h);
   }
   m_file_id_stats_map.clear();
+#endif
   m_open_fd_pq.clear();
 }
 
@@ -152,17 +154,18 @@ inline void sample_list<file_handle_t, sample_name_t>
 ::copy_members(const sample_list& rhs) {
   m_header = rhs.m_header;
   m_sample_list = rhs.m_sample_list;
-  m_file_id_stats_map = rhs.m_file_id_stats_map;
   m_file_map = rhs.m_file_map;
   m_max_open_files = rhs.m_max_open_files;
 
   /// Keep track of existing filenames but do not copy any file
   /// descriptor information
-  for(auto&& e : m_file_id_stats_map) {
-    if(std::get<1>(e) > 0) {
-      std::get<1>(e) = 0;
-    }
-    std::get<2>(e).clear();
+  m_file_id_stats_map.assign(rhs.m_file_id_stats_map.size(),
+                             std::make_tuple("",
+                                             uninitialized_file_handle<file_handle_t>(),
+                                             std::deque<std::pair<int,int>>{}));
+
+  for(size_t i = 0u; i < m_file_id_stats_map.size(); ++i) {
+    std::get<0>(m_file_id_stats_map[i]) = std::get<0>(rhs.m_file_id_stats_map[i]);
   }
 
   /// Do not copy the open file descriptor priority queue
@@ -855,12 +858,8 @@ inline void sample_list<file_handle_t, sample_name_t>
     clear_file_handle(h);
     std::get<2>(e).clear();
   }
-std::cout << "cleaned m_file_id_stats_map" << std::endl;
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];
-if (m_sample_list.size() <= static_cast<size_t>(idx)) {
-  std::cout << "invalid sample_list index " << m_sample_list.size() << " <= " <<  static_cast<size_t>(idx) << std::endl;
-}
     const auto& s = m_sample_list[idx];
     sample_file_id_t index = s.first;
 
