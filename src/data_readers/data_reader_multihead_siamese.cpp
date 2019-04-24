@@ -29,6 +29,7 @@
 
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/image_utils.hpp"
 #include <fstream>
 #include <sstream>
 #include <omp.h>
@@ -87,10 +88,19 @@ void data_reader_multihead_siamese::set_input_params(const int width, const int 
 
 
 bool data_reader_multihead_siamese::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  // TODO(pp): restore
-  (void) X;
-  (void) data_id;
-  (void) mb_idx;
+  // TODO: Set this in a better place.
+  m_transform_pipeline.set_expected_out_dims(
+    {static_cast<size_t>(m_image_num_channels),
+     static_cast<size_t>(m_image_height),
+     static_cast<size_t>(m_image_width)});
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
+  sample_t sample = m_samples.get_sample(data_id);
+  for (size_t i = 0; i < m_num_img_srcs; ++i) {
+    El::Matrix<uint8_t> image;
+    std::vector<size_t> dims;
+    load_image(get_file_dir() + sample.first[i], image, dims);
+    m_transform_pipeline.apply(image, X_v[i], dims);
+  }
   return true;
 }
 

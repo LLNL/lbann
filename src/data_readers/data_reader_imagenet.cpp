@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
-#include <omp.h>
+#include "lbann/utils/image_utils.hpp"
 
 namespace lbann {
 
@@ -70,10 +70,16 @@ CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
 }
 
 bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  // TODO(pp): restore
-  (void) X;
-  (void) data_id;
-  (void) mb_idx;
+  // TODO: Set this in a better place.
+  m_transform_pipeline.set_expected_out_dims(
+    {static_cast<size_t>(m_image_num_channels),
+     static_cast<size_t>(m_image_height),
+     static_cast<size_t>(m_image_width)});
+  El::Matrix<uint8_t> image;
+  std::vector<size_t> dims;
+  load_image(get_file_dir() + m_image_list[data_id].first, image, dims);
+  auto X_v = create_datum_view(X, mb_idx);
+  m_transform_pipeline.apply(image, X_v, dims);
   return true;
 }
 
