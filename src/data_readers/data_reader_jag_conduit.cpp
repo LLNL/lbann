@@ -882,7 +882,9 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  if (opts->has_string("write_sample_list") && is_master()) {
+  if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+    const std::string msg = " writing sample list " + sample_list_file;
+    log_msg(msg.c_str());
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
@@ -1616,7 +1618,6 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
-  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   return ok;
 }
 

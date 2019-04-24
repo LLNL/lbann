@@ -75,8 +75,6 @@ std::unique_ptr<model> build_model_from_prototext(
   // Optionally over-ride some values in prototext
   get_cmdline_overrides(*comm, pb);
 
-  customize_data_readers_index_list(*comm, pb);
-
   lbann_data::Model *pb_model = pb.mutable_model();
 
   // Adjust the number of parallel readers; this may be adjusted
@@ -155,6 +153,9 @@ std::unique_ptr<model> build_model_from_prototext(
   if (opts->has_string("print_affinity")) {
     display_omp_setup();
   }
+
+  // Update the index lists to accomodate multi-trainer / multi-model specification
+  customize_data_readers_index_list(*comm, pb);
 
   // Initialize data readers
   //@todo: code not in place for correctly handling image preprocessing
