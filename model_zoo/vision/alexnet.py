@@ -32,22 +32,19 @@ parser.add_argument(
     help='data reader prototext file (default: ' + data_reader_prototext + ')',
     metavar='FILE')
 parser.add_argument(
-    '--imagenet-classes', action='store', type=int,
-    help='number of ImageNet-1K classes (availability of subsampled datasets may vary by system)',
-    metavar='NUM')
-parser.add_argument(
     '--prototext', action='store', type=str,
     help='exported prototext file', metavar='FILE')
-parser.add_argument(
-    '--disable-run', action='store_true',
-    help='do not run experiment (e.g. if only the prototext is desired)')
 args = parser.parse_args()
+
+# Due to a data reader limitation, the actual model realization must be
+# hardcoded to 1000 labels for ImageNet.
+imagenet_labels = 1000
 
 # Construct layer graph
 input = lbann.Input()
 images = lbann.Identity(input)
 labels = lbann.Identity(input)
-preds = lbann.models.AlexNet(args.num_labels)(images)
+preds = lbann.models.AlexNet(imagenet_labels)(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy([probs, labels])
 top1 = lbann.CategoricalAccuracy([probs, labels])
@@ -92,24 +89,18 @@ if args.prototext:
                                data_reader=data_reader_proto)
 
 # Run experiment
-if not args.disable_run:
+if not args.prototext:
     from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
     import lbann.contrib.lc.launcher
-    kwargs = {}
-    if args.nodes:          kwargs['nodes'] = args.nodes
-    if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
-    if args.partition:      kwargs['partition'] = args.partition
-    if args.account:        kwargs['account'] = args.account
-    if args.time_limit:     kwargs['time_limit'] = args.time_limit
-    if args.imagenet_classes:
-        classes = args.imagenet_classes
-        kwargs['lbann_args'] = (
-            '--data_filedir_train={} --data_filename_train={} '
-            '--data_filedir_test={} --data_filename_test={}'
-            .format(imagenet_dir(data_set='train', num_classes=classes),
-                    imagenet_labels(data_set='train', num_classes=classes),
-                    imagenet_dir(data_set='val', num_classes=classes),
-                    imagenet_labels(data_set='val', num_classes=classes)))
+    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+    classes = args.num_labels
+    kwargs['lbann_args'] = (
+        '--data_filedir_train={} --data_filename_train={} '
+        '--data_filedir_test={} --data_filename_test={}'
+        .format(imagenet_dir(data_set='train', num_classes=classes),
+                imagenet_labels(data_set='train', num_classes=classes),
+                imagenet_dir(data_set='val', num_classes=classes),
+                imagenet_labels(data_set='val', num_classes=classes)))
     lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
                                   job_name = 'lbann_alexnet',
                                   **kwargs)
