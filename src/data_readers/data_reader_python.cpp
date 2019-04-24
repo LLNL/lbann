@@ -296,10 +296,6 @@ bool python_reader::fetch_data_block(CPUMat& X,
   return true;
 }
 
-bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
-  return true;
-}
-
 bool python_reader::fetch_label(CPUMat& Y, int data_id, int col) {
   return true;
 }
