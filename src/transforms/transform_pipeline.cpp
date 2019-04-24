@@ -69,7 +69,6 @@ void transform_pipeline::apply(utils::type_erased_matrix& data,
 void transform_pipeline::apply(CPUMat& data, std::vector<size_t>& dims) {
   utils::type_erased_matrix m = utils::type_erased_matrix(std::move(data));
   apply(m, dims);
-  // TODO(pp): If data is a view, this can result in a copy.
   data = std::move(m.template get<DataType>());
 }
 
@@ -97,7 +96,6 @@ void transform_pipeline::apply(El::Matrix<uint8_t>& data, CPUMat& out_data,
       for (; i < m_transforms.size(); ++i) {
         m_transforms[i]->apply(m, dims);
       }
-      // TODO(pp): Issues with views.
       out_data = std::move(m.template get<DataType>());
     }
   } else {
