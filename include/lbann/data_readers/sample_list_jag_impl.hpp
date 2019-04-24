@@ -327,7 +327,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 }
 
 
-  inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
+inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt_files = 0u;
   std::string line;
@@ -567,6 +567,8 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
     }
     std::get<2>(e).clear();
   }
+  // Once all of the file handles are closed, clear the priority queue
+  m_open_fd_pq.clear();
 
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];
