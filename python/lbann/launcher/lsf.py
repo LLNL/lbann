@@ -35,7 +35,7 @@ def run(command,
         job_name (str, optional): Batch job name.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
-        reservation (str, optional): Reservation name (for DATs).
+        reservation (str, optional): Scheduler reservation name.
         jsrun_args (str, optional): Command-line arguments to jsrun.
         environment (dict of {str: str}, optional): Environment
             variables.

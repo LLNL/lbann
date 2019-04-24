@@ -33,7 +33,7 @@ def run(command,
         job_name (str, optional): Batch job name.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
-        reservation (str, optional): Reservation name.
+        reservation (str, optional): Scheduler reservation name.
         srun_args (str, optional): Command-line arguments to srun.
         environment (dict of {str: str}, optional): Environment
             variables.

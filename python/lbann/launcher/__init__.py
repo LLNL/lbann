@@ -55,7 +55,7 @@ def run(lbann_exe, model, data_reader, optimizer,
         system (str, optional): Target system.
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
-        reservation (str, optional): Reservation name (for DATs).
+        reservation (str, optional): Scheduler reservation name.
         launcher_args (str, optional): Command-line arguments to
             launcher.
         environment (dict of {str: str}, optional): Environment

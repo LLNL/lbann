@@ -48,6 +48,8 @@ def run(model, data_reader, optimizer,
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
     # Magic default arguments to jsrun/etc.
+    # Pack processes using ten cores for each, with 40 cores total, and
+    # all four GPUs visible to each process.
     if system in ('sierra', 'lassen'):
         if scheduler == 'lsf':
             launcher_args += ' -d packed -b "packed:10" -r 1 -c 40 -g 4'

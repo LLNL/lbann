@@ -88,7 +88,7 @@ if args.prototext:
 if not args.prototext:
     from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
     import lbann.contrib.lc.launcher
-    kwargs = lbann.contrib.args.get_launcher_kwargs(args)
+    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     classes = args.num_labels
     kwargs['lbann_args'] = (
         '--data_filedir_train={} --data_filename_train={} '
