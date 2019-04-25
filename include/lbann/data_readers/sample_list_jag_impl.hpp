@@ -58,6 +58,7 @@ inline sample_list_jag::~sample_list_jag() {
       conduit::relay::io::hdf5_close_file(std::get<1>(f));
     }
     std::get<1>(f) = 0;
+    std::get<2>(f).clear();
   }
   m_file_id_stats_map.clear();
   m_open_fd_pq.clear();
@@ -327,7 +328,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 }
 
 
-  inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
+inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt_files = 0u;
   std::string line;
@@ -563,10 +564,12 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
   for (auto&& e : m_file_id_stats_map) {
     if(std::get<1>(e) > 0) {
       conduit::relay::io::hdf5_close_file(std::get<1>(e));
-      std::get<1>(e) = 0;
     }
+    std::get<1>(e) = 0;
     std::get<2>(e).clear();
   }
+  // Once all of the file handles are closed, clear the priority queue
+  m_open_fd_pq.clear();
 
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];

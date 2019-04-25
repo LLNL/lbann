@@ -21,7 +21,9 @@ class SystemParams:
 _system_params = {'catalyst': SystemParams(24, 0, 'slurm', 'pbatch', 'brain'),
                   'pascal':   SystemParams(36, 2, 'slurm', 'pbatch', 'lc'),
                   'quartz':   SystemParams(36, 0, 'slurm', 'pbatch', 'brain'),
-                  'surface':  SystemParams(16, 2, 'slurm', 'pbatch', 'hpclearn')}
+                  'surface':  SystemParams(16, 2, 'slurm', 'pbatch', 'hpclearn'),
+                  'lassen':   SystemParams(44, 4, 'lsf', 'pbatch', None),
+                  'sierra':   SystemParams(44, 4, 'lsf', 'pbatch', None)}
 
 # Detect system
 _system = re.sub(r'\d+', '', gethostname())
