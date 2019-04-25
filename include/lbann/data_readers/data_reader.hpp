@@ -702,13 +702,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// until later.
   void setup_data_store(int mini_batch_size);
 
-  void instantiate_data_store(std::vector<int> *local_list_sizes = nullptr);
+  void instantiate_data_store(const std::vector<int>& local_list_sizes = std::vector<int>());
 
   // note: don't want to make this virtual, since then all derived classes
   //       would have to override. But, this should only be called from within
   //       derived classes where it makes sense to do so.
   //       Once the sample_list class and file formats are generalized and
-  //       finalized, it should (may?) be possible to code a single 
+  //       finalized, it should (may?) be possible to code a single
   //       preload_data_store method.
   virtual void preload_data_store() {
     LBANN_ERROR("you should not be here");

@@ -709,7 +709,7 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::instantiate_data_store(std::vector<int> *local_list_sizes) {
+void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
   options *opts = options::get();
   if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store"))) {
     if (m_data_store != nullptr) {
@@ -738,8 +738,8 @@ void generic_data_reader::instantiate_data_store(std::vector<int> *local_list_si
     if(is_master()) {
       std::cout << "Starting the preload" << std::endl;
     }
-    if (local_list_sizes != nullptr) {
-      m_data_store->build_preloaded_owner_map(*local_list_sizes);
+    if (local_list_sizes.size() != 0) {
+      m_data_store->build_preloaded_owner_map(local_list_sizes);
     }
     preload_data_store();
     if(is_master()) {
