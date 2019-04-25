@@ -50,8 +50,8 @@ void random_resized_aspect_ratio_crop::apply(utils::type_erased_matrix& data,
       std::swap(w, h);
     }
     if (w <= dims[2] && h <= dims[1]) {
-      x = get_uniform_random_int(0, dims[2] - w);
-      y = get_uniform_random_int(0, dims[1] - h);
+      x = get_uniform_random_int(0, dims[2] - w + 1);
+      y = get_uniform_random_int(0, dims[1] - h + 1);
       break;
     }
     // Reset.
