@@ -25,10 +25,6 @@ def run(model, data_reader, optimizer,
 
     """
 
-    # Hacked bugfix for MVAPICH
-    # TODO: Is this still needed?
-    environment['MV2_USE_RDMA_CM'] = 0
-
     # Setup GPU bindings
     # Note: Hydrogen processes take ownership of the GPU indices that
     # matches their node communicator ranks. mpibind assigns each rank
@@ -47,8 +43,20 @@ def run(model, data_reader, optimizer,
         environment['OMP_NUM_THREADS'] = 8
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
+    # Hacked bugfix for MPI_Init in MVAPICH2-2.3
+    # Note: MPI_Init hangs when started with more than 35
+    # processes. This bug is not present in MVAPICH2-2.2 but is
+    # present in MVAPICH2-2.3rc2.
+    environment['MV2_USE_RDMA_CM'] = 0
+
+    # Hacked bugfix for MPI_Sendrecv in MVAPICH2-2.3
+    # Note: MPI_Sendrecv produces incorrect output under certain
+    # circumstances. This bug is not present in MVAPICH2-2.2 or
+    # MVAPICH2-2.3.1.
+    environment['MV2_USE_LAZY_MEM_UNREGISTER'] = 0
+
     # Magic default arguments to jsrun/etc.
-    # Pack processes using ten cores for each, with 40 cores total, and
+    # Note: Pack processes using ten cores for each, with 40 cores total, and
     # all four GPUs visible to each process.
     if system in ('sierra', 'lassen'):
         if scheduler == 'lsf':
