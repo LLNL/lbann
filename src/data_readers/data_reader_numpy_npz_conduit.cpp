@@ -30,7 +30,6 @@
 #include "lbann/data_readers/numpy_conduit_converter.hpp"
 #include "lbann/utils/file_utils.hpp"
 //#include <cstdio>
-#include <string>
 #include <unordered_set>
 #include <cnpy.h>
 
@@ -75,6 +74,7 @@ void numpy_npz_conduit_reader::load() {
   // for a first draft, this reader only works with a pre-loaded data store
   opts->set_option("preload_data_store", 1);
   opts->set_option("use_data_store", 1);
+  // for a first draft, this reader only works with a pre-loaded data store
 
   //dah - for now, I assume the input file contains, on each line, the name
   //      of an npz file. This will no doubt change in the future.
@@ -128,6 +128,18 @@ if (m_master) std::cerr << "attempting to load: " << npz_filename << "\n";
         conduit::Node node;
         numpy_conduit_converter::load_conduit_node(npz_filename, data_id, node);
 
+  // note: in the following block "m_num_samples" plays the role of data_id
+  m_num_samples = 0;
+
+  std::string npz_filename;
+  bool first = true;
+  std::unordered_set<int> label_classes;
+  while (getline(ifs, npz_filename)) {
+    if (npz_filename.size() > 2) {
+      if (m_num_samples % np == rank) {
+        conduit::Node &node = m_data_store->get_empty_node(m_num_samples);
+        numpy_conduit_cache::load_conduit_node(npz_filename, m_num_samples, node);
+
         // things that only need to be node for a single sample
         if (first) {
           //fill in m_data_dims
@@ -153,6 +165,12 @@ if (m_master) std::cerr << "attempting to load: " << npz_filename << "\n";
           }
           first = false;
         } // end, things that only need to be node for a single sample
+            if (word_size != 4) {
+              LBANN_ERROR("numpy_npz_conduit_reader: label numpy array should be in int32");
+            }
+          }
+          first = false;
+        }
 
         if (m_has_labels) {
           char *char_data = node[std::to_string(m_num_samples) + "/frm/data"].value();
@@ -165,6 +183,9 @@ std::cerr << "calling set_conduit_node for data id: " << data_id << " role: " <<
       }
     }
   }
+    }
+  }
+  ifs.close();
 
   //TODO: need to all-reduce label_classes
   if (m_has_labels) {
@@ -198,6 +219,12 @@ std::cerr << "calling set_conduit_node for data id: " << data_id << " role: " <<
                                               std::multiplies<unsigned>());
   }
   */
+
+  // Reset indices.
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_num_samples);
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  select_subset_of_data();
 }
 
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {

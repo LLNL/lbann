@@ -45,6 +45,7 @@ using namespace lbann;
 // sample code that demonstrates use of the numpy_conduit_cache class
 
 int main(int argc, char *argv[]) {
+#if 0
   int random_seed = lbann_default_random_seed;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
@@ -98,6 +99,7 @@ int main(int argc, char *argv[]) {
 
   // Clean up
   return EXIT_SUCCESS;
+#endif
 }
 
 #endif //#ifdef LBANN_HAS_CONDUIT

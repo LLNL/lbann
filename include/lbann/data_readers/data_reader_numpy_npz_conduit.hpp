@@ -25,6 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+
 #ifndef LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 #define LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 
@@ -71,7 +72,6 @@ namespace lbann {
   const std::vector<int> get_data_dims() const override { return m_data_dims; }
 
   protected:
-
     void preload_data_store();
 
     bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
