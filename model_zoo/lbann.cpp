@@ -29,7 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
-#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include <cstdlib>
 
 
@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
     }
 
     //this must be called after call to opts->init();
-    if (!opts->has_bool("disable_signal_handler")) {
-      std::string file_base = (opts->has_bool("stack_trace_to_file") ?
+    if (!opts->get_bool("disable_signal_handler")) {
+      std::string file_base = (opts->get_bool("stack_trace_to_file") ?
                                "stack_trace" : "");
       stack_trace::register_signal_handler(file_base);
     }
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    if (! (opts->has_bool("exit_after_setup") && opts->get_bool("exit_after_setup"))) {
+    if (! opts->get_bool("exit_after_setup")) {
 
       // Train model
       model->train(pb_model->num_epochs());
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
     }
 
   } catch (exception& e) {
-    if (options::get()->has_bool("stack_trace_to_file")) {
+    if (options::get()->get_bool("stack_trace_to_file")) {
       std::ostringstream ss("stack_trace");
       const auto& rank = get_rank_in_world();
       if (rank >= 0) {

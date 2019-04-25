@@ -299,6 +299,10 @@ EvalType evaluate(model& m, const std::string& metric_name) {
     LBANN_ERROR(err.str());
   }
 
+  // Mark the data store as loaded - Note that this is a temporary fix
+  // for the current use of the tournament
+  m.make_data_store_preloaded(execution_mode::validation);
+
   // Clean up and return metric value
   m.set_execution_mode(original_mode);
   return metric_value;
@@ -371,6 +375,21 @@ void lbann_callback_ltfb::setup(model *m) {
     }
   }
 
+}
+
+void lbann_callback_ltfb::on_train_begin(model *m) {
+  auto&& comm = *m->get_comm();
+
+  if (comm.am_world_master()) {
+    std::cout << "starting synchronizing trainers...\n";
+  }
+  double tm1 = get_time();
+  /// Make sure that all of the trainers are ready to go before starting
+  comm.intertrainer_barrier();
+
+  if (comm.am_world_master()) {
+    std::cout << "synchronizing trainers... " << get_time()-tm1 <<"s\n";
+  }
 }
 
 void lbann_callback_ltfb::on_batch_begin(model *m) {

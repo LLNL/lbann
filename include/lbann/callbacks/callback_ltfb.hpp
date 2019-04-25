@@ -127,6 +127,7 @@ public:
   std::string name() const override { return "LTFB"; }
 
   void setup(model *m) override;
+  void on_train_begin(model *m) override;
   void on_batch_begin(model *m) override;
 
   /** Convert string to LTFB communication algorithm.

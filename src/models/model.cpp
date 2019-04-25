@@ -37,6 +37,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -1004,26 +1005,24 @@ void model::train(int num_epochs, int num_batches) {
   do_train_end_cbs();
 }
 
-//this is for data store functionality
-void model::collect_indices(execution_mode mode) {
-  reset_mode_and_model(mode);
-  while (true) {
-    get_layer(0).forward_prop();
-    bool finished = true;
-    finished = get_layer(0).update() && finished;
-    if (finished) {
-      break;
-    }
-  }
-  //this may not be necessary, but shouldn't hurt
-  reset_epoch_statistics(mode);
-}
 
 void model::collect_background_data_fetch(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
       input->collect_background_data_fetch(mode);
+    }
+  }
+}
+
+void model::make_data_store_preloaded(execution_mode mode) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    if (input != nullptr) {
+      auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
+      if(data_store != nullptr && !data_store->is_preloaded()) {
+        input->get_data_reader(mode)->get_data_store_ptr()->set_preload();
+      }
     }
   }
 }

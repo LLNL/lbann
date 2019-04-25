@@ -30,20 +30,19 @@
 #include "data_reader.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <Python.h>
-#include <mutex>
 
 namespace lbann {
 
 namespace python {
 
-/** Singleton class to manage embedded Python session.
+/** @brief Singleton class to manage embedded Python session.
  *
  *  This is very experimental. Be warned.
  */
 class manager {
 public:
 
-  /** Get singleton instance. */
+  /** @brief Get singleton instance. */
   static manager& get_instance();
   /** @brief Construct singleton instance.
    *  @details If there is already an instance, it is destroyed.
@@ -52,7 +51,7 @@ public:
   /** Destroy singleton instance. */
   static void destroy();
 
-  /** Check if a Python error has occurred.
+  /** @brief Check if a Python error has occurred.
    *
    *  Throw an exception if an error is detected.
    *
@@ -60,43 +59,52 @@ public:
    */
   void check_error(bool force_error = false) const;
 
-  /** RAII-style mutex wrapper.
-   *
-   *  Python session is not thread-safe.
-   *
-   *  @c std::lock_guard would be better than @c std::unique_lock, but
-   *  it can't be returned from a function since it is non-copyable
-   *  (guaranteed copy elision is C++17). @c std::scoped_lock is
-   *  supposed to be strictly better than @c std::lock_guard, but it
-   *  is C++17.
-   */
-  using mutex_guard_type = std::unique_lock<std::mutex>;
-  /** RAII-style mutex wrapper.
-   *
-   *  Python session is not thread-safe.
-   *
-   *  A mutex is locked when this function is called and it is
-   *  unlocked when the guard is destructed.
-   */
-  mutex_guard_type get_mutex_guard();
-
   ~manager();
 
 private:
 
-  /** Singleton instance. */
+  /** @brief Singleton instance. */
   static std::unique_ptr<manager> m_instance;
-  /** Python session is not thread-safe. */
-  std::mutex m_mutex;
+
+  /** @brief State on main Python thread. */
+  PyThreadState* m_thread_state = nullptr;
 
   // Lifetime functions
   manager();
   manager(const manager&) = delete;
-  manager operator=(const manager&) = delete;
+  manager& operator=(const manager&) = delete;
 
 };
 
-/** Convenience wrapper around @c PyObject pointer.
+/** @brief RAII wrapper for Python GIL.
+ *
+ *  The Python interpreter is not thread-safe, so it uses the "global
+ *  interpreter lock" to ensure only one thread is executing at a
+ *  time. Multithreading is achieved by periodically transferring
+ *  control of the GIL between threads. This makes it hard to get
+ *  meaningful speedups from simple multithreading. Certain
+ *  operations, e.g. I/O and numerical kernels in NumPy, can be
+ *  efficiently parallelized because they yield control of the GIL
+ *  while working.
+ *
+ *  This is very experimental. Be warned.
+ */
+class global_interpreter_lock {
+public:
+
+  global_interpreter_lock(const manager&);
+  ~global_interpreter_lock();
+
+private:
+
+  global_interpreter_lock(const global_interpreter_lock&) = delete;
+  global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
+
+  PyGILState_STATE m_gil_state;
+
+};
+
+/** @brief Convenience wrapper around @c PyObject pointer.
  *
  *  This is very experimental. Be warned.
  */
@@ -123,13 +131,14 @@ private:
 
 class python_reader : public generic_data_reader {
 public:
-  python_reader(std::string script,
+  python_reader(std::string module,
+                std::string module_dir,
                 std::string sample_function,
                 std::string num_samples_function,
                 std::string sample_dims_function);
   python_reader(const python_reader&) = default;
   python_reader& operator=(const python_reader&) = default;
-  ~python_reader() override = default;
+  ~python_reader() override;
   python_reader* copy() const override { return new python_reader(*this); }
 
   std::string get_type() const override {
@@ -141,16 +150,21 @@ public:
   int get_linearized_data_size() const override;
   int get_linearized_label_size() const override;
 
+  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
   void load() override;
 
 protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_data_block(CPUMat& X,
+                        El::Int thread_id,
+                        El::Int mb_size,
+                        El::Matrix<El::Int>& indices_fetched) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
   std::vector<El::Int> m_sample_dims;
   El::Int m_num_samples;
   python::object m_sample_function;
+  python::object m_process_pool;
 
 };
 

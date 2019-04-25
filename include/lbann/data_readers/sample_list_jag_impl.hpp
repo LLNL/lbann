@@ -58,8 +58,56 @@ inline sample_list_jag::~sample_list_jag() {
       conduit::relay::io::hdf5_close_file(std::get<1>(f));
     }
     std::get<1>(f) = 0;
+    std::get<2>(f).clear();
   }
   m_file_id_stats_map.clear();
+  m_open_fd_pq.clear();
+}
+
+inline sample_list_jag::sample_list_jag(const sample_list_jag& rhs) {
+  copy_members(rhs);
+}
+
+inline sample_list_jag& sample_list_jag::operator=(const sample_list_jag& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+inline sample_list_jag& sample_list_jag::copy(const sample_list_jag& rhs) {
+  // check for self-assignment
+  if (this == &rhs) {
+    return (*this);
+  }
+
+  copy_members(rhs);
+
+  return (*this);
+}
+
+inline void sample_list_jag::copy_members(const sample_list_jag& rhs) {
+  m_header = rhs.m_header;
+  m_sample_list = rhs.m_sample_list;
+  m_file_id_stats_map = rhs.m_file_id_stats_map;
+  m_file_map = rhs.m_file_map;
+  m_max_open_files = rhs.m_max_open_files;
+
+  /// Keep track of existing filenames but do not copy any file
+  /// descriptor information
+  for(auto&& e : m_file_id_stats_map) {
+    if(std::get<1>(e) > 0) {
+      std::get<1>(e) = 0;
+    }
+    std::get<2>(e).clear();
+  }
+
+  /// Do not copy the open file descriptor priority queue
+  /// File handle ownership is not transfered in the copy
   m_open_fd_pq.clear();
 }
 
@@ -280,7 +328,7 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 }
 
 
-  inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
+inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt_files = 0u;
   std::string line;
@@ -516,10 +564,12 @@ inline void sample_list_jag::compute_epochs_file_usage(const std::vector<int>& s
   for (auto&& e : m_file_id_stats_map) {
     if(std::get<1>(e) > 0) {
       conduit::relay::io::hdf5_close_file(std::get<1>(e));
-      std::get<1>(e) = 0;
     }
+    std::get<1>(e) = 0;
     std::get<2>(e).clear();
   }
+  // Once all of the file handles are closed, clear the priority queue
+  m_open_fd_pq.clear();
 
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
     int idx = shuffled_indices[i];

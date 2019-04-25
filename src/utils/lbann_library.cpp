@@ -73,8 +73,6 @@ std::unique_ptr<model> build_model_from_prototext(
   // Optionally over-ride some values in prototext
   get_cmdline_overrides(*comm, pb);
 
-  customize_data_readers_index_list(*comm, pb);
-
   lbann_data::Model *pb_model = pb.mutable_model();
 
   // Adjust the number of parallel readers; this may be adjusted
@@ -107,6 +105,22 @@ std::unique_ptr<model> build_model_from_prototext(
     init_random(random_seed);
     init_data_seq_random(random_seed);
   }
+  // Set up the communicator and get the grid based on the first model's spec.
+  // We do not currently support splitting different models in different ways,
+  // as this implies different grids.
+  int procs_per_trainer = pb_model->procs_per_trainer();
+  if (procs_per_trainer == 0) {
+    procs_per_trainer = comm->get_procs_in_world();
+  }
+  if (first_model) {
+    comm->split_trainers(procs_per_trainer);
+    if (pb_model->num_parallel_readers() > procs_per_trainer) {
+      pb_model->set_num_parallel_readers(procs_per_trainer);
+    }
+  } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
+    LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
+  }
+
   // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
   if (pb_model->random_init_models_differently()) {
@@ -124,22 +138,6 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 #endif
 
-  // Set up the communicator and get the grid based on the first model's spec.
-  // We do not currently support splitting different models in different ways,
-  // as this implies different grids.
-  int procs_per_trainer = pb_model->procs_per_trainer();
-  if (procs_per_trainer == 0) {
-    procs_per_trainer = comm->get_procs_in_world();
-  }
-  if (first_model) {
-    comm->split_trainers(procs_per_trainer);
-    if (pb_model->num_parallel_readers() > procs_per_trainer) {
-      pb_model->set_num_parallel_readers(procs_per_trainer);
-    }
-  } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
-    LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
-  }
-
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
@@ -153,6 +151,9 @@ std::unique_ptr<model> build_model_from_prototext(
   if (opts->has_string("print_affinity")) {
     display_omp_setup();
   }
+
+  // Update the index lists to accomodate multi-trainer / multi-model specification
+  customize_data_readers_index_list(*comm, pb);
 
   // Initialize data readers
   //@todo: code not in place for correctly handling image preprocessing
@@ -190,14 +191,13 @@ std::unique_ptr<model> build_model_from_prototext(
     ret_model->allow_background_io_activity(false);
   }
 
-  //under development; experimental
-  if (opts->has_bool("use_data_store") && opts->get_bool("use_data_store")) {
+  if (opts->get_bool("use_data_store")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }
     for (auto&& r : data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(ret_model.get(), pb_model->mini_batch_size());
+      r.second->setup_data_store(pb_model->mini_batch_size());
     }
   }
 
@@ -214,21 +214,19 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (first_model) {
 #ifndef LBANN_DETERMINISTIC
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
+  // Under normal conditions, reinitialize the random number generator so
+  // that regularization techniques (e.g. dropout) generate unique patterns
+  // on different ranks.
+  init_random(random_seed + comm->get_rank_in_world());
 #else
-    if(comm->am_world_master()) {
-      std::cout <<
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
-#endif
+  if(comm->am_world_master()) {
+    std::cout <<
+      "--------------------------------------------------------------------------------\n"
+      "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+      "--------------------------------------------------------------------------------\n";
   }
+#endif
   return ret_model;
 }
 

@@ -74,6 +74,11 @@ class sample_list_jag {
 
   sample_list_jag();
   ~sample_list_jag();
+  sample_list_jag(const sample_list_jag& rhs);
+  sample_list_jag& operator=(const sample_list_jag& rhs);
+  sample_list_jag& copy(const sample_list_jag& rhs);
+
+  void copy_members(const sample_list_jag& rhs);
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
@@ -140,6 +145,16 @@ class sample_list_jag {
       id++;
     }
     manage_open_hdf5_handles(id, true);
+  }
+
+  void delete_hdf5_handle_pq_entry(sample_file_id_t id) {
+    for (std::deque<fd_use_map_t>::iterator it = m_open_fd_pq.begin(); it!=m_open_fd_pq.end(); ++it) {
+      if(it->first == id) {
+        it = m_open_fd_pq.erase(it);
+        break;
+      }
+    }
+    return;
   }
 
   void manage_open_hdf5_handles(sample_file_id_t id, bool pre_open_fd = false) {
@@ -213,8 +228,9 @@ class sample_list_jag {
       }
       auto& e = m_file_id_stats_map[id];
       std::get<1>(e) = h;
+      /// If a new file is opened, place it in the priority queue
+      manage_open_hdf5_handles(id, pre_open_fd);
     }
-    manage_open_hdf5_handles(id, pre_open_fd);
     return h;
   }
 
@@ -228,6 +244,7 @@ class sample_list_jag {
       if(file_access_queue.empty()) {
         conduit::relay::io::hdf5_close_file(std::get<1>(e));
         std::get<1>(e) = 0;
+        delete_hdf5_handle_pq_entry(id);
       }
     }
   }
