@@ -547,7 +547,7 @@ std::vector<cudnnConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
 template <typename AlgoType, typename PerfType>
 AlgoType find_best_heuristic_algorithm(
   const std::vector<PerfType>& perf_results,
-  const std::vector<AlgoType>& deterministic_algos,
+  const std::vector<AlgoType>& nondeterministic_algos,
   bool deterministic,
   size_t max_ws_size) {
   std::vector<AlgoType> algos;
@@ -556,8 +556,8 @@ AlgoType find_best_heuristic_algorithm(
       continue;
     }
     if (deterministic &&
-        std::find(deterministic_algos.begin(), deterministic_algos.end(),
-                  p.algo) != deterministic_algos.end()) {
+        std::find(nondeterministic_algos.begin(), nondeterministic_algos.end(),
+                  p.algo) != nondeterministic_algos.end()) {
       continue;
     }
     if (p.memory > max_ws_size) {
@@ -574,17 +574,20 @@ AlgoType find_best_heuristic_algorithm(
 template <typename AlgoType, typename PerfType>
 AlgoType find_best_algorithm(
   const std::vector<PerfType>& perf_results,
-  const std::vector<AlgoType>& deterministic_algos,
+  const std::vector<AlgoType>& nondeterministic_algos,
   bool deterministic,
   size_t max_ws_size) {
   std::unordered_map<AlgoType, float> time_map;
   for (const auto& p : perf_results) {
     if (p.status != CUDNN_STATUS_SUCCESS) {
+      // If an algorithm fails, we still add it in case the failure is
+      // nondeterministic.
+      time_map[p.algo] = std::numeric_limits<float>::max();
       continue;
     }
     if (deterministic &&
-        std::find(deterministic_algos.begin(), deterministic_algos.end(),
-                  p.algo) != deterministic_algos.end()) {
+        std::find(nondeterministic_algos.begin(), nondeterministic_algos.end(),
+                  p.algo) != nondeterministic_algos.end()) {
       continue;
     }
     if (p.memory > max_ws_size) {
@@ -608,6 +611,9 @@ AlgoType find_best_algorithm(
       min_time = time;
       best_algo = algo;
     }
+  }
+  if (min_time == std::numeric_limits<float>::max()) {
+    LBANN_ERROR("No valid convolution algorithms.");
   }
   return best_algo;
 }
