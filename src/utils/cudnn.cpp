@@ -29,6 +29,7 @@
 
 #include "El.hpp"
 #include <iostream>
+#include <map>
 #include <unordered_map>
 #include <tuple>
 
@@ -151,7 +152,7 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
   }
 #endif // LBANN_DEBUG
-  
+
   // Set cuDNN tensor descriptor
   // Note: cuDNN tensors should have at least 4 dimensions
   /// @todo Think about 1D convolution
@@ -270,7 +271,7 @@ layer_tensor_manager& layer_tensor_manager::operator=(const layer_tensor_manager
 
   // Set layer being managed
   m_layer = other.m_layer;
-  
+
   // Destroy tensor descriptors
   set_num_parents(0);
   set_num_children(0);
@@ -577,7 +578,7 @@ AlgoType find_best_algorithm(
   const std::vector<AlgoType>& nondeterministic_algos,
   bool deterministic,
   size_t max_ws_size) {
-  std::unordered_map<AlgoType, float> time_map;
+  std::map<AlgoType, float> time_map;
   for (const auto& p : perf_results) {
     if (p.status != CUDNN_STATUS_SUCCESS) {
       // If an algorithm fails, we still add it in case the failure is
