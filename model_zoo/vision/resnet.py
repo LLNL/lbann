@@ -57,16 +57,13 @@ parser.add_argument(
     help='data reader prototext file (default: ' + data_reader_prototext + ')',
     metavar='FILE')
 parser.add_argument(
-    '--imagenet-classes', action='store', type=int,
-    help='number of ImageNet-1K classes (availability of subsampled datasets may vary by system)',
-    metavar='NUM')
-parser.add_argument(
     '--prototext', action='store', type=str,
-    help='exported prototext file', metavar='FILE')
-parser.add_argument(
-    '--disable-run', action='store_true',
-    help='do not run experiment (e.g. if only the prototext is desired)')
+    help='exported prototext file (do not run experiment)', metavar='FILE')
 args = parser.parse_args()
+
+# Due to a data reader limitation, the actual model realization must be
+# hardcoded to 1000 labels for ImageNet.
+imagenet_labels = 1000
 
 # Choose ResNet variant
 resnet_variant_dict = {18: lbann.models.ResNet18,
@@ -87,7 +84,7 @@ if args.block_type and args.blocks and args.block_channels:
     # Build custom ResNet.
     resnet = lbann.models.ResNet(
         block_variant_dict[args.block_type],
-        args.num_labels,
+        imagenet_labels,
         list(map(int, args.blocks.split(','))),
         list(map(int, args.block_channels.split(','))),
         zero_init_residual=True,
@@ -97,17 +94,17 @@ if args.block_type and args.blocks and args.block_channels:
 elif args.width == 1:
     # Vanilla ResNet.
     resnet = resnet_variant_dict[args.resnet](
-        args.num_labels,
+        imagenet_labels,
         bn_stats_aggregation=args.bn_stats_aggregation)
 elif args.width == 2 and args.resnet == 50:
     # Use pre-defined WRN-50-2.
     resnet = wide_resnet_variant_dict[args.resnet](
-        args.num_labels,
+        imagenet_labels,
         bn_stats_aggregation=args.bn_stats_aggregation)
 else:
     # Some other Wide ResNet.
     resnet = resnet_variant_dict[args.resnet](
-        args.num_labels,
+        imagenet_labels,
         bn_stats_aggregation=args.bn_stats_aggregation,
         width=args.width)
 
@@ -164,24 +161,18 @@ if args.prototext:
                                data_reader=data_reader_proto)
 
 # Run experiment
-if not args.disable_run:
+if not args.prototext:
     from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
     import lbann.contrib.lc.launcher
-    kwargs = {}
-    if args.nodes:          kwargs['nodes'] = args.nodes
-    if args.procs_per_node: kwargs['procs_per_node'] = args.procs_per_node
-    if args.partition:      kwargs['partition'] = args.partition
-    if args.account:        kwargs['account'] = args.account
-    if args.time_limit:     kwargs['time_limit'] = args.time_limit
-    if args.imagenet_classes:
-        classes = args.imagenet_classes
-        kwargs['lbann_args'] = (
-            '--data_filedir_train={} --data_filename_train={} '
-            '--data_filedir_test={} --data_filename_test={}'
-            .format(imagenet_dir(data_set='train', num_classes=classes),
-                    imagenet_labels(data_set='train', num_classes=classes),
-                    imagenet_dir(data_set='val', num_classes=classes),
-                    imagenet_labels(data_set='val', num_classes=classes)))
+    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+    classes = args.num_labels
+    kwargs['lbann_args'] = (
+        '--data_filedir_train={} --data_filename_train={} '
+        '--data_filedir_test={} --data_filename_test={}'
+        .format(imagenet_dir(data_set='train', num_classes=classes),
+                imagenet_labels(data_set='train', num_classes=classes),
+                imagenet_dir(data_set='val', num_classes=classes),
+                imagenet_labels(data_set='val', num_classes=classes)))
     lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
-                                  job_name = 'lbann_resnet',
+                                  job_name='lbann_resnet',
                                   **kwargs)
