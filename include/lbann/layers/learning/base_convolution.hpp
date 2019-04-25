@@ -971,54 +971,50 @@ protected:
     const int k = (using_transposed_convolution ?
                    get_input_size() / num_input_channels :
                    get_output_size() / num_output_channels);
-    DMat<Device> im2col_matrix(m, k);
-
-    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+    DataType dst_scale = 0, gradient_scale = 0;
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
+    El::Scale(dst_scale, kernel_gradient);
     gradient_scale /= effective_mini_batch_size;
-    if (has_local_data) {
-      auto& local_kernel_gradient = kernel_gradient.Matrix();
-      DMat<Device> kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
+    DMat<Device> im2col_matrix(m, k);
+    DMat<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
 
-      // Compute kernel gradient contributions from each data sample
-      for (El::Int col = 0; col < local_width; ++col) {
-        if (using_transposed_convolution) {
-          const DMat<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
-          const DMat<Device> gradient_wrt_output_col =
-            El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
-          im2col(gradient_wrt_output_col,
-                 im2col_matrix,
-                 num_output_channels,
-                 output_dims.size() - 1,
-                 &output_dims[1],
-                 m_pads.data(),
-                 &kernel_dims[2],
-                 m_strides.data());
-          El::Gemm(El::NORMAL, El::NORMAL,
-                   gradient_scale, im2col_matrix, input_col,
-                   dst_scale, kernel_gradient_matrix);
-        }
-        else {
-          const DMat<Device> input_col
-            = El::LockedView(local_input, El::ALL, El::IR(col));
-          const DMat<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
-          im2col(input_col,
-                 im2col_matrix,
-                 num_input_channels,
-                 input_dims.size() - 1,
-                 &input_dims[1],
-                 m_pads.data(),
-                 &kernel_dims[2],
-                 m_strides.data());
-          El::Gemm(El::NORMAL, El::NORMAL,
-                   gradient_scale, im2col_matrix, gradient_wrt_output_col,
-                   dst_scale, kernel_gradient_matrix);
-        }
+    // Compute kernel gradient contributions from each data sample
+    for (El::Int col = 0; col < local_width; ++col) {
+      if (using_transposed_convolution) {
+        const DMat<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
+        const DMat<Device> gradient_wrt_output_col =
+          El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
+        im2col(gradient_wrt_output_col,
+               im2col_matrix,
+               num_output_channels,
+               output_dims.size() - 1,
+               &output_dims[1],
+               m_pads.data(),
+               &kernel_dims[2],
+               m_strides.data());
+        El::Gemm(El::NORMAL, El::NORMAL,
+                 gradient_scale, im2col_matrix, input_col,
+                 DataType(1), kernel_gradient_matrix);
       }
-    } else {
-      El::Scale(dst_scale, kernel_gradient);
+      else {
+        const DMat<Device> input_col
+          = El::LockedView(local_input, El::ALL, El::IR(col));
+        const DMat<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
+        im2col(input_col,
+               im2col_matrix,
+               num_input_channels,
+               input_dims.size() - 1,
+               &input_dims[1],
+               m_pads.data(),
+               &kernel_dims[2],
+               m_strides.data());
+        El::Gemm(El::NORMAL, El::NORMAL,
+                 gradient_scale, im2col_matrix, gradient_wrt_output_col,
+                 DataType(1), kernel_gradient_matrix);
+      }
     }
+
   }
 
 private:
