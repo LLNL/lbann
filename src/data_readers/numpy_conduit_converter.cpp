@@ -25,28 +25,27 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/numpy_conduit_cache.hpp"
+#include "lbann/data_readers/numpy_conduit_converter.hpp"
 #include "lbann/utils/exception.hpp"
-
-#ifdef LBANN_HAS_CONDUIT
 
 namespace lbann {
 
-
-void numpy_conduit_cache::load(const std::string filename, int data_id) {
+//static
+void numpy_conduit_converter::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset_conduit_node) {
 
   try {
-    m_numpy[data_id] = cnpy::npz_load(filename);
-    conduit::Node &n = m_data[data_id];
-    std::map<std::string, cnpy::NpyArray> &a = m_numpy[data_id];
+    if (reset_conduit_node) {
+      output.reset();
+    }
+    std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filename);
     for (auto &&t : a) {
       cnpy::NpyArray &b = t.second;
-      n[std::to_string(data_id) + "/" + t.first + "/word_size"] = b.word_size;
-      n[std::to_string(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
-      n[std::to_string(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
-      n[std::to_string(data_id) + "/" + t.first + "/shape"] = b.shape;
+      output[std::to_string(data_id) + "/" + t.first + "/word_size"] = b.word_size;
+      output[std::to_string(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
+      output[std::to_string(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[std::to_string(data_id) + "/" + t.first + "/shape"] = b.shape;
       std::shared_ptr<std::vector<char>> data = b.data_holder;
-      n[std::to_string(data_id) + "/" + t.first + "/data"].set_external_char_ptr(b.data_holder->data());
+      output[std::to_string(data_id) + "/" + t.first + "/data"].set_external_char_ptr(b.data_holder->data());
     }
   } catch (...) {
     //note: npz_load throws std::runtime_error, but I don't want to assume
@@ -55,16 +54,4 @@ void numpy_conduit_cache::load(const std::string filename, int data_id) {
   }
 }
 
-const conduit::Node & numpy_conduit_cache::get_conduit_node(int data_id) const {
-  std::unordered_map<int, conduit::Node>::const_iterator it = m_data.find(data_id);
-  if (it == m_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data");
-  }
-  return it->second;
-}
-
-
-
 } // end of namespace lbann
-
-#endif // LBANN_HAS_CONDUIT
