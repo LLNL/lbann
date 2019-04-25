@@ -61,8 +61,6 @@ bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     1ull,
     static_cast<size_t>(m_image_height),
     static_cast<size_t>(m_image_width)};
-  // TODO: Do this in a better place.
-  m_transform_pipeline.set_expected_out_dims(dims);
   m_transform_pipeline.apply(pixel_col, dims);
   return true;
 }

@@ -82,11 +82,6 @@ void data_reader_triplet::set_input_params(const int width, const int height, co
 
 
 bool data_reader_triplet::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  // TODO: Set this in a better place.
-  m_transform_pipeline.set_expected_out_dims(
-    {static_cast<size_t>(m_image_num_channels),
-     static_cast<size_t>(m_image_height),
-     static_cast<size_t>(m_image_width)});
   std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
   sample_t sample = m_samples.get_sample(data_id);
   for (size_t i = 0; i < m_num_img_srcs; ++i) {

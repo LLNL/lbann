@@ -139,6 +139,10 @@ void image_data_reader::load() {
 
 void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
+   m_transform_pipeline.set_expected_out_dims(
+    {static_cast<size_t>(m_image_num_channels),
+     static_cast<size_t>(m_image_height),
+     static_cast<size_t>(m_image_width)});
 }
 
 std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
