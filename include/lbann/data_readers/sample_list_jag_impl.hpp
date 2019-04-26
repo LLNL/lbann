@@ -9,6 +9,7 @@
 #include "sample_list_jag.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/options.hpp"
 #include <deque>
 #include "hdf5.h"
 #include "conduit/conduit.hpp"
@@ -329,6 +330,10 @@ inline void sample_list_jag::read_exclusive_list(std::istream& istrm, size_t str
 
 
 inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t stride, size_t offset) {
+  if (options::get()->get_bool("fast_sample_list")) {
+    read_inclusive_list_fast(istrm, stride, offset);
+    return;
+  }
   const std::string whitespaces(" \t\f\v\n\r");
   size_t cnt_files = 0u;
   std::string line;
@@ -393,6 +398,62 @@ inline void sample_list_jag::read_inclusive_list(std::istream& istrm, size_t str
       if (found == set_of_samples.cend()) {
         LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name);
       }
+      m_sample_list.emplace_back(index, sample_name);
+      valid_sample_count++;
+    }
+    if(valid_sample_count != included_samples) {
+      LBANN_ERROR(std::string("Bundle file does not contain the correct number of included samples: expected ")
+                  + std::to_string(included_samples)
+                  + std::string(" samples, but found ")
+                  + std::to_string(valid_sample_count));
+    }
+  }
+
+  if (m_header.get_num_files() != cnt_files) {
+    LBANN_ERROR(std::string("Sample list number of files requested ")
+                + std::to_string(m_header.get_num_files())
+                + std::string(" does not equal number of files loaded ")
+                + std::to_string(cnt_files));
+  }
+}
+
+inline void sample_list_jag::read_inclusive_list_fast(std::istream& istrm, size_t stride, size_t offset) {
+  const std::string whitespaces(" \t\f\v\n\r");
+  size_t cnt_files = 0u;
+  std::string line;
+
+  while (std::getline(istrm, line)) {
+    const size_t end_of_str = line.find_last_not_of(whitespaces);
+    if (end_of_str == std::string::npos) { // empty line
+      continue;
+    }
+    if (cnt_files++ >= m_header.get_num_files()) {
+      break;
+    }
+    // Check to see if there is a strided load and skip the lines that are not for this rank
+    if ((cnt_files-1)%stride != offset) {
+      continue;
+    }
+
+    std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
+    std::string filename;
+    size_t included_samples;
+    size_t excluded_samples;
+
+    sstr >> filename >> included_samples >> excluded_samples;
+
+    const std::string conduit_file_path = add_delimiter(m_header.get_file_dir()) + filename;
+
+    m_file_map[filename] = included_samples;
+
+    sample_file_id_t index = m_file_id_stats_map.size();
+    m_file_id_stats_map.emplace_back(std::make_tuple(filename, 0, std::deque<std::pair<int,int>>{}));
+
+    size_t valid_sample_count = 0u;
+    while(!sstr.eof()) {
+      std::string sample_name;;
+      sstr >> sample_name;
+
       m_sample_list.emplace_back(index, sample_name);
       valid_sample_count++;
     }

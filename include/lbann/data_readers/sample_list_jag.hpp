@@ -272,6 +272,16 @@ class sample_list_jag {
   /// read the body of inclusive sample list
   void read_inclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);
 
+  /// read the body of inclusive sample list. This method does not assume
+  /// data is in conduit nodes; it takes all information from the sample
+  /// list and does no testing to check if the sample list accurately 
+  /// reflects the data. This method is useful (1) if the data is not 
+  /// in conduit files (e.g, when working with numpy data; (2) when we 
+  /// trust the sample list, and want to skip some of the time-consuming
+  /// run-time sanity checks. This method is intended for use during
+  /// testing and development
+  void read_inclusive_list_fast(std::istream& istrm, size_t stride=1, size_t offset=0);
+
   /// Reads a sample list and populates the internal list
   size_t get_samples_per_file(std::istream& istrm, const std::string& filename, size_t stride=1, size_t offset=0);
 
