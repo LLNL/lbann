@@ -709,8 +709,54 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
+void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
+  options *opts = options::get();
+  if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store"))) {
+    if (m_data_store != nullptr) {
+      delete m_data_store;
+      m_data_store = nullptr;
+    }
+    return;
+  }
+
+  if (is_master()) {
+    std::cout << "\nUSING DATA_STORE\n\n";
+  }
+  m_data_store = new data_store_conduit(this);  // *data_store_conduit
+  if (m_shuffled_indices.size() == 0) {
+    LBANN_ERROR("shuffled_indices.size() == 0");
+  }
+
+  //a call to m_data_store->check_mem_capacity(...) should go here, but
+  //at the moment that depends on the sample_list class, which it shouldn't
+  //TODO: revisit
+
+  m_data_store->set_shuffled_indices(&m_shuffled_indices);
+
+  // optionally preload the data store
+  if (opts->get_bool("preload_data_store")) {
+    if(is_master()) {
+      std::cout << "Starting the preload" << std::endl;
+    }
+    if (local_list_sizes.size() != 0) {
+      m_data_store->build_preloaded_owner_map(local_list_sizes);
+    }
+    preload_data_store();
+    if(is_master()) {
+      std::cout << "preload complete" << std::endl;
+    }
+  }
+
+  if(is_master()) {
+    std::cout << "Setting up the data store is complete" << std::endl;
+  }
+}
+
 void generic_data_reader::setup_data_store(int mini_batch_size) {
-  m_data_store = nullptr;
+  if (m_data_store == nullptr) {
+    LBANN_ERROR("m_data_store == nullptr; you shouldn't be here");
+  }
+  m_data_store->setup(mini_batch_size);
 }
 
 bool generic_data_reader::data_store_active() const {

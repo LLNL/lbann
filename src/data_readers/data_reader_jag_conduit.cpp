@@ -159,12 +159,6 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
-
-  // Initialize the data store
-  options *opts = options::get();
-  if (opts->get_bool("use_data_store")) {
-    m_data_store = new data_store_conduit(this);  // *data_store_conduit
-  }
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
@@ -403,14 +397,14 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     else {
       if (!m_sample_list.is_file_handle_valid(h)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
-                    " in dir: " + m_sample_list.get_samples_dirname() + 
+                    " in dir: " + m_sample_list.get_samples_dirname() +
                     " for sample "+ sample_name + " ran_in_trainer: " \
                     + std::to_string(m_comm->get_rank_in_trainer()) \
                     + " because we could not get a file handle");
         return false;
       } else {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
-                    " in dir: " + m_sample_list.get_samples_dirname() + 
+                    " in dir: " + m_sample_list.get_samples_dirname() +
                     " for sample "+ sample_name + " ran_in_trainer: " \
                     + std::to_string(m_comm->get_rank_in_trainer()) \
                     + " because we could not get a sample from the data_store");
@@ -850,16 +844,6 @@ void data_reader_jag_conduit::load() {
 
   options *opts = options::get();
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
-    if (m_comm->get_trainer_rank() == 0) {
-      m_data_store->check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-    }
-
-    // unsure if this will always work; the intent is that no trainer
-    // should start loading data until the check has completed
-    m_comm->global_barrier();
-  }
-
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
@@ -922,31 +906,7 @@ void data_reader_jag_conduit::load() {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
-    if (is_master()) {
-      std::cout << "\nUSING DATA_STORE\n\n";
-    }
-    m_data_store->set_shuffled_indices(&m_shuffled_indices);
-    if (opts->get_bool("preload_data_store")) {
-      if(is_master()) {
-        std::cout << "Starting the preload" << std::endl;
-      }
-      m_data_store->build_preloaded_owner_map(local_list_sizes);
-      preload_data_store();
-      if(is_master()) {
-        std::cout << "preload complete" << std::endl;
-      }
-
-    }
-  } else {
-    // these should already be set; in the future there will only
-    // be one of these (when data_store_conduit is completed)
-    m_data_store = nullptr;
-  }
-
-  if(is_master()) {
-    std::cout << "Setting up the data store is complete" << std::endl;
-  }
+  instantiate_data_store(local_list_sizes);
 
   select_subset_of_data();
 }
