@@ -33,6 +33,9 @@ namespace transform {
 void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
   // Only work with DataTypes to avoid rounding/floating point issues.
   auto& mat = data.template get<DataType>();
+  if (mat.Height() != mat.LDim()) {
+    LBANN_ERROR("Normalizing non-contiguous matrix not supported.");
+  }
   DataType mean, stdev;
   entrywise_mean_and_stdev(mat, mean, stdev);
   DataType* __restrict__ buf = mat.Buffer();

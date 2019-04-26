@@ -38,6 +38,9 @@ void normalize::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims
   }
   // Only work with DataTypes to avoid rounding/floating point issues.
   auto& mat = data.template get<DataType>();
+  if (mat.Height() != mat.LDim()) {
+    LBANN_ERROR("Normalizing non-contiguous matrix not supported");
+  }
   DataType* __restrict__ buf = mat.Buffer();
   if (m_means.size() == 1) {
     const DataType mean = m_means[0];
@@ -68,7 +71,13 @@ void normalize::apply(utils::type_erased_matrix& data, CPUMat& out,
   } else if (dims.size() != 3 && m_means.size() != 1) {
     LBANN_ERROR("Transform data has no channels, cannot normalize with multiple channels");
   }
+  if (out.Height() != out.LDim()) {
+    LBANN_ERROR("Normalizing to non-contiguous matrix not supported.");
+  }
   const auto& src = data.template get<DataType>();
+  if (src.Height() != src.LDim()) {
+    LBANN_ERROR("Normalizing from non-contiguous matrix not supported.");
+  }
   const DataType* __restrict__ src_buf = src.LockedBuffer();
   DataType* __restrict__ dst_buf = out.Buffer();
   if (m_means.size() == 1) {

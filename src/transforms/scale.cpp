@@ -33,6 +33,9 @@ void scale::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
   // Currently only works on DataTypes.
   // Need to decide how to handle uint8_t matrices.
   auto& mat = data.template get<DataType>();
+  if (mat.Height() != mat.LDim()) {
+    LBANN_ERROR("Scaling non-contiguous matrix not supported.");
+  }
   // Don't use El::Scale because it spawns OpenMP threads.
   DataType* __restrict__ buf = mat.Buffer();
   const El::Int size = mat.Height() * mat.Width();
