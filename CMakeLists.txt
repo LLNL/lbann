@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 
 project(LBANN CXX)
 
@@ -110,6 +110,9 @@ option(LBANN_WITH_HWLOC
 option(LBANN_WITH_NVPROF
   "Enable NVTX-based instrumentation for nvprof" OFF)
 
+option(LBANN_WITH_PYTHON
+  "Install Python frontend and enable embedded Python" ON)
+
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
 option(LBANN_WITH_VTUNE
@@ -117,9 +120,6 @@ option(LBANN_WITH_VTUNE
 
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
-
-option(LBANN_WITH_PYTHON
-  "Enable Python/C API for Python extension and embedding" OFF)
 
 # Enable parallel random matrix generation, if possible
 option(LBANN_DETERMINISTIC
@@ -293,14 +293,11 @@ if (LBANN_WITH_TBINF)
 endif ()
 
 if (LBANN_WITH_PYTHON)
-  if (LBANN_PYTHON_INCLUDE_DIR)
-    set(PYTHON_INCLUDE_DIR ${LBANN_PYTHON_INCLUDE_DIR})
-  endif (LBANN_PYTHON_INCLUDE_DIR)
-  if (LBANN_PYTHON_LIBRARY)
-    set(PYTHON_LIBRARY ${LBANN_PYTHON_LIBRARY})
-  endif (LBANN_PYTHON_LIBRARY)
-  find_package(PythonLibs REQUIRED)
-  set(LBANN_HAS_PYTHON ${PYTHONLIBS_FOUND})
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+  if (Python_VERSION_MAJOR LESS 3)
+    message(FATAL_ERROR "Python 2 is not supported.")
+  endif ()
+  set(LBANN_HAS_PYTHON ${Python_FOUND})
 endif (LBANN_WITH_PYTHON)
 
 if (LBANN_WITH_VTUNE)
@@ -466,7 +463,7 @@ target_include_directories(lbann PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
 if (LBANN_HAS_PYTHON)
-  target_include_directories(lbann PUBLIC ${PYTHON_INCLUDE_DIRS})
+  target_include_directories(lbann PUBLIC ${Python_INCLUDE_DIRS})
 endif ()
 
 # Use the IMPORTED targets when possible.
@@ -500,7 +497,7 @@ if (LBANN_HAS_VTUNE)
 endif ()
 
 if (LBANN_HAS_PYTHON)
-  target_link_libraries(lbann PUBLIC ${PYTHON_LIBRARIES})
+  target_link_libraries(lbann PUBLIC ${Python_LIBRARIES})
 endif ()
 
 if (TARGET LBANN_CXX_FLAGS_werror)
@@ -601,6 +598,14 @@ install(
 install(
   FILES "${PROJECT_BINARY_DIR}/lbann_config.hpp"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+# Install Python frontend
+if (LBANN_HAS_PYTHON)
+  install(
+    DIRECTORY "${PROJECT_SOURCE_DIR}/python/lbann"
+    DESTINATION "${CMAKE_INSTALL_PREFIX}/python-modules"
+    FILES_MATCHING PATTERN "*.py")
+endif (LBANN_HAS_PYTHON)
 
 # Install contributor list, license, readme
 install(
