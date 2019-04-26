@@ -337,11 +337,17 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
       const std::string& file_name = m_sample_list.get_samples_filename(id);
       if (h <= static_cast<hid_t>(0)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
-                    " for sample "+ sample_name);
+                    " in dir: " + m_sample_list.get_samples_dirname() + 
+                    " for sample "+ sample_name + " ran_in_trainer: " \
+                    + std::to_string(m_comm->get_rank_in_trainer()) \
+                    + " because we could not get a file handle");
         return false;
       } else {
-          LBANN_ERROR(get_type() + ":: could not find path in file " + file_name + \
-                      " for sample "+ sample_name + "; path: " + path);
+        LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
+                    " in dir: " + m_sample_list.get_samples_dirname() + 
+                    " for sample "+ sample_name + " ran_in_trainer: " \
+                    + std::to_string(m_comm->get_rank_in_trainer()) \
+                    + " because we could not get a sample from the data_store");
           return false;
       }
     }
@@ -835,7 +841,9 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  if (opts->has_string("write_sample_list") && is_master()) {
+  if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+    const std::string msg = " writing sample list " + sample_list_file;
+    log_msg(msg.c_str());
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
@@ -1551,7 +1559,6 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
-  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   return ok;
 }
 
