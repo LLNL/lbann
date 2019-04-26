@@ -19,7 +19,7 @@ except ImportError:
     import lbann_pb2
 
 # Import core functionality into lbann namespace
-from lbann.util import lbann_dir
+from lbann.util import lbann_exe
 from lbann.callback import *
 from lbann.layer import *
 from lbann.metric import *

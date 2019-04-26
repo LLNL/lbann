@@ -3,7 +3,6 @@ import argparse
 import os.path
 import google.protobuf.text_format as txtf
 import lbann
-import lbann.contrib.lc.launcher
 
 # ----------------------------------
 # Command-line arguments
@@ -87,8 +86,8 @@ model = lbann.Model(mini_batch_size,
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
 # Load data reader from prototext
-data_reader_file = os.path.join(lbann.lbann_dir(),
-                                'model_zoo',
+model_zoo_dir = os.path.dirname(os.path.dirname(__file__))
+data_reader_file = os.path.join(model_zoo_dir,
                                 'data_readers',
                                 'data_reader_mnist.prototext')
 data_reader_proto = lbann.lbann_pb2.LbannPB()
@@ -104,6 +103,6 @@ data_reader_proto = data_reader_proto.data_reader
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition
 if args.account: kwargs['account'] = args.account
-lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
-                              job_name='lbann_lenet',
-                              **kwargs)
+lbann.run(model, data_reader_proto, opt,
+          job_name='lbann_lenet',
+          **kwargs)
