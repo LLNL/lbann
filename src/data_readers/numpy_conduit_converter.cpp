@@ -44,8 +44,11 @@ void numpy_conduit_converter::load_conduit_node(const std::string filename, int 
       output[std::to_string(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
       output[std::to_string(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
       output[std::to_string(data_id) + "/" + t.first + "/shape"] = b.shape;
-      std::shared_ptr<std::vector<char>> data = b.data_holder;
-      output[std::to_string(data_id) + "/" + t.first + "/data"].set_external_char_ptr(b.data_holder->data());
+
+      // conduit makes a copy of the data, and owns the data, hence it
+      // will be properly deleted when then conduit::Node is deleted
+      char *data = b.data_holder->data();
+      output[std::to_string(data_id) + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
     }
   } catch (...) {
     //note: npz_load throws std::runtime_error, but I don't want to assume

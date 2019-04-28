@@ -195,6 +195,8 @@ void init_data_readers(
       reader_csv->set_skip_rows(readme.skip_rows());
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
+    } else if (name == "numpy_npz_conduit_reader") {
+      reader = new numpy_npz_conduit_reader(shuffle);
     } else if (name == "numpy") {
       auto* reader_numpy = new numpy_reader(shuffle);
       reader_numpy->set_has_labels(!readme.disable_labels());
