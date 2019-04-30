@@ -600,11 +600,43 @@ install(
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 # Install Python frontend
+# Note (tym): Python best practices are to put setup.py at the package
+# root and setuptools only accepts relative paths. However, we need to
+# insert a config file containing install-specific file paths and make
+# sure setup.py can pick it up. I see three approaches for the build
+# process:
+#   1) Inject the config file into a known location in the source
+#      directory so that setup.py can pick it up.
+#   2) Copy the Python source tree into the build directory and insert
+#      setup.py and the config file.
+#   3) Create setup.py and the config file in the build directory and
+#      pass the source directory as a relative path.
+# We go for option 3 since it's simple and lightweight, but it runs
+# counter to the intent of setuptools. If we learn about any nicer
+# approaches, we should use them.
 if (LBANN_HAS_PYTHON)
-  install(
-    DIRECTORY "${PROJECT_SOURCE_DIR}/python/lbann"
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/python-modules"
-    FILES_MATCHING PATTERN "*.py")
+
+  # Construct config file
+  set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)
+  set(_LBANN_PB2_PY
+    ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/python/lbann_pb2.py)
+  set(_LBANN_EXE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/lbann)
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/configure_files/python_config.ini.in"
+    "${_PYTHON_CONFIG_INI}"
+    @ONLY)
+
+  # Install Python package with setuptools
+  set(_SETUP_PY ${CMAKE_BINARY_DIR}/setup.py)
+  file(RELATIVE_PATH _RELATIVE_PATH_BUILD_DIR_TO_PYTHON_DIR
+    "${CMAKE_BINARY_DIR}"
+    "${CMAKE_SOURCE_DIR}/python")
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/configure_files/setup.py.in"
+    "${_SETUP_PY}"
+    @ONLY)
+  install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --user)")
+
 endif (LBANN_HAS_PYTHON)
 
 # Install contributor list, license, readme
