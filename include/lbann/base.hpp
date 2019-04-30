@@ -44,6 +44,10 @@ namespace lbann {
 // Forward-declaration.
 class lbann_comm;
 
+// support for encodind data_id in conduit::Node, used by
+// conduit_data_store and associated code
+#define SAMPLE_ID_PAD 9
+
 // Note that this should only be used to wrap the thing coming out of
 // initialize()! This will be removed when we have proper RAII around
 // these things.

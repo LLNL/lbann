@@ -53,8 +53,6 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-#define SAMPLE_ID_PAD 9
-
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream _err; \
