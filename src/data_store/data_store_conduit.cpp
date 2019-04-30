@@ -43,6 +43,7 @@ data_store_conduit::data_store_conduit(
   m_is_setup(false),
   m_reader(reader),
   m_preload(false),
+  m_explicit_loading(false),
   m_owner_map_mb_size(0),
   m_super_node(false),
   m_compacted_sample_size(0) {
@@ -86,6 +87,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
   m_preload = rhs.m_preload;
+  m_explicit_loading = rhs.m_explicit_loading;
   m_owner = rhs.m_owner;
   m_shuffled_indices = rhs.m_shuffled_indices;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
