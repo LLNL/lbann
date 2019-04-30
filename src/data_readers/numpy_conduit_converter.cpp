@@ -27,29 +27,48 @@
 
 #include "lbann/data_readers/numpy_conduit_converter.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include <cnpy.h>
 
 namespace lbann {
 
 //static
-void numpy_conduit_converter::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset_conduit_node) {
+void numpy_conduit_converter::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset) {
 
   try {
-    if (reset_conduit_node) {
+    if (reset) {
       output.reset();
     }
+
+    std::vector<size_t> shape;
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filename);
+
     for (auto &&t : a) {
       cnpy::NpyArray &b = t.second;
-      output[std::to_string(data_id) + "/" + t.first + "/word_size"] = b.word_size;
-      output[std::to_string(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
-      output[std::to_string(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
-      output[std::to_string(data_id) + "/" + t.first + "/shape"] = b.shape;
+      if (b.shape[0] != 1) {
+        LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples");
+      }
+      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/word_size"] = b.word_size;
+      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/fortran_order"] = b.fortran_order;
+      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/shape"] = b.shape;
 
-      // conduit makes a copy of the data, and owns the data, hence it
+      if (b.data_holder->size() / b.word_size != b.num_vals) {
+        LBANN_ERROR("b.data_holder->size() / b.word_size (" + std::to_string(b.data_holder->size()) + " / " + std::to_string(b.word_size) + ") != b.num_vals (" + std::to_string(b.num_vals));
+      }
+
+      // conduit makes a copy of the data, hence owns the data, hence it
       // will be properly deleted when then conduit::Node is deleted
       char *data = b.data_holder->data();
-      output[std::to_string(data_id) + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
+      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
+
+/*
+std::cerr << "  " << t.first << " num vals: " << b.num_vals << "  word size: " << b.word_size << " shape: ";
+for (auto t2 : b.shape) std::cerr << t2 << " ";
+std::cerr << " fortran: " << b.fortran_order << "\n";
+*/
     }
+
   } catch (...) {
     //note: npz_load throws std::runtime_error, but I don't want to assume
     //      that won't change in the future

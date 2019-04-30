@@ -89,19 +89,21 @@ namespace lbann {
     /// Whether to fetch a label from the last column.
     bool m_has_labels = true;
     /// Whether to fetch a response from the last column.
-    bool m_has_responses = false;
+    bool m_has_responses = true;
 
     std::vector<int> m_data_dims;
-    int m_data_word_size;
+    int m_data_word_size = 0;
+    int m_response_word_size = 0;
 
     // A constant to be multiplied when data is converted
     // from int16 to DataType.
     DataType m_scaling_factor_int16 = 1.0;
 
-    // my_data_id[j] is the data_id for the numpy data in my_files[j]
-    // note: these are declared here since they are used in preload()
-    std::vector<std::string> m_my_files;
-    std::vector<int> m_my_data_ids;
+    // fills in: m_num_samples, m_num_features, m_num_response_features, 
+    // m_data_dims, m_data_word_size, m_response_word_size 
+    void fill_in_metadata();
+
+    std::vector<std::string> m_filenames;
   };
 
 }  // namespace lbann
