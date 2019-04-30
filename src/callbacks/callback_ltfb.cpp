@@ -279,6 +279,10 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   const auto original_mode = m.get_execution_mode();
   m.collect_background_data_fetch(original_mode);
 
+  // Mark the data store as loading - Note that this is a temporary fix
+  // for the current use of the tournament
+  m.mark_data_store_explicitly_loading(execution_mode::validation);
+
   // Evaluate model on validation set
   m.evaluate(execution_mode::validation);
 
