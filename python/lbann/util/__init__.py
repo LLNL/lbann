@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from os.path import abspath, dirname, isfile, join
 
 def make_iterable(obj):
     """Convert to an iterable object.

@@ -314,6 +314,7 @@ fi
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
     module load cmake/3.12.1
+    module load python/3.6.4
 
     CMAKE_PATH=$(dirname $(which cmake))
 else

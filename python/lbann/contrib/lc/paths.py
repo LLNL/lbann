@@ -1,45 +1,6 @@
 """Useful file paths on LC systems."""
-from os.path import abspath, dirname, isdir, join
-from lbann.util import make_iterable
+import os.path
 from lbann.contrib.lc.systems import system
-
-# ==============================================
-# File paths for `build_lbann_lc.sh`
-# ==============================================
-
-def lbann_dir():
-    """LBANN root directory (deprecated).
-
-    Assumes Python package is in source directory.
-
-    """
-    return dirname(dirname(dirname(dirname(dirname(abspath(__file__))))))
-
-def install_dir(build_type = None, system = system()):
-    """LBANN install directory (deprectated).
-
-    Searches in the `build` directory. Assumes LBANN has been built
-    with `scripts/build_lbann_lc.sh`.
-
-    """
-    if not build_type:
-        build_type = ('Release', 'Debug')
-    for _type in make_iterable(build_type):
-        _dir = join(lbann_dir(),
-                    'build',
-                    'gnu.{}.{}.llnl.gov'.format(_type, system),
-                    'install')
-        if isdir(_dir):
-            return _dir
-    raise RuntimeError('could not find install directory')
-
-def lbann_exe(build_type = None, system = system()):
-    """LBANN executable (deprectated).
-
-    Assumes LBANN has been built with `scripts/build_lbann_lc.sh`.
-
-    """
-    return join(install_dir(build_type, system), 'bin', 'lbann')
 
 # ==============================================
 # Data sets
@@ -121,21 +82,21 @@ def imagenet_labels(system = system(), data_set = 'train',
                 200: '_c100-299', 300: '_c0-299'}
     if data_set.lower() in ('train', 'training'):
         if num_classes in suffixes.keys():
-            return join(label_dir,
-                        'train' + suffixes[num_classes] + '.txt')
+            return os.path.join(label_dir,
+                                'train' + suffixes[num_classes] + '.txt')
         else:
             raise RuntimeError('invalid number of classes ({0}) '
                                'for ImageNet data set ({1})'
                                .format(num_classes, data_set))
     elif data_set.lower() in ('val', 'validation'):
         if num_classes in suffixes.keys():
-            return join(label_dir,
-                        'val' + suffixes[num_classes] + '.txt')
+            return os.path.join(label_dir,
+                                'val' + suffixes[num_classes] + '.txt')
         else:
             raise RuntimeError('invalid number of classes ({0}) '
                                'for ImageNet data set ({1})'
                                .format(num_classes, data_set))
     elif data_set.lower() in ('test', 'testing'):
-        return join(label_dir, 'test.txt')
+        return os.path.join(label_dir, 'test.txt')
     else:
         raise RuntimeError('unknown ImageNet data set (' + data_set + ')')

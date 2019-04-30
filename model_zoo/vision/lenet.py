@@ -98,7 +98,8 @@ data_reader_proto = data_reader_proto.data_reader
 # ----------------------------------
 # Run experiment
 # ----------------------------------
-# Note: Use `lbann.run` instead for non-LC systems.
+# Note: Use `lbann.contrib.lc.launcher.run` instead for optimized
+# defaults on LC systems.
 
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition

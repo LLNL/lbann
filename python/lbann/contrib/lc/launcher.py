@@ -1,9 +1,9 @@
-import lbann
+from lbann import lbann_exe
 from lbann.contrib.lc.systems import *
 import lbann.launcher
 
 def run(model, data_reader, optimizer,
-        lbann_exe=lbann.lbann_exe(),
+        lbann_exe=lbann_exe(),
         lbann_args='',
         experiment_dir=None,
         nodes=1,
