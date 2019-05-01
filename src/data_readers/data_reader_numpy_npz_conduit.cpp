@@ -55,7 +55,22 @@ numpy_npz_conduit_reader& numpy_npz_conduit_reader::operator=(const numpy_npz_co
 
 
 void numpy_npz_conduit_reader::copy_members(const numpy_npz_conduit_reader &rhs) {
-  LBANN_ERROR("not implemented - TODO");
+  if(rhs.m_data_store != nullptr) {
+      m_data_store = new data_store_conduit(rhs.get_data_store());
+  }
+  m_data_store->set_data_reader_ptr(this);
+
+  m_num_samples = rhs.m_num_samples;
+  m_num_features = rhs.m_num_features;
+  m_num_labels = rhs.m_num_labels;
+  m_num_response_features = rhs.m_num_response_features;
+  m_has_labels = rhs.m_has_labels;
+  m_has_responses = rhs.m_has_responses;
+  m_data_dims = rhs.m_data_dims;
+  m_data_word_size = rhs.m_data_word_size;
+  m_response_word_size = rhs.m_response_word_size;
+  m_scaling_factor_int16 = rhs.m_scaling_factor_int16;
+  m_filenames = rhs.m_filenames;
 }
 
 void numpy_npz_conduit_reader::load() {
