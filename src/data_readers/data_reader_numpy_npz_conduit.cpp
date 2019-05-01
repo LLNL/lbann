@@ -91,14 +91,6 @@ void numpy_npz_conduit_reader::load() {
   //      conduit, and that doesn't apply here.
 
   std::string infile = get_data_filename();
-  if (is_master()) {
-    std::ifstream ifs(infile);
-    if (!ifs) {
-      LBANN_ERROR("numpy_npz_conduit_reader::load() - can't open file : " + infile);
-    }  
-    ifs.close();
-  }
-
   read_filelist(m_comm, infile, m_filenames);
 
   fill_in_metadata();
