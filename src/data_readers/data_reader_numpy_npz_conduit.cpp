@@ -253,6 +253,10 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have responses");
   }
 
+  // assumes: fetch_datum for this data_id has previously been called,
+  //          hence, the requested node will be in the data_store;
+  //          this is for the case where we didn't preload. If we did
+  //          preload, the requested nod should also be in the data_store
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
   const char *char_data = node[DATA_ID_STR(data_id) + "/responses/data"].value();
   char *char_data_2 = const_cast<char*>(char_data);
