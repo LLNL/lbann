@@ -93,6 +93,8 @@ void numpy_npz_conduit_reader::load() {
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
 
+  // fills in: m_num_samples, m_num_features, m_num_response_features, 
+  // m_data_dims, m_data_word_size, m_response_word_size 
   fill_in_metadata();
 
   std::vector<int> local_list_sizes;
@@ -121,7 +123,7 @@ void numpy_npz_conduit_reader::load() {
 
   // TODO: this may need fixing up for efficiency. If using an absolute
   //       num samples, or percentage of samples, and we've preloaded,
-  //       that's very wasteful
+  //       this is wasteful and not what we want
   select_subset_of_data();
 }
 
@@ -135,7 +137,7 @@ void numpy_npz_conduit_reader::preload_data_store() {
     }
 
     // debug; should go away
-    std::cerr << "attempting to load: " << m_filenames[data_id] << "\n";
+    std::cerr << m_comm->get_rank_in_trainer() <<" :: attempting to load: " << m_filenames[data_id] << "\n";
 
     conduit::Node node;
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
@@ -196,7 +198,6 @@ void numpy_npz_conduit_reader::preload_data_store() {
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
 
-
   conduit::Node node;
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
@@ -220,11 +221,16 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
 
     // OPTIMIZE
     LBANN_OMP_PARALLEL_FOR
-      for(int j = 0; j < m_num_features; j++)
+      for(int j = 0; j < m_num_features; j++) {
         dest[j] = data[j] * m_scaling_factor_int16;
+      }  
 
   } else {
-    void *data = NULL;
+    void *data = (void*)char_data_2;
+    std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
+
+    /*
+    // the following is from data_reader_numpy_npz -- I don't think it's necessary
     if (m_data_word_size == 4) {
       float *f = reinterpret_cast<float*>(char_data_2);
       data = (void*)(f + data_id * m_num_features);
@@ -233,9 +239,8 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
       data = (void*)(d + data_id * m_num_features);
     }
     std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
+    */
   }
-
-
 
   return true;
 }
@@ -266,8 +271,10 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   //          preload, the requested nod should also be in the data_store
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
   const char *char_data = node[DATA_ID_STR(data_id) + "/responses/data"].value();
-  char *char_data_2 = const_cast<char*>(char_data);
-  void *responses = NULL;
+  void *responses =  (void*)char_data;
+  //char *char_data_2 = const_cast<char*>(char_data);
+  //void *responses = (void*) 
+  /*
   if (m_response_word_size == 4) {
     responses = (void *) reinterpret_cast<float*>(char_data_2);
   } else if (m_response_word_size == 8) {
@@ -275,6 +282,7 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   } else {
     LBANN_ERROR("m_response_word_size= " + std::to_string(m_response_word_size) + "; should be 4 our 8");
   }
+  */
   Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
   std::memcpy(Y_v.Buffer(), responses,
               m_num_response_features * m_response_word_size);
