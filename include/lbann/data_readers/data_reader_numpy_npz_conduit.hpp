@@ -93,7 +93,7 @@ namespace lbann {
 
     std::vector<int> m_data_dims;
     int m_data_word_size = 0;
-    int m_response_word_size = 0;
+    size_t m_response_word_size = 0;
 
     // A constant to be multiplied when data is converted
     // from int16 to DataType.
