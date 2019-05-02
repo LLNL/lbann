@@ -128,17 +128,16 @@ void numpy_npz_conduit_reader::load() {
 }
 
 void numpy_npz_conduit_reader::preload_data_store() {
+  double tm1 = time();
   m_data_store->set_preload();
   int rank = m_comm->get_rank_in_trainer();
 
   std::unordered_set<int> label_classes;
+  size_t nn = 1;
   for (size_t data_id=0; data_id<m_filenames.size(); data_id++) {
     if (m_data_store->get_index_owner(data_id) != rank) {
       continue;
     }
-
-    // debug; should go away
-    std::cerr << "rank: " << m_comm->get_rank_in_trainer() <<" :: attempting to load: " << m_filenames[data_id] << ";  data_id: " << data_id << "\n";
 
     conduit::Node node;
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
@@ -193,6 +192,10 @@ void numpy_npz_conduit_reader::preload_data_store() {
     }
     m_num_labels = label_classes.size();
     #endif
+  }
+  double tm2 = time();
+  if (is_master()) {
+    std::cout << "time to preload: " << tm2 - tm1 << "\n";
   }
 }
 

@@ -529,7 +529,6 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
       per_rank_list_range_start += per_rank_list_size;
     }
     m_owner[i] = owning_rank;
-if (m_world_master) std::cerr << "data_store_conduit::build_preloaded_owner_map; m_owner["<<i<<"] = " << owning_rank << "\n";
   }
 }
 
