@@ -41,7 +41,7 @@
 #include <map>
 #include <memory>
 
-#define _USE_IO_HANDLE_
+//#define _USE_IO_HANDLE_
 #ifdef _USE_IO_HANDLE_
 #include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
 #else

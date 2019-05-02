@@ -1,7 +1,7 @@
 #ifndef __SAMPLE_LIST_HDF5_HPP__
 #define __SAMPLE_LIST_HDF5_HPP__
 
-#include "sample_list.hpp"
+#include "sample_list_open_files.hpp"
 #include "hdf5.h"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
@@ -10,15 +10,15 @@
 namespace lbann {
 
 template <typename sample_name_t>
-class sample_list_hdf5 : public sample_list<hid_t, sample_name_t> {
+class sample_list_hdf5 : public sample_list_open_files<sample_name_t, hid_t> {
  public:
   using file_handle_t = hid_t;
-  using typename sample_list<hid_t, sample_name_t>::sample_file_id_t;
-  using typename sample_list<hid_t, sample_name_t>::sample_t;
-  using typename sample_list<hid_t, sample_name_t>::samples_t;
-  using typename sample_list<hid_t, sample_name_t>::file_id_stats_t;
-  using typename sample_list<hid_t, sample_name_t>::file_id_stats_v_t;
-  using typename sample_list<hid_t, sample_name_t>::fd_use_map_t;
+  using typename sample_list_open_files<sample_name_t, hid_t>::sample_file_id_t;
+  using typename sample_list_open_files<sample_name_t, hid_t>::sample_t;
+  using typename sample_list_open_files<sample_name_t, hid_t>::samples_t;
+  using typename sample_list_open_files<sample_name_t, hid_t>::file_id_stats_t;
+  using typename sample_list_open_files<sample_name_t, hid_t>::file_id_stats_v_t;
+  using typename sample_list_open_files<sample_name_t, hid_t>::fd_use_map_t;
 
   sample_list_hdf5();
   ~sample_list_hdf5() override;
@@ -35,7 +35,7 @@ class sample_list_hdf5 : public sample_list<hid_t, sample_name_t> {
 
 template <typename sample_name_t>
 inline sample_list_hdf5<sample_name_t>::sample_list_hdf5()
-: sample_list<hid_t, sample_name_t>() {} 
+: sample_list_open_files<sample_name_t, hid_t>() {} 
 
 template <typename sample_name_t>
 inline sample_list_hdf5<sample_name_t>::~sample_list_hdf5() {

@@ -288,7 +288,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_normalization_params.clear();
   m_input_normalization_params.clear();
 
-  m_sample_list.clear();
+  //m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
 }

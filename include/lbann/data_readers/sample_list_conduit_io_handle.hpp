@@ -1,7 +1,7 @@
 #ifndef __SAMPLE_LIST_CONDUIT_IO_HANDLE_HPP__
 #define __SAMPLE_LIST_CONDUIT_IO_HANDLE_HPP__
 
-#include "sample_list.hpp"
+#include "sample_list_open_files.hpp"
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_handle.hpp"
@@ -9,15 +9,15 @@
 namespace lbann {
 
 template <typename sample_name_t>
-class sample_list_conduit_io_handle : public sample_list<conduit::relay::io::IOHandle*, sample_name_t> {
+class sample_list_conduit_io_handle : public sample_list_open_files<sample_name_t, conduit::relay::io::IOHandle*> {
  public:
   using file_handle_t = conduit::relay::io::IOHandle*;
-  using typename sample_list<file_handle_t, sample_name_t>::sample_file_id_t;
-  using typename sample_list<file_handle_t, sample_name_t>::sample_t;
-  using typename sample_list<file_handle_t, sample_name_t>::samples_t;
-  using typename sample_list<file_handle_t, sample_name_t>::file_id_stats_t;
-  using typename sample_list<file_handle_t, sample_name_t>::file_id_stats_v_t;
-  using typename sample_list<file_handle_t, sample_name_t>::fd_use_map_t;
+  using typename sample_list_open_files<sample_name_t, file_handle_t>::sample_file_id_t;
+  using typename sample_list_open_files<sample_name_t, file_handle_t>::sample_t;
+  using typename sample_list_open_files<sample_name_t, file_handle_t>::samples_t;
+  using typename sample_list_open_files<sample_name_t, file_handle_t>::file_id_stats_t;
+  using typename sample_list_open_files<sample_name_t, file_handle_t>::file_id_stats_v_t;
+  using typename sample_list_open_files<sample_name_t, file_handle_t>::fd_use_map_t;
 
   sample_list_conduit_io_handle();
   ~sample_list_conduit_io_handle() override;
@@ -34,7 +34,7 @@ class sample_list_conduit_io_handle : public sample_list<conduit::relay::io::IOH
 
 template <typename sample_name_t>
 inline sample_list_conduit_io_handle<sample_name_t>::sample_list_conduit_io_handle()
-: sample_list<file_handle_t, sample_name_t>() {}
+: sample_list_open_files<sample_name_t, file_handle_t>() {}
 
 template <typename sample_name_t>
 inline sample_list_conduit_io_handle<sample_name_t>::~sample_list_conduit_io_handle() {
