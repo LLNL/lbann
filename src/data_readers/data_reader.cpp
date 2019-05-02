@@ -296,7 +296,6 @@ bool generic_data_reader::update(bool is_active_reader) {
     }
 
     set_initial_position();
-
   }
 
   post_update();
@@ -782,7 +781,8 @@ bool generic_data_reader::priming_data_store() const {
           && (((m_model->get_execution_mode() == execution_mode::training)
                && m_model->get_epoch() == 0)
               || ((m_model->get_execution_mode() == execution_mode::validation)
-                  && m_model->get_epoch() == 1)));
+                  && m_model->get_epoch() == 1)
+              || m_data_store->is_explicitly_loading()));
 }
 
 void generic_data_reader::set_data_store(data_store_conduit *g) {

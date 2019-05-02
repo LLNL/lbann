@@ -106,6 +106,10 @@ class data_store_conduit {
 
   bool is_preloaded() { return m_preload; }
 
+  void set_explicit_loading(bool flag) { m_explicit_loading = flag; }
+
+  bool is_explicitly_loading() { return m_explicit_loading; }
+
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
@@ -155,6 +159,9 @@ protected :
 
   /// set to true if data_store is preloaded
   bool m_preload;
+
+  /// set to true if data_store is being explicitly loaded
+  bool m_explicit_loading;
 
   /// maps an index to the processor that owns the associated data
   mutable std::unordered_map<int, int> m_owner;
