@@ -642,8 +642,7 @@ class generic_input_layer : public io_layer {
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_label_size = (it->second)->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        LBANN_ERROR("lbann_io_layer: validation label set size does not "
-                              "match the currently established data set size");
+        LBANN_ERROR("lbann_io_layer: validation label set size (" + std::to_string(tmp_label_size) + ") does not match the currently established data set size (" + std::to_string(linearized_label_size) + ")");
       }
     }
     it = m_data_readers.find(execution_mode::testing);
