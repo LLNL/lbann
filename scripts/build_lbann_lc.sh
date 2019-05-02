@@ -315,17 +315,8 @@ if [ ${USE_MODULES} -ne 0 ]; then
     module load git
     module load cmake/3.12.1
     module load python/3.6.4
-
-    CMAKE_PATH=$(dirname $(which cmake))
 else
     use git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-fi
-
-if [[ ${CORAL} -eq 1 ]]; then
-	# the latest version, 3.12.1, has several issues
-    module load cmake/3.9.2
-    CMAKE_PATH=$(dirname $(which cmake))
 fi
 
 ################################################################
@@ -767,7 +758,7 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
- ${CMAKE_PATH}/cmake \
+cmake \
 -G ${GENERATOR} \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
