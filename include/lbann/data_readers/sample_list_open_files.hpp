@@ -74,7 +74,7 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void compute_epochs_file_usage(const std::vector<int>& shufled_indices, int mini_batch_size, const lbann_comm& comm);
 
-  virtual bool is_file_handle_valid(const file_handle_t& h) const;
+  virtual bool is_file_handle_valid(const file_handle_t& h) const = 0;
 
   void all_gather_packed_lists(lbann_comm& comm) override;
 
@@ -83,7 +83,7 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   void set_samples_filename(sample_file_id_t id, const std::string& filename) override;
 
   /// Get the list of samples from a specific type of bundle file
-  virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const;
+  virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const = 0;
 
   /// Get the list of samples that exist in a bundle file
   file_handle_t get_bundled_sample_names(std::string file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
@@ -102,9 +102,9 @@ class sample_list_open_files : public sample_list<sample_name_t> {
            (((left.second).first == (right.second).first) &&
             ((left.second).second < (right.second).second)); }
 
-  virtual file_handle_t open_file_handle_for_read(const std::string& file_path);
-  virtual void close_file_handle(file_handle_t& h);
-  virtual void clear_file_handle(file_handle_t& h);
+  virtual file_handle_t open_file_handle_for_read(const std::string& file_path) = 0;
+  virtual void close_file_handle(file_handle_t& h) = 0;
+  virtual void clear_file_handle(file_handle_t& h) = 0;
 
  private:
   using sample_list<sample_name_t>::serialize;
