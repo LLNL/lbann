@@ -6,18 +6,38 @@ Support for new network structures:
 Support for new layers:
 
 Performance optimizations:
+- GPU implementation of RMSprop optimizer.
+- cuDNN convolution algorithms are determined by empirically measuring
+performance rather than using heuristics.
 
 Model portability & usability:
 
 Internal features:
+- Weight gradient allreduces are in-place rather than on a staging buffer.
+- Fully connected and convolution layers only create bias weights when
+needed.
+- Optimizer exposes gradient buffers so they can be updated in-place.
 
 I/O & data readers:
+- Python data reader that interacts with an embedded Python session.
+
+Python front end:
+- Package name has been changed to lbann.
+- Optimizers.
+- Function to launch SLURM or LSF jobs and run LBANN experiments.
+- Python scripts for LeNet, AlexNet, and (Wide) ResNets in model zoo.
 
 Build system:
  - Added documentation for how users can use Spack to install LBANN
- either directly or via environments
+ either directly or via environments.
+ - Conduit is a required dependency.
+
+Bug fixes:
+- Models can now be copied or setup multiple times.
+- Fixed incorrect weight initialization with multiple trainers.
 
 Retired features:
+- "Zero" layer (hack for early GAN implementation).
 
 ============================== Release Notes: v0.98.1 ==============================
 Bug Fixes:
