@@ -289,7 +289,8 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
     LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
                 + " is not the same size as existing nodes in the data_store "
                 + std::to_string(m_compacted_sample_size) + " != "
-                + std::to_string(nd.total_bytes_compact()));
+                + std::to_string(nd.total_bytes_compact())
+                + " role: " + m_reader->get_role());
   }
   if(!nd.is_contiguous()) {
     LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
@@ -305,7 +306,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node) {
   if (m_data.find(data_id) != m_data.end()) {
-    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
+    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node for role: " + m_reader->get_role());
   }
 
   if (m_owner[data_id] != m_rank_in_trainer) {
@@ -346,8 +347,14 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   */
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  // if not preloaded, and get_label() or get_response() is called, 
+  // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
+    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    if (t3 != m_data.end()) {
+      return t3->second["data"];
+    }
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size())+ " and also failed to find it in m_data; m_data.size: " + std::to_string(m_data.size()) + "; role: " + m_reader->get_role());
   }
 
   return t2->second;
@@ -549,7 +556,6 @@ void data_store_conduit::build_owner_map(int mini_batch_size) {
 }
 
 const conduit::Node & data_store_conduit::get_random_node() const {
-std::cout << "\nstarting data_store_conduit::get_random_node()\n";
   size_t sz = m_data.size();
 
   // Deal with edge case

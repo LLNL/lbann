@@ -32,6 +32,8 @@
 #include "lbann/utils/file_utils.hpp" // pad()
 #include "lbann/utils/jag_utils.hpp"  // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/timer.hpp"
+#include "lbann/models/model.hpp"
+
 
 namespace lbann {
 
@@ -97,6 +99,10 @@ void numpy_npz_conduit_reader::load() {
   // fills in: m_num_samples, m_num_features, m_num_response_features, 
   // m_data_dims, m_data_word_size, m_response_word_size 
   fill_in_metadata();
+
+  if (m_num_labels == 0 && !opts->get_bool("preload_data_store") && opts->get_bool("use_data_store")) {
+    LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
+  }
 
   std::vector<int> local_list_sizes;
   if (opts->get_bool("preload_data_store")) {
@@ -176,9 +182,11 @@ void numpy_npz_conduit_reader::preload_data_store() {
 
     // if we're using a subset of the data we may not have a contiguous
     // set of zero-based labels, so let's pretend like we do
-    m_num_labels = trainer_max - trainer_min;
-    if(is_master()) {
-      std::cout << "num_labels: " << m_num_labels << "\n";
+    if (m_num_labels != 0) { //note: num_labels may be specified in the reader
+      m_num_labels = trainer_max - trainer_min;
+      if(is_master()) {
+        std::cout << "num_labels: " << m_num_labels << "\n";
+      }
     }
 
     #if 0
@@ -201,18 +209,17 @@ void numpy_npz_conduit_reader::preload_data_store() {
 
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
-
   conduit::Node node;
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   } else {
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
-    if (priming_data_store()) {
+    //note: if testing, and test set is touched more than once, the following
+    //      will through an exception TODO: relook later
+    if (priming_data_store() || m_model->get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
-    } else {
-      LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
-    }
+    } 
   }
 
   const char *char_data = node[DATA_ID_STR(data_id) + "/data/data"].value();
@@ -254,13 +261,15 @@ bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have labels");
   }
   if (m_num_labels == 0) {
-    LBANN_ERROR("num labels = 0. num_labels is only valid when run with --preload_data_store. If warrented, code can be revised so that num_labels is specified in the data_reader prototext file; please contact Dave Hysom to make it so");
+    LBANN_ERROR("num labels = 0. num_labels is only valid when run with --preload_data_store, *or* if your reader prototext contains a 'num_labels' field");
   }
-  const conduit::Node node = m_data_store->get_conduit_node(data_id);
+
+  const conduit::Node& node = m_data_store->get_conduit_node(data_id);
   const char *char_data = node[DATA_ID_STR(data_id)+ "/frm/data"].value();
   char *char_data_2 = const_cast<char*>(char_data);
   int *label = reinterpret_cast<int*>(char_data_2);
   Y(*label, mb_idx) = 1;
+
   return true;
 }
 
@@ -273,7 +282,20 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   //          hence, the requested node will be in the data_store;
   //          this is for the case where we didn't preload. If we did
   //          preload, the requested nod should also be in the data_store
-  const conduit::Node node = m_data_store->get_conduit_node(data_id);
+  //
+  conduit::Node node;
+  if (data_store_active()) {
+    const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+    node.set_external(ds_node);
+  } else {
+    numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
+    if (priming_data_store()) {
+      m_data_store->set_conduit_node(data_id, node);
+    } else {
+      LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
+    }
+  }
+
   const char *char_data = node[DATA_ID_STR(data_id) + "/responses/data"].value();
   void *responses =  (void*)char_data;
   //char *char_data_2 = const_cast<char*>(char_data);

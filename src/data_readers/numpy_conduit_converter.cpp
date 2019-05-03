@@ -32,6 +32,9 @@
 
 namespace lbann {
 
+#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
+
+
 //static
 void numpy_conduit_converter::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset) {
 
@@ -48,10 +51,10 @@ void numpy_conduit_converter::load_conduit_node(const std::string filename, int 
       if (b.shape[0] != 1) {
         LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples");
       }
-      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/word_size"] = b.word_size;
-      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/fortran_order"] = b.fortran_order;
-      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/num_vals"] = b.num_vals;
-      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/shape"] = b.shape;
+      output[DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] = b.word_size;
+      output[DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
+      output[DATA_ID_STR(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[DATA_ID_STR(data_id) + "/" + t.first + "/shape"] = b.shape;
 
       if (b.data_holder->size() / b.word_size != b.num_vals) {
         LBANN_ERROR("b.data_holder->size() / b.word_size (" + std::to_string(b.data_holder->size()) + " / " + std::to_string(b.word_size) + ") != b.num_vals (" + std::to_string(b.num_vals));
@@ -60,13 +63,7 @@ void numpy_conduit_converter::load_conduit_node(const std::string filename, int 
       // conduit makes a copy of the data, hence owns the data, hence it
       // will be properly deleted when then conduit::Node is deleted
       char *data = b.data_holder->data();
-      output[pad(std::to_string(data_id),SAMPLE_ID_PAD, '0') + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
-
-/*
-std::cerr << "  " << t.first << " num vals: " << b.num_vals << "  word size: " << b.word_size << " shape: ";
-for (auto t2 : b.shape) std::cerr << t2 << " ";
-std::cerr << " fortran: " << b.fortran_order << "\n";
-*/
+      output[DATA_ID_STR(data_id) + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
     }
 
   } catch (...) {

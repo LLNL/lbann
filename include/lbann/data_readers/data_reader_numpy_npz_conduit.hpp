@@ -64,6 +64,7 @@ namespace lbann {
 
   void load() override;
 
+  void set_num_labels(int n) { m_num_labels = n; }
   int get_num_labels() const override { return m_num_labels; }
   int get_num_responses() const override { return get_linearized_response_size(); }
   int get_linearized_data_size() const override { return m_num_features; }
