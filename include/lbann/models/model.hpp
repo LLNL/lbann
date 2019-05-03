@@ -243,6 +243,8 @@ public:
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
+  virtual void mark_data_store_explicitly_loading(execution_mode mode);
+
   // ===========================================
   // Summarizer
   // ===========================================
