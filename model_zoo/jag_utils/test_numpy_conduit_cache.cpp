@@ -27,6 +27,11 @@
 
 #include "lbann_config.hpp"
 
+int main(int argc, char *argv[]) {
+}
+
+#if 0
+
 #ifdef LBANN_HAS_CONDUIT
 
 #include "conduit/conduit.hpp"
@@ -99,5 +104,7 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 }
+
+#endif
 
 #endif //#ifdef LBANN_HAS_CONDUIT
