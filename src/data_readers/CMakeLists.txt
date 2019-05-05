@@ -38,7 +38,7 @@ set_full_path(THIS_DIR_SOURCES
   offline_patches_npz.cpp
   image_preprocessor.cpp
   image_utils.cpp
-  numpy_conduit_cache.cpp 
+  numpy_conduit_converter.cpp 
   )
 
 # Add the subdirectories
