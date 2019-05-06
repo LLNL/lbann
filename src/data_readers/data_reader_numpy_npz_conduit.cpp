@@ -37,8 +37,6 @@
 
 namespace lbann {
 
-#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
-
 numpy_npz_conduit_reader::numpy_npz_conduit_reader(const bool shuffle)
   : generic_data_reader(shuffle) {}
 
