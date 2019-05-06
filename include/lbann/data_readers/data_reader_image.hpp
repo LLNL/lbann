@@ -100,6 +100,8 @@ class image_data_reader : public generic_data_reader {
     return m_image_list.at(idx);
   }
 
+  void preload_data_store() override; 
+
  protected:
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();
