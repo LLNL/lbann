@@ -32,6 +32,7 @@
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 
 namespace lbann {
 class image_data_reader : public generic_data_reader {
@@ -117,6 +118,8 @@ class image_data_reader : public generic_data_reader {
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
   std::vector<cv::Mat> m_thread_cv_buffer;
+
+  void load_conduit_node_from_file(int data_id, conduit::Node &node);
 };
 
 }  // namespace lbann
