@@ -133,6 +133,10 @@ class data_store_conduit {
     ++m_n;
   }
 
+  void set_super_node_mode() {
+    m_super_node = true;
+  }
+
 protected :
 
   /// records the number of times exchange_mini_batch_data has been called
