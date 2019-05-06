@@ -32,8 +32,6 @@
 
 namespace lbann {
 
-#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
-
 
 //static
 void numpy_conduit_converter::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset) {
