@@ -27,9 +27,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include <fstream>
 
 namespace lbann {
+
+#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
 
 image_data_reader::image_data_reader(bool shuffle)
   : generic_data_reader(shuffle) {
@@ -108,6 +113,8 @@ void image_data_reader::load() {
   //const std::string imageDir = get_file_dir();
   const std::string imageListFile = get_data_filename();
 
+  options *opts = options::get();
+
   m_image_list.clear();
 
   // load image list
@@ -128,12 +135,80 @@ void image_data_reader::load() {
   }
   fclose(fplist);
 
+  // TODO: this will probably need to change after sample_list class
+  //       is modified
+  
+  std::vector<int> local_list_sizes;
+  if (opts->get_bool("preload_data_store")) {
+    int np = m_comm->get_procs_per_trainer();
+    int base_files_per_rank = m_image_list.size() / np;
+    int extra = m_image_list.size() - (base_files_per_rank*np);
+    if (extra > np) {
+      LBANN_ERROR("extra > np");
+    }
+    local_list_sizes.resize(np, 0);
+    for (int j=0; j<np; j++) {
+      local_list_sizes[j] = base_files_per_rank;
+      if (j < extra) {
+        local_list_sizes[j] += 1;
+      }
+    }
+  }
+
   // reset indices
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_image_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
+  instantiate_data_store(local_list_sizes);
+  if (opts->get_bool("preload_data_store") || opts->get_bool("use_data_store")) {
+    m_data_store->set_super_node_mode();
+  }
+
   select_subset_of_data();
+}
+
+void read_raw_data(const std::string &filename, std::vector<char> &data) {
+  data.clear();
+  std::ifstream in(filename.c_str());
+  if (!in) {
+    LBANN_ERROR("failed to open " + filename + " for reading");
+  }
+  in.seekg(0, in.end);
+  int num_bytes = in.tellg();
+  in.seekg(0, in.beg);
+  data.resize(num_bytes);
+  in.read((char*)data.data(), num_bytes);
+  in.close();
+}
+
+void image_data_reader::preload_data_store() {
+  double tm1 = get_time();
+  m_data_store->set_preload();
+
+  int rank = m_comm->get_rank_in_trainer();
+  std::vector<char> data;
+  for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+    if (m_data_store->get_index_owner(data_id) != rank) {
+      continue;
+    }
+
+    conduit::Node node;
+    const std::string filename = get_file_dir() + m_image_list[data_id].first;
+    int label = m_image_list[data_id].second;
+    node[DATA_ID_STR(data_id) + "/label"] = label;    
+    node[DATA_ID_STR(data_id) + "/filename"] = filename; //not really needed, but nice to have   
+
+    read_raw_data(filename, data);
+
+    node[DATA_ID_STR(data_id) + "/buffer"].set_char_ptr(data.data());
+    m_data_store->set_conduit_node(data_id, node);
+  }
+
+
+  if (is_master()) {
+    std::cout << "image_data_reader::preload_data_store time: " << (get_time() - tm1) << "\n";
+  }  
 }
 
 void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
