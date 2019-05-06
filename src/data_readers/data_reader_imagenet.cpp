@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/image_utils.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include <omp.h>
 
 namespace lbann {
@@ -37,9 +38,7 @@ imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shu
   set_defaults();
 
   if (!pp) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("construction error: no image processor");
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
@@ -48,9 +47,7 @@ imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shu
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
   : image_data_reader(rhs) {
   if (!rhs.m_master_pps) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("construction error: no image processor");
   }
   m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 }
@@ -64,9 +61,7 @@ imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
   image_data_reader::operator=(rhs);
 
   if (!rhs.m_master_pps) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " construction error: no image processor";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("construction error: no image processor");
   }
   m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
   return (*this);
@@ -103,10 +98,7 @@ bool imagenet_reader::replicate_processor(const cv_process& pp, const int nthrea
   }
 
   if (!ok || (nthreads <= 0)) {
-    std::stringstream err;
-    err << __FILE__<<" "<<__LINE__<< " :: " << get_type() << " cannot replicate image processor";
-    throw lbann_exception(err.str());
-    return false;
+    LBANN_ERROR("cannot replicate image processor");
   }
 
   const std::vector<unsigned int> dims = pp.get_data_dims();
@@ -124,27 +116,40 @@ CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
 }
 
 bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+  int width=0, height=0, img_type=0;
   int tid = m_io_thread_pool->get_local_thread_id();
+  CPUMat X_v = create_datum_view(X, mb_idx);
+  bool ret;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
-  int width=0, height=0, img_type=0;
+  if (m_data_store != nullptr) {
+    conduit::Node node;
+    if (data_store_active()) {
+      const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+      node.set_external(ds_node);
+    } else if (priming_data_store()) {
+      load_conduit_node_from_file(data_id, node);
+      m_data_store->set_conduit_node(data_id, node);
+    } else {
+      LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
+    }
 
-  CPUMat X_v = create_datum_view(X, mb_idx);
-
-  bool ret;
-  ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+    char *buf = node[DATA_ID_STR(data_id) + "/buffer"].value();
+    ret = lbann::image_utils::load_image(buf, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+  }
+  
+  // not using data store
+  else {
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+  }
 
   if(!ret) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                          + get_type() + ": image_utils::load_image failed to load - "
-                          + imagepath);
+    LBANN_ERROR(get_type() + ": image_utils::load_image failed to load - " + imagepath);
   }
   if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                          + get_type() + ": mismatch data size -- either width, height or channel - "
-                          + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
-                          + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
-  }
+    LBANN_ERROR( get_type() + ": mismatch data size -- either width, height or channel - " + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height) + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
+  } 
+
   return true;
 }
 
