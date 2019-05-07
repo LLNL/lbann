@@ -55,6 +55,11 @@ def get_command(cluster,
         raise Exception('Invalid character(s): %s' % ' , '.join(
             invalid_character_errors))
 
+    # Never give lbannusr an allocation for over 12 hours though.
+    strict_time_limit = 60*6  # 6 hours.
+    if time_limit > strict_time_limit:
+        time_limit = strict_time_limit
+
     # Check executable existence
     if check_executable_existence:
         process_executable_existence(executable, skip_no_exe)
@@ -344,9 +349,12 @@ def get_command(cluster,
     t = (command_allocate, command_run, command_lbann, command_redirect)
 
     if return_tuple:
+        print('command_tuple=' + str(t))
         return t
     else:
-        return '%s%s %s%s' % t
+        command_string = '%s%s %s%s' % t
+        print('command_string=' + command_string)
+        return command_string
 
 
 def process_executable_existence(executable, skip_no_exe=True):
@@ -411,4 +419,5 @@ def get_default_exes(default_dirname, cluster):
         default_exes['gcc4'] = exes['gcc4']
         default_exes['gcc4_debug'] = exes['gcc4_debug']
 
+    print('default_exes={d}'.format(d=default_exes))
     return default_exes

@@ -336,12 +336,22 @@ void init_data_readers(
       reader = new mesh_reader(shuffle);
     } else if (name == "moving_mnist") {
       reader = new moving_mnist_reader(7, 40, 40, 2);
+    } else if (name == "python") {
+#ifdef LBANN_HAS_PYTHON
+      const auto& params = readme.python();
+      reader = new python_reader(params.module(),
+                                 params.module_dir(),
+                                 params.sample_function(),
+                                 params.num_samples_function(),
+                                 params.sample_dims_function());
+#else
+      LBANN_ERROR("attempted to construct Python data reader, "
+                  "but LBANN is not built with Python/C API");
+#endif // LBANN_HAS_PYTHON
     } else {
-      if (master) {
         err << __FILE__ << " " << __LINE__ << " :: unknown name for data reader: "
             << name;
         throw lbann_exception(err.str());
-      }
     }
     reader->set_comm(comm);
 
@@ -456,7 +466,12 @@ void init_data_readers(
             reader_jag_conduit->set_leading_reader(leader);
           }
         } else {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader), reader->get_unused_indices());
+          const std::string role = "validate";
+          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+          reader_jag_conduit->set_role(role);
+          leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
 #endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
@@ -484,10 +499,30 @@ void init_data_readers(
       } else if (name == "moving_mnist") {
         reader_validation = new moving_mnist_reader(7, 40, 40, 2);
         (*(moving_mnist_reader *)reader_validation) = (*(moving_mnist_reader *)reader);
+      } else if (name == "python") {
+#ifdef LBANN_HAS_PYTHON
+        const auto& params = readme.python();
+        reader_validation = new python_reader(params.module(),
+                                              params.module_dir(),
+                                              params.sample_function(),
+                                              params.num_samples_function(),
+                                              params.sample_dims_function());
+#else
+        LBANN_ERROR("attempted to construct Python data reader, "
+                    "but LBANN is not built with Python/C API");
+#endif // LBANN_HAS_PYTHON
       }
 
       reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
+      if(reader_validation->get_data_store_ptr() != nullptr) {
+        reader_validation->get_data_store_ptr()->compact_nodes();
+      }
+      /// At this point clean up any unused samples from the main data store
+      if(reader->get_data_store_ptr() != nullptr) {
+        auto&& data_store = reader->get_data_store_ptr();
+        data_store->purge_unused_samples(reader->get_unused_indices());
+      }
 
       if (master) {
         size_t num_train = reader->get_num_data();
@@ -747,7 +782,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
   }
-  if (opts->has_bool("no_im_comm") and opts->get_bool("no_im_comm")) {
+  if (opts->get_bool("no_im_comm")) {
     int sz = model->callback_size();
     for (int j=0; j<sz; j++) {
       lbann_data::Callback *c = model->mutable_callback(j);
@@ -771,13 +806,13 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (opts->has_int("num_parallel_readers")) {
     model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
-  if (opts->has_bool("disable_cuda")) {
+  if (opts->get_bool("disable_cuda")) {
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
   if (opts->has_int("random_seed")) {
     model->set_random_seed(opts->get_int("random_seed"));
   }
-  if(opts->has_bool("serialize_io")) {
+  if(opts->get_bool("serialize_io")) {
     model->set_serialize_io(opts->get_bool("serialize_io"));
   }
 
@@ -860,8 +895,14 @@ void print_help(std::ostream& os)
        "      display information on how OpenMP threads are provisioned\n"
        "  --use_data_store \n"
        "      Enables the data store in-memory structure\n"
+       "  --preload_data_store \n"
+       "      Preloads the data store in-memory structure during data reader load time\n"
        "  --super_node \n"
        "      Enables the data store in-memory structure to use the supernode exchange structure\n"
+       "  --write_sample_list \n"
+       "      Writes out the sample list that was loaded into the current directory\n"
+       "  --ltfb_verbose \n"
+       "      Increases number of per-trainer messages that are reported\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

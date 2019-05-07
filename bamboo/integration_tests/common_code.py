@@ -74,7 +74,7 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
         error_file = open(error_file_name, 'r')
         for line in error_file:
             print('%s: %s' % (error_file_name, line))
-            is_match = re.search('LBANN error on:(.*)', line)
+            is_match = re.search('LBANN error on (.*)', line)
             if is_match:
                 lbann_exceptions.append(is_match.group(1))
     if output_value != 0:
@@ -119,11 +119,14 @@ def extract_data(output_file_name, data_fields, should_log):
 
     for line in output_file:
         if should_log:
-            print('%s: %s' % (output_file_name, line))
+            print('extract_data: %s: %s' % (output_file_name, line))
 
         # Check if line is reporting model results
         is_model = re.search('^Model ([0-9]+)', line)
+        if not is_model:
+            is_model = re.search('^model([0-9]+)', line)
         if is_model:
+            print('extract_data: is_model={is_model}'.format(is_model=is_model))
             model_id = is_model.group(1)
 
             regex = 'training epoch ([0-9]+) objective function : ([0-9.]+)'
@@ -136,11 +139,11 @@ def extract_data(output_file_name, data_fields, should_log):
             populate_data_dict_epoch(regex, line, data_field, data_fields,
                                      data_dict, model_id)
 
-            regex = ('training epoch ([0-9]+) mini-batch time statistics'
-                     ' : ([0-9.]+)s mean, ([0-9.]+)s max, ([0-9.]+)s min,'
-                     ' ([0-9.]+)s stdev')
+            regex = 'training epoch ([0-9]+) mini-batch time statistics : ([0-9.]+)s mean, ([0-9.]+)s max, ([0-9.]+)s min, ([0-9.]+)s stdev'
             is_match = re.search(regex, line)
             if is_match:
+                print('extract_data: is_mini-batch time statistics={is_match}'.format(
+                    is_match=is_match))
                 epoch_id = is_match.group(1)
                 mean_value = float(is_match.group(2))
                 max_value = float(is_match.group(3))
@@ -150,21 +153,25 @@ def extract_data(output_file_name, data_fields, should_log):
                 if data_field in data_fields:
                     if model_id not in data_dict[data_field].keys():
                         data_dict[data_field][model_id] = {}
+                    print('extract_data: mean_value={mv}'.format(mv=mean_value))
                     data_dict[data_field][model_id][epoch_id] = mean_value
                 data_field = 'training_max'
                 if data_field in data_fields:
                     if model_id not in data_dict[data_field].keys():
                         data_dict[data_field][model_id] = {}
+                    print('extract_data: max_value={mv}'.format(mv=max_value))
                     data_dict[data_field][model_id][epoch_id] = max_value
                 data_field = 'training_min'
                 if data_field in data_fields:
                     if model_id not in data_dict[data_field].keys():
                         data_dict[data_field][model_id] = {}
+                    print('extract_data: min_value={mv}'.format(mv=min_value))
                     data_dict[data_field][model_id][epoch_id] = min_value
                 data_field = 'training_stdev'
                 if data_field in data_fields:
                     if model_id not in data_dict[data_field].keys():
                         data_dict[data_field][model_id] = {}
+                    print('extract_data: stdev={sv}'.format(sv=stdev_value))
                     data_dict[data_field][model_id][epoch_id] = stdev_value
 
             regex = 'test categorical accuracy : ([0-9.]+)'
@@ -173,6 +180,7 @@ def extract_data(output_file_name, data_fields, should_log):
                                        data_dict, model_id)
     output_file.close()
     if should_log:
+        print('extract_data: Extracted Data below:')
         pprint.pprint(data_dict)
     return data_dict
 
@@ -181,7 +189,7 @@ def extract_data(output_file_name, data_fields, should_log):
 
 def skeleton(cluster, dir_name, executable, model_folder, model_name,
              data_fields, should_log, compiler_name=None, weekly=False):
-    if compiler_name == None:
+    if compiler_name is None:
         output_file_name = '%s/bamboo/integration_tests/output/%s_output.txt' % (dir_name, model_name)
         error_file_name = '%s/bamboo/integration_tests/error/%s_error.txt' % (dir_name, model_name)
     else:

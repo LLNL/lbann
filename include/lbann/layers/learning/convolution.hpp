@@ -266,24 +266,29 @@ protected:
 
     const int effective_mini_batch_size =
         this->m_model->get_effective_mini_batch_size();
-    const bool has_local_data = this->m_prev_error_signals_t.get_local_size() > 0;
+    const bool has_local_data = this->m_prev_activations_t.get_local_size() > 0 &&
+        this->m_prev_error_signals_t.get_local_size() > 0;
 
     optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr && this->m_bias_scaling_factor != DataType(0)) {
       dc::MPIPrintStreamDebug() << "Compute bias gradients";
-      assert0(dc::tensor::View(m_bias_gradient_t,
-                               this->m_bias_gradient.Buffer()));
-      if (!has_local_data) {
-        m_bias_gradient_t.zero(dc::get_stream());
-      } else {
-        m_conv->backward_bias(DataType(1.0), this->m_prev_error_signals_t,
-                              DataType(0.0), m_bias_gradient_t, false);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+          dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
+      // For comparison with the original LBANN, bias gradients will
+      // be calculated again with the original LBANN. Do not accumulate the
+      // gradients here as it would be otherwise accumulated twice.
+      if (this->early_terminate_last_iteration()) {
+        gradient_scale = 0;
       }
-      if (!this->early_terminate_last_iteration()) {
-        bias_optimizer->add_to_gradient(
-            this->m_bias_gradient,
-            this->m_bias_scaling_factor / effective_mini_batch_size,
-            true);
+      assert0(dc::tensor::View(m_bias_gradient_t,
+                               bias_gradient.Buffer()));
+      if (has_local_data) {
+        m_conv->backward_bias(gradient_scale, this->m_prev_error_signals_t,
+                              dst_scale, m_bias_gradient_t, false);
+      } else {
+        m_bias_gradient_t.scale(dst_scale, dc::get_stream());
       }
     }
 
@@ -292,22 +297,19 @@ protected:
 
     dc::MPIPrintStreamDebug() << "Compute kernel gradients";
 
-    assert0(dc::tensor::View(
-        m_kernel_gradient_e, this->m_kernel_gradient.Buffer()));
-    if (!has_local_data) {
-      m_kernel_gradient_e.zero(dc::get_stream());
-    } else {
-      m_conv->backward_filter(DataType(1.0), this->m_prev_activations_t,
-                              this->m_prev_error_signals_t, DataType(0),
-                              m_kernel_gradient_e, false);
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+    auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+    gradient_scale /= effective_mini_batch_size;
 
-    }
-    // Add gradient contribution
-    const DataType kernel_scale = DataType(1) / effective_mini_batch_size;
-    if (!this->early_terminate_last_iteration()) {
-      kernel_optimizer->add_to_gradient(this->m_kernel_gradient,
-                                        kernel_scale,
-                                        true);
+    assert0(dc::tensor::View(
+        m_kernel_gradient_e, kernel_gradient.Buffer()));
+    if (has_local_data) {
+      m_conv->backward_filter(gradient_scale, this->m_prev_activations_t,
+                              this->m_prev_error_signals_t, dst_scale,
+                              m_kernel_gradient_e, false);
+    } else {
+      m_kernel_gradient_e.scale(dst_scale, dc::get_stream());
     }
 #endif
   }
@@ -397,8 +399,10 @@ protected:
     assert0(tensor::View(
         m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
     m_kernel_gradient_e = TensorDev(kernel_shape, loc, shared_dist);
+    // Gradient buffer is needed for auto-tuning the bp filter algorithm
     assert0(tensor::View(
-        m_kernel_gradient_e, this->m_kernel_gradient.Buffer()));
+        m_kernel_gradient_e,
+        this->get_weights()[0]->get_optimizer()->get_gradient().Buffer()));
 
     m_conv = new Convolution(dc::get_backend(),
                              dc::get_halo_exchange_method());
@@ -422,8 +426,6 @@ protected:
       optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
       if (bias_optimizer != nullptr) {
         m_bias_gradient_t = TensorDev(bias_shape, loc, shared_dist);
-        assert0(tensor::View(m_bias_gradient_t,
-                             this->m_bias_gradient.Buffer()));
         m_conv->setup_bias_gradient(m_bias_gradient_t);
       }
     }

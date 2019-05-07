@@ -7,7 +7,9 @@ import os
 
 def skeleton_layer_elu(cluster, executables, dir_name, compiler_name):
     if compiler_name not in executables:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+        e = 'skeleton_layer_elu: default_exes[%s] does not exist' % compiler_name
+        print('Skip - ' + e)
+        pytest.skip(e)
     output_file_name = '%s/bamboo/unit_tests/output/layer_elu_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/layer_elu_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
@@ -26,10 +28,6 @@ def test_unit_layer_elu_clang4(cluster, exes, dirname):
 
 
 def test_unit_layer_elu_gcc4_check(cluster, exes, dirname):
-    if cluster in ['surface']:
-        pytest.skip('FIXME')
-        # Surface Errors:
-        # assert 34304 == 0
     skeleton_layer_elu(cluster, exes, dirname, 'gcc4')
 
 
@@ -44,6 +42,8 @@ def test_unit_layer_elu_intel18(cluster, exes, dirname):
 # Run with python -m pytest -s test_unit_layer_elu.py -k 'test_unit_layer_elu_exe' --exe=<executable>
 def test_unit_layer_elu_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
+        e = 'test_unit_layer_elu_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
     exes = {'exe': exe}
     skeleton_layer_elu(cluster, exes, dirname, 'exe')

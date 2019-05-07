@@ -23,19 +23,10 @@ if (SPHINX_FOUND)
       build_spack_extra_config.rst
       build_with_cmake.rst
       build_with_superbuild.rst
-      callbacks.rst
+      build_osx.rst
+      publications.rst
       index.rst
-      io.rst
-      layers.rst
-      learning.rst
-      loss_functions.rst
-      metrics.rst
-      objective_functions.rst
-      optimizers.rst
-      regularizers.rst
       running_lbann.rst
-      transform.rst
-      weight_regularization.rst
       sphinx_requirements.txt
       )
 
@@ -78,7 +69,7 @@ endif ()
 if (DOXYGEN_FOUND)
   set(DOXYGEN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
+    ${CMAKE_SOURCE_DIR}/README.md
     )
 
   # Setup Dot support

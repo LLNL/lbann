@@ -46,12 +46,12 @@ void fill_buffer(DataType *buf, size_t len) {
   }
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
   if (randgen_method == "MT") {
-    auto& gen = get_generator();
+    auto& gen = get_io_generator();
     for (size_t i = 0; i < len; ++i) {
       buf[i] = dist(gen);
     }
   } else {
-    auto& gen = get_fast_generator();
+    auto& gen = get_fast_io_generator();
     for (size_t i = 0; i < len; ++i) {
       buf[i] = dist(gen);
     }
@@ -103,7 +103,7 @@ bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if (m_num_labels == 0) {
     LBANN_ERROR("Synthetic data reader does not have labels");
   }
-  Y.Set(fast_rand_int(get_fast_generator(), m_num_labels), mb_idx, 1);
+  Y.Set(fast_rand_int(get_fast_io_generator(), m_num_labels), mb_idx, 1);
   return true;
 }
 

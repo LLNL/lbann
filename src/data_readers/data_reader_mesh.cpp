@@ -68,7 +68,7 @@ void mesh_reader::load() {
 
 bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   if (m_random_flips) {
-    fast_rng_gen& gen = get_fast_generator();
+    fast_rng_gen& gen = get_fast_io_generator();
     std::uniform_int_distribution<int> dist(0, 1);
     m_flip_choices[data_id].first = dist(gen);
     m_flip_choices[data_id].second = dist(gen);

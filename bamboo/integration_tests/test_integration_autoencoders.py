@@ -51,25 +51,16 @@ DATA_FIELDS = [
 ]
 
 
-def skeleton_autoencoder_mnist(cluster, dir_name, executables, compiler_name):
-  if compiler_name not in executables:
-    pytest.skip('default_exes[%s] does not exist' % compiler_name)    
-  model_folder = 'models/autoencoder_mnist'
-  model_name = 'conv_autoencoder_mnist'
-  should_log = False
-  actual_objective_functions = common_code.skeleton(
-      cluster, dir_name, executables[compiler_name], model_folder, model_name,
-      DATA_FIELDS, should_log, compiler_name=compiler_name)
-  run_tests(actual_objective_functions, model_name, dir_name, cluster,
-            should_log, compiler_name)
-
-
 def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
                                   weekly):
-  if cluster == 'surface':
-    pytest.skip('skeleton_autoencoder_imagenet does not run on surface')
+  if cluster in ['surface', 'pascal']:
+      e = 'skeleton_autoencoder_imagenet: does not run on GPU'
+      print('Skip - ' + e)
+      pytest.skip(e)
   if compiler_name not in executables:
-    pytest.skip('default_exes[%s] does not exist' % compiler_name)
+      e = 'skeleton_autoencoder_imagenet: default_exes[%s] does not exist' % compiler_name
+      print('Skip - ' + e)
+      pytest.skip(e)
   model_folder = 'models/autoencoder_imagenet'
   model_name = 'conv_autoencoder_imagenet'
   should_log = False
@@ -83,71 +74,29 @@ def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
             should_log, compiler_name, frequency_str)
 
 
-def test_integration_autoencoder_mnist_clang4(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.219298 != 0.207480 conv_autoencoder_mnist Model 0 Epoch 0 training_objective_function
-  skeleton_autoencoder_mnist(cluster, dirname, exes, 'clang4')
-
-
 def test_integration_autoencoder_imagenet_clang4(cluster, dirname, exes,
                                                  weekly):
-  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang4', weekly)
-
-
-def test_integration_autoencoder_mnist_gcc4(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz', 'surface']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.219298 != 0.207480 conv_autoencoder_mnist Model 0 Epoch 0 training_objective_function
-    # Surface Errors:
-    # 0.053411 != 0.207587 conv_autoencoder_mnist Model 0 Epoch 0 training_objective_function
-    # 0.026719 != 0.194595 conv_autoencoder_mnist Model 0 Epoch 1 training_objective_function
-    # 0.024882 != 0.193141 conv_autoencoder_mnist Model 0 Epoch 2 training_objective_function
-    # 0.023039 != 0.192808 conv_autoencoder_mnist Model 0 Epoch 3 training_objective_function
-    # 0.023243 != 0.192716 conv_autoencoder_mnist Model 0 Epoch 4 training_objective_function
-  skeleton_autoencoder_mnist(cluster, dirname, exes, 'gcc4')
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang4', weekly)
 
 
 def test_integration_autoencoder_imagenet_gcc4(cluster, dirname, exes, weekly):
-  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc4', weekly)
-
-
-def test_integration_autoencoder_mnist_gcc7(cluster, dirname, exes):
-  if cluster in ['catalyst', 'quartz', 'pascal']:
-    pytest.skip('FIXME')
-    # Catalyst Errors:
-    # 0.219383 != 0.207514 conv_autoencoder_mnist Model 0 Epoch 0 training_objective_function
-  skeleton_autoencoder_mnist(cluster, dirname, exes, 'gcc7')
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc4', weekly)
 
 
 def test_integration_autoencoder_imagenet_gcc7(cluster, dirname, exes, weekly):
-    if cluster == 'pascal':
-        pytest.skip('FIXME')
     skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc7', weekly)
-
-
-def test_integration_autoencoder_mnist_intel18(cluster, dirname, exes):
-  skeleton_autoencoder_mnist(cluster, dirname, exes, 'intel18')
 
 
 def test_integration_autoencoder_imagenet_intel18(cluster, dirname, exes,
                                                   weekly):
-  skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel18', weekly)
-
-
-# Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_mnist_exe' --exe=<executable>
-def test_integration_autoencoder_mnist_exe(cluster, dirname, exe):
-    if exe is None:
-        pytest.skip('Non-local testing')
-    exes = {'exe': exe}
-    skeleton_autoencoder_mnist(cluster, dirname, exes, 'exe', True)
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel18', weekly)
 
 
 # Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>
 def test_integration_autoencoder_imagenet_exe(cluster, dirname, exe):
     if exe is None:
-        pytest.skip('Non-local testing')
+        e = 'test_integration_autoencoder_imagenet_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip()
     exes = {'exe': exe}
     skeleton_autoencoder_imagenet(cluster, dirname, exes, 'exe', True)

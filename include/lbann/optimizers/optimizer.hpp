@@ -42,31 +42,31 @@
 
 namespace lbann {
 
-/** Status of values in objective function gradient. */
+/** @brief Status of values in objective function gradient. */
 enum class optimizer_gradient_status {
-  /** Values can be accessed immediately. */
+  /** @brief Values can be accessed immediately. */
   ready,
   /** @brief Values have been cleared.
-   *  @detailed Buffer must be zeroed out before accessing.
+   *  @details Buffer must be zeroed out before accessing.
    */
   cleared,
-  /** Allreduce is needed before accessing values. */
+  /** @brief Allreduce is needed before accessing values. */
   allreduce_needed,
   /** @brief Allreduce on values is in progress.
-   *  @detailed Non-blocking allreduce must be synchronized before
+   *  @details Non-blocking allreduce must be synchronized before
    *  accessing.
    */
   allreduce_started
 };
 
-/** Human-readable string for status of gradient in optimizer. */
+/** @brief Human-readable string for status of gradient in optimizer. */
 std::string to_string(optimizer_gradient_status status);
 
 // Forward declarations
 class weights;
 class persist;
 
-/** Abstract base class for gradient-based optimization algorithms.
+/** @brief Abstract base class for gradient-based optimization algorithms.
  *
  *  Uses a variant of stochastic gradient descent to optimize the
  *  values in a @c weights instance. The weights values are
@@ -82,31 +82,31 @@ public:
   optimizer& operator=(const optimizer& other);
   virtual ~optimizer() = default;
 
-  /** Create a copy of the class instance.
+  /** @brief Create a copy of the class instance.
    *
    *  The caller is responsible for deallocating the returned object.
    */
   virtual optimizer* copy() const = 0;
 
-  /** Human-readable type name. */
+  /** @brief Human-readable type name. */
   virtual std::string get_type() const = 0;
-  /** Human-readable description. */
+  /** @brief Human-readable description. */
   virtual description get_description() const;
 
-  /** Weights being optimized. */
+  /** @brief Weights being optimized. */
   weights& get_weights();
-  /** Weights being optimized. */
+  /** @brief Weights being optimized. */
   const weights& get_weights() const;
-  /** Weights being optimized. */
+  /** @brief Weights being optimized. */
   void set_weights(weights* w) { m_weights = w; }
 
-  /** Objective function gradient w.r.t. the weights.
+  /** @brief Objective function gradient w.r.t. the weights.
    *
    *  An allreduce may be launched and/or synchronized if needed.
    */
   AbsDistMat& get_gradient();
 
-  /** Add to the objective function gradient w.r.t. the weights.
+  /** @brief Add to the objective function gradient w.r.t. the weights.
    *  @param gradient           Contribution to gradient.
    *  @param scale              Scaling factor for gradient
    *                            contribution.
@@ -121,12 +121,35 @@ public:
   void add_to_gradient(const AbsDistMat& gradient,
                        DataType scale = DataType(1),
                        bool allreduce_needed = false);
-  /** Zero out the objective function gradient w.r.t. the weights. */
+  /** @brief Zero out the objective function gradient w.r.t. the weights. */
   void clear_gradient();
+  /** @brief Get the gradient buffer.
+   *
+   *  This provides access to the underlying gradient buffer, which may be
+   *  directly summed into. This buffer should be considered ephemeral and not
+   *  stored. The caller must also ensure the buffer has an appropriate
+   *  distribution. buf_scale provides the caller with a scale factor that must
+   *  be applied to the gradient buffer before writing to it, and in_scale
+   *  provides a scaling factor that must be applied to the user's data.
+   *  Essentially, this enables computations of the form
+   *  gradient = buf_scale*gradient + in_scale*new_gradient
+   *  This is an expert-mode function and is intended to help eliminate copies
+   *  and facilitate kernel fusion.
+   *
+   *  @param buf_scale A scale factor provided to the caller to scale the
+   *  returned buffer by.
+   *  @param in_scale A scale factor provided to the caller to scale their
+   *  gradient contributions by.
+   *  @param allreduce_needed Whether this gradient contribution will need to
+   *  be allreduced.
+   */
+  AbsDistMat& get_gradient_buffer(DataType& buf_scale,
+                                  DataType& in_scale,
+                                  bool allreduce_needed = false);
 
-  /** Objects that are expected to contribute to the gradient. */
+  /** @brief Objects that are expected to contribute to the gradient. */
   El::Int get_num_gradient_sources() const;
-  /** Register a gradient source.
+  /** @brief Register a gradient source.
    *
    *  Any object that uses the weights and influences the objective
    *  function is expected to contribute to the objective function
@@ -134,7 +157,7 @@ public:
    *  forward prop.
    */
   void add_gradient_source(const void* source);
-  /** Unregister a gradient source.
+  /** @brief Unregister a gradient source.
    *
    *  When an object adds its contribution to the objective function
    *  gradient during back prop, it should unregister itself. If there
@@ -143,36 +166,36 @@ public:
    */
   void remove_gradient_source(const void* source);
 
-  /** Must be called before training.
+  /** @brief Must be called before training.
    *
    *  @param w Weights being optimized. If null, no change is made to
    *  the weights.
    */
   virtual void setup(weights* w = nullptr);
 
-  /** Optimization step. */
+  /** @brief Optimization step. */
   void step();
 
-  /** LBANN communicator. */
+  /** @brief LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
-  /** LBANN communicator. */
+  /** @brief LBANN communicator. */
   const lbann_comm& get_comm() const { return *m_comm; }
 
-  /** Scaling factor for optimization step sizes. */
+  /** @brief Scaling factor for optimization step sizes. */
   DataType get_learning_rate() const;
-  /** Scaling factor for optimization step sizes. */
+  /** @brief Scaling factor for optimization step sizes. */
   void set_learning_rate(DataType learning_rate);
 
-  /** Time spent in optimization step. */
+  /** @brief Time spent in optimization step. */
   EvalType get_step_time() const { return m_step_time; }
-  /** Reset stats counters. */
+  /** @brief Reset stats counters. */
   virtual void reset_counters() { m_step_time = 0; }
 
 protected:
 
-  /** Computation for an optimization step.
+  /** @brief Computation for an optimization step.
    *
-   *  @c values and @gradient can be assumed to have the same
+   *  @c values and @c gradient can be assumed to have the same
    *  distribution.
    */
   virtual void step_compute(AbsDistMat& values,
@@ -180,16 +203,16 @@ protected:
 
 private:
 
-  /** LBANN communicator. */
+  /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
-  /** Weights being optimized. */
+  /** @brief Weights being optimized. */
   weights* m_weights = nullptr;
 
-  /** Objective function gradient w.r.t. weights. */
+  /** @brief Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMat> m_gradient;
 
-  /** Workspace matrix.
+  /** @brief Workspace matrix.
    *
    *  Helps ensure gradient contributions are in the right
    *  distribution. Most of the time, this should just be a matrix
@@ -197,7 +220,7 @@ private:
    */
   std::unique_ptr<AbsDistMat> m_gradient_v;
 
-  /** Sources of gradient contributions.
+  /** @brief Sources of gradient contributions.
    *
    *  This set contains pointers to objects (e.g. layers and objective
    *  function terms) that contribute to the objective function
@@ -209,16 +232,16 @@ private:
    */
   std::unordered_set<const void*> m_gradient_sources;
 
-  /** Status of values in objective function gradient. */
+  /** @brief Status of values in objective function gradient. */
   optimizer_gradient_status m_gradient_status = optimizer_gradient_status::cleared;
 
-  /** Communication request object for gradient allreduce.
+  /** @brief Communication request object for gradient allreduce.
    *
    *  Used to synchronize non-blocking allreduce.
    */
   Al::request m_gradient_allreduce_req;
 
-  /** Scaling factor for optimization step sizes.
+  /** @brief Scaling factor for optimization step sizes.
    *
    *  This is not used by the base optimizer class, but is currently
    *  used by all derived optimizer classes. There are several cases
@@ -228,17 +251,17 @@ private:
    */
   DataType m_learning_rate;
 
-  /** Time spent in optimization step. */
+  /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
 
-  /** Launch non-blocking allreduce on the gradient, if needed.
+  /** @brief Launch non-blocking allreduce on the gradient, if needed.
    *
    *  Does nothing if an allreduce is not needed or has already been
    *  started.
    */
   void start_gradient_allreduce();
 
-  /** Synchronize non-blocking allreduce on the gradient, if needed.
+  /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
    *
    *  Does nothing if an allreduce isn't needed. Throws an exception
    *  if an allreduce is needed but hasn't been started.
