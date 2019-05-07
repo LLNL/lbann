@@ -273,7 +273,7 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
       if (distconv_enabled()) {
         fp_compute_distconv();
-        if (early_terminate_last_iteration()) {
+        if (early_terminate_last_iteration() && keep_original()) {
           fp_compute_cudnn();
           dump_reference_activations();
         }
@@ -293,7 +293,7 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
       if (distconv_enabled()) {
         bp_compute_distconv();
-        if (early_terminate_last_iteration()) {
+        if (early_terminate_last_iteration() && keep_original()) {
           bp_compute_cudnn();
           dump_reference_error_signals();
         }

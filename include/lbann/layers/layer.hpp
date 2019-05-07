@@ -599,6 +599,9 @@ protected:
  protected:
   virtual bool keep_original_input() const { return m_keep_original_input; }
   virtual bool keep_original_output() const { return m_keep_original_output; }
+  virtual bool keep_original() const {
+    return keep_original_input() && keep_original_output();
+  }
   virtual void fp_setup_distconv(int mini_batch_size);
   virtual void bp_setup_distconv(int mini_batch_size);
 

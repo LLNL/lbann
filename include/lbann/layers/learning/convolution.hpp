@@ -143,7 +143,8 @@ protected:
         apply_convolution_distconv();
         apply_bias_distconv();
         this->copy_out_activations();
-        if (this->early_terminate_last_iteration()) {
+        if (this->early_terminate_last_iteration() &&
+            this->keep_original()) {
           base_convolution_layer<Device>::apply_convolution_cudnn(true);
           base_convolution_layer<Device>::apply_bias_cudnn();
           this->dump_reference_activations();
@@ -178,7 +179,8 @@ protected:
         }
         compute_gradients_distconv();
         apply_transposed_convolution_distconv();
-        if (this->early_terminate_last_iteration()) {
+        if (this->early_terminate_last_iteration() &&
+            this->keep_original()) {
           base_convolution_layer<Device>::compute_gradients_cudnn(false);
           base_convolution_layer<Device>::apply_transposed_convolution_cudnn(false);
           this->dump_reference_error_signals();

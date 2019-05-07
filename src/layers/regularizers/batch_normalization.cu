@@ -427,7 +427,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled()) {
     fp_compute_distconv();
-    if (!early_terminate_last_iteration()) {
+    if (!early_terminate_last_iteration() || !keep_original()) {
       return;
     }
   }
@@ -548,7 +548,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 #ifdef LBANN_HAS_DISTCONV
   if (distconv_enabled()) {
     bp_compute_distconv();
-    if (!early_terminate_last_iteration()) {
+    if (!early_terminate_last_iteration() || !keep_original()) {
       return;
     }
     assert0(dc::tensor::View(

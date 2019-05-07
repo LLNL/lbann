@@ -77,7 +77,8 @@ void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),
                                            get_activations());
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration()) {
+  if (distconv_enabled() && early_terminate_last_iteration() &&
+      keep_original()) {
     dump_reference_activations();
   }
 #endif // LBANN_HAS_DISTCONV
@@ -96,7 +97,8 @@ void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                                      get_prev_error_signals(),
                                                      get_error_signals());
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration()) {
+  if (distconv_enabled() && early_terminate_last_iteration() &&
+      keep_original()) {
     dump_reference_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV

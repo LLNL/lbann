@@ -147,7 +147,8 @@ void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
            get_local_prev_activations(),
            get_local_activations());
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration()) {
+  if (distconv_enabled() && early_terminate_last_iteration() &&
+      keep_original()) {
     dump_reference_activations();
   }
 #endif // LBANN_HAS_DISTCONV
@@ -168,7 +169,8 @@ void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
            get_local_prev_error_signals(),
            get_local_error_signals());
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration()) {
+  if (distconv_enabled() && early_terminate_last_iteration() &&
+      keep_original()) {
     dump_reference_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
