@@ -160,6 +160,7 @@ void lbann_comm::allreduce(AbsMat& m,
     t = std::type_index(typeid(::Al::NCCLBackend));
     // If available, use the MPI-CUDA backend for small matrices.
 #ifdef AL_HAS_MPI_CUDA
+#if 0 // Always use NCCL
     // Tuned for Sierra.
     if ((El::mpi::Size(c) >= 64 && local_size <= 4096) ||
         (El::mpi::Size(c) >= 128 && local_size <= 8192) ||
@@ -168,6 +169,7 @@ void lbann_comm::allreduce(AbsMat& m,
         (El::mpi::Size(c) >= 2048 && local_size <= 262144)) {
       t = std::type_index(typeid(::Al::MPICUDABackend));
     }
+#endif
 #endif  // AL_HAS_MPI_CUDA
 #elif defined(AL_HAS_MPI_CUDA)
     t = std::type_index(typeid(::Al::MPICUDABackend));
@@ -248,6 +250,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
     // If available, use the MPI-CUDA backend for small matrices.
 #ifdef AL_HAS_MPI_CUDA
     // Tuned for Sierra.
+#if 0 // Always use NCCL
     if ((El::mpi::Size(c) >= 64 && local_size <= 4096) ||
         (El::mpi::Size(c) >= 128 && local_size <= 8192) ||
         (El::mpi::Size(c) >= 256 && local_size <= 32768) ||
@@ -255,6 +258,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
         (El::mpi::Size(c) >= 2048 && local_size <= 262144)) {
       t = std::type_index(typeid(::Al::MPICUDABackend));
     }
+#endif
 #endif  // AL_HAS_MPI_CUDA
 #elif defined(AL_HAS_MPI_CUDA)
     t = std::type_index(typeid(::Al::MPICUDABackend));
