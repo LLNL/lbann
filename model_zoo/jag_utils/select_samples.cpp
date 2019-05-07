@@ -21,7 +21,7 @@ using namespace lbann;
 
 int main(int argc, char **argv) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   int rank, np;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   std::stringstream err;
 
   // sanity check the cmd line
-  if (! (opts->has_string("index_fn") && opts->has_string("sample_mapping_fn") 
+  if (! (opts->has_string("index_fn") && opts->has_string("sample_mapping_fn")
          && opts->has_int("num_samples") && opts->has_int("random_seed")
          && opts->has_string("output_fn"))) {
     if (master) {
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 
   //==========================================================================
   // master builds two maps: <string, set<int>> maps a filename to the
-  // set of indices (not sample_ids; that comes later!) that are to be 
+  // set of indices (not sample_ids; that comes later!) that are to be
   // included and excluded
   if (master) {
 
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
     int num_valid, num_invalid, num_files;
     in >> num_valid >> num_invalid >> num_files;
-    getline(in, line);  //discard newline 
+    getline(in, line);  //discard newline
     string base_dir;
     getline(in, base_dir);
     cerr << "input index file contains " << num_valid << " valid samples\n";
@@ -130,7 +130,7 @@ int main(int argc, char **argv) {
         break;
       }
     }
-  
+
     // loop over each entry from in input index file; determine which, if any,
     // local indices will be added to the INCLUSION index
     int first = 0;
@@ -281,10 +281,9 @@ int main(int argc, char **argv) {
       }
     }
 
-    out << total_good << " " << total_bad << " " << num_include_files 
+    out << total_good << " " << total_bad << " " << num_include_files
             << "\n" << base_dir << "\n" << sout.str();
   }
 
-
-  finalize(comm);
+  return EXIT_SUCCESS;
 }

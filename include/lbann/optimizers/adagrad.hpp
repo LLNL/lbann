@@ -24,67 +24,67 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_ADAGRAD_HPP
-#define LBANN_OPTIMIZER_ADAGRAD_HPP
+#ifndef LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
-/** AdaGrad optimizer. */
+/** AdaGrad optimizer.
+ *
+ *  Reference:
+ *
+ *  John Duchi, Elad Hazan, and Yoram Singer. "Adaptive subgradient
+ *  methods for online learning and stochastic optimization." Journal
+ *  of Machine Learning Research 12, no. Jul (2011): 2121-2159.
+ */
 class adagrad : public optimizer {
- public:
+public:
 
-  /** Constructor. */
-  adagrad(lbann_comm *comm,
-          DataType learning_rate,
-          DataType eps = DataType(1e-8));
-
-  /** Copy constructor. */
+  adagrad(lbann_comm* comm, DataType learning_rate, DataType eps = 1e-8);
   adagrad(const adagrad& other);
-  /** Copy assignment operator. */
   adagrad& operator=(const adagrad& other);
-  /** Destructor. */
-  ~adagrad() override;
-  /** Create a copy. */
+  ~adagrad() override = default;
   adagrad* copy() const override { return new adagrad(*this); }
 
-  /** Get the optimizer name. */
+  /** Human-readable type name. */
   std::string get_type() const override { return "AdaGrad"; }
   /** Human-readable description. */
   description get_description() const override;
 
-  /** Setup optimizer. */
-  void setup(weights& w) override;
+  void setup(weights* w = nullptr) override;
 
-  /** Perform the computation in an optimization step. */
+protected:
+
+  /** Computation for an optimization step. */
   void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
-#ifdef LBANN_HAS_CUDNN
-  /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
-#endif // LBANN_HAS_CUDNN
 
-  /// Set parameters to optimize and initialize optimizer
-  void setup(AbsDistMat *parameters) ;
-  /// Update parameters using objective function gradient
-  void update(const AbsDistMat *gradient) ;
-  std::string name() const { return "adagrad"; }
-
- private:
-
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
+private:
 
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** AdaGrad cache. */
-  AbsDistMat *m_cache;
+  std::unique_ptr<AbsDistMat> m_cache;
+
+  /** CPU implementation of optimization step. */
+  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+#ifdef LBANN_HAS_CUDNN
+  /** GPU implementation of optimization step. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+#endif // LBANN_HAS_CUDNN
+
+  // ===========================================
+  // Checkpointing
+  // ===========================================
+
+  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
+  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
+  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_OPTIMIZER_ADAGRAD_HPP
+#endif // LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED

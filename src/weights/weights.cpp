@@ -95,7 +95,7 @@ weights::weights(const weights& other)
   m_optimizer.reset(other.m_optimizer ?
                     other.m_optimizer->copy() : nullptr);
   if (m_optimizer != nullptr) {
-    m_optimizer->set_weights(*this);
+    m_optimizer->set_weights(this);
   }
 
 }
@@ -115,7 +115,7 @@ weights& weights::operator=(const weights& other) {
   m_optimizer.reset(other.m_optimizer ?
                     other.m_optimizer->copy() : nullptr);
   if (m_optimizer != nullptr) {
-    m_optimizer->set_weights(*this);
+    m_optimizer->set_weights(this);
   }
 
   return *this;
@@ -288,7 +288,7 @@ void weights::setup() {
 
   // Setup optimizer
   if (m_optimizer != nullptr) {
-    m_optimizer->setup(*this);
+    m_optimizer->setup(this);
   }
 
 }

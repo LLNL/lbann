@@ -48,7 +48,7 @@ void lbann_callback_io::on_epoch_end(model *m) {
         std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_trained() << " training samples of "
                   << input->get_total_num_training_samples() << " ("
-                  << input->get_num_samples_trained() / m->get_cur_epoch() << " per epoch)" << std::endl;
+                  << input->get_num_samples_trained() / m->get_epoch() << " per epoch)" << std::endl;
       }
     }
   }
@@ -64,7 +64,7 @@ void lbann_callback_io::on_test_end(model *m) {
         std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_tested() << " test samples of "
                   << input->get_total_num_testing_samples() << " ("
-                  << input->get_num_samples_tested() / m->get_cur_epoch() << " per epoch)" << std::endl;
+                  << input->get_num_samples_tested() / m->get_epoch() << " per epoch)" << std::endl;
       }
     }
   }

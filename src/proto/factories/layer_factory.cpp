@@ -229,7 +229,7 @@ std::unique_ptr<Layer> construct_layer(
     return lbann::make_unique<split_layer<Layout, Device>>(comm);
   }
   if (proto_layer.has_concatenation()) {
-    const auto& axis = proto_layer.concatenation().concatenation_axis();
+    const auto& axis = proto_layer.concatenation().axis();
     return lbann::make_unique<concatenation_layer<Layout, Device>>(comm, axis);
   }
   if (proto_layer.has_slice()) {
@@ -260,7 +260,7 @@ std::unique_ptr<Layer> construct_layer(
       return nullptr;
     }
     return lbann::make_unique<slice_layer<Layout, Device>>(
-             comm, params.slice_axis(), slice_points);
+             comm, params.axis(), slice_points);
   }
   if (proto_layer.has_hadamard()) {
     return lbann::make_unique<hadamard_layer<Layout, Device>>(comm);
@@ -297,11 +297,6 @@ std::unique_ptr<Layer> construct_layer(
       return lbann::make_unique<uniform_layer<Layout, Device>>(
                comm, dims, params.min(), params.max());
     }
-  }
-  if (proto_layer.has_zero()) {
-    const auto& params = proto_layer.zero();
-    return lbann::make_unique<zero_layer<Layout>>(
-             comm, params.first_half(), params.second_half());
   }
   if (proto_layer.has_pooling()) {
     const auto& params = proto_layer.pooling();
@@ -610,6 +605,8 @@ std::unique_ptr<Layer> construct_layer(
                   "a data-parallel layout");
     }
   }
+  CONSTRUCT_LAYER(mini_batch_index);
+  CONSTRUCT_LAYER(mini_batch_size);
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

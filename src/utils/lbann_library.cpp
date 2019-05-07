@@ -30,7 +30,7 @@
 namespace lbann {
 
 /// Setup I/O thread pool that is shared across all models
-std::shared_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
   int num_io_threads = num_free_cores_per_process(comm);
 
   options *opts = options::get();
@@ -48,40 +48,43 @@ std::shared_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
       " (Limited to # Unused Compute Cores or 1)" << std::endl;
   }
 
-  std::shared_ptr<thread_pool> io_thread_pool = std::make_shared<thread_pool>();
+  auto io_thread_pool = make_unique<thread_pool>();
   io_thread_pool->launch_pinned_threads(num_io_threads, io_threads_offset);
 
   return io_thread_pool;
 }
 
-model *build_model_from_prototext(int argc, char **argv,
-                                  lbann_data::LbannPB &pb,
-                                  lbann_comm *comm,
-                                  std::shared_ptr<thread_pool> io_thread_pool,
-                                  bool first_model) {
+std::unique_ptr<model> build_model_from_prototext(
+  int argc, char **argv,
+  lbann_data::LbannPB &pb,
+  lbann_comm *comm,
+  std::shared_ptr<thread_pool> io_thread_pool,
+  bool first_model) {
+
   int random_seed = lbann_default_random_seed;
   bool master = comm->am_world_master();
-  if (master) std::cerr << "starting build_model_from_prototext\n";
-  model *model = nullptr; //d hysom bad namimg! should fix
+  if (master) {
+    std::cerr << "starting build_model_from_prototext" << std::endl;
+  }
 
-  std::stringstream err;
+  std::ostringstream err;
   options *opts = options::get();
 
   // Optionally over-ride some values in prototext
-  get_cmdline_overrides(comm, pb);
+  get_cmdline_overrides(*comm, pb);
 
-  customize_data_readers_index_list(comm, pb);
+  customize_data_readers_index_list(*comm, pb);
 
   lbann_data::Model *pb_model = pb.mutable_model();
 
   // Adjust the number of parallel readers; this may be adjusted
   // after calling split_trainers()
-  set_num_parallel_readers(comm, pb);
+  set_num_parallel_readers(*comm, pb);
 
   // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_background_io() && io_thread_pool->get_num_threads() != 1) {
+  if(pb_model->serialize_io() && io_thread_pool->get_num_threads() != 1) {
     if(master) {
-      std::cout << "Model " << pb_model->name() << " serialized the background I/O threads" << std::endl;
+      std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
     }
     io_thread_pool->relaunch_pinned_threads(1);
   }
@@ -116,7 +119,7 @@ model *build_model_from_prototext(int argc, char **argv,
   if (pb_model->random_init_models_differently()) {
     if (master) {
       std::cout << "WARNING: Ignoring random_init_models_differently " <<
-          "due to sequential consistency" << std::endl;
+        "due to sequential consistency" << std::endl;
     }
   }
 #endif
@@ -129,6 +132,7 @@ model *build_model_from_prototext(int argc, char **argv,
     procs_per_trainer = comm->get_procs_in_world();
   }
   if (first_model) {
+    // DISTCONV: split_trainers does not work (why?)
     //comm->split_trainers(procs_per_trainer);
     if (pb_model->num_parallel_readers() > procs_per_trainer) {
       pb_model->set_num_parallel_readers(procs_per_trainer);
@@ -139,7 +143,7 @@ model *build_model_from_prototext(int argc, char **argv,
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
-  save_session(comm, argc, argv, pb);
+  save_session(*comm, argc, argv, pb);
 
   // Report useful information
   if (master) {
@@ -165,24 +169,26 @@ model *build_model_from_prototext(int argc, char **argv,
   // share a single copy. See data_reader_jag_conduit_hdf5 for example
   if (first_model) {
     if (opts->has_string("share_data_reader_data")) {
-      for (auto t : data_readers) {
+      for (auto&& t : data_readers) {
         opts->set_ptr((void*)t.second);
       }
     }
   }
 
   // User feedback
-  print_parameters(comm, pb);
+  print_parameters(*comm, pb);
 
   // Initalize model
-  model = proto::construct_model(comm,
-                                 data_readers,
-                                 pb.optimizer(),
-                                 pb.model());
-  model->setup(io_thread_pool);
+  std::unique_ptr<model> ret_model{
+    proto::construct_model(comm,
+                           data_readers,
+                           pb.optimizer(),
+                           pb.model())
+  };
+  ret_model->setup(std::move(io_thread_pool));
 
   if(opts->get_bool("disable_background_io_activity")) {
-    model->allow_background_io_activity(false);
+    ret_model->allow_background_io_activity(false);
   }
 
   //under development; experimental
@@ -190,15 +196,10 @@ model *build_model_from_prototext(int argc, char **argv,
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }
-    for (auto r : data_readers) {
+    for (auto&& r : data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(model);
+      r.second->setup_data_store(ret_model.get(), pb_model->mini_batch_size());
     }
-  }
-
-  if (opts->has_string("create_tarball")) {
-    finalize(comm);
-    return 0;
   }
 
   // restart model from checkpoint if we have one
@@ -206,35 +207,37 @@ model *build_model_from_prototext(int argc, char **argv,
   //model->restartShared();
 
   if (comm->am_world_master()) {
-    std::cout << std::endl;
-    std::cout << model->get_description();
-    std::cout << "Callbacks:" << std::endl;
-    for (lbann_callback *cb : model->get_callbacks()) {
+    std::cout << "\n"
+              << ret_model->get_description()
+              << "Callbacks:" << std::endl;
+    for (lbann_callback *cb : ret_model->get_callbacks()) {
       std::cout << cb->name() << std::endl;
     }
   }
 
+  if (first_model) {
 #ifndef LBANN_DETERMINISTIC
-  // Under normal conditions, reinitialize the random number generator so
-  // that regularization techniques (e.g. dropout) generate unique patterns
-  // on different ranks.
-  init_random(random_seed + comm->get_rank_in_world());
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    init_random(random_seed + comm->get_rank_in_world());
 #else
-  if(comm->am_world_master()) {
-    std::cout <<
+    if(comm->am_world_master()) {
+      std::cout <<
         "--------------------------------------------------------------------------------\n"
         "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
         "--------------------------------------------------------------------------------\n";
-  }
+    }
 #endif
-
-  return model;
+  }
+  return ret_model;
 }
 
 void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
             << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
+            << "  Total number of processes  : " << comm->get_procs_in_world() << std::endl
             << "  OpenMP threads per process : " << omp_get_max_threads() << std::endl
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;

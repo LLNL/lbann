@@ -112,9 +112,11 @@ option(LBANN_WITH_NVPROF
 
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
-
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
+
+option(LBANN_WITH_UNIT_TESTING
+  "Enable the unit testing framework (requires Catch2)" OFF)
 
 # Enable parallel random matrix generation, if possible
 option(LBANN_DETERMINISTIC
@@ -349,15 +351,15 @@ if (LBANN_WITH_CONDUIT)
     message(STATUS "Found HDF5: ${HDF5_DIR}")
   endif ()
 
-  find_package(CONDUIT CONFIG QUIET
-    HINTS ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
+  find_package(Conduit CONFIG QUIET
+    HINTS ${Conduit_DIR} $ENV{Conduit_DIR} ${CONDUIT_DIR} $ENV{CONDUIT_DIR}
     PATH_SUFFIXES lib64/cmake lib/cmake
     NO_DEFAULT_PATH)
-  if (NOT CONDUIT_FOUND)
-    find_package(CONDUIT CONFIG QUIET REQUIRED
+  if (NOT Conduit_FOUND)
+    find_package(Conduit CONFIG QUIET REQUIRED
       PATH_SUFFIXES lib64/cmake lib/cmake)
   endif ()
-  message(STATUS "Found CONDUIT: ${CONDUIT_DIR}")
+  message(STATUS "Found CONDUIT: ${Conduit_DIR}")
 
   # Ugh. I don't like that this requires intimate knowledge of
   # specific targets that CONDUIT exports. It should support
@@ -440,6 +442,25 @@ if (LBANN_WITH_DISTCONV)
     set(LBANN_WITH_DISTCONV OFF)
   endif(NOT P2P_FOUND)
 endif (LBANN_WITH_DISTCONV)
+
+if (LBANN_WITH_UNIT_TESTING)
+  find_package(Catch2 2.0.0 CONFIG QUIET
+    HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
+    PATH_SUFFIXES lib64/cmake/Catch2 lib/cmake/Catch2
+    NO_DEFAULT_PATH)
+  if (NOT Catch2_FOUND)
+    find_package(Catch2 2.0.0 CONFIG QUIET REQUIRED)
+  endif ()
+  message(STATUS "Found Catch2: ${Catch2_DIR}")
+
+  # Now that Catch2 has been found, start adding the unit tests
+  include(CTest)
+  include(Catch)
+  add_subdirectory(src/utils/unit_test)
+
+  # Add this one last
+  add_subdirectory(unit_test)
+endif (LBANN_WITH_UNIT_TESTING)
 
 # Handle the documentation
 add_subdirectory(docs)

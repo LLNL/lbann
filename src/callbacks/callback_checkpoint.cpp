@@ -76,7 +76,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
   m_checkpoint_shared = false;
   m_checkpoint_dist = false;
   lbann_comm *comm = m->get_comm();
-  int cur_epoch = m->get_cur_epoch();
+  int cur_epoch = m->get_epoch();
   // If we are at the end of a training epoch and the training epoch lands on defined interval, ckpt
   if (!m_checkpoint_shared && m_checkpoint_epochs > 0 && (p.get_cb_type() == callback_type::epoch || p.get_cb_type() == callback_type::validation)){
       m_checkpoint_shared = (cur_epoch > 0) && (cur_epoch % m_checkpoint_epochs == 0);
@@ -88,11 +88,11 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
 
   // If we are at the end of a training mb step and the training mb step lands on defined interval, trigger checkpoint
   if (!m_checkpoint_shared && m_checkpoint_steps > 0) {
-    m_checkpoint_shared = (m->get_cur_step() > 0) && (m->get_cur_step() % m_checkpoint_steps == 0);
+    m_checkpoint_shared = (m->get_step(execution_mode::training) > 0) && (m->get_step(execution_mode::training) % m_checkpoint_steps == 0);
   }
 
   if(!m_checkpoint_dist && m_ckpt_dist_steps > 0){
-      m_checkpoint_dist = (m->get_cur_step() > 0) && (m->get_cur_step() % m_ckpt_dist_steps == 0);
+      m_checkpoint_dist = (m->get_step(execution_mode::training) > 0) && (m->get_step(execution_mode::training) % m_ckpt_dist_steps == 0);
   }
 
   // check the clock if time-based checkpoint is enabled
@@ -135,8 +135,8 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   comm->trainer_barrier();
   // let user know we're saving a checkpoint
   if (comm->am_trainer_master()) {
-    epoch = m->get_cur_epoch();
-    step = m->get_cur_step();
+    epoch = m->get_epoch();
+    step = m->get_step(execution_mode::training);
     timer.Start();
     printf("Checkpoint: epoch %d step %d ...\n", epoch, step);
     fflush(stdout);

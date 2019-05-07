@@ -25,6 +25,8 @@
 //
 // data_reader_triplet .hpp .cpp - data reader to use triplet patches
 //                                 generated offline.
+// Depreciated and replaced by data_reader_multihead_siamese .hpp .cpp.
+// Kept here just for reference.
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_triplet.hpp"
