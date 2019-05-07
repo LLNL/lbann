@@ -113,6 +113,9 @@ option(LBANN_WITH_NVPROF
 option(LBANN_WITH_PYTHON
   "Install Python frontend and enable embedded Python" ON)
 
+option(LBANN_WITH_PYTHON_USER_INSTALL
+  "Install Python frontend and enable embedded Python in the users .local site-packages" OFF)
+
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
 option(LBANN_WITH_VTUNE
@@ -635,7 +638,14 @@ if (LBANN_HAS_PYTHON)
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/setup.py.in"
     "${_SETUP_PY}"
     @ONLY)
-  install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --user)")
+
+  if (LBANN_WITH_PYTHON_USER_INSTALL)
+    # Install the python packages into the CMAKE install directory
+    # Use either --root as "/" and --prefix as the install prefix or --root as the install prefix and then --prefix as "."
+    install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --force --prefix . --root ${CMAKE_INSTALL_PREFIX})")
+  else ()
+    install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --user)")
+  endif (LBANN_WITH_PYTHON_USER_INSTALL)
 
 endif (LBANN_HAS_PYTHON)
 
