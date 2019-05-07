@@ -292,12 +292,17 @@ if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
 
+# Find Python
+# Note: This uses the Python module in cmake/modules, not the module
+# that comes included with CMake. See the file for a discussion of the
+# differences.
 if (LBANN_WITH_PYTHON)
-  find_package(Python REQUIRED COMPONENTS Interpreter Development)
-  if (Python_VERSION_MAJOR LESS 3)
+  find_package(Python REQUIRED)
+  set(LBANN_HAS_PYTHON "${Python_FOUND}")
+  if (NOT Python_VERSION_MAJOR EQUAL 3)
+    set(LBANN_HAS_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
-  set(LBANN_HAS_PYTHON ${Python_FOUND})
 endif (LBANN_WITH_PYTHON)
 
 if (LBANN_WITH_VTUNE)
@@ -635,7 +640,7 @@ if (LBANN_HAS_PYTHON)
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/setup.py.in"
     "${_SETUP_PY}"
     @ONLY)
-  install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --user)")
+  install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install)")
 
 endif (LBANN_HAS_PYTHON)
 
