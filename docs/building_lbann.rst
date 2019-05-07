@@ -100,7 +100,7 @@ Setup Spack and local base tools
 
 1.  Download and install `Spack <https://github.com/llnl/spack>`_.
     Additionally setup shell support as discussed
-    `here <https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_.
+    `here b<https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_.
 
     .. code-block:: bash
 
@@ -124,6 +124,18 @@ Setup Spack and local base tools
     + Note to unload unwanted modules you can execute :bash:`ml` with
       package names prepended with a dash, e.g.: :bash:`ml -intel`. To
       unload all currently loaded modules, use :bash:`ml purge`.
+
+3.  Optionally, setup your spack environment to take advantages of
+    locally installed tools.  Note that unless your spack environment
+    is explicitly told about tools such as cmake, python, mpi, etc. it
+    will install everything that LBANN and all of its dependencies
+    require. This can take quite a long time, but only has to be done
+    once for a given spack repository.  Once all of the standard tools
+    are installed, rebuilding LBANN with spack is quite fast.
+
+    + Advice on setting up paths to external installations is beyond
+      the scope of this document, but is covered in the `Spack
+      Documentation <https://spack.readthedocs.io/>`_.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Building & Installing LBANN as a user
@@ -167,6 +179,8 @@ Here are three easy ways to install LBANN:
       spack install
       spack env loads
       source loads
+
+      spack spec lbann@0.99 +gpu ^python@3.7.2 ^cudnn@7.5.1-10.0-x64 ^openblas threads=openmp
 
 There are numerous options for all of these packages. These options
 can be viewed via commands such as :bash:`spack info lbann`. To

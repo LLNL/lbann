@@ -8,6 +8,8 @@ Support for new layers:
 Performance optimizations:
 
 Model portability & usability:
+ - Python front end for generating neural network architectures
+ - Python interface for launching jobs on HPC systems
 
 Internal features:
 
