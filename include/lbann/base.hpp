@@ -30,6 +30,7 @@
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"
@@ -43,10 +44,6 @@ namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
-
-// support for encodind data_id in conduit::Node, used by
-// conduit_data_store and associated code
-#define SAMPLE_ID_PAD 9
 
 // Note that this should only be used to wrap the thing coming out of
 // initialize()! This will be removed when we have proper RAII around
