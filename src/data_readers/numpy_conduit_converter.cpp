@@ -27,9 +27,7 @@
 
 #include "lbann/data_readers/numpy_conduit_converter.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/file_utils.hpp"
-#include <cnpy.h>
-
+ 
 namespace lbann {
 
 //static
@@ -62,7 +60,6 @@ void numpy_conduit_converter::load_conduit_node(const std::string filename, int 
       char *data = b.data_holder->data();
       output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
     }
-
   } catch (...) {
     //note: npz_load throws std::runtime_error, but I don't want to assume
     //      that won't change in the future
