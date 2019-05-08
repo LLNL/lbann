@@ -27,6 +27,7 @@
 
 #include "lbann/data_readers/numpy_conduit_converter.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include <cnpy.h>
  
 namespace lbann {
