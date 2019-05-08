@@ -636,9 +636,7 @@ if (LBANN_HAS_PYTHON)
 
   # Construct setup.py
   set(_SETUP_PY ${CMAKE_BINARY_DIR}/setup.py)
-  file(RELATIVE_PATH _RELATIVE_PATH_BUILD_DIR_TO_PYTHON_DIR
-    "${CMAKE_BINARY_DIR}"
-    "${CMAKE_SOURCE_DIR}/python")
+  set(_LBANN_PYTHON_DIR "${CMAKE_SOURCE_DIR}/python")
   configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/setup.py.in"
     "${_SETUP_PY}"
