@@ -1358,7 +1358,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   for(const auto key: m_scalar_keys) {
     std::string conduit_field = m_output_scalar_prefix + key;
-    std::string conduit_obj = '/' + pad(std::to_string(sample_id), LBANN_SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+    std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
