@@ -39,6 +39,7 @@ set_full_path(THIS_DIR_SOURCES
   image_preprocessor.cpp
   image_utils.cpp
   numpy_conduit_converter.cpp 
+  data_reader_numpy_npz_conduit.cpp
   )
 
 # Add the subdirectories

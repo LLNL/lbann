@@ -28,10 +28,6 @@
 #define NUMPY_CONDUIT_CONVERTER_HPP
 
 #include "lbann_config.hpp"
-
-#include <cnpy.h>
-#include "lbann/comm.hpp"
-#include <unordered_map>
 #include "conduit/conduit.hpp"
 
 namespace lbann {

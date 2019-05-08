@@ -48,7 +48,16 @@ data_store_conduit::data_store_conduit(
   m_super_node(false),
   m_compacted_sample_size(0),
   m_is_local_cache(false) {
+  m_comm = m_reader->get_comm();
+  if (m_comm == nullptr) {
+    LBANN_ERROR(" m_comm is nullptr");
+  }
 
+  m_world_master = m_comm->am_world_master();
+  m_trainer_master = m_comm->am_trainer_master();
+  m_rank_in_trainer = m_comm->get_rank_in_trainer();
+  m_np_in_trainer = m_comm->get_procs_per_trainer();
+ 
   options *opts = options::get();
   m_super_node = opts->get_bool("super_node");
 
@@ -137,16 +146,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
-
-  m_comm = m_reader->get_comm();
-  if (m_comm == nullptr) {
-    LBANN_ERROR(" m_comm is nullptr");
-  }
-
-  m_world_master = m_comm->am_world_master();
-  m_trainer_master = m_comm->am_trainer_master();
-  m_rank_in_trainer = m_comm->get_rank_in_trainer();
-  m_np_in_trainer = m_comm->get_procs_per_trainer();
 
   if (m_world_master) {
     if (m_super_node) {
@@ -299,7 +298,8 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
     LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
                 + " is not the same size as existing nodes in the data_store "
                 + std::to_string(m_compacted_sample_size) + " != "
-                + std::to_string(nd.total_bytes_compact()));
+                + std::to_string(nd.total_bytes_compact())
+                + " role: " + m_reader->get_role());
   }
   if(!nd.is_contiguous()) {
     LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
@@ -374,8 +374,14 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   }
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  // if not preloaded, and get_label() or get_response() is called, 
+  // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
+    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    if (t3 != m_data.end()) {
+      return t3->second["data"];
+    }
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size())+ " and also failed to find it in m_data; m_data.size: " + std::to_string(m_data.size()) + "; role: " + m_reader->get_role());
   }
 
   return t2->second;
@@ -384,6 +390,7 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
+
   node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -576,7 +583,6 @@ void data_store_conduit::build_owner_map(int mini_batch_size) {
 }
 
 const conduit::Node & data_store_conduit::get_random_node() const {
-std::cout << "\nstarting data_store_conduit::get_random_node()\n";
   size_t sz = m_data.size();
 
   // Deal with edge case

@@ -53,8 +53,6 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-#define SAMPLE_ID_PAD 9
-
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream _err; \
@@ -375,7 +373,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();
         const std::string cur_child = child_names[0];
-        const std::string new_child = pad(std::to_string(i), SAMPLE_ID_PAD, '0');
+        const std::string new_child = LBANN_DATA_ID_STR(i);
         node.rename_child(cur_child, new_child);
         m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
         std::cout << get_type() + ":: replacing with random node, since failed to open file "
@@ -938,7 +936,7 @@ void data_reader_jag_conduit::preload_data_store() {
       m_sample_list.open_samples_file_handle(idx, true);
       load_conduit_node(idx, key, work);
       conduit::Node & node = m_data_store->get_empty_node(idx);
-      const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
+      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
       node[padded_idx] = work;
 
       m_data_store->set_preloaded_conduit_node(idx, node);
@@ -1256,7 +1254,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
 
   for (const auto& emi_tag : m_emi_image_keys) {
     const std::string conduit_field = m_output_image_prefix + emi_tag;
-    const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+    const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1383,7 +1381,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   for(const auto key: m_scalar_keys) {
     std::string conduit_field = m_output_scalar_prefix + key;
-    std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+    std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1418,7 +1416,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
-      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+      const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
         if (data_store_active()) {
           LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1440,7 +1438,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   } else {
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
-      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+      const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
         if (data_store_active()) {
           LBANN_ERROR("Unable to find field " + conduit_obj
