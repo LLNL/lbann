@@ -43,17 +43,19 @@ data_store_conduit::data_store_conduit(
   m_is_setup(false),
   m_reader(reader),
   m_preload(false),
+  m_explicit_loading(false),
   m_owner_map_mb_size(0),
   m_super_node(false),
-  m_compacted_sample_size(0) {
+  m_compacted_sample_size(0),
+  m_is_local_cache(false) {
 
-  m_super_node = options::get()->get_bool("super_node");
+  options *opts = options::get();
+  m_super_node = opts->get_bool("super_node");
 
-  data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
-  if (jag_reader == nullptr) {
-    LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
+  m_is_local_cache = opts->get_bool("data_store_cache");
+  if (m_is_local_cache && opts->get_bool("preload_data_store")) {
+    LBANN_ERROR("you cannot use both of these options: --data_store_cache --preload_data_store");
   }
-
 }
 
 data_store_conduit::~data_store_conduit() {}
@@ -86,11 +88,13 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
   m_preload = rhs.m_preload;
+  m_explicit_loading = rhs.m_explicit_loading;
   m_owner = rhs.m_owner;
   m_shuffled_indices = rhs.m_shuffled_indices;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_super_node = rhs.m_super_node;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
+  m_is_local_cache = rhs.m_is_local_cache;
 
   if(ds_sample_move_list.size() == 0) {
     m_data = rhs.m_data;
@@ -309,9 +313,16 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 }
 
 
-void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node) {
-  if (m_data.find(data_id) != m_data.end()) {
+void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
+  if (already_have == false && m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
+  }
+
+  if (already_have && is_local_cache()) {
+    if (m_data.find(data_id) == m_data.end()) {
+      LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (" + std::to_string(data_id) + ") doesn't exist in m_data");
+    }
+    return;
   }
 
   if (m_owner[data_id] != m_rank_in_trainer) {
@@ -320,7 +331,11 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node) {
     LBANN_ERROR(s.str());
   }
 
-  if (! m_super_node) {
+  if (is_local_cache()) {
+    m_data[data_id] = node;
+  }
+
+  else if (! m_super_node) {
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
   }
@@ -350,6 +365,13 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     }
   }
   */
+  if (is_local_cache()) {
+    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    if (t3 == m_data.end()) {
+      LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data; m_data.size: " + std::to_string(m_data.size()));
+    }  
+    return t3->second;
+  }
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   if (t2 == m_minibatch_data.end()) {
@@ -762,6 +784,12 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
 
   comm->trainer_barrier();
 }
+
+bool data_store_conduit::has_conduit_node(int data_id) const {
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+  return t == m_data.end();
+}
+
 
 }  // namespace lbann
 

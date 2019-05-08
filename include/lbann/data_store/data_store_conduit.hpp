@@ -89,7 +89,9 @@ class data_store_conduit {
   /// returns the conduit node
   const conduit::Node & get_conduit_node(int data_id) const;
 
-  void set_conduit_node(int data_id, conduit::Node &node);
+  /// if 'already_have = true' then the passed 'node' was obtained by a call to
+  /// get_empty_node(). In some operating modes this saves us from copying the node
+  void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, conduit::Node &node);
 
@@ -106,6 +108,10 @@ class data_store_conduit {
 
   bool is_preloaded() { return m_preload; }
 
+  void set_explicit_loading(bool flag) { m_explicit_loading = flag; }
+
+  bool is_explicitly_loading() { return m_explicit_loading; }
+
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
@@ -120,7 +126,12 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
+  bool is_local_cache() const { return m_is_local_cache; }
+
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+    if (is_local_cache()) {
+      return;
+    }
     if (m_super_node) {
       exchange_data_by_super_node(current_pos, mb_size);
     } else {
@@ -128,6 +139,8 @@ class data_store_conduit {
     }
     ++m_n;
   }
+
+  bool has_conduit_node(int data_id) const;
 
 protected :
 
@@ -155,6 +168,9 @@ protected :
 
   /// set to true if data_store is preloaded
   bool m_preload;
+
+  /// set to true if data_store is being explicitly loaded
+  bool m_explicit_loading;
 
   /// maps an index to the processor that owns the associated data
   mutable std::unordered_map<int, int> m_owner;
@@ -227,6 +243,8 @@ protected :
   int build_indices_i_will_recv(int current_pos, int mb_size);
 
   void error_check_compacted_node(const conduit::Node &nd, int data_id);
+
+  bool m_is_local_cache;
 };
 
 }  // namespace lbann
