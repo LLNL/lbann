@@ -37,8 +37,6 @@
 
 namespace lbann {
 
-#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
-
 numpy_npz_conduit_reader::numpy_npz_conduit_reader(const bool shuffle)
   : generic_data_reader(shuffle) {}
 
@@ -147,7 +145,7 @@ void numpy_npz_conduit_reader::preload_data_store() {
 
     conduit::Node node;
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
-    const char *char_ptr = node[DATA_ID_STR(data_id) + "/frm/data"].value();
+    const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
     const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
     label_classes.insert(*label_ptr);
     m_data_store->set_conduit_node(data_id, node);
@@ -222,7 +220,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     } 
   }
 
-  const char *char_data = node[DATA_ID_STR(data_id) + "/data/data"].value();
+  const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/data/data"].value();
   char *char_data_2 = const_cast<char*>(char_data);
 
   if (m_data_word_size == 2) {
@@ -265,7 +263,7 @@ bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   }
 
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-  const char *char_data = node[DATA_ID_STR(data_id)+ "/frm/data"].value();
+  const char *char_data = node[LBANN_DATA_ID_STR(data_id)+ "/frm/data"].value();
   char *char_data_2 = const_cast<char*>(char_data);
   int *label = reinterpret_cast<int*>(char_data_2);
   Y(*label, mb_idx) = 1;
@@ -296,7 +294,7 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
     }
   }
 
-  const char *char_data = node[DATA_ID_STR(data_id) + "/responses/data"].value();
+  const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/responses/data"].value();
   void *responses =  (void*)char_data;
   //char *char_data_2 = const_cast<char*>(char_data);
   //void *responses = (void*) 
@@ -334,7 +332,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   numpy_conduit_converter::load_conduit_node(m_filenames[rank], data_id, node);
 
   //fill in m_data_dims
-  auto shape = node[DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
+  auto shape = node[LBANN_DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
   int shape_num_elts = shape.number_of_elements();
   for (int k=0; k<shape_num_elts; k++) {
     m_data_dims.push_back(shape[k]);
@@ -348,7 +346,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   }
 
   // Ensure we understand the word sizes
-  size_t word_size = node[DATA_ID_STR(data_id) + "/data/word_size"].value();
+  size_t word_size = node[LBANN_DATA_ID_STR(data_id) + "/data/word_size"].value();
   if (!(word_size == 2 || word_size == 4 || word_size == 8)) {
     LBANN_ERROR("numpy_npz_conduit_reader: word size " + 
                 std::to_string(word_size) + " not supported");
@@ -359,15 +357,15 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   }
 
   if (m_has_labels) {
-    word_size = node[DATA_ID_STR(data_id) + "/frm/word_size"].value();
+    word_size = node[LBANN_DATA_ID_STR(data_id) + "/frm/word_size"].value();
     if (word_size != 4) {
       LBANN_ERROR("numpy_npz_conduit_reader: label should be in int32, but word_size= " + std::to_string(word_size));
     }
   }
 
   if (m_has_responses) {
-    m_response_word_size = node[DATA_ID_STR(data_id) + "/responses/word_size"].value();
-    auto r_shape = node[DATA_ID_STR(data_id) + "/responses/shape"].as_uint64_array();
+    m_response_word_size = node[LBANN_DATA_ID_STR(data_id) + "/responses/word_size"].value();
+    auto r_shape = node[LBANN_DATA_ID_STR(data_id) + "/responses/shape"].as_uint64_array();
     int n = r_shape.number_of_elements();
     m_num_response_features = 1;
     for (int k=1; k<n; k++) {
