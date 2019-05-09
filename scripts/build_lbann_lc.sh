@@ -67,10 +67,10 @@ WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
-ALUMINUM_WITH_MPI_CUDA=ON
-ALUMINUM_WITH_NCCL=ON
+ALUMINUM_WITH_MPI_CUDA=OFF
+ALUMINUM_WITH_NCCL=
+WITH_CONDUIT=ON
 AVOID_CUDA_AWARE_MPI=OFF
-WITH_CONDUIT=OFF
 WITH_DISTCONV=OFF
 DISTCONV_URL=ssh://git@cz-bitbucket.llnl.gov:7999/~maruyama/distconv.git
 DISTCONV_TAG=master
@@ -283,6 +283,8 @@ while :; do
             ;;
 		--with-distconv)
 			WITH_DISTCONV=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
 			;;
 		--distconv-url)
 			DISTCONV_URL=$2

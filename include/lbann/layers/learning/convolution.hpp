@@ -269,8 +269,9 @@ protected:
     const bool has_local_data = this->m_prev_activations_t.get_local_size() > 0 &&
         this->m_prev_error_signals_t.get_local_size() > 0;
 
-    optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
-    if (bias_optimizer != nullptr && this->m_bias_scaling_factor != DataType(0)) {
+    if (this->m_bias_scaling_factor != DataType(0)
+        && this->get_weights()[1]->get_optimizer() != nullptr) {
+      optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
       dc::MPIPrintStreamDebug() << "Compute bias gradients";
       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
@@ -408,11 +409,11 @@ protected:
                              dc::get_halo_exchange_method());
 
     // Bias tensor. Shared by all procs
-    MPIPrintStreamDebug()
-        << "Bias desc: "
-        << dc::util::tostring(this->m_bias_cudnn_desc)
-        << ", bias factor: " << this->m_bias_scaling_factor;
     if (this->m_bias_scaling_factor != DataType(0)) {
+      MPIPrintStreamDebug()
+          << "Bias desc: "
+          << dc::util::tostring(this->m_bias_cudnn_desc)
+          << ", bias factor: " << this->m_bias_scaling_factor;
       std::vector<int> bias_shape_v(dc::num_dims, 1);
       bias_shape_v[dc::num_spatial_dims] = this->get_output_dims()[0];
       Shape bias_shape(bias_shape_v);
@@ -426,6 +427,11 @@ protected:
       optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
       if (bias_optimizer != nullptr) {
         m_bias_gradient_t = TensorDev(bias_shape, loc, shared_dist);
+        // setup_bias_gradients needs strides of the bias tensor,
+        // which is set when its view is set.
+        assert0(tensor::View(
+            m_bias_gradient_t,
+            this->get_weights()[1]->get_optimizer()->get_gradient().Buffer()));
         m_conv->setup_bias_gradient(m_bias_gradient_t);
       }
     }

@@ -100,7 +100,7 @@ option(LBANN_WITH_ALUMINUM "Enable Aluminum all-reduce library" OFF)
 
 option(LBANN_WITH_CNPY "Include cnpy" ON)
 
-option(LBANN_WITH_CONDUIT "Enable Conduit library" OFF)
+option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
