@@ -371,6 +371,7 @@ case ${CLUSTER} in
         ;;
 esac
 echo "export MV2_USE_RDMA_CM=0"                         >> ${BATCH_SCRIPT}
+echo "export MV2_USE_LAZY_MEM_UNREGISTER=0"             >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

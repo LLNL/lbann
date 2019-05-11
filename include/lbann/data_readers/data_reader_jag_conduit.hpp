@@ -256,7 +256,10 @@ class data_reader_jag_conduit : public generic_data_reader {
 
  protected:
 
-  void preload_data_store();
+  /// once the sample_list class and file formats are generalized and
+  /// finalized, it should (may?) be possible to code a single 
+  /// preload_data_store method.
+  void preload_data_store() override;
 
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);

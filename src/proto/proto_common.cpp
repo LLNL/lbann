@@ -196,6 +196,15 @@ void init_data_readers(
       reader_csv->set_skip_rows(readme.skip_rows());
       reader_csv->set_has_header(readme.has_header());
       reader = reader_csv;
+    } else if (name == "numpy_npz_conduit_reader") {
+      auto *npz_conduit = new numpy_npz_conduit_reader(shuffle);
+      npz_conduit->set_has_labels(!readme.disable_labels());
+      npz_conduit->set_has_responses(!readme.disable_responses());
+      npz_conduit->set_scaling_factor_int16(readme.scaling_factor_int16());
+      if (readme.num_labels() != 0) {
+        npz_conduit->set_num_labels(readme.num_labels());
+      }
+      reader = npz_conduit;
     } else if (name == "numpy") {
       auto* reader_numpy = new numpy_reader(shuffle);
       reader_numpy->set_has_labels(!readme.disable_labels());
@@ -430,8 +439,11 @@ void init_data_readers(
       if (name == "mnist") {
         reader_validation = new mnist_reader(shuffle);
         (*(mnist_reader *)reader_validation) = (*(mnist_reader *)reader);
+      } else if (name == "numpy_npz_conduit_reader") {
+        reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+        reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "multihead_siamese") {
