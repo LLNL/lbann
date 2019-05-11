@@ -50,6 +50,12 @@ private:
   using map_type = std::unordered_map<key_type,builder_type>;
 
 public:
+  using size_type = typename map_type::size_type;
+
+public:
+  /** @name Builder registration */
+  ///@{
+
   /** @brief Register a new builder for key @c key.
    *
    *  @param key     An identifier for a concrete type to be constructed.
@@ -78,6 +84,10 @@ public:
     return m_registered_builders.erase(key);
   }
 
+  ///@}
+  /** @brief Object construction */
+  ///@{
+
   /** @brief Construct a new object.
    *
    *  @param key  The key for the object to be created.
@@ -87,13 +97,23 @@ public:
    */
   template <typename... Ts>
   std::unique_ptr<base_type> create_object(
-    key_type const& key, Ts&&... Args) const
+    key_type const& key, Ts&&... args) const
   {
     auto it = m_registered_builders.find(key);
     if (it != m_registered_builders.end())
-      return (it->second)(std::forward<Ts>(Args)...);
+      return (it->second)(std::forward<Ts>(args)...);
 
     return this->handle_unknown_key(key);
+  }
+
+  ///@}
+  /** @name Queries */
+  ///@{
+
+  /** @brief Get the number of registered builders. */
+  size_type get_num_registered_builders() const noexcept
+  {
+    return m_registered_builders.size();
   }
 
   /** @brief Get the names of all builders known to the factory.

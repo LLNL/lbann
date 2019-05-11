@@ -41,9 +41,6 @@ class lbann_callback_check_dataset : public lbann_callback {
   using lbann_callback::on_forward_prop_end;
   using lbann_callback::on_evaluate_forward_prop_end;
 
-  /**
-   * @param basename The basename for writing files.
-   */
   lbann_callback_check_dataset() :
     lbann_callback() {}
   lbann_callback_check_dataset(
@@ -63,7 +60,7 @@ class lbann_callback_check_dataset : public lbann_callback {
 
   std::string name() const override { return "check data set indices"; }
  private:
-  /** Basename for writing files. */
+  /** @brief Basename for writing files. */
   std::string m_basename;
 
   std::set<long> training_set;

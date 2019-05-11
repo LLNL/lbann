@@ -42,6 +42,9 @@ class lbann_callback_summary : public lbann_callback {
   /**
    * @param summarizer The summary object to write to; this callback takes
    * ownership of it.
+   * @param batch_interval The frequency with which to summarize
+   * @param mat_interval FIXME
+   * @todo Document mat_interval parameter.
    */
   lbann_callback_summary(lbann_summary *summarizer, int batch_interval = 1,
     int mat_interval = 25);

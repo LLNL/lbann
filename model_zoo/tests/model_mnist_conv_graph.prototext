@@ -3,8 +3,6 @@ model {
   mini_batch_size: 31
   block_size: 257
   num_epochs: 4
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -211,6 +209,12 @@ model {
   }
   layer {
     parents: "prob_pool"
+    name: "prob_flat"
+    reshape { dims: "-1" }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "prob_flat"
     name: "prob"
     softmax {}
     data_layout: "data_parallel"

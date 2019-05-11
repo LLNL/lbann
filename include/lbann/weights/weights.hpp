@@ -124,7 +124,7 @@ public:
    *  See the 'get_dims' function for an explanation of the notation.
    */
   void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = {});
+                std::vector<int> matrix_width_dims = std::vector<int>());
   /** Set weight tensor dimensions as a 1D tensor. */
   void set_dims(int size) { set_dims({size}, {}); }
 

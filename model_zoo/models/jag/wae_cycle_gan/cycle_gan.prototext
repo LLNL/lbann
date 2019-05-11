@@ -1,7 +1,7 @@
 model {
   name: "cycgan_model"
   shareable_training_data_reader:false 
-  serialize_background_io: true
+  serialize_io: true
   procs_per_trainer:0 
   objective_function {
     l2_weight_regularization {
@@ -520,20 +520,22 @@ model {
     data_layout: "data_parallel"
     parents: "d2fc3 one"
   }
-  layer {
-    name: "gsample_minus_y"
-    data_layout: "data_parallel"
-    parents: "gen1fc4 image_data_dummy"
-    weighted_sum {
-      scaling_factors: "1 -1"
-    }
-  }
+  #layer {
+  #  name: "gsample_minus_y"
+  #  data_layout: "data_parallel"
+  #  parents: "gen1fc4 image_data_dummy"
+  #  weighted_sum {
+  #    scaling_factors: "1 -1"
+  #  }
+  #}
   layer {
     name: "l_l2_y"
     data_layout: "data_parallel"
-    l2_norm2 {
-    }
-    parents: "gsample_minus_y"
+    #l2_norm2 {
+    #}
+    mean_absolute_error { }
+    #parents: "gsample_minus_y"
+    parents: "gen1fc4 image_data_dummy"
   }
   layer {
     fully_connected {
@@ -1003,6 +1005,15 @@ model {
     }
   }
 
+  #callback {
+  #  dump_outputs {
+      #directory :"fw_latent_loss/"
+  #    batch_interval: 782
+  #    layers: "fw_latent_loss"
+  #    execution_modes: "train test"
+  #    format: "npy"
+  #  }
+  #}
   callback { save_model { dir: "model" } }
   ##########X cyclic loss, input to this path is Y_fake (gen1fc4) from fw model
   #### Shares weight with path that takes real/encoder (latent) image

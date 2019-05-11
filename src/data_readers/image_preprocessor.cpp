@@ -60,7 +60,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
                       m_shear_range;
   if (do_transform) {
     cv::Mat sqpixels = cv_pixels(pixels, imheight, imwidth, num_channels);
-    rng_gen& gen = get_generator();
+    rng_gen& gen = get_io_generator();
     std::uniform_int_distribution<int> bool_dist(0, 1);
     // Flips.
     bool horiz_flip = bool_dist(gen) && m_horizontal_flip;

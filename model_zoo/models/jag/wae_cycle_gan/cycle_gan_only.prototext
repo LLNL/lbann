@@ -1,7 +1,7 @@
 model {
   name: "cycgan_model"
   shareable_training_data_reader:false 
-  serialize_background_io: true
+  serialize_io: true
   procs_per_trainer:0 
   objective_function {
     l2_weight_regularization {
@@ -413,19 +413,11 @@ model {
     parents: "d2fc3 one"
   }
   layer {
-    name: "gsample_minus_y"
-    data_layout: "data_parallel"
-    parents: "gen1fc4 image_data_dummy"
-    weighted_sum {
-      scaling_factors: "1 -1"
-    }
-  }
-  layer {
     name: "l_l2_y"
     data_layout: "data_parallel"
-    l2_norm2 {
+    mean_absolute_error {
     }
-    parents: "gsample_minus_y"
+    parents: "gen1fc4 image_data_dummy"
   }
   layer {
     fully_connected {
@@ -695,23 +687,11 @@ model {
     data_layout: "data_parallel"
     parents: "d2_invfc3 one"
   }
-  #layer {
-  #  name: "gsample2_minus_x"
-  #  data_layout: "data_parallel"
-  #  parents: "gen2fc4 param_data_id"
-  #  weighted_sum {
-  #    scaling_factors: "1 -1"
-  #  }
-  #}
-  #@todo: replace with mean abs layer
   layer {
     name: "l_l2_x"
     data_layout: "data_parallel"
-    #l2_norm2 {
-    #}
     mean_absolute_error{
     }
-    #parents: "gsample2_minus_x"
     parents: "gen2fc4 param_data_id"
   }
   weights {

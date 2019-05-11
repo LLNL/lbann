@@ -92,13 +92,13 @@ private:
   std::unique_ptr<AbsDistMat> m_bias_gradient;
 
 public:
-  /**
-   * Set up batch normalization.
-   * @param decay Controls the momentum of the running mean/standard
-   * deviation averages.
-   * @param epsilon A small number to avoid division by zero.
-   * @param use_global_stats Whether to use global statistics when
-   * training.
+  /** @brief Set up batch normalization.
+   *
+   *  @param comm The communication context for this layer
+   *  @param decay Controls the momentum of the running mean/standard
+   *         deviation averages.
+   *  @param epsilon A small number to avoid division by zero.
+   *  @param stats_aggregation The type of statistics to use when training.
    */
   batch_normalization_layer(lbann_comm *comm,
                             DataType decay=0.9,

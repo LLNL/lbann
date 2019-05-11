@@ -67,10 +67,10 @@ WITH_CUDA_2=ON
 WITH_TOPO_AWARE=ON
 INSTRUMENT=
 WITH_ALUMINUM=
-ALUMINUM_WITH_MPI_CUDA=ON
-ALUMINUM_WITH_NCCL=ON
+ALUMINUM_WITH_MPI_CUDA=OFF
+ALUMINUM_WITH_NCCL=
+WITH_CONDUIT=ON
 AVOID_CUDA_AWARE_MPI=OFF
-WITH_CONDUIT=OFF
 WITH_DISTCONV=OFF
 DISTCONV_URL=ssh://git@cz-bitbucket.llnl.gov:7999/~maruyama/distconv.git
 DISTCONV_TAG=master
@@ -78,6 +78,9 @@ LBANN_DISTCONV_NUM_DIMS=4
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
+WITH_PYTHON=OFF
+PYTHON_LIBRARY=/usr/tce/packages/python/python-3.6.4/lib/libpython3.6m.so
+PYTHON_INCLUDE_DIR=/usr/tce/packages/python/python-3.6.4/include/python3.6m
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -136,6 +139,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
+  ${C}--python${N}                Build with Python/C API.
 EOF
 }
 
@@ -279,6 +283,8 @@ while :; do
             ;;
 		--with-distconv)
 			WITH_DISTCONV=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
 			;;
 		--distconv-url)
 			DISTCONV_URL=$2
@@ -300,6 +306,9 @@ while :; do
             ;;
         --reconfigure)
             RECONFIGURE=1
+            ;;
+        --python)
+            WITH_PYTHON=ON
             ;;
         -?*)
             # Unknown option
@@ -768,6 +777,9 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
     print_variable WITH_TOPO_AWARE
+    print_variable WITH_PYTHON
+    print_variable PYTHON_LIBRARY
+    print_variable PYTHON_INCLUDE_DIR
     echo ""
 fi
 
@@ -846,6 +858,9 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
+-D LBANN_WITH_PYTHON=${WITH_PYTHON} \
+-D LBANN_PYTHON_LIBRARY=${PYTHON_LIBRARY} \
+-D LBANN_PYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR} \
 -D LBANN_SB_BUILD_DISTCONV=${WITH_DISTCONV} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DISTCONV_URL=${DISTCONV_URL} \
@@ -856,8 +871,7 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_WITH_P2P=${WITH_DISTCONV} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
 -D LBANN_SB_FWD_ALUMINUM_ALUMINUM_ENABLE_STREAM_MEM_OPS=ON \
--D
- LBANN_SB_FWD_ALUMINUM_ALUMINUM_HT_USE_PASSTHROUGH=OFF \
+-D LBANN_SB_FWD_ALUMINUM_ALUMINUM_HT_USE_PASSTHROUGH=OFF \
 ${CMAKE_BLAS_OPTIONS} \
 ${SUPERBUILD_DIR}
 EOF

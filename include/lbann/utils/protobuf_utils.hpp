@@ -7,9 +7,9 @@
 
 namespace lbann {
 
-/**
- * static methods for parsing command line for prototext filenames,
- * reading in prototext files, etc.
+/** @file protobuf_utils.hpp
+ *  @brief static methods for parsing command line for prototext
+ *         filenames, reading in prototext files, etc.
  */
 
 struct prototext_fn_triple {
@@ -19,10 +19,11 @@ struct prototext_fn_triple {
   std::string optimizer;
 };
 
-
 namespace protobuf_utils
 {
-/** convience wrapper: calls parse_prototext_filenames_from_command_line(),
+/** @brief convience wrapper for other parsing, loading, and verifying prototext.
+ *
+ *  Calls parse_prototext_filenames_from_command_line(),
  *  then load_prototext(), then verify_prototext(). This is the only function
  *  that needs to be called from, e.g, model_zoo/lbann.cpp; the three called
  *  functions are made public for testing.
@@ -33,14 +34,16 @@ load_prototext(
   const int argc,
   char* const argv[]);
 
-/** parses the command line for --model=<string> --reader=<string>
- *  optimizer=<string> and their multi counterparts:
- *  --model={<string_1>,<string_2>,...}
- *  --reader={<string_1>,<string_2>,...}
- *  --optimizer={<string_1>,<string_2>,...}
- *  If the multi-model option is given, the reader and optimzier
- *  can either be single, or contain the same number of filenames
- *  as does the --model={...} specification
+/** @brief Parses the command line for special prototext flags
+ *
+ *  This looks for `--model=<string>`, `--reader=<string>`, and
+ *  `--optimizer=<string>` as well as their multi-value counterparts:
+ *  `--model={<string_1>,<string_2>,...}`,
+ *  `--reader={<string_1>,<string_2>,...}`, and
+ *  `--optimizer={<string_1>,<string_2>,...}`. If the multi-model
+ *  option is given, the reader and optimzier can either be single, or
+ *  contain the same number of filenames as does the `--model={...}`
+ *  specification.
  */
 std::vector<prototext_fn_triple>
 parse_prototext_filenames_from_command_line(
@@ -51,8 +54,8 @@ read_in_prototext_files(
   const bool master,
   const std::vector<prototext_fn_triple> &names);
 
-/** attempts to verify the all models are valid, and contain an
- *  optimizer and reader
+/** @brief attempts to verify the all models are valid, and contain an
+ *         optimizer and reader
  */
 void verify_prototext(
   const bool master,
