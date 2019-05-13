@@ -99,7 +99,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr)
+    m_model(nullptr),
+    m_issue_warning(true)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -249,16 +250,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
-  virtual void set_role(std::string role) {
-    m_role = role;
-    if (options::get()->has_string("jag_partitioned")
-        && get_role() == "train") {
-      m_jag_partitioned = true;
-      if (is_master()) {
-        std::cerr << "USING JAG DATA PARTITIONING\n";
-      }
-    }
-  }
+  virtual void set_role(std::string role);
 
   /**
    * Get the role for this dataset.
@@ -907,6 +899,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// etc.
   void set_jag_variables(int mb_size);
   model *m_model;
+
+  /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
+  /// but we're not retrieving a conduit::Node from the store. This typically occurs
+  /// during the test phase
+  bool m_issue_warning;
 };
 
 template<typename T>

@@ -42,8 +42,6 @@ imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shu
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
-
-  if (is_master()) std::cout << "XX imagenet_reader ctor, pp, shuffle\n";
 }
 
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
@@ -52,7 +50,6 @@ imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
     LBANN_ERROR("construction error: no image processor");
   }
   m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
-  if (is_master()) std::cout << "XX imagenet_reader copy ctor\n";
 }
 
 
@@ -63,8 +60,6 @@ imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<i
   }
   m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
   set_role(role);
-
-  if (is_master()) std::cout << "XX imagenet_reader copy ctor, ds_sample_list size: " << ds_sample_move_list.size() << "\n";
 }
 
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list)
@@ -73,12 +68,9 @@ imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<i
     LBANN_ERROR("construction error: no image processor");
   }
   m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
-
-  if (is_master()) std::cout << "XX imagenet_reader copy ctor, ds_sample_list size: " << ds_sample_move_list.size() << "\n";
 }
 
 imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
-  if (is_master()) std::cout << "XX imagenet_reader operator=\n";
   // check for self-assignment
   if (this == &rhs) {
     return (*this);

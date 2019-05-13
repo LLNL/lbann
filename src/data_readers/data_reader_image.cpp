@@ -36,14 +36,12 @@ namespace lbann {
 
 image_data_reader::image_data_reader(bool shuffle)
   : generic_data_reader(shuffle) {
-if (is_master()) std::cout << "XX image_data_reader(bool shuffle); role: " << get_role() << "\n";
   set_defaults();
 }
 
 image_data_reader::image_data_reader(const image_data_reader& rhs)
   : generic_data_reader(rhs)
 {
-if (is_master()) std::cout << "XX image_data_reader copy ctor; role: " << get_role() << "\n";
   copy_members(rhs);
 }
 
@@ -51,14 +49,12 @@ image_data_reader::image_data_reader(const image_data_reader& rhs,const std::vec
   : generic_data_reader(rhs)
 {
   set_role(role);
-if (is_master()) std::cout << "XX copy ctor, ds_sample_move_list: " << ds_sample_move_list.size() << "; role: " << get_role() << "\n";
   copy_members(rhs, ds_sample_move_list);
 }
 
 image_data_reader::image_data_reader(const image_data_reader& rhs,const std::vector<int>& ds_sample_move_list)
   : generic_data_reader(rhs)
 {
-if (is_master()) std::cout << "XX copy ctor, ds_sample_move_list: " << ds_sample_move_list.size() << "; role: " << get_role() << "\n";
   copy_members(rhs, ds_sample_move_list);
 }
 
@@ -76,7 +72,6 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
 }
 
 void image_data_reader::copy_members(const image_data_reader &rhs, const std::vector<int>& ds_sample_move_list) {
-  if (is_master()) std::cout << "XX image_data_reader::copy_members; role: " << get_role() << " ds_sample_move_list.size: " << ds_sample_move_list.size() << "\n";
 
   if(rhs.m_data_store != nullptr) {
     if(ds_sample_move_list.size() == 0) {
@@ -87,11 +82,6 @@ void image_data_reader::copy_members(const image_data_reader &rhs, const std::ve
     m_data_store->set_data_reader_ptr(this);
   }
 
-  if(m_data_store != nullptr) {
-    if (m_data_store->m_output) {
-      m_data_store->m_output << "image_data_reader::copy_members; role: " << get_role() << " ds_sample_move_list size: " << ds_sample_move_list.size() << "\n";
-    }
-  }
   m_image_dir = rhs.m_image_dir;
   m_image_list = rhs.m_image_list;
   m_image_width = rhs.m_image_width;
@@ -100,7 +90,6 @@ void image_data_reader::copy_members(const image_data_reader &rhs, const std::ve
   m_image_linearized_size = rhs.m_image_linearized_size;
   m_num_labels = rhs.m_num_labels;
   //m_thread_cv_buffer = rhs.m_thread_cv_buffer
-if (is_master()) std::cout << "XX image_data_reader::copy_members; role: " << get_role() << "\n";
 }
 
 

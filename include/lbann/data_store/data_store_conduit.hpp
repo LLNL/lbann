@@ -167,6 +167,9 @@ class data_store_conduit {
   /// for use during development and debugging
   int get_data_size() { return m_data.size(); }
 
+  /// made public for debugging during development
+  void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
+
 protected :
 
   /// records the number of times exchange_mini_batch_data has been called
@@ -174,7 +177,6 @@ protected :
 
   bool m_is_setup;
 
-  void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
   generic_data_reader *m_reader;
 
   lbann_comm *m_comm;
