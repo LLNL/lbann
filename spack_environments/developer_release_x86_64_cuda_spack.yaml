@@ -23,7 +23,7 @@ spack:
   - ninja@1.8.2
   - zlib
   - cmake
-  - cudnn@7.5.1-10.0-x64
+  - cudnn@7.5.1-10.0-x86_64
   - cub@1.7.1
   - nccl@2.3.7-1
   - hwloc@2.0.2
