@@ -1125,6 +1125,10 @@ private:
     DataType* output,
     size_t ws_size,
     DataType* ws) {
+    // Always use the same deterministic algorithm for debugging
+    if (getenv("DISTCONV_DETERMINISTIC")) {
+      return CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
+    }
     if (m_fwd_cudnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
       bool deterministic = true;
@@ -1155,6 +1159,10 @@ private:
     DataType* error_signal,
     size_t ws_size,
     DataType* ws) {
+    // Always use the same deterministic algorithm for debugging
+    if (getenv("DISTCONV_DETERMINISTIC")) {
+      return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
+    }
     if (m_bwd_data_cudnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
       bool deterministic = true;
@@ -1187,6 +1195,10 @@ private:
     const cudnnFilterDescriptor_t& kernel_gradient_desc,
     size_t ws_size,
     DataType* ws) {
+    // Always use the same deterministic algorithm for debugging
+    if (getenv("DISTCONV_DETERMINISTIC")) {
+      return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
+    }
     if (m_bwd_filter_cudnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
       bool deterministic = true;
