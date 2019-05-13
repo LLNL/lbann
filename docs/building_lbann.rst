@@ -176,8 +176,8 @@ Here are three easy ways to install LBANN:
       ml load spack
 
 - Building with the head of develop branch for lbann, hydrogen and
-  aluminum with GPU support (use the user's defaults for specifying the
-  compiler, MPI library, etc.):
+  aluminum with GPU support (use the user's defaults for specifying
+  the compiler, MPI library, etc.):
 
   .. code-block:: bash
 
