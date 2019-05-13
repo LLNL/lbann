@@ -1,0 +1,63 @@
+  packages:
+    all:
+      providers:
+        mpi: [mvapich2@2.3 arch=linux-rhel7-x86_64]
+        lapack: [openblas threads=openmp]
+        blas: [openblas threasd=openmp]
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: [gcc@7.3.0 arch=linux-rhel7-x86_64]
+
+    cmake::
+      variants: ~openssl ~ncurses
+      version: [3.12.1]
+      paths:
+        cmake@3.12.1 arch=linux-rhel7-x86_64:  /usr/tce/packages/cmake/cmake-3.12.1
+
+    cuda::
+      buildable: False
+      version: [10.0.130]
+      paths:
+        cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
+
+    cudnn::
+      buildable: true
+      version: [7.5.1-10.0-x86_64]
+
+    hwloc::
+      buildable: False
+      version: [2.0.2]
+      paths:
+        hwloc@2.0.2 arch=linux-rhel7-x86_64: /usr/lib64/libhwloc.so
+
+    mvapich2::
+      buildable: True
+      version: [2.3]
+      paths:
+        mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-x86_64: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
+
+    openblas::
+      buildable: True
+      variants: threads=openmp
+      version: [0.3.6]
+
+    opencv::
+      buildable: true
+      version: [4.1.0]
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-7.3.0/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
+      spec: gcc@7.3.0
+      target: x86_64

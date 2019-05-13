@@ -11,6 +11,8 @@ Performance optimizations:
 performance rather than using heuristics.
 
 Model portability & usability:
+ - Python front end for generating neural network architectures
+ - Python interface for launching jobs on HPC systems
 
 Internal features:
 - Weight gradient allreduces are in-place rather than on a staging buffer.
