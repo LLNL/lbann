@@ -19,18 +19,17 @@ spack:
   - conduit@master~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
   - cnpy@master build_type=RelWithDebInfo
   - opencv build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png+powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab+vsx~vtk+zlib
-  - cereal@1.2.2 build_type=RelWithDebInfo patches=2dfa0bff9816d0ebd8a1bcc70ced4483b3cda83a982ea5027f1aaadceaa15aac,720265382f29b744488d67e8df5000f2ca1b4dceb2018835fb5dc7a3a1c23f75,91f968e9ac3964e1a689a9ad379ab16f7803ac3d34d24f87ebcaecaa3f9a2f16
-  - ninja@1.8.2
+  - cereal
+  - ninja
   - zlib
   - cmake
   - cudnn@7.5.1-10.1-ppc64le
-  - cub@1.7.1
-  - nccl@2.3.7-1
-  - hwloc@2.0.2
-  - py-cython@0.29
+  - cub
+  - nccl
+  - hwloc
   - py-argparse
   - py-configparser
-  - py-cython@0.29
+  - py-cython
   - py-graphviz
   - py-matplotlib
   - py-onnx
