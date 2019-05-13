@@ -72,6 +72,9 @@ data_store_conduit::data_store_conduit(
   if (m_is_local_cache && opts->get_bool("preload_data_store")) {
     LBANN_ERROR("you cannot use both of these options: --data_store_cache --preload_data_store");
   }
+  if (m_world_master) {
+    std::cout << "data_store_conduit is running in local_cache mode\n";
+  }
 }
 
 data_store_conduit::~data_store_conduit() {
