@@ -165,7 +165,7 @@ Here are three easy ways to install LBANN:
 
       cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_gpu/ # where <arch> = x86_64 | ppc64le
       spack install
-      ml load spack
+      ml load lbann
 
 - Building with the latest released versions and GPU support (use the
   user's defaults for specifying the compiler, MPI library, etc.):
@@ -173,7 +173,7 @@ Here are three easy ways to install LBANN:
   .. code-block:: bash
 
       spack install lbann +gpu +nccl
-      ml load spack
+      ml load lbann
 
 - Building with the head of develop branch for lbann, hydrogen and
   aluminum with GPU support (use the user's defaults for specifying
@@ -182,7 +182,7 @@ Here are three easy ways to install LBANN:
   .. code-block:: bash
 
       spack install lbann@develop +gpu +nccl ^hydrogen@develop ^aluminum@master
-      ml load spack
+      ml load lbann
 
 There are numerous options for all of these packages. These options
 can be viewed via commands such as :bash:`spack info lbann`. To
