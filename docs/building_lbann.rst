@@ -158,12 +158,12 @@ Here are three easy ways to install LBANN:
 - Using the Spack environment method, (e.g., for an x86_64 LLNL LC
   system with GPU support):
 
-.. note:: This method provides a consistent set of dependencies during
-  installation.
+  .. note:: This method provides a consistent set of dependencies during
+      installation.
 
   .. code-block:: bash
 
-      cd <path to spack repo>/spack_environments/users/llnl_lc/<arch>_gpu/ # where <arch> = x86_64 | ppc64le
+      cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_gpu/ # where <arch> = x86_64 | ppc64le
       spack install
       ml load spack
 
