@@ -15,12 +15,24 @@ see [here](docs/onnx/README.md).
 
 ## Setup
 
-The `lbann` package will be installed as a user-local package during
-the standard CMake build process. If you need to switch between
-multiple LBANN builds, e.g. for different systems, you should build
-LBANN while inside a virtual environment.
+The `lbann` Python package is installed as part of the LBANN build
+process. Usage instructions depend on which build method was used.
 
-Warnings:
+_Spack_: `module load lbann`.
+
+_CMake_: The Python package is typically installed inside the install
+directory at `<install directory>/share/python`. To make sure Python
+can detect it, update the `PYTHONPATH` environment variable:
+```sh
+export PYTHONPATH=<install directory>/share/python:${PYTHONPATH}
+```
+Alternatively, the package can be installed into a Python
+site-packages directory so that Python can detect it immediately. This
+usually requires an active virtual environment or root access. To
+build with this approach, pass `-DLBANN_PYTHON_IN_INSTALL_DIR=OFF` as
+an argument into CMake during the build process.
+
+_Warnings_:
 * The build system is still under active development.
 * Python 2 is not supported.
 * The CMake build process does not handle package dependencies. See
@@ -31,8 +43,7 @@ Warnings:
   * If you do not already have the ONNX Python package installed, you
     will need to ensure the `protoc` compiler is in your path when you
     run this. Either load the appropriate Spack module or add
-    `$LBANN_HOME/build/<your build>/install/bin` to `$PATH` before
-    running.
+    `<install directory>/bin` to `$PATH` before running.
 
 ## Modules
 

@@ -70,6 +70,7 @@ ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
 WITH_TBINF=OFF
+PYTHON_IN_INSTALL_DIR=ON
 RECONFIGURE=0
 USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -129,6 +130,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
+  ${C}--python-site-packages${N}  Install Python frontend to Python site-packages directory (requires an active virtual environment or root access)
 EOF
 }
 
@@ -267,6 +269,9 @@ while :; do
         --with-conduit)
             WITH_CONDUIT=ON
             ;;
+        --python-site-packages)
+            PYTHON_IN_INSTALL_DIR=OFF
+            ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
             ;;
@@ -314,7 +319,6 @@ fi
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
     module load cmake/3.12.1
-    module load python/3.6.4
 else
     use git
 fi
@@ -718,6 +722,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
     print_variable WITH_TOPO_AWARE
+    print_variable PYTHON_IN_INSTALL_DIR
     echo ""
 fi
 
@@ -795,6 +800,7 @@ cmake \
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
+-D LBANN_PYTHON_IN_INSTALL_DIR=${PYTHON_IN_INSTALL_DIR} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 ${SUPERBUILD_DIR}
 EOF

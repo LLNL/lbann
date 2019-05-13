@@ -113,9 +113,6 @@ option(LBANN_WITH_NVPROF
 option(LBANN_WITH_PYTHON
   "Install Python frontend and enable embedded Python" ON)
 
-option(LBANN_WITH_PYTHON_USER_INSTALL
-  "Install Python frontend and enable embedded Python in the users .local site-packages" OFF)
-
 option(LBANN_WITH_TBINF "Include Tensorboard interface" ON)
 
 option(LBANN_WITH_VTUNE
@@ -130,6 +127,9 @@ option(LBANN_DETERMINISTIC
 
 option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
+
+option(LBANN_PYTHON_IN_INSTALL_DIR
+  "Install Python frontend in the install directory (as opposed to a Python site-packages directory)" ON)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
@@ -295,12 +295,17 @@ if (LBANN_WITH_TBINF)
   add_subdirectory(external/TBinf)
 endif ()
 
+# Find Python
+# Note: This uses the Python module in cmake/modules, not the module
+# that comes included with CMake. See the file for a discussion of the
+# differences.
 if (LBANN_WITH_PYTHON)
-  find_package(Python REQUIRED COMPONENTS Interpreter Development)
-  if (Python_VERSION_MAJOR LESS 3)
+  find_package(Python REQUIRED)
+  set(LBANN_HAS_PYTHON "${Python_FOUND}")
+  if (NOT Python_VERSION_MAJOR EQUAL 3)
+    set(LBANN_HAS_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
-  set(LBANN_HAS_PYTHON ${Python_FOUND})
 endif (LBANN_WITH_PYTHON)
 
 if (LBANN_WITH_VTUNE)
@@ -629,23 +634,25 @@ if (LBANN_HAS_PYTHON)
     "${_PYTHON_CONFIG_INI}"
     @ONLY)
 
-  # Install Python package with setuptools
+  # Construct setup.py
   set(_SETUP_PY ${CMAKE_BINARY_DIR}/setup.py)
-  file(RELATIVE_PATH _RELATIVE_PATH_BUILD_DIR_TO_PYTHON_DIR
-    "${CMAKE_BINARY_DIR}"
-    "${CMAKE_SOURCE_DIR}/python")
+  set(_LBANN_PYTHON_DIR "${CMAKE_SOURCE_DIR}/python")
   configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/setup.py.in"
     "${_SETUP_PY}"
     @ONLY)
 
-  if (LBANN_WITH_PYTHON_USER_INSTALL)
-    # Install the python packages into the CMAKE install directory
-    # Use either --root as "/" and --prefix as the install prefix or --root as the install prefix and then --prefix as "."
-    install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --force --prefix . --root ${CMAKE_INSTALL_PREFIX})")
-  else ()
-    install(CODE "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install --user)")
-  endif (LBANN_WITH_PYTHON_USER_INSTALL)
+  # Install Python package with setuptools
+  set(LBANN_SETUP_PY_ARGS ""
+    CACHE STRING "Arguments to pass to 'setup.py install' when installing the Python frontend")
+  set(_SETUP_PY_ARGS "${LBANN_SETUP_PY_ARGS}")
+  if (LBANN_PYTHON_IN_INSTALL_DIR)
+    set(_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/python")
+    set(_SETUP_PY_ARGS
+      "${_SETUP_PY_ARGS} --root ${_PYTHON_INSTALL_DIR} --install-lib . --install-data .")
+  endif (LBANN_PYTHON_IN_INSTALL_DIR)
+  install(CODE
+    "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install ${_SETUP_PY_ARGS})")
 
 endif (LBANN_HAS_PYTHON)
 

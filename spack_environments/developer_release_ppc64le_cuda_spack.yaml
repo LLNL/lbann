@@ -36,6 +36,7 @@ spack:
   - py-onnx
   - py-pandas
   - py-protobuf+cpp
+  - py-setuptools
   - py-texttable
   mirrors: {}
   modules:
