@@ -155,7 +155,20 @@ that want to train new or existing models using the python front-end.
 
 Here are three easy ways to install LBANN:
 
-- Building with the latest released versions and GPU support:
+- Using the Spack environment method, (e.g., for an x86_64 LLNL LC
+  system with GPU support):
+
+.. note:: This method provides a consistent set of dependencies during
+  installation.
+
+  .. code-block:: bash
+
+      cd <path to spack repo>/spack_environments/users/llnl_lc/x86_64_gpu/
+      spack install
+      ml load spack
+
+- Building with the latest released versions and GPU support (use the
+  users defaults for specifying the compiler, MPI library, etc.):
 
   .. code-block:: bash
 
@@ -163,24 +176,13 @@ Here are three easy ways to install LBANN:
       ml load spack
 
 - Building with the head of develop branch for lbann, hydrogen and
-  aluminum with GPU support:
+  aluminum with GPU support (use the users defaults for specifying the
+  compiler, MPI library, etc.):
 
   .. code-block:: bash
 
       spack install lbann@develop +gpu +nccl ^hydrogen@develop ^aluminum@master
       ml load spack
-
-- Using the Spack environment method, (e.g., for an x86_64 LLNL LC
-  system with GPU support):
-
-  .. code-block:: bash
-
-      cd <path to spack repo>/spack_environments/users/llnl_lc/x86_64_gpu/
-      spack install
-      spack env loads
-      source loads
-
-      spack spec lbann@0.99 +gpu ^python@3.7.2 ^cudnn@7.5.1-10.0-x64 ^openblas threads=openmp
 
 There are numerous options for all of these packages. These options
 can be viewed via commands such as :bash:`spack info lbann`. To
@@ -219,6 +221,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
         export LBANN_INSTALL_DIR=/path/to/an/install/directory
         cd ${LBANN_BUILD_DIR}
         spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+        cp ${LBANN_HOME}/spack_environments/std_versions_and_variants_llnl_lc_cz.yaml .
+        cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml . # where <arch> = x86_64 | ppc64le
         spack install
         spack env loads # Spack creates a file named loads that has all of the correct modules
         source loads

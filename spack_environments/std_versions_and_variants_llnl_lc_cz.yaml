@@ -1,0 +1,29 @@
+  packages:
+    all:
+      providers: {}
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: []
+
+    protobuf:
+      buildable: True
+      variants: build_type=Release +shared
+      version: [3.7.1]
+
+    python:
+      buildable: True
+      version: [3.7.2]
+
+    py-matplotlib:
+      buildable: True
+      variants: ~tk ~image
+
+    py-numpy:
+      buildable: True
+      version: [1.16.2]
+
+    zlib:
+      buildable: True
+      version: [1.2.11]
