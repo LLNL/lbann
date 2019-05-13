@@ -76,9 +76,6 @@ inline void __swapEndianInt(unsigned int& ui) {
   ui = ((ui >> 24) | ((ui<<8) & 0x00FF0000) | ((ui>>8) & 0x0000FF00) | (ui << 24));
 }
 
-#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
-
-
 // The generic approach
 template<typename T>
 std::basic_string<T> pad(const std::basic_string<T>& s,

@@ -74,7 +74,10 @@ class data_store_conduit {
   void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
 
   //! convenience handle
-  void set_shuffled_indices(const std::vector<int> *indices) { m_shuffled_indices = indices; }
+  void set_shuffled_indices(const std::vector<int> *indices);
+
+  /// for use during development and debugging
+  int get_num_indices() { return m_shuffled_indices->size(); }
 
   void setup(int mini_batch_size);
 
@@ -131,6 +134,9 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
+  /// for use during development and debugging
+  void set_role(const std::string role);
+
   bool is_local_cache() const { return m_is_local_cache; }
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
@@ -149,7 +155,17 @@ class data_store_conduit {
     m_super_node = true;
   }
 
+  void set_node_sizes_vary() { m_node_sizes_vary = true; }
+
   bool has_conduit_node(int data_id) const;
+
+  /// only used for debugging; pass --debug on cmd line to get
+  /// each data store to print to a different file. This is made
+  /// public so data readers can also print to the file
+  mutable std::ofstream m_output;
+
+  /// for use during development and debugging
+  int get_data_size() { return m_data.size(); }
 
 protected :
 
@@ -230,7 +246,7 @@ protected :
   void setup_data_store_buffers();
 
   /// called by exchange_data
-  static void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
+  void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);
@@ -254,6 +270,8 @@ protected :
   void error_check_compacted_node(const conduit::Node &nd, int data_id);
 
   bool m_is_local_cache;
+
+  bool m_node_sizes_vary;
 };
 
 }  // namespace lbann

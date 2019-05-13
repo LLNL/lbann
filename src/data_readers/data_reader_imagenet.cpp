@@ -42,6 +42,8 @@ imagenet_reader::imagenet_reader(const std::shared_ptr<cv_process>& pp, bool shu
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
+
+  if (is_master()) std::cout << "XX imagenet_reader ctor, pp, shuffle\n";
 }
 
 imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
@@ -50,9 +52,33 @@ imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
     LBANN_ERROR("construction error: no image processor");
   }
   m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
+  if (is_master()) std::cout << "XX imagenet_reader copy ctor\n";
+}
+
+
+imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list, std::string role)
+  : image_data_reader(rhs, ds_sample_move_list) {
+  if (!rhs.m_master_pps) {
+    LBANN_ERROR("construction error: no image processor");
+  }
+  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
+  set_role(role);
+
+  if (is_master()) std::cout << "XX imagenet_reader copy ctor, ds_sample_list size: " << ds_sample_move_list.size() << "\n";
+}
+
+imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list)
+  : image_data_reader(rhs, ds_sample_move_list) {
+  if (!rhs.m_master_pps) {
+    LBANN_ERROR("construction error: no image processor");
+  }
+  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
+
+  if (is_master()) std::cout << "XX imagenet_reader copy ctor, ds_sample_list size: " << ds_sample_move_list.size() << "\n";
 }
 
 imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
+  if (is_master()) std::cout << "XX imagenet_reader operator=\n";
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -122,20 +148,47 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   bool ret;
   const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
 
+  bool have_node = true;
   if (m_data_store != nullptr) {
     conduit::Node node;
-    if (data_store_active()) {
+    if (m_data_store->is_local_cache()) {
+      if (m_data_store->has_conduit_node(data_id)) {
+        const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+        node.set_external(ds_node);
+      } else {
+        load_conduit_node_from_file(data_id, node);
+        m_data_store->set_conduit_node(data_id, node);
+      }
+    } else if (data_store_active()) {
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
       node.set_external(ds_node);
     } else if (priming_data_store()) {
       load_conduit_node_from_file(data_id, node);
       m_data_store->set_conduit_node(data_id, node);
     } else {
-      LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
+      if (get_role() != "test") {
+        LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
+      }
+      if (m_issue_warning) {
+        if (is_master()) {
+          LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving a node from the store; role: " + get_role() + "; this is probably OK for test mode, but may be an error for train or validate modes");
+        }  
+        m_issue_warning = false;
+      }
+      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+      have_node = false;
     }
 
-    char *buf = node[DATA_ID_STR(data_id) + "/buffer"].value();
-    ret = lbann::image_utils::load_image(buf, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+    if (have_node) {
+      char *buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+      size_t size = node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+      std::vector<unsigned char> v2(size);
+      for (size_t j=0; j<size; j++) {
+        v2[j] = buf[j];
+      }
+      ret = lbann::image_utils::load_image(v2, width, height, img_type, *(m_pps[tid]), X_v, &m_thread_cv_buffer[tid]);
+      //ret = lbann::image_utils::load_image(v2, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+    }
   }
   
   // not using data store

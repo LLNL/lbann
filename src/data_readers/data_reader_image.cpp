@@ -34,23 +34,33 @@
 
 namespace lbann {
 
-#define DATA_ID_STR(data_id) pad(std::to_string(data_id), SAMPLE_ID_PAD, '0')
-
 image_data_reader::image_data_reader(bool shuffle)
   : generic_data_reader(shuffle) {
+if (is_master()) std::cout << "XX image_data_reader(bool shuffle); role: " << get_role() << "\n";
   set_defaults();
 }
 
 image_data_reader::image_data_reader(const image_data_reader& rhs)
-  : generic_data_reader(rhs),
-    m_image_dir(rhs.m_image_dir),
-    m_image_list(rhs.m_image_list),
-    m_image_width(rhs.m_image_width),
-    m_image_height(rhs.m_image_height),
-    m_image_num_channels(rhs.m_image_num_channels),
-    m_image_linearized_size(rhs.m_image_linearized_size),
-    m_num_labels(rhs.m_num_labels)
-{}
+  : generic_data_reader(rhs)
+{
+if (is_master()) std::cout << "XX image_data_reader copy ctor; role: " << get_role() << "\n";
+  copy_members(rhs);
+}
+
+image_data_reader::image_data_reader(const image_data_reader& rhs,const std::vector<int>& ds_sample_move_list, std::string role)
+  : generic_data_reader(rhs)
+{
+  set_role(role);
+if (is_master()) std::cout << "XX copy ctor, ds_sample_move_list: " << ds_sample_move_list.size() << "; role: " << get_role() << "\n";
+  copy_members(rhs, ds_sample_move_list);
+}
+
+image_data_reader::image_data_reader(const image_data_reader& rhs,const std::vector<int>& ds_sample_move_list)
+  : generic_data_reader(rhs)
+{
+if (is_master()) std::cout << "XX copy ctor, ds_sample_move_list: " << ds_sample_move_list.size() << "; role: " << get_role() << "\n";
+  copy_members(rhs, ds_sample_move_list);
+}
 
 image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   generic_data_reader::operator=(rhs);
@@ -64,6 +74,35 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
 
   return (*this);
 }
+
+void image_data_reader::copy_members(const image_data_reader &rhs, const std::vector<int>& ds_sample_move_list) {
+  if (is_master()) std::cout << "XX image_data_reader::copy_members; role: " << get_role() << " ds_sample_move_list.size: " << ds_sample_move_list.size() << "\n";
+
+  if(rhs.m_data_store != nullptr) {
+    if(ds_sample_move_list.size() == 0) {
+      m_data_store = new data_store_conduit(rhs.get_data_store());
+    } else {
+      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
+    }
+    m_data_store->set_data_reader_ptr(this);
+  }
+
+  if(m_data_store != nullptr) {
+    if (m_data_store->m_output) {
+      m_data_store->m_output << "image_data_reader::copy_members; role: " << get_role() << " ds_sample_move_list size: " << ds_sample_move_list.size() << "\n";
+    }
+  }
+  m_image_dir = rhs.m_image_dir;
+  m_image_list = rhs.m_image_list;
+  m_image_width = rhs.m_image_width;
+  m_image_height = rhs.m_image_height;
+  m_image_num_channels = rhs.m_image_num_channels;
+  m_image_linearized_size = rhs.m_image_linearized_size;
+  m_num_labels = rhs.m_num_labels;
+  //m_thread_cv_buffer = rhs.m_thread_cv_buffer
+if (is_master()) std::cout << "XX image_data_reader::copy_members; role: " << get_role() << "\n";
+}
+
 
 void image_data_reader::set_linearized_image_size() {
   m_image_linearized_size = m_image_width * m_image_height * m_image_num_channels;
@@ -160,14 +199,14 @@ void image_data_reader::load() {
   m_shuffled_indices.resize(m_image_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
+  opts->set_option("node_sizes_vary", 1);
+  opts->set_option("super_node", 1);
   instantiate_data_store(local_list_sizes);
-  if (opts->get_bool("preload_data_store") || opts->get_bool("use_data_store")) {
-    m_data_store->set_super_node_mode();
-  }
 
   select_subset_of_data();
 }
 
+//void read_raw_data(const std::string &filename, std::vector<conduit::uint8> &data) {
 void read_raw_data(const std::string &filename, std::vector<char> &data) {
   data.clear();
   std::ifstream in(filename.c_str());
@@ -186,25 +225,15 @@ void image_data_reader::preload_data_store() {
   double tm1 = get_time();
   m_data_store->set_preload();
 
+  conduit::Node node;
   int rank = m_comm->get_rank_in_trainer();
-  std::vector<char> data;
   for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
     if (m_data_store->get_index_owner(data_id) != rank) {
       continue;
     }
-
-    conduit::Node node;
-    const std::string filename = get_file_dir() + m_image_list[data_id].first;
-    int label = m_image_list[data_id].second;
-    node[DATA_ID_STR(data_id) + "/label"] = label;    
-    node[DATA_ID_STR(data_id) + "/filename"] = filename; //not really needed, but nice to have   
-
-    read_raw_data(filename, data);
-
-    node[DATA_ID_STR(data_id) + "/buffer"].set_char_ptr(data.data());
-    m_data_store->set_conduit_node(data_id, node);
+    load_conduit_node_from_file(data_id, node);
+    m_data_store->set_preloaded_conduit_node(data_id, node);
   }
-
 
   if (is_master()) {
     std::cout << "image_data_reader::preload_data_store time: " << (get_time() - tm1) << "\n";
@@ -227,5 +256,19 @@ std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_cu
   ret.reserve(m_mini_batch_size);
   return ret;
 }
+
+void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node) {
+  node.reset();
+  const std::string filename = get_file_dir() + m_image_list[data_id].first;
+  int label = m_image_list[data_id].second;
+  //std::vector<conduit::uint8> data;
+  std::vector<char> data;
+  read_raw_data(filename, data);
+  node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);
+  node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set(data);
+  node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set_char_ptr(data.data(), data.size());
+  node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
+}
+
 
 }  // namespace lbann
