@@ -100,7 +100,7 @@ Setup Spack and local base tools
 
 1.  Download and install `Spack <https://github.com/llnl/spack>`_.
     Additionally setup shell support as discussed
-    `here b<https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_.
+    `here <https://spack.readthedocs.io/en/latest/module_file_support.html#id2>`_.
 
     .. code-block:: bash
 
