@@ -53,8 +53,6 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-#define SAMPLE_ID_PAD 9
-
 // This macro may be moved to a global scope
 #define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
   std::stringstream _err; \
@@ -157,12 +155,6 @@ data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_proces
   }
 
   m_master_pps = lbann::make_unique<cv_process>(*pp);
-
-  // Initialize the data store
-  options *opts = options::get();
-  if (opts->get_bool("use_data_store")) {
-    m_data_store = new data_store_conduit(this);  // *data_store_conduit
-  }
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
@@ -354,7 +346,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();
         const std::string cur_child = child_names[0];
-        const std::string new_child = pad(std::to_string(i), SAMPLE_ID_PAD, '0');
+        const std::string new_child = LBANN_DATA_ID_STR(i);
         node.rename_child(cur_child, new_child);
         m_using_random_node.emplace(m_io_thread_pool->get_local_thread_id());
         std::cout << get_type() + ":: replacing with random node, since failed to open file "
@@ -379,11 +371,17 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
       const std::string& file_name = m_sample_list.get_samples_filename(id);
       if (h <= static_cast<hid_t>(0)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
-                    " for sample "+ sample_name);
+                    " in dir: " + m_sample_list.get_samples_dirname() +
+                    " for sample "+ sample_name + " ran_in_trainer: " \
+                    + std::to_string(m_comm->get_rank_in_trainer()) \
+                    + " because we could not get a file handle");
         return false;
       } else {
-          LBANN_ERROR(get_type() + ":: could not find path in file " + file_name + \
-                      " for sample "+ sample_name + "; path: " + path);
+        LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
+                    " in dir: " + m_sample_list.get_samples_dirname() +
+                    " for sample "+ sample_name + " ran_in_trainer: " \
+                    + std::to_string(m_comm->get_rank_in_trainer()) \
+                    + " because we could not get a sample from the data_store");
           return false;
       }
     }
@@ -821,16 +819,6 @@ void data_reader_jag_conduit::load() {
 
   options *opts = options::get();
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
-    if (m_comm->get_trainer_rank() == 0) {
-      m_data_store->check_mem_capacity(m_comm, sample_list_file,  m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-    }
-
-    // unsure if this will always work; the intent is that no trainer
-    // should start loading data until the check has completed
-    m_comm->global_barrier();
-  }
-
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
@@ -877,7 +865,9 @@ void data_reader_jag_conduit::load() {
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
-  if (opts->has_string("write_sample_list") && is_master()) {
+  if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+    const std::string msg = " writing sample list " + sample_list_file;
+    log_msg(msg.c_str());
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
@@ -891,31 +881,7 @@ void data_reader_jag_conduit::load() {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
-    if (is_master()) {
-      std::cout << "\nUSING DATA_STORE\n\n";
-    }
-    m_data_store->set_shuffled_indices(&m_shuffled_indices);
-    if (opts->get_bool("preload_data_store")) {
-      if(is_master()) {
-        std::cout << "Starting the preload" << std::endl;
-      }
-      m_data_store->build_preloaded_owner_map(local_list_sizes);
-      preload_data_store();
-      if(is_master()) {
-        std::cout << "preload complete" << std::endl;
-      }
-
-    }
-  } else {
-    // these should already be set; in the future there will only
-    // be one of these (when data_store_conduit is completed)
-    m_data_store = nullptr;
-  }
-
-  if(is_master()) {
-    std::cout << "Setting up the data store is complete" << std::endl;
-  }
+  instantiate_data_store(local_list_sizes);
 
   select_subset_of_data();
 }
@@ -947,7 +913,7 @@ void data_reader_jag_conduit::preload_data_store() {
       m_sample_list.open_samples_hdf5_handle(idx, true);
       load_conduit_node(idx, key, work);
       conduit::Node & node = m_data_store->get_empty_node(idx);
-      const std::string padded_idx = '/' + pad(std::to_string(idx), SAMPLE_ID_PAD, '0');
+      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
       node[padded_idx] = work;
 
       m_data_store->set_preloaded_conduit_node(idx, node);
@@ -1265,7 +1231,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
 
   for (const auto& emi_tag : m_emi_image_keys) {
     const std::string conduit_field = m_output_image_prefix + emi_tag;
-    const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+    const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1392,7 +1358,7 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
 
   for(const auto key: m_scalar_keys) {
     std::string conduit_field = m_output_scalar_prefix + key;
-    std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+    std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1427,7 +1393,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
-      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+      const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
         if (data_store_active()) {
           LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1449,7 +1415,7 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   } else {
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
-      const std::string conduit_obj = '/' + pad(std::to_string(sample_id), SAMPLE_ID_PAD, '0') + '/' + conduit_field;
+      const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
       if(sample[conduit_obj].schema().dtype().is_empty()) {
         if (data_store_active()) {
           LBANN_ERROR("Unable to find field " + conduit_obj
@@ -1598,7 +1564,6 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 
   m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
-  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
   return ok;
 }
 

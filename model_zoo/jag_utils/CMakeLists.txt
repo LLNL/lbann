@@ -56,8 +56,4 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(generate_corrupt_samples-bin lbann )
   set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
 
-  add_executable( test_numpy_conduit_cache-bin test_numpy_conduit_cache.cpp )
-  target_link_libraries(test_numpy_conduit_cache-bin lbann )
-  set_target_properties(test_numpy_conduit_cache-bin PROPERTIES OUTPUT_NAME test_numpy_conduit_cache)
-
 endif ()
