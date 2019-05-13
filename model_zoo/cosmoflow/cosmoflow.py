@@ -162,23 +162,21 @@ class CosmoFlow(lm.Module):
 
         return x
 
-# TODO: Use numpy_npz_conduit data reader
 def create_data_reader(train_path, val_path, test_path):
     readerArgs = [
-        {"role": "train",    "data_file_pattern": "{}/train_*_int16.npz".format(train_path)},
-        {"role": "validate", "data_file_pattern": "{}/val_*_int16.npz".format(val_path)},
-        {"role": "test",     "data_file_pattern": "{}/test_*_int16.npz".format(test_path)},
+        {"role": "train",    "data_filename": train_path},
+        {"role": "validate", "data_filename": val_path},
+        {"role": "test",     "data_filename": test_path},
     ]
 
     readers = []
     for readerArg in readerArgs:
         reader = lp.lbann_pb2.Reader(
-            name="cosmoflow",
+            name="numpy_npz_conduit_reader",
             shuffle=True,
             validation_percent=0,
             absolute_sample_count=0,
             percent_of_data_to_use=1.0,
-            scaling_factor_int16=1.0,
             **readerArg)
 
         readers.append(reader)
@@ -199,13 +197,19 @@ parser.add_argument(
     '--account', action='store', type=str,
     help='scheduler account', metavar='NAME')
 parser.add_argument(
+    '--experiment-dir', action='store', type=str,
+    help='experiment directory', metavar='NAME')
+parser.add_argument(
     "--learn-rate", action="store", default=0.0005, type=float,
     help="The initial learning-rate")
 parser.add_argument(
-        "--mini-batch-size", action="store", default=128, type=int,
+        "--nodes", action="store", default=8, type=int,
+        help="The number of nodes")
+parser.add_argument(
+        "--mini-batch-size", action="store", default=32, type=int,
         help="The mini-batch size")
 parser.add_argument(
-        "--epochs", action="store", default=130, type=float,
+        "--epochs", action="store", default=130, type=int,
         help="The number of epochs")
 parser.add_argument(
         "--output-size", action="store", default=4, type=int,
@@ -284,7 +288,10 @@ data_reader_proto = create_data_reader(args.train_path,
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition
 if args.account: kwargs['account'] = args.account
+if args.experiment_dir: kwargs['experiment_dir'] = args.experiment_dir
+
 lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
-                              job_name='lbann_lenet',
-                              nodes=8,
+                              lbann_args=" --use_data_store --preload_data_store",
+                              job_name='lbann_cosmoflow',
+                              nodes=args.nodes,
                               **kwargs)
