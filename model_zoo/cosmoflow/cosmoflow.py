@@ -273,7 +273,10 @@ model = lbann.Model(args.mini_batch_size,
                     callbacks=callbacks)
 
 # Setup optimizer
-opt = lbann.Adam(learn_rate=args.learn_rate)
+opt = lbann.Adam(learn_rate=args.learn_rate,
+                 beta1=0.9,
+                 beta2=0.99,
+                 eps=1e-8)
 
 # Setup data reader
 data_reader_proto = create_data_reader(args.train_path,
