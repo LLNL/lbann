@@ -97,7 +97,8 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
                                        El::Int partner_trainer,
                                        const std::set<std::string>& weights_names,
                                        const std::vector<weights*>& send_weights,
-                                       std::vector<weights*>& recv_weights) {
+                                       std::vector<weights*>& recv_weights,
+                                       bool exchange_hyperparameters) {
 
   // Get partner process
   const El::Int rank_in_trainer = comm.get_rank_in_trainer();
@@ -127,19 +128,21 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       const auto* send_sgd = dynamic_cast<const sgd*>(send_opt);
       auto* recv_sgd = dynamic_cast<sgd*>(recv_opt);
       if (send_sgd != nullptr && recv_sgd != nullptr) {
-        using hyperparameters_type = std::tuple<DataType, DataType, bool>;
-        hyperparameters_type hyperparameters(send_sgd->get_learning_rate(),
+        if(exchange_hyperparameters) {
+          using hyperparameters_type = std::tuple<DataType, DataType, bool>;
+          hyperparameters_type hyperparameters(send_sgd->get_learning_rate(),
                                              send_sgd->get_momentum(),
                                              send_sgd->using_nesterov());
-        El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
+          El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
                           sizeof(hyperparameters_type),
                           partner_rank_in_world,
                           partner_rank_in_world,
                           comm.get_world_comm(),
                           El::SyncInfo<El::Device::CPU>{});
-        recv_sgd->set_learning_rate(std::get<0>(hyperparameters));
-        recv_sgd->set_momentum(std::get<1>(hyperparameters));
-        recv_sgd->set_nesterov(std::get<2>(hyperparameters));
+          recv_sgd->set_learning_rate(std::get<0>(hyperparameters));
+          recv_sgd->set_momentum(std::get<1>(hyperparameters));
+          recv_sgd->set_nesterov(std::get<2>(hyperparameters));
+        }
         El::SendRecv(send_sgd->get_velocity().LockedMatrix(),
                      recv_sgd->get_velocity().Matrix(),
                      comm.get_world_comm(),
@@ -149,30 +152,32 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       const auto* send_adam = dynamic_cast<const adam*>(send_opt);
       auto* recv_adam = dynamic_cast<adam*>(recv_opt);
       if (send_adam != nullptr && recv_adam != nullptr) {
-        using hyperparameters_type = std::tuple<DataType, DataType, DataType, DataType, DataType, DataType>;
-        hyperparameters_type hyperparameters(send_adam->get_learning_rate(),
+        if(exchange_hyperparameters) {
+          using hyperparameters_type = std::tuple<DataType, DataType, DataType, DataType, DataType, DataType>;
+          hyperparameters_type hyperparameters(send_adam->get_learning_rate(),
                                              send_adam->get_beta1(),
                                              send_adam->get_beta2(),
                                              send_adam->get_eps(),
                                              send_adam->get_current_beta1(),
                                              send_adam->get_current_beta2());
-        El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
+          El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
                           sizeof(hyperparameters_type),
                           partner_rank_in_world,
                           partner_rank_in_world,
                           comm.get_world_comm(),
                           El::SyncInfo<El::Device::CPU>{});
-        recv_adam->set_learning_rate(std::get<0>(hyperparameters));
-        recv_adam->set_beta1(std::get<1>(hyperparameters));
-        recv_adam->set_beta2(std::get<2>(hyperparameters));
-        recv_adam->set_eps(std::get<3>(hyperparameters));
-        recv_adam->set_current_beta1(std::get<4>(hyperparameters));
-        recv_adam->set_current_beta2(std::get<5>(hyperparameters));
-        El::SendRecv(send_adam->get_moment1().LockedMatrix(),
+          recv_adam->set_learning_rate(std::get<0>(hyperparameters));
+          recv_adam->set_beta1(std::get<1>(hyperparameters));
+          recv_adam->set_beta2(std::get<2>(hyperparameters));
+          recv_adam->set_eps(std::get<3>(hyperparameters));
+          recv_adam->set_current_beta1(std::get<4>(hyperparameters));
+          recv_adam->set_current_beta2(std::get<5>(hyperparameters));
+          El::SendRecv(send_adam->get_moment1().LockedMatrix(),
                      recv_adam->get_moment1().Matrix(),
                      comm.get_world_comm(),
                      partner_rank_in_world,
                      partner_rank_in_world);
+        }
         El::SendRecv(send_adam->get_moment2().LockedMatrix(),
                      recv_adam->get_moment2().Matrix(),
                      comm.get_world_comm(),
@@ -320,19 +325,22 @@ lbann_callback_ltfb::lbann_callback_ltfb(El::Int batch_interval,
                                          std::set<std::string> weights_names,
                                          bool low_score_wins,
                                          communication_algorithm comm_algo,
+                                         bool exchange_hyperparameters,
                                          lbann_summary *summarizer)
   : lbann_callback(batch_interval, summarizer),
     m_metric_name(std::move(metric_name)),
     m_weights_names(std::move(weights_names)),
     m_low_score_wins(low_score_wins),
-    m_comm_algo(comm_algo) {}
+    m_comm_algo(comm_algo),
+    m_exchange_hyperparameters(exchange_hyperparameters) {}
 
 lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
   lbann_callback(other),
   m_metric_name(other.m_metric_name),
   m_weights_names(other.m_weights_names),
   m_low_score_wins(other.m_low_score_wins),
-  m_comm_algo(other.m_comm_algo) {
+  m_comm_algo(other.m_comm_algo),
+  m_exchange_hyperparameters(other.m_exchange_hyperparameters) {
 
   // Deep copy
   m_workspace_weights.clear();
@@ -351,6 +359,7 @@ lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& o
   m_weights_names = other.m_weights_names;
   m_low_score_wins = other.m_low_score_wins;
   m_comm_algo = other.m_comm_algo;
+  m_exchange_hyperparameters = other.m_exchange_hyperparameters;
 
   // Deep copy
   m_workspace_weights.clear();
@@ -442,7 +451,8 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
                                       partner_trainer,
                                       m_weights_names,
                                       local_weights,
-                                      model_weights);
+                                      model_weights,
+                                      m_exchange_hyperparameters);
     break;
   case communication_algorithm::checkpoint_file:
     exchange_models__checkpoint_file(comm,
