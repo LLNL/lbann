@@ -116,8 +116,6 @@ class data_reader_jag : public generic_data_reader {
   /// Return the input values of the simulation correspoding to the i-th sample
   std::vector<DataType> get_input(const size_t i) const;
 
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
-
  protected:
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);

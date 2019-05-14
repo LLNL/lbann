@@ -1559,13 +1559,6 @@ void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
    }
 }
 
-void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool) {
-  lbann::save_image(filename, pixels,
-                    {1, 
-                     static_cast<size_t>(m_image_height),
-                     static_cast<size_t>(m_image_width)});
-}
-
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
   //@TODO revisit later -- don't know how to handle this yet
   if (m_data_store != nullptr) {

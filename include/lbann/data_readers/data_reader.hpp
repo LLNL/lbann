@@ -294,15 +294,6 @@ class generic_data_reader {
   virtual int fetch_responses(CPUMat& Y);
 
   /**
-   * Save pixels to an image. The implementing data reader is responsible for
-   * handling format detection, conversion, etc.
-   */
-  // TODO: This function needs to go away from here
-  virtual void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) {
-    NOT_IMPLEMENTED("save_image");
-  }
-  /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
    * around, then reshuffle the data indicies.
