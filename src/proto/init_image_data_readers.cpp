@@ -83,6 +83,16 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
 
+    if(height == 0 && pb_schema.image_height() != 0) {
+      height = pb_schema.image_height();
+    }
+    if(width == 0 && pb_schema.image_width() != 0) {
+      width = pb_schema.image_width();
+    }
+    if(channels == 0 && pb_schema.image_num_channels() != 0) {
+      channels = pb_schema.image_num_channels();
+    }
+
     if (channels == 0) {
       channels = 1;
     }

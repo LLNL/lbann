@@ -31,6 +31,8 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
+#include "lbann/utils/opencv.hpp"
+#include "lbann/transforms/vision/to_lbann_layout.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
@@ -1417,6 +1419,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
     case JAG_Image: {
       const size_t num_images = get_num_img_srcs()
                               * static_cast<size_t>(m_split_channels? m_image_num_channels : 1u);
+      const size_t num_channels = static_cast<size_t>(m_split_channels ? 1u : m_image_num_channels);
       const size_t image_size = m_split_channels? get_linearized_1ch_image_size() : get_linearized_image_size();
       const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
@@ -1425,6 +1428,20 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       if (images.size() != num_images) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
           std::to_string(images.size()) + "!=" + std::to_string(num_images));
+      }
+
+      if (!m_split_channels && m_image_num_channels != 1) {
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : transform pipeline now requires single channel images: num_channels=", \
+          std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
+      }
+
+      std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      auto tll = lbann::transform::to_lbann_layout();
+      for(size_t i=0u; i < num_images; ++i) {
+        //        El::Matrix<uint8_t> img = El::Matrix<uint8_t>(utils::get_linearized_size(dims), 1, images[i].data, utils::get_linearized_size(dims));
+        El::Matrix<uint8_t> img = El::Matrix<uint8_t>(1, utils::get_linearized_size(dims), images[i].data, 1);
+        utils::type_erased_matrix te_img(std::move(img));
+        tll.apply(te_img, X_v[i], dims);
       }
       break;
     }

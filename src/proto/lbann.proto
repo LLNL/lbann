@@ -202,6 +202,10 @@ message DataSetMetaData {
     string image_prefix = 2;
     string input_prefix = 3;
 
+    uint64 image_height = 11;
+    uint64 image_width = 12;
+    uint64 image_num_channels = 13;
+
     //------------------ start of only for jag_conduit -----------------------
     bool split_jag_image_channels = 89;
     repeated string jag_image_keys = 90;
