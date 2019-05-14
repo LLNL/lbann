@@ -334,7 +334,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   //fill in m_data_dims
   auto shape = node[LBANN_DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
   int shape_num_elts = shape.number_of_elements();
-  for (int k=0; k<shape_num_elts; k++) {
+  for (int k=1; k<shape_num_elts; k++) {
     m_data_dims.push_back(shape[k]);
   }
   m_num_features = std::accumulate(m_data_dims.begin() + 1,
