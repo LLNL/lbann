@@ -97,6 +97,8 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   /// read the body of a sample list
   void read_sample_list(std::istream& istrm, size_t stride=1, size_t offset=0) override;
 
+  void assign_samples_name() override {}
+
   static bool pq_cmp(fd_use_map_t left, fd_use_map_t right) {
     return ((left.second).first < (right.second).first) ||
            (((left.second).first == (right.second).first) &&

@@ -19,14 +19,6 @@
 
 namespace lbann {
 
-template<> inline size_t uninitialized_sample_name<size_t>() {
-  return 0ul;
-}
-
-template<> inline std::string uninitialized_sample_name<std::string>() {
-  return "";
-}
-
 template<typename T>
 inline std::string to_string(const T val) {
   return std::to_string(val);
@@ -527,7 +519,8 @@ inline void sample_list<sample_name_t>
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::assign_samples_name() {
-  if constexpr (std::is_integral<sample_name_t>::value) {
+  if constexpr (std::is_integral<sample_name_t>::value
+            && !std::is_same<sample_name_t, bool>::value) {
     sample_name_t i = 0;
     for (auto& s: m_sample_list) {
       s.second = i++;
@@ -536,6 +529,24 @@ inline void sample_list<sample_name_t>
     for (auto& s: m_sample_list) {
       s.second = s.first;
     }
+  } else {
+    LBANN_ERROR(std::string{} + " :: base class does not implement this method"
+                              + " for the current sample name type");
+  }
+}
+
+template <typename sample_name_t>
+inline sample_name_t uninitialized_sample_name() {
+  if constexpr (std::is_integral<sample_name_t>::value) {
+    return static_cast<sample_name_t>(0);
+  } else if constexpr (std::is_same<std::string, sample_name_t>::value) {
+    return "";
+  } else if constexpr (std::is_floating_point<sample_name_t>::value) {
+    return 0.0;
+  } else if constexpr (std::is_default_constructible<sample_name_t>::value
+                      && std::is_copy_constructible<sample_name_t>::value) {
+    sample_name_t ret{};
+    return ret;
   } else {
     LBANN_ERROR(std::string{} + " :: base class does not implement this method"
                               + " for the current sample name type");
@@ -563,7 +574,21 @@ inline void sample_list<sample_name_t>
   LBANN_ERROR(std::string{} + " :: base class does not implement this method"
                             + " for the current sample name type");
 }
-#endif
+
+template<> inline size_t uninitialized_sample_name<size_t>() {
+  return 0ul;
+}
+
+template<> inline std::string uninitialized_sample_name<std::string>() {
+  return "";
+}
+
+template <typename sample_name_t>
+inline sample_name_t uninitialized_sample_name() {
+  sample_name_t ret{};
+  return ret;
+}
+#endif // defined(__cpp_if_constexpr)
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
