@@ -33,8 +33,10 @@ namespace transform {
 void random_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
   if (dims[1] <= m_h || dims[2] <= m_w) {
-    // Just return image as-is when it's smaller than the crop region.
-    return;
+    std::stringstream ss;
+    ss << "Random crop to " << m_h << "x" << m_w
+       << " applied to input " << dims[1] << "x" << dims[2];
+    LBANN_ERROR(ss.str());
   }
   std::vector<size_t> new_dims = {dims[0], m_h, m_w};
   auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
