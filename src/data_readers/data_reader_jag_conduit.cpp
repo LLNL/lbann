@@ -30,7 +30,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/image_utils.hpp"
+#include "lbann/utils/image.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()

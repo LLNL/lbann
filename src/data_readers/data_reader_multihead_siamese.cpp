@@ -29,7 +29,7 @@
 
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/image_utils.hpp"
+#include "lbann/utils/image.hpp"
 #include <fstream>
 #include <sstream>
 #include <omp.h>

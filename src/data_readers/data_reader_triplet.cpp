@@ -31,7 +31,7 @@
 
 #include "lbann/data_readers/data_reader_triplet.hpp"
 #include "lbann/utils/file_utils.hpp"
-#include "lbann/utils/image_utils.hpp"
+#include "lbann/utils/image.hpp"
 #include <fstream>
 #include <sstream>
 #include <omp.h>

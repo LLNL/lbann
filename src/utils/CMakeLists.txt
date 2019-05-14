@@ -8,7 +8,7 @@ set_full_path(THIS_DIR_SOURCES
   file_utils.cpp
   graph.cpp
   im2col.cpp
-  image_utils.cpp
+  image.cpp
   number_theory.cpp
   omp_diagnostics.cpp
   options.cpp

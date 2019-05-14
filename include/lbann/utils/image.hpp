@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_UTILS_IMAGE_UTILS_HPP
-#define LBANN_UTILS_IMAGE_UTILS_HPP
+#ifndef LBANN_UTILS_IMAGE_HPP
+#define LBANN_UTILS_IMAGE_HPP
 
 #include "lbann/base.hpp"
 
@@ -62,4 +62,4 @@ void save_image(const std::string filename, const CPUMat& src,
 
 }  // namespace lbann
 
-#endif  // LBANN_UTILS_IMAGE_UTILS_HPP
+#endif  // LBANN_UTILS_IMAGE_HPP

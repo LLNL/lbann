@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 
 // File being tested
-#include <lbann/utils/image_utils.hpp>
+#include <lbann/utils/image.hpp>
 
 // Hide by default because this will create a file.
 TEST_CASE("Testing image utils", "[.image-utils][utilities]") {

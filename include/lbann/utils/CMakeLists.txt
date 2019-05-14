@@ -14,7 +14,7 @@ set_full_path(THIS_DIR_HEADERS
   file_utils.hpp
   glob.hpp
   im2col.hpp
-  image_utils.hpp
+  image.hpp
   jag_utils.hpp
   lbann_library.hpp
   mild_exception.hpp

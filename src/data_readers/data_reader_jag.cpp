@@ -27,7 +27,7 @@
 
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/cnpy_utils.hpp"
-#include "lbann/utils/image_utils.hpp"
+#include "lbann/utils/image.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
