@@ -26,7 +26,7 @@
 
 #include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/colorize.hpp"
-#include "lbann/utils/opencv_utils.hpp"
+#include "lbann/utils/opencv.hpp"
 
 namespace lbann {
 namespace transform {

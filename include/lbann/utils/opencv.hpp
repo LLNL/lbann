@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_UTILS_OPENCV_UTILS_HPP_INCLUDED
-#define LBANN_UTILS_OPENCV_UTILS_HPP_INCLUDED
+#ifndef LBANN_UTILS_OPENCV_HPP_INCLUDED
+#define LBANN_UTILS_OPENCV_HPP_INCLUDED
 
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/type_erased_matrix.hpp"
@@ -68,9 +68,6 @@ inline bool check_is_image(const utils::type_erased_matrix& data,
  */
 inline void assert_is_image(const utils::type_erased_matrix& data,
                             const std::vector<size_t>& dims) {
-#ifndef LBANN_HAS_OPENCV
-  LBANN_ERROR("OpenCV is not supported.");
-#endif
   try {
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
@@ -118,4 +115,4 @@ inline int get_linearized_size(const std::vector<size_t>& dims) {
 }  // namespace utils
 }  // namespace lbann
 
-#endif  // LBANN_UTILS_OPENCV_UTILS_HPP_INCLUDED
+#endif  // LBANN_UTILS_OPENCV_HPP_INCLUDED

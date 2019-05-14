@@ -29,7 +29,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include "lbann/utils/image.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/opencv_utils.hpp"
+#include "lbann/utils/opencv.hpp"
 
 namespace {
 

@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
-#include "lbann/utils/opencv_utils.hpp"
+#include "lbann/utils/opencv.hpp"
 
 namespace lbann {
 namespace transform {

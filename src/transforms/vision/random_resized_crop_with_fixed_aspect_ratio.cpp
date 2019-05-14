@@ -26,7 +26,7 @@
 
 #include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/random_resized_crop_with_fixed_aspect_ratio.hpp"
-#include "lbann/utils/opencv_utils.hpp"
+#include "lbann/utils/opencv.hpp"
 
 namespace lbann {
 namespace transform {
