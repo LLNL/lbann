@@ -309,7 +309,7 @@ if (LBANN_WITH_PYTHON)
     CACHE PATH "The prefix for the python installation")
 
   set(CMAKE_INSTALL_PYTHONDIR
-    "lib/python-${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
+    "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
     CACHE PATH
     "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
 
@@ -634,8 +634,7 @@ if (LBANN_HAS_PYTHON)
   # Construct config file
   # NOTE (trb): python_config.ini is installed by setup.py
   set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)
-  set(_LBANN_PB2_PY
-    ${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/lbann_pb2.py)
+  set(_LBANN_PB2_PY ${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}/lbann_pb2.py)
   set(_LBANN_EXE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/lbann)
   configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/python_config.ini.in"
