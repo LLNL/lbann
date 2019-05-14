@@ -7,7 +7,7 @@
 #include <lbann/transforms/vision/random_crop.hpp>
 #include "helper.hpp"
 
-TEST_CASE("Testing random resized crop preprocessing", "[preproc]") {
+TEST_CASE("Testing random resized crop with fixed aspect ratio preprocessing", "[preproc]") {
   lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
 
   SECTION("matrix with one channel") {
