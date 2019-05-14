@@ -35,7 +35,7 @@ namespace transform {
 /**
  * Convert data to LBANN's native data layout.
  * Currently only supports converting from OpenCV layouts.
- * This will also re-scale data as needed.
+ * This will also rescale data from [0, 255] to [0, 1].
  */
 class to_lbann_layout : public transform {
 public:

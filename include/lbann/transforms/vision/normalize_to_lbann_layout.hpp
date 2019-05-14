@@ -36,7 +36,7 @@ namespace transform {
  * Normalize and convert data to LBANN's native data layout.
  * Currently only supports converting from OpenCV layouts.
  * This normalizes with provided channel-wise means and standard deviations,
- * scales to [0, 1], and converts to LBANN's data layout.
+ * scales from [0, 255] to [0, 1], and converts to LBANN's data layout.
  * Normalization is applied after the scaling to [0, 1].
  * This essentially fuses the to_lbann_layout and normalize transforms.
  */
