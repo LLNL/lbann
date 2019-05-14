@@ -128,9 +128,6 @@ option(LBANN_DETERMINISTIC
 option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
 
-option(LBANN_PYTHON_IN_INSTALL_DIR
-  "Install Python frontend in the install directory (as opposed to a Python site-packages directory)" ON)
-
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
 mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
@@ -627,7 +624,7 @@ if (LBANN_HAS_PYTHON)
   # Construct config file
   set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)
   set(_LBANN_PB2_PY
-    ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/python/lbann_pb2.py)
+    ${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/lbann_pb2.py)
   set(_LBANN_EXE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/lbann)
   configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/python_config.ini.in"
@@ -643,14 +640,8 @@ if (LBANN_HAS_PYTHON)
     @ONLY)
 
   # Install Python package with setuptools
-  set(LBANN_SETUP_PY_ARGS ""
-    CACHE STRING "Arguments to pass to 'setup.py install' when installing the Python frontend")
-  set(_SETUP_PY_ARGS "${LBANN_SETUP_PY_ARGS}")
-  if (LBANN_PYTHON_IN_INSTALL_DIR)
-    set(_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/python")
-    set(_SETUP_PY_ARGS
-      "${_SETUP_PY_ARGS} --root ${_PYTHON_INSTALL_DIR} --install-lib . --install-data .")
-  endif (LBANN_PYTHON_IN_INSTALL_DIR)
+  set(_SETUP_PY_ARGS
+    "${_SETUP_PY_ARGS} --root ${CMAKE_INSTALL_PREFIX} --prefix .")
   install(CODE
     "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install ${_SETUP_PY_ARGS})")
 
