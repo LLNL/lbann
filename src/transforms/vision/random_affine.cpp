@@ -40,25 +40,25 @@ void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
   constexpr float pi_rad = 3.14159265358979323846f / 180.0f;
   float angle = 0.0f;
   if (m_rotate_min != 0.0f || m_rotate_max != 0.0f) {
-    angle = get_uniform_random(m_rotate_min, m_rotate_max) * pi_rad;
+    angle = transform::get_uniform_random(m_rotate_min, m_rotate_max) * pi_rad;
   }
   float translate_x = 0.0f;
   if (m_translate_h != 0.0f) {
     const float dx = dims[2]*m_translate_w;
-    translate_x = std::round(get_uniform_random(-dx, dx));
+    translate_x = std::round(transform::get_uniform_random(-dx, dx));
   }
   float translate_y = 0.0f;
   if (m_translate_w != 0.0f) {
     const float dy = dims[1]*m_translate_h;
-    translate_y = std::round(get_uniform_random(-dy, dy));
+    translate_y = std::round(transform::get_uniform_random(-dy, dy));
   }
   float scale = 1.0f;
   if (m_scale_min != 0.0f || m_scale_max != 0.0f) {
-    scale = get_uniform_random(m_scale_min, m_scale_max);
+    scale = transform::get_uniform_random(m_scale_min, m_scale_max);
   }
   float shear = 0.0f;
   if (m_shear_min != 0.0f || m_shear_max != 0.0f) {
-    shear = get_uniform_random(m_shear_min, m_shear_max) * pi_rad;
+    shear = transform::get_uniform_random(m_shear_min, m_shear_max) * pi_rad;
   }
   // Centering matrix:
   const float center_x = dims[2]*0.5f + 0.5f;

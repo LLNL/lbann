@@ -89,17 +89,17 @@ public:
   }
 protected:
   /** Return a value uniformly at random in [a, b). */
-  inline float get_uniform_random(float a, float b) {
+  static inline float get_uniform_random(float a, float b) {
     fast_rng_gen& gen = get_fast_generator();
     std::uniform_real_distribution<float> dist(a, b);
     return dist(gen);
   }
   /** Return true with probability p. */
-  inline bool get_bool_random(float p) {
+  static inline bool get_bool_random(float p) {
     return get_uniform_random(0.0, 1.0) < p;
   }
   /** Return an integer uniformly at random in [a, b). */
-  inline int get_uniform_random_int(int a, int b) {
+  static inline El::Int get_uniform_random_int(El::Int a, El::Int b) {
     fast_rng_gen& gen = get_fast_generator();
     return fast_rand_int(gen, b - a) + a;
   }

@@ -43,8 +43,10 @@ void random_resized_crop::apply(utils::type_erased_matrix& data, std::vector<siz
   const size_t zoom_w = m_w*zoom;
   const size_t zoom_crop_h = m_crop_h*zoom;
   const size_t zoom_crop_w = m_crop_w*zoom;
-  const size_t dx = get_uniform_random_int(0, 2*(zoom*m_w - zoom_crop_w) + 1);
-  const size_t dy = get_uniform_random_int(0, 2*(zoom*m_h - zoom_crop_h) + 1);
+  const size_t dx = transform::get_uniform_random_int(
+    0, 2*(zoom*m_w - zoom_crop_w) + 1);
+  const size_t dy = transform::get_uniform_random_int(
+    0, 2*(zoom*m_h - zoom_crop_h) + 1);
   const size_t x = (dims[2] - zoom_w + dx + 1) / 2;
   const size_t y = (dims[1] - zoom_h + dy + 1) / 2;
   // Sanity check.

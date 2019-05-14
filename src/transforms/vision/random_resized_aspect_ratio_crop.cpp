@@ -41,17 +41,18 @@ void random_resized_aspect_ratio_crop::apply(utils::type_erased_matrix& data,
   const size_t area = dims[1]*dims[2];
   // There's a chance this can fail, so we only make ten attempts.
   for (int attempt = 0; attempt < 10; ++attempt) {
-    const float target_area = area*get_uniform_random(m_scale_min, m_scale_max);
-    const float target_ar = get_uniform_random(m_ar_min, m_ar_max);
+    const float target_area = area*transform::get_uniform_random(m_scale_min,
+                                                                 m_scale_max);
+    const float target_ar = transform::get_uniform_random(m_ar_min, m_ar_max);
     w = std::sqrt(target_area * target_ar);
     h = std::sqrt(target_area / target_ar);
     // Swap these with 50% probability.
-    if (get_bool_random(0.5)) {
+    if (transform::get_bool_random(0.5)) {
       std::swap(w, h);
     }
     if (w <= dims[2] && h <= dims[1]) {
-      x = get_uniform_random_int(0, dims[2] - w + 1);
-      y = get_uniform_random_int(0, dims[1] - h + 1);
+      x = transform::get_uniform_random_int(0, dims[2] - w + 1);
+      y = transform::get_uniform_random_int(0, dims[1] - h + 1);
       break;
     }
     // Reset.

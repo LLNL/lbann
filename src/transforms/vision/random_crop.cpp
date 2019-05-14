@@ -40,8 +40,8 @@ void random_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& di
   auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
   // Select the upper-left corner of the crop.
-  const size_t x = get_uniform_random_int(0, dims[2] - m_h + 1);
-  const size_t y = get_uniform_random_int(0, dims[1] - m_h + 1);
+  const size_t x = transform::get_uniform_random_int(0, dims[2] - m_h + 1);
+  const size_t y = transform::get_uniform_random_int(0, dims[1] - m_h + 1);
   // Sanity check.
   if (x >= static_cast<size_t>(src.cols) ||
       y >= static_cast<size_t>(src.rows) ||

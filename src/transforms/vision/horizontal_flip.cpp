@@ -31,7 +31,7 @@ namespace lbann {
 namespace transform {
 
 void horizontal_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
-  if (get_bool_random(m_p)) {
+  if (transform::get_bool_random(m_p)) {
     cv::Mat src = utils::get_opencv_mat(data, dims);
     auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(dims), 1);
     cv::Mat dst = utils::get_opencv_mat(dst_real, dims);
