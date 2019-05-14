@@ -71,7 +71,8 @@ public:
 
   /**
    * Apply the transform to data.
-   * @param data The input data to transform, which is modified in-place.
+   * @param data The input data to transform, which is modified in-place. The
+   *   matrix shuold be contiguous.
    * @param dims The dimensions of the data tensor. For "plain data", dims
    * should have one entry, giving its size. For images, dims should have three
    * entries: channels, height, width.

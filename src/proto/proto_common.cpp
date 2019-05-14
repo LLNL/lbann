@@ -93,6 +93,7 @@ void init_data_readers(
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
+    // This is a hack that should be fixed when we clean up data reader setup.
     bool set_transform_pipeline = true;
 
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
