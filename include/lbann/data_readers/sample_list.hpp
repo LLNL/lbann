@@ -50,7 +50,7 @@ class sample_list {
   using sample_file_id_t = std::size_t;
   /** To describe a sample as the id of the file to which it belongs.
     * Each file contains only one sample. */
-  using sample_t = sample_file_id_t;
+  using sample_t = std::template pair<sample_file_id_t, sample_name_t>;
   /// Type for the list of samples
   using samples_t = std::template vector< sample_t >;
   /// Mapping of the file index to the filename
@@ -116,6 +116,9 @@ class sample_list {
   /// read the body of a sample list, which is the list of sample files, where each file contains a single sample.
   virtual void read_sample_list(std::istream& istrm, size_t stride=1, size_t offset=0);
 
+  /// Assign names to samples when there is only one sample per file without a name.
+  virtual void assign_samples_name();
+
   /// Reads a sample list and populates the internal list
   size_t get_samples_per_file(std::istream& istrm, const std::string& filename, size_t stride=1, size_t offset=0);
 
@@ -138,6 +141,9 @@ class sample_list {
 };
 
 void handle_mpi_error(int ierr);
+
+template<typename T>
+inline T uninitialized_sample_name();
 
 } // end of namespace
 

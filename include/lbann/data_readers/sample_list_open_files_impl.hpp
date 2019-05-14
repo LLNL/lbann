@@ -323,17 +323,20 @@ inline bool sample_list_open_files<sample_name_t, file_handle_t>
     tmp_file_map[filename].emplace_back(s.second);
   }
 
-  typename samples_t::const_iterator it_begin = m_sample_list.cbegin();
-  typename samples_t::const_iterator it_end = m_sample_list.cbegin();
-
   sstr.clear();
 
   // reserve the string to hold the entire sample lit
   size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1;
-  if (it_begin < it_end) {
-    estimated_len += tmp_file_map.size();
-    sstr.reserve(estimated_len);
+  for (const auto& f : tmp_file_map) {
+    estimated_len += f.first.size()
+                   + std::to_string(f.second.size()).size()
+                   + std::to_string(m_file_map.at(f.first) - f.second.size()).size()
+                   + 3u;
+    for (const auto& s : f.second) {
+      estimated_len += lbann::to_string(s).size() + 1u;
+    }
   }
+  sstr.reserve(estimated_len);
 
   // write the list header
   this->write_header(sstr, tmp_file_map.size());
@@ -404,7 +407,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const {
-  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  LBANN_ERROR(std::string{} + " :: abstract class does not implement this method");
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -644,27 +647,27 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 template <typename sample_name_t, typename file_handle_t>
 inline bool sample_list_open_files<sample_name_t, file_handle_t>
 ::is_file_handle_valid(const file_handle_t& h) const {
-  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  LBANN_ERROR(std::string{} + " :: abstract class does not implement this method");
   return false;
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
 ::open_file_handle_for_read(const std::string& file_path) {
-  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  LBANN_ERROR(std::string{} + " :: abstract class does not implement this method");
   return file_handle_t();
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::close_file_handle(file_handle_t& h) {
-  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  LBANN_ERROR(std::string{} + " :: abstract class does not implement this method");
 }
 
 template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::clear_file_handle(file_handle_t& h) {
-  LBANN_ERROR(std::string{} + " :: base class does not implement this method");
+  LBANN_ERROR(std::string{} + " :: abstract class does not implement this method");
 }
 
 } // end of namespace lbann

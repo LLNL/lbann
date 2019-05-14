@@ -19,6 +19,14 @@
 
 namespace lbann {
 
+template<> inline size_t uninitialized_sample_name<size_t>() {
+  return 0ul;
+}
+
+template<> inline std::string uninitialized_sample_name<std::string>() {
+  return "";
+}
+
 template<typename T>
 inline std::string to_string(const T val) {
   return std::to_string(val);
@@ -293,7 +301,8 @@ inline void sample_list<sample_name_t>
     }
 
     const sample_file_id_t index = m_file_id_stats_map.size();
-    m_sample_list.emplace_back(index);
+    static const auto sn0 = uninitialized_sample_name<sample_name_t>();
+    m_sample_list.emplace_back(std::make_pair(index, sn0));
     m_file_id_stats_map.emplace_back(filename);
   }
 
@@ -430,7 +439,7 @@ inline bool sample_list<sample_name_t>
 ::to_string(std::string& sstr) const {
   size_t total_len = 0ul;
   for (const auto& s : m_sample_list) {
-    const std::string& filename = m_file_id_stats_map[s];
+    const std::string& filename = m_file_id_stats_map[s.first];
     total_len += filename.size() + 1u;
   }
 
@@ -446,7 +455,7 @@ inline bool sample_list<sample_name_t>
   // write the list body
   for (const auto& s : m_sample_list) {
     // File name
-    const std::string& filename = m_file_id_stats_map[s];
+    const std::string& filename = m_file_id_stats_map[s.first];
     sstr += filename + '\n';
   }
 
@@ -514,6 +523,48 @@ inline void sample_list<sample_name_t>
   m_file_id_stats_map[id] = filename;
 }
 
+#if defined(__cpp_if_constexpr) // c++17
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::assign_samples_name() {
+  if constexpr (std::is_integral<sample_name_t>::value) {
+    sample_name_t i = 0;
+    for (auto& s: m_sample_list) {
+      s.second = i++;
+    }
+  } else if constexpr (std::is_same<std::string, sample_name_t>::value) {
+    for (auto& s: m_sample_list) {
+      s.second = s.first;
+    }
+  } else {
+    LBANN_ERROR(std::string{} + " :: base class does not implement this method"
+                              + " for the current sample name type");
+  }
+}
+#else
+template<> inline void sample_list<size_t>
+::assign_samples_name() {
+  size_t i = 0ul;
+  for (auto& s: m_sample_list) {
+    s.second = i++;
+  }
+}
+
+template<> inline void sample_list<std::string>
+::assign_samples_name() {
+  for (auto& s: m_sample_list) {
+    s.second = s.first;
+  }
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::assign_samples_name() {
+  LBANN_ERROR(std::string{} + " :: base class does not implement this method"
+                            + " for the current sample name type");
+}
+#endif
+
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::all_gather_packed_lists(lbann_comm& comm) {
@@ -534,7 +585,7 @@ inline void sample_list<sample_name_t>
     const samples_t& s_list = per_rank_samples[r];
     const auto& files = per_rank_files[r];
     for (const auto& s : s_list) {
-      sample_file_id_t index = s;
+      sample_file_id_t index = s.first;
       const std::string& filename = files[index];
       if(index >= m_file_id_stats_map.size()
          || (m_file_id_stats_map.back() != filename)) {
@@ -548,9 +599,12 @@ inline void sample_list<sample_name_t>
           }
         }
       }
-      m_sample_list.emplace_back(index);
+      static const auto sn0 = uninitialized_sample_name<sample_name_t>();
+      m_sample_list.emplace_back(std::make_pair(index, sn0));
     }
   }
+
+  assign_samples_name();
 
   return;
 }
