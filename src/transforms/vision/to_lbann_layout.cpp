@@ -43,7 +43,7 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
     // This should not occur, but just in case.
     LBANN_ERROR("Do not support non-contiguous OpenCV matrices.");
   }
-  if (out.Height() != out.LDim()) {
+  if (!out.Contiguous()) {
     LBANN_ERROR("ToLBANNLayout does not support non-contiguous destination.");
   }
   const uint8_t* __restrict__ src_buf = src.ptr();

@@ -51,7 +51,7 @@ void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
   } else if (dims.size() != 3 && m_means.size() != 1) {
     LBANN_ERROR("Transform data has no channels, cannot normalize with multiple channels");
   }
-  if (out.Height() != out.LDim()) {
+  if (!out.Contiguous()) {
     LBANN_ERROR("NormalizeToLBANNLayout does not support non-contiguous destination.");
   }
   const uint8_t* __restrict__ src_buf = src.ptr();
