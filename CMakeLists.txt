@@ -571,8 +571,8 @@ export(EXPORT LBANNTargets NAMESPACE LBANN:: FILE LBANNTargets.cmake)
 
 # Write the configure file for the install tree
 set(INCLUDE_INSTALL_DIRS include)
-set(LIB_INSTALL_DIR lib)
-set(CMAKE_INSTALL_DIR lib/cmake/lbann)
+set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_INSTALL_DIR ${LIB_INSTALL_DIR}/cmake/lbann)
 set(EXTRA_CMAKE_MODULE_DIR)
 configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
   "${CMAKE_BINARY_DIR}/LBANNConfig.cmake.install"
@@ -765,7 +765,8 @@ set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
 if (NOT (LBANN_MODULEFILE_NAME MATCHES ".+\.lua"))
   message(WARNING
     "LBANN_MODULEFILE_NAME must have extension \".lua\". Appending.")
-  set(LBANN_MODULEFILE_NAME "${LBANN_MODULEFILE_NAME}.lua")
+  set(LBANN_MODULEFILE_NAME "${LBANN_MODULEFILE_NAME}.lua"
+    CACHE STRING "" FORCE)
 endif ()
 
 # TODO (trb) -- describe the configuration at all?
@@ -788,6 +789,8 @@ whatis(\"URL: https://github.com/llnl/lbann\")
 prepend_path(\"PATH\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
 prepend_path(\"LD_LIBRARY_PATH\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
 prepend_path(\"PYTHONPATH\",\"${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}\")
+
+pushenv(\"LBANN_DIR\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DIR}\")
 ")
 file(WRITE "${CMAKE_BINARY_DIR}/${LBANN_MODULEFILE_NAME}.install" "${_LBANN_MODULE_TEXT}")
 install(FILES "${CMAKE_BINARY_DIR}/${LBANN_MODULEFILE_NAME}.install"
