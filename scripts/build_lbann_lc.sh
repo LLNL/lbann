@@ -70,11 +70,9 @@ ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
 WITH_TBINF=OFF
+PYTHON_IN_INSTALL_DIR=ON
 RECONFIGURE=0
 USE_NINJA=0
-WITH_PYTHON=OFF
-PYTHON_LIBRARY=/usr/tce/packages/python/python-3.6.4/lib/libpython3.6m.so
-PYTHON_INCLUDE_DIR=/usr/tce/packages/python/python-3.6.4/include/python3.6m
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -132,7 +130,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
-  ${C}--python${N}                Build with Python/C API.
+  ${C}--python-site-packages${N}  Install Python frontend to Python site-packages directory (requires an active virtual environment or root access)
 EOF
 }
 
@@ -271,14 +269,14 @@ while :; do
         --with-conduit)
             WITH_CONDUIT=ON
             ;;
+        --python-site-packages)
+            PYTHON_IN_INSTALL_DIR=OFF
+            ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
             ;;
         --reconfigure)
             RECONFIGURE=1
-            ;;
-        --python)
-            WITH_PYTHON=ON
             ;;
         -?*)
             # Unknown option
@@ -320,22 +318,9 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    if [ "${WITH_CONDUIT}" = "ON" ] ; then
-        module load cmake/3.12.1
-        HDF5_CMAKE_EXE=$(which cmake)
-    fi
-    module load cmake/3.9.2
-
-    CMAKE_PATH=$(dirname $(which cmake))
+    module load cmake/3.12.1
 else
     use git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-fi
-
-if [[ ${CORAL} -eq 1 ]]; then
-	# the latest version, 3.12.1, has several issues
-    module load cmake/3.9.2
-    CMAKE_PATH=$(dirname $(which cmake))
 fi
 
 ################################################################
@@ -737,9 +722,7 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
     print_variable WITH_TOPO_AWARE
-    print_variable WITH_PYTHON
-    print_variable PYTHON_LIBRARY
-    print_variable PYTHON_INCLUDE_DIR
+    print_variable PYTHON_IN_INSTALL_DIR
     echo ""
 fi
 
@@ -780,7 +763,7 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
- ${CMAKE_PATH}/cmake \
+cmake \
 -G ${GENERATOR} \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
@@ -800,7 +783,6 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \
--D HDF5_CMAKE_COMMAND=${HDF5_CMAKE_EXE} \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
@@ -818,10 +800,8 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
+-D LBANN_PYTHON_IN_INSTALL_DIR=${PYTHON_IN_INSTALL_DIR} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
--D LBANN_WITH_PYTHON=${WITH_PYTHON} \
--D LBANN_PYTHON_LIBRARY=${PYTHON_LIBRARY} \
--D LBANN_PYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR} \
 ${SUPERBUILD_DIR}
 EOF
 )

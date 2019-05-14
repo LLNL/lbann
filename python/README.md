@@ -13,37 +13,41 @@ see [here](docs/onnx/README.md).
 * For more details about the *accuracy/loss* visualization script
 (also known as `lbplot`), see [here](docs/plot/README.md).
 
-# Setup
+## Setup
 
-Requirements:
-* Python 3. You may need to load the relevant module for your
-  environment to be set up right.
-* The Python protobuf module, which can be locally installed with
-  `pip3 install --user protobuf`.
-* A build of LBANN.
+The `lbann` Python package is installed as part of the LBANN build
+process. Usage instructions depend on which build method was used.
 
-Run `pip3 install --user -e .` on this directory to install this
-package.
+_Spack_: `module load lbann`.
 
-If you do not already have the ONNX Python package installed, you will
-need to ensure the `protoc` compiler is in your path when you run
-this. Either load the appropriate Spack module or add
-`$LBANN_HOME/build/<your build>/install/bin` to `$PATH` before
-running. (See [here](https://github.com/onnx/onnx#source) for
-additional documentation on installing ONNX.)
+_CMake_: The Python package is typically installed inside the install
+directory at `<install directory>/share/python`. To make sure Python
+can detect it, update the `PYTHONPATH` environment variable:
+```sh
+export PYTHONPATH=<install directory>/share/python:${PYTHONPATH}
+```
+Alternatively, the package can be installed into a Python
+site-packages directory so that Python can detect it immediately. This
+usually requires an active virtual environment or root access. To
+build with this approach, pass `-DLBANN_PYTHON_IN_INSTALL_DIR=OFF` as
+an argument into CMake during the build process.
 
-_Advanced users_: This requires the `lbann_pb2` Python module
-generated from `lbann.proto` using the `protoc` compiler. The LBANN
-build process should do this automatically, installing it to
-`LBANN_INSTALL_DIR/share/python`.  This package uses some basic
-heuristics to attempt to locate this if `lbann_pb2` is not in your
-default Python search path. If these fail, you should manually set
-your Python path to include the directory with `lbann_pb2` (e.g. by
-setting the `PYTHONPATH` environment variable).
+_Warnings_:
+* The build system is still under active development.
+* Python 2 is not supported.
+* The CMake build process does not handle package dependencies. See
+  `$LBANN_HOME/cmake/configure_files/setup.py.in` for the full list of
+  dependencies.
+* Installing the ONNX Python package may require some work. See [the
+  documentation](https://github.com/onnx/onnx#source).
+  * If you do not already have the ONNX Python package installed, you
+    will need to ensure the `protoc` compiler is in your path when you
+    run this. Either load the appropriate Spack module or add
+    `<install directory>/bin` to `$PATH` before running.
 
-# Modules
+## Modules
 
-## `lbann`
+### `lbann`
 
 The `Model` class describes a neural network model and contains the
 following components:
@@ -78,13 +82,13 @@ parsing messages defined in `src/proto/lbann.proto`. This file is
 currently the best source for documentation. Note that LBANN currently
 only supports static models, i.e. models with static execution graphs.
 
-## `lbann.proto`
+### `lbann.proto`
 
 The `save_prototext` function can be used to export an LBANN
 experiment to a prototext file. A typical experiment is comprised of a
 model, data reader, and optimizer.
 
-## `lbann.modules`
+### `lbann.modules`
 
 This is a collection of neural network modules, which are patterns of
 layers that take an input layer to produce an output layer. Once
@@ -96,27 +100,27 @@ _A possible note of confusion_: "modules" in LBANN are similar to
 "layers" in PyTorch, TensorFlow, and Keras. LBANN uses "layer" in a
 similar manner as Caffe.
 
-## `lbann.modules`
+### `lbann.models`
 
 This consists of common and influential neural network models. They
 are implemented as `Module`s and can be used as components within more
 complicated models.
 
-## `lbann.launcher`
+### `lbann.launcher`
 
 The `run` function interfaces with job schedulers on HPC clusters. It
 will either submit a batch job (if on a login node) or run with an
 existing node allocation (if on a compute node).
 
-_LLNL users_: The `run` function in the
-`lbann.contrib.lc.launcher` module provides similar functionality,
-with defaults and optimizations for LC systems.
+_LLNL users_: The `run` function in the `lbann.contrib.lc.launcher`
+module provides similar functionality, with defaults and optimizations
+for LC systems.
 
-## `lbann.onnx`
+### `lbann.onnx`
 
 This contains functionality to convert between LBANN and ONNX models.
 
-# Example
+## Examples
 
 A simple (and not very good) convolutional neural network for MNIST
 data:
@@ -191,3 +195,7 @@ model = lbann.Model(
 lbann.proto.save_prototext('test.prototext', model=model)
 
 ```
+
+See the implementation of LeNet in
+`$LBANN_HOME/model_zoo/vision/lenet.py` for a more comprehensive
+example.
