@@ -36,22 +36,7 @@ imagenet_reader::imagenet_reader(bool shuffle)
   set_defaults();
 }
 
-imagenet_reader::imagenet_reader(const imagenet_reader& rhs)
-  : image_data_reader(rhs) {
-}
-
-imagenet_reader& imagenet_reader::operator=(const imagenet_reader& rhs) {
-  // check for self-assignment
-  if (this == &rhs) {
-    return (*this);
-  }
-
-  image_data_reader::operator=(rhs);
-  return (*this);
-}
-
-imagenet_reader::~imagenet_reader() {
-}
+imagenet_reader::~imagenet_reader() {}
 
 void imagenet_reader::set_defaults() {
   m_image_width = 256;
@@ -59,10 +44,6 @@ void imagenet_reader::set_defaults() {
   m_image_num_channels = 3;
   set_linearized_image_size();
   m_num_labels = 1000;
-}
-
-void imagenet_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
-  image_data_reader::setup(num_io_threads, io_thread_pool);
 }
 
 CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {

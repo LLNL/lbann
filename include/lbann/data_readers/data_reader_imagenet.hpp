@@ -35,13 +35,11 @@ namespace lbann {
 class imagenet_reader : public image_data_reader {
  public:
   imagenet_reader(bool shuffle = true);
-  imagenet_reader(const imagenet_reader&);
-  imagenet_reader& operator=(const imagenet_reader&);
+  imagenet_reader(const imagenet_reader&) = default;
+  imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() override;
 
   imagenet_reader* copy() const override { return new imagenet_reader(*this); }
-
-  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
 
   std::string get_type() const override {
     return "imagenet_reader";
