@@ -163,11 +163,12 @@ class CosmoFlow(lm.Module):
         return x
 
 def create_data_reader(train_path, val_path, test_path):
-    readerArgs = [
-        {"role": "train",    "data_filename": train_path},
-        {"role": "validate", "data_filename": val_path},
-        {"role": "test",     "data_filename": test_path},
-    ]
+    readerArgs = []
+    for role, data_filename in [("train",    train_path),
+                                ("validate", val_path),
+                                ("test",     test_path)]:
+        if data_filename != "":
+            readerArgs.append({"role": role, "data_filename": data_filename})
 
     readers = []
     for readerArg in readerArgs:
