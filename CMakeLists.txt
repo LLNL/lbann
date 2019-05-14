@@ -303,6 +303,16 @@ if (LBANN_WITH_PYTHON)
     set(LBANN_HAS_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
+
+  # Setup the installation stuff
+  set(PYTHON_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+    CACHE PATH "The prefix for the python installation")
+
+  set(CMAKE_INSTALL_PYTHONDIR
+    "lib/python-${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
+    CACHE PATH
+    "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
+
 endif (LBANN_WITH_PYTHON)
 
 if (LBANN_WITH_VTUNE)
@@ -622,6 +632,7 @@ install(
 if (LBANN_HAS_PYTHON)
 
   # Construct config file
+  # NOTE (trb): python_config.ini is installed by setup.py
   set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)
   set(_LBANN_PB2_PY
     ${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages/lbann_pb2.py)
@@ -640,10 +651,25 @@ if (LBANN_HAS_PYTHON)
     @ONLY)
 
   # Install Python package with setuptools
+  set(_PY_INSTALL_DIR "${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}")
   set(_SETUP_PY_ARGS
-    "${_SETUP_PY_ARGS} --root ${CMAKE_INSTALL_PREFIX} --prefix .")
+    "${_SETUP_PY_ARGS} --root ${_PY_INSTALL_DIR} --install-lib . --install-data .")
   install(CODE
     "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install ${_SETUP_PY_ARGS})")
+
+  set(_PY_INSTALL_MSG
+    "
+\n**********************************************************************
+
+A Python package has been installed to ${_PY_INSTALL_DIR}. To use
+this package, be sure to add this directory to your PYTHONPATH, e.g.:
+
+  export PYTHONPATH=${_PY_INSTALL_DIR}:\\$\{PYTHONPATH\}
+
+**********************************************************************\n
+")
+  install(CODE
+    "execute_process(COMMAND ${CMAKE_COMMAND} -E echo \"${_PY_INSTALL_MSG}\")")
 
 endif (LBANN_HAS_PYTHON)
 
@@ -728,3 +754,42 @@ string(APPEND _str
 # Output to stdout
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${_str}")
 set(_str)
+
+#
+# Write a basic modulefile
+#
+set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
+  CACHE STRING
+  "The name of the LBANN modulefile to install. Must end in .lua.")
+
+if (NOT (LBANN_MODULEFILE_NAME MATCHES ".+\.lua"))
+  message(WARNING
+    "LBANN_MODULEFILE_NAME must have extension \".lua\". Appending.")
+  set(LBANN_MODULEFILE_NAME "${LBANN_MODULEFILE_NAME}.lua")
+endif ()
+
+# TODO (trb) -- describe the configuration at all?
+# TODO (trb) -- move elsewhere? This is getting messy.
+
+set(_LBANN_MODULE_TEXT
+  "
+help(
+[[
+LBANN version ${LBANN_VERSION}. Livermore Big Artificial Neural Network
+Toolkit. A distributed memory, HPC-optimized, model and data parallel
+training toolkit for deep neural networks.
+]])
+
+whatis(\"Package: LBANN\")
+whatis(\"Version: ${LBANN_VERSION}\")
+whatis(\"Description: Livermore Big Artificial Neural Network Toolkit. A distributed memory, HPC-optimized, model and data parallel training toolkit for deep neural networks.\")
+whatis(\"URL: https://github.com/llnl/lbann\")
+
+prepend_path(\"PATH\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
+prepend_path(\"LD_LIBRARY_PATH\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
+prepend_path(\"PYTHONPATH\",\"${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}\")
+")
+file(WRITE "${CMAKE_BINARY_DIR}/${LBANN_MODULEFILE_NAME}.install" "${_LBANN_MODULE_TEXT}")
+install(FILES "${CMAKE_BINARY_DIR}/${LBANN_MODULEFILE_NAME}.install"
+  RENAME "${LBANN_MODULEFILE_NAME}"
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")

@@ -46,7 +46,7 @@ if (LBANN_HAS_PROTOBUF)
 
   # Install the Python module into the site-packages directory
   install(FILES ${PROTO_PY} DESTINATION
-                ${CMAKE_INSTALL_PREFIX}/lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages)
+                ${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 
 endif (LBANN_HAS_PROTOBUF)
 
