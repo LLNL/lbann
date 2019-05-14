@@ -37,10 +37,6 @@ transform_pipeline::transform_pipeline(const transform_pipeline& other) :
   }
 }
 
-transform_pipeline::transform_pipeline(transform_pipeline&& other) :
-  m_transforms(std::move(other.m_transforms)),
-  m_expected_out_dims(std::move(other.m_expected_out_dims)) {}
-
 transform_pipeline& transform_pipeline::operator=(
   const transform_pipeline& other) {
   m_expected_out_dims = other.m_expected_out_dims;
@@ -48,13 +44,6 @@ transform_pipeline& transform_pipeline::operator=(
   for (const auto& trans : other.m_transforms) {
     m_transforms.emplace_back(trans->copy());
   }
-  return *this;
-}
-
-transform_pipeline& transform_pipeline::operator=(
-  transform_pipeline&& other) {
-  m_expected_out_dims = std::move(other.m_expected_out_dims);
-  m_transforms = std::move(other.m_transforms);
   return *this;
 }
 

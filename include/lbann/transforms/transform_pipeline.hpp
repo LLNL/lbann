@@ -41,9 +41,9 @@ class transform_pipeline {
 public:
   transform_pipeline() {}
   transform_pipeline(const transform_pipeline&);
-  transform_pipeline(transform_pipeline&&);
+  transform_pipeline(transform_pipeline&&) = default;
   transform_pipeline& operator=(const transform_pipeline&);
-  transform_pipeline& operator=(transform_pipeline&&);
+  transform_pipeline& operator=(transform_pipeline&&) = default;
   ~transform_pipeline() {}
 
   transform_pipeline* copy() const { return new transform_pipeline(*this); }
