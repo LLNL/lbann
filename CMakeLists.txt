@@ -697,8 +697,10 @@ macro(append_str_tf STRING_VAR)
     math(EXPR _num_spaces "${_max_length} - ${_var_length}")
     lbann_get_space_string(_spaces ${_num_spaces})
     if (${var})
+      set(${var} "TRUE")
       string(APPEND ${STRING_VAR} "  ${var}:" "${_spaces}" "TRUE\n")
     else ()
+      set(${var} "FALSE")
       string(APPEND ${STRING_VAR} "  ${var}:" "${_spaces}" "FALSE\n")
     endif ()
   endforeach()
@@ -769,30 +771,10 @@ if (NOT (LBANN_MODULEFILE_NAME MATCHES ".+\.lua"))
     CACHE STRING "" FORCE)
 endif ()
 
-# TODO (trb) -- describe the configuration at all?
-# TODO (trb) -- move elsewhere? This is getting messy.
-
-set(_LBANN_MODULE_TEXT
-  "
-help(
-[[
-LBANN version ${LBANN_VERSION}. Livermore Big Artificial Neural Network
-Toolkit. A distributed memory, HPC-optimized, model and data parallel
-training toolkit for deep neural networks.
-]])
-
-whatis(\"Package: LBANN\")
-whatis(\"Version: ${LBANN_VERSION}\")
-whatis(\"Description: Livermore Big Artificial Neural Network Toolkit. A distributed memory, HPC-optimized, model and data parallel training toolkit for deep neural networks.\")
-whatis(\"URL: https://github.com/llnl/lbann\")
-
-prepend_path(\"PATH\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}\")
-prepend_path(\"LD_LIBRARY_PATH\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}\")
-prepend_path(\"PYTHONPATH\",\"${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}\")
-
-pushenv(\"LBANN_DIR\",\"${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DIR}\")
-")
-file(WRITE "${CMAKE_BINARY_DIR}/${LBANN_MODULEFILE_NAME}.install" "${_LBANN_MODULE_TEXT}")
-install(FILES "${CMAKE_BINARY_DIR}/${LBANN_MODULEFILE_NAME}.install"
+configure_file(
+  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
+  "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
+  @ONLY)
+install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
