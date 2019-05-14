@@ -7,8 +7,8 @@ set_full_path(THIS_DIR_SOURCES
   normalize_to_lbann_layout.cpp
   random_affine.cpp
   random_crop.cpp
-  random_resized_aspect_ratio_crop.cpp
   random_resized_crop.cpp
+  random_resized_crop_with_fixed_aspect_ratio.cpp
   resize.cpp
   resized_center_crop.cpp
   to_lbann_layout.cpp

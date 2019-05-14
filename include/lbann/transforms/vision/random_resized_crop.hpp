@@ -32,12 +32,28 @@
 namespace lbann {
 namespace transform {
 
-/** Resize an image then extract a random crop. */
+/**
+ * Extract a crop of random size and aspect ratio, then crop to a size.
+ * This is commonly used for Inception-style networks and some other
+ * image classification networks.
+ */
 class random_resized_crop : public transform {
 public:
-  /** Resize to h x w, then extract a random crop_h x crop_w crop. */
-  random_resized_crop(size_t h, size_t w, size_t crop_h, size_t crop_w) :
-    transform(), m_h(h), m_w(w), m_crop_h(crop_h), m_crop_w(crop_w) {}
+  /**
+   * Crop to a random size and aspect ratio, then resize to h x w.
+   * The random crop has area in [scale_min, scale_max] of the original image
+   * area, and aspect ratio in [ar_min, ar_max] of the original. This random
+   * crop is then resized to be h x w.
+   * These default to (0.08, 1.0) and (3/4, 4/3), respectively, which are the
+   * standard.
+   */
+  random_resized_crop(size_t h, size_t w,
+                      float scale_min=0.08, float scale_max=1.0,
+                      float ar_min=0.75, float ar_max=4.0f/3.0f) :
+    transform(),
+    m_h(h), m_w(w),
+    m_scale_min(scale_min), m_scale_max(scale_max),
+    m_ar_min(ar_min), m_ar_max(ar_max) {}
 
   transform* copy() const override { return new random_resized_crop(*this); }
 
@@ -45,10 +61,12 @@ public:
 
   void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
 private:
-  /** Height and width of the resized image. */
+  /** Height and width of the final crop. */
   size_t m_h, m_w;
-  /** Height and width of the crop. */
-  size_t m_crop_h, m_crop_w;
+  /** Range for the area of the random crop. */
+  float m_scale_min, m_scale_max;
+  /** Range for the aspect ratio of the random crop. */
+  float m_ar_min, m_ar_max;
 };
 
 }  // namespace transform

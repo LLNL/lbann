@@ -57,12 +57,12 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     else if (trans.has_random_crop()) {
       height = trans.random_crop().height();
       width = trans.random_crop().width();
-    } else if (trans.has_random_resized_aspect_ratio_crop()) {
-      height = trans.random_resized_aspect_ratio_crop().height();
-      width = trans.random_resized_aspect_ratio_crop().width();
     } else if (trans.has_random_resized_crop()) {
-      height = trans.random_resized_crop().crop_height();
-      width = trans.random_resized_crop().crop_width();
+      height = trans.random_resized_crop().height();
+      width = trans.random_resized_crop().width();
+    } else if (trans.has_random_resized_crop_with_fixed_aspect_ratio()) {
+      height = trans.random_resized_crop_with_fixed_aspect_ratio().crop_height();
+      width = trans.random_resized_crop_with_fixed_aspect_ratio().crop_width();
     } else if (trans.has_resize()) {
       height = trans.resize().height();
       width = trans.resize().width();

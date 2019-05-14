@@ -35,8 +35,8 @@
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
 #include "lbann/transforms/vision/random_affine.hpp"
 #include "lbann/transforms/vision/random_crop.hpp"
-#include "lbann/transforms/vision/random_resized_aspect_ratio_crop.hpp"
 #include "lbann/transforms/vision/random_resized_crop.hpp"
+#include "lbann/transforms/vision/random_resized_crop_with_fixed_aspect_ratio.hpp"
 #include "lbann/transforms/vision/resize.hpp"
 #include "lbann/transforms/vision/resized_center_crop.hpp"
 #include "lbann/transforms/vision/to_lbann_layout.hpp"
@@ -84,21 +84,21 @@ std::unique_ptr<transform::transform> construct_transform(
     auto& pb_trans = trans.random_crop();
     return make_unique<transform::random_crop>(
       pb_trans.height(), pb_trans.width());
-  } else if (trans.has_random_resized_aspect_ratio_crop()) {
-    auto& pb_trans = trans.random_resized_aspect_ratio_crop();
+  } else if (trans.has_random_resized_crop()) {
+    auto& pb_trans = trans.random_resized_crop();
     // Handle defaults: If one specified, all must be.
     if (pb_trans.scale_min() != 0.0f) {
-      return make_unique<transform::random_resized_aspect_ratio_crop>(
+      return make_unique<transform::random_resized_crop>(
         pb_trans.height(), pb_trans.width(),
         pb_trans.scale_min(), pb_trans.scale_max(),
         pb_trans.ar_min(), pb_trans.ar_max());
     } else {
-      return make_unique<transform::random_resized_aspect_ratio_crop>(
+      return make_unique<transform::random_resized_crop>(
         pb_trans.height(), pb_trans.width());
     }
-  } else if (trans.has_random_resized_crop()) {
-    auto& pb_trans = trans.random_resized_crop();
-    return make_unique<transform::random_resized_crop>(
+  } else if (trans.has_random_resized_crop_with_fixed_aspect_ratio()) {
+    auto& pb_trans = trans.random_resized_crop_with_fixed_aspect_ratio();
+    return make_unique<transform::random_resized_crop_with_fixed_aspect_ratio>(
       pb_trans.height(), pb_trans.width(),
       pb_trans.crop_height(), pb_trans.crop_width());
   } else if (trans.has_resize()) {

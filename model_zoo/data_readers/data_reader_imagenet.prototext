@@ -12,7 +12,7 @@ data_reader {
     num_labels: 1000
 
     transforms {
-      random_resized_aspect_ratio_crop {
+      random_resized_crop {
         height: 224
         width: 224
       }

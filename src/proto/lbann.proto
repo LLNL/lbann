@@ -136,7 +136,7 @@ message Transform {
     uint64 width = 2;
   }
   // Random crop with scale and aspect ratio augmentation.
-  message RandomResizedAspectRatioCrop {
+  message RandomResizedCrop {
     uint64 height = 1;
     uint64 width = 2;
     float scale_min = 3;
@@ -145,7 +145,7 @@ message Transform {
     float ar_max = 6;
   }
   // Resize to height x width, then randomly crop to crop_height x crop_width.
-  message RandomResizedCrop {
+  message RandomResizedCropWithFixedAspectRatio {
     uint64 height = 1;
     uint64 width = 2;
     uint64 crop_height = 3;
@@ -184,8 +184,8 @@ message Transform {
     NormalizeToLBANNLayout normalize_to_lbann_layout = 104;
     RandomAffine random_affine = 105;
     RandomCrop random_crop = 106;
-    RandomResizedAspectRatioCrop random_resized_aspect_ratio_crop = 107;
-    RandomResizedCrop random_resized_crop = 108;
+    RandomResizedCrop random_resized_crop = 107;
+    RandomResizedCropWithFixedAspectRatio random_resized_crop_with_fixed_aspect_ratio = 108;
     Resize resize = 109;
     ResizedCenterCrop resized_center_crop = 110;
     ToLBANNLayout to_lbann_layout = 111;

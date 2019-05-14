@@ -31,37 +31,60 @@
 namespace lbann {
 namespace transform {
 
-void random_resized_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
+void random_resized_crop::apply(utils::type_erased_matrix& data,
+                                std::vector<size_t>& dims) {
   cv::Mat src = utils::get_opencv_mat(data, dims);
-  std::vector<size_t> new_dims = {dims[0], m_crop_h, m_crop_w};
+  std::vector<size_t> new_dims = {dims[0], m_h, m_w};
   auto dst_real = El::Matrix<uint8_t>(utils::get_linearized_size(new_dims), 1);
   cv::Mat dst = utils::get_opencv_mat(dst_real, new_dims);
-  // Compute the projected crop area in the original image, crop it, and resize.
-  const float zoom = std::min(float(src.rows) / float(m_h),
-                              float(src.cols) / float(m_w));
-  const size_t zoom_h = m_h*zoom;
-  const size_t zoom_w = m_w*zoom;
-  const size_t zoom_crop_h = m_crop_h*zoom;
-  const size_t zoom_crop_w = m_crop_w*zoom;
-  const size_t dx = transform::get_uniform_random_int(
-    0, 2*(zoom*m_w - zoom_crop_w) + 1);
-  const size_t dy = transform::get_uniform_random_int(
-    0, 2*(zoom*m_h - zoom_crop_h) + 1);
-  const size_t x = (dims[2] - zoom_w + dx + 1) / 2;
-  const size_t y = (dims[1] - zoom_h + dy + 1) / 2;
+  size_t x = 0, y = 0, h = 0, w = 0;
+  const size_t area = dims[1]*dims[2];
+  // There's a chance this can fail, so we only make ten attempts.
+  for (int attempt = 0; attempt < 10; ++attempt) {
+    const float target_area = area*transform::get_uniform_random(m_scale_min,
+                                                                 m_scale_max);
+    const float target_ar = transform::get_uniform_random(m_ar_min, m_ar_max);
+    w = std::sqrt(target_area * target_ar);
+    h = std::sqrt(target_area / target_ar);
+    // Swap these with 50% probability.
+    if (transform::get_bool_random(0.5)) {
+      std::swap(w, h);
+    }
+    if (w <= dims[2] && h <= dims[1]) {
+      x = transform::get_uniform_random_int(0, dims[2] - w + 1);
+      y = transform::get_uniform_random_int(0, dims[1] - h + 1);
+      break;
+    }
+    // Reset.
+    h = 0;
+    w = 0;
+  }
+  bool fallback = false;
+  // Fallback.
+  if (h == 0) {
+    fallback = true;
+    w = std::min(dims[1], dims[2]);
+    h = w;
+    x = (dims[2] - w) / 2;
+    y = (dims[1] - h) / 2;
+  }
   // Sanity check.
   if (x >= static_cast<size_t>(src.cols) ||
       y >= static_cast<size_t>(src.rows) ||
-      (x + zoom_crop_w) > static_cast<size_t>(src.cols) ||
-      (y + zoom_crop_h) > static_cast<size_t>(src.rows)) {
+      (x + w) > static_cast<size_t>(src.cols) ||
+      (y + h) > static_cast<size_t>(src.rows)) {
     std::stringstream ss;
     ss << "Bad crop dimensions for " << src.rows << "x" << src.cols << ": "
-       << zoom_crop_h << "x" << zoom_crop_w << " at (" << x << "," << y << ")";
+       << h << "x" << w << " at (" << x << "," << y << ") fallback=" << fallback;
     LBANN_ERROR(ss.str());
   }
-  // The crop is just a view.
-  cv::Mat tmp = src(cv::Rect(x, y, zoom_crop_h, zoom_crop_w));
+  // This is just a view.
+  cv::Mat tmp = src(cv::Rect(x, y, w, h));
   cv::resize(tmp, dst, dst.size(), 0, 0, cv::INTER_LINEAR);
+  // Sanity check.
+  if (dst.ptr() != dst_real.Buffer()) {
+    LBANN_ERROR("Did not resize into dst_real.");
+  }
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
 }
