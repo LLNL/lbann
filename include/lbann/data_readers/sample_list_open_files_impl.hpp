@@ -84,6 +84,12 @@ inline size_t sample_list_open_files<sample_name_t, file_handle_t>
 }
 
 template <typename sample_name_t, typename file_handle_t>
+inline size_t sample_list_open_files<sample_name_t, file_handle_t>
+::get_num_files() const {
+  return m_file_id_stats_map.size();
+}
+
+template <typename sample_name_t, typename file_handle_t>
 inline void sample_list_open_files<sample_name_t, file_handle_t>
 ::read_exclusive_list(std::istream& istrm,
                       size_t stride, size_t offset) {

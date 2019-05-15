@@ -43,6 +43,9 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   /// Tells how many samples in the list
   size_t size() const override;
 
+  /// Tells how many sample files are there
+  size_t get_num_files() const override;
+
   using sample_list<sample_name_t>::load;
   /// Emit a serialized archive using the cereal library
   template <class Archive> void save( Archive & ar ) const;

@@ -76,6 +76,9 @@ class sample_list {
   /// Tells how many samples in the list
   virtual size_t size() const;
 
+  /// Tells how many sample files are there
+  virtual size_t get_num_files() const;
+
   /// Tells if the internal list is empty
   bool empty() const;
 

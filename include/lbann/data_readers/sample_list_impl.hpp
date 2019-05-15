@@ -185,6 +185,12 @@ inline size_t sample_list<sample_name_t>
 }
 
 template <typename sample_name_t>
+inline size_t sample_list<sample_name_t>
+::get_num_files() const {
+  return m_file_id_stats_map.size();
+}
+
+template <typename sample_name_t>
 inline bool sample_list<sample_name_t>
 ::empty() const {
   return (size() == 0ul);
@@ -416,12 +422,14 @@ template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::write_header(std::string& sstr, size_t num_files) const {
   // The first line indicate if the list is exclusive or inclusive
-  // The next line contains the number of samples and the number of files, which are the same in this caes
+  // The next line contains the number of samples (included and excluded),
+  // as well as the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
   sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
+  /// TODO: clarify the comment below and fix the output
   /// Include the number of invalid samples, which for an inclusive index list is always 0
-  sstr += std::to_string(m_sample_list.size()) + " 0 " + std::to_string(num_files) + '\n';
+  sstr += std::to_string(size()) + " 0 " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
 
@@ -442,7 +450,7 @@ inline bool sample_list<sample_name_t>
   sstr.reserve(estimated_len);
 
   // write the list header
-  write_header(sstr, m_file_id_stats_map.size());
+  write_header(sstr, get_num_files());
 
   // write the list body
   for (const auto& s : m_sample_list) {
