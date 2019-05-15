@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -222,7 +222,7 @@ bool cv_process::preprocess(cv::Mat& image, unsigned int tr_start, unsigned int 
 
   const unsigned int num_trs = static_cast<unsigned int>(m_transforms.size());
   const bool lazy_normalization = (tr_end == num_trs) && to_fuse_normalizer_with_copy();
-  const unsigned int n_immediate_transforms 
+  const unsigned int n_immediate_transforms
       = std::min((lazy_normalization?  m_normalizer_idx : num_trs), tr_end);
 
   for (size_t i = tr_start; i < n_immediate_transforms; ++i) {
@@ -248,7 +248,7 @@ bool cv_process::postprocess(cv::Mat& image) {
   bool ok = true;
 
   const bool lazy_normalization = to_fuse_normalizer_with_copy();
-  const unsigned int n_immediate_transforms 
+  const unsigned int n_immediate_transforms
       = (lazy_normalization? m_normalizer_idx : m_transforms.size());
 
   // If normalizer is the last transform in the preprocessing pipeline, it will

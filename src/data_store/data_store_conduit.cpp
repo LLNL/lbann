@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -57,7 +57,7 @@ data_store_conduit::data_store_conduit(
   m_trainer_master = m_comm->am_trainer_master();
   m_rank_in_trainer = m_comm->get_rank_in_trainer();
   m_np_in_trainer = m_comm->get_procs_per_trainer();
- 
+
   options *opts = options::get();
   m_super_node = opts->get_bool("super_node");
 
@@ -369,12 +369,12 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
       LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data; m_data.size: " + std::to_string(m_data.size()));
-    }  
+    }
     return t3->second;
   }
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
-  // if not preloaded, and get_label() or get_response() is called, 
+  // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);

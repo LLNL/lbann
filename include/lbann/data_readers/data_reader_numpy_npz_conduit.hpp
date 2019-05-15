@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,7 @@
 namespace lbann {
   /**
    * Data reader for data stored in numpy (.npz) files that are encapsulated .
-   * in conduit::Nodes 
+   * in conduit::Nodes
    */
   class numpy_npz_conduit_reader : public generic_data_reader {
  public:
@@ -100,8 +100,8 @@ namespace lbann {
     // from int16 to DataType.
     DataType m_scaling_factor_int16 = 1.0;
 
-    // fills in: m_num_samples, m_num_features, m_num_response_features, 
-    // m_data_dims, m_data_word_size, m_response_word_size 
+    // fills in: m_num_samples, m_num_features, m_num_response_features,
+    // m_data_dims, m_data_word_size, m_response_word_size
     void fill_in_metadata();
 
     std::vector<std::string> m_filenames;
