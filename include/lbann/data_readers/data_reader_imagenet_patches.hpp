@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,8 +55,6 @@ class imagenet_reader_patches : public image_data_reader {
   const std::vector<int> get_data_dims() const override {
     return {m_num_patches*m_image_num_channels, m_image_height, m_image_width};
   }
-
-  void setup_data_store(model *m) override;
 
  protected:
   void set_defaults() override;

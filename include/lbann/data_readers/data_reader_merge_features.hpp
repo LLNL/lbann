@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -69,9 +69,6 @@ class data_reader_merge_features : public generic_compound_data_reader {
     // Todo: Can we merge the dimensions of each reader sensibly?
     return {get_linearized_data_size()};
   }
-
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
 
  protected:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;

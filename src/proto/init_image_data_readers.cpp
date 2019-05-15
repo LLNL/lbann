@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -318,9 +318,9 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "jag_conduit") || (name == "jag_conduit_hdf5") ||
-      (name == "triplet") || (name == "mnist_siamese") || (name == "multi_images") ||
-      (name == "moving_mnist")) {
+  if ((name == "imagenet") || (name == "jag_conduit") ||
+      (name == "multihead_siamese") || (name == "mnist_siamese") ||
+      (name == "multi_images") || (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
     pp = std::make_shared<cv_process_patches>();
@@ -345,8 +345,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = new imagenet_reader_patches(ppp, shuffle);
   } else if (name == "imagenet") {
     reader = new imagenet_reader(pp, shuffle);
-  } else if (name == "triplet") {
-    reader = new data_reader_triplet(pp, shuffle);
+  } else if (name == "multihead_siamese") {
+    reader = new data_reader_multihead_siamese(pp, pb_readme.num_image_srcs(), shuffle);
   } else if (name == "mnist_siamese") {
     reader = new data_reader_mnist_siamese(pp, shuffle);
   } else if (name == "multi_images") {
@@ -354,17 +354,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   } else if (name == "moving_mnist") {
     reader = new moving_mnist_reader(7, 40, 40, 2);
 #ifdef LBANN_HAS_CONDUIT
-  } else if (name =="jag_conduit_hdf5") {
-    data_reader_jag_conduit_hdf5* reader_jag = new data_reader_jag_conduit_hdf5(pp, shuffle);
-    const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
-    reader_jag->set_image_dims(width, height);
-    reader_jag->set_scalar_keys(pb_schema.scalar_keys());
-    reader_jag->set_input_keys(pb_schema.input_keys());
-    reader_jag->set_image_views(pb_schema.image_views());
-    reader_jag->set_image_channels(pb_schema.image_channels());
-    reader = reader_jag;
-    if (master) std::cout << reader->get_type() << " is set" << std::endl;
-    return;
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
@@ -549,6 +538,11 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
       err << __FILE__ << " " << __LINE__ << " no data_reader_multi_images";
       throw lbann_exception(err.str());
     }
+    multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
+  } else if(name == "multihead_siamese") {
+    const int n_img_srcs = pb_readme.num_image_srcs();
+    data_reader_multi_images* multi_image_dr_ptr
+      = dynamic_cast<data_reader_multi_images*>(image_data_reader_ptr);
     multi_image_dr_ptr->set_input_params(width, height, channels, n_labels, n_img_srcs);
   } else {
     image_data_reader_ptr->set_input_params(width, height, channels, n_labels);

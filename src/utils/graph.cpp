@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,8 +34,8 @@
 namespace lbann {
 namespace graph {
 
-void print(const std::set<int>& nodes,
-           const std::map<int,std::set<int>>& edges,
+void print(const std::set<El::Int>& nodes,
+           const std::map<El::Int,std::set<El::Int>>& edges,
            std::ostream& os) {
   for (const auto& node : nodes) {
     os << "node " << node << " neighbors :";
@@ -45,18 +45,18 @@ void print(const std::set<int>& nodes,
     os << "\n";
   }
 }
-  
-std::set<int> get_neighbors(int node,
-                            const std::map<int,std::set<int>>& edges) {
+
+std::set<El::Int> get_neighbors(El::Int node,
+                                const std::map<El::Int,std::set<El::Int>>& edges) {
   if (edges.count(node) > 0) {
     return edges.at(node);
   } else {
-    return std::set<int>();
+    return {};
   }
 }
 
-bool is_closure(const std::set<int>& nodes,
-                const std::map<int,std::set<int>>& edges) {
+bool is_closure(const std::set<El::Int>& nodes,
+                const std::map<El::Int,std::set<El::Int>>& edges) {
   for (const auto& node : nodes) {
     for (const auto& neighbor : get_neighbors(node, edges)) {
       if (nodes.count(neighbor) == 0) {
@@ -67,12 +67,10 @@ bool is_closure(const std::set<int>& nodes,
   return true;
 }
 
-bool is_topologically_sorted(const std::set<int>& nodes,
-                             const std::map<int,std::set<int>>& edges) {
+bool is_topologically_sorted(const std::set<El::Int>& nodes,
+                             const std::map<El::Int,std::set<El::Int>>& edges) {
   if (!is_closure(nodes, edges)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: " << "graph is not a closure";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("graph is not a closure");
   }
   for (const auto& node : nodes) {
     const auto& neighbors = get_neighbors(node, edges);
@@ -83,14 +81,12 @@ bool is_topologically_sorted(const std::set<int>& nodes,
   return true;
 }
 
-bool is_cyclic(const std::set<int>& nodes,
-               const std::map<int,std::set<int>>& edges) {
+bool is_cyclic(const std::set<El::Int>& nodes,
+               const std::map<El::Int,std::set<El::Int>>& edges) {
 
   // Check that graph is valid
   if (!is_closure(nodes, edges)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: " << "graph is not a closure";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("graph is not a closure");
   }
 
   // Topologically sorted graphs are not cyclic
@@ -99,8 +95,8 @@ bool is_cyclic(const std::set<int>& nodes,
   }
 
   // Perform depth-first searches to detect cycles
-  std::unordered_map<int,bool> is_visited, is_sorted;
-  std::stack<int> search_stack;
+  std::unordered_map<El::Int,bool> is_visited, is_sorted;
+  std::stack<El::Int> search_stack;
   for (auto&& it = nodes.rbegin(); it != nodes.rend(); ++it) {
     search_stack.push(*it);
   }
@@ -123,17 +119,15 @@ bool is_cyclic(const std::set<int>& nodes,
     }
   }
   return false;
-  
+
 }
 
-std::map<int,std::set<int>> transpose(const std::set<int>& nodes,
-                                      const std::map<int,std::set<int>>& edges) {
+std::map<El::Int,std::set<El::Int>> transpose(const std::set<El::Int>& nodes,
+                                              const std::map<El::Int,std::set<El::Int>>& edges) {
   if (!is_closure(nodes, edges)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: " << "graph is not a closure";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to transpose a graph that is not a closure");
   }
-  std::map<int,std::set<int>> transpose_edges;
+  std::map<El::Int,std::set<El::Int>> transpose_edges;
   for (const auto& node : nodes) {
     for (const auto& neighbor : get_neighbors(node, edges)) {
       transpose_edges[neighbor].insert(node);
@@ -142,9 +136,9 @@ std::map<int,std::set<int>> transpose(const std::set<int>& nodes,
   return transpose_edges;
 }
 
-std::map<int,std::set<int>> induce_subgraph(const std::set<int>& nodes,
-                                            const std::map<int,std::set<int>>& edges) {
-  std::map<int,std::set<int>> induced_edges;
+std::map<El::Int,std::set<El::Int>> induce_subgraph(const std::set<El::Int>& nodes,
+                                                    const std::map<El::Int,std::set<El::Int>>& edges) {
+  std::map<El::Int,std::set<El::Int>> induced_edges;
   for (const auto& node : nodes) {
     for (const auto& neighbor : get_neighbors(node, edges)) {
       if (nodes.count(neighbor) > 0) {
@@ -155,13 +149,13 @@ std::map<int,std::set<int>> induce_subgraph(const std::set<int>& nodes,
   return induced_edges;
 }
 
-std::vector<int> breadth_first_search(int root,
-                                      const std::map<int,std::set<int>>& edges) {
+std::vector<El::Int> breadth_first_search(El::Int root,
+                                          const std::map<El::Int,std::set<El::Int>>& edges) {
 
   // Initialize data structures
-  std::unordered_map<int,bool> is_visited;
-  std::vector<int> sorted_nodes;
-  std::queue<int> search_queue;
+  std::unordered_map<El::Int,bool> is_visited;
+  std::vector<El::Int> sorted_nodes;
+  std::queue<El::Int> search_queue;
   search_queue.push(root);
 
   // Visit nodes until search queue is exhausted
@@ -182,13 +176,13 @@ std::vector<int> breadth_first_search(int root,
 
 }
 
-std::vector<int> depth_first_search(int root,
-                                    const std::map<int,std::set<int>>& edges) {
+std::vector<El::Int> depth_first_search(El::Int root,
+                                        const std::map<El::Int,std::set<El::Int>>& edges) {
 
   // Initialize data structures
-  std::unordered_map<int,bool> is_visited, is_sorted;
-  std::vector<int> sorted_nodes;
-  std::stack<int> search_stack;
+  std::unordered_map<El::Int,bool> is_visited, is_sorted;
+  std::vector<El::Int> sorted_nodes;
+  std::stack<El::Int> search_stack;
   search_stack.push(root);
 
   // Visit nodes until search stack is exhausted
@@ -219,29 +213,26 @@ std::vector<int> depth_first_search(int root,
 }
 
 
-std::vector<int> topological_sort(const std::set<int>& nodes,
-                                  const std::map<int,std::set<int>>& edges) {
+std::vector<El::Int> topological_sort(const std::set<El::Int>& nodes,
+                                      const std::map<El::Int,std::set<El::Int>>& edges) {
 
   // Check that graph is valid
   if (!is_closure(nodes, edges)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: " << "graph is not a closure";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to topologically sort "
+                "a graph that is not a closure");
   }
   if (is_cyclic(nodes, edges)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: " << "graph is cyclic";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to topologically sort a cyclic graph");
   }
 
   // Return original order if already sorted
   if (is_topologically_sorted(nodes, edges)) {
-    return std::vector<int>(nodes.begin(), nodes.end());
+    return std::vector<El::Int>(nodes.begin(), nodes.end());
   }
 
   // Perform depth-first searches on nodes
-  std::stack<int> sorted_stack;
-  std::unordered_map<int,bool> is_sorted;
+  std::stack<El::Int> sorted_stack;
+  std::unordered_map<El::Int,bool> is_sorted;
   for (const auto& root : nodes) {
     if (!is_sorted[root]) {
       const auto& dfs = depth_first_search(root, edges);
@@ -255,26 +246,26 @@ std::vector<int> topological_sort(const std::set<int>& nodes,
   }
 
   // Reverse DFS post-order is topologically sorted
-  std::vector<int> sorted_nodes;
+  std::vector<El::Int> sorted_nodes;
   while (!sorted_stack.empty()) {
     sorted_nodes.push_back(sorted_stack.top());
     sorted_stack.pop();
   }
   return sorted_nodes;
-  
+
 }
 
-void condensation(const std::set<int>& nodes,
-                  const std::map<int,std::set<int>>& edges,
-                  std::map<int,std::set<int>>& components,
-                  std::set<int>& condensation_nodes,
-                  std::map<int,std::set<int>>& condensation_edges) {
+void condensation(const std::set<El::Int>& nodes,
+                  const std::map<El::Int,std::set<El::Int>>& edges,
+                  std::map<El::Int,std::set<El::Int>>& components,
+                  std::set<El::Int>& condensation_nodes,
+                  std::map<El::Int,std::set<El::Int>>& condensation_edges) {
 
   // Initialize data structures for unsorted condensation
-  std::unordered_map<int,std::set<int>> unsorted_components;
-  std::unordered_map<int,int> unsorted_component_assignments;
-  std::set<int> unsorted_condensation_nodes;
-  std::map<int,std::set<int>> unsorted_condensation_edges;
+  std::unordered_map<El::Int,std::set<El::Int>> unsorted_components;
+  std::unordered_map<El::Int,El::Int> unsorted_component_assignments;
+  std::set<El::Int> unsorted_condensation_nodes;
+  std::map<El::Int,std::set<El::Int>> unsorted_condensation_edges;
 
   // Find strongly connected components with Kosaraju's algorithm
   // Note: First sort nodes by DFS post-order. Then, pick root nodes
@@ -282,8 +273,8 @@ void condensation(const std::set<int>& nodes,
   // DFS that visits a node determines the strongly connected
   // component it belongs to.
   const auto& transpose_edges = transpose(nodes, edges);
-  std::stack<int> dfs_stack;
-  std::unordered_map<int,bool> is_sorted, is_condensed;
+  std::stack<El::Int> dfs_stack;
+  std::unordered_map<El::Int,bool> is_sorted, is_condensed;
   for (const auto& root : nodes) {
     if (!is_sorted[root]) {
       for (const auto& node : depth_first_search(root, edges)) {
@@ -298,7 +289,7 @@ void condensation(const std::set<int>& nodes,
     const auto& root = dfs_stack.top();
     dfs_stack.pop();
     if (!is_condensed[root]) {
-      const int index = unsorted_condensation_nodes.size();
+      const El::Int index = unsorted_condensation_nodes.size();
       unsorted_condensation_nodes.insert(index);
       for (const auto& node : depth_first_search(root, transpose_edges)) {
         if (!is_condensed[node]) {
@@ -332,7 +323,7 @@ void condensation(const std::set<int>& nodes,
   for (size_t i = 0; i < unsorted_condensation_nodes.size(); ++i) {
     condensation_nodes.insert(i);
   }
-  std::unordered_map<int,int> unsorted_to_sorted;
+  std::unordered_map<El::Int,El::Int> unsorted_to_sorted;
   for (const auto& component : condensation_nodes) {
     const auto& unsorted_component = sorted_to_unsorted[component];
     unsorted_to_sorted[unsorted_component] = component;

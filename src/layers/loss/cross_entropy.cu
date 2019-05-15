@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,7 +39,7 @@ __global__ void fp_kernel(int height, int width,
                           const DataType* __restrict__ ground_truth,
                           int ground_truth_ldim,
                           DataType* __restrict__ contribution) {
-  
+
   // Indices
   const int tid = threadIdx.x;
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -72,11 +72,11 @@ __global__ void fp_kernel(int height, int width,
     if (tid == 0) {
       cuda::atomic_add(&contribution[col], shared_contribution[0]);
     }
-    
+
   }
-    
+
 }
-  
+
 void local_fp_gpu(const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
                   AbsMat& local_contribution) {
@@ -110,7 +110,7 @@ __global__ void bp_kernel(int height, int width,
                           int gradient_wrt_prediction_ldim,
                           DataType* __restrict__ gradient_wrt_ground_truth,
                           int gradient_wrt_ground_truth_ldim) {
-  
+
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const int bidy = blockIdx.y;
@@ -128,7 +128,7 @@ __global__ void bp_kernel(int height, int width,
       dxhat = - dy * std::log(x);
     }
   }
-    
+
 }
 
 void local_bp_gpu(const AbsMat& local_prediction,

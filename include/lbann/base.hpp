@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////xecu
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,6 +30,7 @@
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"
@@ -37,10 +38,18 @@
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
 
+#include <functional>
+
 namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
+
+// Note that this should only be used to wrap the thing coming out of
+// initialize()! This will be removed when we have proper RAII around
+// these things.
+using world_comm_ptr =
+    std::unique_ptr<lbann_comm, std::function<void(lbann_comm*)>>;
 
 /** Create LBANN communicator.
  *
@@ -52,9 +61,10 @@ class lbann_comm;
  *  @param argc Command line arguments.
  *  @param argv Number of command line arguments.
  *  @param seed RNG seed.
- *  @return     LBANN communicator.
+ *  @return     LBANN communicator corresponding to MPI_COMM_WORLD.
  */
-lbann_comm* initialize(int& argc, char**& argv, int seed = -1);
+world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
+
 /** Destroy LBANN communicator.
  *
  *  Finalizes Elemental, which in turn finalizes MPI, Aluminum, and

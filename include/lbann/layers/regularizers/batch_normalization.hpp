@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -85,13 +85,13 @@ private:
   std::unique_ptr<AbsDistMat> m_bias_gradient;
 
 public:
-  /**
-   * Set up batch normalization.
-   * @param decay Controls the momentum of the running mean/standard
-   * deviation averages.
-   * @param epsilon A small number to avoid division by zero.
-   * @param use_global_stats Whether to use global statistics when
-   * training.
+  /** @brief Set up batch normalization.
+   *
+   *  @param comm The communication context for this layer
+   *  @param decay Controls the momentum of the running mean/standard
+   *         deviation averages.
+   *  @param epsilon A small number to avoid division by zero.
+   *  @param stats_aggregation The type of statistics to use when training.
    */
   batch_normalization_layer(lbann_comm *comm,
                             DataType decay=0.9,

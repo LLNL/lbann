@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -134,17 +134,8 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
 
   // Get mini-batch step information
   const auto& mode = m.get_execution_mode();
-  const auto& epoch = m.get_cur_epoch();
-  El::Int step = 0;
-  switch (mode) {
-  case execution_mode::training:
-    step = m.get_cur_step();            break;
-  case execution_mode::validation:
-    step = m.get_cur_validation_step(); break;
-  case execution_mode::testing:
-    step = m.get_cur_testing_step();    break;
-  default: LBANN_ERROR("invalid execution mode");
-  }
+  const auto& epoch = m.get_epoch();
+  const auto& step = m.get_step();
 
   // Quit if output dump isn't needed
   if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }

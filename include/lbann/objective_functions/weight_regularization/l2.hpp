@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,7 +31,8 @@
 
 namespace lbann {
 
-/** @brief Apply L2 regularization to a set of weights.
+/** @class l2_weight_regularization
+ *  @brief Apply L2 regularization to a set of weights.
  *
  *  Given a weights tensor @f$ w @f$,
  *  @f[ L2(w) = \frac{1}{2} \sum\limits_{i} w(i)^2 @f]
@@ -79,6 +80,7 @@ private:
 
   /** Add the sum of squares of @c vals to @c contribution.
    *
+   *  @param vals           The values to accumulate
    *  @param contribution   @f$ 1 \times 1 @f$ matrix. Used as an
    *                        accumulation variable.
    */

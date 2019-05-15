@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -237,11 +237,16 @@ model* construct_model(lbann_comm* comm,
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
                                             proto_model);
+  std::vector<Layer*> layer_pointers;
+  layer_pointers.reserve(layer_list.size());
+  for (auto&& ptr : layer_list) {
+    layer_pointers.push_back(ptr.get());
+  }
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();
   auto&& obj = construct_objective_function(proto_obj);
-  assign_layers_to_objective_function(layer_list, *obj, proto_obj);
+  assign_layers_to_objective_function(layer_pointers, *obj, proto_obj);
 
   // Construct weights
   std::vector<weights*> weights_list;
@@ -250,7 +255,7 @@ model* construct_model(lbann_comm* comm,
                                              proto_opt,
                                              proto_model.weights(i)));
   }
-  assign_weights_to_layers(layer_list, weights_list, proto_model);
+  assign_weights_to_layers(layer_pointers, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);
 
   // Construct metrics
@@ -261,7 +266,7 @@ model* construct_model(lbann_comm* comm,
                                            params.name(),
                                            params.unit()));
   }
-  assign_layers_to_metrics(layer_list, metric_list, proto_model);
+  assign_layers_to_metrics(layer_pointers, metric_list, proto_model);
 
   // Construct callbacks
   std::vector<lbann_callback*> callback_list;
@@ -270,14 +275,14 @@ model* construct_model(lbann_comm* comm,
     callback_list.push_back(construct_callback(comm,
                                                proto_model.callback(i),
                                                data_readers,
-                                               layer_list,
+                                               layer_pointers,
                                                weights_list,
                                                summarizer));
   }
 
   // Instantiate model
   auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
-  for (auto&& l   : layer_list   ) { m->add_layer(l);     }
+  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
   for (auto&& cb  : callback_list) { m->add_callback(cb); }

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -207,10 +207,10 @@ void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
     std::string mode_string;
     switch (mode) {
     case execution_mode::training:
-      mode_string = "train-epoch" + std::to_string(m.get_cur_epoch());
+      mode_string = "train-epoch" + std::to_string(m.get_epoch());
       break;
     case execution_mode::validation:
-      mode_string = "validation-epoch" + std::to_string(m.get_cur_epoch());
+      mode_string = "validation-epoch" + std::to_string(m.get_epoch());
       break;
     case execution_mode::testing:
       mode_string = "test";

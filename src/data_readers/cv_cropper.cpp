@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -85,7 +85,7 @@ void cv_cropper::set(const unsigned int width, const unsigned int height,
 }
 
 void cv_cropper::reset() {
-  m_enabled = false; 
+  m_enabled = false;
   m_zoom = 1.0;
   m_interpolation = m_interpolation_choices[0];
 }
@@ -152,8 +152,8 @@ bool cv_cropper::apply(cv::Mat& image) {
 
   // Get random crop of image
   if(m_rand_crop) {
-    const int rnd_dw = fast_rand_int(get_fast_generator(), static_cast<int>(2*(zoomed_roi_width - zoomed_width)) + 1);
-    const int rnd_dh = fast_rand_int(get_fast_generator(), static_cast<int>(2*(zoomed_roi_height - zoomed_height)) + 1);
+    const int rnd_dw = fast_rand_int(get_fast_io_generator(), static_cast<int>(2*(zoomed_roi_width - zoomed_width)) + 1);
+    const int rnd_dh = fast_rand_int(get_fast_io_generator(), static_cast<int>(2*(zoomed_roi_height - zoomed_height)) + 1);
     crop_x_start = static_cast<int>(image.cols - zoomed_roi_width + rnd_dw + 1) / 2;
     crop_y_start = static_cast<int>(image.rows - zoomed_roi_height + rnd_dh + 1) / 2;
   } else {
@@ -194,4 +194,3 @@ std::ostream& cv_cropper::print(std::ostream& os) const {
 
 } // end of namespace lbann
 #endif // LBANN_HAS_OPENCV
-

@@ -1,9 +1,11 @@
-============================== (Pending) Release Notes: v0.99 ==============================
+============================== (Pending) Release Notes: v1.00 ==============================
 Support for new training algorithms:
 
 Support for new network structures:
 
 Support for new layers:
+
+Python front-end:
 
 Performance optimizations:
 
@@ -15,7 +17,74 @@ I/O & data readers:
 
 Build system:
 
+Bug fixes:
+
 Retired features:
+
+============================== Release Notes: v0.99 ==============================
+Support for new training algorithms:
+ - Improvements to LTFB infrastructure (including transfer of SGD and Adam hyperparameters)
+
+Support for new network structures:
+ - Support for Wide ResNets
+
+Support for new layers:
+
+Python front-end:
+ - Python front-end for generating neural network architectures (lbann namespace):
+   including layers, objective functions, callbacks, metrics, and optimizers.
+ - Python interface for launching (SLURM or LSF) jobs on HPC systems
+ - Support for running LBANN experiments and capturing experimental output
+ - Network templates for AlexNet, LeNet, arbitrary ResNet models, and Wide ResNet models
+ - Python scripts for LeNet, AlexNet, and (Wide) ResNets in model zoo.
+
+Performance optimizations:
+ - GPU implementation of RMSprop optimizer.
+ - cuDNN convolution algorithms are determined by empirically measuring
+   performance rather than using heuristics.
+ - Avoid setting up unused bias weights.
+ - Perform gradient accumulations in-place when possible.
+
+Model portability & usability:
+
+Internal features:
+ - Weight gradient allreduces are in-place rather than on a staging buffer.
+ - Fully connected and convolution layers only create bias weights when
+   needed.
+ - Optimizer exposes gradient buffers so they can be updated in-place.
+ - Added callback support to explicitly save model
+ - Min-max metric for reporting on multiple LTFB trainers
+ - Cleanup of Hydrogen interface to match Hydrogen v1.2.0
+ - Added type-erased matrix class for internal refactoring
+ - Make CUB always log performance critical events
+
+I/O & data readers:
+ - Python data reader that interacts with an embedded Python session.
+ - Optimized data store to provide preload option
+ - Extended data store to operate with Cosmoflow-numpy data reader
+
+Build system:
+ - Added documentation for how users can use Spack to install LBANN
+   either directly or via environments.
+ - Conduit is a required dependency.
+ - Provided Spack environment for installing LBANN as a user
+ - Improved documentation on lbann.readthedocs.io
+ - CMake installs a module file in the installation directory that
+   sets up PATH and PYTHONPATH variables appropriately
+
+Bug fixes:
+ - Models can now be copied or setup multiple times.
+ - Fixed incorrect weight initialization with multiple trainers.
+ - Updated I/O random number generators to be C++ thread safe (rather than OpenMP)
+ - Added an I/O random number generator for preprocessing that is independent
+   of the data sequence RNG.
+ - Fixed initialization order of RNGs and multiple models / trainers.
+ - General fixes for I/O and LTFB interaction.
+
+Retired features:
+ - "Zero" layer (hack for early GAN implementation).
+ - Removed data reader specific implementations of data store (in favor of Conduit-based
+   data store)
 
 ============================== Release Notes: v0.98.1 ==============================
 Bug Fixes:

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -42,6 +42,9 @@ class lbann_callback_summary : public lbann_callback {
   /**
    * @param summarizer The summary object to write to; this callback takes
    * ownership of it.
+   * @param batch_interval The frequency with which to summarize
+   * @param mat_interval FIXME
+   * @todo Document mat_interval parameter.
    */
   lbann_callback_summary(lbann_summary *summarizer, int batch_interval = 1,
     int mat_interval = 25);

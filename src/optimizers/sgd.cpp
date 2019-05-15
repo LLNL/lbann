@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,7 @@
 
 namespace lbann {
 
-sgd::sgd(lbann_comm *comm,
+sgd::sgd(lbann_comm* comm,
          DataType learning_rate,
          DataType momentum,
          bool nesterov)
@@ -71,7 +71,7 @@ AbsDistMat& sgd::get_velocity() {
   return const_cast<AbsDistMat&>(static_cast<const sgd&>(*this).get_velocity());
 }
 
-void sgd::setup(weights& w) {
+void sgd::setup(weights* w) {
   optimizer::setup(w);
   const auto& gradient = this->get_gradient();
   m_velocity.reset(AbsDistMat::Instantiate(gradient.DistData()));
@@ -79,74 +79,94 @@ void sgd::setup(weights& w) {
 }
 
 void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
-
-  // SGD without momentum is just an Axpy
   if (m_momentum == DataType(0)) {
-    El::Axpy(-m_learning_rate, gradient, values);
-    return;
+    // Vanilla SGD
+    El::Axpy(-this->get_learning_rate(), gradient, values);
+  } else {
+    // Momentum or Nesterov SGD
+    switch (values.GetLocalDevice()) {
+    case El::Device::CPU: momentum_step_cpu(values, gradient); break;
+#ifdef LBANN_HAS_CUDA
+    case El::Device::GPU: momentum_step_gpu(values, gradient); break;
+#endif // LBANN_HAS_CUDA
+    default:
+      std::ostringstream err;
+      err << "unsupported device type "
+        << "(" << static_cast<int>(values.GetLocalDevice()) << ")";
+      LBANN_ERROR(err.str());
+    }
   }
+}
+
+void sgd::momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
 
   // Get local matrix data
-  const int local_height = values.LocalHeight();
-  const int local_width = values.LocalWidth();
-  DataType* __restrict__ values_buffer = values.Buffer();
-  const int values_ldim = values.LDim();
-  const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
-  const int gradient_ldim = gradient.LDim();
-  DataType* __restrict__ velocity_buffer = m_velocity->Buffer();
-  const int velocity_ldim = m_velocity->LDim();
+  const auto& learning_rate = this->get_learning_rate();
+  const size_t local_height = values.LocalHeight();
+  const size_t local_width = values.LocalWidth();
+  auto* __restrict__ values_buffer = values.Buffer();
+  const auto* __restrict__ gradient_buffer = gradient.LockedBuffer();
+  auto* __restrict__ velocity_buffer = m_velocity->Buffer();
 
-  // Check if matrix data is contiguous
-  if (values_ldim != local_height
-      || gradient_ldim != local_height
-      || velocity_ldim != local_height) {
-    // (Nesterov) momentum SGD for non-contiguous data
-    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-    for (int j=0; j<local_width; ++j) {
-      for (int i=0; i<local_height; ++i) {
-        const DataType g = gradient_buffer[i+j*gradient_ldim];
-        DataType& v = velocity_buffer[i+j*velocity_ldim];
-        DataType& x = values_buffer[i+j*values_ldim];
+  if (values.Contiguous() && gradient.Contiguous()
+      && m_velocity->Contiguous()) {
+    const size_t local_size = local_height * local_width;
+    if (m_nesterov) {
+
+      // Nesterov SGD for contiguous data
+      LBANN_OMP_PARALLEL_FOR
+      for (size_t i = 0; i < local_size; ++i) {
+        auto& x = values_buffer[i];
+        const auto& g = gradient_buffer[i];
+        auto& v = velocity_buffer[i];
         v = m_momentum * v + g;
-        x -= (m_nesterov ?
-              m_learning_rate * (m_momentum * v + g) :
-              m_learning_rate * v);
+        x -= learning_rate * (m_momentum * v + g);
       }
+
+    } else {
+
+      // Momentum SGD with contiguous data
+      LBANN_OMP_PARALLEL_FOR
+      for (size_t i = 0; i < local_size; ++i) {
+        auto& x = values_buffer[i];
+        const auto& g = gradient_buffer[i];
+        auto& v = velocity_buffer[i];
+        v = m_momentum * v + g;
+        x -= learning_rate * v;
+      }
+
     }
   } else {
-    if (m_nesterov) {
-      // Nesterov's accelerated gradient descent for contiguous data
-      LBANN_OMP_PARALLEL_FOR
-      for (int i=0; i<local_height*local_width; ++i) {
-        DataType& x = values_buffer[i];
-        const DataType g = gradient_buffer[i];
-        DataType& v = velocity_buffer[i];
+
+    // Momentum or Nesterov SGD with non-contiguous data
+    const size_t values_ldim = values.LDim();
+    const size_t gradient_ldim = gradient.LDim();
+    const size_t velocity_ldim = m_velocity->LDim();
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+    for (size_t col = 0; col < local_width; ++col) {
+      for (size_t row=0; row < local_height; ++row) {
+        const auto& g = gradient_buffer[row+col*gradient_ldim];
+        auto& v = velocity_buffer[row+col*velocity_ldim];
+        auto& x = values_buffer[row+col*values_ldim];
         v = m_momentum * v + g;
-        x -= m_learning_rate * (m_momentum * v + g);
-      }
-    } else {
-      // Momentum SGD for contiguous data
-      LBANN_OMP_PARALLEL_FOR
-      for (int i=0; i<local_height*local_width; ++i) {
-        DataType& x = values_buffer[i];
-        const DataType g = gradient_buffer[i];
-        DataType& v = velocity_buffer[i];
-        v = m_momentum * v + g;
-        x -= m_learning_rate * v;
+        x -= (m_nesterov ?
+              learning_rate * (m_momentum * v + g) :
+              learning_rate * v);
       }
     }
+
   }
 
 }
 
-////////////////////////////////////////////////////////////
+// =============================================
 // Checkpointing
-////////////////////////////////////////////////////////////
+// =============================================
 
 bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
-  if (m_comm->am_trainer_master()) {
+  if (get_comm().am_trainer_master()) {
     pack_scalars(p);
   }
 
@@ -160,11 +180,11 @@ bool sgd::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 bool sgd::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
-  if (m_comm->am_trainer_master()) {
+  if (get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
   }
 
-  m_comm->trainer_broadcast(0, header);
+  get_comm().trainer_broadcast(0, header);
 
   unpack_header(header);
   char l_name[512];

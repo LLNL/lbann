@@ -4,10 +4,16 @@ import tools
 import pytest
 import os
 
-def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_name):
+
+def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
+                                     compiler_name):
     if compiler_name not in executables:
-      pytest.skip('default_exes[%s] does not exist' % compiler_name)
+        e = 'skeleton_checkpoint_lenet_shared: default_exes[%s] does not exist' % compiler_name
+        print('Skip - ' + e)
+        pytest.skip(e)
     exe = executables[compiler_name]
+
+    # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
@@ -23,6 +29,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
         sys.exit(1)
     os.system('mv ckpt ckpt_baseline')
 
+    # Run to checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_checkpoint_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
@@ -37,6 +44,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
         sys.stderr.write('LeNet (checkpoint) execution failed, exiting with error')
         sys.exit(1)
 
+    # Pick up from checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_restart_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_restart_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
@@ -55,10 +63,16 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name, compiler_na
     os.system('rm -rf ckpt*')
     assert diff_test == 0
 
-def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compiler_name):
+
+def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
+                                          compiler_name):
      if compiler_name not in executables:
-       pytest.skip('default_exes[%s] does not exist' % compiler_name)
+         e = 'skeleton_checkpoint_lenet_distributed: default_exes[%s] does not exist' % compiler_name
+         print('Skip - ' + e)
+         pytest.skip(e)
      exe = executables[compiler_name]
+
+     # No checkpointing, printing weights to files.
      output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
      error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
      command = tools.get_command(
@@ -74,6 +88,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
          sys.exit(1)
      os.system('mv ckpt ckpt_baseline')
 
+     # Run to checkpoint, printing weights to files.
      output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_checkpoint_%s_output.txt' % (dir_name, compiler_name)
      error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_checkpoint_%s_error.txt' % (dir_name, compiler_name)
      command = tools.get_command(
@@ -88,6 +103,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
          sys.stderr.write('LeNet (checkpoint) execution failed, exiting with error')
          sys.exit(1)
 
+     # Pick up from checkpoint, printing weights to files.
      output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_restart_%s_output.txt' % (dir_name, compiler_name)
      error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_restart_%s_error.txt' % (dir_name, compiler_name)
      command = tools.get_command(
@@ -106,26 +122,33 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name, compil
      os.system('rm -rf ckpt*')
      assert diff_test == 0
 
+
 def test_unit_checkpoint_lenet_clang4(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang4')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang4')
+
 
 def test_unit_checkpoint_lenet_gcc4(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'gcc4')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'gcc4')
 
+
 def test_unit_checkpoint_lenet_gcc7(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'gcc7')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'gcc7')
+
 
 def test_unit_checkpoint_lenet_intel18(cluster, exes, dirname):
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'intel18')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'intel18')
 
+
 # Run with python -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_exe' --exe=<executable>
 def test_unit_checkpoint_lenet_exe(cluster, dirname, exe):
-    if exe == None:
-        pytest.skip('Non-local testing')
-    exes = {'exe' : exe}
+    if exe is None:
+        e = 'test_unit_checkpoint_lenet_exe: Non-local testing'
+        print('Skip - ' + e)
+        pytest.skip(e)
+    exes = {'exe': exe}
     skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'exe')
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'exe')

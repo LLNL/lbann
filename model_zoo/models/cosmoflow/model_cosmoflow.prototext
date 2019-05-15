@@ -24,7 +24,6 @@ model {
     children: "DARK_MATTER SECRETS_OF_THE_UNIVERSE"
     data_layout: "data_parallel"
     input {
-      io_buffer: "partitioned"
       target_mode: "regression"
     }
   }

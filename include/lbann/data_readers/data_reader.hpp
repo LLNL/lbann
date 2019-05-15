@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,6 +43,7 @@
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_set>
 
 
 #define NOT_IMPLEMENTED(n) { \
@@ -52,7 +53,7 @@
 
 namespace lbann {
 
-class generic_data_store;
+class data_store_conduit;
 class model;
 
 /**
@@ -90,8 +91,6 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_save_minibatch_indices(false),
-    m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
     m_is_partitioned(false),
@@ -372,9 +371,7 @@ class generic_data_reader : public lbann_image_preprocessor {
             && (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
-  void set_mini_batch_size(const int s) {
-    m_mini_batch_size = s;
-  }
+  void set_mini_batch_size(const int s);
   /// Get the mini batch size
   int get_mini_batch_size() const {
     return m_mini_batch_size;
@@ -532,6 +529,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   int *get_unused_data() {
     return &m_unused_indices[0];
   }
+  const std::vector<int>& get_unused_indices() {
+    return m_unused_indices;
+  }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
@@ -684,39 +684,34 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
   }
 
-  /// returns the data store
-  generic_data_store * get_data_store() const {
+  /// returns a const ref to the data store
+  virtual const data_store_conduit& get_data_store() const {
     if (m_data_store == nullptr) {
       LBANN_ERROR("m_data_store is nullptr");
     }
+    return *m_data_store;
+  }
+
+  data_store_conduit* get_data_store_ptr() const {
     return m_data_store;
   }
 
-  /// sets up a data_store.
-  virtual void setup_data_store(model *m);
+  /// sets up a data_store; this is called from build_model_from_prototext()
+  /// in utils/lbann_library.cpp. This is a bit awkward: would like to call it
+  /// when we instantiate the data_store, but we don;t know the mini_batch_size
+  /// until later.
+  void setup_data_store(int mini_batch_size);
 
-  /** This call changes the functionality of fetch_data(); when set,
-    * indices are added to m_my_minibatch_indices, but fetch_datum()
-    * is not called. This method is added to support data store functionality.
-    */
-  void set_save_minibatch_entries(bool b);
+  void instantiate_data_store(const std::vector<int>& local_list_sizes = std::vector<int>());
 
-  /// support of data store functionality
-  void init_minibatch();
-
-  /// support of data store functionality
-  const std::vector<std::vector<int> > & get_minibatch_indices() const {
-    return m_my_minibatch_indices;
-  }
-
-  /// support of data store functionality
-  int get_compound_rank() {
-    return m_compound_rank;
-  }
-
-  /// support of data store functionality
-  void set_compound_rank(int r) {
-    m_compound_rank = r;
+  // note: don't want to make this virtual, since then all derived classes
+  //       would have to override. But, this should only be called from within
+  //       derived classes where it makes sense to do so.
+  //       Once the sample_list class and file formats are generalized and
+  //       finalized, it should (may?) be possible to code a single
+  //       preload_data_store method.
+  virtual void preload_data_store() {
+    LBANN_ERROR("you should not be here");
   }
 
   void set_gan_labelling(bool has_gan_labelling) {
@@ -725,7 +720,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
 
   /// support of data store functionality
-  void set_data_store(generic_data_store *g);
+  void set_data_store(data_store_conduit *g);
 
   virtual bool data_store_active() const;
 
@@ -738,6 +733,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void post_update() {}
 
  protected:
+
+  // For use with conduit when samples are corrupt.
+  mutable std::unordered_set<int> m_using_random_node;
 
   /**
    * Return the absolute number of data samples that will be used for training
@@ -757,13 +755,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  int m_rank;
-
-  generic_data_store *m_data_store;
+  data_store_conduit *m_data_store;
 
   lbann_comm *m_comm;
 
-  bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.
@@ -869,16 +865,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_samples;
 
  protected :
-   /// added to support data store functionality
-   bool m_save_minibatch_indices;
-
-   /// added to support data store functionality
-   std::vector<std::vector<int> > m_my_minibatch_indices;
-
-   /// added to support data store functionality
-   int m_compound_rank;
-
-
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0

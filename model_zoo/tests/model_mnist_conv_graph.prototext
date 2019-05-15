@@ -3,8 +3,6 @@ model {
   mini_batch_size: 31
   block_size: 257
   num_epochs: 4
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -36,9 +34,7 @@ model {
     name: "data"
     children: "images labels"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     name: "images"
@@ -141,7 +137,7 @@ model {
     children: "branch3_conv1 branch3_conv2"
     data_layout: "data_parallel"
     slice {
-      slice_axis: 1
+      axis: 1
       slice_points: "0 4 6"
     }
   }
@@ -186,7 +182,7 @@ model {
     name: "branch3_concat"
     data_layout: "data_parallel"
     concatenation {
-      concatenation_axis: 1
+      axis: 1
     }
   }
 
@@ -213,6 +209,12 @@ model {
   }
   layer {
     parents: "prob_pool"
+    name: "prob_flat"
+    reshape { dims: "-1" }
+    data_layout: "data_parallel"
+  }
+  layer {
+    parents: "prob_flat"
     name: "prob"
     softmax {}
     data_layout: "data_parallel"

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,12 +44,15 @@ class lbann_callback_save_model : public lbann_callback {
  public:
   /**
    * @param dir directory to save model
-   * @param file extension e.g., model, state ......
+   * @param disable_save_after_training Don't save after training
+   * @param extension file extension e.g., model, state ......
    */
   lbann_callback_save_model(std::string dir,
                             bool disable_save_after_training,
                             std::string extension="prototext") :
-    lbann_callback(), m_dir(std::move(dir)), m_disable_save_after_training(disable_save_after_training), m_extension(std::move(extension))
+    lbann_callback(), m_dir(std::move(dir)),
+    m_disable_save_after_training(disable_save_after_training),
+    m_extension(std::move(extension))
     {}
   lbann_callback_save_model(const lbann_callback_save_model&) = default;
   lbann_callback_save_model& operator=(

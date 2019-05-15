@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -58,16 +58,16 @@ void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, 
 }
 
 void lbann_callback_check_dataset::on_forward_prop_end(model *m, Layer *l) {
-  add_to_set(m, l, m->get_cur_step(), training_set);
+  add_to_set(m, l, m->get_step(), training_set);
 }
 
 void lbann_callback_check_dataset::on_evaluate_forward_prop_end(model *m, Layer *l) {
   switch(m->get_execution_mode()) {
   case execution_mode::validation:
-    add_to_set(m, l, m->get_cur_validation_step(), validation_set);
+    add_to_set(m, l, m->get_step(), validation_set);
     break;
   case execution_mode::testing:
-    add_to_set(m, l, m->get_cur_testing_step(), testing_set);
+    add_to_set(m, l, m->get_step(), testing_set);
     break;
   default:
     throw lbann_exception("lbann_callback_check_dataset: invalid execution phase");

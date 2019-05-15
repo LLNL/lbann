@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -172,6 +172,8 @@ class weights_layer : public transform_layer {
   }
 
   void bp_compute() override {
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
@@ -181,14 +183,14 @@ class weights_layer : public transform_layer {
     // Matrices
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, DataType(1));
+    El::Fill(*m_workspace, one);
 
     // Compute gradient contribution and accumulate
-    const auto& scale = DataType(1) / this->m_model->get_effective_mini_batch_size();
+    const auto& scale = one / this->m_model->get_effective_mini_batch_size();
     El::Gemv(El::NORMAL,
              scale, local_gradient_wrt_output, *m_workspace,
-             DataType(0), m_gradient->Matrix());
-    opt->add_to_gradient_staging(*m_gradient);
+             zero, m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, one, true);
 
     // Clean up
     m_workspace->Empty();

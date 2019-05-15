@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -412,8 +412,8 @@ void columnwise_covariance(const AbsDistMat& data1,
     }
     local_covs(0, col) = sum;
   }
-  AllReduce(covs, covs.RedundantComm(), El::mpi::SUM);
-  local_covs *= DataType(1) / height;
+  El::AllReduce(covs, covs.RedundantComm(), El::mpi::SUM);
+  El::Scale(DataType(1) / height, local_covs);
 
 }
 

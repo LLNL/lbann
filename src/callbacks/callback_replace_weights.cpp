@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,11 +29,11 @@
 namespace lbann {
 
 void lbann_callback_replace_weights::on_batch_end(model *m) {
-  const auto& step = m->get_cur_step();
+  const auto& step = m->get_step(execution_mode::training);
   if(step % m_batch_interval == 0) {
     for(size_t i = 0; i < m_src_layers.size(); i++) {
       m_dst_layers[i]->replace_weights(m_src_layers[i]);
-    } 
+    }
   }
 }
 

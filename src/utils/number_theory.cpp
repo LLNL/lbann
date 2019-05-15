@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,7 +33,7 @@ namespace lbann {
 namespace number_theory {
 
 int prime(int n) {
-  if (n < 0) { 
+  if (n < 0) {
     std::stringstream err;
     err << "invalid index (" << n << ")";
     LBANN_ERROR(err.str());
@@ -64,7 +64,7 @@ int prime(int n) {
 }
 
 std::vector<int> prime_factors(int n) {
-  if (n < 2) { 
+  if (n < 2) {
     std::stringstream err;
     err << "invalid number to factorize (" << n << ")";
     LBANN_ERROR(err.str());
@@ -98,7 +98,7 @@ std::vector<int> balanced_factors(int n, int num_factors) {
 
   // Trivial case when n = 1
   if (n == 1) { return std::vector<int>(num_factors, 1); };
-  
+
   // Get prime factorization
   const auto& primes = prime_factors(n);
 

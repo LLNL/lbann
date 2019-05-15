@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -40,8 +40,8 @@ void lbann_callback_timer::batch_timing_end(const model& m) {
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
   if (m_summarizer != nullptr) {
-    m_summarizer->reduce_scalar("minibatch_time", batch_time, m.get_cur_step()-1);
-    m_summarizer->reduce_scalar_all("minibatch_time", batch_time, m.get_cur_step()-1);
+    m_summarizer->reduce_scalar("minibatch_time", batch_time, m.get_step(execution_mode::training)-1);
+    m_summarizer->reduce_scalar_all("minibatch_time", batch_time, m.get_step(execution_mode::training)-1);
   }
 }
 
@@ -88,7 +88,7 @@ void lbann_callback_timer::timing_end(model& m) {
   std::string mode_string;
   switch(mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m.get_cur_epoch()-1);
+    mode_string = "training epoch " + std::to_string(m.get_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";

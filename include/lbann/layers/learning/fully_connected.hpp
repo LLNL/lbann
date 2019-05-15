@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,13 +41,13 @@ template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
 public:
 
+  /** @todo Accept a vector for output_size */
   fully_connected_layer(lbann_comm *comm,
-                        int output_size,  /// @todo Accept a vector
+                        int output_size,
                         bool transpose = false,
                         weights* weight = nullptr,
                         bool has_bias = true)
     : learning_layer(comm),
-      m_linearity_gradient(nullptr),
       m_bias_gradient(nullptr),
       m_transpose(transpose) {
 
@@ -65,11 +65,7 @@ public:
     m_transpose(other.m_transpose) {
 
     // Deep matrix copies
-    m_linearity_gradient = other.m_linearity_gradient;
     m_bias_gradient = other.m_bias_gradient;
-    if (m_linearity_gradient != nullptr) {
-      m_linearity_gradient = m_linearity_gradient->Copy();
-    }
     if (m_bias_gradient != nullptr) {
       m_bias_gradient = m_bias_gradient->Copy();
     }
@@ -83,11 +79,7 @@ public:
 
     // Deep matrix copies
     deallocate_matrices();
-    m_linearity_gradient = other.m_linearity_gradient;
     m_bias_gradient = other.m_bias_gradient;
-    if (m_linearity_gradient != nullptr) {
-      m_linearity_gradient = m_linearity_gradient->Copy();
-    }
     if (m_bias_gradient != nullptr) {
       m_bias_gradient = m_bias_gradient->Copy();
     }
@@ -129,7 +121,11 @@ protected:
           << "attempted to setup " << m_name << " with an invalid number of weights";
       throw lbann_exception(err.str());
     }
-    this->m_weights.resize(2, nullptr);
+    if (m_bias_scaling_factor != DataType(0)) {
+      this->m_weights.resize(2, nullptr);
+    } else {
+      this->m_weights.resize(1, nullptr);
+    }
     if (this->m_weights[0] == nullptr) {
       auto* w = new weights(get_comm());
       std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
@@ -140,16 +136,7 @@ protected:
       this->m_weights[0] = w;
       this->m_model->add_weights(w);
     }
-    if (this->m_weights[1] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_bias_weights");
-      w->set_optimizer(opt);
-      this->m_weights[1] = w;
-      this->m_model->add_weights(w);
-    }
     auto& linearity_weights = *this->m_weights[0];
-    auto& bias_weights = *this->m_weights[1];
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -173,19 +160,28 @@ protected:
     }
     linearity_weights.set_matrix_distribution(linearity_dist);
 
-    // Setup bias weights
-    auto bias_dist = get_activations().DistData();
-    bias_dist.rowDist = El::STAR;
-    bias_weights.set_dims(get_output_dims());
-    bias_weights.set_matrix_distribution(bias_dist);
-
-    // Setup weight gradients
-    El::Zeros(*m_linearity_gradient,
-              linearity_weights.get_matrix_height(),
-              linearity_weights.get_matrix_width());
-    El::Zeros(*this->m_bias_gradient,
-              bias_weights.get_matrix_height(),
-              bias_weights.get_matrix_width());
+    // Set up bias if needed.
+    if (m_bias_scaling_factor != DataType(0)) {
+      if (this->m_weights[1] == nullptr) {
+        auto* w = new weights(get_comm());
+        std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+        w->set_name(get_name() + "_bias_weights");
+        w->set_optimizer(opt);
+        this->m_weights[1] = w;
+        this->m_model->add_weights(w);
+      }
+      auto& bias_weights = *this->m_weights[1];
+      // Setup bias weights
+      auto bias_dist = get_activations().DistData();
+      bias_dist.rowDist = El::STAR;
+      bias_weights.set_dims(get_output_dims());
+      bias_weights.set_matrix_distribution(bias_dist);
+      if (this->m_bias_gradient != nullptr) {
+        El::Zeros(*this->m_bias_gradient,
+                  bias_weights.get_matrix_height(),
+                  bias_weights.get_matrix_width());
+      }
+    }
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {
@@ -218,11 +214,6 @@ private:
    */
   DataType m_bias_scaling_factor;
 
-  /** Linearity gradient.
-   *  This is this layer's contribution to the objective function
-   *  gradient w.r.t. the linearity weights (i.e. its matrix weights).
-   */
-  AbsDistMat* m_linearity_gradient;
   /** Bias weights gradient.
    *  This is this layer's contribution to the objective function
    *  gradient w.r.t. the bias weights.
@@ -234,7 +225,6 @@ private:
 
   /** Deallocate distributed matrices. */
   void deallocate_matrices() {
-    if (m_linearity_gradient != nullptr) delete m_linearity_gradient;
     if (m_bias_gradient != nullptr) delete m_bias_gradient;
   }
 

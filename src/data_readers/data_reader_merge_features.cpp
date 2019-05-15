@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,7 +27,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_merge_features.hpp"
-#include "lbann/data_store/data_store_merge_features.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -108,16 +107,6 @@ bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx)
 
 bool data_reader_merge_features::fetch_response(CPUMat& Y, int data_id, int mb_idx) {
   return m_label_reader->fetch_response(Y, data_id, mb_idx);
-}
-
-void data_reader_merge_features::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_merge_features(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
 }
 
 }  // namespace lbann

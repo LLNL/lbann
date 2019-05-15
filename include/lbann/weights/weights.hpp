@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -124,7 +124,7 @@ public:
    *  See the 'get_dims' function for an explanation of the notation.
    */
   void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = {});
+                std::vector<int> matrix_width_dims = std::vector<int>());
   /** Set weight tensor dimensions as a 1D tensor. */
   void set_dims(int size) { set_dims({size}, {}); }
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -73,7 +73,6 @@
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
-#include "lbann/layers/transform/zero.hpp"
 #include "lbann/layers/transform/reduction.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/layers/transform/gaussian.hpp"
@@ -101,6 +100,8 @@
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/mini_batch_index.hpp"
+#include "lbann/layers/misc/mini_batch_size.hpp"
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
@@ -109,13 +110,14 @@
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_mnist_siamese.hpp"
-#include "lbann/data_readers/data_reader_triplet.hpp"
+#include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/data_readers/data_reader_jag_conduit_hdf5.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
+#include "lbann/data_readers/data_reader_numpy_npz.hpp"
+#include "lbann/data_readers/data_reader_numpy_npz_conduit.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
@@ -123,10 +125,10 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_moving_mnist.hpp"
+#include "lbann/data_readers/data_reader_python.hpp"
 
 /// Data stores
-#include "lbann/data_store/generic_data_store.hpp"
-#include "lbann/data_store/data_store_imagenet.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"

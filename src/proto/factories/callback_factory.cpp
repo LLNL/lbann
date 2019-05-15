@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -66,8 +66,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
 
   if (proto_cb.has_print()) {
-    const auto& interval = proto_cb.print().interval();
-    return new lbann_callback_print(interval);
+    const auto& params = proto_cb.print();
+    return new lbann_callback_print(params.interval(),
+                                    params.print_global_stat_only());
   }
   if (proto_cb.has_timer()) {
     return new lbann_callback_timer(summarizer);
@@ -183,6 +184,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_poly_learning_rate(params.power(),
                                                  params.num_epochs(),
                                                  params.max_iter(),
+                                                 params.end_lr(),
                                                  selected_weights);
   }
 
@@ -260,7 +262,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                       params.mat_interval());
   }
   if (proto_cb.has_profiler()) {
-    return new lbann_callback_profiler(proto_cb.profiler().sync());
+    return new lbann_callback_profiler(proto_cb.profiler().sync(),
+                                       proto_cb.profiler().skip_init());
   }
   if (proto_cb.has_sync_layers()) {
     const auto& params = proto_cb.sync_layers();

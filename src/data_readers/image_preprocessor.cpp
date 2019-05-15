@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -60,7 +60,7 @@ void lbann_image_preprocessor::augment(Mat& pixels, unsigned imheight,
                       m_shear_range;
   if (do_transform) {
     cv::Mat sqpixels = cv_pixels(pixels, imheight, imwidth, num_channels);
-    rng_gen& gen = get_generator();
+    rng_gen& gen = get_io_generator();
     std::uniform_int_distribution<int> bool_dist(0, 1);
     // Flips.
     bool horiz_flip = bool_dist(gen) && m_horizontal_flip;
@@ -192,22 +192,22 @@ void lbann_image_preprocessor::unit_scale(Mat& pixels,
     unsigned num_channels) {
   // Pixels are in range [0, 255], normalize using that.
   // Channels are not relevant here.
-  pixels *= DataType(1) / 255;
+  El::Scale(DataType(1) / 255, pixels);
 }
 
 
-void lbann_image_preprocessor::pixel_noise(Mat& pixels) 
+void lbann_image_preprocessor::pixel_noise(Mat& pixels)
 {
   if(m_noise_factor){
     Mat X_noise;
     El::Gaussian(X_noise, pixels.Height(), pixels.Width(), DataType(0), DataType(1));
     El::Axpy(m_noise_factor,X_noise,pixels);
     //@todo - clip to min and max of input entry
-    auto clip = [](const DataType& z) { 
+    auto clip = [](const DataType& z) {
          return std::max(DataType(0), std::min(z,DataType(1)));
     };
     EntrywiseMap(pixels, El::MakeFunction(clip));
-  } 
+  }
 }
 
 void lbann_image_preprocessor::z_score(Mat& pixels,

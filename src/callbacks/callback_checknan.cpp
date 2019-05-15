@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -80,8 +80,8 @@ void dump_network(model *m) {
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
-       << "-epoch" << m->get_cur_epoch()
-       << "-step" << m->get_cur_step()
+       << "-epoch" << m->get_epoch()
+       << "-step" << m->get_step(execution_mode::training)
        << "-" << l->get_name() << "-";
     const std::string prefix = ss.str();
     for (int i = 0; i < l->get_num_children(); ++i) {
@@ -99,8 +99,8 @@ void dump_network(model *m) {
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
-       << "-epoch" << m->get_cur_epoch()
-       << "-step" << m->get_cur_step()
+       << "-epoch" << m->get_epoch()
+       << "-step" << m->get_step(execution_mode::training)
        << "-" << w->get_name() << "-";
     const std::string prefix = ss.str();
     El::Write(w->get_values().LockedMatrix(),

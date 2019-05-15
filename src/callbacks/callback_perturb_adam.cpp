@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -49,7 +49,7 @@ void lbann_callback_perturb_adam::setup(model* m) {
 }
 
 void lbann_callback_perturb_adam::on_batch_begin(model* m) {
-  if (m_perturb_during_training && m->get_cur_step() > 0) {
+  if (m_perturb_during_training && m->get_step() > 0) {
     perturb(*m);
   }
 }

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -54,9 +54,6 @@ class imagenet_reader : public image_data_reader {
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
 
  protected:
   /// preprocessor duplicated for each omp thread

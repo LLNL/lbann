@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -144,7 +144,7 @@ class lbann_image_preprocessor {
    * internal_save_image.
    * @param pixels The image to save (as a column vector).
    * @param filename The image filename (type inferred from extension).
-   * @param scale Whether pixels has been scaled (default true).
+   * @param do_scale Whether pixels has been scaled (default true).
    */
   virtual void save_image(Mat& pixels, const std::string filename,
                           bool do_scale = true) {}
@@ -188,9 +188,9 @@ class lbann_image_preprocessor {
   /** Undo cv_pixels. */
   void col_pixels(const cv::Mat& sqpixels, Mat& pixels, unsigned num_channels);
 
-  /**
-   * Flip sqpixels.
-   * @param flip_flag OpenCV flip flag: 0=vertical, 1=horizontal, -1=both.
+  /** @brief Flip sqpixels.
+   *  @param sqpixels The image to flip
+   *  @param flip_flag OpenCV flip flag: 0=vertical, 1=horizontal, -1=both.
    */
   void flip(cv::Mat& sqpixels, int flip_flag);
   /** Apply the affine transformation in 3x3 matrix trans. */

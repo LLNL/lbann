@@ -21,9 +21,17 @@ methods.
 
 
 ## Building LBANN
-A few options for building LBANN are documented
-[here](docs/BuildingLBANN.md#top).
+The preferred method for LBANN users to install LBANN is to use
+[Spack](https://github.com/llnl/spack). After some system
+configuration, this should be as straightforward as
 
+```bash
+spack install lbann
+```
+
+More detailed instructions for building and installing LBANN are
+available at the [main LBANN
+documentation](https://lbann.readthedocs.io/en/latest/index.html).
 
 ## Running LBANN
 The basic template for running LBANN is
@@ -42,8 +50,12 @@ optimized for the case in which one assigns one GPU per MPI
 the MPI launcher.
 
 More details about running LBANN are documented
-[here](docs/RunningLBANN.md#top).
+[here](https://lbann.readthedocs.io/en/latest/running_lbann.html).
 
+## Publications
+
+A list of publications, presentations and posters are shown
+[here](https://lbann.readthedocs.io/en/latest/publications.html).
 
 ## Reporting issues
 Issues, questions, and bugs can be raised on the [Github issue

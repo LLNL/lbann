@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <tuple>
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_imcomm.hpp"
 #include "lbann/utils/random.hpp"
@@ -126,6 +127,19 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       const auto* send_sgd = dynamic_cast<const sgd*>(send_opt);
       auto* recv_sgd = dynamic_cast<sgd*>(recv_opt);
       if (send_sgd != nullptr && recv_sgd != nullptr) {
+        using hyperparameters_type = std::tuple<DataType, DataType, bool>;
+        hyperparameters_type hyperparameters(send_sgd->get_learning_rate(),
+                                             send_sgd->get_momentum(),
+                                             send_sgd->using_nesterov());
+        El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
+                          sizeof(hyperparameters_type),
+                          partner_rank_in_world,
+                          partner_rank_in_world,
+                          comm.get_world_comm(),
+                          El::SyncInfo<El::Device::CPU>{});
+        recv_sgd->set_learning_rate(std::get<0>(hyperparameters));
+        recv_sgd->set_momentum(std::get<1>(hyperparameters));
+        recv_sgd->set_nesterov(std::get<2>(hyperparameters));
         El::SendRecv(send_sgd->get_velocity().LockedMatrix(),
                      recv_sgd->get_velocity().Matrix(),
                      comm.get_world_comm(),
@@ -135,6 +149,25 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
       const auto* send_adam = dynamic_cast<const adam*>(send_opt);
       auto* recv_adam = dynamic_cast<adam*>(recv_opt);
       if (send_adam != nullptr && recv_adam != nullptr) {
+        using hyperparameters_type = std::tuple<DataType, DataType, DataType, DataType, DataType, DataType>;
+        hyperparameters_type hyperparameters(send_adam->get_learning_rate(),
+                                             send_adam->get_beta1(),
+                                             send_adam->get_beta2(),
+                                             send_adam->get_eps(),
+                                             send_adam->get_current_beta1(),
+                                             send_adam->get_current_beta2());
+        El::mpi::SendRecv(reinterpret_cast<El::byte*>(&hyperparameters),
+                          sizeof(hyperparameters_type),
+                          partner_rank_in_world,
+                          partner_rank_in_world,
+                          comm.get_world_comm(),
+                          El::SyncInfo<El::Device::CPU>{});
+        recv_adam->set_learning_rate(std::get<0>(hyperparameters));
+        recv_adam->set_beta1(std::get<1>(hyperparameters));
+        recv_adam->set_beta2(std::get<2>(hyperparameters));
+        recv_adam->set_eps(std::get<3>(hyperparameters));
+        recv_adam->set_current_beta1(std::get<4>(hyperparameters));
+        recv_adam->set_current_beta2(std::get<5>(hyperparameters));
         El::SendRecv(send_adam->get_moment1().LockedMatrix(),
                      recv_adam->get_moment1().Matrix(),
                      comm.get_world_comm(),
@@ -160,7 +193,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Checkpoint directories
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_cur_step();
+  const auto step = m.get_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
@@ -219,7 +252,7 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_cur_step();
+  const auto step = m.get_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
@@ -246,6 +279,10 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   const auto original_mode = m.get_execution_mode();
   m.collect_background_data_fetch(original_mode);
 
+  // Mark the data store as loading - Note that this is a temporary fix
+  // for the current use of the tournament
+  m.mark_data_store_explicitly_loading(execution_mode::validation);
+
   // Evaluate model on validation set
   m.evaluate(execution_mode::validation);
 
@@ -265,6 +302,10 @@ EvalType evaluate(model& m, const std::string& metric_name) {
         << "in model \"" << m.get_name() << "\"";
     LBANN_ERROR(err.str());
   }
+
+  // Mark the data store as loaded - Note that this is a temporary fix
+  // for the current use of the tournament
+  m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
   m.set_execution_mode(original_mode);
@@ -340,12 +381,27 @@ void lbann_callback_ltfb::setup(model *m) {
 
 }
 
+void lbann_callback_ltfb::on_train_begin(model *m) {
+  auto&& comm = *m->get_comm();
+
+  if (comm.am_world_master()) {
+    std::cout << "starting synchronizing trainers...\n";
+  }
+  double tm1 = get_time();
+  /// Make sure that all of the trainers are ready to go before starting
+  comm.intertrainer_barrier();
+
+  if (comm.am_world_master()) {
+    std::cout << "synchronizing trainers... " << get_time()-tm1 <<"s\n";
+  }
+}
+
 void lbann_callback_ltfb::on_batch_begin(model *m) {
   auto&& comm = *m->get_comm();
 
   // Check whether to start LTFB round
   const auto mode = m->get_execution_mode();
-  const auto step = m->get_cur_step();
+  const auto step = m->get_step();
   if (mode != execution_mode::training || step == 0) { return; }
 
   // Print message

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,14 +37,15 @@ namespace lbann {
  * Print verbose status updates to standard error stream.
  * This callback is useful for "printf debugging."
  *
- * Takes a prototext parameter @c phase: train | validate | test | <empty>
- * if <empty> will print messages for all phases
+ * Takes a prototext parameter @c phase: train | validate | test | \<empty\>
+ * if \<empty\> will print messages for all phases
  *
  */
 class lbann_callback_debug : public lbann_callback {
  public:
 
-  /** Constructor.
+  /** @brief Constructor.
+   *
    *  If modes is empty, status updates will be printed for all
    *  execution modes.
    */
@@ -56,13 +57,13 @@ class lbann_callback_debug : public lbann_callback {
   lbann_callback_debug* copy() const override { return new lbann_callback_debug(*this); }
   std::string name() const override { return "debug"; }
 
-  /** Print that a batch is beginning. */
+  /** @brief Print that a batch is beginning. */
   void on_batch_begin(model *m) override;
-  /** Print that a batch is ending. */
+  /** @brief Print that a batch is ending. */
   void on_batch_end(model *m) override;
-  /** Print that a layer's forward prop is beginning. */
+  /** @brief Print that a layer's forward prop is beginning. */
   void on_batch_evaluate_begin(model *m) override;
-  /** Print that a layer's forward prop is ending. */
+  /** @brief Print that a layer's forward prop is ending. */
   void on_batch_evaluate_end(model *m) override;
 
   using lbann_callback::on_forward_prop_begin;
@@ -74,27 +75,28 @@ class lbann_callback_debug : public lbann_callback {
   using lbann_callback::on_optimize_begin;
   using lbann_callback::on_optimize_end;
 
-  /** Print that a layer's forward prop is beginning. */
+  /** @brief Print that a layer's forward prop is beginning. */
   void on_forward_prop_begin(model *m, Layer *l) override;
-  /** Print that a layer's forward prop is ending. */
+  /** @brief Print that a layer's forward prop is ending. */
   void on_forward_prop_end(model *m, Layer *l) override;
-  /** Print that a layer's backward prop is beginning. */
+  /** @brief Print that a layer's backward prop is beginning. */
   void on_backward_prop_begin(model *m, Layer *l) override;
-  /** Print that a layer's backward prop is ending. */
+  /** @brief Print that a layer's backward prop is ending. */
   void on_backward_prop_end(model *m, Layer *l) override;
-  /** Print that a layer's backward prop is beginning. */
+  /** @brief Print that a layer's backward prop is beginning. */
   void on_evaluate_forward_prop_begin(model *m, Layer *l) override;
-  /** Print that a layer's backward prop is ending. */
+  /** @brief Print that a layer's backward prop is ending. */
   void on_evaluate_forward_prop_end(model *m, Layer *l) override;
 
-  /** Print that a weights' optimization step is beginning. */
+  /** @brief Print that a weights' optimization step is beginning. */
   void on_optimize_begin(model *m, weights *w) override;
-  /** Print that a weights' optimization step is ending. */
+  /** @brief Print that a weights' optimization step is ending. */
   void on_optimize_end(model *m, weights *w) override;
 
  private:
 
-  /** Execution modes for which status updates will be printed.
+  /** @brief Execution modes for which status updates will be printed.
+   *
    *  If empty, status updates are printed for all execution modes.
    */
   std::set<execution_mode> m_modes;

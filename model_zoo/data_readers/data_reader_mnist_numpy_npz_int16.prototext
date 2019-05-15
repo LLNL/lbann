@@ -1,0 +1,67 @@
+data_reader {
+  reader {
+    name: "numpy_npz"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lscratchh/brainusr/datasets/MNIST/numpy/train_int16.npz"
+    validation_percent: 0.1
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    disable_responses: true
+    num_labels: 10
+    scaling_factor_int16: 0.000030518509476 # 1 / 0x7FFF
+
+    image_preprocessor {
+      normalizer {
+        scale: true
+        subtract_mean: false
+        unit_variance: false
+        z_score: false
+      }
+      augmenter {
+        horizontal_flip: false
+        vertical_flip: false
+        rotation: 0
+        horizontal_shift: 0
+        vertical_shift: 0
+        shear_range: 0
+      }
+      noiser {
+        disable: true
+        factor: 0.0
+      }
+    }
+  }
+  reader {
+    name: "numpy_npz"
+    role: "test"
+    shuffle: true
+    data_filedir: "/p/lscratchh/brainusr/datasets/MNIST/numpy/test_int16.npz"
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    disable_responses: true
+    num_labels: 10
+    scaling_factor_int16: 0.000030518509476 # 1 / 0x7FFF
+
+    image_preprocessor {
+      normalizer {
+        scale: true
+        subtract_mean: false
+        unit_variance: false
+        z_score: false
+      }
+      augmenter {
+        horizontal_flip: false
+        vertical_flip: false
+        rotation: 0
+        horizontal_shift: 0
+        vertical_shift: 0
+        shear_range: 0
+      }
+      noiser {
+        disable: true
+        factor: 0.0
+      }
+    }
+  }
+}

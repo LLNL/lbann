@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,7 +37,7 @@ namespace lbann {
 /**
  * Record a timeline of training runtime on each rank and output it to a
  * logfile for external processing.
- * The logfile is named timeline.m<model-rank>.<rank>.txt.
+ * The logfile is named timeline.m\<model-rank\>.\<rank\>.txt.
  * Each line is a separate event, written as name:start-time:end-time.
  * Times are relative to the beginning of training.
  */

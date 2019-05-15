@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -33,21 +33,31 @@
 
 namespace lbann {
 
-/**
- *  * Checkpoint at given interval in given directory
- *   */
+/** @brief Checkpoint at given interval in given directory */
 class lbann_callback_checkpoint : public lbann_callback {
  public:
 
-  /**
- * @param checkpoint_dir directory to save checkpoint files
- * @param checkpoint_epochs interval to checkpoint
- * @param checkpoint_steps interval to checkpoint
- * @param checkpoint_secs interval to checkpoint
- * @param checkpoint_per_rank true to save/load a file per mpi rank
- */
+  /** @brief Construct the checkpoint callback
+   *
+   *  It may be beneficial to the distributed checkpoints at a higher
+   *  tempo than the shared checkpoints because they are less
+   *  expensive.
+   *
+   *  @param checkpoint_dir directory to save checkpoint files
+   *  @param checkpoint_epochs interval to checkpoint
+   *  @param checkpoint_steps interval to checkpoint
+   *  @param checkpoint_secs interval to checkpoint
+   *  @param per_rank_dir The directory into which to dump distributed checkpoints
+   *  @param ckpt_dist_epochs The frequency of distributed checkpoints in epochs
+   *  @param ckpt_dist_steps The frequence of distributed checkpoints in steps
+   */
   lbann_callback_checkpoint(std::string checkpoint_dir,
-                            int checkpoint_epochs, int checkpoint_steps, int checkpoint_secs, std::string per_rank_dir, int ckpt_dist_epochs, int ckpt_dist_steps) :
+                            int checkpoint_epochs,
+                            int checkpoint_steps,
+                            int checkpoint_secs,
+                            std::string per_rank_dir,
+                            int ckpt_dist_epochs,
+                            int ckpt_dist_steps) :
     lbann_callback(),
     m_checkpoint_dir(checkpoint_dir),
     m_checkpoint_epochs(checkpoint_epochs),
@@ -170,7 +180,10 @@ static inline bool write_latest(std::string filename, int epoch, int train) {
   }
   return true;
 }
-/** \brief Reads the "latest" file and returns the epoch number and sample offset for most recent checkpoint */
+
+/** \brief Reads the "latest" file and returns the epoch number and
+ *        sample offset for most recent checkpoint
+ */
 static inline bool read_latest(std::string filename, int *epochLast, int *trainLast) {
   // assume we don't have a file, we'll return -1 in that case
   *epochLast = -1;

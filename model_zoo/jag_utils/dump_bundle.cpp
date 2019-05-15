@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -43,7 +43,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   int np = comm->get_procs_in_world();
   if (np != 1 || argc == 1) {
@@ -52,14 +52,12 @@ int main(int argc, char *argv[]) {
                 << "usage: " << argv[0] << " conduit_bundle_filename\n"
                 << "function: dumps the conduit file to cout\n";
     }
-    finalize(comm);
   }
 
   conduit::Node node;
   conduit::relay::io::load(argv[1], "hdf5", node);
   node.print();
 
-  finalize(comm);
   return EXIT_SUCCESS;
 }
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,7 +37,7 @@ namespace {
 
 void fill_matrix(CPUMat& mat) {
   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
-  auto& gen = get_fast_generator();
+  auto& gen = get_fast_io_generator();
   const El::Int height = mat.Height();  // Width is 1.
   DataType * __restrict__ buf = mat.Buffer();
   for (El::Int i = 0; i < height; ++i) {
@@ -74,7 +74,7 @@ bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if (m_num_labels == 0) {
     LBANN_ERROR("Synthetic data reader does not have labels");
   }
-  Y.Set(fast_rand_int(get_fast_generator(), m_num_labels), mb_idx, 1);
+  Y.Set(fast_rand_int(get_fast_io_generator(), m_num_labels), mb_idx, 1);
   return true;
 }
 

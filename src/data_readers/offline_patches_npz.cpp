@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,13 +31,35 @@
 #include <set>
 #include <algorithm>
 
+#include <iostream>
+
 namespace lbann {
+
+offline_patches_npz::offline_patches_npz(size_t npatches, std::string divider)
+  : m_checked_ok(false), m_lbann_format(false)
+{
+  m_num_patches = npatches;
+  m_variant_divider = divider;
+}
+
+offline_patches_npz::offline_patches_npz(size_t npatches)
+  : m_checked_ok(false), m_lbann_format(false)
+{
+  m_num_patches = npatches;
+  m_variant_divider = ".JPEG.";
+}
+
+offline_patches_npz::offline_patches_npz(std::string divider)
+  : m_checked_ok(false), m_lbann_format(false)
+{
+  m_num_patches = 3u;
+  m_variant_divider = divider;
+}
 
 offline_patches_npz::offline_patches_npz()
   : m_checked_ok(false), m_num_patches(3u), m_variant_divider(".JPEG."),
     m_lbann_format(false)
 {}
-
 
 bool offline_patches_npz::load(const std::string filename, size_t first_n,
   bool keep_file_lists) {
@@ -88,6 +110,7 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n,
   { // load the label array into a vector of label_t (uint8_t)
     cnpy::NpyArray d_item_class_list = dataset["item_class_list"];
     m_checked_ok = (d_item_class_list.shape.size() == 1u);
+
     if (m_checked_ok) {
       // In case of shrinking to first_n, make sure the size is consistent
       const size_t num_samples = m_item_root_list.shape[0];
@@ -130,7 +153,6 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n,
       dataset.erase(it); // to keep memory footprint as low as possible
     }
   }
-  //for (const auto& fl: m_file_root_list) std::cout << fl << std::endl;
 
   { // load the array of dictionary substrings of variant type
     cnpy::NpyArray d_file_variant_list = dataset["file_variant_list"];
@@ -156,12 +178,10 @@ bool offline_patches_npz::load(const std::string filename, size_t first_n,
       dataset.erase(it); // to keep memory footprint as low as possible
     }
   }
-  //for (const auto& fl: m_file_variant_list) std::cout << fl << std::endl;
 
   m_checked_ok = m_checked_ok && check_data();
 
   if (!m_checked_ok) {
-    //std::cout << get_description();
     m_item_class_list.clear();
     m_file_root_list.clear();
     m_file_variant_list.clear();
@@ -184,6 +204,7 @@ bool offline_patches_npz::check_data() const {
             (m_item_variant_list.shape[2] > 0u) &&
             (m_item_root_list.word_size == sizeof(size_t)) &&
             (m_item_variant_list.word_size == sizeof(size_t));
+
   return ok;
 }
 
@@ -213,6 +234,7 @@ offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) 
 
   for (size_t p = 0u; p < m_num_patches; ++p) {
     const size_t root = cnpy_utils::data<size_t>(m_item_root_list, {idx, p});
+
     if (root >= m_file_root_list.size()) {
       using std::to_string;
       throw lbann_exception("offline_patches_npz: invalid file_root_list index: "
@@ -229,6 +251,7 @@ offline_patches_npz::sample_t offline_patches_npz::get_sample(const size_t idx) 
     file_name += m_file_variant_list.at(variant[ve]);
     file_names.push_back(file_name);
   }
+
   return std::make_pair(file_names, m_item_class_list[idx]);
 }
 

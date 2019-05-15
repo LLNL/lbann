@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,10 +55,25 @@ fast_rng_gen& get_fast_generator();
 
 /**
  * Return a reference to the global LBANN random number generator used
- * for shuffling the data samples within each mini-bathc
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
+ * for shuffling the data samples within each mini-batch
+ * @note This is stored in a thread_local variable.
  */
 rng_gen& get_data_seq_generator();
+
+/**
+ * Return a reference to the global LBANN random number generator used
+ * for shuffling the data samples within each mini-batch
+ * @note This is stored in a thread_local variable.
+ */
+rng_gen& get_io_generator();
+
+/**
+ * Return a reference to the fast global LBANN random number generator used
+ * for the I/O threads
+ * @note This is stored in a thread_local variable.
+ */
+fast_rng_gen& get_fast_io_generator();
+
 /**
  * Return random integers uniformly distributed in [0, max).
  * @param g C++ uniform random bit generator.
@@ -92,13 +107,12 @@ inline T fast_rand_int_pow2(Generator& g, T max) {
   return x & ((typename Generator::result_type) max);
 }
 
-/**
- * Initialize the random number generator (with optional seed).
- * @param comm If present, mixes the process's rank within the model into the
- * seed; if not, uses the MPI world rank.
- * @todo Support saving/restoring the generator's state. This is directly
- * supported via the >> and << operators on the generator (reading/writing
- * from/to a stream).
+/** @brief Initialize the random number generator (with optional seed).
+ *
+ *  @param seed Seed value for the random number generator
+ *  @param comm If present, mixes the process's rank within the model
+ *              into the seed; if not, uses the MPI world rank.
+ *
  */
 void init_random(int seed = -1, lbann_comm *comm = nullptr);
 
@@ -108,11 +122,17 @@ void init_random(int seed = -1, lbann_comm *comm = nullptr);
  * samples.  Using a separate RNG for the data sequences helps provide
  * a stable training result that does not vary with how much I/O
  * parallelism is applied.
- * @todo Support saving/restoring the generator's state. This is directly
- * supported via the >> and << operators on the generator (reading/writing
- * from/to a stream).
  */
 void init_data_seq_random(int seed = -1);
+
+/**
+ * Initialize a random number generator (with optional seed) that is
+ * specifically used by the I/O threads for tasks such as data
+ * preprocessing, etc.
+ *
+ * Called from init_random
+ */
+void init_io_random(int seed = -1);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from

@@ -9,6 +9,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdexcept>
+#include <algorithm>
 
 namespace lbann {
 
@@ -106,16 +107,15 @@ bool options::get_bool(std::string option, bool the_default)
 
 bool options::get_bool(std::string option)
 {
+  if (m_opts.find(option) != m_opts.end()) {
+    std::string s1 = m_opts[option];
+    std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
+    if (s1 == "true") return true;
+    if (s1 == "false") return false;
+  }
   int result;
   if (!m_test_int(option, result)) {
     return false;
-    /*
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " ::options::get_int() - failed to find option: " << option
-        << ", or to convert to int";
-    throw std::runtime_error(err.str());
-    */
   }
   if (result == 0) return false;
   return true;
@@ -239,13 +239,6 @@ bool options::m_test_string(std::string option, std::string &out)
 }
 
 bool options::has_int(std::string option)
-{
-  int test;
-  if (m_test_int(option, test)) return true;
-  return false;
-}
-
-bool options::has_bool(std::string option)
 {
   int test;
   if (m_test_int(option, test)) return true;

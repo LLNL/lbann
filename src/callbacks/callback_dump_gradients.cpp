@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,8 +38,8 @@ void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
       const std::string file
         = (m_basename
            + "model" + std::to_string(m->get_comm()->get_trainer_rank())
-           + "-epoch" + std::to_string(m->get_cur_epoch())
-           + "-step" + std::to_string(m->get_cur_step())
+           + "-epoch" + std::to_string(m->get_epoch())
+           + "-step" + std::to_string(m->get_step())
            + "-" + w->get_name()
            + "-Gradient");
       El::Write(opt->get_gradient(), file, El::ASCII);

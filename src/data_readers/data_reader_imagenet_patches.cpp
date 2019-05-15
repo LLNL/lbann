@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,7 +28,6 @@
 
 #include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_imagenet_patches.hpp"
 
 #include <omp.h>
 
@@ -152,13 +151,7 @@ bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int width=0, height=0, img_type=0;
   std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
   bool ret;
-  if (m_data_store != nullptr) {
-    std::vector<unsigned char> *image_buf;
-    m_data_store->get_data_buf(data_id, image_buf, 0);
-    ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v);
-  } else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
-  }
+  ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
     //ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v);
 
   if (m_pps[tid]->is_self_labeling()) {
@@ -177,16 +170,6 @@ bool imagenet_reader_patches::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
                           + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
   }
   return true;
-}
-
-void imagenet_reader_patches::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_imagenet_patches(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
 }
 
 }  // namespace lbann

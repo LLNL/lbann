@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -57,6 +57,9 @@ class offline_patches_npz {
   using sample_t = std::pair<std::vector<std::string>, label_t>;
 
   offline_patches_npz();
+  offline_patches_npz(size_t npatches);
+  offline_patches_npz(std::string divider);
+  offline_patches_npz(size_t npatches, std::string divider);
   // TODO: copy constructor and assignment operator for deep-copying if needed
   // The cnpy structure relies on shared_ptr
 
@@ -79,6 +82,10 @@ class offline_patches_npz {
   /// Return the number of patches per sample (the number of image data sources)
   size_t get_num_patches() const {
     return m_num_patches;
+  }
+  /// Set the number of patches per sample (the number of image data sources)
+  void set_num_patches(size_t npatches) {
+    m_num_patches = npatches;
   }
   /// Reconsturct and return the meta-data (patch file names and the label) of idx-th sample
   sample_t get_sample(const size_t idx) const;

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,7 +44,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
   if (master) {
@@ -70,7 +70,6 @@ int main(int argc, char *argv[]) {
           "function: constructs an index that lists number of samples\n"
           "          in each file, indices of invalid samples, etc\n";
       }
-      finalize(comm);
       return EXIT_SUCCESS;
     }
 
@@ -85,7 +84,7 @@ int main(int argc, char *argv[]) {
     int rank = comm->get_rank_in_world();
     std::stringstream ss;
     ss << output_fn << "." << rank;
-    std::ofstream out(ss.str().c_str());
+    std::ofstream out(ss.str());
     std::cerr << rank << " :: opened for writing: " << ss.str() << "\n";
     if (!out.good()) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + output_fn + " for writing");
@@ -96,7 +95,7 @@ int main(int argc, char *argv[]) {
 
     // get list of input filenames
     std::vector<std::string> filenames;
-    read_filelist(comm, input_fn, filenames);
+    read_filelist(comm.get(), input_fn, filenames);
 
     int num_samples = 0;
     int num_samples_bad = 0;
@@ -169,7 +168,7 @@ if (j >= 400) break;
       if (!out2) {
         LBANN_ERROR("failed to open output file");
       }
-      out2 << "CONDUIT_HDF5_EXCLUSION\n" << global_num_samples << " " << global_num_samples_bad 
+      out2 << "CONDUIT_HDF5_EXCLUSION\n" << global_num_samples << " " << global_num_samples_bad
            << " " << filenames.size() << "\n" << base_dir << "\n";
       out2.close();
 
@@ -200,7 +199,6 @@ if (j >= 400) break;
     } // if (master)
 
   } catch (std::exception const &e) {
-    finalize(comm);
     if (master) std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
   } catch (...) {
@@ -209,7 +207,6 @@ if (j >= 400) break;
   }
 
   // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }
 

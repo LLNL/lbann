@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -129,7 +129,7 @@ cv::Mat drop_2channels(const cv::Mat& _img) {
   // compute channel to remain
   pw_fp_t m[3] = {0.0 _f, 0.0 _f, 0.0 _f};
 
-  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  ::lbann::rng_gen& gen = ::lbann::get_io_generator();
 
   std::uniform_int_distribution<int> rg_ch(0, 2);
   const int chosenCh = rg_ch(gen);

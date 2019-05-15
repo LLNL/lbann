@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -172,7 +172,7 @@ lbann::DataType absolute_error(lbann::CPUMat& approx_val, lbann::CPUMat& true_va
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   elemerr = true_val;
-  elemerr -= approx_val;
+  El::Axpy(lbann::DataType{-1}, approx_val, elemerr);
   lbann::DataType abs_err = El::EntrywiseNorm(elemerr, 1);
   El::EntrywiseMap(elemerr, std::function<lbann::DataType(const lbann::DataType&)>(
   [](const lbann::DataType& x) {

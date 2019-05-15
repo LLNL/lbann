@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -44,7 +44,7 @@
 
 namespace lbann {
 
-class data_store_jag;
+class data_store_conduit;
 
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
@@ -59,7 +59,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
   using sample_t = sample_list_jag::sample_t;
-  using sample_id_t = sample_list_jag::sample_id_t;
+  using sample_file_id_t = sample_list_jag::sample_file_id_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -79,6 +79,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
+  data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
@@ -235,10 +236,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
-#ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
-#endif // _JAG_OFFLINE_TOOL_MODE_
+  void setup_data_store(int mini_batch_size);
 
   /// A untiliy function to convert the pointer to image data into an opencv image
   static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
@@ -257,12 +255,15 @@ class data_reader_jag_conduit : public generic_data_reader {
   void add_input_normalization_param(const linear_transform_t& t);
 
  protected:
-  data_store_jag *m_jag_store;
+
+  /// once the sample_list class and file formats are generalized and
+  /// finalized, it should (may?) be possible to code a single
+  /// preload_data_store method.
+  void preload_data_store() override;
 
   virtual void set_defaults();
   virtual bool replicate_processor(const cv_process& pp, const int nthreads);
-  virtual void copy_members(const data_reader_jag_conduit& rhs);
-
+  virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);
@@ -351,7 +352,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
   /** Load the conduit node with the data of the sample i identified by key
-   *  from the file that contains the sample.
+   *  from the file that contains the sample, and returm true. Upon failure
+   *  to load from file, attempt to retrieve a random conduit node from
+   *  the data_store (if --use_data_store) and return false.
    */
   bool load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const;
   /// Check if a key exist for sample i
@@ -362,12 +365,12 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool data_store_active() const {
     bool flag = generic_data_reader::data_store_active();
-    return (m_jag_store != nullptr && flag);
+    return (m_data_store != nullptr && flag);
   }
 
   bool priming_data_store() const {
     bool flag = generic_data_reader::priming_data_store();
-    return (m_jag_store != nullptr && flag);
+    return (m_data_store != nullptr && flag);
   }
 
  protected:

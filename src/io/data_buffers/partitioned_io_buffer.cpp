@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -34,16 +34,27 @@ lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_pa
   m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
 }
 
+lbann::partitioned_io_buffer::~partitioned_io_buffer() {
+  for (auto& buf : m_data_buffers) {
+    delete buf.second;
+  }
+}
+
 lbann::partitioned_io_buffer::partitioned_io_buffer(const lbann::partitioned_io_buffer& other)
   : generic_io_buffer(other) {
-  for (auto& buf : m_data_buffers) {
-    buf.second = buf.second->copy();
+  for (const auto& buf : other.m_data_buffers) {
+    m_data_buffers[buf.first] = buf.second->copy();
   }
+}
+
+lbann::partitioned_io_buffer* lbann::partitioned_io_buffer::copy() const {
+  return new partitioned_io_buffer(*this);
 }
 
 lbann::partitioned_io_buffer& lbann::partitioned_io_buffer::operator=(const lbann::partitioned_io_buffer& other) {
   generic_io_buffer::operator=(other);
   for (auto& buf : m_data_buffers) {
+    if (buf.second) delete buf.second;
     buf.second = buf.second->copy();
   }
   return *this;

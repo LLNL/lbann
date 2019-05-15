@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -22,12 +22,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_model .hpp .cpp - Abstract class for neural network training models
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MODEL_HPP
-#define LBANN_MODEL_HPP
+#ifndef LBANN_MODELS_MODEL_HPP_INCLUDED
+#define LBANN_MODELS_MODEL_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
@@ -48,160 +46,208 @@
 
 namespace lbann {
 
-// Forward-declare this.
+// Forward declarations
 class lbann_callback;
 
-/** Base class for LBANN models. */
+/** @brief Abstract base class for neural network models. */
 class model {
 public:
 
-  /** Constructor. */
-  model(lbann_comm *comm,
-        int mini_batch_size,
-        objective_function *obj_fn,
-        optimizer* default_optimizer = nullptr);
+  // ===========================================
+  // Life cycle functions
+  // ===========================================
 
-  /** Copy constructor. */
+  model(lbann_comm* comm,
+        El::Int mini_batch_size,
+        objective_function* obj_fn,
+        optimizer* default_optimizer = nullptr);
   model(const model& other);
-  /** Copy assignment operator. */
   model& operator=(const model& other);
-  /** Destructor. */
   virtual ~model();
-  /** Copy model. */
   virtual model* copy() const = 0;
 
-  /** Return the model's type. */
+  // ===========================================
+  // Access functions
+  // ===========================================
+
+  /** @brief Model type's name.
+   *  @details Should be a brief, human-readable description of the
+   *  model's architecture.
+   */
   virtual std::string get_type() const = 0;
 
-  /** Set the model's name; this is an arbitrary string
-   *  that may be useful in multi-model scenarios, e.g,
-   *  LTFB, jag
+  /** @brief Model instance name.
+   *  @details Each model in a trainer should have a unique, and
+   *  preferably human-readable, name.
+   */
+  std::string get_name() const noexcept { return m_name; }
+  /** @brief Model instance name.
+   *  @details Each model in a trainer should have a unique, and
+   *  preferably human-readable, name.
    */
   void set_name(std::string name);
 
-  /** Return the model's name; this is an arbitrary string
-   *  that may be useful in multi-model scenarios, e.g,
-   *  LTFB, jag
-   */
-  std::string get_name() const {
-    return m_name;
-  }
-
-  /** Human-readable description. */
+  /** @brief Human-readable description. */
   virtual description get_description() const;
 
-  /** Set up the model. */
-  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
-
-  /** Add layer to model. */
-  virtual void add_layer(Layer *layer);
-
-  /** Add weights to model. */
-  void add_weights(weights *w);
-
-  /** Register a new callback for the model. */
-  void add_callback(lbann_callback *cb);
-
-  /** Get the list of callbacks for the model. */
-  virtual std::vector<lbann_callback*>& get_callbacks() {
-    return m_callbacks;
-  }
-
-  /** Register a new metric for the model. */
-  void add_metric(metric *m);
-
-  /** Construct an instance of the default optimizer.
-   *  If there is no default optimizer, a null pointer is returned.
-   */
-  optimizer* create_optimizer() const;
-
-  /** Return the model's objective function. */
+  /** @brief Mathematical function to be minimized during training. */
   objective_function* get_objective_function() const {
     return m_objective_function;
   }
 
-  /** Return the model's metrics. */
-  virtual const std::vector<metric *>& get_metrics() const {
+  /** @brief Return the model's metrics. */
+  virtual const std::vector<metric*>& get_metrics() const {
     return m_metrics;
   }
 
-  /** Set the model's layers. */
-  void set_layers(std::vector<Layer *>& layers);
-
-  /** Return the model's layers. */
-  virtual const std::vector<Layer *>& get_layers() const { return m_layers; }
+  /** @brief Size of model's list of layers. */
+  El::Int get_num_layers() const noexcept;
+  /** @param pos Position in model's list of layers. */
+  Layer& get_layer(El::Int pos);
+  /** @param pos Position in model's list of layers. */
+  const Layer& get_layer(El::Int pos) const;
+  /** @brief Return list of layers in model.
+   *  @details The list is in execution order for forward propagation.
+   */
+  std::vector<Layer*> get_layers();
+  /** @brief Return list of layers in model.
+   *  @details The list is in execution order for forward propagation.
+   */
+  const std::vector<Layer*> get_layers() const;
 
   const std::vector<weights*> get_weights() const;
 
   std::vector<weights*> get_weights();
 
-  /** Replace the model's weights. */
-  void replace_weights(std::vector<weights *>& w);
+  /** @brief Get the list of callbacks for the model. */
+  virtual std::vector<lbann_callback*>& get_callbacks() {
+    return m_callbacks;
+  }
 
-  /** Copy trained weights from input parameter w.
- *  Only weight values are placed, pointers and layer structure are in place.
- *  Weights to be copied are of the same name */
-  void copy_trained_weights_from(std::vector<weights *>& w);
-
-  /** Return the I/O thread pool */
+  /** @brief Return the I/O thread pool */
   std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
 
-  /** Get the model's comm. */
+  /** @brief Get the model's comm. */
   inline lbann_comm *get_comm() const {
     return m_comm;
   }
 
-  /** Get the current epoch for the model. */
-  inline int get_cur_epoch() const {
-    return m_current_epoch;
-  }
-  /** Get the current step for the model. */
-  inline int get_cur_step() const {
-    return m_current_step;  /// @todo This should be renamed to get_cur_training step and replaced with one that returns the current based on execution mode
-  }
+  void set_execution_mode(execution_mode mode);
+  execution_mode get_execution_mode() const noexcept;
 
-  /** Get the current validation step for the model. */
-  inline int get_cur_validation_step() const {
-    return m_current_validation_step;
-  }
-  /** Get the current testing step for the model. */
-  inline int get_cur_testing_step() const {
-    return m_current_testing_step;
-  }
-  /** Set the model (and all layers') execution mode. */
-  inline void set_execution_mode(execution_mode mode) {
-    m_execution_mode = mode;
-  }
-  /** Get the model's execution mode. */
-  inline execution_mode get_execution_mode() const {
-    return m_execution_mode;
-  }
-  /** Set the model's current mini-batch size. */
+  /** @brief Number of times the training set has been traversed. */
+  inline El::Int get_epoch() const noexcept { return m_epoch; }
+
+  /** @brief Current mini-batch step for current execution mode.
+   *  @details Step counts are not reset after each epoch.
+   */
+  El::Int get_step() const noexcept;
+
+  /** @brief Current mini-batch step for given execution mode.
+   *  @details Step counts are not reset after each epoch.
+   */
+  El::Int get_step(execution_mode mode) const noexcept;
+
+  /** @brief Set the model's current mini-batch size. */
   inline void set_current_mini_batch_size(int mini_batch_size) {
     m_current_mini_batch_size = mini_batch_size;
   }
-  /** Get the model's current mini-batch size. */
+  /** @brief Get the model's current mini-batch size. */
   inline int get_current_mini_batch_size() const {
     return m_current_mini_batch_size;
   }
-  /** Get the model's maximum mini-batch size. */
+  /** @brief Get the model's maximum mini-batch size. */
   inline int get_max_mini_batch_size() const {
     return m_max_mini_batch_size;
   }
-  /** Get the model's effective mini-batch size. */
+  /** @brief Get the model's effective mini-batch size. */
   inline int get_effective_mini_batch_size() const {
     return m_effective_mini_batch_size;
   }
-  /** Set the model's effective mini-batch size. */
+  /** @brief Set the model's effective mini-batch size. */
   inline void set_effective_mini_batch_size(int mini_batch_size) {
     m_effective_mini_batch_size = mini_batch_size;
   }
   int get_num_iterations_per_epoch(execution_mode mode) const;
 
-  /** Get the current phase (multiple epochs) in layer-wise model training. */
-  inline int get_current_phase() const {
-    return m_current_phase;
+  /** @brief Return true if the flag to stop training is set. */
+  bool get_terminate_training() const {
+    return m_terminate_training;
   }
+  /** @brief Set the terminate training flag (on or off). */
+  void set_terminate_training(bool f) {
+    m_terminate_training = f;
+  }
+
+  // ===========================================
+  // Model specification
+  // ===========================================
+
+  /** @brief Add layer to model. */
+  virtual void add_layer(std::unique_ptr<Layer> l);
+
+  /** @brief Add weights to model. */
+  void add_weights(weights *w);
+
+  /** @brief Register a new callback for the model. */
+  void add_callback(lbann_callback *cb);
+
+  /** @brief Register a new metric for the model. */
+  void add_metric(metric *m);
+
+  /** @brief Replace the model's weights. */
+  void replace_weights(std::vector<weights *>& w);
+
+  /** @brief Copy trained weights from input parameter w.
+   *
+   *  Only weight values are placed, pointers and layer structure are in place.
+   *  Weights to be copied are of the same name
+   */
+  void copy_trained_weights_from(std::vector<weights *>& w);
+
+  /** @brief Construct an instance of the default optimizer.
+   *
+   *  If there is no default optimizer, a null pointer is returned.
+   */
+  optimizer* create_optimizer() const;
+
+  /** @brief Set a flag that can be used to enable / disable the
+   *         background I/O activities
+   */
+  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
+
+  /** @brief Are background I/O activities enabled by the input layers */
+  bool background_io_activity_allowed() { return m_background_io_allowed; }
+
+  // ===========================================
+  // Setup
+  // ===========================================
+
+  /** @details Must be called after model specification and before
+   *  execution. */
+  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
+
+  // ===========================================
+  // Execution
+  // ===========================================
+
+  /** @brief Evaluate model. */
+  virtual void evaluate(execution_mode mode, int num_batches=0);
+
+  /** @brief Train model. */
+  virtual void train(int num_epochs, int num_batches=0);
+
+  /** @brief Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
+
+  virtual void make_data_store_preloaded(execution_mode mode);
+
+  virtual void mark_data_store_explicitly_loading(execution_mode mode);
+
+  // ===========================================
+  // Summarizer
+  // ===========================================
 
   /**
    * Summarize statistics (e.g. timers, counters); these should be computable
@@ -214,258 +260,282 @@ public:
    */
   virtual void summarize_matrices(lbann_summary& summarizer);
 
-  /** Return true if the flag to stop training is set. */
-  bool get_terminate_training() const {
-    return m_terminate_training;
-  }
-  /** Set the terminate training flag (on or off). */
-  void set_terminate_training(bool f) {
-    m_terminate_training = f;
-  }
+  // ===========================================
+  // Checkpointing
+  // ===========================================
 
-  /** Train model. */
-  virtual void train(int num_epochs, int num_batches=0);
-  /** Evaluate model. */
-  virtual void evaluate(execution_mode mode, int num_batches=0);
-
-  /** Run one epoch using only the input layer; this supports
-   *  data_store functionality
-   */
-  void collect_indices(execution_mode mode);
-
-  /** Complete any background I/O data fetch for the execution
-      mode requested */
-  virtual void collect_background_data_fetch(execution_mode mode);
-
-  /** Set a flag that can be used to enable / disable the background I/O activities */
-  void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
-
-  /** Are background I/O activities enabled by the input layers */
-  bool background_io_activity_allowed() { return m_background_io_allowed; }
-
-  /** Checkpoint model to given file descriptor, return number of bytes written */
+  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
   virtual bool save_to_checkpoint_shared(persist& p);
-  /** Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   virtual bool load_from_checkpoint_shared(persist& p);
 
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
 
-  /** Save the model's weight to file */
+  /** @brief Save the model's weight to file */
   virtual bool save_weights(persist& p);
 
-  /** Reload the model's weights from a file */
+  /** @brief Reload the model's weights from a file */
   virtual bool reload_weights(const std::string latest,
                               const std::vector<std::string>& weight_list);
 
-  /** Saves the model explicitly if the save_model callback is present */
+  /** @brief Saves the model explicitly if the save_model callback is present */
   virtual bool save_model();
 
-  /** Write model to proto file */
+  /** @brief Write model to proto file */
   virtual void write_proto(lbann_data::Model* proto);
 
 protected:
 
-  /** The objective function used to train the model. */
-  objective_function *m_objective_function;
-  /** Give model a name. */
-  std::string m_name;
-  /** The model's current execution mode. */
-  execution_mode m_execution_mode;
-  /** Flag telling the model to terminate training. */
-  bool m_terminate_training;
-  /** Most recent/current epoch for the model. */
-  int m_current_epoch;
-  /** Most recent/current training step for the model. */
-  int m_current_step;
-  int m_current_validation_step;
-  int m_current_testing_step;
-  /**
-   * Maximum possible minibatch size supported by layers in this model.
-   * Note that this is local to the particular model, not across multiple
-   * models.
-   */
-  int m_max_mini_batch_size;
-  /** Size of the current mini-batch in the model. */
-  int m_current_mini_batch_size;
-  /**
-   * The "effective" size of a minibatch.
-   * This is the size of the minibatch across all models and used for e.g.
-   * correctly averaging gradients from multiple models.
-   */
-  int m_effective_mini_batch_size;
-  /** current phase (multiple of epoch counts) in training a model */
-  int m_current_phase;
-  /** Communicator for the model. */
-  lbann_comm *m_comm;
-  /** Current callbacks to process. */
-  std::vector<lbann_callback *> m_callbacks;
-
-  /** Default optimizer.
-   *  If a layer needs to construct an optimizer during setup, it will
-   *  make a copy of the default optimizer.
-   */
-  optimizer *m_default_optimizer;
-
-  /** List of model metrics.
-   *  A metric can be used to evaluate the performance of the model
-   *  without affecting the training process.
-   */
-  std::vector<metric *> m_metrics;
-
-  /** List of layers in model.
-   *  The list is in execution order for forward propagation.
-   */
-  std::vector<Layer *> m_layers;
-  /** List of weights in model. */
-  std::vector<weights *> m_weights;
-
-  /** Threads available for I/O */
-  std::shared_ptr<thread_pool> m_io_thread_pool;
-
-  /** Flag that allows input layers to fetch data in the background */
-  bool m_background_io_allowed;
-
-  /** Check if the model execution mode is valid. */
+  /** @brief Check if the model execution mode is valid. */
   virtual bool is_execution_mode_valid(execution_mode mode) const;
 
-  /** Reorder layers. */
-  virtual void permute_layers(const std::vector<int>& permutation);
+  /** @brief Reorder layer list with a gather.
+   *
+   *  The new layer list is the same length as @c gather_indices and
+   *  its entries are given by
+   *  @f[ \text{new\_list}[i] = \text{old\_list}[\text{gather\_indices}[i]] @f]
+   *
+   *  Since entries in the layer list must be unique, this will fail
+   *  if @c gather_indices has any repeated entries.
+   */
+  void reorder_layers(const std::vector<El::Int>& gather_indices);
 
-  /** Remap pointers.
+  /** @brief Remap pointers.
+   *
    *  Layer and weights pointers are remapped using the provided
    *  maps. If a pointer is not a key in the corresponding map, the
    *  pointer is not changed.
    */
-  virtual void remap_pointers(const std::unordered_map<Layer *,Layer *>& layer_map,
-                              const std::unordered_map<weights *,weights *>& weights_map);
+  virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
+                              const std::unordered_map<weights*,weights*>& weights_map);
 
-  /** In case that a layer is frozen, also freeze layers that precede it if that
-   *  makes senses for the particular model, such as sequential or siamese.
-   *  For othe models, users can manually control the behaivor by indicating
-   *  whether to freeze each layer in the model description prototext.
+  /** @brief
+   *
+   *  In case that a layer is frozen, also freeze layers that precede
+   *  it if that makes senses for the particular model, such as
+   *  sequential or siamese.  For othe models, users can manually
+   *  control the behaivor by indicating whether to freeze each layer
+   *  in the model description prototext.
+   *
+   *  For general DAG models, users need to manually specify each
+   *  layer to freeze in the model description prototext.
    */
-  virtual void freeze_layers_under_frozen_surface();
+  virtual void freeze_layers_under_frozen_surface() {}
 
-  /** Set up topology of layer graph.
+  /** @brief Set up topology of layer graph.
+   *
    *  Called in setup function. All layers in connected component of
    *  layer graph are added to the model and all parent/child
    *  relationships between layers are reciprocated.
    */
   virtual void setup_layer_topology();
-  /** Set up layer execution order.
+  /** @brief Set up layer execution order.
+   *
    *  Called in setup function.
    */
   virtual void setup_layer_execution_order();
-  /** Set up layers.
+  /** @brief Set up layers.
+   *
    *  Called in setup function.
    */
   virtual void setup_layers();
-  /** Set up weights.
+  /** @brief Set up weights.
+   *
    *  Called in setup function. All weights being used by layers or
    *  the objective function are added to the model and all unused
    *  weights are deleted.
    */
   virtual void setup_weights();
 
-  /** Reset model pointer and execution mode. */
+  /** @brief Reset model pointer and execution mode. */
   virtual void reset_mode_and_model(execution_mode mode);
-  /** Reset model statistics for an epoch. */
+  /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
-  /** Evaluate model on a mini-batch */
+  /** @brief Evaluate model on a mini-batch */
   virtual bool evaluate_mini_batch(execution_mode mode);
-  /** Train model on a mini-batch. */
+  /** @brief Train model on a mini-batch. */
   virtual bool train_mini_batch();
 
-  /** Forward propagation step. */
+  /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
-  /** Backward propagation step. */
+  /** @brief Backward propagation step. */
   virtual void backward_prop();
-  /** Clear each optimizer's gradient.
+  /** @brief Clear each optimizer's gradient.
+   *
    *  This must be called before training forward prop since layers
    *  set an optimizer flag during forward prop.
    */
   virtual void clear_gradients();
-  /** Update weights step. */
+  /** @brief Update weights step. */
   virtual void update_weights();
-  /** Update layers step. */
+  /** @brief Update layers step. */
   virtual bool update_layers();
-  /** Reconcile weight values.
+  /** @brief Reconcile weight values.
+   *
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
   virtual void reconcile_weight_values();
 
-  ////////////////////////////////////////////////////////////
+  // ===========================================
   // Callbacks
-  ////////////////////////////////////////////////////////////
+  // ===========================================
 
-  /** Execute callbacks at start of training. */
+  /** @brief Execute callbacks at start of training. */
   virtual void do_train_begin_cbs();
-  /** Execute callbacks at end of training. */
+  /** @brief Execute callbacks at end of training. */
   virtual void do_train_end_cbs();
-  /** Execute callbacks at start of evaluation. */
+  /** @brief Execute callbacks at start of evaluation. */
   virtual void do_evaluate_begin_cbs(execution_mode mode);
-  /** Execute callbacks at end of evaluation. */
+  /** @brief Execute callbacks at end of evaluation. */
   virtual void do_evaluate_end_cbs(execution_mode mode);
-  /** Execute callbacks at start of epoch. */
+  /** @brief Execute callbacks at start of epoch. */
   virtual void do_epoch_begin_cbs();
-  /** Execute callbacks at end of epoch. */
+  /** @brief Execute callbacks at end of epoch. */
   virtual void do_epoch_end_cbs();
-  /** Execute callbacks at start of mini-batch. */
+  /** @brief Execute callbacks at start of mini-batch. */
   virtual void do_batch_begin_cbs(execution_mode mode);
-  /** Execute callbacks at end of mini-batch. */
+  /** @brief Execute callbacks at end of mini-batch. */
   virtual void do_batch_end_cbs(execution_mode mode);
-  /** Execute callbacks at start of model forward propagation. */
+  /** @brief Execute callbacks at start of model forward propagation. */
   virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
-  /** Execute callbacks at end of model forward propagation. */
+  /** @brief Execute callbacks at end of model forward propagation. */
   virtual void do_model_forward_prop_end_cbs(execution_mode mode);
-  /** Execute callbacks at start of layer forward propagation. */
+  /** @brief Execute callbacks at start of layer forward propagation. */
   virtual void do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l);
-  /** Execute callbacks at end of layer forward propagation. */
+  /** @brief Execute callbacks at end of layer forward propagation. */
   virtual void do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l);
-  /** Execute callbacks at start of model backward propagation. */
+  /** @brief Execute callbacks at start of model backward propagation. */
   virtual void do_model_backward_prop_begin_cbs();
-  /** Execute callbacks at end of model backward propagation. */
+  /** @brief Execute callbacks at end of model backward propagation. */
   virtual void do_model_backward_prop_end_cbs();
-  /** Execute callbacks at start of layer backward propagation. */
+  /** @brief Execute callbacks at start of layer backward propagation. */
   virtual void do_layer_backward_prop_begin_cbs(Layer *l);
-  /** Execute callbacks at end of layer backward propagation. */
+  /** @brief Execute callbacks at end of layer backward propagation. */
   virtual void do_layer_backward_prop_end_cbs(Layer *l);
-  /** Execute callbacks at start of model optimization. */
+  /** @brief Execute callbacks at start of model optimization. */
   virtual void do_model_optimize_begin_cbs();
-  /** Execute callbacks at end of model optimization. */
+  /** @brief Execute callbacks at end of model optimization. */
   virtual void do_model_optimize_end_cbs();
-  /** Execute callbacks at the start of weight optimization. */
+  /** @brief Execute callbacks at the start of weight optimization. */
   virtual void do_weight_optimize_begin_cbs(weights *w);
-  /** Execute callbacks at the end of weight optimization. */
+  /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
 private:
 
-  /** Search layer graph and add all connected layers. */
-  void add_connected_layers();
-  /** Insert evaluation layers where needed.
-   *  If an objective function layer term or a layer metric
-   *  corresponds to a layer that is not an evaluation layer, an
-   *  evaluation layer is added as a child of the original layer and
-   *  set as the corresponding layer to the layer term or layer
-   *  metric.
+  /** @brief LBANN communicator. */
+  lbann_comm* m_comm;
+
+  /** @brief Model instance's name.
+   *  @details Each model in a trainer should have a unique,
+   *  preferably human-readable, name.
    */
-  void add_evaluation_layers();
-  /** Insert dummy layers after layers with too few children.
+  std::string m_name;
+
+  /** @brief Current execution mode. */
+  execution_mode m_execution_mode = execution_mode::training;
+
+  /** @brief Number of times the training data set has been traversed. */
+  El::Int m_epoch = 0;
+
+  /** @brief Number of mini-batch steps performed.
+   *  @details Step counts are not reset after each epoch.
+   */
+  std::map<execution_mode, El::Int> m_step;
+
+  /** @brief Whether to terminate training.
+   *  @details If true, training will terminate immediately before
+   *  the next epoch.
+   */
+  bool m_terminate_training = false;
+
+  /** @brief Size of the current mini-batch in the model. */
+  int m_current_mini_batch_size;
+  /** @details Maximum possible minibatch size supported by layers in
+   *  this model.  Note that this is local to the particular model,
+   *  not across multiple models.
+   */
+  int m_max_mini_batch_size;
+  /** @brief The "effective" size of a minibatch.
+   *
+   *  This is the size of the minibatch across all models and used for
+   *  e.g.  correctly averaging gradients from multiple models.
+   */
+  int m_effective_mini_batch_size;
+
+  /** @brief Tensor operations.
+   *  @details The list is in execution order for forward propagation.
+   */
+  std::vector<std::unique_ptr<Layer>> m_layers;
+
+  /** @brief Trainable parameters. */
+  std::vector<weights*> m_weights;
+
+  /** @details If a layer needs to construct an optimizer during
+   *  setup, it will make a copy of the default optimizer. This object
+   *  is just used to create copies and is not actually used for
+   *  optimization.
+   */
+  optimizer* m_default_optimizer = nullptr;
+
+  /** @brief Mathematical function to be minimized during training. */
+  objective_function* m_objective_function;
+
+  /** @brief Numerical quantities to evaluate model performance.
+   *  @details Does not affect training.
+   */
+  std::vector<metric*> m_metrics;
+
+  /** @brief Current callbacks to process. */
+  std::vector<lbann_callback*> m_callbacks;
+
+  /** @brief Threads available for I/O */
+  std::shared_ptr<thread_pool> m_io_thread_pool;
+
+  /** @brief Flag that allows input layers to fetch data in the background */
+  bool m_background_io_allowed = true;
+
+  // ===========================================
+  // Functions to add utility layers
+  // ===========================================
+
+  /** @brief Insert evaluation layers where needed.
+   *
+   *  If a @c lbann::layer_term or @c lbann::layer_metric corresponds
+   *  to a layer that is not an evaluation_layer, an evaluation layer
+   *  is created and added to the model.
+   *
+   *  @param layer_set      Layers in model. Updated with any newly
+   *                        created layers.
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
+   */
+  void add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
+                             std::unordered_set<std::string>& layer_names);
+
+  /** @brief Insert dummy layers after layers with too few children.
+   *
    *  If a layer expects more child layers than it has, add dummy
    *  layers until it has enough children.
+   *
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_dummy_layers();
-  /** Insert split layers after layers with too many children.
+  void add_dummy_layers(std::unordered_set<std::string>& layer_names);
+  /** @brief Insert split layers after layers with too many children.
+   *
    *  If a layer expects one child layer but has multiple, add a split
-   *  layer. The split layer will be the original layer's child and
-   *  the split layer's children will be the original children.
+   *  layer to the model.
+   *
+   *  @param layer_names    Names of layers in model. Updated with any
+   *                        newly created layers.
    */
-  void add_split_layers();
+  void add_split_layers(std::unordered_set<std::string>& layer_names);
+
 };
 
-}  // namespace lbann
+} // namespace lbann
 
-#endif  // LBANN_MODEL_HPP
+#endif // LBANN_MODELS_MODEL_HPP_INCLUDED

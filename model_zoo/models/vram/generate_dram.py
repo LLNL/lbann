@@ -146,7 +146,7 @@ class LstmCell:
     input_fc = None
     output_fc = None
     cell_fc = None
-    
+
     def __init__(self, name, size, model):
         self.name = name
         self.size = size
@@ -216,7 +216,6 @@ def configure_model(model):
 
     # Initialize input
     data = new_layer(model, "data", [], "input", "cpu")
-    data.input.io_buffer = "partitioned"
     image = new_layer(model, "image", data, "split")
     label = new_layer(model, "label", data, "split")
     data.children = str_list([image.name, label.name])
@@ -267,7 +266,7 @@ def configure_model(model):
     # Classification network components
     class_network = FullyConnectedCell("class_prob", label_dims[0], model,
                                     "softmax", "glorot_normal_initializer", False)
-    
+
     # Construct unrolled model
     for step in range(unroll_depth):
 
@@ -320,13 +319,13 @@ def configure_model(model):
         glimpse3.pooling.pool_dims_i = 32
         glimpse3.pooling.pool_strides_i = glimpse3.pooling.pool_dims_i
         glimpse3.pooling.pool_mode = "average"
-        glimpse = new_layer(model, "glimpse_step%d" % step, 
+        glimpse = new_layer(model, "glimpse_step%d" % step,
                             [glimpse1, glimpse2, glimpse3], "concatenation")
-        glimpse = new_layer(model, "glimpse_flat_step%d" % step, 
+        glimpse = new_layer(model, "glimpse_flat_step%d" % step,
                             glimpse, "reshape")
         glimpse.reshape.num_dims = 1
         glimpse.reshape.dims = str_list([128 * 3])
-        
+
         # Recurrent network
         h1 = lstm1(glimpse)
         h2 = lstm2(h1)
@@ -366,7 +365,7 @@ def configure_model(model):
         met.layer_metric.name = "top-5 categorical accuracy (step %d)" % step
         met.layer_metric.layer = acc5.name
         met.layer_metric.unit = "%"
-        
+
         # Objective function
         class_obj = new_layer(model, "classification_cross_entropy_step%d" % step,
                               [class_prob, label], "cross_entropy")
@@ -383,8 +382,8 @@ def configure_model(model):
         obj = model.objective_function.layer_term.add()
         obj.scale_factor = 1.0
         obj.layer = locy_obj.name
-        
-    
+
+
 if __name__ == "__main__":
 
     # Make sure protobuf Python implementation is built

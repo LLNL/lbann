@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,6 +25,9 @@
 //
 // data_reader_triplet .hpp .cpp - data reader to use triplet patches
 //                                 generated offline.
+//
+// Depreciated and replaced by data_reader_multihead_siamese .hpp .cpp.
+// Kept here just for reference.
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef DATA_READER_TRIPLET_HPP
@@ -77,9 +80,6 @@ class data_reader_triplet : public data_reader_multi_images {
   sample_t get_sample(size_t idx) const {
     return m_samples.get_sample(idx);
   }
-
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
 
  protected:
   void set_defaults() override;

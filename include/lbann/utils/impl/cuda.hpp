@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -116,8 +116,8 @@ WRAP_UNARY_CUDA_MATH_FUNCTION(tanh)
 WRAP_UNARY_CUDA_MATH_FUNCTION(acosh)
 WRAP_UNARY_CUDA_MATH_FUNCTION(asinh)
 WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
-#undef WRAP_UNARY_CUDA_MATH_FUNCTION  
-  
+#undef WRAP_UNARY_CUDA_MATH_FUNCTION
+
 // Binary math functions
 #define WRAP_BINARY_CUDA_MATH_FUNCTION(func)                    \
   template <> __device__ __forceinline__                        \
@@ -147,7 +147,7 @@ float mod<float>(const float& x, const float& y) { return ::fmodf(x,y); }
 template <> __device__ __forceinline__
 double mod<double>(const double& x, const double& y) { return ::fmod(x,y); }
 WRAP_BINARY_CUDA_MATH_FUNCTION(pow)
-#undef WRAP_BINARY_CUDA_MATH_FUNCTION  
+#undef WRAP_BINARY_CUDA_MATH_FUNCTION
 
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
@@ -181,9 +181,9 @@ SPECIFIERS float infinity<float>()   { return CUDART_INF_F; }
 SPECIFIERS double infinity<double>() { return CUDART_INF;   }
 #undef HEADER
 #endif // __CUDACC_RELAXED_CONSTEXPR__
-  
+
 #endif // __CUDACC__
-  
+
 // -------------------------------------------------------------
 // Helper functions for entrywise operations
 // -------------------------------------------------------------
@@ -277,7 +277,7 @@ void apply_entrywise_unary_operator(const AbsMat& input,
         height, width, input.LockedBuffer(), input.LDim(),
         output.Buffer(), output.LDim());
   }
-  
+
 }
 
 /** Apply an entry-wise binary operator to GPU data.
@@ -330,9 +330,9 @@ void apply_entrywise_binary_operator(const AbsMat& input1,
         input2.LockedBuffer(), input2.LDim(),
         output.Buffer(), output.LDim());
   }
-  
+
 }
-  
+
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
@@ -382,19 +382,21 @@ void apply_entrywise_binary_operator(const AbsDistMat& input1,
                                                   input2.LockedMatrix(),
                                                   output.Matrix());
 }
-  
+
 #endif // __CUDACC__
 
 // -------------------------------------------------------------
 // Utilities for Thrust
 // -------------------------------------------------------------
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 namespace thrust {
 
 template <typename T>
 allocator<T>::allocator(cudaStream_t stream)
   : m_stream(stream),
     m_system(stream) {}
-  
+
 template <typename T>
 typename allocator<T>::pointer allocator<T>::allocate(allocator<T>::size_type size) {
   value_type* buffer = nullptr;
@@ -429,8 +431,9 @@ template <typename T>
 typename allocator<T>::system_type& allocator<T>::system() {
   return m_system;
 }
-  
+
 } // namespace thrust
+#endif // !DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace cuda
 } // namespace lbann

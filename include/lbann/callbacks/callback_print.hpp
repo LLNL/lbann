@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -39,7 +39,8 @@ namespace lbann {
  */
 class lbann_callback_print : public lbann_callback {
  public:
-  lbann_callback_print(int batch_interval = 1) : lbann_callback(batch_interval) {}
+  lbann_callback_print(int batch_interval = 1, bool print_global_stat_only=false) :
+  lbann_callback(batch_interval), m_print_global_stat_only(print_global_stat_only) {}
   lbann_callback_print(const lbann_callback_print&) = default;
   lbann_callback_print& operator=(const lbann_callback_print&) = default;
   lbann_callback_print* copy() const override { return new lbann_callback_print(*this); }
@@ -53,6 +54,7 @@ class lbann_callback_print : public lbann_callback {
  private:
   /** Print objective function and metrics to standard output. */
   void report_results(model *m);
+  bool m_print_global_stat_only;
 
 };
 

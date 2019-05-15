@@ -232,6 +232,8 @@ case ${CLUSTER} in
         echo "export AL_PROGRESS_RANKS_PER_NUMA_NODE=2" >> ${BATCH_SCRIPT}
         ;;
 esac
+echo "export MV2_USE_RDMA_CM=0"                         >> ${BATCH_SCRIPT}
+echo "export MV2_USE_LAZY_MEM_UNREGISTER=0"             >> ${BATCH_SCRIPT}
 echo ""                                                 >> ${BATCH_SCRIPT}
 
 # Cache dataset in node-local memory

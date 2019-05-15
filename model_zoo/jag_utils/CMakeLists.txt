@@ -51,4 +51,9 @@ if (LBANN_HAS_CONDUIT)
   add_executable( build_sample_id_mapping-bin build_sample_id_mapping.cpp )
   target_link_libraries(build_sample_id_mapping-bin lbann )
   set_target_properties(build_sample_id_mapping-bin PROPERTIES OUTPUT_NAME build_sample_id_mapping)
+
+  add_executable( generate_corrupt_samples-bin generate_corrupt_samples.cpp )
+  target_link_libraries(generate_corrupt_samples-bin lbann )
+  set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
+
 endif ()

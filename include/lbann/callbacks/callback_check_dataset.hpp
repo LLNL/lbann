@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,9 +41,6 @@ class lbann_callback_check_dataset : public lbann_callback {
   using lbann_callback::on_forward_prop_end;
   using lbann_callback::on_evaluate_forward_prop_end;
 
-  /**
-   * @param basename The basename for writing files.
-   */
   lbann_callback_check_dataset() :
     lbann_callback() {}
   lbann_callback_check_dataset(
@@ -63,7 +60,7 @@ class lbann_callback_check_dataset : public lbann_callback {
 
   std::string name() const override { return "check data set indices"; }
  private:
-  /** Basename for writing files. */
+  /** @brief Basename for writing files. */
   std::string m_basename;
 
   std::set<long> training_set;
