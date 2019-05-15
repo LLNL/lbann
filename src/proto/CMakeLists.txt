@@ -44,8 +44,9 @@ if (LBANN_HAS_PROTOBUF)
   # Install the newly built headers
   install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-  # Install the Python module.
-  install(FILES ${PROTO_PY} DESTINATION ${CMAKE_INSTALL_DATADIR}/python)
+  # Install the Python module into the site-packages directory
+  install(FILES ${PROTO_PY} DESTINATION
+                ${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 
 endif (LBANN_HAS_PROTOBUF)
 
