@@ -12,7 +12,7 @@ Python front-end:
    including layers, objective functions, callbacks, metrics, and optimizers.
  - Python interface for launching (SLURM or LSF) jobs on HPC systems
  - Support for running LBANN experiments and capturing experimental output
- - Network templates for AlexNet, LeNet, arbitrary ResNet models, and Wide ReNet models
+ - Network templates for AlexNet, LeNet, arbitrary ResNet models, and Wide ResNet models
  - Python scripts for LeNet, AlexNet, and (Wide) ResNets in model zoo.
 
 Performance optimizations:
@@ -21,7 +21,6 @@ Performance optimizations:
    performance rather than using heuristics.
  - Avoid setting up unused bias weights.
  - Perform gradient accumulations in-place when possible.
- - Convolution layers now use auto-tuning to select the fastest cuDNN convolution algorithm.
 
 Model portability & usability:
  - Provided Spack environment for installing LBANN as a user
@@ -47,6 +46,8 @@ Build system:
  - Added documentation for how users can use Spack to install LBANN
    either directly or via environments.
  - Conduit is a required dependency.
+ - CMake installs a module file in the installation directory that
+   sets up PATH and PYTHONPATH variables appropriately
 
 Bug fixes:
  - Models can now be copied or setup multiple times.
@@ -55,7 +56,7 @@ Bug fixes:
  - Added an I/O random number generator for preprocessing that is independent
    of the data sequence RNG.
  - Fixed initialization order of RNGs and multiple models / trainers.
- - General fixes for I/O and LTFB interation.
+ - General fixes for I/O and LTFB interaction.
 
 Retired features:
  - "Zero" layer (hack for early GAN implementation).
