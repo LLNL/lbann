@@ -427,7 +427,7 @@ inline void sample_list<sample_name_t>
   // The next line contains the root data file directory
 
   sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
-  /// TODO: clarify the comment below and fix the output
+  /// TODO: clarify the comment below
   /// Include the number of invalid samples, which for an inclusive index list is always 0
   sstr += std::to_string(size()) + " 0 " + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
@@ -641,25 +641,5 @@ inline void sample_list<sample_name_t>
 
   return;
 }
-
-/*
-template <typename sample_name_t>
-inline void sample_list<sample_name_t>
-::open_samples_file(const size_t i) {
-  const sample_t& s = m_sample_list[i];
-  sample_file_id_t id = s.first;
-  const std::string& file_name = get_samples_filename(id);
-  const std::string& file_dir = get_samples_dirname();
-  const std::string file_path = add_delimiter(file_dir) + file_name;
-  if (file_name.empty() || !check_if_file_exists(file_path)) {
-    LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
-  }
-  try {
-    h = open_file_handle_for_read( file_path );
-  } catch (conduit::Error const& e) {
-    LBANN_WARNING(" :: trying to open the file " + file_path + " and got " + e.what());
-  }
-}
-*/
 
 } // end of namespace lbann
