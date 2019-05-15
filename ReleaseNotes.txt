@@ -23,8 +23,6 @@ Performance optimizations:
  - Perform gradient accumulations in-place when possible.
 
 Model portability & usability:
- - Provided Spack environment for installing LBANN as a user
- - Improved documentation on lbann.readthedocs.io
 
 Internal features:
  - Weight gradient allreduces are in-place rather than on a staging buffer.
@@ -46,6 +44,8 @@ Build system:
  - Added documentation for how users can use Spack to install LBANN
    either directly or via environments.
  - Conduit is a required dependency.
+ - Provided Spack environment for installing LBANN as a user
+ - Improved documentation on lbann.readthedocs.io
  - CMake installs a module file in the installation directory that
    sets up PATH and PYTHONPATH variables appropriately
 
