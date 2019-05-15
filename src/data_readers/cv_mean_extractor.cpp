@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -61,7 +61,7 @@ cv_mean_extractor *cv_mean_extractor::clone() const {
 /** Set up the internal matrices used to accumulate image statistics,
  *  and initialize the batch size.
  */
-void cv_mean_extractor::set(const unsigned int width, const unsigned int height, 
+void cv_mean_extractor::set(const unsigned int width, const unsigned int height,
                             const unsigned int n_ch, const unsigned int batch_sz) {
   if (!m_sum.empty() || (width == 0u) || (height == 0u) || (n_ch == 0u) || (batch_sz == 0u)) {
     std::stringstream err;
@@ -98,7 +98,7 @@ void cv_mean_extractor::create_matrices(const unsigned int width, const unsigned
 }
 
 void cv_mean_extractor::reset() {
-  // convert to a single change image before resetting the values as the 
+  // convert to a single change image before resetting the values as the
   // dimension of Scalar is limited to 4 (4 channels)
   cv::Mat m_sum_1ch = m_sum.reshape(1);
   m_sum_1ch.setTo(static_cast<Float_T>(0));
@@ -121,7 +121,7 @@ bool cv_mean_extractor::determine_transform(const cv::Mat& image) {
   if (m_sum.empty()) {
     create_matrices(image.cols, image.rows, image.channels());
     reset();
-   
+
     m_enabled = true;
   } else {
     m_enabled = check_if_cv_Mat_has_same_shape(image, m_avg);

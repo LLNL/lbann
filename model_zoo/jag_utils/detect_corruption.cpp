@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,7 +46,7 @@ using namespace lbann;
 void get_input_names(std::unordered_set<std::string> &s);
 void get_scalar_names(std::unordered_set<std::string> &s);
 void get_image_names(std::unordered_set<std::string> &s);
-void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, const char *msg); 
+void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, const char *msg);
 
 //==========================================================================
 int main(int argc, char *argv[]) {
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     conduit::Node n_ok;
     conduit::Node tmp;
     int h = 0;
-    
+
     // used to ensure all values are used
     double total = 0;
     for (size_t j=rank; j<filenames.size(); j+= np) {
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
                 for (size_t k=0; k<image_size; k++) {
                   total += emi[k];
                 }
-              }  
+              }
             } catch (...) {
               sample_err << filenames[j] << " " << cnames[i] << "\n";
               continue;
@@ -250,7 +250,7 @@ void get_image_names(std::unordered_set<std::string> &s) {
 
 void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, const char *msg) {
   comm->global_barrier();
-  if (rank == 0) { std::cerr << "\n" << msg << "\n"; }  
+  if (rank == 0) { std::cerr << "\n" << msg << "\n"; }
   for (int i=0; i<np; i++) {
     comm->global_barrier();
     if (rank == i) {
@@ -258,5 +258,5 @@ void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, c
     }
   }
   comm->global_barrier();
-}  
+}
 #endif //#ifdef LBANN_HAS_CONDUIT

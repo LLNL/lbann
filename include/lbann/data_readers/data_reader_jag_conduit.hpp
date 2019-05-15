@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -257,7 +257,7 @@ class data_reader_jag_conduit : public generic_data_reader {
  protected:
 
   /// once the sample_list class and file formats are generalized and
-  /// finalized, it should (may?) be possible to code a single 
+  /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
   void preload_data_store() override;
 
