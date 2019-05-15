@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -79,7 +79,7 @@ public:
    *  Reports the exception message and the stack trace.
    */
   void print_report(std::ostream& os = std::cerr) const;
-  
+
 private:
   /** Human-readable exception message. */
   std::string m_message;
@@ -87,10 +87,10 @@ private:
    *  The stack trace is recorded when the exception is constructed.
    */
   std::string m_stack_trace;
-  
+
 };
 using lbann_exception = exception;
-  
+
 } // namespace lbann
 
 #endif // LBANN_UTILS_EXCEPTION_HPP_INCLUDED

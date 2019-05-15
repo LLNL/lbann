@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -139,19 +139,19 @@ template <typename T> __device__ __forceinline__ T min(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T max(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T mod(const T& x, const T& y);
 template <typename T> __device__ __forceinline__ T pow(const T& x, const T& y);
-  
+
 // Numeric limits
 template <typename T> constexpr __device__ __forceinline__ T min();
 template <typename T> constexpr __device__ __forceinline__ T max();
 template <typename T> constexpr __device__ __forceinline__ T epsilon();
 template <typename T> __device__ __forceinline__ T infinity();
-  
+
 #endif // __CUDACC__
 
 // -------------------------------------------------------------
 // Utilities for CUDA events
 // -------------------------------------------------------------
-  
+
 /** Wrapper class for a CUDA event. */
 class event_wrapper {
 public:
@@ -177,7 +177,7 @@ private:
    */
   cudaStream_t m_stream;
 };
-  
+
 // -------------------------------------------------------------
 // Helper functions for entrywise operations
 // -------------------------------------------------------------
@@ -199,7 +199,7 @@ template <typename BinaryOperator>
 void apply_entrywise_binary_operator(const AbsMat& input1,
                                      const AbsMat& input2,
                                      AbsMat& output);
-  
+
 
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU, have the same
@@ -217,7 +217,7 @@ template <typename BinaryOperator>
 void apply_entrywise_binary_operator(const AbsDistMat& input1,
                                      const AbsDistMat& input2,
                                      AbsDistMat& output);
-  
+
 #endif // __CUDACC__
 
 // -------------------------------------------------------------
@@ -271,13 +271,13 @@ private:
   cudaStream_t m_stream;
   /** Thrust execution policy. */
   system_type m_system;
-  
+
 };
 
 /** Thrust device vector. */
 template <typename T>
 using vector = ::thrust::device_vector<T, allocator<T>>;
-  
+
 } // namespace thrust
 
 } // namespace cuda

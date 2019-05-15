@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -58,9 +58,9 @@ class layer_metric : public metric {
   std::vector<Layer*> get_layer_pointers() const override;
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers) override;
-  
+
  protected:
-  
+
   void setup(model& m) override;
   EvalType evaluate(execution_mode mode, int mini_batch_size) override;
 
@@ -87,7 +87,7 @@ class layer_metric : public metric {
 
   /** Get corresponding evaluation layer. */
   abstract_evaluation_layer& get_evaluation_layer();
-  
+
 };
 
 }  // namespace lbann

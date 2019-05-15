@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -318,8 +318,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "jag_conduit") || 
-      (name == "multihead_siamese") || (name == "mnist_siamese") || 
+  if ((name == "imagenet") || (name == "jag_conduit") ||
+      (name == "multihead_siamese") || (name == "mnist_siamese") ||
       (name == "multi_images") || (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
