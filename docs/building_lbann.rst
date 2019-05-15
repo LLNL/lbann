@@ -293,6 +293,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
           ${LBANN_HOME}/superbuild
 
         ninja
+        ml use ${LBANN_INSTALL_DIR}/etc/modulefiles/
+        ml load lbann-0.99.0
 
 
 The complete documentation for building LBANN directly with CMake can
