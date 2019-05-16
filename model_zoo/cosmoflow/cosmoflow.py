@@ -167,7 +167,7 @@ def create_data_reader(train_path, val_path, test_path):
     for role, data_filename in [("train",    train_path),
                                 ("validate", val_path),
                                 ("test",     test_path)]:
-        if data_filename != "":
+        if not data_filename is None:
             readerArgs.append({"role": role, "data_filename": data_filename})
 
     readers = []
@@ -205,10 +205,10 @@ parser.add_argument(
     "--learn-rate", action="store", default=0.0005, type=float,
     help="The initial learning-rate")
 parser.add_argument(
-        "--nodes", action="store", default=8, type=int,
+        "--nodes", action="store", default=32, type=int,
         help="The number of nodes")
 parser.add_argument(
-        "--mini-batch-size", action="store", default=32, type=int,
+        "--mini-batch-size", action="store", default=128, type=int,
         help="The mini-batch size")
 parser.add_argument(
         "--epochs", action="store", default=130, type=int,
@@ -219,10 +219,12 @@ parser.add_argument(
 parser.add_argument(
         "--input-width", action="store", default=256, type=int,
         help="Width of input tensor")
-for role, label in [("train", "training"), ("val", "validation"), ("test", "test")]:
+for role, label, required in [("train", "training",   True),
+                              ("val",   "validation", False),
+                              ("test",  "test",       False)]:
     parser.add_argument(
-            "--{}-path".format(role), action="store", default="", type=str,
-            help="Path to {} dataset".format(label))
+            "--{}-path".format(role), type=str, required=required,
+            help="Path to {} dataset".format(label), default=None)
 args = parser.parse_args()
 
 # ----------------------------------
