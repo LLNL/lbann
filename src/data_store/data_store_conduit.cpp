@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -454,12 +454,12 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
       LBANN_ERROR("(local cache) failed to find data_id: " + std::to_string(data_id) + " in m_data; m_data.size: " + std::to_string(m_data.size()));
-    }  
+    }
     return t3->second;
   }
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
-  // if not preloaded, and get_label() or get_response() is called, 
+  // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);

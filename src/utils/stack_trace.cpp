@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -74,10 +74,10 @@ std::string get() {
     ss << std::endl;
   }
   std::free(symbols);
-  
+
   return ss.str();
 }
-  
+
 namespace {
 
 /** Get human-readable description of signal. */
@@ -119,19 +119,19 @@ std::string signal_description(int signal) {
   SIGNAL_CASE(SIGURG,  "high bandwidth data is available at a socket");
   SIGNAL_CASE(SIGXCPU, "CPU time limit exceeded");
   SIGNAL_CASE(SIGXFSZ, "file size limit exceeded");
-#undef SIGNAL_CASE  
+#undef SIGNAL_CASE
 
   // Construct signal description
   std::stringstream ss;
   ss << "signal " << signal;
   if (!desc.empty()) { ss << " (" << desc << ")"; }
   return ss.str();
-  
+
 }
 
 /** Base name for stack trace output file. */
 std::string stack_trace_file_base = "";
-  
+
 /** Signal handler.
  *  Output signal name and stack trace to standard error and to a file
  *  (if desired).
@@ -158,7 +158,7 @@ void handle_signal(int signal) {
 
   // Terminate program
   El::mpi::Abort(El::mpi::COMM_WORLD, 1);
-  
+
 }
 
 } // namespace
@@ -181,8 +181,8 @@ void register_signal_handler(std::string file_base) {
   for (const auto& signal : fatal_signals) {
     sigaction(signal, &sa, nullptr);
   }
-  
+
 }
 
-} //namespace stack_trace 
+} //namespace stack_trace
 } //namespace lbann

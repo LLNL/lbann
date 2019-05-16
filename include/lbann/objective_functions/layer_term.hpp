@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,7 @@ namespace lbann {
 class layer_term : public objective_function_term {
 public:
   layer_term(EvalType scale_factor = EvalType(1));
-  layer_term* copy() const override { return new layer_term(*this); } 
+  layer_term* copy() const override { return new layer_term(*this); }
   std::string name() const override { return "evaluation layer term"; }
 
   /** Set corresponding layer. */
@@ -44,7 +44,7 @@ public:
   Layer& get_layer();
   /** Get corresponding layer (const). */
   const Layer& get_layer() const;
-  
+
   void setup(model& m) override;
 
   void start_evaluation() override;
@@ -52,14 +52,14 @@ public:
   EvalType finish_evaluation() override;
 
   void differentiate() override;
-  
+
   void compute_weight_regularization() override {};
 
 private:
-  
+
   /** Get corresponding evaluation layer. */
   abstract_evaluation_layer& get_evaluation_layer();
-  
+
 };
 
 } // namespace lbann

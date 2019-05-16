@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -69,11 +69,11 @@ __global__ void accumulate_contribution_kernel(El::Int height,
   if (tid == 0) {
     cuda::atomic_add(contribution, shared_contribution[0]);
   }
-    
+
 }
-  
+
 } // namespace
-  
+
 template <>
 void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const GPUMat& vals,
                                                                         GPUMat& contribution) {
@@ -90,5 +90,5 @@ void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const GP
         contribution.Buffer());
   }
 }
-                                   
+
 } // namespace lbann

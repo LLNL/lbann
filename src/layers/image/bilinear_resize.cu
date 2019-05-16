@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -48,7 +48,7 @@ __global__ void fp_kernel(El::Int num_samples,
   constexpr DataType one = 1;
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  
+
   // Stride between interpolation points
   const auto& x_stride = static_cast<DataType>(input_width) / output_width;
   const auto& y_stride = static_cast<DataType>(input_height) / output_height;
@@ -74,7 +74,7 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto input_row = static_cast<El::Int>(cuda::floor(y - half));
     const auto& input_row0 = cuda::max(input_row, El::Int(0));
     const auto& input_row1 = cuda::min(input_row+1, input_height-1);
-    
+
     // Interpolation point relative to input pixel centers
     const auto& unit_x = x - (input_col + half);
     const auto& unit_y = y - (input_row + half);
@@ -106,14 +106,14 @@ __global__ void fp_kernel(El::Int num_samples,
               + pixel01 * unit_x * (one - unit_y)
               + pixel10 * (one - unit_x) * unit_y
               + pixel11 * unit_x * unit_y);
-    
+
   }
-  
-}  
-  
+
 }
 
-  
+}
+
+
 template <>
 void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 
@@ -153,7 +153,7 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
         m_height, m_width,
         local_output.Buffer(), local_output.LDim());
   }
-  
+
 }
-  
+
 } // namespace lbann

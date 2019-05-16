@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -83,19 +83,19 @@ void numpy_npz_conduit_reader::load() {
 
   if (! (opts->get_bool("preload_data_store") || opts->get_bool("use_data_store"))) {
     LBANN_ERROR("numpy_npz_conduit_reader requires data_store; please pass either --use_data_store or --preload_data_store on the cmd line");
-  }  
+  }
 
   //dah - for now, I assume the input file contains, on each line, the complete
   //      pathname of an npz file. This will no doubt change in the future.
   //      I'd like to call load_list_of_samples(), but the sample_list class
-  //      is too specialized -- it checks data in a manner particular to 
+  //      is too specialized -- it checks data in a manner particular to
   //      conduit, and that doesn't apply here.
 
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
 
-  // fills in: m_num_samples, m_num_features, m_num_response_features, 
-  // m_data_dims, m_data_word_size, m_response_word_size 
+  // fills in: m_num_samples, m_num_features, m_num_response_features,
+  // m_data_dims, m_data_word_size, m_response_word_size
   fill_in_metadata();
 
   if (m_num_labels == 0 && !opts->get_bool("preload_data_store") && opts->get_bool("use_data_store")) {
@@ -162,7 +162,7 @@ void numpy_npz_conduit_reader::preload_data_store() {
       if (t < my_min) { my_min = t; }
       if (t > my_max) { my_max = t; }
     }
-    int trainer_min = m_comm->trainer_allreduce<int>(my_min, El::mpi::MIN); 
+    int trainer_min = m_comm->trainer_allreduce<int>(my_min, El::mpi::MIN);
     int trainer_max = m_comm->trainer_allreduce<int>(my_max, El::mpi::MAX);
 
     // dah - commenting out sanity checks, as I don't know if they're
@@ -217,7 +217,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     //      will through an exception TODO: relook later
     if (priming_data_store() || m_model->get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
-    } 
+    }
   }
 
   const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/data/data"].value();
@@ -232,7 +232,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     LBANN_OMP_PARALLEL_FOR
       for(int j = 0; j < m_num_features; j++) {
         dest[j] = data[j] * m_scaling_factor_int16;
-      }  
+      }
 
   } else {
     void *data = (void*)char_data_2;
@@ -297,7 +297,7 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/responses/data"].value();
   void *responses =  (void*)char_data;
   //char *char_data_2 = const_cast<char*>(char_data);
-  //void *responses = (void*) 
+  //void *responses = (void*)
   /*
   if (m_response_word_size == 4) {
     responses = (void *) reinterpret_cast<float*>(char_data_2);
@@ -334,7 +334,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   //fill in m_data_dims
   auto shape = node[LBANN_DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
   int shape_num_elts = shape.number_of_elements();
-  for (int k=0; k<shape_num_elts; k++) {
+  for (int k=1; k<shape_num_elts; k++) {
     m_data_dims.push_back(shape[k]);
   }
   m_num_features = std::accumulate(m_data_dims.begin() + 1,
@@ -348,7 +348,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   // Ensure we understand the word sizes
   size_t word_size = node[LBANN_DATA_ID_STR(data_id) + "/data/word_size"].value();
   if (!(word_size == 2 || word_size == 4 || word_size == 8)) {
-    LBANN_ERROR("numpy_npz_conduit_reader: word size " + 
+    LBANN_ERROR("numpy_npz_conduit_reader: word size " +
                 std::to_string(word_size) + " not supported");
   }
   m_data_word_size = word_size;

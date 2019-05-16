@@ -1,0 +1,3 @@
+[Paths]
+lbann_pb2.py = @_LBANN_PB2_PY@
+lbann_exe = @_LBANN_EXE@
