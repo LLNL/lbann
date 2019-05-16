@@ -33,6 +33,7 @@ set_full_path(THIS_DIR_SOURCES
   profiler.cpp
   callback_replace_weights.cpp
   callback_gpu_memory_usage.cpp
+  callback_perturb_dropout.cpp
 )
 
 # Propagate the files up the tree
