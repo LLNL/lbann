@@ -92,7 +92,7 @@ void lbann_callback_perturb_dropout::perturb(model& m) {
           if (m_keep_prob_factor > zero) {
             auto log_val = std::log(one - std::max(old_keep_prob, min_val));
             log_val += m_keep_prob_factor * dist(gen);
-            new_keep_prob = std::max(EvalType(0.5), std::min(std::exp(one - log_val),one));
+            new_keep_prob = std::max(EvalType(0.5), std::min(one - std::exp(log_val),one));
             std::cout << "Trainer [ " << comm->get_trainer_rank() << " ] keep prob changed from "
                 << old_keep_prob << " to " << new_keep_prob << std::endl;
           }
