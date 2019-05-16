@@ -28,9 +28,13 @@
 #include "lbann/transforms/normalize.hpp"
 #include "lbann/transforms/sample_normalize.hpp"
 #include "lbann/transforms/scale.hpp"
+#include "lbann/transforms/vision/adjust_brightness.hpp"
+#include "lbann/transforms/vision/adjust_contrast.hpp"
+#include "lbann/transforms/vision/adjust_saturation.hpp"
 #include "lbann/transforms/vision/center_crop.hpp"
-#include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/colorize.hpp"
+#include "lbann/transforms/vision/color_jitter.hpp"
+#include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/horizontal_flip.hpp"
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
 #include "lbann/transforms/vision/random_affine.hpp"
@@ -114,6 +118,21 @@ std::unique_ptr<transform::transform> construct_transform(
   } else if (trans.has_vertical_flip()) {
     return make_unique<transform::horizontal_flip>(
       trans.vertical_flip().p());
+  } else if (trans.has_adjust_brightness()) {
+    return make_unique<transform::adjust_brightness>(
+      trans.adjust_brightness().factor());
+  } else if (trans.has_adjust_contrast()) {
+    return make_unique<transform::adjust_contrast>(
+      trans.adjust_contrast().factor());
+  } else if (trans.has_adjust_saturation()) {
+    return make_unique<transform::adjust_saturation>(
+      trans.adjust_saturation().factor());
+  } else if (trans.has_color_jitter()) {
+    auto& pb_trans = trans.color_jitter();
+    return make_unique<transform::color_jitter>(
+      pb_trans.min_brightness_factor(), pb_trans.max_brightness_factor(),
+      pb_trans.min_contrast_factor(), pb_trans.max_contrast_factor(),
+      pb_trans.min_saturation_factor(), pb_trans.max_saturation_factor());
   }
 
   LBANN_ERROR("Unknown transform");

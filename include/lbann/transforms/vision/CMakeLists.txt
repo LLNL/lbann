@@ -1,7 +1,11 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  adjust_brightness.hpp
+  adjust_contrast.hpp
+  adjust_saturation.hpp
   center_crop.hpp
   colorize.hpp
+  color_jitter.hpp
   grayscale.hpp
   horizontal_flip.hpp
   normalize_to_lbann_layout.hpp

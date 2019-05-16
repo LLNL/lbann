@@ -1,7 +1,11 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  adjust_brightness.cpp
+  adjust_contrast.cpp
+  adjust_saturation.cpp
   center_crop.cpp
   colorize.cpp
+  color_jitter.cpp
   grayscale.cpp
   horizontal_flip.cpp
   normalize_to_lbann_layout.cpp
