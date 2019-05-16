@@ -220,6 +220,7 @@ protected :
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
+  std::unordered_map<int, int> m_recv_sample_sizes;
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
@@ -235,6 +236,8 @@ protected :
   std::vector<El::mpi::Request<El::byte>> m_send_requests;
   std::vector<El::mpi::Request<El::byte>> m_recv_requests;
   std::vector<conduit::Node> m_recv_buffer;
+  std::vector<int> m_recv_buffer_sample_sizes;
+  std::vector<int> m_send_buffer_sample_sizes;
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
@@ -253,8 +256,13 @@ protected :
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);
 
+  /// for use when conduit Nodes have non-uniform size, e.g, imagenet,
+  /// and when running in non-super_node mode
+  void exchange_sample_sizes(int num_to_send, int num_to_receive);
+
   /// maps processor id -> set of indices (whose associated samples)
-  /// this proc needs to send. (formerly called "proc_to_indices)
+  /// this proc needs to send. (formerly called "proc_to_indices);
+  /// this is filled in by build_indices_i_will_send()
   std::vector<std::unordered_set<int>> m_indices_to_send;
 
   /// fills in m_indices_to_send and returns the number of samples
@@ -274,6 +282,9 @@ protected :
   bool m_is_local_cache;
 
   bool m_node_sizes_vary;
+
+  /// for use when conduit Nodes have non-uniform size, e.g, imagenet
+  std::unordered_map<int, int> m_sample_sizes;
 };
 
 }  // namespace lbann

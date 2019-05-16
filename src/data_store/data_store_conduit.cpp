@@ -72,8 +72,15 @@ data_store_conduit::data_store_conduit(
   if (m_is_local_cache && opts->get_bool("preload_data_store")) {
     LBANN_ERROR("you cannot use both of these options: --data_store_cache --preload_data_store");
   }
+
   if (m_world_master) {
-    std::cout << "data_store_conduit is running in local_cache mode\n";
+    if (m_is_local_cache) {
+      std::cout << "data_store_conduit is running in local_cache mode\n";
+    } else if (m_super_node) {
+      std::cout << "data_store_conduit is running in super_node mode\n";
+    } else {
+      std::cout << "data_store_conduit is running in multi-message mode\n";
+    }
   }
 }
 
@@ -140,11 +147,11 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
     /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
     for(auto&& i : ds_sample_move_list) {
 
-      if (m_output) {
-        rhs.m_output << "next ds_sample_move_list index: " << i << " is it in rhs? " << (rhs.m_data.find(i) != rhs.m_data.end()) << "  rhs.m_data.size: " << rhs.m_data.size() << "\n";
-      }
-
       if(rhs.m_data.find(i) != rhs.m_data.end()){
+        if (m_output) {
+          rhs.m_output << "moving index: " << i << " from other to myself\n";
+        }
+
         if (!m_super_node) {
           /// Repack the nodes because they don't seem to copy correctly
           build_node_for_sending(rhs.m_data[i]["data"], m_data[i]);
@@ -351,7 +358,11 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
       m_output << "3. calling build_node_for_sending\n";
     }
     build_node_for_sending(n2, m_data[data_id]);
-    error_check_compacted_node(m_data[data_id], data_id);
+    if (!m_node_sizes_vary) {
+      error_check_compacted_node(m_data[data_id], data_id);
+    } else {
+      m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+    }
   } else {
     if (m_data.find(data_id) == m_data.end()) {
       m_data[data_id] = node;
@@ -415,11 +426,9 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   }
 
   else if (! m_super_node) {
-    if (m_output) {
-      m_output << "4. calling build_node_for_sending\n";
-    }
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
+    m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
   }
 
   else {
@@ -536,6 +545,12 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   m_recv_buffer.resize(num_recv_req);
   m_recv_data_ids.resize(num_recv_req);
 
+/* XX for ruture development
+  if (m_node_sizes_vary) {
+    exchange_sample_sizes(num_send_req, num_recv_req);
+  }
+*/
+
   //========================================================================
   //part 2: exchange the actual data
 
@@ -558,7 +573,15 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
       if(n.contiguous_data_ptr() == nullptr) {
         LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid contiguous data pointer");
       }
-      m_comm->nb_tagged_send(s, m_compacted_sample_size, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
+
+      int sz = m_compacted_sample_size;
+      if (m_node_sizes_vary) {
+        if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
+          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index));
+        }
+        sz = m_sample_sizes[index];
+      }
+      m_comm->nb_tagged_send<El::byte>(s, sz, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
     }
   }
 
@@ -715,7 +738,7 @@ conduit::Node & data_store_conduit::get_empty_node(int data_id) {
 
 void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
   if (m_output) {
-    m_output << " purge_unused_samples; indices.size(): " << indices.size() << " data.size(): " << m_data.size() << std::endl;
+    m_output << " starting purge_unused_samples; indices.size(): " << indices.size() << " data.size(): " << m_data.size() << std::endl;
   }
   /// Remove unused indices from the data and owner maps
   for(auto&& i : indices) {
@@ -725,6 +748,9 @@ void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
     if(m_owner.find(i) != m_owner.end()) {
       m_owner.erase(i);
     }
+  }
+  if (m_output) {
+    m_output << " leaving  purge_unused_samples; indices.size(): " << indices.size() << " data.size(): " << m_data.size() << std::endl;
   }
 }
 
@@ -922,6 +948,86 @@ bool data_store_conduit::has_conduit_node(int data_id) const {
 
 void data_store_conduit::set_shuffled_indices(const std::vector<int> *indices) { 
   m_shuffled_indices = indices; 
+}
+
+void data_store_conduit::exchange_sample_sizes(int num_send_req, int num_recv_req) {
+//for future development
+#if 0
+
+  m_send_requests.resize(m_np_in_trainer);
+  m_recv_requests.resize(num_recv_req);
+  m_recv_buffer_sample_sizes.resize(num_recv_req);
+  m_recv_data_ids.resize(num_recv_req);
+
+  // start sends for outgoing sample sizes
+  std::vector<std::vector<int>> outgoing(m_np_in_trainer);
+  size_t request_idx = 0;
+  for (int p=0; p<m_np_in_trainer; p++) {
+    const std::unordered_set<int> &indices = m_indices_to_send[p];
+    outgoing[p].reserve(m_indices_to_send.size()+1);
+    outgoing[p].push_back(0);
+    for (auto data_id : indices) {
+      if (m_data.find(data_id) == m_data.end()) {
+        LBANN_ERROR("failed to find data_id= " + std::to_string(data_id) + " in m_data");
+      }
+      if (m_sample_sizes.find(data_id) == m_sample_sizes.end()) {
+        LBANN_ERROR("failed to find data_id= " + std::to_string(data_id) + " in m_sample_sizes");
+      }
+      outgoing[p].push_back(m_sample_sizes[data_id]);
+    }
+
+    if (m_output) {
+      m_output << "XX sending num samples: " << outgoing[p].size() << " to " << p << std::endl;
+    }
+
+    const El::byte *s = reinterpret_cast<const El::byte*>(outgoing[p].data());
+    int tag = (p+1) * -1;
+    m_comm->nb_tagged_send<El::byte>(s, sizeof(int)*outgoing[p].size(), p, tag, m_send_requests[request_idx++], m_comm->get_trainer_comm());
+  }
+
+  // sanity checks
+  if (request_idx!= m_send_requests.size()) {
+    LBANN_ERROR("request_idx!= m_send_requests.size");
+  }
+
+m_output.close();
+MPI_Barrier(MPI_COMM_WORLD);
+exit(0);
+
+  // start recvs for incoming sample sizes
+  request_idx = 0;
+  for (int p=0; p<m_np_in_trainer; p++) {
+    const std::unordered_set<int> &indices = m_indices_to_recv[p];
+    for (auto index : indices) {
+      El::byte *s = reinterpret_cast<El::byte*>(&m_recv_buffer_sample_sizes[request_idx]);
+      m_comm->nb_tagged_recv<El::byte>(s, sizeof(int), p, index, m_recv_requests[request_idx], m_comm->get_trainer_comm());
+      m_recv_data_ids[request_idx] = index;
+      m_recv_sample_sizes[index] = index;
+      ++request_idx;
+    }
+  }
+
+  // sanity checks
+  if (request_idx != m_recv_buffer.size()) {
+    LBANN_ERROR("request_idx != m_recv_buffer.size; request_idx: " + std::to_string(request_idx) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
+  }
+  if (m_recv_requests.size() != m_recv_buffer.size()) {
+    LBANN_ERROR("m_recv_requests.size != m_recv_buffer.size; m_recv_requests: " + std::to_string(m_recv_requests.size()) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
+  }
+
+  // wait for all msgs to complete
+  m_comm->wait_all(m_send_requests);
+  m_comm->wait_all(m_recv_requests);
+
+  if (m_output) {
+    m_output << "my incoming Node sizes (data_id, size):\n";
+    for (size_t j=0; j<m_recv_sample_sizes.size(); j++) {
+      int data_id = m_recv_sample_sizes[j];
+      int sz = m_recv_buffer_sample_sizes[j];
+      m_output << data_id << " " << sz << std::endl;
+    }
+  }
+#endif
 }
 
 }  // namespace lbann
