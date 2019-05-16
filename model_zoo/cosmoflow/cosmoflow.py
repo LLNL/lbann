@@ -178,6 +178,7 @@ def create_data_reader(train_path, val_path, test_path):
             validation_percent=0,
             absolute_sample_count=0,
             percent_of_data_to_use=1.0,
+            scaling_factor_int16=1.0,
             **readerArg)
 
         readers.append(reader)
