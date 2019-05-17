@@ -400,6 +400,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 
 
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
+  m_mutex.lock();
   if (already_have == false && m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
   }
@@ -412,11 +413,13 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     if (m_data.find(data_id) == m_data.end()) {
       LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (" + std::to_string(data_id) + ") doesn't exist in m_data");
     }
+    m_mutex.unlock();
     return;
   }
 
   if (is_local_cache()) {
     m_data[data_id] = node;
+    m_mutex.unlock();
   }
 
   else if (m_owner[data_id] != m_rank_in_trainer) {
@@ -429,10 +432,12 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
     m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+    m_mutex.unlock();
   }
 
   else {
     m_data[data_id] = node;
+    m_mutex.unlock();
     // @TODO would like to do: m_data[data_id].set_external(node); but since
     // (as of now) 'node' is a local variable in a data_reader+jag_conduit,
     // we need to do a deep copy. If the data_store furnishes a node to the

@@ -37,6 +37,7 @@
 #include "conduit/conduit_node.hpp"
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
 
 
 namespace lbann {
@@ -285,6 +286,8 @@ protected :
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet
   std::unordered_map<int, int> m_sample_sizes;
+
+  std::mutex m_mutex;
 };
 
 }  // namespace lbann
