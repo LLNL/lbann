@@ -189,7 +189,6 @@ void image_data_reader::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   opts->set_option("node_sizes_vary", 1);
-  opts->set_option("super_node", 1);
   instantiate_data_store(local_list_sizes);
 
   select_subset_of_data();

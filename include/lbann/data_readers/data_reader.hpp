@@ -720,6 +720,8 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   void set_model(model *m) { m_model = m; }
 
+  model * get_model() const { return m_model; }
+
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
   virtual void post_update() {}

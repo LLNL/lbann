@@ -48,7 +48,8 @@ data_store_conduit::data_store_conduit(
   m_super_node(false),
   m_compacted_sample_size(0),
   m_is_local_cache(false), 
-  m_node_sizes_vary(false) {
+  m_node_sizes_vary(false),
+  m_have_sample_sizes(false) {
   m_comm = m_reader->get_comm();
   if (m_comm == nullptr) {
     LBANN_ERROR(" m_comm is nullptr");
@@ -108,7 +109,6 @@ data_store_conduit& data_store_conduit::operator=(const data_store_conduit& rhs)
 }
 
 void data_store_conduit::set_role(const std::string role) {
-
   if (options::get()->get_bool("debug")) {
     std::stringstream ss;
     ss << "debug_" << m_reader->get_role() << "." << m_comm->get_rank_in_world();
@@ -134,6 +134,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_is_local_cache = rhs.m_is_local_cache;
   m_node_sizes_vary = rhs.m_node_sizes_vary;
+  m_sample_sizes = rhs.m_sample_sizes;
 
   /// This block needed when carving a validation set from the training set
   if (options::get()->get_bool("debug") && !m_output) {
@@ -260,9 +261,6 @@ void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t 
     for (auto idx : m_indices_to_send[p]) {
       m_send_buffer[p].update_external(m_data[idx]);
     }
-    if (m_output) {
-      m_output << "2. calling build_node_for_sending\n";
-    }
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
   }
 
@@ -354,9 +352,6 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
       m_output << "set_preloaded_conduit_node: " << data_id << " for non-super_node mode\n";
     }
     conduit::Node n2 = node;
-    if (m_output) {
-      m_output << "3. calling build_node_for_sending\n";
-    }
     build_node_for_sending(n2, m_data[data_id]);
     if (!m_node_sizes_vary) {
       error_check_compacted_node(m_data[data_id], data_id);
@@ -538,6 +533,15 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     LBANN_ERROR("setup(mb_size) has not been called");
   }
 
+  /// exchange sample sizes if they are non-uniform (imagenet);
+  /// this will only be called once, during the first call to 
+  /// exchange_data_by_sample at the beginning of the 2nd epoch,
+  /// or during the first call th exchange_data_by_sample() during
+  /// the first epoch if preloading
+  if (m_node_sizes_vary && !m_have_sample_sizes) {
+    exchange_sample_sizes();
+  }
+
   if (m_output) {
     m_output << "starting data_store_conduit::exchange_data_by_sample; mb_size: " << mb_size << std::endl;
   }
@@ -549,12 +553,6 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   m_recv_requests.resize(num_recv_req);
   m_recv_buffer.resize(num_recv_req);
   m_recv_data_ids.resize(num_recv_req);
-
-/* XX for ruture development
-  if (m_node_sizes_vary) {
-    exchange_sample_sizes(num_send_req, num_recv_req);
-  }
-*/
 
   //========================================================================
   //part 2: exchange the actual data
@@ -580,12 +578,18 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
       }
 
       int sz = m_compacted_sample_size;
+
       if (m_node_sizes_vary) {
         if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
-          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index));
+          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index) + "; m_sample_sizes.size: " + std::to_string(m_sample_sizes.size()));
         }
         sz = m_sample_sizes[index];
       }
+
+      if (m_output) {
+        m_output << "sending " << index << " size: " << sz << " to " << p << std::endl;
+      }
+
       m_comm->nb_tagged_send<El::byte>(s, sz, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
     }
   }
@@ -597,12 +601,22 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   // start recvs for incoming data
   ss = 0;
+
   for (int p=0; p<m_np_in_trainer; p++) {
     const std::unordered_set<int> &indices = m_indices_to_recv[p];
     for (auto index : indices) {
-      m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
+
+      int sz = m_compacted_sample_size;
+      if (m_node_sizes_vary) {
+        if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
+          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index) + "; m_sample_sizes.size(): " + std::to_string(m_sample_sizes.size()) + " role: " + m_reader->get_role());
+        }
+        sz = m_sample_sizes[index];
+      }
+
+      m_recv_buffer[ss].set(conduit::DataType::uint8(sz));
       El::byte *r = reinterpret_cast<El::byte*>(m_recv_buffer[ss].data_ptr());
-      m_comm->nb_tagged_recv<El::byte>(r, m_compacted_sample_size, p, index, m_recv_requests[ss], m_comm->get_trainer_comm());
+      m_comm->nb_tagged_recv<El::byte>(r, sz, p, index, m_recv_requests[ss], m_comm->get_trainer_comm());
       m_recv_data_ids[ss] = index;
       ++ss;
     }
@@ -693,9 +707,6 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
       per_rank_list_range_start += per_rank_list_size;
     }
     m_owner[i] = owning_rank;
-    if (m_output) {
-      m_output << "m_owner[" << i << "] = " << owning_rank << std::endl;
-    }
   }
 }
 
@@ -776,9 +787,6 @@ void data_store_conduit::compact_nodes() {
         /// Repack the nodes because they don't seem to copy correctly
         conduit::Node node = m_data[j]["data"];
         m_data.erase(j);
-        if (m_output) {
-          m_output << "5. calling build_node_for_sending\n";
-        }
         build_node_for_sending(node, m_data[j]);
       }
     }
@@ -955,84 +963,49 @@ void data_store_conduit::set_shuffled_indices(const std::vector<int> *indices) {
   m_shuffled_indices = indices; 
 }
 
-void data_store_conduit::exchange_sample_sizes(int num_send_req, int num_recv_req) {
-//for future development
-#if 0
-
-  m_send_requests.resize(m_np_in_trainer);
-  m_recv_requests.resize(num_recv_req);
-  m_recv_buffer_sample_sizes.resize(num_recv_req);
-  m_recv_data_ids.resize(num_recv_req);
-
-  // start sends for outgoing sample sizes
-  std::vector<std::vector<int>> outgoing(m_np_in_trainer);
-  size_t request_idx = 0;
-  for (int p=0; p<m_np_in_trainer; p++) {
-    const std::unordered_set<int> &indices = m_indices_to_send[p];
-    outgoing[p].reserve(m_indices_to_send.size()+1);
-    outgoing[p].push_back(0);
-    for (auto data_id : indices) {
-      if (m_data.find(data_id) == m_data.end()) {
-        LBANN_ERROR("failed to find data_id= " + std::to_string(data_id) + " in m_data");
-      }
-      if (m_sample_sizes.find(data_id) == m_sample_sizes.end()) {
-        LBANN_ERROR("failed to find data_id= " + std::to_string(data_id) + " in m_sample_sizes");
-      }
-      outgoing[p].push_back(m_sample_sizes[data_id]);
-    }
-
-    if (m_output) {
-      m_output << "XX sending num samples: " << outgoing[p].size() << " to " << p << std::endl;
-    }
-
-    const El::byte *s = reinterpret_cast<const El::byte*>(outgoing[p].data());
-    int tag = (p+1) * -1;
-    m_comm->nb_tagged_send<El::byte>(s, sizeof(int)*outgoing[p].size(), p, tag, m_send_requests[request_idx++], m_comm->get_trainer_comm());
+void data_store_conduit::exchange_sample_sizes() {
+  if (m_output) {
+    m_output << "starting data_store_conduit::exchange_sample_sizes" << std::endl;
   }
 
-  // sanity checks
-  if (request_idx!= m_send_requests.size()) {
-    LBANN_ERROR("request_idx!= m_send_requests.size");
-  }
-
-m_output.close();
-MPI_Barrier(MPI_COMM_WORLD);
-exit(0);
-
-  // start recvs for incoming sample sizes
-  request_idx = 0;
-  for (int p=0; p<m_np_in_trainer; p++) {
-    const std::unordered_set<int> &indices = m_indices_to_recv[p];
-    for (auto index : indices) {
-      El::byte *s = reinterpret_cast<El::byte*>(&m_recv_buffer_sample_sizes[request_idx]);
-      m_comm->nb_tagged_recv<El::byte>(s, sizeof(int), p, index, m_recv_requests[request_idx], m_comm->get_trainer_comm());
-      m_recv_data_ids[request_idx] = index;
-      m_recv_sample_sizes[index] = index;
-      ++request_idx;
-    }
-  }
-
-  // sanity checks
-  if (request_idx != m_recv_buffer.size()) {
-    LBANN_ERROR("request_idx != m_recv_buffer.size; request_idx: " + std::to_string(request_idx) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
-  }
-  if (m_recv_requests.size() != m_recv_buffer.size()) {
-    LBANN_ERROR("m_recv_requests.size != m_recv_buffer.size; m_recv_requests: " + std::to_string(m_recv_requests.size()) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
-  }
-
-  // wait for all msgs to complete
-  m_comm->wait_all(m_send_requests);
-  m_comm->wait_all(m_recv_requests);
+  int my_count = m_sample_sizes.size();
+  std::vector<int> all_counts(m_np_in_trainer);
+  m_comm->all_gather(&my_count, 1, all_counts.data(), 1,  m_comm->get_trainer_comm());
 
   if (m_output) {
-    m_output << "my incoming Node sizes (data_id, size):\n";
-    for (size_t j=0; j<m_recv_sample_sizes.size(); j++) {
-      int data_id = m_recv_sample_sizes[j];
-      int sz = m_recv_buffer_sample_sizes[j];
-      m_output << data_id << " " << sz << std::endl;
+    for (size_t h=0; h<all_counts.size(); h++) {
+      m_output << "num samples owned by P_" << h << " is " << all_counts[h] << std::endl;
     }
   }
-#endif
+
+  std::vector<int> my_sizes(m_sample_sizes.size()*2);
+  size_t j = 0;
+  for (auto t : m_sample_sizes) {
+    my_sizes[j++] = t.first;
+    my_sizes[j++] = t.second;
+  }
+
+  std::vector<int> other_sizes;
+  for (int k=0; k<m_np_in_trainer; k++) {
+    other_sizes.resize(all_counts[k]*2);
+    if (m_rank_in_trainer == k) {
+      m_comm->broadcast<int>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
+    } else {
+      m_comm->broadcast<int>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
+      for (size_t i=0; i<other_sizes.size(); i += 2) {
+        if (m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end()) {
+          LBANN_ERROR("duplicate data_id: " + std::to_string(other_sizes[i]));
+        }
+        m_sample_sizes[other_sizes[i]] = other_sizes[i+1];
+      }
+    }
+  }
+
+  m_have_sample_sizes = true;
+}
+
+void data_store_conduit::set_preload() { 
+  m_preload = true;
 }
 
 }  // namespace lbann

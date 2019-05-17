@@ -113,7 +113,7 @@ class data_store_conduit {
 
   /// As of this writing, will be called if cmd line includes: --preload_data_store
   /// This may change in the future; TODO revisit
-  void set_preload() { m_preload = true; }
+  void set_preload(); 
 
   bool is_preloaded() { return m_preload; }
 
@@ -259,7 +259,7 @@ protected :
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet,
   /// and when running in non-super_node mode
-  void exchange_sample_sizes(int num_to_send, int num_to_receive);
+  void exchange_sample_sizes();
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to send. (formerly called "proc_to_indices);
@@ -287,7 +287,11 @@ protected :
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet
   std::unordered_map<int, int> m_sample_sizes;
 
+  /// used in set_conduit_node(...)
   std::mutex m_mutex;
+
+  /// used in exchange_data_by_sample, when sample sizes are non-uniform
+  bool m_have_sample_sizes;
 };
 
 }  // namespace lbann
