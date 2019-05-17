@@ -226,7 +226,6 @@ Hydrogen, and LBANN separately, by whatever means they choose.
         spack install
         spack env loads # Spack creates a file named loads that has all of the correct modules
         source loads
-        unset LIBRARY_PATH
 
 
     + Note that the environments provided here have a set of external
