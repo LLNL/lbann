@@ -55,4 +55,5 @@ if (LBANN_HAS_CONDUIT)
   add_executable( generate_corrupt_samples-bin generate_corrupt_samples.cpp )
   target_link_libraries(generate_corrupt_samples-bin lbann )
   set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
+
 endif ()

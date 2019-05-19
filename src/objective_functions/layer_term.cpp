@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -62,7 +62,7 @@ abstract_evaluation_layer& layer_term::get_evaluation_layer() {
   }
   return *eval;
 }
-  
+
 void layer_term::setup(model& m) {
   objective_function_term::setup(m);
   get_evaluation_layer().set_scale(m_scale_factor);

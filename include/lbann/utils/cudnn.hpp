@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -198,6 +198,74 @@ public:
   cudnnTensorDescriptor_t& get_prev_error_signals(int child_index = 0) override;
   cudnnTensorDescriptor_t& get_error_signals(int parent_index = 0) override;
 };
+
+////////////////////////////////////////////////////////////
+// cuDNN algorithm selection
+////////////////////////////////////////////////////////////
+
+/**
+ * Select a forward convolution algorithm.
+ *
+ * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * provided via the pointer arguments.
+ *
+ * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param deterministic True to require deterministic algorithms.
+ */
+cudnnConvolutionFwdAlgo_t get_fwd_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const void* kernel,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& output_desc,
+  void* output,
+  size_t ws_size,
+  void* ws);
+
+/** Select a backward data convolution algorithm.
+ *
+ * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * provided via the pointer arguments.
+ *
+ * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param deterministic True to require deterministic algorithms.
+ */
+cudnnConvolutionBwdDataAlgo_t get_bwd_data_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnFilterDescriptor_t& kernel_desc,
+  const void* kernel,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const void* prev_error_signal,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnTensorDescriptor_t& error_signal_desc,
+  void* error_signal,
+  size_t ws_size,
+  void* ws);
+
+/** Select a backward filter convolution algorithm.
+ *
+ * If autotuning, memory for cuDNN algorithm runs is needed and should be
+ * provided via the pointer arguments.
+ *
+ * @param autotune True to attempt all cuDNN algorithms and select the fastest.
+ * @param deterministic True to require deterministic algorithms.
+ */
+cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
+  bool autotune,
+  bool deterministic,
+  const cudnnTensorDescriptor_t& input_desc,
+  const void* input,
+  const cudnnTensorDescriptor_t& prev_error_signal_desc,
+  const void* prev_error_signal,
+  const cudnnConvolutionDescriptor_t& conv_desc,
+  const cudnnFilterDescriptor_t& kernel_gradient_desc,
+  void* kernel_gradient,
+  size_t ws_size,
+  void* ws);
 
 } // namespace cudnn
 } // namespace lbann

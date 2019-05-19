@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,7 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_store/data_store_jag.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 
 #ifdef LBANN_HAS_CONDUIT
 
@@ -37,60 +37,77 @@
 
 namespace lbann {
 
-data_store_jag::data_store_jag(
+data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
-  generic_data_store(reader),
+  m_n(0),
+  m_is_setup(false),
+  m_reader(reader),
   m_preload(false),
+  m_explicit_loading(false),
   m_owner_map_mb_size(0),
   m_super_node(false),
-  m_super_node_overhead(0),
-  m_compacted_sample_size(0) {
-
-  set_name("data_store_jag");
-  m_super_node = options::get()->get_bool("super_node");
-
-  data_reader_jag_conduit *jag_reader = dynamic_cast<data_reader_jag_conduit*>(m_reader);
-  if (jag_reader == nullptr) {
-    LBANN_ERROR(" dynamic_cast<data_reader_jag_conduit*>(m_reader) failed");
+  m_compacted_sample_size(0),
+  m_is_local_cache(false) {
+  m_comm = m_reader->get_comm();
+  if (m_comm == nullptr) {
+    LBANN_ERROR(" m_comm is nullptr");
   }
 
+  m_world_master = m_comm->am_world_master();
+  m_trainer_master = m_comm->am_trainer_master();
+  m_rank_in_trainer = m_comm->get_rank_in_trainer();
+  m_np_in_trainer = m_comm->get_procs_per_trainer();
+
+  options *opts = options::get();
+  m_super_node = opts->get_bool("super_node");
+
+  m_is_local_cache = opts->get_bool("data_store_cache");
+  if (m_is_local_cache && opts->get_bool("preload_data_store")) {
+    LBANN_ERROR("you cannot use both of these options: --data_store_cache --preload_data_store");
+  }
 }
 
-data_store_jag::~data_store_jag() {}
+data_store_conduit::~data_store_conduit() {}
 
-data_store_jag::data_store_jag(const data_store_jag& rhs)
-  : generic_data_store(rhs) {
+data_store_conduit::data_store_conduit(const data_store_conduit& rhs) {
   copy_members(rhs);
 }
 
-data_store_jag::data_store_jag(const data_store_jag& rhs, const std::vector<int>& ds_sample_move_list)
-  : generic_data_store(rhs, ds_sample_move_list) {
+data_store_conduit::data_store_conduit(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+
   copy_members(rhs, ds_sample_move_list);
 }
 
-data_store_jag& data_store_jag::operator=(const data_store_jag& rhs) {
+data_store_conduit& data_store_conduit::operator=(const data_store_conduit& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
   }
-  generic_data_store::operator=(rhs);
-
   copy_members(rhs);
-
   return (*this);
 }
 
-void data_store_jag::copy_members(const data_store_jag& rhs, const std::vector<int>& ds_sample_move_list) {
+void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+  m_n = rhs.m_n;
+  m_is_setup = rhs.m_is_setup;
+  m_reader = rhs.m_reader;
+  m_comm = rhs.m_comm;
+  m_rank_in_trainer = rhs.m_rank_in_trainer;
+  m_np_in_trainer = rhs.m_np_in_trainer;
+  m_world_master = rhs.m_world_master;
+  m_trainer_master = rhs.m_trainer_master;
   m_preload = rhs.m_preload;
+  m_explicit_loading = rhs.m_explicit_loading;
+  m_owner = rhs.m_owner;
+  m_shuffled_indices = rhs.m_shuffled_indices;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_super_node = rhs.m_super_node;
-  m_super_node_overhead = rhs.m_super_node;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
-  m_name = rhs.m_name;
+  m_is_local_cache = rhs.m_is_local_cache;
 
   if(ds_sample_move_list.size() == 0) {
     m_data = rhs.m_data;
-  }else {
+  } else {
     /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
     for(auto&& i : ds_sample_move_list) {
       if(rhs.m_data.find(i) != rhs.m_data.end()){
@@ -99,18 +116,38 @@ void data_store_jag::copy_members(const data_store_jag& rhs, const std::vector<i
         /// Repack the nodes because they don't seem to copy correctly
         build_node_for_sending(node, m_data[i]);
       }
+      /// Removed migrated nodes from the original data store's owner list
+      if(rhs.m_owner.find(i) != rhs.m_owner.end()) {
+        m_owner[i] = rhs.m_owner[i];
+        rhs.m_owner.erase(i);
+      }
     }
   }
+
+
+  /// Clear the pointer to the data reader, this cannot be copied
+  m_reader = nullptr;
+  m_shuffled_indices = nullptr;
+
+  //these will probably zero-length, but I don't want to make assumptions
+  //as to state when copy_member is called
+  m_minibatch_data = rhs.m_minibatch_data;
+  m_send_buffer = rhs.m_send_buffer;
+  m_send_buffer_2 = rhs.m_send_buffer_2;
+  m_send_requests = rhs.m_send_requests;
+  m_recv_requests = rhs.m_recv_requests;
+  m_recv_buffer = rhs.m_recv_buffer;
+  m_outgoing_msg_sizes = rhs.m_outgoing_msg_sizes;
+  m_incoming_msg_sizes = rhs.m_incoming_msg_sizes;
+  m_compacted_sample_size = rhs.m_compacted_sample_size;
+  m_reconstituted = rhs.m_reconstituted;
+  m_indices_to_send = rhs.m_indices_to_send;
+  m_indices_to_recv = rhs.m_indices_to_recv;
 }
 
-void data_store_jag::setup(int mini_batch_size) {
-  generic_data_store::setup(mini_batch_size);
+void data_store_conduit::setup(int mini_batch_size) {
 
-  if (m_is_setup) {
-    LBANN_ERROR("data_store_jag::setup was called previously. Note that this is called from lbann_library::build_model_from_prototext, so this may not be an error. Please consult with Brian Van Essen and Dave Hysom is you think multiple calls to data_reader::set_mini_batch_size are permissible");
-  }
-
-  if (m_master) {
+  if (m_world_master) {
     if (m_super_node) {
       std::cout << "data store mode: exchange_data via super nodes\n";
     } else {
@@ -119,41 +156,41 @@ void data_store_jag::setup(int mini_batch_size) {
   }
 
   double tm1 = get_time();
-  if (m_master && !m_preload) {
-    std::cout << "starting data_store_jag::setup() for role: " << m_reader->get_role() << "\n";
+  if (m_world_master && !m_preload) {
+    std::cout << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
   }
 
   if (!m_preload) {
     // generic_data_store::setup(mini_batch_size);
     build_owner_map(mini_batch_size);
-  }else {
+  } else {
     m_owner_map_mb_size = mini_batch_size;
   }
 
   m_is_setup = true;
 
-  if (m_master && !m_preload) {
-    std::cout << "TIME for data_store_jag setup: " << get_time() - tm1 << "\n";
+  if (m_world_master && !m_preload) {
+    std::cout << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
   }
 }
 
-void data_store_jag::setup_data_store_buffers() {
+void data_store_conduit::setup_data_store_buffers() {
   // allocate buffers that are used in exchange_data()
-  m_send_buffer.resize(m_np);
-  m_send_buffer_2.resize(m_np);
-  m_send_requests.resize(m_np);
-  m_recv_requests.resize(m_np);
-  m_outgoing_msg_sizes.resize(m_np);
-  m_incoming_msg_sizes.resize(m_np);
-  m_recv_buffer.resize(m_np);
-  m_reconstituted.resize(m_np);
+  m_send_buffer.resize(m_np_in_trainer);
+  m_send_buffer_2.resize(m_np_in_trainer);
+  m_send_requests.resize(m_np_in_trainer);
+  m_recv_requests.resize(m_np_in_trainer);
+  m_outgoing_msg_sizes.resize(m_np_in_trainer);
+  m_incoming_msg_sizes.resize(m_np_in_trainer);
+  m_recv_buffer.resize(m_np_in_trainer);
+  m_reconstituted.resize(m_np_in_trainer);
 }
 
 // Note: conduit has a very nice interface for communicating nodes
 //       in blocking scenarios. Unf, for non-blocking we need to
 //       handle things ourselves. TODO: possibly modify conduit to
 //       handle non-blocking comms
-void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
+void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
 
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
@@ -171,7 +208,7 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
 
   // construct a super node for each processor; the super node
   // contains all samples this proc owns that other procs need
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     m_send_buffer[p].reset();
     for (auto idx : m_indices_to_send[p]) {
       m_send_buffer[p].update_external(m_data[idx]);
@@ -182,13 +219,13 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //========================================================================
   //part 1.5: exchange super_node sizes
 
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
     El::byte *s = reinterpret_cast<El::byte*>(&m_outgoing_msg_sizes[p]);
     m_comm->nb_send<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_send_requests[p]);
   }
 
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     El::byte *s = reinterpret_cast<El::byte*>(&m_incoming_msg_sizes[p]);
     m_comm->nb_recv<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_recv_requests[p]);
   }
@@ -199,13 +236,13 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //part 2: exchange the actual data
 
   // start sends for outgoing data
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     const El::byte *s = reinterpret_cast<El::byte*>(m_send_buffer_2[p].data_ptr());
     m_comm->nb_send<El::byte>(s, m_outgoing_msg_sizes[p], m_comm->get_trainer_rank(), p, m_send_requests[p]);
   }
 
   // start recvs for incoming data
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
     m_comm->nb_recv<El::byte>((El::byte*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, m_recv_requests[p]);
   }
@@ -218,7 +255,7 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   //part 3: construct the Nodes needed by me for the current minibatch
 
   m_minibatch_data.clear();
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
     conduit::Node n_msg;
     n_msg["schema_len"].set_external((conduit::int64*)n_buff_ptr);
@@ -244,7 +281,7 @@ void data_store_jag::exchange_data_by_super_node(size_t current_pos, size_t mb_s
   }
 }
 
-void data_store_jag::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
+void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
   // note: at this point m_data[data_id] = node
   // note: if running in super_node mode, nothing to do
   if (!m_super_node) {
@@ -254,14 +291,15 @@ void data_store_jag::set_preloaded_conduit_node(int data_id, conduit::Node &node
   }
 }
 
-void data_store_jag::error_check_compacted_node(const conduit::Node &nd, int data_id) {
+void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int data_id) {
   if(m_compacted_sample_size == 0) {
     m_compacted_sample_size = nd.total_bytes_compact();
   } else if(m_compacted_sample_size != nd.total_bytes_compact()) {
     LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
                 + " is not the same size as existing nodes in the data_store "
                 + std::to_string(m_compacted_sample_size) + " != "
-                + std::to_string(nd.total_bytes_compact()));
+                + std::to_string(nd.total_bytes_compact())
+                + " role: " + m_reader->get_role());
   }
   if(!nd.is_contiguous()) {
     LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
@@ -275,18 +313,29 @@ void data_store_jag::error_check_compacted_node(const conduit::Node &nd, int dat
 }
 
 
-void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
-  if (m_data.find(data_id) != m_data.end()) {
-    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_jag::set_conduit_node");
+void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
+  if (already_have == false && m_data.find(data_id) != m_data.end()) {
+    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
   }
 
-  if (m_owner[data_id] != m_rank) {
+  if (already_have && is_local_cache()) {
+    if (m_data.find(data_id) == m_data.end()) {
+      LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (" + std::to_string(data_id) + ") doesn't exist in m_data");
+    }
+    return;
+  }
+
+  if (m_owner[data_id] != m_rank_in_trainer) {
     std::stringstream s;
-    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank << "; data reader role: " << m_reader->get_role() << "\n";
+    s << "set_conduit_node error for data id: "<<data_id<< " m_owner: " << m_owner[data_id] << " me: " << m_rank_in_trainer << "; data reader role: " << m_reader->get_role() << "\n";
     LBANN_ERROR(s.str());
   }
 
-  if (! m_super_node) {
+  if (is_local_cache()) {
+    m_data[data_id] = node;
+  }
+
+  else if (! m_super_node) {
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
   }
@@ -300,7 +349,7 @@ void data_store_jag::set_conduit_node(int data_id, conduit::Node &node) {
   }
 }
 
-const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
+const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   /**
    * dah: commenting this out since it gives a false positive for test
    *      case with unshuffled indices. Since we currently send samples
@@ -316,10 +365,23 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
     }
   }
   */
+  if (is_local_cache()) {
+    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    if (t3 == m_data.end()) {
+      LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_data; m_data.size: " + std::to_string(m_data.size()));
+    }
+    return t3->second;
+  }
 
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
+  // if not preloaded, and get_label() or get_response() is called,
+  // we need to check m_data
   if (t2 == m_minibatch_data.end()) {
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size()));
+    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    if (t3 != m_data.end()) {
+      return t3->second["data"];
+    }
+    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size())+ " and also failed to find it in m_data; m_data.size: " + std::to_string(m_data.size()) + "; role: " + m_reader->get_role());
   }
 
   return t2->second;
@@ -327,7 +389,8 @@ const conduit::Node & data_store_jag::get_conduit_node(int data_id) const {
 
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
-void data_store_jag::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
+void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
+
   node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -361,7 +424,7 @@ void data_store_jag::build_node_for_sending(const conduit::Node &node_in, condui
   }
 }
 
-void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
+void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
   }
@@ -379,7 +442,7 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
 
   // start sends for outgoing data
   size_t ss = 0;
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     const std::unordered_set<int> &indices = m_indices_to_send[p];
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
@@ -407,7 +470,7 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
 
   // start recvs for incoming data
   ss = 0;
-  for (int p=0; p<m_np; p++) {
+  for (int p=0; p<m_np_in_trainer; p++) {
     const std::unordered_set<int> &indices = m_indices_to_recv[p];
     for (auto index : indices) {
       m_recv_buffer[ss].set(conduit::DataType::uint8(m_compacted_sample_size));
@@ -452,13 +515,13 @@ void data_store_jag::exchange_data_by_sample(size_t current_pos, size_t mb_size)
   }
 }
 
-int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
+int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) {
   m_indices_to_recv.clear();
-  m_indices_to_recv.resize(m_np);
+  m_indices_to_recv.resize(m_np_in_trainer);
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
-    if ((i % m_owner_map_mb_size) % m_np == m_rank) {
+    if ((i % m_owner_map_mb_size) % m_np_in_trainer == m_rank_in_trainer) {
       int owner = m_owner[index];
       m_indices_to_recv[owner].insert(index);
       k++;
@@ -467,20 +530,20 @@ int data_store_jag::build_indices_i_will_recv(int current_pos, int mb_size) {
   return k;
 }
 
-int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
+int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) {
   m_indices_to_send.clear();
-  m_indices_to_send.resize(m_np);
+  m_indices_to_send.resize(m_np_in_trainer);
   int k = 0;
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[(i % m_owner_map_mb_size) % m_np].insert(index);
+      m_indices_to_send[(i % m_owner_map_mb_size) % m_np_in_trainer].insert(index);
 
       // Sanity check
-      if (m_owner[index] != m_rank) {
+      if (m_owner[index] != m_rank_in_trainer) {
         std::stringstream s;
-        s << "error for i: "<<i<<" index: "<<index<< " m_owner: " << m_owner[index] << " me: " << m_rank;
+        s << "error for i: "<<i<<" index: "<<index<< " m_owner: " << m_owner[index] << " me: " << m_rank_in_trainer;
         LBANN_ERROR(s.str());
       }
       k++;
@@ -489,7 +552,7 @@ int data_store_jag::build_indices_i_will_send(int current_pos, int mb_size) {
   return k;
 }
 
-void data_store_jag::build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes) {
+void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes) {
   m_owner.clear();
   int owning_rank = 0;
   size_t per_rank_list_range_start = 0;
@@ -503,8 +566,8 @@ void data_store_jag::build_preloaded_owner_map(const std::vector<int>& per_rank_
   }
 }
 
-void data_store_jag::build_owner_map(int mini_batch_size) {
-  if (m_master) std::cout << "starting data_store_jag::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << "\n";
+void data_store_conduit::build_owner_map(int mini_batch_size) {
+  if (m_world_master) std::cout << "starting data_store_conduit::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << "\n";
   if (mini_batch_size == 0) {
     LBANN_ERROR("mini_batch_size == 0; can't build owner_map");
   }
@@ -515,39 +578,11 @@ void data_store_jag::build_owner_map(int mini_batch_size) {
     /// To compute the owner index first find its position inside of
     /// the mini-batch (mod mini-batch size) and then find how it is
     /// striped across the ranks in the trainer
-    m_owner[index] = (i % m_owner_map_mb_size) % m_np;
+    m_owner[index] = (i % m_owner_map_mb_size) % m_np_in_trainer;
   }
 }
 
-void data_store_jag::compute_super_node_overhead() {
-  if (m_super_node_overhead != 0) {
-    return;
-  }
-  if (m_data.size() < 2) {
-    LBANN_ERROR("m_data must contain at least two sample nodes");
-  }
-  conduit::Node n2;
-  conduit::Node n3;
-  int first = 0;
-  for (auto &t : m_data) {
-    n2.update_external(t.second);
-    build_node_for_sending(n2, n3);
-    if (first == 0) {
-      first = n3.total_bytes_compact();
-    } else {
-      m_super_node_overhead = 2*first - n3.total_bytes_compact();
-      m_compacted_sample_size = first - m_super_node_overhead;
-      if (m_master) {
-        std::cout << "m_super_node_overhead: " << m_super_node_overhead
-                  << " m_compacted_sample_size: " << m_compacted_sample_size << "\n";
-      }
-      return;
-    }
-  }
-}
-
-const conduit::Node & data_store_jag::get_random_node() const {
-std::cout << "\nstarting data_store_jag::get_random_node()\n";
+const conduit::Node & data_store_conduit::get_random_node() const {
   size_t sz = m_data.size();
 
   // Deal with edge case
@@ -560,20 +595,20 @@ std::cout << "\nstarting data_store_jag::get_random_node()\n";
   return it->second;
 }
 
-const conduit::Node & data_store_jag::get_random_node(const std::string &field) const {
+const conduit::Node & data_store_conduit::get_random_node(const std::string &field) const {
   auto node = get_random_node();
   //return node;
   return node[field];
 }
 
-conduit::Node & data_store_jag::get_empty_node(int data_id) {
+conduit::Node & data_store_conduit::get_empty_node(int data_id) {
   if (m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("we already have a node with data_id= " + std::to_string(data_id));
   }
   return m_data[data_id];
 }
 
-void data_store_jag::purge_unused_samples(const std::vector<int>& indices) {
+void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
   /// Remove unused indices from the data and owner maps
   for(auto&& i : indices) {
     if(m_data.find(i) != m_data.end()){
@@ -585,7 +620,7 @@ void data_store_jag::purge_unused_samples(const std::vector<int>& indices) {
   }
 }
 
-void data_store_jag::compact_nodes() {
+void data_store_conduit::compact_nodes() {
   for(auto&& j : *m_shuffled_indices) {
     if(m_data.find(j) != m_data.end()){
       if(!m_data[j].is_contiguous()) {
@@ -597,6 +632,170 @@ void data_store_jag::compact_nodes() {
     }
   }
 }
+
+int data_store_conduit::get_index_owner(int idx) {
+  if (m_owner.find(idx) == m_owner.end()) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << " idx: " << idx << " was not found in the m_owner map;"
+        << " map size: " << m_owner.size();
+    throw lbann_exception(err.str());
+  }
+  return m_owner[idx];
+}
+
+void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
+  if (comm->am_world_master()) {
+    // note: we only estimate memory required by the data reader/store
+
+    // get avaliable memory
+    std::ifstream in("/proc/meminfo");
+    std::string line;
+    std::string units;
+    double a_mem = 0;
+    while (getline(in, line)) {
+      if (line.find("MemAvailable:")) {
+        std::stringstream s3(line);
+        s3 >> line >> a_mem >> units;
+        if (units != "kB") {
+          LBANN_ERROR("units is " + units + " but we only know how to handle kB; please contact Dave Hysom");
+        }
+        break;
+      }
+    }
+    in.close();
+    if (a_mem == 0) {
+      LBANN_ERROR("failed to find MemAvailable field in /proc/meminfo");
+    }
+
+    // a lot of the following is cut-n-paste from the sample list class;
+    // would like to use the sample list class directly, but this
+    // is quicker than figuring out how to modify the sample_list.
+    // Actually there are at least three calls, starting from
+    // data_reader_jag_conduit, before getting to the code that
+    // loads the sample list file names
+
+    // get list of conduit files that I own, and compute my num_samples
+    std::ifstream istr(sample_list_file);
+    if (!istr.good()) {
+      LBANN_ERROR("failed to open " + sample_list_file + " for reading");
+    }
+
+    std::string base_dir;
+    std::getline(istr, line);  //exclusiveness; discard
+
+    std::getline(istr, line);
+    std::stringstream s5(line);
+    int included_samples;
+    int excluded_samples;
+    size_t num_files;
+    s5 >> included_samples >> excluded_samples >> num_files;
+
+    std::getline(istr, base_dir); // base dir; discard
+
+    const std::string whitespaces(" \t\f\v\n\r");
+    size_t cnt_files = 0u;
+    int my_sample_count = 0;
+
+    conduit::Node useme;
+    bool got_one = false;
+
+    // loop over conduit filenames
+    while (std::getline(istr, line)) {
+      const size_t end_of_str = line.find_last_not_of(whitespaces);
+      if (end_of_str == std::string::npos) { // empty line
+        continue;
+      }
+      if (cnt_files++ >= num_files) {
+        break;
+      }
+      if ((cnt_files-1)%stride != offset) {
+        continue;
+      }
+      std::stringstream sstr(line.substr(0, end_of_str + 1)); // clear trailing spaces for accurate parsing
+      std::string filename;
+      sstr >> filename >> included_samples >> excluded_samples;
+      my_sample_count += included_samples;
+
+      // attempt to load a JAG sample
+      if (!got_one) {
+        hid_t hdf5_file_hnd;
+        try {
+          hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read(base_dir + '/' + filename);
+        } catch (conduit::Error const& e) {
+          LBANN_ERROR(" failed to open " + base_dir + '/' + filename + " for reading");
+        }
+        std::vector<std::string> sample_names;
+        try {
+          conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", sample_names);
+        } catch (conduit::Error const& e) {
+          LBANN_ERROR("hdf5_group_list_child_names() failed");
+        }
+
+        for (auto t : sample_names) {
+          std::string key = "/" + t + "/performance/success";
+          try {
+            conduit::relay::io::hdf5_read(hdf5_file_hnd, key, useme);
+          } catch (conduit::Error const& e) {
+            LBANN_ERROR("failed to read success flag for " + key);
+          }
+          if (useme.to_int64() == 1) {
+            got_one = true;
+            try {
+              key = "/" + t;
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, useme);
+            } catch (conduit::Error const& e) {
+              LBANN_ERROR("failed to load JAG sample: " + key);
+            }
+            break;
+          }
+        } // end: for (auto t : sample_names)
+
+        conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
+      } // end: attempt to load a JAG sample
+    } // end: loop over conduit filenames
+    istr.close();
+    // end: get list of conduit files that I own, and compute my num_samples
+
+    if (! got_one) {
+      LBANN_ERROR("failed to find any successful JAG samples");
+    }
+
+    // compute memory for the compacted nodes this processor owns
+    double bytes_per_sample = useme.total_bytes_compact() / 1024;
+    double  procs_per_node = comm->get_procs_per_node();
+    double mem_this_proc = bytes_per_sample * my_sample_count;
+    double mem_this_node = mem_this_proc * procs_per_node;
+
+    std::cout
+      << "\n"
+      << "==============================================================\n"
+      << "Estimated memory requirements for JAG samples:\n"
+      << "Memory for one sample:             " <<  bytes_per_sample << " kB\n"
+      << "Total mem for a single rank:       " << mem_this_proc << " kB\n"
+      << "Samples per proc:                  " << my_sample_count << "\n"
+      << "Procs per node:                    " << procs_per_node << "\n"
+      << "Total mem for all ranks on a node: " << mem_this_node << " kB\n"
+      << "Available memory: " << a_mem << " kB (RAM only; not virtual)\n";
+    if (mem_this_node > static_cast<double>(a_mem)) {
+      std::cout << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
+        << "==============================================================\n\n";
+      LBANN_ERROR("insufficient memory to load data\n");
+    } else {
+      double m = 100 * mem_this_node / a_mem;
+      std::cout << "Estimate that data will consume at least " << m << " % of memory\n"
+        << "==============================================================\n\n";
+    }
+  }
+
+  comm->trainer_barrier();
+}
+
+bool data_store_conduit::has_conduit_node(int data_id) const {
+  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
+  return t == m_data.end();
+}
+
 
 }  // namespace lbann
 

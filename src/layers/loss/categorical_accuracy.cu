@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -49,7 +49,7 @@ __global__ void fill_indices_kernel(El::Int local_height,
     indices[row + col*local_height] = col_shift + row * col_stride;
   }
 }
-  
+
 /** Find largest entry within each CUDA block.
  *  Each block is assigned several entries from the same mini-batch
  *  sample and it finds the largest entry. Results are output to
@@ -73,7 +73,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
   const El::Int bidy = blockIdx.y;
   const El::Int nthreadsx = blockDim.x * gridDim.x;
   const El::Int nblocksx = gridDim.x;
-  
+
   // Reduce each matrix column independently
   for (El::Int col = bidy; col < width; col += gridDim.y) {
 
@@ -115,7 +115,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
     }
 
   }
-  
+
 }
 
 /** Compute sample-wise categorical accuracy.
@@ -137,7 +137,7 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
                            DataType(1) : DataType(0));
   }
 }
-  
+
 /** GPU implementation of categorical accuracy layer forward prop. */
 void fp_gpu(lbann_comm& comm,
             const AbsDistMat& predictions,
@@ -154,7 +154,7 @@ void fp_gpu(lbann_comm& comm,
   const auto& local_height = local_predictions.Height();
   const auto& local_width = local_predictions.Width();
   if (local_width < 1) { return; }
-  
+
   // Column communicator
   auto&& col_comm = predictions.ColComm();
   const auto& col_comm_rank = El::mpi::Rank(col_comm);
@@ -361,7 +361,7 @@ void fp_gpu(lbann_comm& comm,
       prediction_inds.data().get(), label_inds.data().get(),
       local_loss.Buffer(), local_loss.LDim());
   }
-  
+
 }
 
 } // namespace

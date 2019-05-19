@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-
 #include "lbann/data_readers/data_reader_python.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
@@ -34,6 +33,7 @@ namespace lbann {
 
 namespace python {
 
+// Static variables
 std::unique_ptr<manager> manager::m_instance;
 
 manager& manager::get_instance() {
@@ -51,7 +51,20 @@ void manager::destroy() {
 
 manager::manager() {
   if (!Py_IsInitialized()) {
+
+    // Hack to display output from Python
+    // Note: Python outputs didn't appear because MPI intercepts
+    // stdout and stderr. See
+    // https://stackoverflow.com/questions/29352485/python-print-not-working-when-embedded-into-mpi-program
+    Py_UnbufferedStdioFlag = 1;
+
+    // Initialize embedded Python session
     Py_Initialize();
+    PyEval_InitThreads();
+
+    // Release GIL
+    m_thread_state = PyEval_SaveThread();
+
   }
   if (!Py_IsInitialized()) {
     LBANN_ERROR("error creating embedded Python session");
@@ -60,30 +73,30 @@ manager::manager() {
 
 manager::~manager() {
   if (Py_IsInitialized()) {
+    if (m_thread_state != nullptr) {
+      PyEval_RestoreThread(m_thread_state);
+    }
     Py_Finalize();
   }
 }
 
 void manager::check_error(bool force_error) const {
+  global_interpreter_lock gil(*this);
   if (force_error || PyErr_Occurred()) {
 
     // Get error information from Python session
     PyObject *type, *value, *traceback;
     PyErr_Fetch(&type, &value, &traceback);
 
-    // Print directly to stderr if we didn't get any information
-    if (value == nullptr && traceback == nullptr) {
-      PyErr_Print();
-    }
-
     // Construct error message
     std::ostringstream err;
     err << "detected Python error";
     if (value != nullptr) {
-      const char* msg = PyUnicode_AsUTF8(value);
-      if (msg != nullptr) {
-        err << " (" << msg << ")";
-      }
+      auto msg = PyObject_Repr(value);
+      auto msg_str = PyUnicode_AsEncodedString(msg, "utf-8", "Error -");
+      err << " (" << PyBytes_AS_STRING(msg_str) << ")";
+      Py_XDECREF(msg_str);
+      Py_XDECREF(msg);
     }
 
     // Print Python traceback if available
@@ -124,8 +137,13 @@ void manager::check_error(bool force_error) const {
   }
 }
 
-manager::mutex_guard_type manager::get_mutex_guard() {
-  return mutex_guard_type(m_mutex);
+global_interpreter_lock::global_interpreter_lock(const manager&)
+  : m_gil_state(PyGILState_Ensure()) {}
+
+global_interpreter_lock::~global_interpreter_lock() {
+  if (Py_IsInitialized()) {
+    PyGILState_Release(m_gil_state);
+  }
 }
 
 object::object(PyObject* ptr) : m_ptr(ptr) {
@@ -162,7 +180,9 @@ object& object::operator=(object&& other) {
 }
 
 object::~object() {
-  Py_XDECREF(m_ptr);
+  if (Py_IsInitialized()) {
+    Py_XDECREF(m_ptr);
+  }
 }
 
 } // namespace python
@@ -174,28 +194,28 @@ python_reader::python_reader(std::string module,
                              std::string sample_dims_function)
   : generic_data_reader(true) {
 
-  // Acquire mutex for Python session
+  // Acquire Python GIL
   auto& manager = python::manager::get_instance();
-  const auto lock = manager.get_mutex_guard();
+  python::global_interpreter_lock gil(manager);
 
-  // Import Python module
+  // Import Python module for data
   if (!module_dir.empty()) {
     auto path = PySys_GetObject("path");  // Borrowed reference
     PyList_Append(path, python::object(module_dir));
     manager.check_error();
   }
-  python::object module_obj = PyImport_ImportModule(module.c_str());
+  python::object data_module = PyImport_ImportModule(module.c_str());
 
   // Get number of samples
   python::object num_func
-    = PyObject_GetAttrString(module_obj, num_samples_function.c_str());
+    = PyObject_GetAttrString(data_module, num_samples_function.c_str());
   python::object num = PyObject_CallObject(num_func, nullptr);
   m_num_samples = PyLong_AsLong(num);
   manager.check_error();
 
   // Get sample dimensions
   python::object dims_func
-    = PyObject_GetAttrString(module_obj, sample_dims_function.c_str());
+    = PyObject_GetAttrString(data_module, sample_dims_function.c_str());
   python::object dims = PyObject_CallObject(dims_func, nullptr);
   dims = PyObject_GetIter(dims);
   for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
@@ -205,9 +225,15 @@ python_reader::python_reader(std::string module,
   manager.check_error();
 
   // Get sample function
-  m_sample_function = PyObject_GetAttrString(module_obj,
+  m_sample_function = PyObject_GetAttrString(data_module,
                                              sample_function.c_str());
 
+}
+
+python_reader::~python_reader() {
+  if (Py_IsInitialized() && m_process_pool != nullptr) {
+    PyObject_CallMethod(m_process_pool, "terminate", nullptr);
+  }
 }
 
 const std::vector<int> python_reader::get_data_dims() const {
@@ -229,30 +255,63 @@ int python_reader::get_linearized_label_size() const {
   return get_num_labels();
 }
 
-bool python_reader::fetch_datum(CPUMat& X, int data_id, int col) {
+bool python_reader::fetch_data_block(CPUMat& X,
+                                     El::Int thread_id,
+                                     El::Int mb_size,
+                                     El::Matrix<El::Int>& indices_fetched) {
 
-  // Lock mutex for the scope of this function
+  // Acquire Python GIL on first IO thread
+  // Note: Do nothing on other IO threads.
+  if (thread_id != 0) { return true; }
   auto& manager = python::manager::get_instance();
-  const auto lock = manager.get_mutex_guard();
+  python::global_interpreter_lock gil(manager);
 
-  // Get sample with Python
-  python::object args = Py_BuildValue("(i)", data_id);
-  python::object sample = PyObject_CallObject(m_sample_function, args);
-  sample = PyObject_GetIter(sample);
-
-  // Extract sample entries from Python iterator
-  const El::Int sample_size = get_linearized_data_size();
-  for (El::Int row = 0; row < sample_size; ++row) {
-    python::object val = PyIter_Next(sample);
-    X(row, col) = PyFloat_AsDouble(val);
+  // Get sample indices
+  python::object indices = PyList_New(0);
+  for (El::Int i = 0; i < mb_size; ++i) {
+    El::Int index = m_shuffled_indices[m_current_pos + i * m_sample_stride];
+    PyList_Append(indices, python::object(index));
+    indices_fetched.Set(i, 0, index);
   }
-  if (PyErr_Occurred()) { LBANN_ERROR("Python error detected"); }
+
+  // Get samples using Python process pool
+  python::object samples = PyObject_CallMethod(m_process_pool,
+                                               "map",
+                                               "(O,O)",
+                                               m_sample_function.get(),
+                                               indices.get());
+
+  // Extract sample entries from Python objects
+  const El::Int sample_size = get_linearized_data_size();
+  samples = PyObject_GetIter(samples);
+  for (El::Int col = 0; col < mb_size; ++col) {
+    python::object sample = PyIter_Next(samples);
+    sample = PyObject_GetIter(sample);
+    for (El::Int row = 0; row < sample_size; ++row) {
+      python::object val = PyIter_Next(sample);
+      X(row, col) = PyFloat_AsDouble(val);
+    }
+  }
 
   return true;
 }
 
 bool python_reader::fetch_label(CPUMat& Y, int data_id, int col) {
   return true;
+}
+
+void python_reader::setup(int num_io_threads,
+                          std::shared_ptr<thread_pool> io_thread_pool) {
+  generic_data_reader::setup(num_io_threads, io_thread_pool);
+
+  // Initialize Python process pool
+  auto& manager = python::manager::get_instance();
+  python::global_interpreter_lock gil(manager);
+  python::object multiprocessing_module
+    = PyImport_ImportModule("multiprocessing");
+  m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",
+                                       "(L)", num_io_threads);
+
 }
 
 void python_reader::load() {

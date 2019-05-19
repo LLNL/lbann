@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -79,7 +79,11 @@ public:
   std::string name() const override { return "dump outputs"; }
 
   void on_forward_prop_end(model* m, Layer* l) override          { dump_outputs(*m, *l); }
-  void on_evaluate_forward_prop_end(model* m, Layer* l) override { dump_outputs(*m, *l); }
+  void on_evaluate_forward_prop_end(model* m, Layer* l) override {
+       if(m->get_step() % m_batch_interval == 0) { 
+         dump_outputs(*m, *l); 
+       }
+  }
 
 private:
 

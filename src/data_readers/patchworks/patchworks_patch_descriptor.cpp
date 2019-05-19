@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -110,7 +110,7 @@ bool patch_descriptor::get_first_patch(ROI& patch) {
     y_margin = m_height + (m_height+1)/2 + 2*m_jitter + m_gap;
   }
 
-  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  ::lbann::rng_gen& gen = ::lbann::get_io_generator();
 
   if ((m_mode_center == 0u || m_mode_center == 1u)) {
     // area where the center of a center patch can be in
@@ -160,7 +160,7 @@ bool patch_descriptor::get_first_patch(ROI& patch) {
 bool patch_descriptor::get_next_patch(ROI& patch) {
   bool got_one = false;
 
-  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  ::lbann::rng_gen& gen = ::lbann::get_io_generator();
 
   do {
     ROI p = m_patch_center;
@@ -218,7 +218,7 @@ bool patch_descriptor::extract_patches(const cv::Mat& img, std::vector<cv::Mat>&
   }
 
   std::uniform_int_distribution<int> rg_patch_idx(0, m_displacements.size()-1);
-  ::lbann::rng_gen& gen = ::lbann::get_generator();
+  ::lbann::rng_gen& gen = ::lbann::get_io_generator();
   m_cur_patch_idx = rg_patch_idx(gen);
 
   if (!get_next_patch(roi)) {

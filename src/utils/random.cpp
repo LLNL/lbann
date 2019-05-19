@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,6 +27,7 @@
 #include <omp.h>
 #include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
+#include <thread>
 
 namespace {
 #ifdef __ICC
@@ -35,9 +36,6 @@ lbann::rng_gen generator;
 
 lbann::fast_rng_gen fast_generator;
 #pragma omp threadprivate(fast_generator)
-
-lbann::rng_gen data_seq_generator;
-#pragma omp threadprivate(data_seq_generator)
 #else
 // Random number generator, file-visible only.
 // Defined like this to work around a GCC problem with threadprivate objects:
@@ -49,11 +47,19 @@ lbann::rng_gen generator;
 extern lbann::fast_rng_gen fast_generator;
 #pragma omp threadprivate(fast_generator)
 lbann::fast_rng_gen fast_generator;
-
-extern lbann::rng_gen data_seq_generator;
-#pragma omp threadprivate(data_seq_generator)
-lbann::rng_gen data_seq_generator;
 #endif
+
+thread_local lbann::rng_gen data_seq_generator;
+thread_local bool data_seq_generator_inited = false;
+int data_seq_generator_seed_base = 0;
+
+thread_local lbann::rng_gen io_generator;
+thread_local bool io_generator_inited = false;
+int io_generator_seed_base = 0;
+
+thread_local lbann::fast_rng_gen fast_io_generator;
+thread_local bool fast_io_generator_inited = false;
+int fast_io_generator_seed_base = 0;
 }
 
 namespace lbann {
@@ -67,7 +73,31 @@ fast_rng_gen& get_fast_generator() {
 }
 
 rng_gen& get_data_seq_generator() {
+  if (!::data_seq_generator_inited) {
+    ::data_seq_generator.seed(::data_seq_generator_seed_base);
+    ::data_seq_generator_inited = true;
+  }
   return ::data_seq_generator;
+}
+
+rng_gen& get_io_generator() {
+  if (!::io_generator_inited) {
+    std::hash<std::thread::id> h;
+    ::io_generator.seed((::io_generator_seed_base << 8) |
+                        h(std::this_thread::get_id()));
+    ::io_generator_inited = true;
+  }
+  return ::io_generator;
+}
+
+fast_rng_gen& get_fast_io_generator() {
+  if (!::fast_io_generator_inited) {
+    std::hash<std::thread::id> h;
+    ::fast_io_generator.seed((::fast_io_generator_seed_base << 8) |
+                             h(std::this_thread::get_id()));
+    ::fast_io_generator_inited = true;
+  }
+  return ::fast_io_generator;
 }
 
 bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
@@ -75,9 +105,11 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
   makedir(dirname.c_str());
   std::string rng_name;
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ofstream rng_seq(rng_name);
   rng_seq << ::data_seq_generator;
+
 #ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ofstream rng_EL(rng_name);
@@ -89,8 +121,18 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
     rank_in_world = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
   } else {
     rank_in_world = std::to_string(comm->get_rank_in_world());
-
   }
+
+  /// @todo - Note that the RNG with thread local data is not correct
+  rng_name = dirname + "/rng_io_generator_" + rank_in_world;
+  std::ofstream rng_io(rng_name);
+  rng_io << ::io_generator;
+
+  /// @todo - Note that the RNG with thread local data is not correct
+  rng_name = dirname + "/rng_fast_io_generator_" + rank_in_world;
+  std::ofstream rng_fast_io(rng_name);
+  rng_fast_io << ::fast_io_generator;
+
 #ifdef _OPENMP
   #pragma omp parallel private(rng_name)
   {
@@ -120,9 +162,11 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;
 
+  /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
   rng_seq >> ::data_seq_generator;
+
 #ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ifstream rng_EL(rng_name);
@@ -135,6 +179,16 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   } else {
     rank_in_world = std::to_string(comm->get_rank_in_world());
   }
+
+  /// @todo - Note that the RNG with thread local data is not correct
+  rng_name = dirname + "/rng_io_generator_" + rank_in_world;
+  std::ifstream rng_io(rng_name);
+  rng_io >> ::io_generator;
+
+  /// @todo - Note that the RNG with thread local data is not correct
+  rng_name = dirname + "/rng_fast_io_generator_" + rank_in_world;
+  std::ifstream rng_fast_io(rng_name);
+  rng_fast_io >> ::fast_io_generator;
 
 #ifdef _OPENMP
   #pragma omp parallel private(rng_name)
@@ -199,6 +253,8 @@ void init_random(int seed, lbann_comm *comm) {
     El::Generator().seed(rand_val);
 #endif
   }
+
+  init_io_random(seed);
 }
 
 void init_data_seq_random(int seed) {
@@ -208,16 +264,25 @@ void init_data_seq_random(int seed) {
     seed = rd();
   }
 
-  // Seed every OpenMP thread, if present.
-  // Note: Threadprivate OMP variables don't work with dynamic threads.
-#ifdef _OPENMP
-  #pragma omp parallel
-  {
-    get_data_seq_generator().seed(seed);
+  ::data_seq_generator_seed_base = seed;
+  /// Reset the init flag so that generator will reinitialize
+  ::data_seq_generator_inited = false;
+}
+
+void init_io_random(int seed) {
+  if (seed == -1) {
+    // Seed with a random value.
+    std::random_device rd;
+    seed = rd();
   }
-#else
-  get_data_seq_generator().seed(seed);
-#endif
+
+  ::io_generator_seed_base = seed;
+  /// Reset the init flag so that generator will reinitialize
+  ::io_generator_inited = false;
+
+  ::fast_io_generator_seed_base = seed;
+  /// Reset the init flag so that generator will reinitialize
+  ::fast_io_generator_inited = false;
 }
 
 void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,

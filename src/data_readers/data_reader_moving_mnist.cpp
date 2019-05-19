@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -130,10 +130,10 @@ bool moving_mnist_reader::fetch_datum(CPUMat& X, int data_id, int col) {
     const auto& object_width = bounds[obj][1] - bounds[obj][0];
     const auto& object_height = bounds[obj][3] - bounds[obj][2];
     pos[obj].resize(m_num_frames);
-    pos[obj][0][0] = (m_image_width - object_width + 1) * dist(get_generator());
-    pos[obj][0][1] = (m_image_height - object_height + 1) * dist(get_generator());
-    const DataType vnorm = vmax * dist(get_generator());
-    const DataType theta = 2 * M_PI * dist(get_generator());
+    pos[obj][0][0] = (m_image_width - object_width + 1) * dist(get_io_generator());
+    pos[obj][0][1] = (m_image_height - object_height + 1) * dist(get_io_generator());
+    const DataType vnorm = vmax * dist(get_io_generator());
+    const DataType theta = 2 * M_PI * dist(get_io_generator());
     v[obj][0] = vnorm * std::sin(theta);
     v[obj][1] = vnorm * std::cos(theta);
   }

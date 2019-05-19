@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -240,6 +240,10 @@ public:
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
   virtual void collect_background_data_fetch(execution_mode mode);
+
+  virtual void make_data_store_preloaded(execution_mode mode);
+
+  virtual void mark_data_store_explicitly_loading(execution_mode mode);
 
   // ===========================================
   // Summarizer

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -61,7 +61,7 @@ void cv_resizer::set(const unsigned int width, const unsigned int height,
 }
 
 void cv_resizer::reset() {
-  m_enabled = false; 
+  m_enabled = false;
   m_interpolation = m_interpolation_choices[0];
 }
 
@@ -115,4 +115,3 @@ std::ostream& cv_resizer::print(std::ostream& os) const {
 
 } // end of namespace lbann
 #endif // LBANN_HAS_OPENCV
-

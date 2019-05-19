@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -126,7 +126,7 @@ inline bool check_if_cv_Mat_is_float_type(const cv::Mat& image) {
 inline bool check_if_cv_Mat_has_same_shape(const cv::Mat& image1, const cv::Mat& image2) {
   return ((image1.cols == image2.cols) &&
           (image1.rows == image2.rows) &&
-          (image1.channels() == image2.channels())); 
+          (image1.channels() == image2.channels()));
 }
 
 template<typename T>

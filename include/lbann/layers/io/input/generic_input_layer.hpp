@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -292,10 +292,7 @@ class generic_input_layer : public io_layer {
         io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
       }
     }else {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "could not fp_compute for I/O layers : encoutered generic_io_buffer type";
-      throw lbann_exception(err.str());
+          LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
     }
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
@@ -342,9 +339,7 @@ class generic_input_layer : public io_layer {
     case execution_mode::testing:
       break;
     default:
-      throw lbann_exception(
-                            std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-                            " :: generic data distribution: invalid execution phase");
+      LBANN_ERROR("generic data distribution: invalid execution phase");
     }
     return data_reader;
   }
@@ -501,7 +496,7 @@ class generic_input_layer : public io_layer {
       return m_testing_dataset;
       break;
     default:
-      throw lbann_exception("get_dataset: invalid execution mode");
+      LBANN_ERROR("get_dataset: invalid execution mode");
     }
   }
 
@@ -517,7 +512,7 @@ class generic_input_layer : public io_layer {
       return m_testing_dataset;
       break;
     default:
-      throw lbann_exception("get_dataset: invalid execution mode");
+       LBANN_ERROR("get_dataset: invalid execution mode");
     }
   }
 
@@ -613,7 +608,7 @@ class generic_input_layer : public io_layer {
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_data_size = (it->second)->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        throw lbann_exception("lbann_io_layer: validation data set size does not "
+        LBANN_ERROR("lbann_io_layer: validation data set size does not "
                               "match the currently established data set size");
       }
     }
@@ -622,7 +617,7 @@ class generic_input_layer : public io_layer {
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_data_size = (it->second)->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        throw lbann_exception("lbann_io_layer: testing data set size does not "
+        LBANN_ERROR("lbann_io_layer: testing data set size does not "
                               "match the currently established data set size");
       }
     }
@@ -647,15 +642,14 @@ class generic_input_layer : public io_layer {
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_label_size = (it->second)->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        throw lbann_exception("lbann_io_layer: validation label set size does not "
-                              "match the currently established data set size");
+        LBANN_ERROR("lbann_io_layer: validation label set size (" + std::to_string(tmp_label_size) + ") does not match the currently established data set size (" + std::to_string(linearized_label_size) + ")");
       }
     }
     it = m_data_readers.find(execution_mode::testing);
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_label_size = (it->second)->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        throw lbann_exception("lbann_io_layer: testing label set size does not "
+        LBANN_ERROR("lbann_io_layer: testing label set size does not "
                               "match the currently established data set size");
       }
     }
@@ -677,7 +671,7 @@ class generic_input_layer : public io_layer {
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_response_size = (it->second)->get_linearized_response_size();
       if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-        throw lbann_exception("lbann_io_layer: validation response set size does not "
+        LBANN_ERROR("lbann_io_layer: validation response set size does not "
                               "match the currently established data set size");
       }
     }
@@ -685,7 +679,7 @@ class generic_input_layer : public io_layer {
     if ((it != m_data_readers.end()) && it->second) {
       long tmp_response_size = (it->second)->get_linearized_response_size();
       if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-        throw lbann_exception("lbann_io_layer: testing response set size does not "
+        LBANN_ERROR("lbann_io_layer: testing response set size does not "
                               "match the currently established data set size");
       }
     }

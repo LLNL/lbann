@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,7 +38,7 @@ __global__ void fp_kernel(int global_height,
                           const DataType* __restrict__ ground_truth,
                           int ground_truth_ldim,
                           DataType* __restrict__ contribution) {
-  
+
   // Indices
   const int tid = threadIdx.x;
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -70,11 +70,11 @@ __global__ void fp_kernel(int global_height,
       shared_contribution[0] /= global_height;
       cuda::atomic_add(&contribution[col], shared_contribution[0]);
     }
-    
+
   }
-    
+
 }
-  
+
 void local_fp_gpu(El::Int height,
                   const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
@@ -110,7 +110,7 @@ __global__ void bp_kernel(int global_height,
                           int gradient_wrt_prediction_ldim,
                           DataType* __restrict__ gradient_wrt_ground_truth,
                           int gradient_wrt_ground_truth_ldim) {
-  
+
   // Indices
   const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const int bidy = blockIdx.y;
@@ -136,7 +136,7 @@ __global__ void bp_kernel(int global_height,
       }
     }
   }
-    
+
 }
 
 void local_bp_gpu(El::Int height,

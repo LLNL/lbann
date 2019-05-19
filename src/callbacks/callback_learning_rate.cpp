@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -223,12 +223,14 @@ lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
   double p, uint64_t n_epochs, uint64_t max_iter)
   : lbann_callback_learning_rate(std::unordered_set<weights *>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
+    m_end_lr(0.0f),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
 lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
-  double p, uint64_t n_epochs, uint64_t max_iter, std::unordered_set<weights *> weights_list)
+  double p, uint64_t n_epochs, uint64_t max_iter, double end_lr,  std::unordered_set<weights *> weights_list)
   : lbann_callback_learning_rate(weights_list),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
+    m_end_lr(end_lr),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
 /**
@@ -248,7 +250,7 @@ void lbann_callback_poly_learning_rate::setup(model *m) {
 float lbann_callback_poly_learning_rate::global_schedule(model *m) {
   const float scale = m_lr / m_last_epoch_lr;
   m_last_epoch_lr = m_lr;
-  return m_cur_global_lr * scale;
+  return (m_cur_global_lr - m_end_lr) * scale + m_end_lr;
 }
 
 /**
@@ -260,7 +262,7 @@ float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer 
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
   const float scale = m_lr / m_last_epoch_lr;
-  return m_cur_global_lr * scale;
+  return (m_cur_global_lr - m_end_lr) * scale + m_end_lr;
 }
 
 lbann_callback_optimizerwise_adaptive_learning_rate::lbann_callback_optimizerwise_adaptive_learning_rate(

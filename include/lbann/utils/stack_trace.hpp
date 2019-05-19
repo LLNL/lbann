@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -47,14 +47,14 @@ std::string get();
  *  Fatal signals are those that cause an abnormal termination by
  *  default, according to the POSIX C standard
  *  (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/signal.h.html).
- *  
+ *
  *  This functionality is somewhat risky since the handler calls
  *  non-reentrant functions, which can result in undefined behavior
  *  (see https://www.ibm.com/developerworks/library/l-reent/).
  */
 void register_signal_handler(std::string file_base = "");
 
-} //namespace stack_trace 
+} //namespace stack_trace
 } //namespace lbann
 
 #endif // LBANN_UTILS_STACK_TRACE_HPP_INCLUDED
