@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -161,4 +159,3 @@ void get_image_names(std::unordered_set<std::string> &s) {
   s.insert("(90.0, 78.0)//0.0/emi");
 }
 
-#endif //#ifdef LBANN_HAS_CONDUIT

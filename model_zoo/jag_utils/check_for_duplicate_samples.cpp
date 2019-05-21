@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -159,4 +157,3 @@ void get_input_names(std::unordered_set<std::string> &s) {
   s.insert("shape_model_initial_modes:(1,0)");
 }
 
-#endif //#ifdef LBANN_HAS_CONDUIT

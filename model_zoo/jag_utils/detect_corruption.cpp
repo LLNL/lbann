@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -259,4 +257,3 @@ void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, c
   }
   comm->global_barrier();
 }
-#endif //#ifdef LBANN_HAS_CONDUIT

@@ -27,7 +27,7 @@
 #ifndef _DATA_READER_JAG_CONDUIT_HPP_
 #define _DATA_READER_JAG_CONDUIT_HPP_
 
-#include "lbann_config.hpp" // may define LBANN_HAS_CONDUIT
+#include "lbann_config.hpp" 
 
 #include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
