@@ -27,8 +27,6 @@
 
 #include "lbann/data_store/data_store_conduit.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
@@ -1010,4 +1008,3 @@ void data_store_conduit::set_preload() {
 
 }  // namespace lbann
 
-#endif //#ifdef LBANN_HAS_CONDUIT

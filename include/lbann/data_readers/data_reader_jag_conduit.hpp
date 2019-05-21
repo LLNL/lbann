@@ -29,7 +29,6 @@
 
 #include "lbann_config.hpp" // may define LBANN_HAS_CONDUIT
 
-#ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
@@ -602,5 +601,4 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
 }
 
 } // end of namespace lbann
-#endif // LBANN_HAS_CONDUIT
 #endif // _DATA_READER_JAG_CONDUIT_HPP_

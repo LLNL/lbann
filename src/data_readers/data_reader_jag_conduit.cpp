@@ -31,7 +31,6 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include "lbann/data_readers/opencv_extensions.hpp"
 #include <limits>     // numeric_limits
@@ -1648,4 +1647,3 @@ void data_reader_jag_conduit::add_input_normalization_param(const data_reader_ja
 } // end of namespace lbann
 
 #undef _CN_
-#endif // LBANN_HAS_CONDUIT

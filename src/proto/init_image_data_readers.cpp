@@ -353,7 +353,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = new data_reader_multi_images(pp, shuffle);
   } else if (name == "moving_mnist") {
     reader = new moving_mnist_reader(7, 40, 40, 2);
-#ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
@@ -513,7 +512,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
-#endif // LBANN_HAS_CONDUIT
   }
 
   if (channels == 0) {
