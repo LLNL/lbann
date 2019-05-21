@@ -290,6 +290,15 @@ protected :
 
   /// used in exchange_data_by_sample, when sample sizes are non-uniform
   bool m_have_sample_sizes;
+
+  /// fills in m_image_name_to_index, m_image_sizes, and m_image_offsets
+  void get_image_sizes();
+
+  /// number of bytes in each image
+  std::vector<int> m_image_sizes;
+
+  /// offset at which the raw image will be stored in a shared memory segment
+  std::vector<int> m_image_offsets;
 };
 
 }  // namespace lbann

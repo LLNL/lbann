@@ -72,6 +72,10 @@ data_store_conduit::data_store_conduit(
     LBANN_ERROR("you cannot use both of these options: --data_store_cache --preload_data_store");
   }
 
+  if (m_is_local_cache) {
+    get_image_sizes();
+  }
+
   if (m_world_master) {
     if (m_is_local_cache) {
       std::cout << "data_store_conduit is running in local_cache mode\n";
@@ -1004,6 +1008,87 @@ void data_store_conduit::exchange_sample_sizes() {
 
 void data_store_conduit::set_preload() { 
   m_preload = true;
+}
+
+void data_store_conduit::get_image_sizes() {
+  options *opts = options::get();
+  /// this block fires if image sizes have been precomputed
+  if (opts->has_string("image_sizes_filename")) {
+    LBANN_ERROR("not yet implemented");
+  }
+
+  else {
+    // get list of image file names
+    const std::string image_list_file = m_reader->get_data_filename();
+    const std::string image_dir = m_reader->get_file_dir();
+    FILE *fplist = fopen(image_list_file.c_str(), "rt");
+    std::vector<std::string> image_file_names;
+    int imagelabel;
+    while (!feof(fplist)) {
+      char imagepath[512];
+      if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
+        break;
+      }
+      image_file_names.emplace_back(imagepath);
+    }
+    fclose(fplist);
+
+    // get sizes of files for which I'm responsible
+    // TODO: should add threading to reduce computation time
+    std::vector<int> my_sizes;
+    for (size_t h=m_rank_in_trainer; h<image_file_names.size(); h += m_np_in_trainer) {
+      const std::string fn = image_dir + '/' + image_file_names[h];
+      std::ifstream in(fn.c_str());
+      if (!in) {
+        LBANN_ERROR("failed to open " + fn + " for reading");
+      }
+      in.seekg(0, std::ios::end);
+      my_sizes.push_back(in.tellg());
+      in.close();
+    }
+
+    if (m_output) {
+      m_output << "my image sizes:\n";
+      for (size_t k=0; k<my_sizes.size(); k++) {
+        m_output << k << " " << my_sizes[k] << "\n";
+      }
+    }  
+
+    // globally exchange files sizes within trainer
+    int my_count = my_sizes.size();
+    std::vector<int> counts(m_np_in_trainer);
+    m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
+    size_t g_count = std::accumulate(counts.begin(), counts.end(), 0);
+    if (g_count != image_file_names.size()) {
+      LBANN_ERROR("g_count != image_file_names.size()");
+    }
+    std::vector<int> work(image_file_names.size());
+    std::vector<int> disp(m_np_in_trainer);
+    disp[0] = 0;
+    for (size_t h=0; h<counts.size()-1; h++) {
+      disp[h+1] = disp[0] + counts[h];
+    }
+    m_comm->trainer_all_gather(my_sizes, work, counts, disp);
+
+    // fill in  m_image_sizes and m_image_offsets
+    m_image_sizes.resize(image_file_names.size());
+    for (int rank = 0; rank < m_np_in_trainer; rank++) {
+      size_t offset = disp[rank];
+      size_t count = counts[rank];
+      size_t i = rank;
+      for (size_t j=offset; j<offset+count; j++) {
+        m_image_sizes[i] = work[j];
+        i += m_np_in_trainer;
+      }
+    }
+
+    if (m_output) {
+      m_output << "all image sizes:\n";
+      for (size_t h=0; h<m_image_sizes.size(); h++) {
+        m_output << h << " " << m_image_sizes[h] << "\n";;
+      }
+    }
+  }
 }
 
 }  // namespace lbann
