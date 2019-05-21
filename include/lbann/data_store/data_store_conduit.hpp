@@ -30,8 +30,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "conduit/conduit_node.hpp"
@@ -296,6 +294,5 @@ protected :
 
 }  // namespace lbann
 
-#endif //#ifdef LBANN_HAS_CONDUIT
 
 #endif  // __DATA_STORE_JAG_HPP__
