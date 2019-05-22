@@ -5,5 +5,6 @@ if [ "${CLUSTER}" = 'catalyst' ]; then
 fi
 
 if [ "${CLUSTER}" = 'pascal' ]; then
+    export MV2_USE_CUDA=1
     salloc -N16 -t 600 ./run.sh
 fi
