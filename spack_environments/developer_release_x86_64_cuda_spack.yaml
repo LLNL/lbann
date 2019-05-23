@@ -9,7 +9,7 @@
 #    for LBANN, Hydrogen, or Aluminum are in the specs list.
 # 2) Packages and their variants that are secondary dependencies of
 #    the primary dependencies should be in the packages list.  This
-#    ensures that all primary dependenies build with a consistent set
+#    ensures that all primary dependencies build with a consistent set
 #    of secondary (and tertiary, ...) dependencies.
 ################################################################################
 
