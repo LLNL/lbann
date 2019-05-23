@@ -115,7 +115,7 @@ class lbann_image_preprocessor {
 
   /**
    * Add noise to data (disable by default)
-   * noise_factor control the ammount of noise
+   * noise_factor control the amount of noise
    * to be set to a value above zero but less than 1 (say 0.5)
    * */
   void add_noise(float noise_factor=0.0f) {
@@ -132,7 +132,7 @@ class lbann_image_preprocessor {
   void augment(Mat& pixels, unsigned imheight, unsigned imwidth,
                unsigned num_channels);
   /**
-   * Normalize poxels according to the currently-set transforms.
+   * Normalize pixels according to the currently-set transforms.
    * @param pixels The pixels to process as a column vector.
    * @param num_channels The number of channels pixels has.
    */

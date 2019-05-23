@@ -144,7 +144,7 @@ void init_io_random(int seed = -1);
 void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
                    DataType stddev = 1.0f);
 /**
- * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
+ * Make mat into an m x n matrix where each entry is an independent Bernoulli
  * random variable with parameter p.
  * This makes the same guarantees as gaussian_fill.
  */

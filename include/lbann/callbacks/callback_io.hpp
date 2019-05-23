@@ -46,12 +46,12 @@ class lbann_callback_io : public lbann_callback {
   lbann_callback_io* copy() const override { return new lbann_callback_io(*this); }
   /** Only apply to specific layers. */
   lbann_callback_io(std::unordered_set<Layer *> layers);
-  /** Report how much I/O has occured per data reader */
+  /** Report how much I/O has occurred per data reader */
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "io"; }
  private:
-  /** Indicies of layers to monitor. */
+  /** Indices of layers to monitor. */
   std::unordered_set<Layer *> m_layer_indices;
 };
 

@@ -132,7 +132,7 @@ class partitioned_io_buffer : public generic_io_buffer {
   /** Input data buffers
    *  There is a buffer for each phase of execution.
    *  Each matrix column corresponds to a flattened mini-batch sample
-   *  or label or responase.
+   *  or label or response.
    */
   data_buffer_map_t m_data_buffers;
 };

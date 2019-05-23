@@ -54,7 +54,7 @@ class cv_transform {
   //bool m_manual_switch;
 
   /** Check if transform is configured to apply.
-   * (e.g., if any of the augmentaion methods is enabled)
+   * (e.g., if any of the augmentation methods is enabled)
    */
   virtual bool check_to_enable() const {
     return true;
@@ -127,7 +127,7 @@ inline cv_transform::cv_transform()
 inline cv_transform::cv_transform(const cv_transform& rhs)
   : m_name(rhs.m_name), m_enabled(rhs.m_enabled) {}
 
-/// Assignement operator. deep-copy everything
+/// Assignment operator. deep-copy everything
 inline cv_transform& cv_transform::operator=(const cv_transform& rhs) {
   m_enabled = rhs.m_enabled;
   m_name = rhs.m_name;
@@ -149,7 +149,7 @@ inline bool cv_transform::determine_transform(const cv::Mat& image) {
   // if (!m_enabled) return false;
   // compute m_trans for the image and the configuration of the transform
   // Here, some transform may not applicable to the given image.
-  // In that case, set m_enabled = false (or fruther throw an exception).
+  // In that case, set m_enabled = false (or further throw an exception).
   return m_enabled;
 }
 
@@ -158,7 +158,7 @@ inline bool cv_transform::determine_transform(const cv::Mat& image) {
  *  Then, check if they are valid, and turn the transform on if so.
  *  By default, turn this off as we do not need to undo in most of the cases.
  *  In need of manual overriding to enable/disable inverse transform, implement
- *  such a logic in this fuction and interfaces to enable/disable.
+ *  such a logic in this function and interfaces to enable/disable.
  */
 inline bool cv_transform::determine_inverse_transform() {
   // In case of manual overriding, if (!m_manual_switch) return false;

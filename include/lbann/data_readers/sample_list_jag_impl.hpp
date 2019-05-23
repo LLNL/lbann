@@ -107,7 +107,7 @@ inline void sample_list_jag::copy_members(const sample_list_jag& rhs) {
   }
 
   /// Do not copy the open file descriptor priority queue
-  /// File handle ownership is not transfered in the copy
+  /// File handle ownership is not transferred in the copy
   m_open_fd_pq.clear();
 }
 

@@ -45,7 +45,7 @@ namespace lbann {
  * pre-loads all the data into memory as minist_reader does.
  * However, to feed a siamese model, this reader randomly chooses the paired
  * input on-line. It maintains another data index list, 'm_shuffled_indices2'.
- * It first copies the primary list maintined by the base class to the secondary
+ * It first copies the primary list maintained by the base class to the secondary
  * list, and shuffles the secondary whenever the primary gets shuffled via the
  * overridden shuffle_indices() method.
  */

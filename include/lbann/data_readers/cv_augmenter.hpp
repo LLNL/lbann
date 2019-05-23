@@ -65,7 +65,7 @@ class cv_augmenter : public cv_transform {
   // --- state variables ---
   /// Flip decision made
   cv_flipping m_flip; // currently more of a configuration variable but can easily become a state variable
-  /// The rest of the affine tranformations determined
+  /// The rest of the affine transformations determined
   cv::Mat_<float> m_trans;
 
   /// Check if there is a reason to enable. (i.e., any option set)
@@ -88,7 +88,7 @@ class cv_augmenter : public cv_transform {
 
   /**
    * Construct an affine transformation matrix based on the options and random
-   * numbers. If successful, the tranform is enabled. If not, it is disabled.
+   * numbers. If successful, the transform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
   bool determine_transform(const cv::Mat& image) override;

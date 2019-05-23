@@ -94,7 +94,7 @@ public:
      *    - Supports hyperparameter exploration.
      *    - Checkpoint files currently do not store model architecture
      *      information, so this is not suitable for model
-     *      architecture exploraiton.
+     *      architecture exploration.
      *    - This approach is temporary and experimental, since going
      *      through the file system is very suboptimal. When a wire
      *      format for model checkpoints is developed, it should be

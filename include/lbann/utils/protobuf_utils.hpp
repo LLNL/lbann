@@ -21,7 +21,7 @@ struct prototext_fn_triple {
 
 namespace protobuf_utils
 {
-/** @brief convience wrapper for other parsing, loading, and verifying prototext.
+/** @brief convenience wrapper for other parsing, loading, and verifying prototext.
  *
  *  Calls parse_prototext_filenames_from_command_line(),
  *  then load_prototext(), then verify_prototext(). This is the only function
@@ -41,7 +41,7 @@ load_prototext(
  *  `--model={<string_1>,<string_2>,...}`,
  *  `--reader={<string_1>,<string_2>,...}`, and
  *  `--optimizer={<string_1>,<string_2>,...}`. If the multi-model
- *  option is given, the reader and optimzier can either be single, or
+ *  option is given, the reader and optimizer can either be single, or
  *  contain the same number of filenames as does the `--model={...}`
  *  specification.
  */

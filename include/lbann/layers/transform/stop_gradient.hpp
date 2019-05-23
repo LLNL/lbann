@@ -36,7 +36,7 @@ namespace lbann {
  *  The output is identical to the input, but the back propagation
  *  output (i.e. the error signal) is always zero. Compare with the
  *  stop_gradient operation in TensorFlow and Keras. Note that this
- *  means that computed gradients in preceeding layers are not exact
+ *  means that computed gradients in preceding layers are not exact
  *  gradients of the objective function.
  */
 template <data_layout T_layout, El::Device Dev>

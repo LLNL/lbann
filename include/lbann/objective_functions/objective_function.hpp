@@ -120,7 +120,7 @@ class objective_function {
   /** List of objective function terms. */
   std::vector<objective_function_term*> m_terms;
 
-  /** Objective funciton statistics. */
+  /** Objective function statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;
 
   /** Time spent evaluating the objective function. */

@@ -42,7 +42,7 @@ namespace lbann {
  * account for the synchronization at the end of propagation(s).
  * When nvprof is enabled, cudaProfilerStart() follows the synchronization
  * inserted at the beginning of the selected prop step(s), and cudaProfilerEnd()
- * comes after the local GPU sychronization and before the global MPI barrier
+ * comes after the local GPU synchronization and before the global MPI barrier
  * inserted at the end of the selected prop step(s).
  * Note that this callback should come before the summarizer callback
  * as the base callback lbann_callback_sync_layers requires.

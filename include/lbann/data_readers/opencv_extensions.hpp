@@ -144,7 +144,7 @@ double get_depth_normalizing_factor(const int cv_depth);
 /// Return the factor to inverse the unit scaling
 double get_depth_denormalizing_factor(const int cv_depth);
 
-/// returns the number of bytes that would be used for the image without compresstion and any header
+/// returns the number of bytes that would be used for the image without compression and any header
 inline size_t image_data_amount(const cv::Mat& img) {
   return static_cast<size_t>(CV_ELEM_SIZE(img.depth())*
                              CV_MAT_CN(img.type())*

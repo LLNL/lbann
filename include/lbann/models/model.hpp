@@ -314,8 +314,8 @@ protected:
    *
    *  In case that a layer is frozen, also freeze layers that precede
    *  it if that makes senses for the particular model, such as
-   *  sequential or siamese.  For othe models, users can manually
-   *  control the behaivor by indicating whether to freeze each layer
+   *  sequential or siamese.  For other models, users can manually
+   *  control the behavior by indicating whether to freeze each layer
    *  in the model description prototext.
    *
    *  For general DAG models, users need to manually specify each

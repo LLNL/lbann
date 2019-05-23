@@ -62,7 +62,7 @@ public:
    *  @param builder An @c Invokable object that builds concrete objects.
    *
    *  @return @c true if the builder was registered successfully; @c
-   *      false otherise.
+   *      false otherwise.
    */
   bool register_builder(key_type key, builder_type builder)
   {

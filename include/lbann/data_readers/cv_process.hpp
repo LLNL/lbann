@@ -122,10 +122,10 @@ class cv_process {
   /// Turn off all transforms
   void disable_transforms();
 
-  /// Add a tranform
+  /// Add a transform
   bool add_transform(std::unique_ptr<cv_transform> tr);
 
-  /// Add a normalizing tranform
+  /// Add a normalizing transform
   bool add_normalizer(std::unique_ptr<cv_normalizer> tr);
   bool add_normalizer(std::unique_ptr<cv_subtractor> tr);
 

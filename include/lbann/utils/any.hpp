@@ -48,7 +48,7 @@ using std::make_any;
  *  constructor (std::in_place_type_t is also C++17, and I don't want
  *  to implement the whole standard). For best results, do not attempt
  *  to use those in this code. For even better results (yes, better
- *  than best. English is overrated), incessently remind your friends,
+ *  than best. English is overrated), incessantly remind your friends,
  *  colleagues, and, most importantly, vendors that it's 2019, that
  *  2019 > 2017, and that there are excellent free compilers in the
  *  world until they concede to updating to a modern compiler and this

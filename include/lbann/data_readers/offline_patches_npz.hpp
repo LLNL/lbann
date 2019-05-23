@@ -87,7 +87,7 @@ class offline_patches_npz {
   void set_num_patches(size_t npatches) {
     m_num_patches = npatches;
   }
-  /// Reconsturct and return the meta-data (patch file names and the label) of idx-th sample
+  /// Reconstruct and return the meta-data (patch file names and the label) of idx-th sample
   sample_t get_sample(const size_t idx) const;
   /// Return the label of idx-th sample
   label_t get_label(const size_t idx) const;
@@ -137,7 +137,7 @@ class offline_patches_npz {
    *   the second dimension is the length of the largest string. This is
    *   relevant to file_{root,variant}_list.
    * - convert item_class_list to a list of label_t(uint8_t) instead of a
-   *   list of a charater sequence (two digits).
+   *   list of a character sequence (two digits).
    * The reformatting is get around the inability of cnpy library for writing
    * an array of character strings.
    */

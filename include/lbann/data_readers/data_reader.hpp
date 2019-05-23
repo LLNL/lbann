@@ -247,7 +247,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual void set_validation_percent(double s);
 
   /**
-   * Set an idenifier for the dataset.
+   * Set an identifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
   virtual void set_role(std::string role);
@@ -297,7 +297,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
-   * around, then reshuffle the data indicies.
+   * around, then reshuffle the data indices.
    */
   virtual bool update(bool is_active_reader);
 
@@ -306,7 +306,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * perform actions that are specific to their data sets, for example,
    * data_reader_jag_conduit_hdf5 has the 'primary' data reader
    * bcast its shuffled indices to the other data readers. In general
-   * most data readers will probably not overide this method.
+   * most data readers will probably not override this method.
    * It may also be called outside of update.
    */
 
@@ -567,7 +567,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   void select_subset_of_data_partitioned();
 
   /**
-   * Replaced the shuffled index set with the unused index set, empying the
+   * Replaced the shuffled index set with the unused index set, emptying the
    * unused set.
    */
   virtual void use_unused_index_set();
@@ -578,9 +578,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
 
-  /// Does the data reader have a unqiue index list per model
+  /// Does the data reader have a unique index list per model
   virtual bool has_list_per_model() const { return false; }
-  /// Does the data reader have a unqiue index list per trainer
+  /// Does the data reader have a unique index list per trainer
   virtual bool has_list_per_trainer() const { return false; }
 
 
@@ -799,7 +799,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// Shuffle indices (uses the data_seq_generator)
   virtual void shuffle_indices();
-  /// Shuffle indices and profide a random number generator
+  /// Shuffle indices and provide a random number generator
   virtual void shuffle_indices(rng_gen& gen);
 
   int m_mini_batch_size;
@@ -820,7 +820,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   int m_iteration_stride;
 
   std::vector<int> m_shuffled_indices;
-  /// Record of the indicies that are not being used for training
+  /// Record of the indices that are not being used for training
   std::vector<int> m_unused_indices;
 
   int m_last_mini_batch_size;
@@ -872,7 +872,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    /// Has no effect if m_is_partitioned = false
    double m_partition_overlap;
 
-   /// mode = 1: share overlap_percent/2 with left and right nabors
+   /// mode = 1: share overlap_percent/2 with left and right neighbors
    /// mode = 2: there's a set of overlap indices common to all models
    int m_partition_mode;
 

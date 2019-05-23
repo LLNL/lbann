@@ -63,7 +63,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   using linear_transform_t = std::pair<double, double>;
 
   /**
-   * Dependent/indepdendent variable types
+   * Dependent/independent variable types
    * - JAG_Image: simulation output images
    * - JAG_Scalar: simulation output scalars
    * - JAG_Input: simulation input parameters
@@ -237,7 +237,7 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   void setup_data_store(int mini_batch_size);
 
-  /// A untiliy function to convert the pointer to image data into an opencv image
+  /// A utility function to convert the pointer to image data into an opencv image
   static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
                                const int height, const int num_ch=1);
   /// A utility function to convert a JAG variable type to name string
@@ -303,7 +303,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Shuffle sammple indices using a different RNG
+  /// Shuffle sample indices using a different RNG
   void shuffle_indices(rng_gen& gen) override;
 
   /**
@@ -344,14 +344,14 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /**
    * Check if the key is associated with non-numeric value, that is not and
-   * cannot be converted to a numertic.
+   * cannot be converted to a numeric.
    */
   static bool check_non_numeric(const std::string key);
 
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
   /** Load the conduit node with the data of the sample i identified by key
-   *  from the file that contains the sample, and returm true. Upon failure
+   *  from the file that contains the sample, and return true. Upon failure
    *  to load from file, attempt to retrieve a random conduit node from
    *  the data_store (if --use_data_store) and return false.
    */
@@ -477,9 +477,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 };
 
 /**
- * To faciliate the type comparison between a c++ native type and a conduit type id.
- * By deafult, each pair of a native type TN and a conduit type TC is not the same.
- * Those that are the same require explicit instantication to say otherwise.
+ * To facilitate the type comparison between a c++ native type and a conduit type id.
+ * By default, each pair of a native type TN and a conduit type TC is not the same.
+ * Those that are the same require explicit instantiation to say otherwise.
  */
 template<typename TN, conduit::DataType::TypeID TC>
 struct is_same : std::false_type {};
@@ -570,7 +570,7 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
       vals.push_back(static_cast<S>(n.to_value()));
       break;
     case TypeID::CHAR8_STR_ID: {
-        // In case of a charater string, the method to convert it to a float number is specific to each key
+        // In case of a character string, the method to convert it to a float number is specific to each key
         if (check_non_numeric(key)) {
           return 0u;
         //} else if (key == "some_key_with_non_numeric_values_that_can_be_converted_to_numerics_in_a_specific_way") {

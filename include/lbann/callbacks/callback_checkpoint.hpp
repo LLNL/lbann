@@ -49,7 +49,7 @@ class lbann_callback_checkpoint : public lbann_callback {
    *  @param checkpoint_secs interval to checkpoint
    *  @param per_rank_dir The directory into which to dump distributed checkpoints
    *  @param ckpt_dist_epochs The frequency of distributed checkpoints in epochs
-   *  @param ckpt_dist_steps The frequence of distributed checkpoints in steps
+   *  @param ckpt_dist_steps The frequency of distributed checkpoints in steps
    */
   lbann_callback_checkpoint(std::string checkpoint_dir,
                             int checkpoint_epochs,

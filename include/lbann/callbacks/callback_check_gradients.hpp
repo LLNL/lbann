@@ -35,7 +35,7 @@ namespace lbann {
  *  Gradient checking is performed at the beginning of the test
  *  phase. Using a fourth-order finite difference scheme, a numerical
  *  partial derivative is computed for every weight parameter. If the
- *  numerical derivative differs signifcantly from the analytical
+ *  numerical derivative differs significantly from the analytical
  *  derivative computed during backprop, the gradient check has
  *  failed.
  */

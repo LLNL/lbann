@@ -143,7 +143,7 @@ class cv_normalizer : public cv_transform {
 
   /**
    * Combine the normalizations enabled and define a linear transform
-   * per pixel to address them all. If successful, the tranform is enabled.
+   * per pixel to address them all. If successful, the transform is enabled.
    * If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
@@ -152,13 +152,13 @@ class cv_normalizer : public cv_transform {
   /**
    * Reverse the normalization done as x' = alpha*x + beta by
    * x = (x'- beta)/alpha
-   * If successful, the tranform is enabled. If not, it is disabled.
+   * If successful, the transform is enabled. If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
   bool determine_inverse_transform() override;
 
   /**
-   * Apply the normalization defined as a linear tranform per pixel.
+   * Apply the normalization defined as a linear transform per pixel.
    * As this method is executed, the transform becomes deactivated.
    * @return false if not successful.
    */
@@ -200,7 +200,7 @@ class cv_normalizer : public cv_transform {
  * to another, which may be the same container if the type of the initial value
  * and that of the result are the same.
  * The transformation is alpha[ch]*input[ch] + beta[ch] -> output[ch]
- * @param first  The beginning of the input interator
+ * @param first  The beginning of the input iterator
  * @param last   The last of the input iterator
  * @param result The beginning of the output iterator
  * @param trans  Parameters for linearly transforming channel values per pixel
@@ -265,7 +265,7 @@ inline OutputIterator cv_normalizer::scale(
  * The first template parameter is the channel value type of the input image.
  * The second one is the channel value type desired for the output image.
  *
- * @param image  The image to be modified, which is the input and also the ouput.
+ * @param image  The image to be modified, which is the input and also the output.
  * @param trans  Parameters for linearly transforming channel values per pixel
  * @return true if successful. The input image will be modified to a new one.
  */

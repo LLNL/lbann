@@ -98,7 +98,7 @@ struct request {
  * (El::SyncInfo<El::Device::CPU> is an empty struct), but GPU Matrix
  * objects now have an associated stream and event. These are
  * GPUManager::Stream() and GPUManager::Event() by default, resp., but
- * can be overriden by a user. Note: the Matrix never owns these; it
+ * can be overridden by a user. Note: the Matrix never owns these; it
  * will not free these resources at destruction. There are many
  * methods in which multiple El::Matrix objects might interact. This
  * should work properly; otherwise, report bugs to benson31.
