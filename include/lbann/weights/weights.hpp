@@ -55,7 +55,7 @@ class optimizer;
  *  correspond to the matrix height. The remaining dimensions, the
  *  "matrix width dimensions," correspond to the matrix width.
  *
- *  Note that LBANN weights are similar to Tensorflow variables and
+ *  Note that LBANN weights are similar to TensorFlow variables and
  *  Caffe parameters.
  */
 class weights {

@@ -130,7 +130,7 @@ def plot(stat_path_list, stat_name_list, ind_var='time', time_units='hours',
             d['val_axis'] = _get_time_axis(d['val_time'], units=time_units)
             xlabel = 'Time ({})'.format(time_units)
         else:
-            raise Exception('Invalid indepedent variable: {}'.format(ind_var))
+            raise Exception('Invalid independent variable: {}'.format(ind_var))
 
         # Store the stat dict for plotting
         stat_dict_list.append((run_name, d))

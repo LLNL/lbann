@@ -9,7 +9,7 @@ This script checks:
 
 This script outputs the following statuses for each LBANN/ONNX operators:
 * Supported: The conversion is supported. If this is not true, the conversion is explicitly disabled (for some reasons).
-* Tested:    There exists at least one test fucntion for the conversion.
+* Tested:    There exists at least one test function for the conversion.
 * Bijective: The operator is paired with an another operator, and the conversion is bijective.
 
 If an operator is not listed in the generated list, it is not supported.

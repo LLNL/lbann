@@ -20,7 +20,7 @@ and create such an image filled with the mean value.
 mkdir build; cd build; cmake ..; make
 
 OpenCV and MPI are required to build this tool. The former dependency can be
-fullfilled by a system installed copy of OpenCV, or the one built by LBANN.
+fulfilled by a system installed copy of OpenCV, or the one built by LBANN.
 The variable 'OpenCV_DIR' in CMakeList.txt needs to point to the OpenCV
 installation directory.
 To use the one built by LBANN, the variable 'LBANN_BUILD_DIR' needs to point to
@@ -42,10 +42,10 @@ Usage: > ./compute_mean path_file w h [ r rw rh ] bsz save
     h: the final crop height of image.
        (w and h are dictated whether by cropping images to the size)
     r: whether to randomize the crop position within the center region. (0|1)
-   rw: The width of the center region with respect to w after resizig the raw image.
+   rw: The width of the center region with respect to w after resizing the raw image.
    rh: The height of the center region with respect to h after resizing the raw image.
        Raw image will be resized to an image of size rw x rh around the center,
-       which covers area of the original image as much as possible while preseving
+       which covers area of the original image as much as possible while preserving
        the aspect ratio of object in the image.
        When r rw and rh are omitted, it is assumed that r=0, rw=w, and rh=h.
 

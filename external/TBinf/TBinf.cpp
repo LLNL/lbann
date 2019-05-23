@@ -40,7 +40,7 @@ SummaryWriter::SummaryWriter(const std::string logdir) {
   filename = logdir + "/events.tfevents.";
   double secs = get_time_in_seconds();
   filename += std::to_string((int64_t) secs);
-  // Note: Tensorflow also appends the hostname here, but that doesn't currently
+  // Note: TensorFlow also appends the hostname here, but that doesn't currently
   // seem necessary.
   // TODO: We might check whether the file exists.
   file.open(filename, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -199,7 +199,7 @@ void SummaryWriter::write_summary_event(tensorflow::Summary *s, int64_t step) {
 }
 
 void SummaryWriter::write_event(tensorflow::Event& e) {
-  // Record format (from Tensorflow record_writer.cc):
+  // Record format (from TensorFlow record_writer.cc):
   // uint64 length
   // uint32 masked crc of length
   // byte data[length]

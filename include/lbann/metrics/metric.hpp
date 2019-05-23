@@ -105,7 +105,7 @@ class metric {
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
   /** Return a display unit for this metric.
-   *  Default is an empty string. This is overriden if the metric has
+   *  Default is an empty string. This is overridden if the metric has
    *  units, e.g. "%" or "sec".
    */
   virtual std::string get_unit() const { return ""; }

@@ -149,7 +149,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes=[]):
     Args:
         l (lbann_pb2.Layer): A LBANN layer to be converted.
         tensorShapes (dict): Shapes of known named tensors.
-        knownNodes (list): A list of known ONNX nodes in the same netowrk.
+        knownNodes (list): A list of known ONNX nodes in the same network.
                            This information is needed when the layer refers information of another layer, such as unpooling.
 
     Returns:
@@ -167,7 +167,7 @@ def parseLbannLayer(l, tensorShapes, knownNodes=[]):
     if l.HasField("split"):
         if l.name not in tensorShapes.keys():
             raise RuntimeError("The shape of \"{}\" cannot be inferred.".format(l.name) \
-                               + " This error may happen when you set incorret an input tensor name.")
+                               + " This error may happen when you set incorrect an input tensor name.")
 
         ipt = onnx.helper.make_tensor_value_info(name="{}_0".format(l.name),
                                                  elem_type=lbann.onnx.ELEM_TYPE,

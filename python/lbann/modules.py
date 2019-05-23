@@ -40,7 +40,7 @@ class Module:
     def __call__(self, input):
         """Apply module mattern to `input`.
 
-        Syntatic sugar around `forward` function.
+        Syntactic sugar around `forward` function.
 
         """
         return self.forward(input)

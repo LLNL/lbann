@@ -40,7 +40,7 @@ namespace TBinf {
 
 /**
  * Write data to a Tensorboard logging directory.
- * This writes data in the same format as Tensorflow does.
+ * This writes data in the same format as TensorFlow does.
  */
 class SummaryWriter {
  public:

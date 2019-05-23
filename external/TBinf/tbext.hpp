@@ -1,4 +1,4 @@
-// This file contains modified code from the Tensorflow project, which is
+// This file contains modified code from the TensorFlow project, which is
 // released under the Apache License, Version 2.0. The original copyright and
 // license notice appears below:
 /* Copyright 2015 The TensorFlow Authors. All Rights Reserved.

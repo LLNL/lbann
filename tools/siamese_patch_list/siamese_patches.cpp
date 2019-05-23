@@ -39,7 +39,7 @@ void load(const std::string& file_name, offline_patches_npz& data, const int out
 int main(int argc, char** argv)
 {
   if ((argc < 4) || (argc > 7)) {
-    std::cout << "Uasge: > " << argv[0] << " npz_file in_mode out_mode [arg1 [arg2 [out_file]]]" << std::endl;
+    std::cout << "Usage: > " << argv[0] << " npz_file in_mode out_mode [arg1 [arg2 [out_file]]]" << std::endl;
     std::cout << "         in_mode 0: load all data" << std::endl;
     std::cout << "         in_mode 1: load first n(arg1) samples" << std::endl;
     std::cout << "         in_mode 2: load all data and proceed to out_mode 2" << std::endl;

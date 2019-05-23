@@ -85,10 +85,10 @@ std::string params::show_help(std::string name) {
       << "    h: the final crop height of image." << std::endl
       << "       (w and h are dictated whether by cropping images to the size)" << std::endl
       << "    r: whether to randomize the crop position within the center region. (0|1)" << std::endl
-      << "   rw: The width of the center region with respect to w after resizig the raw image." << std::endl
+      << "   rw: The width of the center region with respect to w after resizing the raw image." << std::endl
       << "   rh: The height of the center region with respect to h after resizing the raw image." << std::endl
       << "       Raw image will be resized to an image of size rw x rh around the center," << std::endl
-      << "       which covers area of the original image as much as possible while preseving" << std::endl
+      << "       which covers area of the original image as much as possible while preserving" << std::endl
       << "       the aspect ratio of object in the image." << std::endl
       << "       When r, rw, and rh are omitted, it is assumed that r=0, rw=w, and rh=h." << std::endl
       << std::endl

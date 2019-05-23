@@ -292,7 +292,7 @@ class generic_input_layer : public io_layer {
         io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
       }
     }else {
-          LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
+          LBANN_ERROR("could not fp_compute for I/O layers : encountered generic_io_buffer type");
     }
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
@@ -315,7 +315,7 @@ class generic_input_layer : public io_layer {
   }
 
   /**
-   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
+   * Once a mini-batch is processed, reshuffle the data for the next batch if necessary
    */
   bool update_compute() override {
     return m_data_set_processed;

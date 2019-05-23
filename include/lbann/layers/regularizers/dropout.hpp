@@ -47,7 +47,7 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer {
 public:
-  /** Keep units with probabiliy keep_prob. */
+  /** Keep units with probability keep_prob. */
   dropout(lbann_comm *comm,
           EvalType keep_prob = EvalType(0.5))
     : regularizer_layer(comm),

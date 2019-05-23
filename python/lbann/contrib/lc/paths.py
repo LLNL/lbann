@@ -39,7 +39,7 @@ def imagenet_dir(system = system(), data_set = 'training',
     Some of these data sets have been preprocessed to only include
     images in a subset of the label classes, e.g. images in the first
     10 label classes. This is convenient for quickly evaluating
-    performance or learning behavior. The availabiilty of these
+    performance or learning behavior. The availability of these
     subsampled data sets may vary by system.
 
     """
@@ -69,7 +69,7 @@ def imagenet_labels(system = system(), data_set = 'train',
     Some of these data sets have been preprocessed to only include
     images in a subset of the label classes, e.g. images in the first
     10 label classes. This is convenient for quickly evaluating
-    performance or learning behavior. The availabiilty of these
+    performance or learning behavior. The availability of these
     subsampled data sets may vary by system.
 
     """

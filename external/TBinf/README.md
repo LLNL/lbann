@@ -3,7 +3,7 @@
 **Author**: Nikoli Dryden <dryden1@llnl.gov>
 
 [Tensorboard](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/tensorboard)
-is Tensorflow's fancy visualization interface for summary statistics.
+is TensorFlow's fancy visualization interface for summary statistics.
 
 This is a light wrapper providing support for writing Tensorboard event files.
 Currently, this supports writing scalar and histogram summaries. Support for
@@ -56,7 +56,7 @@ CXX -std=c++11 -I$PROTOBUF_INCLUDE -L$PROTOBUF_LIB -lprotobuf TBinf.cpp event.pb
 
 ## License notice
 
-This code contains portions derived from code in the Tensorflow project.
+This code contains portions derived from code in the TensorFlow project.
 Specifically, `event.proto`, `summary.proto`, and `tbext.hpp` contain modified
 code. The original license notification is as follows:
 

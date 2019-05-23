@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--save-fig', type=str, default='',
                         help="Save the training/validation curve plot as an image file.")
     parser.add_argument('--save-csv', type=str, default='',
-                        help="Save the sumamry table as a CSV file.")
+                        help="Save the summary table as a CSV file.")
     parser.add_argument('--loss-ymin', type=float, # default=None, # float("-inf"),
                         help="The minimum y-axis limit of the loss plot.")
     parser.add_argument('--loss-ymax', type=float, # default=None, # float("inf"),

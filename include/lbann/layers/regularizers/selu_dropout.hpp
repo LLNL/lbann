@@ -42,7 +42,7 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class selu_dropout : public regularizer_layer {
  public:
-  /** Keep units with probabiliy keep_prob. */
+  /** Keep units with probability keep_prob. */
   selu_dropout(lbann_comm *comm,
                float keep_prob=0.95f,
                DataType alpha = DataType(1.6732632423543772848170429916717),

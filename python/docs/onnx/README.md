@@ -21,10 +21,10 @@ See the following documentation for details.
 ## Example: Converting [the MNIST model](/model_zoo/models/simple_mnist/model_mnist_simple_1.prototext) from LBANN to ONNX
 See [`viz/l2o/`](viz/l2o/) for more details.
 
-### LBANN (vizualized with [viz.py](/viz/viz.py))
+### LBANN (visualized with [viz.py](/viz/viz.py))
 <img src="viz/l2o/mnist/mnist_lbann.png" width="200" />
 
-### ONNX (vizualized with [Netron](https://github.com/lutzroeder/netron))
+### ONNX (visualized with [Netron](https://github.com/lutzroeder/netron))
 <img src="viz/l2o/mnist/mnist_onnx_netron.png" width="200" />
 
 ### ONNX with the original node names

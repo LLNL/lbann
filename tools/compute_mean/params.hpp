@@ -77,7 +77,7 @@ class params {
    */
   std::string m_data_path_file;
 
-  /// File type extention used for writing cropped images. e.g. ".jpeg", ".png"
+  /// File type extension used for writing cropped images. e.g. ".jpeg", ".png"
   std::string m_out_ext;
 
   /// The parameters used by cropper.

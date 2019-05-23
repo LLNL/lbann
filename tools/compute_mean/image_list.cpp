@@ -118,7 +118,7 @@ void image_list::load_file(const std::string& file_name, const mpi_states& ms, s
   unsigned long buf_size = 0ul;
   bool ok = true;
 
-  // root rank load a file into a buffer, which wil be broadcast later
+  // root rank load a file into a buffer, which will be broadcast later
   if (ms.is_root()) {
     ok = lbann::load_file(file_name, buf);
     if (!ok) {
@@ -246,7 +246,7 @@ std::string image_list::get_image_name_with_new_ext(const size_t i, const std::s
 }
 
 
-/// Print out the path prameters read, and the number of images for this rank to process.
+/// Print out the path parameters read, and the number of images for this rank to process.
 void image_list::description() const {
   std::cout << " - m_root_data_path: " << m_root_data_path << std::endl;
   std::cout << " - m_data_list : " << m_data_list << std::endl;

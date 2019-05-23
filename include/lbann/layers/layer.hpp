@@ -52,7 +52,7 @@ class lbann_callback_sync_layers;
  * A layer takes input tensors ("previous activations") and applies a
  * mathematical operation to obtain output tensors
  * ("activations"). This operation often has trainable parameters
- * called "weights." The previous activations are recieved from
+ * called "weights." The previous activations are received from
  * "parent layers" and the activations are sent to "child layers,"
  * making each layer a node in a directed graph. The layer graph and
  * the weights are managed by a neural network model class. A layer
@@ -399,7 +399,7 @@ protected:
    *  tensor is resized to match the mini-batch size.
    */
   virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size);
-  /** Compute objective funciton gradients.
+  /** Compute objective function gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input
    *  tensors are populated with the computed values and the gradients

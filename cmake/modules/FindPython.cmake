@@ -2,7 +2,7 @@
 #
 # This makes several improvements over the FindPython.cmake module
 # that comes included with CMake:
-#   - The stock version ignores user-provded hints if it thinks it has
+#   - The stock version ignores user-provided hints if it thinks it has
 #     found a newer Python version. This is a problem if a virtual
 #     environment doesn't override the 'python<major>.<minor>'
 #     executable since that executable will take

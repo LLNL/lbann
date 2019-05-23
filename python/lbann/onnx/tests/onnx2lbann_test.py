@@ -8,7 +8,7 @@ For each test case, this script
 This script does not check produced tensor shapes since the LBANN Python frontend is not capable of
 performing shape inference (while the ONNX Python frontend can perform it).
 
-This scirpt assumes that ONNX networks from the ONNX Model Zoo (https://github.com/onnx/models)
+This script assumes that ONNX networks from the ONNX Model Zoo (https://github.com/onnx/models)
 are placed under ONNX_MDOEL_ZOO_ROOT.
 Run scripts/onnx/download_onnx_model_zoo.sh to download the models.
 """

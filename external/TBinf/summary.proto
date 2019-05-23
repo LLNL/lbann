@@ -1,4 +1,4 @@
-// This is derived from the event.proto in Tensorflow. See the readme for
+// This is derived from the event.proto in TensorFlow. See the readme for
 // license and copyright information.
 syntax = "proto3";
 

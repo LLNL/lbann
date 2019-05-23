@@ -442,7 +442,7 @@ imcomm
 191  softmax dataLayout: model_parallel
 192  target_layer  dataLayout: data_parallel ()
 --------------------------------------------------------------------------------
-[0] Epoch : stats formated [tr/v/te] iter/epoch = [22724/3316/0]
+[0] Epoch : stats formatted [tr/v/te] iter/epoch = [22724/3316/0]
             global MB = [  16/  16/   0] global last MB = [   4  /   3  /   0  ]
              local MB = [  16/  16/   0]  local last MB = [   4+0/   3+0/   0+0]
 --------------------------------------------------------------------------------
@@ -493,6 +493,6 @@ Model 0 validation mini-batch time statistics : 0.393503s mean, 1.69897s max, 0.
 --------------------------------------------------------------------------------
 srun: Force Terminated job 64002
 srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** STEP 64002.0 ON pascal63 CANCELLED AT 2018-06-27T17:07:13 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 64002.0 ON pascal63 CANCELED AT 2018-06-27T17:07:13 DUE TO TIME LIMIT ***
 srun: error: pascal63: task 0: Terminated
 srun: error: pascal63: task 1: Terminated

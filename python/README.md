@@ -53,7 +53,7 @@ The `Model` class describes a neural network model and contains the
 following components:
 
 * A `Layer` is a tensor operation, arranged within a directed acyclic
-  graph. A layer will recieve input tensors from its parents and will
+  graph. A layer will receive input tensors from its parents and will
   send output tensor to its children. Once the layer graph has been
   constructed, it may be helpful to call `traverse_layer_graph`, which
   is a generator function that traverses the layer graph in a

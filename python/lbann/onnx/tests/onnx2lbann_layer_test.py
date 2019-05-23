@@ -3,7 +3,7 @@ A test suite to check whether lbann.onnx can convert typical ONNX operators to L
 
 For each test case, this script
 1. converts a given ONNX operator into a LBANN layer, and
-2. compares all the fields of the converted operator and a prepared eqivalent LBANN layer.
+2. compares all the fields of the converted operator and a prepared equivalent LBANN layer.
 
 If a converted LBANN layer has non-empty "*_i" fields, this script ignores them but compares the vector version of them.
 """

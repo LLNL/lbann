@@ -71,7 +71,7 @@ class Layer(abc.ABC):
         self.weights.extend(make_iterable(w))
 
     def __call__(self, parent):
-        """This layer will recieve an input tensor from `parent`.
+        """This layer will receive an input tensor from `parent`.
 
         Syntactic sugar around `add_parent` function.
 

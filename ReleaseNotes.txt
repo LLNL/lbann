@@ -96,7 +96,7 @@ Support for new training algorithms:
  - LTFB can perform inter-trainer communication via checkpoint files
 
 Support for new network structures:
- - Wassertein autoencoder
+ - Wasserstein autoencoder
 
 Support for new layers:
  - Squared difference
@@ -320,7 +320,7 @@ Support for new layers:
   - Optimizers:
     -- Hypergradient Adam
   - Transform Layers:
-    -- Contatenation, Noise, Unpooling, Pooling, Reshape, Slice, Split, Sum
+    -- Concatenation, Noise, Unpooling, Pooling, Reshape, Slice, Split, Sum
   - Regularizer:
     -- Batch Normalization, Selu Dropout, Local Response Normalization (LRN)
   - Activations:
