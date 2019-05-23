@@ -95,7 +95,7 @@ class cv_cropper : public cv_transform {
 
   /**
    * Construct transformation parameters based on the options and random
-   * numbers. If successful, the tranform is enabled.If not, it is disabled.
+   * numbers. If successful, the transform is enabled.If not, it is disabled.
    * @return false if not enabled or unsuccessful.
    */
   bool determine_transform(const cv::Mat& image) override;

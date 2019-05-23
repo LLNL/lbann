@@ -55,7 +55,7 @@ class cv_colorizer : public cv_transform {
   }
 
   /**
-   * If a given image is in grayscale, the tranform is enabled, and not otherwise.
+   * If a given image is in grayscale, the transform is enabled, and not otherwise.
    * @return false if not enabled or unsuccessful.
    */
   bool determine_transform(const cv::Mat& image) override;
