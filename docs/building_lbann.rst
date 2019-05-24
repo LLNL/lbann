@@ -104,7 +104,7 @@ Setup Spack and local base tools
 
     .. code-block:: bash
 
-        . ${SPACK_ROOT}/share/spack/setup-env.sh
+        source ${SPACK_ROOT}/share/spack/setup-env.sh
 
 
 2.  Setup your compiler and external software environment. For example,
@@ -163,7 +163,7 @@ Here are three easy ways to install LBANN:
 
   .. code-block:: bash
 
-      cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_gpu/ # where <arch> = x86_64 | ppc64le
+      cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_cuda/ # where <arch> = x86_64 | ppc64le
       spack install
       spack env loads
       source ./loads
