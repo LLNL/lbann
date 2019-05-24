@@ -1010,7 +1010,8 @@ void data_store_conduit::set_preload() {
   m_preload = true;
 }
 
-void data_store_conduit::get_image_sizes() {
+int data_store_conduit::get_image_offsets() {
+  int segment_length = 0;
   options *opts = options::get();
   /// this block fires if image sizes have been precomputed
   if (opts->has_string("image_sizes_filename")) {
@@ -1020,7 +1021,7 @@ void data_store_conduit::get_image_sizes() {
   else {
     // get list of image file names
     const std::string image_list_file = m_reader->get_data_filename();
-    const std::string image_dir = m_reader->get_file_dir();
+    m_image_base_dir = m_reader->get_file_dir();
     FILE *fplist = fopen(image_list_file.c_str(), "rt");
     std::vector<std::string> image_file_names;
     int imagelabel;
@@ -1034,8 +1035,6 @@ void data_store_conduit::get_image_sizes() {
     fclose(fplist);
 
     // get sizes of files for which I'm responsible
-    // TODO: should add threading to reduce computation time
-    std::vector<int> my_sizes;
     for (size_t h=m_rank_in_trainer; h<image_file_names.size(); h += m_np_in_trainer) {
       const std::string fn = image_dir + '/' + image_file_names[h];
       std::ifstream in(fn.c_str());
@@ -1043,7 +1042,8 @@ void data_store_conduit::get_image_sizes() {
         LBANN_ERROR("failed to open " + fn + " for reading");
       }
       in.seekg(0, std::ios::end);
-      my_sizes.push_back(in.tellg());
+      m_my_sizes.push_back(in.tellg());
+      m_my_files.push_back(image_file_names[h]);
       in.close();
     }
 
@@ -1070,25 +1070,45 @@ void data_store_conduit::get_image_sizes() {
     }
     m_comm->trainer_all_gather(my_sizes, work, counts, disp);
 
-    // fill in  m_image_sizes and m_image_offsets
-    m_image_sizes.resize(image_file_names.size());
+    // fill in  m_image_offsets
+    m_image_offsets.resize(image_file_names.size()+1);
+    m_image_offsets[0] = 0;
     for (int rank = 0; rank < m_np_in_trainer; rank++) {
       size_t offset = disp[rank];
       size_t count = counts[rank];
       size_t i = rank;
       for (size_t j=offset; j<offset+count; j++) {
-        m_image_sizes[i] = work[j];
+        m_image_offsets[i+1] = m_image_offsets[i] + work[j];
         i += m_np_in_trainer;
       }
     }
+    segment_length = m_image_offsets.back();
 
     if (m_output) {
-      m_output << "all image sizes:\n";
-      for (size_t h=0; h<m_image_sizes.size(); h++) {
-        m_output << h << " " << m_image_sizes[h] << "\n";;
+      m_output << "image offsets:\n";
+      for (size_t h=0; h<m_image_offsets.size(); h++) {
+        m_output << h << " " << m_image_offsets[h] << "\n";;
       }
     }
   }
+
+  return segment_length;
+}
+
+void data_store_conduit::allocate_shared_segment(int size) {
+  int node_id = m_comm->get_rank_in_node();
+  if (node_id == 0) {
+  }
+  m_comm->barrier(m_comm->get_node_comm());
+}
+
+void data_store_conduit::preload_local_cache() {
+  int segment_size = get_image_offsets();
+  allocate_shared_segment(segment_length);
+  load_files();
+}
+
+void data_store_conduit::load_files() {
 }
 
 }  // namespace lbann

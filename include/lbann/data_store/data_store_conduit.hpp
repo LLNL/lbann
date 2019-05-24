@@ -91,6 +91,8 @@ class data_store_conduit {
   }
   */
 
+  void preload_local_cache();
+
   void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
 
   /// returns the conduit node
@@ -291,14 +293,20 @@ protected :
   /// used in exchange_data_by_sample, when sample sizes are non-uniform
   bool m_have_sample_sizes;
 
-  /// fills in m_image_name_to_index, m_image_sizes, and m_image_offsets
-  void get_image_sizes();
-
-  /// number of bytes in each image
-  std::vector<int> m_image_sizes;
+  /// fills in m_image_offsets; returns the segment size (which is the
+  /// sum of the file sizes)
+  int get_image_offsets();
 
   /// offset at which the raw image will be stored in a shared memory segment
   std::vector<int> m_image_offsets;
+
+  void allocate_shared_segment(int size);
+
+  std::string m_image_base_dir;
+  std::vector<std::string> m_my_files;
+  std::vector<std::string> m_my_sizes;
+
+  void load_files();
 };
 
 }  // namespace lbann
