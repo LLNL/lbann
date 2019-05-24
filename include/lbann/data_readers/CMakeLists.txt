@@ -28,6 +28,8 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_pilot2_molecular.hpp
   data_reader_python.hpp
   data_reader_synthetic.hpp
+  data_reader_jag_conduit.hpp
+  data_reader_hydra_conduit.hpp
   image_preprocessor.hpp
   image_utils.hpp
   opencv.hpp
