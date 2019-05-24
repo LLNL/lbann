@@ -125,7 +125,7 @@ Setup Spack and local base tools
       package names prepended with a dash, e.g.: :bash:`ml -intel`. To
       unload all currently loaded modules, use :bash:`ml purge`.
 
-3.  Optionally, setup your spack environment to take advantages of
+3.  Optionally, setup your spack environment to take advantage of
     locally installed tools.  Note that unless your spack environment
     is explicitly told about tools such as cmake, python, mpi, etc. it
     will install everything that LBANN and all of its dependencies
@@ -165,7 +165,8 @@ Here are three easy ways to install LBANN:
 
       cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_gpu/ # where <arch> = x86_64 | ppc64le
       spack install
-      ml load lbann
+      spack env loads
+      source ./loads
 
 - Building with the latest released versions and GPU support (use the
   user's defaults for specifying the compiler, MPI library, etc.):
