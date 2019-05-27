@@ -30,14 +30,20 @@ int main(int argc, char **argv) {
   opts->init(argc, argv);
 
   // sanity check the cmd line
-  if (argc != 2) {
+  if (argc < 2) {
     if (master) {
-      cerr << "\nusage: " << argv[0] << " --base_dir=<string>\n"
+      cerr << "\nusage: " << argv[0] << " --base_dir=<string> [--hydra]\n"
            << "assumes: the file '<base_dir>/index.txt' exists\n"
-           << "output: writes the file <base_dir>/id_mapping.txt\n\n";
+           << "output: writes the file <base_dir>/id_mapping.txt\n"
+           << "hydra: you must include --hydra when building a mapping for\n"
+           << "       hydra conduit nodes, else the output file will be\n"
+           << "       meaningless, and will result in undefined behavior.";
+
     }
     return(0);
   }
+
+  bool hydra = opts->get_bool("hydra");
 
   // get list of conduit filenames
   if (master) cerr << "reading filelist\n";
@@ -50,7 +56,10 @@ int main(int argc, char **argv) {
   sprintf(b, "%s/index.txt", base_dir.c_str());
   std::string fn;
   std::ifstream in(b);
-  if (!in) LBANN_ERROR("can't open file for writing");
+  if (!in) {
+    std::string fn2(b);
+    LBANN_ERROR("can't open file for reading: " + fn2);
+  }
   std::string line;
   getline(in, line);
   getline(in, line);
@@ -72,6 +81,7 @@ int main(int argc, char **argv) {
   // each proc builds a map: sample_id -> local index, for the
   // conduit files for which it's responsible
   size_t q = 0;
+  conduit::Node n_ok;
   if (master) cerr << "building map\n";
   for (size_t j=rank; j<filenames.size(); j+= np) {
     out << filenames[j] << " ";
@@ -82,7 +92,39 @@ int main(int argc, char **argv) {
     std::vector<std::string> cnames;
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
     for (size_t h=0; h<cnames.size(); h++) {
-      out << cnames[h] << " ";
+      const std::string key_1 = "/" + cnames[h] + "/performance/success";
+      bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
+      if (!good) {
+        std::cerr << "missing path: " << key_1 << " (this is probably OK for hydra)\n";
+        continue;
+      }
+
+      try {
+        conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
+      } catch (...) {
+        std::cerr << "exception hdf5_read file: " << filenames[j] << "; key: " << key_1 << "\n";
+        continue;
+      }
+      int success = n_ok.to_int64();
+      if (success == 1) {
+        if (hydra) {
+          const std::string key_3 = "/" + cnames[h] + "/runno";
+          if (conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_3)) {
+            try {
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key_3, n_ok);
+            } catch (...) {
+              std::cerr << "failed to read: " << key_3 << "; continuing; this is only for hydra, and may be an error\n";
+              continue;
+            }
+            std::string s3 = n_ok.as_string();
+            out << cnames[h] << "runno/" << s3 << " ";
+          }
+        }
+
+        else {
+          out << cnames[h] << " ";
+        }  
+      }  
     }
     out << "\n";
   }
