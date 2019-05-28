@@ -43,7 +43,10 @@ int main(int argc, char **argv) {
     return(0);
   }
 
-  bool hydra = opts->get_bool("hydra");
+std::unordered_set<std::string> names;
+int total = 0;
+
+  //bool hydra = opts->get_bool("hydra");
 
   // get list of conduit filenames
   if (master) cerr << "reading filelist\n";
@@ -92,6 +95,13 @@ int main(int argc, char **argv) {
     std::vector<std::string> cnames;
     conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
     for (size_t h=0; h<cnames.size(); h++) {
+if (cnames[h].find("META") == string::npos) {
+  ++total;
+  if (names.find(cnames[h]) != names.end()) {
+    std::cout << "XX duplicate: " << cnames[h] << "\n";
+  }
+  names.insert(cnames[h]);
+}
       const std::string key_1 = "/" + cnames[h] + "/performance/success";
       bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
       if (!good) {
@@ -107,6 +117,15 @@ int main(int argc, char **argv) {
       }
       int success = n_ok.to_int64();
       if (success == 1) {
+          // the IDs that John provided look like this:
+          // 274e5a16-7c3a-11e9-90fd-0894ef80059f/runno/run0001
+          // however, the top-level fields, e.g, "274e5a16-7c3a-11e9-90fd-0894ef80059f,"
+          // are unique, at least for the current set of hydra bricks, so for now I'm using
+          // that field as the sample_id. This has the advantage that the sample_ids are at
+          // the top level, as they are for JAG samples
+          out << cnames[h] << " ";
+
+        #if 0
         if (hydra) {
           const std::string key_3 = "/" + cnames[h] + "/runno";
           if (conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_3)) {
@@ -117,13 +136,15 @@ int main(int argc, char **argv) {
               continue;
             }
             std::string s3 = n_ok.as_string();
-            out << cnames[h] << "runno/" << s3 << " ";
+            out << cnames[h] << "/runno/" << s3 << " ";
           }
         }
 
         else {
           out << cnames[h] << " ";
-        }  
+        }
+        #endif
+
       }  
     }
     out << "\n";
@@ -157,5 +178,7 @@ int main(int argc, char **argv) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: system call failed: " + s3.str());
     }
   }
+
+std::cout << "\n\ntotal: " << total << " uniq: " << names.size() << "\n\n";
 
 }
