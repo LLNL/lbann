@@ -43,7 +43,7 @@ The following basic tools are **required**.
 + `CEREAL <https://github.com/USCiLab/cereal>`_ is used to handle
   complex serialization tasks.
 
-+ `CMake <https://cmake.org>`_, version 3.9 or newer.
++ `CMake <https://cmake.org>`_, version 3.12 or newer.
 
 The following LLNL-maintained packages are **required**.
 
