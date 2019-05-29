@@ -64,7 +64,10 @@ int main(int argc, char *argv[]) {
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
       for(auto&& m : models) {
-        lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), m.get());
+        bool loaded = lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), 
+                                                                    m.get(),
+                                                                    opts->get_bool("ckptdir_is_fullpath"));
+        if(!loaded)  LBANN_ERROR("Unable to reload model"); 
       }
     }else {
       LBANN_ERROR("Unable to reload model");
