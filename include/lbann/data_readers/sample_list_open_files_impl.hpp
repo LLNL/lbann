@@ -366,6 +366,17 @@ inline bool sample_list_open_files<sample_name_t, file_handle_t>
 }
 
 template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
+::get_num_samples(size_t& total, size_t& included, size_t& excluded) const {
+  total = 0u;
+  for ( const auto f: m_file_map) {
+    total += f.second;
+  }
+  included = size();
+  excluded = total - included;
+}
+
+template <typename sample_name_t, typename file_handle_t>
 inline const typename sample_list_open_files<sample_name_t, file_handle_t>::samples_t&
 sample_list_open_files<sample_name_t, file_handle_t>::get_list() const {
   return m_sample_list;

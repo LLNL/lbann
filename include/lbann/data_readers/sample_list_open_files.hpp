@@ -102,6 +102,9 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void assign_samples_name() override {}
 
+  /// Get the number of total/included/excluded samples
+  void get_num_samples(size_t& total, size_t& included, size_t& excluded) const override;
+
   static bool pq_cmp(fd_use_map_t left, fd_use_map_t right) {
     return ((left.second).first < (right.second).first) ||
            (((left.second).first == (right.second).first) &&

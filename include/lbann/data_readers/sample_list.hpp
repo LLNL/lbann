@@ -128,6 +128,9 @@ class sample_list {
   /// Add the header info to the given string
   void write_header(std::string& sstr, size_t num_files) const;
 
+  /// Get the number of total/included/excluded samples
+  virtual void get_num_samples(size_t& total, size_t& included, size_t& excluded) const;
+
   virtual void set_samples_filename(sample_file_id_t id, const std::string& filename);
 
  protected:

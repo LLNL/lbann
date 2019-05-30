@@ -427,12 +427,21 @@ inline void sample_list<sample_name_t>
   // The next line contains the root data file directory
 
   sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
+  size_t total, included, excluded;
+  get_num_samples(total, included, excluded);
   /// TODO: clarify the comment below
   /// Include the number of invalid samples, which for an inclusive index list is always 0
-  sstr += std::to_string(size()) + " 0 " + std::to_string(num_files) + '\n';
+  sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
 
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::get_num_samples(size_t& total, size_t& included, size_t& excluded) const {
+  total = size();
+  included = size();
+  excluded = 0ul;
+}
 
 template <typename sample_name_t>
 inline bool sample_list<sample_name_t>
