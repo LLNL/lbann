@@ -5,92 +5,218 @@
 Running LBANN
 ====================
 
-The basic template for running LBANN is
+------------------------------------
+Anatomy of an LBANN experiment
+------------------------------------
 
-.. code-block:: bash
+~~~~~~~~~~~~
+Parallelism
+~~~~~~~~~~~~
 
-    <mpi-launcher> <mpi-options> \
-        lbann <lbann-options> \
-        --model=model.prototext \
-        --optimizer=opt.prototext \
-        --reader=data_reader.prototext
+LBANN is run under the `MPI
+<https://en.wikipedia.org/wiki/Message_Passing_Interface>` paradigm,
+i.e. with multiple processes that communicate with message
+passing. These processes are subdivided into "trainers." Conceptually,
+a trainer owns parallel objects, like models and data readers, and
+generally operates independently of other trainers.
 
-When using GPGPU accelerators, users should be aware that LBANN is
-optimized for the case in which one assigns one GPU per MPI
-*rank*. This should be borne in mind when choosing the parameters for
-the MPI launcher.
+Comments:
 
-A list of options for LBANN may be found by running :bash:`lbann
---help`.
++ LBANN targets HPC systems with homogeneous compute nodes and GPU
+  accelerators, which motivates some simplifying assumptions:
+  - All trainers have the same number of processes.
+  - Each MPI process corresponds to one GPU.
 
-.. note:: At time of writing, it is known that some of these are
-          out-of-date. An
-          `issue <https://github.com/LLNL/lbann/issues/864>`_ has been
-          opened to track this.
++ Processors are block assigned to trainers based on MPI rank.
+  - In order to minimize the cost of intra-trainer communication, make
+    sure to map processes to the hardware and network
+    topologies. Typically, this just means choosing a sensible number
+    of processes per trainer, e.g. a multiple of the number of GPUs
+    per compute node.
 
-.. _using-the-model-zoo:
++ Generally, increasing the number of processes per trainer will
+  accelerate computation but require more intra-trainer
+  communication. There is typically a sweet spot where run time is
+  minimized, but it is complicated and sensitive to the type of
+  computational operations, the amount of work, the hardware and
+  network properties, and the communication algorithms.
+  - Rule-of-thumb: Configure experiments so that the bulk of run time
+    is taken by compute-bound operations (e.g. convolution or matrix
+    multiplication) and so that each process has enough work to
+    achieve a large fraction of peak performance (e.g. by making the
+    mini-batch size sufficiently large).
+
++ Most HPC systems are managed with job schedulers like `Slurm
+  <https://slurm.schedmd.com/overview.html>`. Typically, users can not
+  immediately access compute nodes but must request them from login
+  nodes. The login nodes can be accessed directly (e.g. via
+  :bash:`ssh`), but users are discouraged from doing heavy
+  computation on them.
+  - For debugging and quick testing, it's convenient to request an
+    interactive session (:bash:`salloc` or :bash:`sxterm` with Slurm).
+  - If you need to run multiple experiments or if experiments are not
+    time-sensitive, it's best to submit a batch job (:bash:`sbatch`
+    with Slurm).
+  - When running an experiment, make sure you know what scheduler
+    account to charge (used for billing and determining priority) and
+    what scheduler partition to run on (compute nodes on a system are
+    typically subdivided into multiple groups, e.g. for batch jobs and
+    for debugging).
+  - Familiarize yourself with the rules for the systems you use
+    (e.g. the expected work for each partition, time limits, job
+    submission limits) and be a good neighbor.
+
+~~~~~~~~~~~~~~~~~~~~
+Model components
+~~~~~~~~~~~~~~~~~~~~
+
+.. note:: `A major refactor of core model infrastructure
+          <https://github.com/LLNL/lbann/pull/916>` is pending. This
+          documentation will be updated once it is merged and the
+          interface stabilized.
+
++ Layer: A tensor operation, arranged within a directed acyclic graph.
+  - During evaluation ("forward prop"), a layer recieves input tensors
+    from its parents and sends an output tensor to each child.
+  - During automatic differentation ("backprop"), a layer recieves
+    "input error signals" (objective function gradients w.r.t. output
+    tensors) from its children and sends "output error signals"
+    (objective function gradients w.r.t. input tensors) to its
+    parents. If the layer has any associated weights, it will also
+    compute objective function gradients w.r.t. the weights.
+  - Most layers require a specific number of parents and children, but
+    LBANN will insert layers into the graph if there is a mismatch and
+    the intention is obvious. For example, if a layer expects one
+    child but has multiple, then a split layer (with multiple output
+    tensors all identical to the input tensor) is inserted. Similarly,
+    if a layer has fewer children than expected, dummy layers will be
+    inserted. However, this does not work if there is any
+    ambiguity. In such cases (common with input and slice layers), it
+    is recommended to manually insert identity layers so that the
+    parent/child relationships are absolutely unambiguous.
+
++ Weights [#complain_about_word_weights]_: A tensor consisting of
+  trainable parameters, typically associated with one or more
+  layers. A weights owns an initializer to initially populate its
+  values and an optimizer to find values that minimize the objective
+  function.
+  - A weights without a specified initializer will use a zero
+    initializer.
+  - A weights without a specified optimizer will use the model's
+    default optimizer.
+  - If a layer requires weightses and none are specified, it will
+    create the needed weightses. The layer will pick sensible
+    initializers and optimizers for the weightses.
+  - The dimensions of a weights is determined by their associated
+    layers. The user can not set it directly.
+
++ Objective function: Mathematical expression that the optimizers will
+  attempt to minimize. It is made up of multiple terms that are added
+  together (possibly with scaling factors).
+  - An objective function term can get its value from a scalar-valued
+    layer, i.e. a layer with an output tensor with one entry.
+
++ Metric: Mathematical expression that will be reported to the
+  user. This typically does not affect training, but is helpful for
+  evaluating the progress of training.
+
++ Callback: Function that is performed at various points during an
+  experiment. Callbacks are helpful for reporting, debugging, and
+  performing advanced training techniques.
+
+.. [#complain_about_word_weights] It is unfortunate that the deep
+   learning community has settled upon the plural word "weights" to
+   describe tensors of trainable parameters. Rather than using awkward
+   and ambiguous phrases like "set of weights," we'll give up on
+   grammar and refer to "weights" (singular) and "weightses" (plural).
+
+~~~~~~~~~~~~~~~~~~~~
+Data readers
+~~~~~~~~~~~~~~~~~~~~
+
+.. note:: The core infrastructure for data readers is slated for
+          significant refactoring, so expect major changes in the
+          future.
+
+Data readers are responsible for managing a data set and providing
+data samples to models. A data set is comprised of independent data
+samples, each of which is made up of multiple tensors. For example, a
+data sample for a labeled image classification problem consists of an
+image tensor and a one-hot label vector.
+
+.. note:: The data readers are currently hard-coded to assume this
+          simple classification paradigm. Hacks are needed if your
+          data does not match it exactly, e.g. if a data sample is
+          comprised of more than two tensors. The most basic approach
+          is to flatten all tensors and concatenate them into one
+          large vector. The model is then responsible for slicing this
+          vector into the appropriate chunks and resizing the chunks
+          into the appropriate dimensions. Done correctly, this should
+          not impose any additional overhead.
+
+Specifically, data readers and models interact via input layers. Each
+model must have exactly one input layer and its output tensors are
+populated by a data reader every mini-batch step. This is typically
+performed by a background thread pool, so data ingestion will
+efficiently overlap with other computation, especially if the data
+reader's work is IO-bound or if the computation is largely on GPUs.
+
+.. note:: An input layer has an output tensor for each data sample
+          tensor. Since each data sample has two tensors (one for the
+          data and one for the label), it follows that every input
+          layer should have two child layers. To make parent/child
+          relationships unambiguous, we recommend manually creating
+          identity layers as children of the input layer.
+
+Note that layers within a model treat the data for a mini-batch as a
+single tensor where the leading dimension is the mini-batch
+size. Thus, corresponding tensors in all data samples must have the
+same dimensions. The data dimensions must be known from the beginning
+of the experiment and can not change. However, real data is rarely so
+consistent and some preprocessing is typically required.
+
+.. note:: `A major refactor of the preprocessing pipeline
+          <https://github.com/LLNL/lbann/pull/1014>` is pending. This
+          documentation will be updated once it is merged and the
+          interface stabilized.
 
 --------------------
-Using the model zoo
+Python frontend
 --------------------
 
-LBANN ships with prototext descriptions of a variety of models,
-optimizers and data readers. These may be found in the :code:`model_zoo/`
-directory of the source repository or the :code:`share/model_zoo/` directory
-of the install directory.
+LBANN provides a Python frontend with syntax that is intended to be
+reminiscent of `PyTorch <https://pytorch.org/>`. Under-the-hood, it is
+a wrapper around the Protobuf interface.
 
-.. warning:: Some of these prototexts point to specific data locations
-             on LLNL LC clusters. Users may have to modify such paths
-             to point to locations on their own systems. This can be
-             done by modifying the prototext directly or overriding
-             the options on the command line with, e.g., the
-             :code:`--data_filedir_train` and
-             :code:`--data_filedir_test` options.
+~~~~~~~~~~~~~~~~~~~~
+Setup
+~~~~~~~~~~~~~~~~~~~~
 
-The following is an example invocation of LBANN on a machine using
-Slurm's :bash:`srun` as an MPI launcher. In the example command,
-a machine with 2 GPGPUs per node are available, 4 nodes will be used,
-:bash:`${LBANN_EXE}` is the path to the :code:`lbann` executable, and
-:bash:`${LBANN_MODEL_ZOO_DIR}` is the path to the :code:`model_zoo/` directory in
-either the source tree or the install tree. Note that the options
-passed to :bash:`srun` are not likely to be portable to other MPI
-launchers. The example will train Alexnet with SGD optimization on the
-Imagenet dataset for 5 epochs.
+The `lbann` Python package is installed as part of the LBANN build
+process. However, it is necessary to update the :bash:`PYTHONPATH`
+environment variable to make sure Python detect it. There are several
+ways to do this:
+
++ If LBANN has been built with Spack, loading LBANN will automatically
+  update :bash:`PYTHONPATH`:
 
 .. code-block:: bash
 
-    srun -N4 --ntasks-per-node=2 \
-        ${LBANN_EXE} \
-        --model=${LBANN_MODEL_ZOO_DIR}/models/alexnet/alexnet.prototext \
-        --optimizer=${LBANN_MODEL_ZOO_DIR}/optimizers/opt_sgd.prototext \
-        --reader=${LBANN_MODEL_ZOO_DIR}/data_readers/data_reader_imagenet.prototext \
-        --num_epochs=5
-    
----------------------------------------------
-Using the Python interface for prototext
----------------------------------------------
+    module load lbann
 
-There is a python interface for generating model prototext
-files. Example Python scripts may be found in the
-:code:`scripts/proto/lbann/models` directory of the source
-repository. Running the Python script will generate a prototext that
-can be passed to the :code:`--model` option for LBANN.
++ LBANN includes a modulefile that updates :bash:`PYTHONPATH`:
 
 .. code-block:: bash
-                
-    python3 alexnet.py alexnet.prototext
-    <mpi-launcher> <mpi-options> \
-        lbann --model=alexnet.prototext <other-lbann-options>
 
-where :code:`<other-lbann-options>` are as documented
-:ref:`above <using-the-model-zoo>`, with optimizer and data reader
-prototexts coming from the appropriate :code:`model_zoo/` directories.
+    module use <install directory>/etc/modulefiles
+    module load lbann-<version>
 
-------------------------------
-Running the inference engine
-------------------------------
++ Directly manipulate :bash:`PYTHONPATH`:
 
-This section is under construction, requiring input from other team
-members. Until it is complete, please ask questions on the
-`issue tracker <https://github.com/llnl/lbann/issues>`_.
+.. code-block:: bash
 
+    export PYTHONPATH=<install directory>/lib/python<version>/site-packages:${PYTHONPATH}
+
+--------------------
+Protobuf frontend
+--------------------
