@@ -30,13 +30,12 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "conduit/conduit_node.hpp"
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
 
 
 namespace lbann {
@@ -74,7 +73,10 @@ class data_store_conduit {
   void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
 
   //! convenience handle
-  void set_shuffled_indices(const std::vector<int> *indices) { m_shuffled_indices = indices; }
+  void set_shuffled_indices(const std::vector<int> *indices);
+
+  /// for use during development and debugging
+  int get_num_indices() { return m_shuffled_indices->size(); }
 
   void setup(int mini_batch_size);
 
@@ -109,7 +111,7 @@ class data_store_conduit {
 
   /// As of this writing, will be called if cmd line includes: --preload_data_store
   /// This may change in the future; TODO revisit
-  void set_preload() { m_preload = true; }
+  void set_preload(); 
 
   bool is_preloaded() { return m_preload; }
 
@@ -131,6 +133,9 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
+  /// for use during development and debugging
+  void set_role(const std::string role);
+
   bool is_local_cache() const { return m_is_local_cache; }
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
@@ -145,7 +150,24 @@ class data_store_conduit {
     ++m_n;
   }
 
+  void set_super_node_mode() {
+    m_super_node = true;
+  }
+
+  void set_node_sizes_vary() { m_node_sizes_vary = true; }
+
   bool has_conduit_node(int data_id) const;
+
+  /// only used for debugging; pass --debug on cmd line to get
+  /// each data store to print to a different file. This is made
+  /// public so data readers can also print to the file
+  mutable std::ofstream m_output;
+
+  /// for use during development and debugging
+  int get_data_size() { return m_data.size(); }
+
+  /// made public for debugging during development
+  void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
 
 protected :
 
@@ -154,7 +176,6 @@ protected :
 
   bool m_is_setup;
 
-  void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
   generic_data_reader *m_reader;
 
   lbann_comm *m_comm;
@@ -198,6 +219,7 @@ protected :
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
+  std::unordered_map<int, int> m_recv_sample_sizes;
 
   /// contains the Nodes that this processor owns;
   /// maps data_id to conduit::Node
@@ -213,6 +235,8 @@ protected :
   std::vector<El::mpi::Request<El::byte>> m_send_requests;
   std::vector<El::mpi::Request<El::byte>> m_recv_requests;
   std::vector<conduit::Node> m_recv_buffer;
+  std::vector<int> m_recv_buffer_sample_sizes;
+  std::vector<int> m_send_buffer_sample_sizes;
   std::vector<int> m_outgoing_msg_sizes;
   std::vector<int> m_incoming_msg_sizes;
 
@@ -226,13 +250,18 @@ protected :
   void setup_data_store_buffers();
 
   /// called by exchange_data
-  static void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
+  void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
   void build_owner_map(int mini_batch_size);
 
+  /// for use when conduit Nodes have non-uniform size, e.g, imagenet,
+  /// and when running in non-super_node mode
+  void exchange_sample_sizes();
+
   /// maps processor id -> set of indices (whose associated samples)
-  /// this proc needs to send. (formerly called "proc_to_indices)
+  /// this proc needs to send. (formerly called "proc_to_indices);
+  /// this is filled in by build_indices_i_will_send()
   std::vector<std::unordered_set<int>> m_indices_to_send;
 
   /// fills in m_indices_to_send and returns the number of samples
@@ -250,10 +279,20 @@ protected :
   void error_check_compacted_node(const conduit::Node &nd, int data_id);
 
   bool m_is_local_cache;
+
+  bool m_node_sizes_vary;
+
+  /// for use when conduit Nodes have non-uniform size, e.g, imagenet
+  std::unordered_map<int, int> m_sample_sizes;
+
+  /// used in set_conduit_node(...)
+  std::mutex m_mutex;
+
+  /// used in exchange_data_by_sample, when sample sizes are non-uniform
+  bool m_have_sample_sizes;
 };
 
 }  // namespace lbann
 
-#endif //#ifdef LBANN_HAS_CONDUIT
 
 #endif  // __DATA_STORE_JAG_HPP__

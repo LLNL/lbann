@@ -120,6 +120,7 @@ public:
     std::set<std::string> weights_names = std::set<std::string>(),
     bool low_score_wins = false,
     communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
+    bool exchange_hyperparameters = false,
     lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
@@ -154,6 +155,10 @@ private:
 
   /** Inter-trainer communication scheme. */
   communication_algorithm m_comm_algo;
+ 
+  /** Whether to exchange training hyperparameters between trainers
+  */
+  bool m_exchange_hyperparameters;
 
   /** Workspace weights.
    *

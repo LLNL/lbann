@@ -726,6 +726,10 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
     LBANN_ERROR("shuffled_indices.size() == 0");
   }
 
+  if (opts->get_bool("node_sizes_vary")) {
+    m_data_store->set_node_sizes_vary();
+  }
+
   //a call to m_data_store->check_mem_capacity(...) should go here, but
   //at the moment that depends on the sample_list class, which it shouldn't
   //TODO: revisit
@@ -808,6 +812,20 @@ void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, 
 
 void generic_data_reader::set_mini_batch_size(const int s) {
   m_mini_batch_size = s;
+}
+
+void generic_data_reader::set_role(std::string role) {
+  m_role = role;
+  if (options::get()->has_string("jag_partitioned")
+      && get_role() == "train") {
+    m_jag_partitioned = true;
+    if (is_master()) {
+      std::cerr << "USING JAG DATA PARTITIONING\n";
+    }
+  }
+  if (m_data_store != nullptr) {
+    m_data_store->set_role(role);
+  }
 }
 
 }  // namespace lbann

@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -274,4 +272,3 @@ void test_conduit_3(int from, int to, std::vector<std::string> filenames) {
   std::cerr << "  time to load entire (images) sample: " << n1 << "\n";
   std::cerr << "  time to access image values: " << n2 << "\n";
 }
-#endif //#ifdef LBANN_HAS_CONDUIT

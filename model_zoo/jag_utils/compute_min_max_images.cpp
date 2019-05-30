@@ -27,7 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
 
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
@@ -237,6 +236,3 @@ std::cerr << rank << " :: opening for reading: " << files[j] << "\n";
   return EXIT_SUCCESS;
 }
 
-
-
-#endif //#ifdef LBANN_HAS_CONDUIT

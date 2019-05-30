@@ -79,7 +79,11 @@ public:
   std::string name() const override { return "dump outputs"; }
 
   void on_forward_prop_end(model* m, Layer* l) override          { dump_outputs(*m, *l); }
-  void on_evaluate_forward_prop_end(model* m, Layer* l) override { dump_outputs(*m, *l); }
+  void on_evaluate_forward_prop_end(model* m, Layer* l) override {
+       if(m->get_step() % m_batch_interval == 0) { 
+         dump_outputs(*m, *l); 
+       }
+  }
 
 private:
 

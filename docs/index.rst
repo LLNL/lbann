@@ -42,6 +42,8 @@ methods.
 
    lbann/lbann
    style_guide
+   continuous_integration
+   documentation_building
 
 ==================
 

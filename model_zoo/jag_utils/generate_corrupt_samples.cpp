@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay_io_handle.hpp"
 #include <iostream>
@@ -161,4 +159,3 @@ int main(int argc, char *argv[]) {
   out.close();
   std::cout << "\nMade directory 'corrupt_jag_samples/' and wrote files in that directory\n\n";
 }
-#endif //#ifdef LBANN_HAS_CONDUIT

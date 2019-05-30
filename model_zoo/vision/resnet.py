@@ -52,6 +52,9 @@ parser.add_argument(
 parser.add_argument(
     '--num-labels', action='store', default=1000, type=int,
     help='number of data classes (default: 1000)', metavar='NUM')
+parser.add_argument(
+    '--random-seed', action='store', default=0, type=int,
+    help='random seed for LBANN RNGs', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 parser.add_argument(
     '--data-reader', action='store',
@@ -145,7 +148,8 @@ model = lbann.Model(args.mini_batch_size,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
-                    callbacks=callbacks)
+                    callbacks=callbacks,
+                    random_seed=args.random_seed)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
