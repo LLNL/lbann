@@ -16,7 +16,7 @@ Parallelism
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 LBANN is run under the `MPI
-<https://en.wikipedia.org/wiki/Message_Passing_Interface>` paradigm,
+<https://en.wikipedia.org/wiki/Message_Passing_Interface>`_ paradigm,
 i.e. with multiple processes that communicate with message
 passing. These processes are subdivided into "trainers." Conceptually,
 a trainer owns parallel objects, like models and data readers, and
@@ -26,10 +26,13 @@ Comments:
 
 + LBANN targets HPC systems with homogeneous compute nodes and GPU
   accelerators, which motivates some simplifying assumptions:
+
   - All trainers have the same number of processes.
+
   - Each MPI process corresponds to one GPU.
 
 + Processors are block assigned to trainers based on MPI rank.
+
   - In order to minimize the cost of intra-trainer communication, make
     sure to map processes to the hardware and network
     topologies. Typically, this just means choosing a sensible number
@@ -42,6 +45,7 @@ Comments:
   minimized, but it is complicated and sensitive to the type of
   computational operations, the amount of work, the hardware and
   network properties, and the communication algorithms.
+
   - Rule-of-thumb: Configure experiments so that the bulk of run time
     is taken by compute-bound operations (e.g. convolution or matrix
     multiplication) and so that each process has enough work to
@@ -49,21 +53,25 @@ Comments:
     mini-batch size sufficiently large).
 
 + Most HPC systems are managed with job schedulers like `Slurm
-  <https://slurm.schedmd.com/overview.html>`. Typically, users can not
-  immediately access compute nodes but must request them from login
-  nodes. The login nodes can be accessed directly (e.g. via
-  :bash:`ssh`), but users are discouraged from doing heavy
-  computation on them.
+  <https://slurm.schedmd.com/overview.html>`_. Typically, users can
+  not immediately access compute nodes but must request them from
+  login nodes. The login nodes can be accessed directly (e.g. via
+  :bash:`ssh`), but users are discouraged from doing heavy computation
+  on them.
+
   - For debugging and quick testing, it's convenient to request an
     interactive session (:bash:`salloc` or :bash:`sxterm` with Slurm).
+
   - If you need to run multiple experiments or if experiments are not
     time-sensitive, it's best to submit a batch job (:bash:`sbatch`
     with Slurm).
+
   - When running an experiment, make sure you know what scheduler
     account to charge (used by the scheduler for billing and
     determining priority) and what scheduler partition to run on
     (compute nodes on a system are typically subdivided into multiple
     groups, e.g. for batch jobs and for debugging).
+
   - Familiarize yourself with the rules for the systems you use
     (e.g. the expected work for each partition, time limits, job
     submission limits) and be a good neighbor.
@@ -73,19 +81,22 @@ Model components
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note:: `A major refactor of core model infrastructure
-          <https://github.com/LLNL/lbann/pull/916>` is pending. This
+          <https://github.com/LLNL/lbann/pull/916>`_ is pending. This
           documentation will be updated once it is merged and the
           interface stabilized.
 
 + Layer: A tensor operation, arranged within a directed acyclic graph.
+
   - During evaluation ("forward prop"), a layer receives input tensors
     from its parents and sends an output tensor to each child.
+
   - During automatic differentiation ("backprop"), a layer receives
     "input error signals" (objective function gradients w.r.t. output
     tensors) from its children and sends "output error signals"
     (objective function gradients w.r.t. input tensors) to its
     parents. If the layer has any associated weights, it will also
     compute objective function gradients w.r.t. the weights.
+
   - Most layers require a specific number of parents and children, but
     LBANN will insert layers into the graph if there is a mismatch and
     the intention is obvious. For example, if a layer expects one
@@ -97,24 +108,34 @@ Model components
     is recommended to manually insert identity layers so that the
     parent/child relationships are absolutely unambiguous.
 
-+ Weights [#complain_about_word_weights]_: A tensor consisting of
-  trainable parameters, typically associated with one or more
-  layers. A weights owns an initializer to initially populate its
-  values and an optimizer to find values that minimize the objective
-  function.
++ Weights: A tensor consisting of trainable parameters, typically
+  associated with one or more layers. A weights owns an initializer to
+  initially populate its values and an optimizer to find values that
+  minimize the objective function.
+
   - A weights without a specified initializer will use a zero
     initializer.
+
   - A weights without a specified optimizer will use the model's
     default optimizer.
+
   - If a layer requires weightses and none are specified, it will
     create the needed weightses. The layer will pick sensible
     initializers and optimizers for the weightses.
+
   - The dimensions of a weights is determined by their associated
     layers. The user can not set it directly.
+
+.. note:: It is unfortunate that the deep learning community has
+   settled upon the plural word "weights" to describe tensors of
+   trainable parameters. Rather than using awkward and ambiguous
+   phrases like "set of weights," we have given up on grammar and
+   refer to "weights" (singular) and "weightses" (plural).
 
 + Objective function: Mathematical expression that the optimizers will
   attempt to minimize. It is made up of multiple terms that are added
   together (possibly with scaling factors).
+
   - An objective function term can get its value from a scalar-valued
     layer, i.e. a layer with an output tensor with one entry.
 
@@ -125,12 +146,6 @@ Model components
 + Callback: Function that is performed at various points during an
   experiment. Callbacks are helpful for reporting, debugging, and
   performing advanced training techniques.
-
-.. [#complain_about_word_weights] It is unfortunate that the deep
-   learning community has settled upon the plural word "weights" to
-   describe tensors of trainable parameters. Rather than using awkward
-   and ambiguous phrases like "set of weights," we'll give up on
-   grammar and refer to "weights" (singular) and "weightses" (plural).
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Data readers
@@ -178,7 +193,7 @@ of the experiment and can not change. However, real data is rarely so
 consistent and some preprocessing is typically required.
 
 .. note:: `A major refactor of the preprocessing pipeline
-          <https://github.com/LLNL/lbann/pull/1014>` is pending. This
+          <https://github.com/LLNL/lbann/pull/1014>`_ is pending. This
           documentation will be updated once it is merged and the
           interface stabilized.
 
@@ -187,8 +202,8 @@ Python frontend
 ------------------------------------------------
 
 LBANN provides a Python frontend with syntax reminiscent of `PyTorch
-<https://pytorch.org/>`. See the `model zoo implementation of LeNet
-<https://github.com/LLNL/lbann/blob/develop/model_zoo/vision/lenet.py>`
+<https://pytorch.org/>`_. See the `model zoo implementation of LeNet
+<https://github.com/LLNL/lbann/blob/develop/model_zoo/vision/lenet.py>`_
 for a simple example.
 
 Comments:
@@ -255,9 +270,10 @@ A typical workflow involves the following steps:
 
 1. Configuring LBANN model components (like the graph of
 :python:`Layer` s) and creating a :python:`Model`.
+
   + Classes for model components are automatically generated from the
     LBANN Protobuf specification at `src/proto/lbann.proto
-    <https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`.
+    <https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`_.
     This file is currently the best source of documentation. Message
     fields in the Protobuf specification are optional arguments for
     the corresponding Python class constructor.
@@ -266,20 +282,25 @@ A typical workflow involves the following steps:
    :python:`Weights` es.
 
 3. Loading in a Protobuf text file describing the data reader.
+
    + The Python frontend currently does not have good support for
      specifying data readers. If any data reader properties need to be
      set programmatically, the user must do it directly via the
      Protobuf Python API.
 
 4. Launching LBANN by calling :python:`run`.
+
    + :python:`lbann.run` will detect whether the user is currently on
      a login node or a compute node. If on a login node, a batch job
      will be submitted to the job scheduler. If on a compute node,
      LBANN will be run directly on the allocated nodes.
+
    + A timestamped work directory will be created each time LBANN is
      run. The default location of these work directories can be set
      with the environment variable :bash:`LBANN_EXPERIMENT_DIR`.
+
    + Supported job managers are Slurm and LSF.
+
    + LLNL users may prefer to use
    :python:`lbann.contrib.lc.launcher.run`. This is a wrapper around
    :python:`lbann.run`, with defaults and optimizations specifically
@@ -380,7 +401,7 @@ which can be fed into the Protobuf frontend.
 
 This contains functionality to convert between LBANN and ONNX
 models. See `python/docs/onnx/README.md
-<https://github.com/LLNL/lbann/blob/develop/python/docs/onnx/README.md>`
+<https://github.com/LLNL/lbann/blob/develop/python/docs/onnx/README.md>`_
 for full documentation.
 
 ------------------------------------------------
@@ -407,7 +428,7 @@ file. The basic template for running LBANN is
         lbann --prototext=experiment.prototext
 
 The LBANN Protobuf format is defined in `src/proto/lbann.proto
-<https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`. It
+<https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`_. It
 is important to remember that the default value of a Protobuf field is
 logically false (e.g. false for Boolean fields and empty for string
 fields).
