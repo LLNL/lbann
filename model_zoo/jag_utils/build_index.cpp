@@ -135,6 +135,9 @@ if (j >= 400) break;
         bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
         if (!good) {
           std::cerr << "missing path: " << key_1 << " (this is probably OK for hydra)\n";
+          s5 << cnames[h] << " ";
+          ++num_samples_bad;
+          ++local_num_samples_bad;
           continue;
         }
 
