@@ -1,17 +1,19 @@
 .. role:: bash(code)
           :language: bash
+.. role:: python(code)
+          :language: python
 
-====================
+============================================================
 Running LBANN
-====================
+============================================================
 
-------------------------------------
+------------------------------------------------
 Anatomy of an LBANN experiment
-------------------------------------
+------------------------------------------------
 
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Parallelism
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 LBANN is run under the `MPI
 <https://en.wikipedia.org/wiki/Message_Passing_Interface>` paradigm,
@@ -58,17 +60,17 @@ Comments:
     time-sensitive, it's best to submit a batch job (:bash:`sbatch`
     with Slurm).
   - When running an experiment, make sure you know what scheduler
-    account to charge (used for billing and determining priority) and
-    what scheduler partition to run on (compute nodes on a system are
-    typically subdivided into multiple groups, e.g. for batch jobs and
-    for debugging).
+    account to charge (used by the scheduler for billing and
+    determining priority) and what scheduler partition to run on
+    (compute nodes on a system are typically subdivided into multiple
+    groups, e.g. for batch jobs and for debugging).
   - Familiarize yourself with the rules for the systems you use
     (e.g. the expected work for each partition, time limits, job
     submission limits) and be a good neighbor.
 
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Model components
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note:: `A major refactor of core model infrastructure
           <https://github.com/LLNL/lbann/pull/916>` is pending. This
@@ -130,9 +132,9 @@ Model components
    and ambiguous phrases like "set of weights," we'll give up on
    grammar and refer to "weights" (singular) and "weightses" (plural).
 
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Data readers
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. note:: The core infrastructure for data readers is slated for
           significant refactoring, so expect major changes in the
@@ -180,22 +182,36 @@ consistent and some preprocessing is typically required.
           documentation will be updated once it is merged and the
           interface stabilized.
 
---------------------
+------------------------------------------------
 Python frontend
---------------------
+------------------------------------------------
 
-LBANN provides a Python frontend with syntax that is intended to be
-reminiscent of `PyTorch <https://pytorch.org/>`. Under-the-hood, it is
-a wrapper around the Protobuf interface.
+LBANN provides a Python frontend with syntax reminiscent of `PyTorch
+<https://pytorch.org/>`. See the `model zoo implementation of LeNet
+<https://github.com/LLNL/lbann/blob/develop/model_zoo/vision/lenet.py>`
+for a simple example.
 
-~~~~~~~~~~~~~~~~~~~~
+Comments:
+
++ Under-the-hood, the Python frontend is actually a convenience
+  wrapper around the Protobuf frontend. The core infrastructure allows
+  users to configure an experiment, "compiles" it to a Prototext text
+  file, and feeds it into the Protobuf frontend.
+
++ The Python interface can only configure and launch experiments. It
+  is not active during an experiment and it does not allow for any
+  dynamic control flow.
+
++ Only Python 3 is supported.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Setup
-~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The `lbann` Python package is installed as part of the LBANN build
-process. However, it is necessary to update the :bash:`PYTHONPATH`
-environment variable to make sure Python detect it. There are several
-ways to do this:
+The :python:`lbann` Python package is installed as part of the LBANN
+build process. However, it is necessary to update the
+:bash:`PYTHONPATH` environment variable to make sure Python detect
+it. There are several ways to do this:
 
 + If LBANN has been built with Spack, loading LBANN will automatically
   update :bash:`PYTHONPATH`:
@@ -217,6 +233,142 @@ ways to do this:
 
     export PYTHONPATH=<install directory>/lib/python<version>/site-packages:${PYTHONPATH}
 
---------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Basic usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A typical workflow involves the following steps:
+
+1. Configuring LBANN model components (like the graph of
+:python:`Layer` s) and creating a :python:`Model`.
+  + Classes for model components are automatically generated from the
+    LBANN Protobuf specification at `src/proto/lbann.proto
+    <https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`.
+    This file is currently the best source of documentation. Message
+    fields in the Protobuf specification are optional arguments for
+    the corresponding Python class constructor.
+
+2. Configuring the default :python:`Optimizer` to be used by the
+   :python:`Weights` es.
+
+3. Loading in a Protobuf text file describing the data reader.
+   + The Python frontend currently does not have good support for
+     specifying data readers. If any data reader properties need to be
+     set programmatically, the user must do it directly via the
+     Protobuf Python API.
+
+4. Launching LBANN by calling :python:`run`.
+   + :python:`lbann.run` will detect whether the user is currently on
+     a login node or a compute node. If on a login node, a batch job
+     will be submitted to the job scheduler. If on a compute node,
+     LBANN will be run directly on the allocated nodes.
+   + A timestamped work directory will be created each time LBANN is
+     run. The default location of these work directories can be set
+     with the environment variable :bash:`LBANN_EXPERIMENT_DIR`.
+   + Supported job managers are Slurm and LSF.
+   + LLNL users may prefer to use
+   :python:`lbann.contrib.lc.launcher.run`. This is a wrapper around
+   :python:`lbann.run`, with defaults and optimizations specifically
+   for LC systems.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A simple example
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+    import lbann
+
+    # ----------------------------------
+    # Construct layer graph
+    # ----------------------------------
+
+    # Input data
+    input = lbann.Input()
+    image = lbann.Identity(input)
+    label = lbann.Identity(input)
+
+    # Softmax classifier
+    y = lbann.FullyConnected(image, num_neurons = 10, has_bias = True)
+    pred = lbann.Softmax(y)
+
+    # Loss function and accuracy
+    loss = lbann.CrossEntropy([pred, label])
+    acc = lbann.CrossEntropy([pred, label])
+
+    # ----------------------------------
+    # Setup experiment
+    # ----------------------------------
+
+    # Setup model
+    mini_batch_size = 64
+    num_epochs = 5
+    model = lbann.Model(mini_batch_size,
+                        num_epochs,
+                        layers=lbann.traverse_layer_graph(input),
+                        objective_function=loss,
+                        metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
+                        callbacks=[lbann.CallbackPrint(), lbann.CallbackTimer()])
+
+    # Setup optimizer
+    opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
+
+    # Load data reader from prototext
+    import google.protobuf.text_format as txtf
+    data_reader_proto = lbann.lbann_pb2.LbannPB()
+    with open('path/to/lbann/model_zoo/data_readers/data_reader.prototext', 'r') as f:
+        txtf.Merge(f.read(), data_reader_proto)
+    data_reader_proto = data_reader_proto.data_reader
+
+    # ----------------------------------
+    # Run experiment
+    # ----------------------------------
+
+    lbann.run(model, data_reader_proto, opt)
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Useful submodules
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+^^^^^^^^^^^^^^^^^^^^^^^^
+:python:`lbann.modules`
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+A :python:`Module` is a pattern of layers that can be applied multiple
+times in a neural network. Once created, a `Module` is *callable*,
+taking a layer as input and returning a layer as output. They will
+create and manage `Weights` es internally, so they are convenient for
+weight sharing between different layers. They are also useful for
+complicated patterns like RNN cells.
+
+*A possible note of confusion*: "Modules" in LBANN are similar to
+"layers" in PyTorch, TensorFlow, and Keras. LBANN uses "layer" to
+refer to tensor operations, in a similar manner as Caffe.
+
+^^^^^^^^^^^^^^^^^^^^^^^^
+:python:`lbann.models`
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Several common and influential neural network models are implemented
+as :python:`Module` s. They can be used as building blocks within more
+complicated models.
+
+^^^^^^^^^^^^^^^^^^^^^^^^
+:python:`lbann.proto`
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :proto:`save_prototext` function will export a Protobuf text file,
+which can be fed into the Protobuf frontend.
+
+^^^^^^^^^^^^^^^^^^^^^^^^
+:python:`lbann.onnx`
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+This contains functionality to convert between LBANN and ONNX
+models. See `python/docs/onnx/README.md
+<https://github.com/LLNL/lbann/blob/develop/python/docs/onnx/README.md>`
+for full documentation.
+
+------------------------------------------------
 Protobuf frontend
---------------------
+------------------------------------------------
