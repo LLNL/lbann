@@ -78,9 +78,9 @@ Model components
           interface stabilized.
 
 + Layer: A tensor operation, arranged within a directed acyclic graph.
-  - During evaluation ("forward prop"), a layer recieves input tensors
+  - During evaluation ("forward prop"), a layer receives input tensors
     from its parents and sends an output tensor to each child.
-  - During automatic differentation ("backprop"), a layer recieves
+  - During automatic differentiation ("backprop"), a layer receives
     "input error signals" (objective function gradients w.r.t. output
     tensors) from its children and sends "output error signals"
     (objective function gradients w.r.t. input tensors) to its
@@ -213,12 +213,16 @@ build process. However, it is necessary to update the
 :bash:`PYTHONPATH` environment variable to make sure Python detect
 it. There are several ways to do this:
 
-+ If LBANN has been built with Spack, loading LBANN will automatically
-  update :bash:`PYTHONPATH`:
++ If LBANN has been built with the Spack user build process, loading
+  LBANN will automatically update :bash:`PYTHONPATH`:
 
 .. code-block:: bash
 
     module load lbann
+
+.. note:: This will *not* work if LBANN has been built with
+  :bash:`scripts/build_lbann_lc.sh` or with the Spack developer build
+  process.
 
 + LBANN includes a modulefile that updates :bash:`PYTHONPATH`:
 
@@ -232,6 +236,16 @@ it. There are several ways to do this:
 .. code-block:: bash
 
     export PYTHONPATH=<install directory>/lib/python<version>/site-packages:${PYTHONPATH}
+
+Note that LBANN depends on the Protobuf Python package, which can be
+installed with:
+
+.. code-block:: bash
+
+    pip install protobuf
+
+If the user does not own the site-packages directory, then it may be
+necessary to pass the :bash:`--user` flag to pip.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Basic usage
@@ -370,5 +384,30 @@ models. See `python/docs/onnx/README.md
 for full documentation.
 
 ------------------------------------------------
-Protobuf frontend
+Protobuf frontend (advanced)
 ------------------------------------------------
+
+The main LBANN driver uses Protobuf text files (sometimes called
+prototext files) to specify experiments. The Python frontend operates
+by "compiling" an experiment configuration into a Protobuf text file
+and passing it into the LBANN driver. Aside from quick debugging,
+there are very few situations where directly manipulating Protobuf
+text files is superior to using the Python frontend. In fact, it is
+possible to use Protobuf's Python API to programmatically manipulate
+Protobuf messages, if such fine control is necessary.
+
+In order to fully specify an experiment, the user must provide
+Protobuf text files for the model, default optimizer, and data
+reader. These can be provided as three separate files or one unified
+file. The basic template for running LBANN is
+
+.. code-block:: bash
+
+    <mpi-launcher> <mpi-options> \
+        lbann --prototext=experiment.prototext
+
+The LBANN Protobuf format is defined in `src/proto/lbann.proto
+<https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`. It
+is important to remember that the default value of a Protobuf field is
+logically false (e.g. false for Boolean fields and empty for string
+fields).
