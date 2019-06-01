@@ -10,7 +10,7 @@ class Model:
 
     def __init__(self, mini_batch_size, epochs,
                  layers=[], weights=[], objective_function=None,
-                 metrics=[], callbacks=[]):
+                 metrics=[], callbacks=[], random_seed=None):
 
         # Scalar fields
         self.mini_batch_size = mini_batch_size
@@ -18,6 +18,7 @@ class Model:
         self.block_size = 256           # TODO: Make configurable
         self.num_parallel_readers = 0   # TODO: Make configurable
         self.procs_per_trainer = 0      # TODO: Make configurable
+        self.random_seed = random_seed
 
         # Get connected layers
         self.layers = list(lbann.layer.traverse_layer_graph(layers))
@@ -49,6 +50,8 @@ class Model:
         model.block_size = self.block_size
         model.num_parallel_readers = self.num_parallel_readers
         model.procs_per_trainer = self.procs_per_trainer
+        if self.random_seed is not None:
+            model.random_seed = self.random_seed
 
         # Add model components
         model.layer.extend([l.export_proto() for l in self.layers])

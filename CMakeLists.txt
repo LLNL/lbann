@@ -128,9 +128,6 @@ option(LBANN_DETERMINISTIC
 option(LBANN_SEQUENTIAL_INITIALIZATION
   "Sequentially consistent initialization" OFF)
 
-option(LBANN_PYTHON_IN_INSTALL_DIR
-  "Install Python frontend in the install directory (as opposed to a Python site-packages directory)" ON)
-
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
 mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
@@ -306,6 +303,16 @@ if (LBANN_WITH_PYTHON)
     set(LBANN_HAS_PYTHON FALSE)
     message(FATAL_ERROR "Python 2 is not supported.")
   endif ()
+
+  # Setup the installation stuff
+  set(PYTHON_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
+    CACHE PATH "The prefix for the python installation")
+
+  set(CMAKE_INSTALL_PYTHONDIR
+    "lib/python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR}/site-packages"
+    CACHE PATH
+    "Relative path from PYTHON_INSTALL_PREFIX to the python package install")
+
 endif (LBANN_WITH_PYTHON)
 
 if (LBANN_WITH_VTUNE)
@@ -423,7 +430,6 @@ if (LBANN_WITH_CONDUIT)
     "${_conduit_interface_link_libs}")
 
   set(CONDUIT_LIBRARIES conduit::conduit)
-  set(LBANN_HAS_CONDUIT ${Conduit_FOUND})
 endif (LBANN_WITH_CONDUIT)
 
 if (LBANN_WITH_UNIT_TESTING)
@@ -566,8 +572,8 @@ export(EXPORT LBANNTargets NAMESPACE LBANN:: FILE LBANNTargets.cmake)
 
 # Write the configure file for the install tree
 set(INCLUDE_INSTALL_DIRS include)
-set(LIB_INSTALL_DIR lib)
-set(CMAKE_INSTALL_DIR lib/cmake/lbann)
+set(LIB_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_INSTALL_DIR ${LIB_INSTALL_DIR}/cmake/lbann)
 set(EXTRA_CMAKE_MODULE_DIR)
 configure_package_config_file(cmake/configure_files/LBANNConfig.cmake.in
   "${CMAKE_BINARY_DIR}/LBANNConfig.cmake.install"
@@ -627,9 +633,9 @@ install(
 if (LBANN_HAS_PYTHON)
 
   # Construct config file
+  # NOTE (trb): python_config.ini is installed by setup.py
   set(_PYTHON_CONFIG_INI ${CMAKE_BINARY_DIR}/python_config.ini)
-  set(_LBANN_PB2_PY
-    ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATADIR}/python/lbann_pb2.py)
+  set(_LBANN_PB2_PY ${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}/lbann_pb2.py)
   set(_LBANN_EXE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/lbann)
   configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/python_config.ini.in"
@@ -645,16 +651,25 @@ if (LBANN_HAS_PYTHON)
     @ONLY)
 
   # Install Python package with setuptools
-  set(LBANN_SETUP_PY_ARGS ""
-    CACHE STRING "Arguments to pass to 'setup.py install' when installing the Python frontend")
-  set(_SETUP_PY_ARGS "${LBANN_SETUP_PY_ARGS}")
-  if (LBANN_PYTHON_IN_INSTALL_DIR)
-    set(_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/python")
-    set(_SETUP_PY_ARGS
-      "${_SETUP_PY_ARGS} --root ${_PYTHON_INSTALL_DIR} --install-lib . --install-data .")
-  endif (LBANN_PYTHON_IN_INSTALL_DIR)
+  set(_PY_INSTALL_DIR "${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}")
+  set(_SETUP_PY_ARGS
+    "${_SETUP_PY_ARGS} --root ${_PY_INSTALL_DIR} --install-lib . --install-data .")
   install(CODE
     "execute_process(COMMAND ${Python_EXECUTABLE} ${_SETUP_PY} install ${_SETUP_PY_ARGS})")
+
+  set(_PY_INSTALL_MSG
+    "
+\n**********************************************************************
+
+A Python package has been installed to ${_PY_INSTALL_DIR}. To use
+this package, be sure to add this directory to your PYTHONPATH, e.g.:
+
+  export PYTHONPATH=${_PY_INSTALL_DIR}:\\$\{PYTHONPATH\}
+
+**********************************************************************\n
+")
+  install(CODE
+    "execute_process(COMMAND ${CMAKE_COMMAND} -E echo \"${_PY_INSTALL_MSG}\")")
 
 endif (LBANN_HAS_PYTHON)
 
@@ -682,8 +697,10 @@ macro(append_str_tf STRING_VAR)
     math(EXPR _num_spaces "${_max_length} - ${_var_length}")
     lbann_get_space_string(_spaces ${_num_spaces})
     if (${var})
+      set(${var} "TRUE")
       string(APPEND ${STRING_VAR} "  ${var}:" "${_spaces}" "TRUE\n")
     else ()
+      set(${var} "FALSE")
       string(APPEND ${STRING_VAR} "  ${var}:" "${_spaces}" "FALSE\n")
     endif ()
   endforeach()
@@ -731,7 +748,6 @@ append_str_tf(_str
   LBANN_HAS_DOXYGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_ALUMINUM
-  LBANN_HAS_CONDUIT
   LBANN_HAS_PYTHON)
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
@@ -739,3 +755,25 @@ string(APPEND _str
 # Output to stdout
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${_str}")
 set(_str)
+
+#
+# Write a basic modulefile
+#
+set(LBANN_MODULEFILE_NAME "lbann-${LBANN_VERSION}.lua"
+  CACHE STRING
+  "The name of the LBANN modulefile to install. Must end in .lua.")
+
+if (NOT (LBANN_MODULEFILE_NAME MATCHES ".+\.lua"))
+  message(WARNING
+    "LBANN_MODULEFILE_NAME must have extension \".lua\". Appending.")
+  set(LBANN_MODULEFILE_NAME "${LBANN_MODULEFILE_NAME}.lua"
+    CACHE STRING "" FORCE)
+endif ()
+
+configure_file(
+  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
+  "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
+  @ONLY)
+install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
+  RENAME "${LBANN_MODULEFILE_NAME}"
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")

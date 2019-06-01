@@ -34,6 +34,7 @@ spack:
   - py-matplotlib
   - py-onnx
   - py-pandas
+  - protobuf
   - py-protobuf+cpp
   - py-setuptools
   - py-texttable

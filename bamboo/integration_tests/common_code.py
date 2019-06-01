@@ -9,6 +9,7 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
                 output_file_name, error_file_name, compiler_name, weekly=False):
     if model_name in ['alexnet', 'conv_autoencoder_imagenet']:
         data_reader_percent = 0.01
+        # If doing weekly testing, increase data_reader_percent
         if weekly:
             data_reader_percent = 0.10
         command = tools.get_command(

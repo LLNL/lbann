@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/utils/image.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 namespace lbann {
 
@@ -35,6 +36,12 @@ imagenet_reader::imagenet_reader(bool shuffle)
   : image_data_reader(shuffle) {
   set_defaults();
 }
+
+imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list, std::string role)
+  : image_data_reader(rhs, ds_sample_move_list, role) {}
+
+imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list)
+  : image_data_reader(rhs, ds_sample_move_list) {}
 
 imagenet_reader::~imagenet_reader() {}
 
@@ -56,6 +63,71 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   load_image(get_file_dir() + m_image_list[data_id].first, image, dims);
   auto X_v = create_datum_view(X, mb_idx);
   m_transform_pipeline.apply(image, X_v, dims);
+
+  // TODO: Restore data store functionality.
+  /*
+  int width=0, height=0, img_type=0;
+  int tid = m_io_thread_pool->get_local_thread_id();
+  CPUMat X_v = create_datum_view(X, mb_idx);
+  bool ret;
+  const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
+
+  bool have_node = true;
+  if (m_data_store != nullptr) {
+    conduit::Node node;
+    if (m_data_store->is_local_cache()) {
+      if (m_data_store->has_conduit_node(data_id)) {
+        const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+        node.set_external(ds_node);
+      } else {
+        load_conduit_node_from_file(data_id, node);
+        m_data_store->set_conduit_node(data_id, node);
+      }
+    } else if (data_store_active()) {
+      const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+      node.set_external(ds_node);
+    } else if (priming_data_store()) {
+      load_conduit_node_from_file(data_id, node);
+      m_data_store->set_conduit_node(data_id, node);
+    } else {
+      if (get_role() != "test") {
+        LBANN_ERROR("you shouldn't be here; please contact Dave Hysom");
+      }
+      if (m_issue_warning) {
+        if (is_master()) {
+          LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving a node from the store; role: " + get_role() + "; this is probably OK for test mode, but may be an error for train or validate modes");
+        }  
+        m_issue_warning = false;
+      }
+      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+      have_node = false;
+    }
+
+    if (have_node) {
+      char *buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+      size_t size = node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+      std::vector<unsigned char> v2(size);
+      for (size_t j=0; j<size; j++) {
+        v2[j] = buf[j];
+      }
+      ret = lbann::image_utils::load_image(v2, width, height, img_type, *(m_pps[tid]), X_v, &m_thread_cv_buffer[tid]);
+      //ret = lbann::image_utils::load_image(v2, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+    }
+  }
+  
+  // not using data store
+  else {
+    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+  }
+
+  if(!ret) {
+    LBANN_ERROR(get_type() + ": image_utils::load_image failed to load - " + imagepath);
+  }
+  if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
+    LBANN_ERROR( get_type() + ": mismatch data size -- either width, height or channel - " + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height) + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
+  }
+  */
+
   return true;
 }
 

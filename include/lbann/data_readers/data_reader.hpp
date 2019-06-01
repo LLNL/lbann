@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -99,7 +99,8 @@ class generic_data_reader {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr)
+    m_model(nullptr),
+    m_issue_warning(true)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -249,16 +250,7 @@ class generic_data_reader {
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
-  virtual void set_role(std::string role) {
-    m_role = role;
-    if (options::get()->has_string("jag_partitioned")
-        && get_role() == "train") {
-      m_jag_partitioned = true;
-      if (is_master()) {
-        std::cerr << "USING JAG DATA PARTITIONING\n";
-      }
-    }
-  }
+  virtual void set_role(std::string role);
 
   /**
    * Get the role for this dataset.
@@ -719,6 +711,8 @@ class generic_data_reader {
 
   void set_model(model *m) { m_model = m; }
 
+  model * get_model() const { return m_model; }
+
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
   virtual void post_update() {}
@@ -904,8 +898,14 @@ class generic_data_reader {
   void set_jag_variables(int mb_size);
   model *m_model;
 
+
   /** Transform pipeline for preprocessing data. */
   transform::transform_pipeline m_transform_pipeline;
+
+  /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
+  /// but we're not retrieving a conduit::Node from the store. This typically occurs
+  /// during the test phase
+  bool m_issue_warning;
 };
 
 template<typename T>
