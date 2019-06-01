@@ -650,6 +650,6 @@ Model 0 validation mini-batch time statistics : 0.48522s mean, 1.91048s max, 0.3
 --------------------------------------------------------------------------------
 srun: Force Terminated job 64528
 srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
-slurmstepd: error: *** STEP 64528.0 ON pascal105 CANCELED AT 2018-06-29T20:33:59 DUE TO TIME LIMIT ***
+slurmstepd: error: *** STEP 64528.0 ON pascal105 CANCELLED AT 2018-06-29T20:33:59 DUE TO TIME LIMIT ***
 srun: error: pascal105: task 0: Terminated
 srun: error: pascal105: task 1: Terminated
