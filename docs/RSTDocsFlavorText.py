@@ -54,7 +54,7 @@ inter-epoch data shuffling.''',
 
     'layers' : '''
 LBANN models are defined in model prototext files. The bulk of these
-defintions will be the series of layers which make up the model
+definitions will be the series of layers which make up the model
 itself. LBANN layers all inherit from the common base
 :code:`lbann::Layer`. The concrete layers belong to one of several
 categories.''',
@@ -78,13 +78,13 @@ The available metric functions in LBANN are found below.''',
 A model is a collection of layers that are composed into a
 computational graph. The model also holds the weight matrices for each
 learning layer. During training the weight matrices are the free
-parameters. For a trained network during inference the weight matrics
+parameters. For a trained network during inference the weight matrices
 are preloaded from saved matrices. The model also contains the
 objective function and optimizer classes for the weights.''',
 
     'objective_functions' : '''
 An objective function is the measure that training attempts to optimize.
-Objective functions are defined in a user's model defintion prototext
+Objective functions are defined in a user's model definition prototext
 file. Available objective functions can be found below.''',
 
     'objective_functions/weight_regularization' : '''
@@ -97,7 +97,7 @@ are selected when invoking LBANN via a command line argument
 are found below.''',
 
     'proto' : '''
-LBANN uses the Tensorflow protobuf format for specifying the
+LBANN uses the TensorFlow protobuf format for specifying the
 architecture of neural networks, data readers, and optimizers. It
 serves as the "assembly language" interface to the toolkit. The
 python front end of LBANN will emit a network description in the
