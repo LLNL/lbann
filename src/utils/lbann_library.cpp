@@ -178,7 +178,7 @@ std::unique_ptr<model> build_model_from_prototext(
   // User feedback
   print_parameters(*comm, pb);
 
-  // Intialize model
+  // Initialize model
   std::unique_ptr<model> ret_model{
     proto::construct_model(comm,
                            data_readers,
