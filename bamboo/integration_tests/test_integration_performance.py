@@ -154,10 +154,10 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
   should_log = True
   output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
   error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
-  if cluster in ['catalyst', 'pascal', 'surface']:
+  if cluster in ['catalyst', 'surface']:
     command = 'salloc --nodes 128 %s/bamboo/integration_tests/%s.sh > %s 2> %s' % (dir_name, model_name, output_file_name, error_file_name)
-  elif cluster == 'ray':
-    e = 'skeleton_performance_full_alexnet: Ray is unsupported for skeleton_performance_full_alexnet'
+  elif cluster in ['pascal', 'ray']:
+    e = 'skeleton_performance_full_alexnet: Pascal, Ray are unsupported for skeleton_performance_full_alexnet'
     print('Skip - ' + e)
     pytest.skip(e)
   else:
