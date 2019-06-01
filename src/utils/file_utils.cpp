@@ -80,7 +80,7 @@ bool parse_path(const std::string& path, std::string& dir, std::string& basename
   return !basename.empty();
 }
 
-/// Return file extention name.
+/// Return file extension name.
 std::string get_ext_name(const std::string file_name) {
   std::string dir;
   std::string basename;
@@ -94,7 +94,7 @@ std::string get_ext_name(const std::string file_name) {
 }
 
 
-/// Return basename without extention.
+/// Return basename without extension.
 std::string get_basename_without_ext(const std::string file_name) {
   std::string dir;
   std::string basename;

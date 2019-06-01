@@ -1617,7 +1617,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
     p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
     p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
     if(p.get_cb_type() == callback_type::batch)
-      p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
+      p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
 
     for (weights *w : m_weights) {
       w->save_to_checkpoint_distributed(p);
@@ -1637,7 +1637,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
   }
 
   else {
-    p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
+    p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
     save_rng_to_checkpoint_shared(p, m_comm);
 
     for (El::Int i = 0; i < get_num_layers(); ++i) {

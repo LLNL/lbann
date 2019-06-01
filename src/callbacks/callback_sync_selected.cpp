@@ -96,7 +96,7 @@ bool lbann_callback_sync_selected::check_if_cuda_profiler_initialized() {
  * @param out_mode output mode for cuda profiler.
  *        (cuda_profiler_setup::output_mode in the prototext)
  * @param comm global world communicator.
- * The profile output will be wrttien to out_dir/layer_name.prop.rank.prof
+ * The profile output will be written to out_dir/layer_name.prop.rank.prof
  */
 void lbann_callback_sync_selected::init_cuda_profiler(
   const std::string cfg_file, const std::string out_dir, int out_mode, lbann_comm* comm) const {
@@ -130,7 +130,7 @@ void lbann_callback_sync_selected::init_cuda_profiler(
   const auto ret = cudaProfilerInitialize(cfg_file.c_str(), o_file.c_str(), o_mode);
 
   if (ret == cudaErrorInvalidValue) {
-    throw lbann_exception("sync_selected is unabled to initialze cuda profiler: invalid inputs.");
+    throw lbann_exception("sync_selected is unable to initialize cuda profiler: invalid inputs.");
   } else if (ret == cudaErrorProfilerDisabled) {
     std::stringstream err;
     err << "sync_selected is unable to initialize cuda profiler: " << std::endl
@@ -261,7 +261,7 @@ void lbann_callback_sync_selected::do_pre_sync(Layer *l) {
 }
 
 void lbann_callback_sync_selected::do_sync(Layer *l) {
-#ifdef LBANN_NVPROF //(also deinfed LBANN_HAS_GPU)
+#ifdef LBANN_NVPROF //(also defined LBANN_HAS_GPU)
   if (m_sync_gpus) {
     El::GPUManager::SynchronizeDevice();
     cudaProfilerStop();

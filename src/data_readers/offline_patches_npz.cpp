@@ -337,7 +337,7 @@ bool offline_patches_npz::select(const std::string out_file, const size_t sample
     size_t* out_ptr        = cnpy_utils::data_ptr<size_t>(m_item_root_list, {sample_start});
     const size_t* data_ptr_end = cnpy_utils::data_ptr<size_t>(m_item_root_list, {sample_end});
 
-    // compute the min-max range of indieces reference
+    // compute the min-max range of indices reference
     auto result = std::minmax_element(data_ptr, data_ptr_end);
     file_root_range = std::make_pair(*result.first, *result.second + 1);
 
@@ -355,7 +355,7 @@ bool offline_patches_npz::select(const std::string out_file, const size_t sample
     size_t* out_ptr        = cnpy_utils::data_ptr<size_t>(m_item_variant_list, {sample_start});
     const size_t* data_ptr_end = cnpy_utils::data_ptr<size_t>(m_item_variant_list, {sample_end});
 
-    // compute the min-max range of indieces reference
+    // compute the min-max range of indices reference
     auto result = std::minmax_element(data_ptr, data_ptr_end);
     file_variant_range = std::make_pair(*result.first, *result.second + 1);
 

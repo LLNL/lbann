@@ -806,7 +806,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
   if (comm->am_world_master()) {
     // note: we only estimate memory required by the data reader/store
 
-    // get avaliable memory
+    // get available memory
     std::ifstream in("/proc/meminfo");
     std::string line;
     std::string units;

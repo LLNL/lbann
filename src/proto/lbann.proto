@@ -34,7 +34,7 @@ message Reader {
   double percent_of_data_to_use = 12;
 
   //for GAN model
-  bool gan_labelling = 201;
+  bool gan_labeling = 201;
   int32 gan_label_value = 202;
   ImagePreprocessor image_preprocessor = 13;
 
@@ -158,7 +158,7 @@ message ImagePreprocessor {
     uint32 patch_gap = 5; // gap between patches
     uint32 patch_jitter = 6; // max jittering amount for patch positions
     uint32 centering_mode = 7; // center patch positioning mode
-    uint32 ca_correction_mode = 8; // chromatic abberation correction mode
+    uint32 ca_correction_mode = 8; // chromatic aberration correction mode
   }
 
   message Noiser {

@@ -188,7 +188,7 @@ void cv_process::determine_inverse_lazy_normalization() {
  * It executes a range of transforms specified as [tr_strart, tr_end). If tr_end
  * is unspecified, it is considered as the total number of transforms. If it is 0,
  * no transform will perform.
- * By default, it executes all of them. Selective execution is useful whe
+ * By default, it executes all of them. Selective execution is useful when
  * generating multiple patches (small images) out of an image.
  * We first run transforms until generating patches, and stop. Then, generate
  * patches, and run the rest of the transforms on each patches generated.

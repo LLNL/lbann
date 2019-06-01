@@ -139,7 +139,7 @@ bool cv_normalizer::determine_transform(const cv::Mat& image) {
     default:
       return false;
       // Currently, do nothing for non-integral types. However, a set of scaling
-      // paramters can be added to the argument list of this function.
+      // parameters can be added to the argument list of this function.
     }
     u_scale = static_cast<ComputeType>(1.0)/largest;
   }

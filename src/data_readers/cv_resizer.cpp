@@ -74,7 +74,7 @@ bool cv_resizer::determine_transform(const cv::Mat& image) {
 
   const double zoom = image.cols * image.rows / static_cast<double>(m_width * m_height);
 
-  if (zoom <= 1.0) { // shirinking
+  if (zoom <= 1.0) { // shrinking
     m_interpolation =  m_interpolation_choices[static_cast<int>(m_adaptive_interpolation)];
   } else { // enlarging
     m_interpolation =  m_interpolation_choices[static_cast<int>(m_adaptive_interpolation) << 1];

@@ -304,7 +304,7 @@ void data_reader_jag::load() {
     m_num_labels=2;
   }
   if (is_master()) {
-    std::cout << "JAG load GAN m_gan_labelling : label_value "
+    std::cout << "JAG load GAN m_gan_labeling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 

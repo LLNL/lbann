@@ -91,7 +91,7 @@ El::Int get_partner_trainer(lbann_comm& comm,
  *  @param weights_names    Names of weights to exchange. If empty,
  *                          then all weights are exchanged.
  *  @param send_weights     Weights values sent to partner.
- *  @param recv_weights     Weights values recieved from partner.
+ *  @param recv_weights     Weights values received from partner.
  */
 void exchange_models__sendrecv_weights(lbann_comm& comm,
                                        El::Int partner_trainer,

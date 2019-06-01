@@ -152,7 +152,7 @@ std::unique_ptr<model> build_model_from_prototext(
     display_omp_setup();
   }
 
-  // Update the index lists to accomodate multi-trainer / multi-model specification
+  // Update the index lists to accommodate multi-trainer / multi-model specification
   customize_data_readers_index_list(*comm, pb);
 
   // Initialize data readers
@@ -178,7 +178,7 @@ std::unique_ptr<model> build_model_from_prototext(
   // User feedback
   print_parameters(*comm, pb);
 
-  // Initalize model
+  // Intialize model
   std::unique_ptr<model> ret_model{
     proto::construct_model(comm,
                            data_readers,

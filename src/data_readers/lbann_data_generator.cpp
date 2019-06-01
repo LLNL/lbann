@@ -42,7 +42,7 @@ lbann::DataGenerator::DataGenerator(const DataGenerator& source)
   : DataReader((const DataReader&) source),
     m_data_width(source.m_data_width), m_data_height(source.m_data_height)
 {
-  // No need to deallocate data on a copy constuctor
+  // No need to deallocate data on a copy constructor
 
   //  clone_image_data(source);
 }

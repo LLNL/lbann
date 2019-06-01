@@ -285,7 +285,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   }
 
   std::string epochdir;
-  // Create dir to restart from based off last recorded checkpoint (or overriden values in last.shared[distributed].checkpoint
+  // Create dir to restart from based off last recorded checkpoint (or overridden values in last.shared[distributed].checkpoint
   if(!shared){
     epochdir = get_distributed_checkpoint_dirname(m, dir, epoch, step);
     p.open_restart(epochdir.c_str());

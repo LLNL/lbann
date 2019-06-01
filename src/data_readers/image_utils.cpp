@@ -274,8 +274,8 @@ bool image_utils::save_image(const std::string& filename,
  *  @param inbuf   The buffer that contains the raw bytes read from an image file
  *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
  *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
- *  @param Width   The width of the image consturcted out of inbuf
- *  @param Height  The height of the image consructed
+ *  @param Width   The width of the image constructed out of inbuf
+ *  @param Height  The height of the image constructed
  *  @param Type    The type of the image constructed (OpenCV code used for cv::Mat)
  *  @param pp      The pre-processing parameters
  *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
@@ -301,8 +301,8 @@ bool image_utils::import_image(cv::InputArray inbuf,
  *  @param inbuf   The buffer that contains the raw bytes read from an image file
  *                 This can be for example, const std:vector<uchar>& or const cv::Mat&.
  *                 http://docs.opencv.org/trunk/d4/d32/classcv_1_1__InputArray.html
- *  @param Width   The width of a patch from the image consturcted out of inbuf
- *  @param Height  The height of a patch from the image consructed
+ *  @param Width   The width of a patch from the image constructed out of inbuf
+ *  @param Height  The height of a patch from the image constructed
  *  @param Type    The type of the image patches (OpenCV code used for cv::Mat)
  *  @param pp      The pre-processing parameters
  *  @param data    The pre-processed image data. A set of sub-matrix Views can be used to store the data.
@@ -327,7 +327,7 @@ bool image_utils::import_image(cv::InputArray inbuf,
 /**
  *  @param fileExt The format extension name of image file: e.g., ".jpeg", ".png"
  *  @param outbuf  The preallocated buffer to contain the bytes to be written into an image file
- *  @param Width   The width of the image to be consturcted based on the given data of ::Mat
+ *  @param Width   The width of the image to be constructed based on the given data of ::Mat
  *  @param Height  The height of the image
  *  @param Type    The type of the image (OpenCV code used for cv::Mat)
  *  @param pp      The post-processing parameters

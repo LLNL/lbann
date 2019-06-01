@@ -503,7 +503,7 @@ void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
 /**
  * First, it checks if the key is in the list of keys to filter.
  * Then, it checks if the key contains any prefix string to filter
- * while sayisfying the mininum length requirement.
+ * while satisfying the minimum length requirement.
  */
 bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   const std::vector<data_reader_jag_conduit::prefix_t>& prefix_filter, const std::string& key) const {
@@ -798,7 +798,7 @@ void data_reader_jag_conduit::load() {
   }
 
   if (is_master()) {
-    std::cout << "JAG load GAN m_gan_labelling : label_value "
+    std::cout << "JAG load GAN m_gan_labeling : label_value "
               << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
@@ -990,7 +990,7 @@ size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_condui
       return get_linearized_scalar_size();
     case JAG_Input:
       return get_linearized_input_size();
-    default: { // includes Unefined case
+    default: { // includes Undefined case
       _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_size() : ", \
                                      "unknown or undefined variable type");
     }
@@ -1262,7 +1262,7 @@ cv::Mat data_reader_jag_conduit::cast_to_cvMat(
   using InputBuf_T = cv_image_type<ch_t>;
   const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
                       reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
-  // reshape the image. Furter need to clone (deep-copy) the image
+  // reshape the image. Further need to clone (deep-copy) the image
   // to preserve the constness of the original data
   return (image.reshape(num_ch, height));
 }

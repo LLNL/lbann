@@ -97,7 +97,7 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
 
   // Check that layer terms in objective function match prototext
   if (num_layer_terms != proto_obj.layer_term_size()) {
-    err << "recieved " << num_layer_terms << " "
+    err << "received " << num_layer_terms << " "
         << "objective function layer terms, "
         << "but there are " << proto_obj.layer_term_size() << " "
         << "in the prototext";
