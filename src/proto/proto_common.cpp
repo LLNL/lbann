@@ -376,7 +376,7 @@ void init_data_readers(
       reader->set_use_percent( readme.percent_of_data_to_use() );
       reader->set_first_n( readme.first_n() );
 
-      reader->set_gan_labelling(readme.gan_labelling());
+      reader->set_gan_labeling(readme.gan_labeling());
       reader->set_gan_label_value(readme.gan_label_value());
 
       reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());

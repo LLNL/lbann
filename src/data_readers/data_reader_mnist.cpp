@@ -64,7 +64,7 @@ bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
-  if(!m_gan_labelling) { //default
+  if(!m_gan_labeling) { //default
     unsigned char label = m_image_data[data_id][0];
     Y.Set(label, mb_idx, 1);
   } else {
@@ -143,7 +143,7 @@ void mnist_reader::load() {
   }
   m_image_data.clear();
 
-  if(m_gan_labelling) m_num_labels=2;
+  if(m_gan_labeling) m_num_labels=2;
 
   const std::string FileDir = get_file_dir();
   const std::string ImageFile = get_data_filename();

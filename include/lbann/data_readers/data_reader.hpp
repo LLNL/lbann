@@ -91,7 +91,7 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_gan_labelling(false), //default, not GAN
+    m_gan_labeling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
     m_is_partitioned(false),
     m_partition_overlap(0),
@@ -706,8 +706,8 @@ class generic_data_reader : public lbann_image_preprocessor {
     LBANN_ERROR("you should not be here");
   }
 
-  void set_gan_labelling(bool has_gan_labelling) {
-     m_gan_labelling = has_gan_labelling;
+  void set_gan_labeling(bool has_gan_labeling) {
+     m_gan_labeling = has_gan_labeling;
   }
   void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
 
@@ -860,7 +860,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
  protected :
   //var to support GAN
-  bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
+  bool m_gan_labeling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
 
    /// if true, dataset is partitioned amongst several models,

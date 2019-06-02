@@ -9,7 +9,7 @@ data_reader {
     validation_percent: 0.1
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
-    gan_labelling: true
+    gan_labeling: true
     gan_label_value: 0
     image_preprocessor {
       noise_factor: 0.0
@@ -43,7 +43,7 @@ data_reader {
     validation_percent: 1.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
-    gan_labelling: true
+    gan_labeling: true
     gan_label_value: 0
     image_preprocessor {
       noise_factor: 0.0

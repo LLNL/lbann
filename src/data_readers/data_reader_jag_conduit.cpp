@@ -793,13 +793,13 @@ void data_reader_jag_conduit::check_input_keys() {
 
 
 void data_reader_jag_conduit::load() {
-  if(m_gan_labelling) {
+  if(m_gan_labeling) {
     m_num_labels=2;
   }
 
   if (is_master()) {
     std::cout << "JAG load GAN m_gan_labeling : label_value "
-              << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
+              << m_gan_labeling <<" : " << m_gan_label_value << std::endl;
   }
 
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
