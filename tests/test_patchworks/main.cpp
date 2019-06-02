@@ -109,7 +109,7 @@ bool test_patch(const int argc, char *argv[]) {
   img->display("patches of " + filename);
  #endif
 
-  std::string patched_filename = basename_with_no_extention(filename)
+  std::string patched_filename = basename_with_no_extension(filename)
                                  + ".patched." + lbann::get_ext_name(filename);
   ok = img->write(patched_filename);
   if (!ok) {

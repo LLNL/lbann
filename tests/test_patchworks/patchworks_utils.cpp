@@ -54,7 +54,7 @@ bool split_path(const std::string& path, std::string& dir, std::string& name) {
   return true;
 }
 
-std::string name_with_no_extention(const std::string filename) {
+std::string name_with_no_extension(const std::string filename) {
   size_t pos = filename.find_last_of('.');
   if (pos == 0u) {
     return filename;
@@ -62,7 +62,7 @@ std::string name_with_no_extention(const std::string filename) {
   return filename.substr(0, pos);
 }
 
-std::string get_file_extention(const std::string filename) {
+std::string get_file_extension(const std::string filename) {
   size_t pos = filename.find_last_of('.');
   if (pos == 0u) {
     return "";
@@ -70,9 +70,9 @@ std::string get_file_extention(const std::string filename) {
   return filename.substr(pos+1, filename.size());
 }
 
-std::string basename_with_no_extention(const std::string filename) {
+std::string basename_with_no_extension(const std::string filename) {
   std::string imgdir;
   std::string imgfile;
   split_path(filename, imgdir, imgfile);
-  return name_with_no_extention(imgfile);
+  return name_with_no_extension(imgfile);
 }

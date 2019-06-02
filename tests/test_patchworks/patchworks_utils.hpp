@@ -14,13 +14,13 @@ unsigned int get_screen_resolution(std::vector<std::pair<int, int> >& res);
 /// Split a file path into the directory and the file name under it
 bool split_path(const std::string& path, std::string& dir, std::string& name);
 
-/// return the file name without extention
-std::string name_with_no_extention(const std::string filename);
+/// return the file name without extension
+std::string name_with_no_extension(const std::string filename);
 
-/// return the file extention
-std::string get_file_extention(const std::string filename);
+/// return the file extension
+std::string get_file_extension(const std::string filename);
 
-/// return the base file name (respective to its final directory) without extention
-std::string basename_with_no_extention(const std::string filename);
+/// return the base file name (respective to its final directory) without extension
+std::string basename_with_no_extension(const std::string filename);
 
 #endif // _PATCHWORKS_UTILS_H_INCLUDED_

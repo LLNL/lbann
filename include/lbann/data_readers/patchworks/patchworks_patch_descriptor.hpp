@@ -120,7 +120,7 @@ class patch_descriptor {
   /// Explicitly set the area to sample patches
   bool set_sample_area(const ROI& area);
 
-  /// Set the file extention of patch files
+  /// Set the file extension of patch files
   void set_file_ext(const std::string e) {
     m_ext = e;
   }
