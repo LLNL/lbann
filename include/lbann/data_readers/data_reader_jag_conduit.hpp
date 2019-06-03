@@ -46,15 +46,24 @@ namespace lbann {
 
 class data_store_conduit;
 
+
 /**
  * Loads JAG simulation parameters and results from hdf5 files using conduit interfaces
  */
+template<class Ch_t=float, class Conduit_ch_t=conduit::float32_array, class Scalar_t=double, class Input_t=double, class TimeSeries_t=double>
 class data_reader_jag_conduit : public data_reader_conduit {
  public:
   using ch_t = float; ///< jag output image channel type
   using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
   using scalar_t = double; ///< jag scalar output type
   using input_t = double; ///< jag input parameter type
+
+/*
+  data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true)
+  : data_reader_conduit(pp, shuffle) {
+    set_defaults();
+  }
+*/
 
 
   data_reader_jag_conduit(bool shuffle = true) = delete;
@@ -120,4 +129,7 @@ class data_reader_jag_conduit : public data_reader_conduit {
 
 
 } // end of namespace lbann
-#endif // _DATA_READER_JAG_CONDUIT_HPP_
+
+#include "data_reader_jag_conduit_impl.hpp"
+
+#endif //_DATA_READER_JAG_CONDUIT_HPP_
