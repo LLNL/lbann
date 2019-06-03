@@ -15,11 +15,11 @@ Anatomy of an LBANN experiment
 Parallelism
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-LBANN is run under the `MPI
-<https://en.wikipedia.org/wiki/Message_Passing_Interface>`_ paradigm,
-i.e. with multiple processes that communicate with message
-passing. These processes are subdivided into "trainers." Conceptually,
-a trainer owns parallel objects, like models and data readers, and
+LBANN is run under `MPI
+<https://en.wikipedia.org/wiki/Message_Passing_Interface>`_, i.e. with
+multiple processes that communicate with message passing. This set of
+processes is subdivided into one or more "trainers." Conceptually, a
+trainer owns parallel objects, like models and data readers, and
 generally operates independently of other trainers.
 
 Comments:
@@ -29,7 +29,8 @@ Comments:
 
   - All trainers have the same number of processes.
 
-  - Each MPI process corresponds to one GPU.
+  - If GPU acceleration is enabled, each MPI process corresponds to
+    one GPU.
 
 + Processors are block assigned to trainers based on MPI rank.
 
@@ -42,9 +43,10 @@ Comments:
 + Generally, increasing the number of processes per trainer will
   accelerate computation but require more intra-trainer
   communication. There is typically a sweet spot where run time is
-  minimized, but it is complicated and sensitive to the type of
-  computational operations, the amount of work, the hardware and
-  network properties, and the communication algorithms.
+  minimized, but it is complicated and sensitive to the nature of the
+  computation, the mini-batch size, the data partitioning scheme,
+  hardware and network properties, the communication algorithms, and
+  myriad other factors.
 
   - Rule-of-thumb: Configure experiments so that the bulk of run time
     is taken by compute-bound operations (e.g. convolution or matrix
@@ -94,8 +96,9 @@ Model components
     "input error signals" (objective function gradients w.r.t. output
     tensors) from its children and sends "output error signals"
     (objective function gradients w.r.t. input tensors) to its
-    parents. If the layer has any associated weights, it will also
-    compute objective function gradients w.r.t. the weights.
+    parents. If the layer has any associated weight tensors, it will
+    also compute objective function gradients w.r.t. the weight
+    tensors.
 
   - Most layers require a specific number of parents and children, but
     LBANN will insert layers into the graph if there is a mismatch and
@@ -109,28 +112,22 @@ Model components
     parent/child relationships are absolutely unambiguous.
 
 + Weights: A tensor consisting of trainable parameters, typically
-  associated with one or more layers. A weights owns an initializer to
-  initially populate its values and an optimizer to find values that
-  minimize the objective function.
+  associated with one or more layers. A weight tensor owns an
+  initializer to initially populate its values and an optimizer to
+  find values that minimize the objective function.
 
-  - A weights without a specified initializer will use a zero
+  - A weight tensor without a specified initializer will use a zero
     initializer.
 
-  - A weights without a specified optimizer will use the model's
+  - A weight tensor without a specified optimizer will use the model's
     default optimizer.
 
-  - If a layer requires weightses and none are specified, it will
-    create the needed weightses. The layer will pick sensible
-    initializers and optimizers for the weightses.
+  - If a layer requires weight tensors and none are specified, it will
+    create the needed weight tensors. The layer will pick sensible
+    initializers and optimizers for the weight tensors.
 
-  - The dimensions of a weights is determined by their associated
-    layers. The user can not set it directly.
-
-.. note:: It is unfortunate that the deep learning community has
-   settled upon the plural word "weights" to describe tensors of
-   trainable parameters. Rather than using awkward and ambiguous
-   phrases like "set of weights," we have given up on grammar and
-   refer to "weights" (singular) and "weightses" (plural).
+  - The dimensions of a weight tensor is determined by their
+    associated layers. The user can not set it directly.
 
 + Objective function: Mathematical expression that the optimizers will
   attempt to minimize. It is made up of multiple terms that are added
@@ -141,7 +138,8 @@ Model components
 
 + Metric: Mathematical expression that will be reported to the
   user. This typically does not affect training, but is helpful for
-  evaluating the progress of training.
+  evaluating the progress of training. A canonical example for
+  classification problems is classification accuracy.
 
 + Callback: Function that is performed at various points during an
   experiment. Callbacks are helpful for reporting, debugging, and
@@ -275,8 +273,8 @@ A typical workflow involves the following steps:
     LBANN Protobuf specification at `src/proto/lbann.proto
     <https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`_.
     This file is currently the best source of documentation. Message
-    fields in the Protobuf specification are optional arguments for
-    the corresponding Python class constructor.
+    fields in the Protobuf specification are optional keyword
+    arguments for the corresponding Python class constructor.
 
 2. Configuring the default :python:`Optimizer` to be used by the
    :python:`Weights` es.
