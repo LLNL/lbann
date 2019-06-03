@@ -60,20 +60,10 @@ CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
 bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   El::Matrix<uint8_t> image;
   std::vector<size_t> dims;
-  load_image(get_file_dir() + m_image_list[data_id].first, image, dims);
-  auto X_v = create_datum_view(X, mb_idx);
-  m_transform_pipeline.apply(image, X_v, dims);
+  const std::string image_path = get_file_dir() + m_image_list[data_id].first;
 
-  // TODO: Restore data store functionality.
-  /*
-  int width=0, height=0, img_type=0;
-  int tid = m_io_thread_pool->get_local_thread_id();
-  CPUMat X_v = create_datum_view(X, mb_idx);
-  bool ret;
-  const std::string imagepath = get_file_dir() + m_image_list[data_id].first;
-
-  bool have_node = true;
   if (m_data_store != nullptr) {
+    bool have_node = true;
     conduit::Node node;
     if (m_data_store->is_local_cache()) {
       if (m_data_store->has_conduit_node(data_id)) {
@@ -96,37 +86,26 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
       if (m_issue_warning) {
         if (is_master()) {
           LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving a node from the store; role: " + get_role() + "; this is probably OK for test mode, but may be an error for train or validate modes");
-        }  
+        }
         m_issue_warning = false;
       }
-      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+      load_image(image_path, image, dims);
       have_node = false;
     }
 
     if (have_node) {
       char *buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
       size_t size = node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
-      std::vector<unsigned char> v2(size);
-      for (size_t j=0; j<size; j++) {
-        v2[j] = buf[j];
-      }
-      ret = lbann::image_utils::load_image(v2, width, height, img_type, *(m_pps[tid]), X_v, &m_thread_cv_buffer[tid]);
-      //ret = lbann::image_utils::load_image(v2, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+      El::Matrix<uint8_t> encoded_image(size, 1, reinterpret_cast<uint8_t*>(buf), size);
+      decode_image(encoded_image, image, dims);
     }
-  }
-  
-  // not using data store
-  else {
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v, m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
+  } else {
+    // Data store is not being used.
+    load_image(image_path, image, dims);
   }
 
-  if(!ret) {
-    LBANN_ERROR(get_type() + ": image_utils::load_image failed to load - " + imagepath);
-  }
-  if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
-    LBANN_ERROR( get_type() + ": mismatch data size -- either width, height or channel - " + imagepath + "[w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height) + "x" + std::to_string(CV_MAT_CN(img_type)) + "]");
-  }
-  */
+  auto X_v = create_datum_view(X, mb_idx);
+  m_transform_pipeline.apply(image, X_v, dims);
 
   return true;
 }
