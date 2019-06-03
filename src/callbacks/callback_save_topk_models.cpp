@@ -30,14 +30,16 @@
 #include "lbann/callbacks/callback_save_topk_models.hpp"
 
 namespace lbann {
-
 void lbann_callback_save_topk_models::on_test_end(model *m) {
+  bool am_in_topk = false;
   if(m->get_comm()->am_trainer_master()) {
-    compute_stats_save_models(m);
+    am_in_topk = compute_stats(m);
   }
+  m->get_comm()->trainer_broadcast(0, am_in_topk); 
+  if(am_in_topk) save_model(m);
 }
 
-void lbann_callback_save_topk_models::compute_stats_save_models(model *m) {
+bool lbann_callback_save_topk_models::compute_stats(model *m) {
   lbann_comm *comm = m->get_comm();
   const int num_trainers = comm->get_num_trainers();
   std::string mode_string = "test";
@@ -50,16 +52,26 @@ void lbann_callback_save_topk_models::compute_stats_save_models(model *m) {
       break;
     }
   }
+  //sanity check
   if (!found_metric) {
     std::stringstream err;
-    err << "could not find metric \"" << m_metric_name << "\""
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "could not find metric \"" << m_metric_name << "\""
         << "in model \"" << m->get_name() << "\"";
     LBANN_ERROR(err.str());
   }
 
+  if (m_k > num_trainers) {
+    std::stringstream err;
+    err << __FILE__ << " " << __LINE__ << " :: "
+        << "k ( " << m_k << ") " 
+        << " can not be greater than number of trainers (" 
+        << num_trainers << ") " ;
+    LBANN_ERROR(err.str());
+  }
+
   std::vector<EvalType> score_list(comm->get_num_trainers());
-  //void all_gather(T &src, std::vector<T> &data, const El::mpi::Comm& c) {
-  comm->all_gather<EvalType>(score, score_list,comm->get_world_comm());
+  comm->all_gather<EvalType>(score, score_list,comm->get_intertrainer_comm());
   std::vector<EvalType> score_v = score_list;
   //top-k in an ascending order
   if(m_ascending_ordering) std::sort(score_v.begin(), score_v.end(),std::less<EvalType>());
@@ -67,21 +79,20 @@ void lbann_callback_save_topk_models::compute_stats_save_models(model *m) {
   else  std::sort(score_v.begin(), score_v.end(),std::greater<EvalType>());
   score_v.resize(m_k);
   
-  std::cout << "Trainer score_v size m_k " << comm->get_trainer_rank() << score_v.size() << m_k << std::endl; 
-  
   if (comm->am_world_master()) {
     std::cout << "Top " << m_k << " " << m_metric_name << " average "
-              << std::accumulate(score_v.begin(), score_v.end(), EvalType(0))/m_k;
+              << std::accumulate(score_v.begin(), score_v.end(), EvalType(0))/m_k << std::endl;
   } 
   for(int i =0; i < num_trainers; ++i) {
     if(std::find(score_v.begin(), score_v.end(), 
                  score_list[i]) != score_v.end()) { 
       if( i == comm->get_trainer_rank()) {
-        save_model_weights(m);
+        std::cout << "Trainer [ " << comm->get_trainer_rank() << "] in top list with score " << score_list[i] << std::endl;;
+          return true;
       }
     }
   } 
-
+  return false;
 }
 
 }  // namespace lbann
