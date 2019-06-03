@@ -301,10 +301,9 @@ A typical workflow involves the following steps:
 
    + Supported job managers are Slurm and LSF.
 
-   + LLNL users may prefer to use
-   :python:`lbann.contrib.lc.launcher.run`. This is a wrapper around
-   :python:`lbann.run`, with defaults and optimizations specifically
-   for LC systems.
+   + LLNL users may prefer to use :python:`lbann.contrib.lc.launcher.run`.
+     This is a wrapper around :python:`lbann.run`, with defaults and
+     optimizations specifically for LC systems.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A simple example
@@ -392,8 +391,8 @@ complicated models.
 :python:`lbann.proto`
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The :proto:`save_prototext` function will export a Protobuf text file,
-which can be fed into the Protobuf frontend.
+The :python:`save_prototext` function will export a Protobuf text
+file, which can be fed into the Protobuf frontend.
 
 ^^^^^^^^^^^^^^^^^^^^^^^^
 :python:`lbann.onnx`
