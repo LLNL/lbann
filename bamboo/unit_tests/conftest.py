@@ -19,17 +19,21 @@ def pytest_addoption(parser):
     # For local testing only
     parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
 
+
 @pytest.fixture
 def cluster(request):
     return request.config.getoption('--cluster')
+
 
 @pytest.fixture
 def dirname(request):
     return request.config.getoption('--dirname')
 
+
 @pytest.fixture
 def exes(request):
     return request.config.getoption('--exes')
+
 
 @pytest.fixture
 def exe(request):

@@ -13,12 +13,12 @@ def pytest_addoption(parser):
 
     parser.addoption('--cluster', action='store', default=cluster,
                      help='--cluster=<cluster> to specify the cluster being run on, for the purpose of determing which commands to use. Default the current cluster')
+    parser.addoption('--debug_build', action='store_true', default=False,
+                      help='--debug_build specifies that debug tests should be run, even without doing a --weekly build. Default False')
     parser.addoption('--dirname', action='store', default=default_dirname,
                      help='--dirname=<path_to_dir> to specify the top-level directory. Default directory of build_lbann_lc executable')
     parser.addoption('--exes', action='store', default=default_exes,
                      help='--exes={compiler_name: path}')
-    parser.addoption('--log', action='store', default=0,
-                     help='--log=1 to keep trimmed accuracy files. Default (--log=0) removes files')
     parser.addoption('--run', action='store_true', default=False,
                      help='--run specifies that a test normally ignored should be run. Default False')
     parser.addoption('--weekly', action='store_true', default=False,
@@ -33,8 +33,8 @@ def cluster(request):
 
 
 @pytest.fixture
-def debug(request):
-    return request.config.getoption('--debug')
+def debug_build(request):
+    return request.config.getoption('--debug_build')
 
 
 @pytest.fixture
