@@ -437,6 +437,7 @@ message Callback {
    CallbackConfusionMatrix confusion_matrix = 36;
    CallbackCheckMetric check_metric = 37;
    CallbackPerturbAdam perturb_adam = 38;
+   CallbackPerturbDropout perturb_dropout = 39;
 }
 
 message CallbackLTFB {
@@ -445,6 +446,7 @@ message CallbackLTFB {
   string weights = 3;       // default: all weights
   bool low_score_wins = 4;
   string communication_algorithm = 5;   // default: "sendrecv_weights"
+  bool exchange_hyperparameters = 6;
 }
 
 message CallbackStepLearningRate {
@@ -678,6 +680,10 @@ message CallbackPerturbAdam {
   string weights = 7;               // Weights with Adam optimizer
 }
 
+message CallbackPerturbDropout {
+  float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
+  string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
+}
 //========================================================================
 // Weights
 //========================================================================

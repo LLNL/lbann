@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -51,7 +51,7 @@ class lbann_callback_dump_error_signals : public lbann_callback {
 
   /** Write error signals to file after each backward prop step. */
   void on_backward_prop_end(model *m, Layer *l) override;
-  
+
  private:
   /** Basename for output files. */
   std::string m_basename;

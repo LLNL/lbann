@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,7 +46,7 @@ __global__ void mean_contribution_kernel(El::Int height,
                                          const DataType* __restrict__ input1,
                                          El::Int input1_ldim,
                                          DataType* __restrict__ contribution) {
-  
+
   // Indices
   const El::Int tid = threadIdx.x;
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -55,7 +55,7 @@ __global__ void mean_contribution_kernel(El::Int height,
 
   // Compute local contribution for each matrix column
   for (El::Int col = bidy; col < width; col += gridDim.y) {
-    
+
     // Compute contributions for each thread
     DataType private_contribution0 = 0;
     DataType private_contribution1 = 0;
@@ -63,7 +63,7 @@ __global__ void mean_contribution_kernel(El::Int height,
       private_contribution0 += input0[row + col * input0_ldim];
       private_contribution1 += input1[row + col * input1_ldim];
     }
-    
+
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
     __shared__ DataType shared_contribution0[block_size];
@@ -83,11 +83,11 @@ __global__ void mean_contribution_kernel(El::Int height,
       cuda::atomic_add(&contribution[2*col+1],
                        scale * shared_contribution1[0]);
     }
-    
+
   }
-  
+
 }
-  
+
 /** Compute local contributions to covariances. */
 template <El::Int block_size>
 __global__ void covariance_contribution_kernel(El::Int height,
@@ -99,7 +99,7 @@ __global__ void covariance_contribution_kernel(El::Int height,
                                                El::Int input1_ldim,
                                                const DataType* __restrict__ means,
                                                DataType* __restrict__ contribution) {
-  
+
   // Indices
   const El::Int tid = threadIdx.x;
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -110,7 +110,7 @@ __global__ void covariance_contribution_kernel(El::Int height,
   for (El::Int col = bidy; col < width; col += gridDim.y) {
     const auto& mean0 = means[2*col];
     const auto& mean1 = means[2*col+1];
-    
+
     // Compute contributions for each thread
     DataType private_contribution = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
@@ -133,9 +133,9 @@ __global__ void covariance_contribution_kernel(El::Int height,
       cuda::atomic_add(&contribution[col],
                        scale * shared_contribution[0]);
     }
-    
+
   }
-  
+
 }
 
 /** Compute gradients w.r.t. inputs. */
@@ -170,7 +170,7 @@ void covariance_backprop_kernel(El::Int height,
     dx1 = dy * scale * (x0 - mean0);
   }
 }
-  
+
 /** GPU forward prop implementation.
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
@@ -187,7 +187,7 @@ void fp_gpu(const AbsDistMat& input0,
   const auto& local_input1 = static_cast<const GPUMat&>(input1.LockedMatrix());
   auto& local_means = static_cast<GPUMat&>(means.Matrix());
   auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input0.Height();
   const auto& width = input0.Width();
@@ -235,7 +235,7 @@ void fp_gpu(const AbsDistMat& input0,
   }
   El::AllReduce(workspace, workspace.RedundantComm());
   El::Copy(workspace, output);
-  
+
 }
 
 /** GPU backprop implementation.
@@ -257,7 +257,7 @@ void bp_gpu(const AbsDistMat& input0,
   auto& local_gradient_wrt_input1 = static_cast<GPUMat&>(gradient_wrt_input1.Matrix());
   const auto& local_means = static_cast<const GPUMat&>(means.LockedMatrix());
   auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input0.Height();
   const auto& local_height = local_input0.Height();
@@ -285,7 +285,7 @@ void bp_gpu(const AbsDistMat& input0,
 }
 
 } // namespace
-  
+
 template <>
 void covariance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {

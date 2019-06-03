@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,6 +35,10 @@ namespace lbann {
 class imagenet_reader : public image_data_reader {
  public:
   imagenet_reader(bool shuffle = true);
+  imagenet_reader(const imagenet_reader&,
+                  const std::vector<int>& ds_sample_move_list);
+  imagenet_reader(const imagenet_reader&,
+                  const std::vector<int>& ds_sample_move_list, std::string role);
   imagenet_reader(const imagenet_reader&) = default;
   imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() override;

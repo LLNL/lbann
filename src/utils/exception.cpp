@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,7 +29,7 @@
 #include "lbann/comm.hpp"
 
 namespace lbann {
-  
+
 exception::exception(std::string message, bool print)
   : m_message(message),
     m_stack_trace(stack_trace::get()) {
@@ -46,7 +46,7 @@ exception::exception(std::string message, bool print)
 
   // Print report to standard error stream
   if (print) { print_report(std::cerr); }
-  
+
 }
 
 const char* exception::what() const noexcept {

@@ -1,5 +1,3 @@
-if (LBANN_HAS_CONDUIT)
-
   add_executable( build_index-bin build_index.cpp )
   target_link_libraries(build_index-bin lbann )
   set_target_properties(build_index-bin PROPERTIES OUTPUT_NAME build_index)
@@ -56,4 +54,3 @@ if (LBANN_HAS_CONDUIT)
   target_link_libraries(generate_corrupt_samples-bin lbann )
   set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
 
-endif ()
