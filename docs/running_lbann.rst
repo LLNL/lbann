@@ -74,6 +74,10 @@ Comments:
     (compute nodes on a system are typically subdivided into multiple
     groups, e.g. for batch jobs and for debugging).
 
+    + With :bash:`salloc`, specify the partition using the
+      :bash:`--partition` command-line argument and specify the
+      account using :bash:`--account`.
+
   - Familiarize yourself with the rules for the systems you use
     (e.g. the expected work for each partition, time limits, job
     submission limits) and be a good neighbor.
@@ -82,10 +86,10 @@ Comments:
 Model components
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: `A major refactor of core model infrastructure
-          <https://github.com/LLNL/lbann/pull/916>`_ is pending. This
-          documentation will be updated once it is merged and the
-          interface stabilized.
+.. warning:: `A major refactor of core model infrastructure
+             <https://github.com/LLNL/lbann/pull/916>`_ is
+             pending. This documentation will be updated once it is
+             merged and the interface stabilized.
 
 + Layer: A tensor operation, arranged within a directed acyclic graph.
 
@@ -149,9 +153,9 @@ Model components
 Data readers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: The core infrastructure for data readers is slated for
-          significant refactoring, so expect major changes in the
-          future.
+.. warning:: The core infrastructure for data readers is slated for
+             significant refactoring, so expect major changes in the
+             future.
 
 Data readers are responsible for managing a data set and providing
 data samples to models. A data set is comprised of independent data
@@ -190,10 +194,10 @@ same dimensions. The data dimensions must be known from the beginning
 of the experiment and can not change. However, real data is rarely so
 consistent and some preprocessing is typically required.
 
-.. note:: `A major refactor of the preprocessing pipeline
-          <https://github.com/LLNL/lbann/pull/1014>`_ is pending. This
-          documentation will be updated once it is merged and the
-          interface stabilized.
+.. warning:: `A major refactor of the preprocessing pipeline
+             <https://github.com/LLNL/lbann/pull/1014>`_ is
+             pending. This documentation will be updated once it is
+             merged and the interface stabilized.
 
 ------------------------------------------------
 Python frontend
@@ -208,8 +212,8 @@ Comments:
 
 + Under-the-hood, the Python frontend is actually a convenience
   wrapper around the Protobuf frontend. The core infrastructure allows
-  users to configure an experiment, "compiles" it to a Prototext text
-  file, and feeds it into the Protobuf frontend.
+  users to configure an experiment and "compiles" it to a Prototext
+  text file.
 
 + The Python interface can only configure and launch experiments. It
   is not active during an experiment and it does not allow for any
@@ -233,9 +237,9 @@ it. There are several ways to do this:
 
     module load lbann
 
-.. note:: This will *not* work if LBANN has been built with
-  :bash:`scripts/build_lbann_lc.sh` or with the Spack developer build
-  process.
+.. warning:: This will *not* work if LBANN has been built with
+             :bash:`scripts/build_lbann_lc.sh` or with the Spack
+             developer build process.
 
 + LBANN includes a modulefile that updates :bash:`PYTHONPATH`:
 
@@ -267,7 +271,7 @@ Basic usage
 A typical workflow involves the following steps:
 
 1. Configuring LBANN model components (like the graph of
-:python:`Layer` s) and creating a :python:`Model`.
+   :python:`Layer` s) and creating a :python:`Model`.
 
   + Classes for model components are automatically generated from the
     LBANN Protobuf specification at `src/proto/lbann.proto
@@ -367,11 +371,11 @@ Useful submodules
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 A :python:`Module` is a pattern of layers that can be applied multiple
-times in a neural network. Once created, a `Module` is *callable*,
-taking a layer as input and returning a layer as output. They will
-create and manage `Weights` es internally, so they are convenient for
-weight sharing between different layers. They are also useful for
-complicated patterns like RNN cells.
+times in a neural network. Once created, a :python:`Module` is
+*callable*, taking a layer as input and returning a layer as
+output. They will create and manage :python:`Weights` es internally,
+so they are convenient for weight sharing between different
+layers. They are also useful for complicated patterns like RNN cells.
 
 *A possible note of confusion*: "Modules" in LBANN are similar to
 "layers" in PyTorch, TensorFlow, and Keras. LBANN uses "layer" to
