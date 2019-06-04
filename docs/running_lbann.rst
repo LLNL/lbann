@@ -128,7 +128,9 @@ Model components
 
   - If a layer requires weight tensors and none are specified, it will
     create the needed weight tensors. The layer will pick sensible
-    initializers and optimizers for the weight tensors.
+    initializers and optimizers for the weight tensors. For example, a
+    convolution layer will initialize its kernel tensor with He normal
+    initialization and with the model's default optimizer.
 
   - The dimensions of a weight tensor is determined by their
     associated layers. The user can not set it directly.
@@ -148,6 +150,13 @@ Model components
 + Callback: Function that is performed at various points during an
   experiment. Callbacks are helpful for reporting, debugging, and
   performing advanced training techniques.
+
+  - This is the natural home for experimental training
+    techniques.
+
+  - A common use-case is to export values with the "dump outputs"
+    callback so that the user can perform data post-processing or
+    visualization.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Data readers
@@ -237,7 +246,7 @@ it. There are several ways to do this:
 
     module load lbann
 
-.. warning:: This will *not* work if LBANN has been built with
+.. warning:: The above will *not* work if LBANN has been built with
              :bash:`scripts/build_lbann_lc.sh` or with the Spack
              developer build process.
 
@@ -431,5 +440,5 @@ file. The basic template for running LBANN is
 The LBANN Protobuf format is defined in `src/proto/lbann.proto
 <https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`_. It
 is important to remember that the default value of a Protobuf field is
-logically false (e.g. false for Boolean fields and empty for string
+logically zero (e.g. false for Boolean fields and empty for string
 fields).
