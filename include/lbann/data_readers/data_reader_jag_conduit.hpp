@@ -53,18 +53,6 @@ class data_store_conduit;
 template<class Ch_t=float, class Conduit_ch_t=conduit::float32_array, class Scalar_t=double, class Input_t=double, class TimeSeries_t=double>
 class data_reader_jag_conduit : public data_reader_conduit {
  public:
-  using ch_t = float; ///< jag output image channel type
-  using conduit_ch_t = conduit::float32_array; ///< conduit type for ch_t array wrapper
-  using scalar_t = double; ///< jag scalar output type
-  using input_t = double; ///< jag input parameter type
-
-/*
-  data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true)
-  : data_reader_conduit(pp, shuffle) {
-    set_defaults();
-  }
-*/
-
 
   data_reader_jag_conduit(bool shuffle = true) = delete;
   data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
@@ -91,16 +79,16 @@ class data_reader_jag_conduit : public data_reader_conduit {
    * Return the images of the i-th sample as an 1-D vector of lbann::DataType
    * There is one image per view, each of which is taken at closest to the bang time.
    */
-  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample) const;
+  std::vector<Ch_t> get_images(const size_t i, conduit::Node& sample) const;
 
   /// Return the scalar simulation output data of the i-th sample
-  std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
+  std::vector<Scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
 
   /// Return the simulation input parameters of the i-th sample
-  std::vector<input_t> get_inputs(const size_t i, conduit::Node& sample) const;
+  std::vector<Input_t> get_inputs(const size_t i, conduit::Node& sample) const;
 
   /// A untiliy function to convert the pointer to image data into an opencv image
-  static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
+  static cv::Mat cast_to_cvMat(const std::pair<size_t, const Ch_t*> img,
                                const int height, const int num_ch=1);
  protected:
 
@@ -123,7 +111,7 @@ class data_reader_jag_conduit : public data_reader_conduit {
 #endif // _JAG_OFFLINE_TOOL_MODE_
 
   /// Obtain image data
-  std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
+  std::vector< std::vector<Ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
 
 };
 

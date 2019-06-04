@@ -54,31 +54,13 @@
 #include <sstream>
 #endif
 
-#if 0
-// This macro may be moved to a global scope
-#define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
-  std::stringstream _err; \
-  _err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << (_CLASS_NAME_) << "::" << (_MSG_); \
-  throw lbann_exception(_err.str()); \
-}
+//#define _CN_ "data_reader_jag_conduit"
 
-#define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) { \
-  std::stringstream _err; \
-  _err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << (_CLASS_NAME_) << "::" << (_MSG1_) << (_MSG2_); \
-  throw lbann_exception(_err.str()); \
-}
-
-// This comes after all the headers, and is only visible within the current implementation file.
-// To make sure, we put '#undef _CN_' at the end of this file
-#define _CN_ "data_reader_jag_conduit"
-
-#endif
+//#endif
 
 namespace lbann {
 
-template<class Ch_t=float, class Conduit_ch_t=conduit::float32_array, class Scalar_t=double, class Input_t=double, class TimeSeries_t=double>
+template<class Ch_t, class Conduit_ch_t , class Scalar_t, class Input_t, class TimeSeries_t>
 data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : data_reader_conduit(pp, shuffle) {
   set_defaults();
@@ -89,17 +71,20 @@ void data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::c
 (const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
 }
 
-data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
   : data_reader_conduit(rhs) {
   copy_members(rhs);
 }
 
-data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
   : data_reader_conduit(rhs) {
   copy_members(rhs, ds_sample_move_list);
 }
 
-data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+data_reader_jag_conduit& data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::operator=(const data_reader_jag_conduit& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -112,14 +97,17 @@ data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_ja
   return (*this);
 }
 
-data_reader_jag_conduit::~data_reader_jag_conduit() {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::~data_reader_jag_conduit() {
 }
 
-void data_reader_jag_conduit::set_defaults() {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+void data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::set_defaults() {
 }
 
 
-void data_reader_jag_conduit::check_image_data() {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+void data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::check_image_data() {
   //@TODO revisit later -- don't know how to handle this yet
   if (m_data_store != nullptr) {
     return;
@@ -131,7 +119,7 @@ void data_reader_jag_conduit::check_image_data() {
 
   size_t first_idx = (m_sample_list[0]).first;
   if (!has_conduit_path(first_idx, "")) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no sample by " + m_sample_list[first_idx].second);
+    LBANN_ERROR("check_image_data() : no sample by " + m_sample_list[first_idx].second);
     return;
   }
   conduit::Node n_imageset;
@@ -144,13 +132,13 @@ void data_reader_jag_conduit::check_image_data() {
   }
   for (const auto& emi_tag: m_emi_image_keys) {
     if (!has_conduit_path(first_idx, m_output_image_prefix + emi_tag)) {
-      _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
+      LBANN_ERROR("check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
   conduit::Node n_image;
   load_conduit_node(first_idx, m_output_image_prefix + m_emi_image_keys[0], n_image);
-  conduit_ch_t emi = n_image.value();
+  Conduit_ch_t emi = n_image.value();
 
   if (m_image_linearized_size != static_cast<size_t>(emi.number_of_elements())) {
     if ((m_image_width == 0) && (m_image_height == 0)) {
@@ -161,14 +149,14 @@ void data_reader_jag_conduit::check_image_data() {
     } else {
       std::string msg = "expected linearized emi image size: "
                       + std::to_string(emi.number_of_elements()) + '\n';
-      _THROW_LBANN_EXCEPTION_(_CN_, msg + get_description());
+      LBANN_ERROR(msg + get_description());
     }
   }
 
   if (m_image_normalization_params.empty()) {
     m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 0.0));
   } else if (m_image_normalization_params.size() != static_cast<size_t>(m_image_num_channels)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of image normalization parameter sets!" \
+    LBANN_ERROR("Incorrect number of image normalization parameter sets!" \
                                 + std::to_string(m_image_normalization_params.size()) + " != " \
                                 + std::to_string(m_image_num_channels));
   }
@@ -186,9 +174,10 @@ void data_reader_jag_conduit::check_image_data() {
 
 
 
-std::vector< std::vector<data_reader_jag_conduit::ch_t> >
-data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > image_ptrs;
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+std::vector< std::vector<Ch_t> >
+data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_image_data(const size_t sample_id, conduit::Node& sample) const {
+  std::vector< std::vector<Ch_t> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
@@ -207,32 +196,33 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
         sample = n_image;
       }
     }
-    conduit_ch_t emi = sample[conduit_obj].value();
+    Conduit_ch_t emi = sample[conduit_obj].value();
     const size_t num_vals = emi.number_of_elements();
-    const ch_t* emi_data = sample[conduit_obj].value();
+    const Ch_t* emi_data = sample[conduit_obj].value();
     image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
   return image_ptrs;
 }
 
-cv::Mat data_reader_jag_conduit::cast_to_cvMat(
-  const std::pair<size_t, const ch_t*> img, const int height, const int num_ch) {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+cv::Mat data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::cast_to_cvMat(
+  const std::pair<size_t, const Ch_t*> img, const int height, const int num_ch) {
   const int num_pixels = static_cast<int>(img.first);
-  const ch_t* ptr = img.second;
+  const Ch_t* ptr = img.second;
 
   // add a zero copying view to data
-  using InputBuf_T = cv_image_type<ch_t>;
+  using InputBuf_T = cv_image_type<Ch_t>;
   const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
-                      reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
+                      reinterpret_cast<void*>(const_cast<Ch_t*>(ptr)));
   // reshape the image. Furter need to clone (deep-copy) the image
   // to preserve the constness of the original data
   return (image.reshape(num_ch, height));
 }
 
-
-std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
-  const std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+std::vector<cv::Mat> data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
+  const std::vector< std::vector<Ch_t> > img_data(get_image_data(sample_id, sample));
   std::vector<cv::Mat> images;
 
   if (m_split_channels) {
@@ -269,21 +259,22 @@ std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_
   return images;
 }
 
-std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<ch_t> images;
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+std::vector<Ch_t> data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_images(const size_t sample_id, conduit::Node& sample) const {
+  std::vector< std::vector<Ch_t> > img_data(get_image_data(sample_id, sample));
+  std::vector<Ch_t> images;
 
   if (m_split_channels) {
     images.resize(get_linearized_size(JAG_Image));
     size_t i = 0u;
     size_t j = 0u;
     for (const auto& img: img_data) {
-      const ch_t * const ptr_end = img.data() + img.size();
+      const Ch_t * const ptr_end = img.data() + img.size();
       for (int c=0; c < m_image_num_channels; ++c) {
         const auto& tr = m_image_normalization_params.at(c);
-        for (const ch_t* ptr = img.data() + c; ptr < ptr_end; ptr += m_image_num_channels) {
+        for (const Ch_t* ptr = img.data() + c; ptr < ptr_end; ptr += m_image_num_channels) {
         #if 1 // with normalization
-          images[i++] = cv::saturate_cast<ch_t>(*ptr * tr.first + tr.second);
+          images[i++] = cv::saturate_cast<Ch_t>(*ptr * tr.first + tr.second);
         #else
           images[i++] = *ptr;
         #endif
@@ -296,7 +287,7 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
     for (const auto& img: img_data) {
     #if 1 // with normalization
       // TODO: normalization needed
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : normalization not implemented yet");
+      LBANN_ERROR("get_images() : normalization not implemented yet");
       (void) img;
     #else
       images.insert(images.end(), img.cbegin(), ptr + img.cend());
@@ -307,8 +298,9 @@ std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(c
   return images;
 }
 
-std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
-  std::vector<scalar_t> scalars;
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+std::vector<Scalar_t> data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_scalars(const size_t sample_id, conduit::Node& sample) const {
+  std::vector<Scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
 
   auto tr = m_scalar_normalization_params.cbegin();
@@ -329,24 +321,25 @@ std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scal
         sample = n_scalar;
       }
     }
-    const scalar_t val_raw = static_cast<scalar_t>(sample[conduit_obj].to_value());
-    const scalar_t val = static_cast<scalar_t>(val_raw * tr->first + tr->second);
+    const Scalar_t val_raw = static_cast<Scalar_t>(sample[conduit_obj].to_value());
+    const Scalar_t val = static_cast<Scalar_t>(val_raw * tr->first + tr->second);
     scalars.push_back(val);
     tr ++;
   }
   return scalars;
 }
 
-std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_inputs(const size_t sample_id, conduit::Node& sample) const {
-  std::vector<input_t> inputs;
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+std::vector<Input_t> data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_inputs(const size_t sample_id, conduit::Node& sample) const {
+  std::vector<Input_t> inputs;
   inputs.reserve(m_input_keys.size());
 
   // The sequence of normalization parameters should follow the same order as
   // that of the variable keys.
   auto tr = m_input_normalization_params.cbegin();
 
-  // automatically determine which method to use based on if all the variables are of input_t
-  if (m_uniform_input_type) {
+  // automatically determine which method to use based on if all the variables are of Input_t
+  if (m_uniform_Input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
@@ -364,8 +357,8 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
           sample = n_input;
         }
       }
-      const input_t val_raw = static_cast<input_t>(sample[conduit_obj].value());
-      const input_t val = static_cast<input_t>(val_raw * tr->first + tr->second);
+      const Input_t val_raw = static_cast<Input_t>(sample[conduit_obj].value());
+      const Input_t val = static_cast<Input_t>(val_raw * tr->first + tr->second);
       inputs.push_back(val);
       tr ++;
     }
@@ -387,8 +380,8 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
         }
       }
       add_val(key, sample[conduit_obj], inputs); // more overhead but general
-      input_t& val = inputs.back();
-      val = static_cast<input_t>(val * tr->first + tr->second);
+      Input_t& val = inputs.back();
+      val = static_cast<Input_t>(val * tr->first + tr->second);
       tr ++;
     }
   }
@@ -397,7 +390,8 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
 }
 
 
-bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+bool data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
@@ -409,7 +403,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       std::vector<cv::Mat> images = get_cv_images(data_id, sample);
 
       if (images.size() != num_images) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
+        LABNN_ERROR("fetch() : the number of images is not as expected" + 
           std::to_string(images.size()) + "!=" + std::to_string(num_images));
       }
 
@@ -420,24 +414,25 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       break;
     }
     case JAG_Scalar: {
-      const std::vector<scalar_t> scalars(get_scalars(data_id, sample));
-      set_minibatch_item<scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
+      const std::vector<Scalar_t> scalars(get_scalars(data_id, sample));
+      set_minibatch_item<Scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
       break;
     }
     case JAG_Input: {
-      const std::vector<input_t> inputs(get_inputs(data_id, sample));
-      set_minibatch_item<input_t>(X, mb_idx, inputs.data(), get_linearized_input_size());
+      const std::vector<Input_t> inputs(get_inputs(data_id, sample));
+      set_minibatch_item<Input_t>(X, mb_idx, inputs.data(), get_linearized_input_size());
       break;
     }
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_" + tag + "() : unknown or undefined variable type");
+      LBANN_ERROR("fetch_" + tag + "() : unknown or undefined variable type");
     }
   }
   return true;
 }
 
 
-bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+bool data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
@@ -532,14 +527,14 @@ void data_reader_jag_conduit::check_input_keys() {
     keys_conduit.insert(std::pair<std::string, TypeID>(itr.name(), static_cast<TypeID>(n.dtype().id())));
   }
 
-  bool is_input_t = true;
+  bool is_Input_t = true;
 
   for (size_t i=0u; i < m_input_keys.size(); ++i) {
     std::map<std::string, TypeID>::const_iterator it = keys_conduit.find(m_input_keys[i]);
     if (it != keys_conduit.cend()) {
       num_found ++;
       found[i] = true;
-      is_input_t = is_input_t && is_same_type<input_t>(it->second);
+      is_Input_t = is_Input_t && is_same_type<Input_t>(it->second);
     }
   }
 
@@ -550,15 +545,15 @@ void data_reader_jag_conduit::check_input_keys() {
         msg += ' ' + m_input_keys[i];
       }
     }
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_input_keys() : " + msg);
+    LBANN_ERROR("check_input_keys() : " + msg);
   }
 
-  m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_input_t;
+  m_uniform_Input_type = (m_input_keys.size() == 0u)? false : is_Input_t;
 
   if (m_input_normalization_params.empty()) {
     m_input_normalization_params.assign(m_input_keys.size(), linear_transform_t(1.0, 0.0));
   } else if (m_input_normalization_params.size() != m_input_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of input normalization parameter sets! " \
+     LBANN_ERROR("Incorrect number of input normalization parameter sets! " \
                                  + std::to_string(m_input_normalization_params.size()) + " != " \
                                  + std::to_string(m_input_keys.size()));
   }
