@@ -82,7 +82,7 @@ std::unique_ptr<Layer> construct_layer(
       num_neurons_method_name = "get_num_neurons_of_slice_from_reader";
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
-      if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
+      if (dynamic_cast<lbann::data_reader_jag_conduit<float,conduit::float32_array, double,double,double>*>(dr_generic) != nullptr) {
         const std::string& var = params.get_slice_points_from_reader();
         bool is_supported = false; /// @todo Remove unneeded function parameter
         const auto slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
@@ -644,7 +644,7 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
   std::vector<El::Int> slice_points;
   is_supported = false;
   // TODO: remove the dynamic cast when this feature gets merged into the base class
-  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
+  const data_reader_jag_conduit<float,conduit::float32_array,double,double,double>* dr = dynamic_cast<const data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(dr_generic);
 
   if (dr != nullptr) {
     is_supported = true;

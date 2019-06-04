@@ -354,7 +354,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   } else if (name == "moving_mnist") {
     reader = new moving_mnist_reader(7, 40, 40, 2);
   } else if (name =="jag_conduit") {
-    data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
+    data_reader_jag_conduit<float,conduit::float32_array,double,double,double>* reader_jag = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(pp, shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
 
     if (channels == 0) {
@@ -384,8 +384,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
     reader_jag->set_image_choices(image_keys);
 
-
-    using var_t = data_reader_jag_conduit::variable_t;
+    using var_t = data_reader_jag_conduit<float,conduit::float32_array,double,double,double>::variable_t;
 
     // composite independent variable
     std::vector< std::vector<var_t> > independent_type(pb_schema.independent_size());
@@ -460,7 +459,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     // add scalar output key prefixes to filter out by
     const int num_scalar_prefix_filters = pb_schema.jag_scalar_prefix_filters_size();
     for (int i=0; i < num_scalar_prefix_filters; ++i) {
-      using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
+      using prefix_t = lbann::data_reader_jag_conduit<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>::prefix_t;
       const prefix_t pf = std::make_pair(pb_schema.jag_scalar_prefix_filters(i).key_prefix(),
                                          pb_schema.jag_scalar_prefix_filters(i).min_len());
       reader_jag->add_scalar_prefix_filter(pf);
@@ -475,7 +474,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     // add scalar output key prefixes to filter out by
     const int num_input_prefix_filters = pb_schema.jag_input_prefix_filters_size();
     for (int i=0; i < num_input_prefix_filters; ++i) {
-      using prefix_t = lbann::data_reader_jag_conduit::prefix_t;
+      using prefix_t = lbann::data_reader_jag_conduit<float,conduit::float32_array,double,double,double>::prefix_t;
       const prefix_t pf = std::make_pair(pb_schema.jag_scalar_prefix_filters(i).key_prefix(),
                                          pb_schema.jag_scalar_prefix_filters(i).min_len());
       reader_jag->add_input_prefix_filter(pf);
@@ -485,7 +484,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     // add image normalization parameters
     const int num_image_normalization_params = pb_normalization.jag_image_normalization_params_size();
     for (int i=0; i <  num_image_normalization_params; ++i) {
-      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      using linear_transform_t = lbann::data_reader_jag_conduit<float,conduit::float32_array,double,double,double>::linear_transform_t;
       const linear_transform_t np = std::make_pair(pb_normalization.jag_image_normalization_params(i).scale(),
                                                    pb_normalization.jag_image_normalization_params(i).bias());
       reader_jag->add_image_normalization_param(np);
@@ -494,7 +493,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     // add scalar normalization parameters
     const int num_scalar_normalization_params = pb_normalization.jag_scalar_normalization_params_size();
     for (int i=0; i <  num_scalar_normalization_params; ++i) {
-      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      using linear_transform_t = lbann::data_reader_jag_conduit<float,conduit::float32_array,double,double,double>::linear_transform_t;
       const linear_transform_t np = std::make_pair(pb_normalization.jag_scalar_normalization_params(i).scale(),
                                                    pb_normalization.jag_scalar_normalization_params(i).bias());
       reader_jag->add_scalar_normalization_param(np);
@@ -503,7 +502,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     // add input normalization parameters
     const int num_input_normalization_params = pb_normalization.jag_input_normalization_params_size();
     for (int i=0; i <  num_input_normalization_params; ++i) {
-      using linear_transform_t = lbann::data_reader_jag_conduit::linear_transform_t;
+      using linear_transform_t = lbann::data_reader_jag_conduit<float,conduit::float32_array,double,double,double>::linear_transform_t;
       const linear_transform_t np = std::make_pair(pb_normalization.jag_input_normalization_params(i).scale(),
                                                    pb_normalization.jag_input_normalization_params(i).bias());
       reader_jag->add_input_normalization_param(np);

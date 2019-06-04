@@ -55,7 +55,7 @@ void init_data_readers(
   bool is_shareable_testing_data_reader,
   bool is_shareable_validation_data_reader)
 {
-  static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
+  static std::unordered_map<std::string, data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*> leading_reader_jag_conduit;
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
@@ -141,7 +141,7 @@ void init_data_readers(
       set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
+      data_reader_jag_conduit<float,conduit::float32_array,double,double,double>* reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
       reader->set_data_index_list(readme.index_list());
@@ -443,8 +443,8 @@ void init_data_readers(
         if(is_shareable_training_data_reader) {
           const std::string role = "validate";
           if (!peek_map(leading_reader_jag_conduit, role)) {
-            reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
-            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_validation = new data_reader_jag_conduit<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(*dynamic_cast<const data_reader_jag_conduit<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>*>(reader));
+            data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
             reader_jag_conduit->set_leading_reader(reader_jag_conduit);
             reader_jag_conduit->set_role(role);
             leading_reader_jag_conduit[role] = reader_jag_conduit;
@@ -454,14 +454,14 @@ void init_data_readers(
             // assigned to validation reader when validation percent is set.
             // Thus, we need to avoid taking a subset of a subset.
             const auto leader = peek_map(leading_reader_jag_conduit, role);
-            reader_validation = new data_reader_jag_conduit(*leader);
-            auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+            reader_validation = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(*leader);
+            data_reader_jag_conduit<float,conduit::float32_array,double,double,double>* reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
             reader_jag_conduit->set_leading_reader(leader);
           }
         } else {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader), reader->get_unused_indices());
+          reader_validation = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(*dynamic_cast<const data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader), reader->get_unused_indices());
           const std::string role = "validate";
-          auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
+          data_reader_jag_conduit<float,conduit::float32_array,double,double,double> *reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
           reader_jag_conduit->set_leading_reader(reader_jag_conduit);
           reader_jag_conduit->set_role(role);
           leading_reader_jag_conduit[role] = reader_jag_conduit;
@@ -524,7 +524,7 @@ void init_data_readers(
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
                   << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
         if (name == "jag_conduit") {
-          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
+          std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader)->get_leading_reader()
                     << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
         }
         std::cout << std::endl;

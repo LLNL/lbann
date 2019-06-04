@@ -25,38 +25,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#if 0
-#include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/utils/lbann_library.hpp"
-
-#include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
-#include "lbann/data_readers/opencv_extensions.hpp"
-#include <limits>     // numeric_limits
-#include <algorithm>  // max_element
-#include <numeric>    // accumulate
-#include <functional> // multiplies
-#include <type_traits>// is_same
-#include <set>
-#include <map>
 #include "lbann/data_readers/image_utils.hpp"
-#include <omp.h>
-#include "lbann/utils/timer.hpp"
-#include "lbann/utils/glob.hpp"
-#include "lbann/utils/peek_map.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
-
-
-#include <cereal/archives/binary.hpp>
-#include <sstream>
-#endif
-
-//#define _CN_ "data_reader_jag_conduit"
-
-//#endif
 
 namespace lbann {
 
@@ -84,7 +54,7 @@ data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::data_r
 }
 
 template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
-data_reader_jag_conduit& data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::operator=(const data_reader_jag_conduit& rhs) {
+data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>  &data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::operator=(const data_reader_jag_conduit& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -339,7 +309,7 @@ std::vector<Input_t> data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,
   auto tr = m_input_normalization_params.cbegin();
 
   // automatically determine which method to use based on if all the variables are of Input_t
-  if (m_uniform_Input_type) {
+  if (m_uniform_input_type) {
     // avoid some overhead by taking advantage of the fact that all the variables are of the same type
     for(const auto key: m_input_keys) {
       const std::string conduit_field = m_input_prefix + key;
@@ -403,7 +373,7 @@ bool data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::f
       std::vector<cv::Mat> images = get_cv_images(data_id, sample);
 
       if (images.size() != num_images) {
-        LABNN_ERROR("fetch() : the number of images is not as expected" + 
+        LBANN_ERROR("fetch() : the number of images is not as expected" + 
           std::to_string(images.size()) + "!=" + std::to_string(num_images));
       }
 
@@ -461,7 +431,8 @@ bool data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::f
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+bool data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::fetch_response(CPUMat& X, int data_id, int mb_idx) {
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
@@ -484,7 +455,8 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+bool data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   if(m_gan_label_value) Y.Set(m_gan_label_value,mb_idx,1); //fake sample is set to 1; adversarial model
   else { //fake sample (second half of minibatch is set to 0;discriminator model
     //mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) : Y.Set(m_gan_label_value,mb_idx,1);
@@ -494,7 +466,8 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
-void data_reader_jag_conduit::check_input_keys() {
+template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
+void data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::check_input_keys() {
   //@TODO revisit later -- don't know how to handle this yet
   if (m_data_store != nullptr) {
     return;
@@ -548,7 +521,7 @@ void data_reader_jag_conduit::check_input_keys() {
     LBANN_ERROR("check_input_keys() : " + msg);
   }
 
-  m_uniform_Input_type = (m_input_keys.size() == 0u)? false : is_Input_t;
+  m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_Input_t;
 
   if (m_input_normalization_params.empty()) {
     m_input_normalization_params.assign(m_input_keys.size(), linear_transform_t(1.0, 0.0));
@@ -568,4 +541,3 @@ void data_reader_jag_conduit::check_input_keys() {
 
 } // end of namespace lbann
 
-//#undef _CN_
