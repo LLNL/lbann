@@ -316,7 +316,11 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
 void numpy_npz_conduit_reader::fill_in_metadata() {
   int rank = m_comm->get_rank_in_trainer();
   // to avoid contention, each rank opens a separate file
-  std::ifstream in(m_filenames[rank]);
+  size_t my_file = rank;
+  if (my_file >= m_filenames.size()) {
+    my_file = 0;
+  }
+  std::ifstream in(m_filenames[my_file]);
   if (!in) {
     LBANN_ERROR("failed to open " + m_filenames[rank] + " for reading");
   }
