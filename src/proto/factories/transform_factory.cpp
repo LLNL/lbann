@@ -34,6 +34,7 @@
 #include "lbann/transforms/vision/center_crop.hpp"
 #include "lbann/transforms/vision/colorize.hpp"
 #include "lbann/transforms/vision/color_jitter.hpp"
+#include "lbann/transforms/vision/cutout.hpp"
 #include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/horizontal_flip.hpp"
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
@@ -133,6 +134,10 @@ std::unique_ptr<transform::transform> construct_transform(
       pb_trans.min_brightness_factor(), pb_trans.max_brightness_factor(),
       pb_trans.min_contrast_factor(), pb_trans.max_contrast_factor(),
       pb_trans.min_saturation_factor(), pb_trans.max_saturation_factor());
+  } else if (trans.has_cutout()) {
+    auto& pb_trans = trans.cutout();
+    return make_unique<transform::cutout>(
+      pb_trans.num_holes(), pb_trans.length());
   }
 
   LBANN_ERROR("Unknown transform");

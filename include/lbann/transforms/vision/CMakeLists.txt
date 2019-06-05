@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_HEADERS
   center_crop.hpp
   colorize.hpp
   color_jitter.hpp
+  cutout.hpp
   grayscale.hpp
   horizontal_flip.hpp
   normalize_to_lbann_layout.hpp
