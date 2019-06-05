@@ -91,7 +91,7 @@ public:
 protected:
   /** Return a value uniformly at random in [a, b). */
   static inline float get_uniform_random(float a, float b) {
-    fast_rng_gen& gen = get_fast_generator();
+    fast_rng_gen& gen = get_fast_io_generator();
     std::uniform_real_distribution<float> dist(a, b);
     return dist(gen);
   }
@@ -101,7 +101,7 @@ protected:
   }
   /** Return an integer uniformly at random in [a, b). */
   static inline El::Int get_uniform_random_int(El::Int a, El::Int b) {
-    fast_rng_gen& gen = get_fast_generator();
+    fast_rng_gen& gen = get_fast_io_generator();
     return fast_rand_int(gen, b - a) + a;
   }
 };
