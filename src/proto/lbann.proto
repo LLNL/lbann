@@ -438,6 +438,7 @@ message Callback {
    CallbackCheckMetric check_metric = 37;
    CallbackPerturbAdam perturb_adam = 38;
    CallbackPerturbDropout perturb_dropout = 39;
+   CallbackMixup mixup = 40;
 }
 
 message CallbackLTFB {
@@ -684,6 +685,12 @@ message CallbackPerturbDropout {
   float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
   string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
 }
+
+message CallbackMixup {
+  string layers = 1;
+  float alpha = 2;
+}
+
 //========================================================================
 // Weights
 //========================================================================
