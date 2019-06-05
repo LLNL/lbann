@@ -322,7 +322,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   }
   std::ifstream in(m_filenames[my_file]);
   if (!in) {
-    LBANN_ERROR("failed to open " + m_filenames[rank] + " for reading");
+    LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
 
@@ -333,7 +333,7 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
 
   int data_id = 0; //meaningless
   conduit::Node node;
-  numpy_conduit_converter::load_conduit_node(m_filenames[rank], data_id, node);
+  numpy_conduit_converter::load_conduit_node(m_filenames[my_file], data_id, node);
 
   //fill in m_data_dims
   auto shape = node[LBANN_DATA_ID_STR(data_id) + "/data/shape"].as_uint64_array();
