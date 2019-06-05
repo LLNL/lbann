@@ -57,7 +57,6 @@ void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
          << h << "x" << w << " at (" << x1 << "," << y1 << ")";
       LBANN_ERROR(ss.str());
     }
-    std::cout << "Cutout: " << x1 << " " << y1 << " " << w << " " << h << std::endl;
     // This will be just a view into the original.
     cv::Mat hole = src(cv::Rect(x1, y1, w, h));
     hole = 0;
