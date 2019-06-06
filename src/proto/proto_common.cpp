@@ -443,7 +443,7 @@ void init_data_readers(
         if(is_shareable_training_data_reader) {
           const std::string role = "validate";
           if (!peek_map(leading_reader_jag_conduit, role)) {
-            reader_validation = new data_reader_jag_conduit<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(*dynamic_cast<const data_reader_jag_conduit<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>*>(reader));
+            reader_validation = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(*dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader));
             data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
             reader_jag_conduit->set_leading_reader(reader_jag_conduit);
             reader_jag_conduit->set_role(role);

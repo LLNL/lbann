@@ -143,10 +143,13 @@ void data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::c
 }
 
 
-
 template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
 std::vector< std::vector<Ch_t> >
 data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_image_data(const size_t sample_id, conduit::Node& sample) const {
+  float x = 1.0;
+  Ch_t *x2 = &x;
+  std::cout << "x2: " << *x2 << std::endl;
+
   std::vector< std::vector<Ch_t> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
@@ -166,10 +169,7 @@ data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_im
         sample = n_image;
       }
     }
-if (is_master())
-std::cout << "XX " << sizeof(Ch_t) << "\n";
-MPI_Barrier(MPI_COMM_WORLD);
-exit(0);
+
  //   Conduit_ch_t emi = sample[conduit_obj].value();
 //    const size_t num_vals = emi.number_of_elements();
  //   const DataType dt = sample.dtype();
