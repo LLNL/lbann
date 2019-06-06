@@ -30,6 +30,9 @@
 
 namespace lbann {
 
+#define JAG_PARAMS float,conduit::float32_array,double,double,double
+#define HYDRA_PARAMS double,conduit::float64_array,double,double,double
+
 template<class Ch_t, class Conduit_ch_t , class Scalar_t, class Input_t, class TimeSeries_t>
 data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
   : data_reader_conduit(pp, shuffle) {
@@ -146,10 +149,6 @@ void data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::c
 template<class Ch_t, class Conduit_ch_t, class Scalar_t, class Input_t, class TimeSeries_t>
 std::vector< std::vector<Ch_t> >
 data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_image_data(const size_t sample_id, conduit::Node& sample) const {
-  float x = 1.0;
-  Ch_t *x2 = &x;
-  std::cout << "x2: " << *x2 << std::endl;
-
   std::vector< std::vector<Ch_t> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
@@ -170,14 +169,10 @@ data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_im
       }
     }
 
- //   Conduit_ch_t emi = sample[conduit_obj].value();
-//    const size_t num_vals = emi.number_of_elements();
- //   const DataType dt = sample.dtype();
-    //std::cout << "dtype name: " << dt.name() << " n elts: " << dt.number_of_elements() << " is_float: " << dt.is_float() << " is double: " << dt.is_double() << "\n";
-    //const void* emi_data = sample[conduit_obj].as_float32_ptr();
-    //const Ch_t* data = emi_data;
-    //const Ch_t* emi_data = sample[conduit_obj].value();
-    //image_ptrs.emplace_back(emi_data, emi_data + num_vals);
+    Conduit_ch_t emi = sample[conduit_obj].value();
+    const size_t num_vals = emi.number_of_elements();
+    const Ch_t* emi_data = sample[conduit_obj].value();
+    image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
   return image_ptrs;

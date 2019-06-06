@@ -56,6 +56,7 @@ void init_data_readers(
   bool is_shareable_validation_data_reader)
 {
   static std::unordered_map<std::string, data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*> leading_reader_jag_conduit;
+  static std::unordered_map<std::string, data_reader_jag_conduit<double,conduit::float64_array,double,double,double>*> leading_reader_hydra_conduit;
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
@@ -139,7 +140,7 @@ void init_data_readers(
       reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
       set_up_generic_preprocessor = false;
-    } else if (name == "jag_conduit") {
+    } else if (name == "jag_conduit" || name == "hydra_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       data_reader_jag_conduit<float,conduit::float32_array,double,double,double>* reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader);
       const lbann_data::Model& pb_model = p.model();
@@ -437,34 +438,66 @@ void init_data_readers(
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
-      } else if (name == "jag_conduit") {
+      } else if (name == "jag_conduit" || name == "hydra_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
         if(is_shareable_training_data_reader) {
           const std::string role = "validate";
-          if (!peek_map(leading_reader_jag_conduit, role)) {
-            reader_validation = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(*dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader));
-            data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
+
+          if (name == "jag_conduit") {
+            if (!peek_map(leading_reader_jag_conduit, role)) {
+              reader_validation = new data_reader_jag_conduit<JAG_PARAMS>(*dynamic_cast<data_reader_jag_conduit<JAG_PARAMS>*>(reader));
+              data_reader_jag_conduit<JAG_PARAMS>*reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<JAG_PARAMS>*>(reader_validation);
+              reader_jag_conduit->set_leading_reader(reader_jag_conduit);
+              reader_jag_conduit->set_role(role);
+              leading_reader_jag_conduit[role] = reader_jag_conduit;
+            } else {
+              // Copy construct the leading validation reader into another validation reader.
+              // We do not copy the train reader as the subset of data may already have been
+              // assigned to validation reader when validation percent is set.
+              // Thus, we need to avoid taking a subset of a subset.
+              const auto leader = peek_map(leading_reader_jag_conduit, role);
+              reader_validation = new data_reader_jag_conduit<JAG_PARAMS>(*leader);
+              data_reader_jag_conduit<JAG_PARAMS>* reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<JAG_PARAMS>*>(reader_validation);
+              reader_jag_conduit->set_leading_reader(leader);
+            }
+          } else { // name == "hydra_conduit"
+            if (!peek_map(leading_reader_hydra_conduit, role)) {
+              reader_validation = new data_reader_jag_conduit<HYDRA_PARAMS>(*dynamic_cast<data_reader_jag_conduit<HYDRA_PARAMS>*>(reader));
+              data_reader_jag_conduit<HYDRA_PARAMS>*reader_hydra_conduit = dynamic_cast<data_reader_jag_conduit<HYDRA_PARAMS>*>(reader_validation);
+              reader_hydra_conduit->set_leading_reader(reader_hydra_conduit);
+              reader_hydra_conduit->set_role(role);
+              leading_reader_hydra_conduit[role] = reader_hydra_conduit;
+            } else {
+              // Copy construct the leading validation reader into another validation reader.
+              // We do not copy the train reader as the subset of data may already have been
+              // assigned to validation reader when validation percent is set.
+              // Thus, we need to avoid taking a subset of a subset.
+              const auto leader = peek_map(leading_reader_hydra_conduit, role);
+              reader_validation = new data_reader_jag_conduit<HYDRA_PARAMS>(*leader);
+              data_reader_jag_conduit<HYDRA_PARAMS>* reader_hydra_conduit = dynamic_cast<data_reader_jag_conduit<HYDRA_PARAMS>*>(reader_validation);
+              reader_hydra_conduit->set_leading_reader(leader);
+            }
+          }
+        }
+        
+        // ! is_shareable_training_data_reader
+        else {
+          if (name == "jag_reader") {
+            reader_validation = new data_reader_jag_conduit<JAG_PARAMS>(*dynamic_cast<const data_reader_jag_conduit<JAG_PARAMS>*>(reader), reader->get_unused_indices());
+            const std::string role = "validate";
+            data_reader_jag_conduit<JAG_PARAMS> *reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<JAG_PARAMS>*>(reader_validation);
             reader_jag_conduit->set_leading_reader(reader_jag_conduit);
             reader_jag_conduit->set_role(role);
             leading_reader_jag_conduit[role] = reader_jag_conduit;
-          } else {
-            // Copy construct the leading validation reader into another validation reader.
-            // We do not copy the train reader as the subset of data may already have been
-            // assigned to validation reader when validation percent is set.
-            // Thus, we need to avoid taking a subset of a subset.
-            const auto leader = peek_map(leading_reader_jag_conduit, role);
-            reader_validation = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(*leader);
-            data_reader_jag_conduit<float,conduit::float32_array,double,double,double>* reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
-            reader_jag_conduit->set_leading_reader(leader);
+          } else { // name = "hydra_reader"
+            reader_validation = new data_reader_jag_conduit<HYDRA_PARAMS>(*dynamic_cast<const data_reader_jag_conduit<HYDRA_PARAMS>*>(reader), reader->get_unused_indices());
+            const std::string role = "validate";
+            data_reader_jag_conduit<HYDRA_PARAMS> *reader_hydra_conduit = dynamic_cast<data_reader_jag_conduit<HYDRA_PARAMS>*>(reader_validation);
+            reader_hydra_conduit->set_leading_reader(reader_hydra_conduit);
+            reader_hydra_conduit->set_role(role);
+            leading_reader_hydra_conduit[role] = reader_hydra_conduit;
           }
-        } else {
-          reader_validation = new data_reader_jag_conduit<float,conduit::float32_array,double,double,double>(*dynamic_cast<const data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader), reader->get_unused_indices());
-          const std::string role = "validate";
-          data_reader_jag_conduit<float,conduit::float32_array,double,double,double> *reader_jag_conduit = dynamic_cast<data_reader_jag_conduit<float,conduit::float32_array,double,double,double>*>(reader_validation);
-          reader_jag_conduit->set_leading_reader(reader_jag_conduit);
-          reader_jag_conduit->set_role(role);
-          leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
