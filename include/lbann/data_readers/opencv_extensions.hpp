@@ -74,7 +74,8 @@ struct cv_image_type {
    *  - _C_: The number of channels It ranges from 1 to CV_CN_MAX which is 512
    */
   static int T(const int _C_) {
-    return CV_MAKETYPE(cv::DataType<_T_>::depth, _C_);
+  return 1; //XX
+    //return CV_MAKETYPE(cv::DataType<_T_>::depth, _C_);
   }
   /** A static member function which maps a native c++ type to the corresponding
    *  OpenCV channel type.

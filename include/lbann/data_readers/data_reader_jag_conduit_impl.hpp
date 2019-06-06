@@ -166,10 +166,18 @@ data_reader_jag_conduit<Ch_t,Conduit_ch_t,Scalar_t,Input_t,TimeSeries_t>::get_im
         sample = n_image;
       }
     }
-    Conduit_ch_t emi = sample[conduit_obj].value();
-    const size_t num_vals = emi.number_of_elements();
-    const Ch_t* emi_data = sample[conduit_obj].value();
-    image_ptrs.emplace_back(emi_data, emi_data + num_vals);
+if (is_master())
+std::cout << "XX " << sizeof(Ch_t) << "\n";
+MPI_Barrier(MPI_COMM_WORLD);
+exit(0);
+ //   Conduit_ch_t emi = sample[conduit_obj].value();
+//    const size_t num_vals = emi.number_of_elements();
+ //   const DataType dt = sample.dtype();
+    //std::cout << "dtype name: " << dt.name() << " n elts: " << dt.number_of_elements() << " is_float: " << dt.is_float() << " is double: " << dt.is_double() << "\n";
+    //const void* emi_data = sample[conduit_obj].as_float32_ptr();
+    //const Ch_t* data = emi_data;
+    //const Ch_t* emi_data = sample[conduit_obj].value();
+    //image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
   return image_ptrs;
