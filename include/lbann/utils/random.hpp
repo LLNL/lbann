@@ -121,27 +121,9 @@ namespace details {
 // http://xoshiro.di.unimi.it/
 
 template <typename Generator>
-inline float random_float_32(Generator& g) {
-  const uint32_t r = g() >> 9;
-  return r * (1.0f / 8388608.0f);
-}
-
-template <typename Generator>
-inline float random_float_64(Generator& g) {
-  const uint32_t r = uint32_t(g()) >> 9;  // Truncate.
-  return r * (1.0f / 8388608.0f);
-}
-
-template <typename Generator>
 inline float random_float(Generator& g) {
-  // TODO: Replace with if constexpr when possible.
-  if (sizeof(typename Generator::result_type) == 4) {
-    return random_float_32(g);
-  } else if (sizeof(typename Generator::result_type) == 8) {
-    return random_float_64(g);
-  } else {
-    LBANN_ERROR("Unsupported generator type");
-  }
+  const uint32_t r = uint32_t(g()) >> 9;  // Truncate if needed.
+  return r * (1.0f / 8388608.0f);
 }
 
 template <typename Generator>
@@ -184,7 +166,7 @@ struct random_uniform_impl<Generator, double> {
 
 }  // namespace details
 
-/** Generate uniformly random values in the range (0, 1]. */
+/** Generate uniformly random values in the range [0, 1). */
 template <typename T, typename Generator>
 inline T fast_random_uniform(Generator& g) {
   static_assert(sizeof(typename Generator::result_type) == 4 ||
