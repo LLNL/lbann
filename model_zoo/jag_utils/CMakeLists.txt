@@ -54,3 +54,8 @@
   target_link_libraries(generate_corrupt_samples-bin lbann )
   set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
 
+  add_executable( compute_hydra_normalization-bin compute_hydra_normalization.cpp )
+  target_link_libraries(compute_hydra_normalization-bin lbann )
+  set_target_properties(compute_hydra_normalization-bin PROPERTIES OUTPUT_NAME compute_hydra_normalization)
+
+
