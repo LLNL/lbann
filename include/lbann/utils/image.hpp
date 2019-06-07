@@ -38,12 +38,12 @@ namespace lbann {
  * @param dims Will contain the dimensions of the image as {channels, height,
  * width}.
  */
-void load_image(const std::string filename, El::Matrix<uint8_t>& dst,
+void load_image(const std::string& filename, El::Matrix<uint8_t>& dst,
                 std::vector<size_t>& dims);
 
 /**
  * Decode an image from buf.
- * @param buf A buffer containing image data to be decoded.
+ * @param src A buffer containing image data to be decoded.
  * @param dst Image will be loaded into this matrix, in OpenCV format.
  * @param dims Will contain the dimensions of the image as {channels, height,
  * width}.
@@ -57,8 +57,8 @@ void decode_image(El::Matrix<uint8_t>& src, El::Matrix<uint8_t>& dst,
  * @param src The image to save. This is in OpenCV format.
  * @param dims The dimensions of the image.
  */
-void save_image(const std::string filename, El::Matrix<uint8_t>& src,
-                const std::vector<size_t> dims);
+void save_image(const std::string& filename, El::Matrix<uint8_t>& src,
+                const std::vector<size_t>& dims);
 /**
  * Save an image to filename.
  * @param filename The path to the image to write.
@@ -67,8 +67,8 @@ void save_image(const std::string filename, El::Matrix<uint8_t>& src,
  * in it.
  * @param dims The dimensions of the image.
  */
-void save_image(const std::string filename, const CPUMat& src,
-                const std::vector<size_t> dims);
+void save_image(const std::string& filename, const CPUMat& src,
+                const std::vector<size_t>& dims);
 
 }  // namespace lbann
 

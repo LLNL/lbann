@@ -182,7 +182,7 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
 
 namespace lbann {
 
-void load_image(const std::string filename, El::Matrix<uint8_t>& dst,
+void load_image(const std::string& filename, El::Matrix<uint8_t>& dst,
                 std::vector<size_t>& dims) {
   // Load the encoded image.
   El::Matrix<uint8_t> buf;
@@ -196,16 +196,16 @@ void decode_image(El::Matrix<uint8_t>& src, El::Matrix<uint8_t>& dst,
   opencv_decode(src, dst, dims, "encoded image");
 }
 
-void save_image(const std::string filename, El::Matrix<uint8_t>& src,
-                const std::vector<size_t> dims) {
+void save_image(const std::string& filename, El::Matrix<uint8_t>& src,
+                const std::vector<size_t>& dims) {
   cv::Mat cv_src = utils::get_opencv_mat(src, dims);
   if (!cv::imwrite(filename, cv_src)) {
     LBANN_ERROR("Could not save image to " + filename);
   }
 }
 
-void save_image(const std::string filename, const CPUMat& src,
-                const std::vector<size_t> dims) {
+void save_image(const std::string& filename, const CPUMat& src,
+                const std::vector<size_t>& dims) {
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
     LBANN_ERROR("Unsupported dimensions for saving an image.");
   }
