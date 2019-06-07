@@ -13,7 +13,7 @@ TEST_CASE("Testing fast_random_uniform", "[random][utilities]") {
       for (size_t i = 0; i < num_tests; ++i) {
         float val = lbann::fast_random_uniform<float>(gen);
         REQUIRE(val >= 0.0f);
-        REQUIRE(val <= 1.0f);
+        REQUIRE(val < 1.0f);
       }
     }
 
@@ -21,7 +21,7 @@ TEST_CASE("Testing fast_random_uniform", "[random][utilities]") {
       for (size_t i = 0; i < num_tests; ++i) {
         double val = lbann::fast_random_uniform<double>(gen);
         REQUIRE(val >= 0.0);
-        REQUIRE(val <= 1.0);
+        REQUIRE(val < 1.0);
       }
     }
   }
@@ -31,7 +31,7 @@ TEST_CASE("Testing fast_random_uniform", "[random][utilities]") {
       for (size_t i = 0; i < num_tests; ++i) {
         float val = lbann::fast_random_uniform<float>(gen);
         REQUIRE(val >= 0.0f);
-        REQUIRE(val <= 1.0f);
+        REQUIRE(val < 1.0f);
       }
     }
 
@@ -39,7 +39,7 @@ TEST_CASE("Testing fast_random_uniform", "[random][utilities]") {
       for (size_t i = 0; i < num_tests; ++i) {
         double val = lbann::fast_random_uniform<double>(gen);
         REQUIRE(val >= 0.0);
-        REQUIRE(val <= 1.0);
+        REQUIRE(val < 1.0);
       }
     }
   }
