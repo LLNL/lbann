@@ -31,15 +31,15 @@
 
 namespace lbann {
 void lbann_callback_save_topk_models::on_test_end(model *m) {
-  bool am_in_topk = false;
+  bool in_topk = false;
   if(m->get_comm()->am_trainer_master()) {
-    am_in_topk = compute_stats(m);
+    in_topk = am_in_topk(m);
   }
-  m->get_comm()->trainer_broadcast(0, am_in_topk); 
-  if(am_in_topk) save_model(m);
+  m->get_comm()->trainer_broadcast(0, in_topk); 
+  if(in_topk) save_model(m);
 }
 
-bool lbann_callback_save_topk_models::compute_stats(model *m) {
+bool lbann_callback_save_topk_models::am_in_topk(model *m) {
   lbann_comm *comm = m->get_comm();
   const int num_trainers = comm->get_num_trainers();
   std::string mode_string = "test";
@@ -55,16 +55,14 @@ bool lbann_callback_save_topk_models::compute_stats(model *m) {
   //sanity check
   if (!found_metric) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "could not find metric \"" << m_metric_name << "\""
+    err << "could not find metric \"" << m_metric_name << "\""
         << "in model \"" << m->get_name() << "\"";
     LBANN_ERROR(err.str());
   }
 
   if (m_k > num_trainers) {
     std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "k ( " << m_k << ") " 
+    err << "k ( " << m_k << ") " 
         << " can not be greater than number of trainers (" 
         << num_trainers << ") " ;
     LBANN_ERROR(err.str());
@@ -72,25 +70,20 @@ bool lbann_callback_save_topk_models::compute_stats(model *m) {
 
   std::vector<EvalType> score_list(comm->get_num_trainers());
   comm->all_gather<EvalType>(score, score_list,comm->get_intertrainer_comm());
-  std::vector<EvalType> score_v = score_list;
+  std::vector<EvalType> top_scores = score_list;
   //top-k in an ascending order
-  if(m_ascending_ordering) std::sort(score_v.begin(), score_v.end(),std::less<EvalType>());
+  if(m_ascending_ordering) std::sort(top_scores.begin(), top_scores.end(),std::less<EvalType>());
   //top-k in an descending order
-  else  std::sort(score_v.begin(), score_v.end(),std::greater<EvalType>());
-  score_v.resize(m_k);
+  else  std::sort(top_scores.begin(), top_scores.end(),std::greater<EvalType>());
+  top_scores.resize(m_k);
   
   if (comm->am_world_master()) {
     std::cout << "Top " << m_k << " " << m_metric_name << " average "
-              << std::accumulate(score_v.begin(), score_v.end(), EvalType(0))/m_k << std::endl;
+              << std::accumulate(top_scores.begin(), top_scores.end(), EvalType(0))/m_k << std::endl;
   } 
-  for(int i =0; i < num_trainers; ++i) {
-    if(std::find(score_v.begin(), score_v.end(), 
-                 score_list[i]) != score_v.end()) { 
-      if( i == comm->get_trainer_rank()) {
-        std::cout << "Trainer [ " << comm->get_trainer_rank() << "] in top list with score " << score_list[i] << std::endl;;
-          return true;
-      }
-    }
+  if(std::find(top_scores.begin(), top_scores.end(), 
+                 score_list[comm->get_trainer_rank()]) != top_scores.end()) { 
+    return true;
   } 
   return false;
 }

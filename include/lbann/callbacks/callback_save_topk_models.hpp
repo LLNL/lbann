@@ -36,7 +36,7 @@ namespace lbann {
 /** Save_topk_models for (e.g., inference and other analysis).
    * @param dir directory to save model
    * @param k number of models to save, should be less than number of trainers
-   * @param metric_namei, evaluation metric
+   * @param metric_name, evaluation metric
    * @ordering for the topk, descending order is default
  */
 class lbann_callback_save_topk_models : public lbann_callback_save_model {
@@ -50,7 +50,8 @@ class lbann_callback_save_topk_models : public lbann_callback_save_model {
   std::string name() const override { return "save_topk_models"; }
 
  private:
-  bool compute_stats(model *m);
+  /*determine if a trainer's model is in top k, computation done by master process*/
+  bool am_in_topk(model *m);
   int m_k ;  
   std::string m_metric_name; 
   bool m_ascending_ordering; 
