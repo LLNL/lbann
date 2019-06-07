@@ -33,14 +33,18 @@
 #include <cmath>
 
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 /**
  * Produces random floating point values drawn from a Beta distribution with
  * parameters a > 0 and b > 0.
+ *
  * See:
+ *
  *     https://en.wikipedia.org/wiki/Beta_distribution
+ *
  * for more details.
  */
 template <typename RealType = double>
@@ -53,10 +57,14 @@ public:
     using distribution_type = beta_distribution;
 
     explicit param_type(RealType a, RealType b) :
-      m_a(a), m_b(b) {}
+      m_a(a), m_b(b) {
+      if (a <= RealType(0) || b <= RealType(0)) {
+        LBANN_ERROR("Beta distribution parameters must be positive");
+      }
+    }
 
-    RealType a() const { return m_a; }
-    RealType b() const { return m_b; }
+    constexpr RealType a() const { return m_a; }
+    constexpr RealType b() const { return m_b; }
 
     bool operator==(const param_type& other) const {
       return m_a == other.m_a && m_b == other.m_b;
@@ -123,7 +131,7 @@ private:
   template <typename Generator>
   result_type generate(Generator& g, const param_type& p) {
     if (p.a() <= result_type(1) && p.b() <= result_type(1)) {
-      return generate_johnk(p.a(), p.b());
+      return generate_johnk(g, p.a(), p.b());
     } else {
       gamma_dist gamma_a(p.a()), gamma_b(p.b());
       return generate_gamma(g, gamma_a, gamma_b);
@@ -136,16 +144,21 @@ private:
    * uniformly random values.
    * 
    * See:
+   *
    *     Johnk, H. D. "Erzeugung von betaverteilten und gammaverteilten
    *     Zufallszahlen." Metrika 8, no. 1 (1964).
+   *
    * For an English-language presentation, see:
+   *
    *     Atkinson, A. C. and M. C. Pearce. "The computer generation of beta,
    *     gamma and normal random variables." Journal of the Royal Statistical
    *     Society: Series A (General) 139, no. 4 (1976).
    *
    * This includes fixes for numerical stability when the parameters are small,
    * see:
+   *
    *     https://github.com/numpy/numpy/issues/5851
+   *
    * for discussion there; and a catch for the (extremely rare) case of the RNG
    * giving us U and V both exactly 0.
    *
@@ -199,7 +212,7 @@ std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& os,
 }
 
 template <typename CharT, typename RealType>
-std::basic_istream<CharT>& operator<<(std::basic_istream<CharT>& is,
+std::basic_istream<CharT>& operator>>(std::basic_istream<CharT>& is,
                                       beta_distribution<RealType>& d) {
   std::string s;
   RealType a, b;
