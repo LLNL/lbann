@@ -53,17 +53,19 @@ int main(int argc, char *argv[]) {
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
 
-  //try {
     options *opts = options::get();
     opts->init(argc, argv);
+
+    ofstream out("normalize.txt");
+    if (!out) {
+      LBANN_ERROR("failed to open: normalize.txt for writing");
+    }
 
     if (!(opts->has_string("filelist"))) {
       if (master) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: usage: " + argv[0] + " --filelist=<string>");
       }
     }
-
-    //=======================================================================
 
     hid_t hdf5_file_hnd;
     std::string key;
@@ -76,6 +78,12 @@ int main(int argc, char *argv[]) {
     std::vector<double> inputs_v_max(sz, DBL_MIN);
     std::vector<double> inputs_v_min(sz, DBL_MAX);
     std::vector<double> inputs_sum(sz, 0.0);
+
+    vector<string> scalar_names = get_scalar_names();
+    sz = scalar_names.size();
+    std::vector<double> scalars_v_max(sz, DBL_MIN);
+    std::vector<double> scalars_v_min(sz, DBL_MAX);
+    std::vector<double> scalars_sum(sz, 0.0);
 
     ifstream in(opts->get_string("filelist").c_str());
     if (!in) {
@@ -125,6 +133,15 @@ int main(int argc, char *argv[]) {
               if (v > inputs_v_max[h]) inputs_v_max[h] = v;
               inputs_sum[h] += v;
             }  
+
+            for (size_t h=0; h<scalar_names.size(); h++) {
+              key = cnames[i] + "/scalars/" + scalar_names[h];
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              double v = tmp.value();
+              if (v < scalars_v_min[h]) scalars_v_min[h] = v;
+              if (v > scalars_v_max[h]) scalars_v_max[h] = v;
+              scalars_sum[h] += v;
+            }  
           } catch (...) {
             LBANN_ERROR("error reading " + key + " from file " + filename);
           }
@@ -133,22 +150,31 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    for (size_t j=0; j<input_names.size(); j++) {
-      cout << input_names[j] << " " << inputs_v_min[j] << " " << inputs_v_max[j] << " " << inputs_sum[j]/num_samples << endl;
-    }
+    out << "    jag_input_normalization_params: [\n";
+    for (size_t h=0; h<input_names.size(); h++) {
+      double scale = 1.0 / (inputs_v_max[h] - inputs_v_min[h]);
+      double bias =  -1*inputs_v_min[h] / (inputs_v_max[h] - inputs_v_min[h]);
+      if (h < input_names.size()-1) {
+        out << "      { scale: " << scale << "  bias: " << bias << " }, #" << input_names[h] << " avg= " << inputs_sum[h] / num_samples << "}\n";
+      } else {  
+        out << "      { scale: " << scale << "  bias: " << bias << " } #" << input_names[h] << " avg= " << inputs_sum[h] / num_samples << "}\n";
+      }  
+    }  
+    out << "    ]\n";
 
+    out << "    jag_scalar_normalization_params: [\n";
+    for (size_t h=0; h<scalar_names.size(); h++) {
+      double scale = 1.0 / (scalars_v_max[h] - scalars_v_min[h]);
+      double bias =  -1*scalars_v_min[h] / (scalars_v_max[h] - scalars_v_min[h]);
+      if (h < scalar_names.size()-1) {
+        out << "      { scale: " << scale << "  bias: " << bias << " }, #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "}\n";
+      } else {  
+        out << "      { scale: " << scale << "  bias: " << bias << " } #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "}\n";
+      }  
+    }  
+    out << "    ]\n";
 
-/*
-  } catch (exception &e) {
-    El::ReportException(e);
-    return EXIT_FAILURE;
-  } catch (std::exception const &e) {
-    El::ReportException(e);
-    return EXIT_FAILURE;
-  }
-*/
-
-  // Clean up
+  cout << "\noutput was written to file: normalize.txt\n";
   return EXIT_SUCCESS;
 }
 
