@@ -50,7 +50,7 @@ class lbann_callback_save_topk_models : public lbann_callback_save_model {
   std::string name() const override { return "save_topk_models"; }
 
  private:
-  /*determine if a trainer's model is in top k, computation done by master process*/
+  /*determine if a trainer's model is in top k, computation done by trainer master processes*/
   bool am_in_topk(model *m);
   int m_k ;  
   std::string m_metric_name; 
