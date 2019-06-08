@@ -38,6 +38,7 @@ namespace lbann {
    * @param k number of models to save, should be less than number of trainers
    * @param metric_name, evaluation metric
    * @ordering for the topk, descending order is default
+   * Note: may end up saving more than k models if multiple models (trainers) have the same metric score
  */
 class lbann_callback_save_topk_models : public lbann_callback_save_model {
  public:
