@@ -45,8 +45,11 @@ using namespace std;
 
 vector<string> get_input_names();
 vector<string> get_scalar_names();
+vector<string> get_image_names();
 
 //==========================================================================
+#define MAGIC_NUMBER 9
+
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
@@ -85,20 +88,29 @@ int main(int argc, char *argv[]) {
     std::vector<double> scalars_v_min(sz, DBL_MAX);
     std::vector<double> scalars_sum(sz, 0.0);
 
+    vector<string> image_names = get_image_names();
+    sz = image_names.size();
+    vector<vector<double>> images_v_max(sz);
+    vector<vector<double>> images_v_min(sz);
+    for (size_t h=0; h<images_v_max.size(); h++) {
+      images_v_max[h].resize(MAGIC_NUMBER, DBL_MIN);
+      images_v_min[h].resize(MAGIC_NUMBER, DBL_MAX);
+    }
+
     ifstream in(opts->get_string("filelist").c_str());
     if (!in) {
       LBANN_ERROR("failed to open " + opts->get_string("filelist") + " for reading");
     }
 
-    size_t hh = 0;
+    size_t hhh = 0;
     string filename;
     while (!in.eof()) {
       getline(in, filename);
       if (filename.size() < 2) {
         continue;
       }
-      hh += 1;
-      if (hh % 10 == 0) std::cout << rank << " :: processed " << hh << " filenames\n";
+      hhh += 1;
+      if (hhh % 10 == 0) std::cout << rank << " :: processed " << hhh << " filenames\n";
 
       try {
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( filename.c_str() );
@@ -125,6 +137,7 @@ int main(int argc, char *argv[]) {
         int success = n_ok.to_int64();
         if (success == 1) {
           try {
+
             for (size_t h=0; h<input_names.size(); h++) {
               key = cnames[i] + "/inputs/" + input_names[h];
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
@@ -142,6 +155,29 @@ int main(int argc, char *argv[]) {
               if (v > scalars_v_max[h]) scalars_v_max[h] = v;
               scalars_sum[h] += v;
             }  
+
+            for (size_t h=0; h<image_names.size(); h++) {
+              key = cnames[i] + "/images/" + image_names[h];
+              conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
+              conduit::float64_array emi = tmp.value();
+              const size_t image_size = emi.number_of_elements();
+              if (image_size != 3*3*64*64) {
+                LBANN_ERROR("image_size != 3*3*64*64");
+              }
+              int idx = 0;
+              for (int g=0; g<MAGIC_NUMBER; g++) {
+                for (int hh=0; hh<(64*64); hh++) {
+                  if (emi[idx] < images_v_min[h][g]) {
+                    images_v_min[h][g] = emi[idx];
+                  }
+                  if (emi[idx] > images_v_max[h][g]) {
+                    images_v_max[h][g] = emi[idx];
+                  }
+                  ++idx;
+                }
+              }
+            }
+
           } catch (...) {
             LBANN_ERROR("error reading " + key + " from file " + filename);
           }
@@ -167,12 +203,27 @@ int main(int argc, char *argv[]) {
       double scale = 1.0 / (scalars_v_max[h] - scalars_v_min[h]);
       double bias =  -1*scalars_v_min[h] / (scalars_v_max[h] - scalars_v_min[h]);
       if (h < scalar_names.size()-1) {
-        out << "      { scale: " << scale << "  bias: " << bias << " }, #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "}\n";
+        out << "      { scale: " << scale << "  bias: " << bias << " }, #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "\n";
       } else {  
-        out << "      { scale: " << scale << "  bias: " << bias << " } #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "}\n";
+        out << "      { scale: " << scale << "  bias: " << bias << " } #" << scalar_names[h] << " avg= " << scalars_sum[h] / num_samples << "\n";
       }  
     }  
     out << "    ]\n";
+
+    out << "    jag_image_normalization_params: [\n";
+    for (size_t h=0; h<image_names.size(); h++) {
+      for (size_t g=0; g<MAGIC_NUMBER; g++) {
+cout << h << " "<< g << " " << images_v_min[h][g] << " " << images_v_max[h][g] << "\n";
+        double scale = 1.0 / (images_v_max[h][g] - images_v_min[h][g]);
+        double bias =  -1*images_v_min[h][g] / (images_v_max[h][g] - images_v_min[h][g]);
+      if (h < image_names.size()-1) {
+        out << "      { scale: " << scale << "  bias: " << bias << " }, #" << image_names[h] << "\n"; // avg= TODO" << "\n";
+      } else {  
+        out << "      { scale: " << scale << "  bias: " << bias << " } #" << image_names[h] << "\n"; // avg= TODO" << "\n";
+      }  
+    }  
+  }  
+  out << "    ]\n";
 
   cout << "\noutput was written to file: normalize.txt\n";
   return EXIT_SUCCESS;
@@ -200,5 +251,12 @@ vector<string> get_scalar_names() {
   f.push_back("bt_rhor");
   f.push_back("bt_eprodr");
   f.push_back("peak_eprodr");
+  return f;
+}
+
+vector<string> get_image_names() {
+  vector<string> f;
+  f.push_back("(90,0)/bang/image/data");
+  f.push_back("(0,0)/bang/image/data");
   return f;
 }
