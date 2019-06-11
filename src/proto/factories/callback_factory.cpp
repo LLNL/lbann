@@ -239,6 +239,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
     }
   }
 
+  if (proto_cb.has_save_topk_models()) {
+    const auto& params = proto_cb.save_topk_models();
+    return new lbann_callback_save_topk_models(params.dir(),
+                                               params.k(),
+                                               params.metric(),
+                                               params.ascending_ordering());
+  }
+
   //////////////////////////////////////////////////////////////
   // Weight exchange/replace
   //////////////////////////////////////////////////////////////

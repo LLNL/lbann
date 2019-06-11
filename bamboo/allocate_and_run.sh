@@ -1,14 +1,14 @@
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
-if [ "${CLUSTER}" = 'catalyst' ]; then
-    salloc -N16 -t 600 ./run.sh
-fi
+echo "allocate_and_run.sh CLUSTER="
+echo $CLUSTER
 
 WEEKLY=0
 while :; do
     case ${1} in
         --weekly)
             # Run all tests. This is a weekly build.
+            echo "Setting WEEKLY in allocate_and_run.sh"
             WEEKLY=1
             ;;
         -?*)
@@ -23,12 +23,23 @@ while :; do
     shift
 done
 
+echo "allocate_and_run.sh WEEKLY="
+echo $WEEKLY
+
 if [ "${CLUSTER}" = 'pascal' ]; then
     export MV2_USE_CUDA=1
-    if [ ${WEEKLY} -ne 0 ]; then
-        salloc -N16 -t 600 ./run.sh --weekly
-    else
-        salloc -N16 -t 600 ./run.sh
-    fi
+fi
 
+if [ ${WEEKLY} -ne 0 ]; then
+    salloc -N16 -t 600 ./run.sh --weekly
+    if [ "${CLUSTER}" = 'catalyst' ]; then
+        cd integration_tests
+        python -m pytest -s test_integration_performance_full_alexnet_clang4 --weekly --run
+        python -m pytest -s test_integration_performance_full_alexnet_gcc4 --weekly --run
+        python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run
+        python -m pytest -s test_integration_performance_full_alexnet_intel18 --weekly --run
+        cd ..
+    fi
+else
+    salloc -N16 -t 600 ./run.sh
 fi

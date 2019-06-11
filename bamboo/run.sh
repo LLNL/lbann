@@ -1,5 +1,10 @@
 #!/bin/bash -l
 
+CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
+
+echo "run.sh CLUSTER="
+echo $CLUSTER
+
 if [ "${CLUSTER}" = 'catalyst' ]; then
     PYTHON=python
 fi
@@ -13,6 +18,7 @@ while :; do
     case ${1} in
         --weekly)
             # Run all tests. This is a weekly build.
+            echo "Setting WEEKLY in run.sh"
             WEEKLY=1
             ;;
         -?*)
@@ -26,6 +32,9 @@ while :; do
     esac
     shift
 done
+
+echo "run.sh WEEKLY="
+echo $WEEKLY
 
 echo "Task: Cleaning"
 ./clean.sh

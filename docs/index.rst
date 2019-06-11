@@ -11,7 +11,7 @@ LBANN provides model-parallel acceleration through domain
 decomposition to optimize for strong scaling of network training.  It
 also allows for composition of model-parallelism with both data
 parallelism and ensemble training methods for training large neural
-networks with massive amounts of data.  LBANN is able to advantage of
+networks with massive amounts of data.  LBANN is able to take advantage of
 tightly-coupled accelerators, low-latency high-bandwidth networking,
 and high-bandwidth parallel file systems.
 
@@ -42,6 +42,8 @@ methods.
 
    lbann/lbann
    style_guide
+   continuous_integration
+   documentation_building
 
 ==================
 
