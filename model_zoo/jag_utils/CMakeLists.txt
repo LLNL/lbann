@@ -54,3 +54,10 @@
   target_link_libraries(generate_corrupt_samples-bin lbann )
   set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
 
+  add_executable( test_reading_speed-bin test_reading_speed.cpp )
+  target_link_libraries(test_reading_speed-bin lbann )
+  set_target_properties(test_reading_speed-bin PROPERTIES OUTPUT_NAME test_reading_speed)
+
+  add_executable( convert-bin convert.cpp )
+  target_link_libraries(convert-bin lbann )
+  set_target_properties(convert-bin PROPERTIES OUTPUT_NAME convert)
