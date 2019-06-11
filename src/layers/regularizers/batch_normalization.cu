@@ -554,7 +554,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
     assert0(dc::tensor::View(
         m_error_signals_copyout,
         get_error_signals().Buffer()));
-    m_error_signals_copyout.zero();
+    m_error_signals_copyout.zero(dc::get_stream());
   }
 #endif // LBANN_HAS_DISTCONV
   constexpr DataType one = 1;

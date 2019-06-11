@@ -1587,7 +1587,7 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
     }
     m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
     assert0(m_prev_activations_t.allocate());
-    m_prev_activations_t.zero();
+    m_prev_activations_t.zero(dc::get_stream());
     m_prev_activations_shuffler = get_tensor_shuffler(
         m_prev_activations_const_view, m_prev_activations_t);
     for (int i = 0; i < 3; ++i) {
@@ -1616,7 +1616,7 @@ void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dist
                               loc, dists[1], activations_local_shape);
   if (allocate) {
     assert0(m_activations_t.allocate());
-    m_activations_t.zero();
+    m_activations_t.zero(dc::get_stream());
   }
 }
 
@@ -1667,7 +1667,7 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
                                        dists[3],
                                        m_activations_t.get_local_shape());
     assert0(m_prev_error_signals_t.allocate());
-    m_prev_error_signals_t.zero();
+    m_prev_error_signals_t.zero(dc::get_stream());
     m_prev_error_signals_shuffler = get_tensor_shuffler(
         m_prev_error_signals_const_view, m_prev_error_signals_t);
     for (int i = 0; i < 3; ++i) {
@@ -1693,7 +1693,7 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
         << get_name() << ": skipping allocation of error signals";
   } else {
     assert0(m_error_signals_t.allocate());
-    m_error_signals_t.zero();
+    m_error_signals_t.zero(dc::get_stream());
   }
   MPIPrintStreamDebug() << get_name() << "; "
                         << "error signals: " << m_error_signals_t;
