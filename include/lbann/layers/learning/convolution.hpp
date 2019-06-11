@@ -212,6 +212,9 @@ protected:
 
     m_conv->forward(DataType(1.0), this->m_prev_activations_t, m_kernel_t,
                     DataType(0.0), this->m_activations_t);
+    if (this->early_terminate_last_iteration()) {
+      this->dump_tensor(m_kernel_t, this->get_name() + "_weights");
+    }
 #endif
   }
 
