@@ -413,6 +413,7 @@ message Callback {
    CallbackCheckMetric check_metric = 37;
    CallbackPerturbAdam perturb_adam = 38;
    CallbackPerturbDropout perturb_dropout = 39;
+   CallbackSaveTopKModels save_topk_models = 40;
 }
 
 message CallbackLTFB {
@@ -658,6 +659,13 @@ message CallbackPerturbAdam {
 message CallbackPerturbDropout {
   float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
   string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
+}
+
+message CallbackSaveTopKModels {
+  string dir = 1;  //directory to save model
+  int32  k = 2;    //number of (top) models to save
+  string metric = 3; //metrics to use in evaluating models
+  bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
 }
 //========================================================================
 // Weights

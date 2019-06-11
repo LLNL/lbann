@@ -150,6 +150,7 @@
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_save_topk_models.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
