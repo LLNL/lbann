@@ -237,7 +237,7 @@ protected:
     case pool_mode::max:
       // This does not seem to be necessary. It's not clear what the
       // difference of the two algorithms is.
-      if (getenv("DISTCONV_DETERMINISTIC")) {
+      if (getenv("LBANN_DISTCONV_DETERMINISTIC")) {
         cudnn_pool_mode = CUDNN_POOLING_MAX_DETERMINISTIC;
         break;
       }

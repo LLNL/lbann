@@ -1126,7 +1126,7 @@ private:
     size_t ws_size,
     DataType* ws) {
     // Always use the same deterministic algorithm for debugging
-    if (getenv("DISTCONV_DETERMINISTIC")) {
+    if (getenv("LBANN_DISTCONV_DETERMINISTIC")) {
       return CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
     }
     if (m_fwd_cudnn_algos.count(local_mini_batch_size) == 0) {
@@ -1160,7 +1160,7 @@ private:
     size_t ws_size,
     DataType* ws) {
     // Always use the same deterministic algorithm for debugging
-    if (getenv("DISTCONV_DETERMINISTIC")) {
+    if (getenv("LBANN_DISTCONV_DETERMINISTIC")) {
       return CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
     }
     if (m_bwd_data_cudnn_algos.count(local_mini_batch_size) == 0) {
@@ -1196,7 +1196,7 @@ private:
     size_t ws_size,
     DataType* ws) {
     // Always use the same deterministic algorithm for debugging
-    if (getenv("DISTCONV_DETERMINISTIC")) {
+    if (getenv("LBANN_DISTCONV_DETERMINISTIC")) {
       return CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
     }
     if (m_bwd_filter_cudnn_algos.count(local_mini_batch_size) == 0) {

@@ -450,7 +450,8 @@ protected:
     Layer::setup_distconv_post(ws_size);
     if (!this->distconv_enabled()) return;
 
-    if (getenv("DISTCONV_DETERMINISTIC")) {
+    if (dc::is_deterministic()) {
+      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
       // Same algorithm as LBANN
       m_fwd_algo = "IMPLICIT_GEMM";
       // Deterministic algorithm
