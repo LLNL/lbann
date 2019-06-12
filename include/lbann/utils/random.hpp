@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/exception.hpp"
 #include <random>
 
 namespace lbann {
@@ -84,6 +85,11 @@ fast_rng_gen& get_fast_io_generator();
  */
 template <typename Generator, typename T>
 inline T fast_rand_int(Generator& g, T max) {
+#ifdef LBANN_DEBUG
+  if (max == 0) {
+    LBANN_ERROR("fast_rand_int called with max=0");
+  }
+#endif
   typename Generator::result_type x;
   do {
     x = g();
