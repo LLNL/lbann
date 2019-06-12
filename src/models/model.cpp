@@ -736,6 +736,14 @@ void model::setup_weights() {
                     m_weights.end());
   }
 
+  // For run-to-run reproducibility, make sure the weights are
+  // initialized in the same order no matter how they are ordered in
+  // the prototext file.
+  std::sort(m_weights.begin(), m_weights.end(),
+            [](weights* const &x, weights* const &y) {
+              return x->get_name().compare(y->get_name()) < 0;
+            });
+
   // Setup weights
   for (auto* w : m_weights) { w->setup(); }
 

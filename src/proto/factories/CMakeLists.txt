@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_SOURCES
   model_factory.cpp
   objective_function_factory.cpp
   optimizer_factory.cpp
+  transform_factory.cpp
   weights_factory.cpp
 )
 

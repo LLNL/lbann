@@ -34,6 +34,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_replace_weights.cpp
   callback_gpu_memory_usage.cpp
   callback_perturb_dropout.cpp
+  callback_save_topk_models.cpp
 )
 
 # Propagate the files up the tree

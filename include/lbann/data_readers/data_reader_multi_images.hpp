@@ -31,7 +31,6 @@
 #define DATA_READER_MULTI_IMAGES_HPP
 
 #include "data_reader_imagenet.hpp"
-#include "cv_process.hpp"
 #include <vector>
 #include <string>
 #include <utility>
@@ -43,8 +42,7 @@ class data_reader_multi_images : public imagenet_reader {
   using img_src_t = std::vector<std::string>;
   using sample_t = std::pair<img_src_t, label_t>;
 
-  data_reader_multi_images(bool shuffle) = delete;
-  data_reader_multi_images(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_multi_images(bool shuffle = true);
   data_reader_multi_images(const data_reader_multi_images&);
   data_reader_multi_images& operator=(const data_reader_multi_images&);
   ~data_reader_multi_images() override;
@@ -99,7 +97,6 @@ class data_reader_multi_images : public imagenet_reader {
  protected:
   void set_defaults() override;
   virtual std::vector<CPUMat> create_datum_views(CPUMat& X, const int mb_idx) const;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
   bool read_text_stream(std::istream& text_stream, std::vector<sample_t>& list);

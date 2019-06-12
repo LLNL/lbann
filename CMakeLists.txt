@@ -446,6 +446,8 @@ if (LBANN_WITH_UNIT_TESTING)
   include(CTest)
   include(Catch)
   add_subdirectory(src/utils/unit_test)
+  add_subdirectory(src/transforms/unit_test)
+  add_subdirectory(src/transforms/vision/unit_test)
 
   # Add this one last
   add_subdirectory(unit_test)

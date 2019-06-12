@@ -28,7 +28,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_multi_images.hpp"
-#include "lbann/data_readers/image_utils.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <fstream>
 #include <sstream>
@@ -36,8 +35,8 @@
 
 namespace lbann {
 
-data_reader_multi_images::data_reader_multi_images(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : imagenet_reader(pp, shuffle) {
+data_reader_multi_images::data_reader_multi_images(bool shuffle)
+  : imagenet_reader(shuffle) {
   set_defaults();
 }
 
@@ -95,32 +94,6 @@ std::vector<CPUMat> data_reader_multi_images::create_datum_views(CPUMat& X, cons
     h = h + m_image_linearized_size;
   }
   return X_v;
-}
-
-bool data_reader_multi_images::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  int tid = m_io_thread_pool->get_local_thread_id();
-  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
-
-  const img_src_t& img_src = m_image_list[data_id].first;
-  for(size_t i=0u; i < m_num_img_srcs; ++i) {
-    int width=0, height=0, img_type=0;
-    const std::string imagepath = get_file_dir() + img_src[i];
-    bool ret = true;
-    ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
-
-    if(!ret) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                            + get_type() + ": image_utils::load_image failed to load - "
-                            + imagepath);
-    }
-    if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                            + get_type() + ": mismatch data size -- either width, height or channel - "
-                            + imagepath + " [w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
-                            + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
-    }
-  }
-  return true;
 }
 
 bool data_reader_multi_images::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
