@@ -27,7 +27,7 @@
 #ifndef _DATA_READER_JAG_CONDUIT_HPP_
 #define _DATA_READER_JAG_CONDUIT_HPP_
 
-#include "lbann_config.hpp" 
+#include "lbann_config.hpp"
 
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
@@ -213,15 +213,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Show the description
   std::string get_description() const;
 
-  /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i, conduit::Node& sample) const;
-
-  /**
-   * Return the images of the i-th sample as an 1-D vector of lbann::DataType
-   * There is one image per view, each of which is taken at closest to the bang time.
-   */
-  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample) const;
-
   /// Return the scalar simulation output data of the i-th sample
   std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
 
@@ -233,9 +224,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   void setup_data_store(int mini_batch_size);
 
-  /// A untiliy function to convert the pointer to image data into an opencv image
-  static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
-                               const int height, const int num_ch=1);
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
@@ -460,11 +448,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   sample_list_jag m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
-
-  /** temporary image normalization
-   * The inputs are the image to normalize, the image source id and the channel id.
-   */
-  void image_normalization(cv::Mat& img, size_t i, size_t ch) const;
 };
 
 /**

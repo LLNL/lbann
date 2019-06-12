@@ -32,7 +32,8 @@
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
 #include "lbann/utils/opencv.hpp"
-#include "lbann/transforms/vision/to_lbann_layout.hpp"
+#include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
+#include "lbann/transforms/scale_and_translate.hpp"
 
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
 #include <limits>     // numeric_limits
@@ -1213,102 +1214,6 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
   return image_ptrs;
 }
 
-cv::Mat data_reader_jag_conduit::cast_to_cvMat(
-  const std::pair<size_t, const ch_t*> img, const int height, const int num_ch) {
-  const int num_pixels = static_cast<int>(img.first);
-  const ch_t* ptr = img.second;
-
-  // add a zero copying view to data
-  const int type_code = CV_MAKETYPE(cv::DataType<ch_t>::depth, 1u);
-  const cv::Mat image(num_pixels, 1, type_code,
-                      reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
-  // reshape the image. Furter need to clone (deep-copy) the image
-  // to preserve the constness of the original data
-  return (image.reshape(num_ch, height));
-}
-
-/// Assumes the same parameters for the same channel from different views
-void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t ch) const {
-  const auto& tr = m_image_normalization_params.at(ch);
-  img.convertTo(img, -1, tr.first, tr.second);
-}
-
-std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
-  const std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<cv::Mat> images;
-
-  if (m_split_channels) {
-    images.reserve(img_data.size()*m_image_num_channels);
-    for (size_t i = 0u; i < img_data.size(); ++i) {
-      const auto& img = img_data[i];
-      cv::Mat ch[m_image_num_channels];
-      cv::split(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels), ch);
-      for(int c = 0; c < m_image_num_channels; ++c) {
-    #if 1 // with normalization
-        image_normalization(ch[c], i, static_cast<size_t>(c));
-    #endif
-        images.emplace_back(ch[c].clone());
-      }
-    }
-  } else {
-    images.reserve(img_data.size());
-    for (size_t i = 0u; i < img_data.size(); ++i) {
-      const auto& img = img_data[i];
-    #if 1 // with normalization
-      cv::Mat ch[m_image_num_channels];
-      cv::split(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels), ch);
-      for(int c = 0; c < m_image_num_channels; ++c) {
-        image_normalization(ch[c], i, static_cast<size_t>(c));
-      }
-      cv::Mat img_normalized;
-      cv::merge(ch, m_image_num_channels, img_normalized);
-      images.emplace_back(img_normalized);
-    #else
-      images.emplace_back(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels).clone());
-    #endif
-    }
-  }
-  return images;
-}
-
-std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<ch_t> images;
-
-  if (m_split_channels) {
-    images.resize(get_linearized_size(JAG_Image));
-    size_t i = 0u;
-    size_t j = 0u;
-    for (const auto& img: img_data) {
-      const ch_t * const ptr_end = img.data() + img.size();
-      for (int c=0; c < m_image_num_channels; ++c) {
-        const auto& tr = m_image_normalization_params.at(c);
-        for (const ch_t* ptr = img.data() + c; ptr < ptr_end; ptr += m_image_num_channels) {
-        #if 1 // with normalization
-          images[i++] = cv::saturate_cast<ch_t>(*ptr * tr.first + tr.second);
-        #else
-          images[i++] = *ptr;
-        #endif
-        }
-      }
-      j ++;
-    }
-  } else {
-    images.reserve(get_linearized_size(JAG_Image));
-    for (const auto& img: img_data) {
-    #if 1 // with normalization
-      // TODO: normalization needed
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : normalization not implemented yet");
-      (void) img;
-    #else
-      images.insert(images.end(), img.cbegin(), ptr + img.cend());
-    #endif
-    }
-  }
-
-  return images;
-}
-
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
@@ -1398,7 +1303,6 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   return inputs;
 }
 
-
 std::vector<CPUMat>
 data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
   std::vector<CPUMat> X_v(sizes.size());
@@ -1416,31 +1320,39 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
-      const size_t num_images = get_num_img_srcs()
-                              * static_cast<size_t>(m_split_channels? m_image_num_channels : 1u);
-      const size_t num_channels = static_cast<size_t>(m_split_channels ? 1u : m_image_num_channels);
-      const size_t image_size = m_split_channels? get_linearized_1ch_image_size() : get_linearized_image_size();
+      const size_t num_images = get_num_img_srcs();
+      const size_t num_channels = m_image_num_channels;
+      const size_t image_size = get_linearized_image_size();
       const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector<cv::Mat> images = get_cv_images(data_id, sample);
+      std::vector< std::vector<ch_t> > img_data(get_image_data(data_id, sample));
 
-      if (images.size() != num_images) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
-          std::to_string(images.size()) + "!=" + std::to_string(num_images));
+      if (img_data.size() != num_images) {
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected ", \
+          std::to_string(img_data.size()) + "!=" + std::to_string(num_images));
       }
-
       if (!m_split_channels && m_image_num_channels != 1) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : transform pipeline now requires single channel images: num_channels=", \
           std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
       }
 
       std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
-      auto tll = lbann::transform::to_lbann_layout();
+      std::vector<size_t> ch_dims = {static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      auto tll = lbann::transform::repack_HWC_to_CHW_layout();
+
       for(size_t i=0u; i < num_images; ++i) {
-        //        El::Matrix<uint8_t> img = El::Matrix<uint8_t>(utils::get_linearized_size(dims), 1, images[i].data, utils::get_linearized_size(dims));
-        El::Matrix<uint8_t> img = El::Matrix<uint8_t>(1, utils::get_linearized_size(dims), images[i].data, 1);
-        utils::type_erased_matrix te_img(std::move(img));
+        CPUMat img_mat = CPUMat(utils::get_linearized_size(dims), 1, img_data[i].data(), utils::get_linearized_size(dims));
+        utils::type_erased_matrix te_img(std::move(img_mat));
+        CPUMat tgt_mat = CPUMat(utils::get_linearized_size(dims), 1);
         tll.apply(te_img, X_v[i], dims);
+        const std::vector<size_t> ch_sizes(num_channels, m_image_height * m_image_width);
+        std::vector<CPUMat> X_ch_v = create_datum_views(X_v[i], ch_sizes, mb_idx);
+        for(size_t ch = 0; ch < num_channels; ch++) {
+          const auto& tr = m_image_normalization_params.at(ch);
+          auto s = lbann::transform::scale_and_translate(tr.first, tr.second);
+          utils::type_erased_matrix te_img_plane(std::move(X_ch_v[ch]));
+          s.apply(te_img_plane, ch_dims);
+        }
       }
       break;
     }
