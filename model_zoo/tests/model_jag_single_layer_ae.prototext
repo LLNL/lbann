@@ -1,7 +1,7 @@
-#Unit test for JAG model and (particularly) data reader
-#Run time for this example is about 2s per epoch on 16 nodes (32 tasks)
-#Example on how to run:
-#srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=bamboo/unit_tests/prototext/jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=bamboo/unit_tests/prototext/jag_reader.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext
+# Unit test for JAG model and (particularly) data reader
+# Run time for this example is about 2s per epoch on 16 nodes (32 tasks)
+# Example on how to run:
+# srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=model_zoo/tests/model_jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=model_zoo/data_readers/data_reader_jag.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext
 model {
   name: "ae_model"
   shareable_training_data_reader:false 
@@ -43,6 +43,17 @@ model {
     }
   }
   callback { timer {} }
+  # See lbann/src/proto/lbann.proto CallbackCheckMetric
+  # See lbann/src/callbacks/callback_check_metric.cpp
+  callback {
+    check_metric {
+      metric: "reconstr_loss",
+      lower_bound: 20.3956,
+      upper_bound: 22.3956,
+      error_on_failure: true,
+      execution_modes: "testing"
+    }
+  }
 
   ###################################################
   # start of layers
