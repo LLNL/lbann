@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -63,7 +63,11 @@ class lbann_callback_save_model : public lbann_callback {
   void on_train_end(model *m) override;
   bool save_model(model *m);
   bool save_model_weights(model *m);
-  static bool load_model_weights(std::string ckpt_dir, model *m);
+  /* ckptdir_is_fullpath flag if true
+ * allow user to specify full path to model weights to load
+ * and allow system to ignore appending trainer id, num of epochs/steps
+ * to default ckpt_dir*/
+  static bool load_model_weights(std::string ckpt_dir, model *m, bool ckptdir_is_fullpath=false);
 
   std::string name() const override { return "save model"; }
  private:

@@ -1,5 +1,5 @@
 """Default settings for LC systems."""
-from socket import gethostname
+import socket
 import re
 
 # ==============================================
@@ -26,7 +26,7 @@ _system_params = {'catalyst': SystemParams(24, 0, 'slurm', 'pbatch', 'brain'),
                   'sierra':   SystemParams(44, 4, 'lsf', 'pbatch', None)}
 
 # Detect system
-_system = re.sub(r'\d+', '', gethostname())
+_system = re.sub(r'\d+', '', socket.gethostname())
 if _system not in _system_params.keys():
     _system = None
 
@@ -40,7 +40,7 @@ def system():
         return _system
     else:
         raise RuntimeError('unknown system '
-                           '(' + gethostname() + ')')
+                           '(' + socket.gethostname() + ')')
 
 def is_lc_system(system = system()):
     """Whether current system is a supported LC system."""

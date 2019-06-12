@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -318,8 +318,8 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
 
   std::shared_ptr<cv_process> pp;
   // set up the image preprocessor
-  if ((name == "imagenet") || (name == "jag_conduit") || 
-      (name == "multihead_siamese") || (name == "mnist_siamese") || 
+  if ((name == "imagenet") || (name == "jag_conduit") ||
+      (name == "multihead_siamese") || (name == "mnist_siamese") ||
       (name == "multi_images") || (name == "moving_mnist")) {
     pp = std::make_shared<cv_process>();
   } else if (name == "imagenet_patches") {
@@ -353,7 +353,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = new data_reader_multi_images(pp, shuffle);
   } else if (name == "moving_mnist") {
     reader = new moving_mnist_reader(7, 40, 40, 2);
-#ifdef LBANN_HAS_CONDUIT
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(pp, shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
@@ -513,7 +512,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = reader_jag;
     if (master) std::cout << reader->get_type() << " is set" << std::endl;
     return;
-#endif // LBANN_HAS_CONDUIT
   }
 
   if (channels == 0) {

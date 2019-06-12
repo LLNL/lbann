@@ -1,44 +1,17 @@
 """Useful file paths on LC systems."""
 import os.path
-from lbann.util import make_iterable, lbann_dir
 from lbann.contrib.lc.systems import system
 
 # ==============================================
-# File paths
+# Data sets
 # ==============================================
 
-def install_dir(build_type = None, system = system()):
-    """LBANN install directory.
-
-    Searches in the `build` directory. Assumes LBANN has been built
-    with `scripts/build_lbann_lc.sh`.
-
-    """
-    if not build_type:
-        build_type = ('Release', 'Debug')
-    for _type in make_iterable(build_type):
-        _dir = os.path.join(lbann_dir(),
-                            'build',
-                            'gnu.{}.{}.llnl.gov'.format(_type, system),
-                            'install')
-        if os.path.isdir(_dir):
-            return _dir
-    raise RuntimeError('could not find install directory')
-
-def lbann_exe(build_type = None, system = system()):
-    """LBANN executable."""
-    return os.path.join(install_dir(build_type, system), 'bin', 'lbann')
-
-def parallel_fs_base_path(system):
+def parallel_file_system_path(system = system()):
     """Base path to parallel file system."""
     if system in ('lassen', 'sierra'):
         return '/p/gpfs1/'
     else:
         return '/p/lustre2/'
-
-# ==============================================
-# Data sets
-# ==============================================
 
 def mnist_dir(system = system()):
     """MNIST directory on LC system.
@@ -49,7 +22,7 @@ def mnist_dir(system = system()):
     from http://yann.lecun.com/exdb/mnist/ and uncompressing.
 
     """
-    return parallel_fs_base_path(system) + 'brainusr/datasets/MNIST'
+    return parallel_file_system_path(system) + 'brainusr/datasets/MNIST'
 
 def imagenet_dir(system = system(), data_set = 'training',
                  num_classes = 1000):
@@ -70,7 +43,7 @@ def imagenet_dir(system = system(), data_set = 'training',
     subsampled data sets may vary by system.
 
     """
-    base_path = parallel_fs_base_path(system)
+    base_path = parallel_file_system_path(system)
     base_path += 'brainusr/datasets/ILSVRC2012/original/'
     if data_set.lower() in ('train', 'training'):
         return base_path + 'train/'
@@ -100,7 +73,7 @@ def imagenet_labels(system = system(), data_set = 'train',
     subsampled data sets may vary by system.
 
     """
-    label_dir = parallel_fs_base_path(system)
+    label_dir = parallel_file_system_path(system)
     if system in ('lassen', 'sierra'):
         label_dir += 'brainusr/datasets/ILSVRC2012/original/labels/'
     else:

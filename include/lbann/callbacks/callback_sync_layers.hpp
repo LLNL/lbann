@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -63,7 +63,7 @@ class lbann_callback_sync_layers : public lbann_callback {
 
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
-    
+
  protected:
   /** Whether to synchronize GPUs. */
   bool m_sync_gpus;

@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,7 @@ namespace lbann {
 /**
  * The numpy_conduit_converter class contains static method(s) for
  * reading numpy files and copying the contents to a conduit file.
- * 
+ *
  * In general the schema for npz files, after conversion to conduit, is:
  *
  * {
@@ -49,14 +49,14 @@ namespace lbann {
  *       "num_vals": <int>,
  *       "shape": <[ vector ]>,
  *       "data": <char*>
- *     }  
- *   }  
- * }  
+ *     }
+ *   }
+ * }
  *
  * cosmoflow has the following sections:
- *    "data": 
- *    "frm": 
- *    "responses": 
+ *    "data":
+ *    "frm":
+ *    "responses":
  */
 
 class numpy_conduit_converter {

@@ -77,9 +77,8 @@ def get_command(cluster,
     if scheduler == 'slurm':
         # Create allocate command
         command_allocate = ''
-        # Allocate a node if we don't have one already
-        # Running the tests manually allows for already having a node allocated
-        if os.getenv('SLURM_JOB_NUM_NODES') == None:
+        # Allocate nodes only if we don't already have an allocation.
+        if os.getenv('SLURM_JOB_NUM_NODES') is None:
             command_allocate = 'salloc'
             option_num_nodes = ''
             option_partition = ''
@@ -122,8 +121,7 @@ def get_command(cluster,
     elif scheduler == 'lsf':
         # Create allocate command
         command_allocate = ''
-        # Allocate a node if we don't have one already
-        # Running the tests manually allows for already having a node allocated
+        # Allocate nodes only if we don't already have an allocation.
         if os.getenv('LSB_HOSTS') is None:
             command_allocate = 'bsub'
             # x => Puts the host running your job into exclusive execution
