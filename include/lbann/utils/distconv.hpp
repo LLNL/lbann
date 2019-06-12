@@ -180,6 +180,10 @@ std::string get_synthetic_data_reader_randgen();
  */
 int get_number_of_pre_generated_synthetic_data();
 
+/** Query if determinism is requested
+ */
+bool is_deterministic();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();

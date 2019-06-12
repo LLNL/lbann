@@ -54,6 +54,7 @@ std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
 // Allowed values: MINSTD, MT, and ONE
 std::string opt_synthetic_data_reader_randgen("MINSTD");
 int opt_num_pre_generated_synthetic_data = 0;
+bool opt_deterministic = false;
 
 void set_options() {
   if (options_set) return;
@@ -96,6 +97,10 @@ void set_options() {
   if (env) {
     opt_num_pre_generated_synthetic_data = atoi(env);
   }
+  env = getenv("LBANN_DISTCONV_DETERMINISTIC");
+  if (env) {
+    opt_deterministic = true;
+  }
   options_set = true;
 }
 
@@ -123,6 +128,9 @@ void print_options(std::ostream &os) {
        << std::endl;
     ss << "  num_pre_generated_synthetic_data: "
        << opt_num_pre_generated_synthetic_data
+       << std::endl;
+    ss << "  deterministic: "
+       << opt_deterministic
        << std::endl;
     os << ss.str();
   }
@@ -248,7 +256,9 @@ void initialize(MPI_Comm comm) {
   cudaStream_t s;
   CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
   mpicuda_comm_instance = new Al::mpicuda_backend::comm_type(mpi_comm, s);
-  backend_instance = new Backend(mpi_comm, cudnn_h, s);
+  ::distconv::cudnn::Options backend_opts;
+  backend_opts.m_deterministic = opt_deterministic;
+  backend_instance = new Backend(mpi_comm, cudnn_h, s, backend_opts);
   print_options(std::cout);
   initialized = true;
 }
@@ -323,6 +333,10 @@ std::string get_synthetic_data_reader_randgen() {
 
 int get_number_of_pre_generated_synthetic_data() {
   return opt_num_pre_generated_synthetic_data;
+}
+
+bool is_deterministic() {
+  return opt_deterministic;
 }
 
 p2p::P2P &get_p2p() {

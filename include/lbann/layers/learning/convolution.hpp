@@ -212,6 +212,9 @@ protected:
 
     m_conv->forward(DataType(1.0), this->m_prev_activations_t, m_kernel_t,
                     DataType(0.0), this->m_activations_t);
+    if (this->early_terminate_last_iteration()) {
+      this->dump_tensor(m_kernel_t, this->get_name() + "_weights");
+    }
 #endif
   }
 
@@ -450,7 +453,8 @@ protected:
     Layer::setup_distconv_post(ws_size);
     if (!this->distconv_enabled()) return;
 
-    if (getenv("DISTCONV_DETERMINISTIC")) {
+    if (dc::is_deterministic()) {
+      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
       // Same algorithm as LBANN
       m_fwd_algo = "IMPLICIT_GEMM";
       // Deterministic algorithm
