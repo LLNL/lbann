@@ -1341,6 +1341,14 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
         LBANN_ERROR(_CN_ + ":: fetch() : transform pipeline now requires single channel images: num_channels=" \
                     + std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
       }
+      if (!m_split_channels && m_image_num_channels != 1) {
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : transform pipeline now requires single channel images: num_channels=", \
+          std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
+      }
+
+      std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      std::vector<size_t> ch_dims = {static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      auto tll = lbann::transform::repack_HWC_to_CHW_layout();
 
       std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
       std::vector<size_t> ch_dims = {static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
