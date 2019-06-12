@@ -40,37 +40,6 @@ model {
   }
   callback { timer {} }
 
-  callback {
-   dump_outputs {
-      directory :"debug_dump/"
-     batch_interval: 1
-     layers: "data"
-     execution_modes: "train"
-     format: "csv"
-#     format: "npy"
-   }
-  }
-  callback {
-   dump_outputs {
-     directory :"debug_dump/"
-     batch_interval: 1
-     layers: "image_data_dummy"
-     execution_modes: "train"
-     format: "csv"
-#     format: "npy"
-   }
-  }
-  callback {
-   dump_outputs {
-     directory :"debug_dump/"
-     batch_interval: 1
-     layers: "encodefc1"
-     execution_modes: "train"
-     format: "csv"
-#     format: "npy"
-   }
-  }
-
   ###################################################
   # start of layers
   ###################################################

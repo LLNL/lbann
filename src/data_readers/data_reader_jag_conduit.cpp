@@ -1313,7 +1313,7 @@ data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>
     El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
     h = h_end;
   }
-  return X_v;
+  return std::move(X_v);
 }
 
 bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
