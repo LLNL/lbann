@@ -59,10 +59,11 @@ void bp_compute_distconv(dc::TensorDev &error_signals,
   switch (num_children) {
     case 0:
       dc::MPIPrintStreamInfo() << "No parent for this sum layer";
-      error_signals.zero();
+      error_signals.zero(dc::get_stream());
       break;
     case 1:
-      dc::tensor::Copy(error_signals, prev_error_signals);
+      dc::tensor::Copy(error_signals, prev_error_signals,
+                       dc::get_stream());
       break;
     case 2:
       prev_error_signals_siblings.at(0).set_outermost_dimension(
@@ -73,7 +74,8 @@ void bp_compute_distconv(dc::TensorDev &error_signals,
                             dc::get_backend().get_stream());
       break;
     default:
-      dc::tensor::Copy(error_signals, prev_error_signals);
+      dc::tensor::Copy(error_signals, prev_error_signals,
+                       dc::get_stream());
       for (auto &child: prev_error_signals_siblings) {
         child.set_outermost_dimension(error_signals.get_shape()[-1]);
         dc::tensor::Transform(error_signals, child, accumulate<DataType>(),

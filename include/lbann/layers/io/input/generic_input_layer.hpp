@@ -992,12 +992,12 @@ class generic_input_layer : public io_layer {
     //const LocaleMPI loc(dc::get_mpi_comm(), false);
     m_activations_t = TensorDev(tensor_shape, loc, dist);
     assert0(m_activations_t.allocate());
-    m_activations_t.zero();
+    m_activations_t.zero(dc::get_stream());
 
     // Keeps the same input type and convert to float on GPU
     m_input_dev = TensorDevInput(tensor_shape, loc, dist);
     assert0(m_input_dev.allocate());
-    m_input_dev.zero();
+    m_input_dev.zero(dc::get_stream());
   }
 
   void setup_tensors_bwd(

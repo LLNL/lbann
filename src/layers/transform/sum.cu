@@ -59,11 +59,11 @@ void fp_compute_distconv(dc::TensorDev &activations,
   switch (num_parents) {
     case 0:
       dc::MPIPrintStreamDebug() << "No parent for sum layer";
-      activations.zero();
+      activations.zero(dc::get_stream());
       break;
     case 1:
       dc::MPIPrintStreamDebug() << "Just one parent for sum layer";
-      dc::tensor::Copy(activations, prev_activations);
+      dc::tensor::Copy(activations, prev_activations, dc::get_stream());
       break;
     case 2:
       // Optimization for layers with 2 parents (e.g.,
@@ -76,7 +76,7 @@ void fp_compute_distconv(dc::TensorDev &activations,
                             dc::get_backend().get_stream());
       break;
     default:
-      dc::tensor::Copy(activations, prev_activations);      
+      dc::tensor::Copy(activations, prev_activations, dc::get_stream());
       for (auto &p: prev_activations_siblings) {
         p.set_outermost_dimension(activations.get_shape()[-1]);
         distconv::tensor::Transform(activations, p, accumulate<DataType>(),
