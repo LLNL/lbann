@@ -138,7 +138,11 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
 
 
 def skeleton_performance_full_alexnet(cluster, dir_name, executables,
-                                      compiler_name, weekly):
+                                      compiler_name, weekly, run):
+  if not run:
+    e = 'skeleton_performance_full_alexnet: Ignored'
+    print('Skip - ' + e)
+    pytest.skip(e)
   if not weekly:
     e = 'skeleton_performance_full_alexnet: Non-local testing'
     print('Skip - ' + e)
@@ -154,10 +158,10 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
   should_log = True
   output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
   error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
-  if cluster in ['catalyst', 'pascal', 'surface']:
+  if cluster in ['catalyst', 'surface']:
     command = 'salloc --nodes 128 %s/bamboo/integration_tests/%s.sh > %s 2> %s' % (dir_name, model_name, output_file_name, error_file_name)
-  elif cluster == 'ray':
-    e = 'skeleton_performance_full_alexnet: Ray is unsupported for skeleton_performance_full_alexnet'
+  elif cluster in ['pascal', 'ray']:
+    e = 'skeleton_performance_full_alexnet: Pascal, Ray are unsupported for skeleton_performance_full_alexnet'
     print('Skip - ' + e)
     pytest.skip(e)
   else:
@@ -179,8 +183,9 @@ def test_integration_performance_alexnet_clang4(cluster, dirname, exes, weekly):
 
 
 def test_integration_performance_full_alexnet_clang4(cluster, dirname, exes,
-                                                     weekly):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang4', weekly)
+                                                     weekly, run):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang4', weekly,
+                                    run)
 
 
 def test_integration_performance_lenet_mnist_gcc4(cluster, dirname, exes):
@@ -191,8 +196,9 @@ def test_integration_performance_alexnet_gcc4(cluster, dirname, exes, weekly):
   skeleton_performance_alexnet(cluster, dirname, exes, 'gcc4', weekly)
 
 
-def test_integration_performance_full_alexnet_gcc4(cluster, dirname, exes, weekly):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc4', weekly)
+def test_integration_performance_full_alexnet_gcc4(cluster, dirname, exes,
+                                                   weekly, run):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc4', weekly, run)
 
 
 def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes):
@@ -204,8 +210,8 @@ def test_integration_performance_alexnet_gcc7(cluster, dirname, exes, weekly):
 
 
 def test_integration_performance_full_alexnet_gcc7(cluster, dirname, exes,
-                                                   weekly):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc7', weekly)
+                                                   weekly, run):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc7', weekly, run)
 
 
 def test_integration_performance_lenet_mnist_intel18(cluster, dirname, exes):
@@ -218,8 +224,9 @@ def test_integration_performance_alexnet_intel18(cluster, dirname, exes,
 
 
 def test_integration_performance_full_alexnet_intel18(cluster, dirname, exes,
-                                                      weekly):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'intel18', weekly)
+                                                      weekly, run):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'intel18', weekly,
+                                    run)
 
 
 # Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>

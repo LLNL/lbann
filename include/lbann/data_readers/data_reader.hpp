@@ -35,9 +35,9 @@
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -62,7 +62,7 @@ class model;
  * classes should implement load and the appropriate subset of fetch_datum,
  * fetch_label, and fetch_response.
  */
-class generic_data_reader : public lbann_image_preprocessor {
+class generic_data_reader {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
@@ -105,7 +105,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  ~generic_data_reader() override {}
+  virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
 
   /// set the comm object
@@ -285,15 +285,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
 
-  /**
-   * Save pixels to an image. The implementing data reader is responsible for
-   * handling format detection, conversion, etc.
-   */
-  // TODO: This function needs to go away from here
-  void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) override {
-    NOT_IMPLEMENTED("save_image");
-  }
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
@@ -726,6 +717,11 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// have identical shuffled indices
   virtual void post_update() {}
 
+  /** Set the transform pipeline this data reader will use. */
+  void set_transform_pipeline(transform::transform_pipeline&& tp) {
+    m_transform_pipeline = std::move(tp);
+  }
+
  protected:
 
   // For use with conduit when samples are corrupt.
@@ -901,6 +897,10 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// etc.
   void set_jag_variables(int mb_size);
   model *m_model;
+
+
+  /** Transform pipeline for preprocessing data. */
+  transform::transform_pipeline m_transform_pipeline;
 
   /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
   /// but we're not retrieving a conduit::Node from the store. This typically occurs

@@ -19,8 +19,10 @@ def pytest_addoption(parser):
                      help='--exes={compiler_name: path}')
     parser.addoption('--log', action='store', default=0,
                      help='--log=1 to keep trimmed accuracy files. Default (--log=0) removes files')
+    parser.addoption('--run', action='store_true', default=False,
+                     help='--run specifies that a test normally ignored should be run. Default False')
     parser.addoption('--weekly', action='store_true', default=False,
-                     help='--weekly specifies that the test should ONLY be run weekly, not nightly')
+                     help='--weekly specifies that the test should ONLY be run weekly, not nightly. Default False')
     # For local testing only
     parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
 
@@ -43,6 +45,11 @@ def dirname(request):
 @pytest.fixture
 def exes(request):
     return request.config.getoption('--exes')
+
+
+@pytest.fixture
+def run(request):
+    return request.config.getoption('--run')
 
 
 @pytest.fixture

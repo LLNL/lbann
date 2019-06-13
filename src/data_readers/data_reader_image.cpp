@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/utils/image.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
@@ -230,13 +231,10 @@ void image_data_reader::preload_data_store() {
 
 void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
-
-  using InputBuf_T = lbann::cv_image_type<uint8_t>;
-  auto cvMat = cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1));
-  m_thread_cv_buffer.resize(num_io_threads);
-  for(int tid = 0; tid < num_io_threads; ++tid) {
-    m_thread_cv_buffer[tid] = cvMat.clone();
-  }
+   m_transform_pipeline.set_expected_out_dims(
+    {static_cast<size_t>(m_image_num_channels),
+     static_cast<size_t>(m_image_height),
+     static_cast<size_t>(m_image_width)});
 }
 
 std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
