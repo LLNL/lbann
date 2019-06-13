@@ -1,0 +1,116 @@
+########################################################################
+# The JAG normalization values were computed over the 10M + 1MA + 1MB random
+# pulls from the 100M data set.  They are valid for the directories:
+# /p/lustre2/brainusr/datasets/10MJAG/ (10M | 1M_A | 1M_B)
+# /p/lustre2/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+# /p/gpfs1/brainusr/datasets/10MJAG/10M | 1M_A | 1M_B
+# /p/gpfs1/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+########################################################################
+
+data_reader {
+  requires_data_set_metadata: true
+
+  reader {
+    name: "jag_conduit"
+    role: "train"
+    shuffle: true
+    # change to a lustre path
+    #data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/"
+    #index_list: "index.txt"
+    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K4trainers/"
+    index_list: "100Kindex.txt"
+    index_list_per_trainer: false
+    index_list_per_model: false
+
+    validation_percent: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    disable_responses: true
+    disable_labels: true
+
+    num_labels: 5
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+      raw_num_channels: 4
+
+      normalizer {
+        disable: true
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+
+  reader {
+    name: "jag_conduit"
+    role: "test"
+    shuffle: true
+    # change to a lustre path
+    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_B/"
+    index_list: "index.txt"
+    #data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K16trainers/"
+    #index_list: "t1_sample_list.txt"
+    index_list_per_trainer: false
+    index_list_per_model: false
+
+    validation_percent: 0
+    absolute_sample_count: 0 
+    percent_of_data_to_use: 0.0005
+    disable_responses: true
+    disable_labels: true
+
+    num_labels: 5
+
+    image_preprocessor {
+      # assume fixed size of input images if cropper is not used
+      raw_width: 64
+      raw_height: 64
+      raw_num_channels: 4
+
+      normalizer {
+        disable: true
+        scale: false
+        subtract_mean: false
+        unit_variance: false
+        z_score: true
+      }
+
+      subtractor {
+        disable: true
+      }
+
+      cropper {
+        disable: true
+      }
+
+      colorizer {
+        disable: true
+      }
+
+      augmenter {
+        disable: true
+      }
+    }
+  }
+}

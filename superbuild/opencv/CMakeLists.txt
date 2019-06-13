@@ -41,7 +41,7 @@ else ()
     CACHE STRING "The URL from which to clone OpenCV")
 endif ()
 
-set(OPENCV_TAG "3.4.5"
+set(OPENCV_TAG "4.1.0"
   CACHE STRING "The git tag or hash to checkout for OpenCV")
 
 include(ExternalProject)
