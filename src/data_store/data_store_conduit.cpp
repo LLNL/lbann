@@ -32,6 +32,8 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
+#include <sys/shm.h>
+#include <sys/ipc.h>
 
 namespace lbann {
 
@@ -65,16 +67,12 @@ data_store_conduit::data_store_conduit(
     std::stringstream ss;
     ss << "debug_" << m_reader->get_role() << "." << m_comm->get_rank_in_world();
     m_output.open(ss.str().c_str());
+    if (m_world_master) {
+      std::cout << "opened " << ss.str() << " for writing\n";
+    }
   }
 
   m_is_local_cache = opts->get_bool("data_store_cache");
-  if (m_is_local_cache && opts->get_bool("preload_data_store")) {
-    LBANN_ERROR("you cannot use both of these options: --data_store_cache --preload_data_store");
-  }
-
-  if (m_is_local_cache) {
-    get_image_sizes();
-  }
 
   if (m_world_master) {
     if (m_is_local_cache) {
@@ -90,6 +88,9 @@ data_store_conduit::data_store_conduit(
 data_store_conduit::~data_store_conduit() {
   if (m_output) {
     m_output.close();
+  }
+  if (m_is_local_cache && m_mem_seg) {
+    shmdt(m_mem_seg);
   }
 }
 
@@ -193,7 +194,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
-
   if (m_world_master) {
     if (m_super_node) {
       std::cout << "data store mode: exchange_data via super nodes\n";
@@ -215,6 +215,10 @@ void data_store_conduit::setup(int mini_batch_size) {
   }
 
   m_is_setup = true;
+
+  if (m_is_local_cache) {
+    preload_local_cache();
+  }
 
   if (m_world_master && !m_preload) {
     std::cout << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
@@ -1023,55 +1027,55 @@ int data_store_conduit::get_image_offsets() {
     const std::string image_list_file = m_reader->get_data_filename();
     m_image_base_dir = m_reader->get_file_dir();
     FILE *fplist = fopen(image_list_file.c_str(), "rt");
-    std::vector<std::string> image_file_names;
     int imagelabel;
     while (!feof(fplist)) {
       char imagepath[512];
       if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
         break;
       }
-      image_file_names.emplace_back(imagepath);
+      m_image_filenames.emplace_back(imagepath);
+      m_labels.emplace_back(imagelabel);
     }
     fclose(fplist);
 
     // get sizes of files for which I'm responsible
-    for (size_t h=m_rank_in_trainer; h<image_file_names.size(); h += m_np_in_trainer) {
-      const std::string fn = image_dir + '/' + image_file_names[h];
+    for (size_t h=m_rank_in_trainer; h<m_image_filenames.size(); h += m_np_in_trainer) {
+      const std::string fn = m_reader->get_file_dir() + '/' + m_image_filenames[h];
       std::ifstream in(fn.c_str());
       if (!in) {
         LBANN_ERROR("failed to open " + fn + " for reading");
       }
       in.seekg(0, std::ios::end);
       m_my_sizes.push_back(in.tellg());
-      m_my_files.push_back(image_file_names[h]);
+      m_my_files.push_back(h);
       in.close();
     }
 
     if (m_output) {
       m_output << "my image sizes:\n";
-      for (size_t k=0; k<my_sizes.size(); k++) {
-        m_output << k << " " << my_sizes[k] << "\n";
+      for (size_t k=0; k<m_my_sizes.size(); k++) {
+        m_output << k << " " << m_my_sizes[k] << "\n";
       }
     }  
 
     // globally exchange files sizes within trainer
-    int my_count = my_sizes.size();
+    int my_count = m_my_sizes.size();
     std::vector<int> counts(m_np_in_trainer);
     m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
     size_t g_count = std::accumulate(counts.begin(), counts.end(), 0);
-    if (g_count != image_file_names.size()) {
-      LBANN_ERROR("g_count != image_file_names.size()");
+    if (g_count != m_image_filenames.size()) {
+      LBANN_ERROR("g_count != m_image_filenames.size()");
     }
-    std::vector<int> work(image_file_names.size());
+    std::vector<int> work(m_image_filenames.size());
     std::vector<int> disp(m_np_in_trainer);
     disp[0] = 0;
     for (size_t h=0; h<counts.size()-1; h++) {
       disp[h+1] = disp[0] + counts[h];
     }
-    m_comm->trainer_all_gather(my_sizes, work, counts, disp);
+    m_comm->trainer_all_gather(m_my_sizes, work, counts, disp);
 
     // fill in  m_image_offsets
-    m_image_offsets.resize(image_file_names.size()+1);
+    m_image_offsets.resize(m_image_filenames.size()+1);
     m_image_offsets[0] = 0;
     for (int rank = 0; rank < m_np_in_trainer; rank++) {
       size_t offset = disp[rank];
@@ -1082,12 +1086,18 @@ int data_store_conduit::get_image_offsets() {
         i += m_np_in_trainer;
       }
     }
-    segment_length = m_image_offsets.back();
+    segment_length = m_image_offsets.back() + sizeof(bool)*m_image_offsets.size();
 
     if (m_output) {
+      if (m_world_master) {
+        std::cout << "image offsets:\n";
+      }
       m_output << "image offsets:\n";
       for (size_t h=0; h<m_image_offsets.size(); h++) {
-        m_output << h << " " << m_image_offsets[h] << "\n";;
+        m_output << h << " " << m_image_offsets[h] << "\n";
+        if (m_world_master) {
+          std::cout << h << " " << m_image_offsets[h] << "\n";
+        }
       }
     }
   }
@@ -1097,18 +1107,58 @@ int data_store_conduit::get_image_offsets() {
 
 void data_store_conduit::allocate_shared_segment(int size) {
   int node_id = m_comm->get_rank_in_node();
+  key_t key = ftok(",", 'x');
+  int shm_id;
   if (node_id == 0) {
+    shm_id = shmget(key, size, (IPC_CREAT | 0666));
+    if (shm_id < 0) {
+      LBANN_ERROR("shm_id < 0; shmget() failed to create shared memory segment of " + std::to_string(size) + " bytes");
+    }
+    m_mem_seg = shmat(shm_id, NULL, 0);
+    if (*(int*)m_mem_seg == -1) {
+      LBANN_ERROR("m_mem_seg == -1; call to shmat() failed");
+    }
+    m_loaded_images = (bool*)((char*)m_mem_seg + m_image_offsets.back());
+    for (size_t j=0; j<m_image_offsets.size(); j++) {
+      *(m_loaded_images + j*sizeof(bool)) = false;
+    }
   }
+
   m_comm->barrier(m_comm->get_node_comm());
+
+  if (node_id != 0) {
+    shm_id = shmget(key, size, 0666);
+    if (shm_id < 0) {
+      LBANN_ERROR("shm_id < 0; shmget() failed to create shared memory segment of " + std::to_string(size) + " bytes");
+    }
+    m_mem_seg = shmat(shm_id, NULL, 0);
+    if (*(int*)m_mem_seg == -1) {
+      LBANN_ERROR("m_mem_seg == -1; call to shmat() failed");
+    }
+  }
 }
 
 void data_store_conduit::preload_local_cache() {
   int segment_size = get_image_offsets();
-  allocate_shared_segment(segment_length);
+  allocate_shared_segment(segment_size);
   load_files();
 }
 
 void data_store_conduit::load_files() {
+  for (auto j : m_my_files) {
+    const std::string fn = m_image_base_dir + '/' + m_image_filenames[j];
+    std::ifstream in(fn, std::ios::in | std::ios::binary);
+    if (!in) {
+      LBANN_ERROR("failed to open " + fn + " for binary read");
+    }
+    char *c = (char*)m_mem_seg + m_image_offsets[j];
+    in.read(c, m_image_offsets[j+1] - m_image_offsets[j]);
+    in.close();
+  }
+MPI_Barrier(MPI_COMM_WORLD);
+if (m_world_master) std::cout << "all files loaded\n";
+MPI_Barrier(MPI_COMM_WORLD);
+exit(0);
 }
 
 }  // namespace lbann

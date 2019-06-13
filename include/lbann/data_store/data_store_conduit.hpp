@@ -303,10 +303,18 @@ protected :
   void allocate_shared_segment(int size);
 
   std::string m_image_base_dir;
-  std::vector<std::string> m_my_files;
-  std::vector<std::string> m_my_sizes;
+  std::vector<int> m_my_files;
+  std::vector<int> m_my_sizes;
 
   void load_files();
+
+  void *m_mem_seg = 0;
+
+  //m_loaded_images[j] = true if the j'th image has been loaded
+  bool *m_loaded_images;
+
+  std::vector<std::string> m_image_filenames;
+  std::vector<int> m_labels;
 };
 
 }  // namespace lbann
