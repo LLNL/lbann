@@ -16,6 +16,7 @@ add_subdirectory(models)
 add_subdirectory(objective_functions)
 add_subdirectory(optimizers)
 add_subdirectory(proto)
+add_subdirectory(transforms)
 add_subdirectory(utils)
 add_subdirectory(weights)
 

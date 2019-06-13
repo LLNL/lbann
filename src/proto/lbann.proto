@@ -36,7 +36,6 @@ message Reader {
   //for GAN model
   bool gan_labelling = 201;
   int32 gan_label_value = 202;
-  ImagePreprocessor image_preprocessor = 13;
 
   int32 num_labels = 99; //for imagenet and synthetic
   int64 num_samples = 100; //only for synthetic
@@ -74,6 +73,8 @@ message Reader {
   //------------- end of only for index lists ------------------
 
   PythonDataReader python = 501;
+
+  repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 }
 
 message PythonDataReader {
@@ -84,117 +85,112 @@ message PythonDataReader {
   string sample_dims_function = 5;  // Function that gets dimensions of data sample
 }
 
-message ImagePreprocessor {
-  string name = 1;
-  bool disable = 2;
-  int32 raw_width = 3;
-  int32 raw_height = 4;
-  int32 raw_num_channels = 5;
-
-  message Cropper {
-    string name = 1;
-    bool disable = 2;
-    bool crop_randomly = 3;
-    uint32 crop_width = 4;
-    uint32 crop_height = 5;
-    int32 resized_width = 6;
-    int32 resized_height = 7;
-    bool adaptive_interpolation = 8;
+// Preprocessing transforms.
+message Transform {
+  // Transforms that apply to LBANN data.
+  // Normalize channel-wise with mean and standard deviation.
+  message Normalize {
+    string means = 1;
+    string stddevs = 2;
+  }
+  // Normalize each sample to have mean 0, standard deviation 1.
+  message SampleNormalize {}
+  // Scale by a constant.
+  message Scale {
+    float scale = 1;
   }
 
-  message Resizer {
-    string name = 1;
-    bool disable = 2;
-    int32 resized_width = 3;
-    int32 resized_height = 4;
-    bool adaptive_interpolation = 5;
+  // Transforms that apply to images.
+  // Crop of size height x width from the center.
+  message CenterCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+  }
+  // Convert to color.
+  message Colorize {}
+  // Convert to grayscale.
+  message Grayscale {}
+  // Horizontal flip with probability p.
+  message HorizontalFlip {
+    float p = 1;
+  }
+  // Fused Normalize + ToLBANNLayout.
+  message NormalizeToLBANNLayout {
+    string means = 1;
+    string stddevs = 2;
+  }
+  // Apply a random affine transform.
+  message RandomAffine {
+    float rotate_min = 1;
+    float rotate_max = 2;
+    float translate_h = 3;
+    float translate_w = 4;
+    float scale_min = 5;
+    float scale_max = 6;
+    float shear_min = 7;
+    float shear_max = 8;
+  }
+  // Crop of size height x width from a random location.
+  message RandomCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+  }
+  // Random crop with scale and aspect ratio augmentation.
+  message RandomResizedCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+    float scale_min = 3;
+    float scale_max = 4;
+    float ar_min = 5;
+    float ar_max = 6;
+  }
+  // Resize to height x width, then randomly crop to crop_height x crop_width.
+  message RandomResizedCropWithFixedAspectRatio {
+    uint64 height = 1;
+    uint64 width = 2;
+    uint64 crop_height = 3;
+    uint64 crop_width = 4;
+  }
+  // Resize to height x width.
+  message Resize {
+    uint64 height = 1;
+    uint64 width = 2;
+  }
+  // Resize to height x width then crop to crop_height x crop_width at the center.
+  message ResizedCenterCrop {
+    uint64 height = 1;
+    uint64 width = 2;
+    uint64 crop_height = 3;
+    uint64 crop_width = 4;
+  }
+  // Convert from an image to LBANN data.
+  message ToLBANNLayout { }
+  // Vertical flip with probability p.
+  message VerticalFlip {
+    float p = 1;
   }
 
-  message Augmenter {
-    string name = 1;
-    bool disable = 2;
-    bool horizontal_flip = 3;
-    bool vertical_flip = 4;
-    double rotation = 5;
-    double horizontal_shift = 6;
-    double vertical_shift = 7;
-    double shear_range = 8;
+  oneof a_transform {
+    // On LBANN data:
+    Normalize normalize = 1;
+    SampleNormalize sample_normalize = 2;
+    Scale scale = 3;
+
+    // On images:
+    CenterCrop center_crop = 100;
+    Colorize colorize = 101;
+    Grayscale grayscale = 102;
+    HorizontalFlip horizontal_flip = 103;
+    NormalizeToLBANNLayout normalize_to_lbann_layout = 104;
+    RandomAffine random_affine = 105;
+    RandomCrop random_crop = 106;
+    RandomResizedCrop random_resized_crop = 107;
+    RandomResizedCropWithFixedAspectRatio random_resized_crop_with_fixed_aspect_ratio = 108;
+    Resize resize = 109;
+    ResizedCenterCrop resized_center_crop = 110;
+    ToLBANNLayout to_lbann_layout = 111;
+    VerticalFlip vertical_flip = 112;
   }
-
-  message Decolorizer {
-    string name = 1;
-    bool disable = 2;
-    bool pick_1ch = 3;
-  }
-
-  message Colorizer {
-    string name = 1;
-    bool disable = 2;
-  }
-
-  message Normalizer {
-    string name = 1;
-    bool disable = 2;
-    bool scale = 3;
-    bool subtract_mean = 4;
-    bool unit_variance = 5;
-    bool z_score = 6;
-  }
-
-  message Subtractor {
-    string name = 1;
-    bool disable = 2;
-    string image_to_sub = 3;
-    string image_to_div = 4;
-    repeated float channel_mean = 5 [packed = true];
-    repeated float channel_stddev = 6 [packed = true];
-  }
-
-  message PatchExtractor {
-    string name = 1;
-    bool disable = 2;
-    uint32 patch_width = 3;
-    uint32 patch_height = 4;
-    uint32 patch_gap = 5; // gap between patches
-    uint32 patch_jitter = 6; // max jittering amount for patch positions
-    uint32 centering_mode = 7; // center patch positioning mode
-    uint32 ca_correction_mode = 8; // chromatic abberation correction mode
-  }
-
-  message Noiser {
-    string name = 1;
-    bool disable = 2;
-    float factor = 3;
-  }
-
-  Cropper cropper = 6;
-  Resizer resizer = 7;
-  Augmenter augmenter = 8;
-  Decolorizer decolorizer = 9;
-  Colorizer colorizer = 10;
-  Subtractor subtractor = 11;
-  Normalizer normalizer = 12;
-  Noiser noiser = 13;
-  PatchExtractor patch_extractor = 14;
-
-  int32 early_normalization = 33; // for data_reader_jag only
-}
-
-// TODO: wrap El::Mat based normalization into a generic preprocessor
-message GenericPreprocessor {
-  string name = 1;
-  bool disable = 2;
-
-  message Normalizer {
-    string name = 1;
-    bool disable = 2;
-    bool scale = 3;
-    bool subtract_mean = 4;
-    bool unit_variance = 5;
-    bool z_score = 6;
-  }
-
-  Normalizer normalizer = 3;
 }
 
 //========================================================================
@@ -205,6 +201,10 @@ message DataSetMetaData {
     string scalar_prefix = 1;
     string image_prefix = 2;
     string input_prefix = 3;
+
+    uint64 image_height = 11;
+    uint64 image_width = 12;
+    uint64 image_num_channels = 13;
 
     //------------------ start of only for jag_conduit -----------------------
     bool split_jag_image_channels = 89;
@@ -412,6 +412,8 @@ message Callback {
    CallbackConfusionMatrix confusion_matrix = 36;
    CallbackCheckMetric check_metric = 37;
    CallbackPerturbAdam perturb_adam = 38;
+   CallbackPerturbDropout perturb_dropout = 39;
+   CallbackSaveTopKModels save_topk_models = 40;
 }
 
 message CallbackLTFB {
@@ -420,6 +422,7 @@ message CallbackLTFB {
   string weights = 3;       // default: all weights
   bool low_score_wins = 4;
   string communication_algorithm = 5;   // default: "sendrecv_weights"
+  bool exchange_hyperparameters = 6;
 }
 
 message CallbackStepLearningRate {
@@ -653,6 +656,17 @@ message CallbackPerturbAdam {
   string weights = 7;               // Weights with Adam optimizer
 }
 
+message CallbackPerturbDropout {
+  float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
+  string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
+}
+
+message CallbackSaveTopKModels {
+  string dir = 1;  //directory to save model
+  int32  k = 2;    //number of (top) models to save
+  string metric = 3; //metrics to use in evaluating models
+  bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
+}
 //========================================================================
 // Weights
 //========================================================================

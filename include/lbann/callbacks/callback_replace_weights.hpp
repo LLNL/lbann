@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,13 +36,13 @@ namespace lbann {
 
 /**
  *  Weights/parameters replacement on k-batch end
- *  Currently support replacing weights/parameters using layer names 
+ *  Currently support replacing weights/parameters using layer names
  *  Can easily be extended to support replacement by weights name
- *  Given two layers specified in prototext, weights are copied from source layer to destination layer. 
+ *  Given two layers specified in prototext, weights are copied from source layer to destination layer.
  */
 class lbann_callback_replace_weights : public lbann_callback {
  public:
-  lbann_callback_replace_weights(std::vector<Layer*> src, 
+  lbann_callback_replace_weights(std::vector<Layer*> src,
     std::vector<Layer*> dst, int batch_interval=1) :
     lbann_callback(batch_interval),
     m_src_layers(std::move(src)),
@@ -50,7 +50,7 @@ class lbann_callback_replace_weights : public lbann_callback {
     if(m_src_layers.size() != m_dst_layers.size())
      throw lbann_exception("In replace weights callback: number of src and dest layers does not match.");
   }
-    
+
   lbann_callback_replace_weights(
     const lbann_callback_replace_weights&) = default;
   lbann_callback_replace_weights& operator=(
@@ -59,7 +59,7 @@ class lbann_callback_replace_weights : public lbann_callback {
     return new lbann_callback_replace_weights(*this);
   }
   void on_batch_end(model *m) override;
-  
+
   std::string name() const override { return "replace weights"; }
  private:
   std::vector<Layer*> m_src_layers, m_dst_layers;

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,9 +35,9 @@
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -62,7 +62,7 @@ class model;
  * classes should implement load and the appropriate subset of fetch_datum,
  * fetch_label, and fetch_response.
  */
-class generic_data_reader : public lbann_image_preprocessor {
+class generic_data_reader {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
@@ -99,12 +99,13 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr)
+    m_model(nullptr),
+    m_issue_warning(true)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  ~generic_data_reader() override {}
+  virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
 
   /// set the comm object
@@ -249,16 +250,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
-  virtual void set_role(std::string role) {
-    m_role = role;
-    if (options::get()->has_string("jag_partitioned")
-        && get_role() == "train") {
-      m_jag_partitioned = true;
-      if (is_master()) {
-        std::cerr << "USING JAG DATA PARTITIONING\n";
-      }
-    }
-  }
+  virtual void set_role(std::string role);
 
   /**
    * Get the role for this dataset.
@@ -293,15 +285,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
 
-  /**
-   * Save pixels to an image. The implementing data reader is responsible for
-   * handling format detection, conversion, etc.
-   */
-  // TODO: This function needs to go away from here
-  void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) override {
-    NOT_IMPLEMENTED("save_image");
-  }
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
@@ -728,9 +711,16 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   void set_model(model *m) { m_model = m; }
 
+  model * get_model() const { return m_model; }
+
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
   virtual void post_update() {}
+
+  /** Set the transform pipeline this data reader will use. */
+  void set_transform_pipeline(transform::transform_pipeline&& tp) {
+    m_transform_pipeline = std::move(tp);
+  }
 
  protected:
 
@@ -907,6 +897,15 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// etc.
   void set_jag_variables(int mb_size);
   model *m_model;
+
+
+  /** Transform pipeline for preprocessing data. */
+  transform::transform_pipeline m_transform_pipeline;
+
+  /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
+  /// but we're not retrieving a conduit::Node from the store. This typically occurs
+  /// during the test phase
+  bool m_issue_warning;
 };
 
 template<typename T>

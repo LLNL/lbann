@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,20 +27,18 @@
 #ifndef _DATA_READER_JAG_CONDUIT_HPP_
 #define _DATA_READER_JAG_CONDUIT_HPP_
 
-#include "lbann_config.hpp" // may define LBANN_HAS_CONDUIT
+#include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-#include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
-#include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
 #include <unordered_map>
 #include <map>
 #include <memory>
 #include "lbann/data_readers/sample_list_jag.hpp"
+#include <opencv2/core.hpp>
 
 namespace lbann {
 
@@ -76,8 +74,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type to define a prefix string and the minimum length requirement to filter out a key
   using prefix_t = std::pair<std::string, size_t>;
 
-  data_reader_jag_conduit(bool shuffle = true) = delete;
-  data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
   data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
@@ -216,15 +213,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Show the description
   std::string get_description() const;
 
-  /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i, conduit::Node& sample) const;
-
-  /**
-   * Return the images of the i-th sample as an 1-D vector of lbann::DataType
-   * There is one image per view, each of which is taken at closest to the bang time.
-   */
-  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample) const;
-
   /// Return the scalar simulation output data of the i-th sample
   std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
 
@@ -234,13 +222,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
-
   void setup_data_store(int mini_batch_size);
 
-  /// A untiliy function to convert the pointer to image data into an opencv image
-  static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
-                               const int height, const int num_ch=1);
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
@@ -257,12 +240,11 @@ class data_reader_jag_conduit : public generic_data_reader {
  protected:
 
   /// once the sample_list class and file formats are generalized and
-  /// finalized, it should (may?) be possible to code a single 
+  /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
   void preload_data_store() override;
 
   virtual void set_defaults();
-  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
   virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
 
   /// add data type for independent variable
@@ -410,10 +392,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Keys to select a set of simulation input parameters to use. By default, use all.
   std::vector<std::string> m_input_keys;
 
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-  std::unique_ptr<cv_process> m_master_pps;
-
   /**
    * Set of keys that are associated with non_numerical values.
    * Such a variable requires a specific method for mapping to a numeric value.
@@ -470,11 +448,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   sample_list_jag m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
-
-  /** temporary image normalization
-   * The inputs are the image to normalize, the image source id and the channel id.
-   */
-  void image_normalization(cv::Mat& img, size_t i, size_t ch) const;
 };
 
 /**
@@ -602,5 +575,4 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
 }
 
 } // end of namespace lbann
-#endif // LBANN_HAS_CONDUIT
 #endif // _DATA_READER_JAG_CONDUIT_HPP_

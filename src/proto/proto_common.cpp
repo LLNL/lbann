@@ -4,6 +4,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/proto/init_image_data_readers.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"
 
 #include <google/protobuf/io/coded_stream.h>
@@ -55,9 +56,7 @@ void init_data_readers(
   bool is_shareable_testing_data_reader,
   bool is_shareable_validation_data_reader)
 {
-#ifdef LBANN_HAS_CONDUIT
   static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
-#endif
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
@@ -84,8 +83,6 @@ void init_data_readers(
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
-    // This is a temporary measure until we individually setup data reader specific preprocessors
-    bool set_up_generic_preprocessor = true;
 
     const std::string& name = readme.name();
 
@@ -94,13 +91,16 @@ void init_data_readers(
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
+    // This is a hack that should be fixed when we clean up data reader setup.
+    bool set_transform_pipeline = true;
+
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
-      set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_patches") ||
-               (name == "multihead_siamese") || (name == "mnist_siamese") || (name == "multi_images")) {
+      set_transform_pipeline = false;
+    } else if ((name == "imagenet") ||
+               (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      set_up_generic_preprocessor = false;
+      set_transform_pipeline = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
 
@@ -135,15 +135,10 @@ void init_data_readers(
       }
 
       reader_jag->set_dependent_variable_type(dependent_type);
-
-      const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
-      reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
-      reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
-      set_up_generic_preprocessor = false;
-#ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
@@ -177,11 +172,9 @@ void init_data_readers(
           break;
         }
       }
-      set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      set_up_generic_preprocessor = false;
-#endif // LBANN_HAS_CONDUIT
+      set_transform_pipeline = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -242,12 +235,9 @@ void init_data_readers(
           reader_numpy_npz->set_has_responses(!readme.disable_responses());
           reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
           npy_readers.push_back(reader_numpy_npz);
-#ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
-          set_up_generic_preprocessor = false;
           npy_readers.push_back(reader);
-#endif
         } else if (readme.format() == "pilot2_molecular_reader") {
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
           reader_pilot2_molecular->set_data_filename(path);
@@ -353,6 +343,11 @@ void init_data_readers(
     }
     reader->set_comm(comm);
 
+    if (set_transform_pipeline) {
+      reader->set_transform_pipeline(
+        std::move(proto::construct_transform_pipeline(readme)));
+    }
+
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );
     }
@@ -386,10 +381,6 @@ void init_data_readers(
       reader->set_gan_label_value(readme.gan_label_value());
 
       reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
-
-      if (set_up_generic_preprocessor) {
-        init_generic_preprocessor(readme, master, reader);
-      }
     }
 
     if (readme.role() == "train") {
@@ -431,20 +422,12 @@ void init_data_readers(
       } else if (name == "numpy_npz_conduit_reader") {
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-        reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
-      } else if (name == "imagenet_patches") {
-        reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
+        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader), reader->get_unused_indices());
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
-      } else if (name == "mnist_siamese") {
-        reader_validation = new data_reader_mnist_siamese(*dynamic_cast<const data_reader_mnist_siamese*>(reader));
-      } else if (name == "multi_images") {
-        reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
-#ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
@@ -474,7 +457,6 @@ void init_data_readers(
           reader_jag_conduit->set_role(role);
           leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
-#endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -532,12 +514,10 @@ void init_data_readers(
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
                   << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
-#ifdef LBANN_HAS_CONDUIT
         if (name == "jag_conduit") {
           std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
                     << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
         }
-#endif // LBANN_HAS_CONDUIT
         std::cout << std::endl;
       }
 

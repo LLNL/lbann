@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -735,6 +735,14 @@ void model::setup_weights() {
     m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
                     m_weights.end());
   }
+
+  // For run-to-run reproducibility, make sure the weights are
+  // initialized in the same order no matter how they are ordered in
+  // the prototext file.
+  std::sort(m_weights.begin(), m_weights.end(),
+            [](weights* const &x, weights* const &y) {
+              return x->get_name().compare(y->get_name()) < 0;
+            });
 
   // Setup weights
   for (auto* w : m_weights) { w->setup(); }

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -71,7 +71,7 @@ cv::Scalar reduce_image(const cv::Mat image) {
 
 /**
  * Scale the mean pixel to the depth of the output image with the adjustment for rounding.
- * Convert to the unit scale if to_unit_scale is set when in_depth is of integral and 
+ * Convert to the unit scale if to_unit_scale is set when in_depth is of integral and
  * out_depth is of float.
  */
 cv::Scalar scale_pixel(const cv::Scalar pixel_m, const int in_depth, const int out_depth) {

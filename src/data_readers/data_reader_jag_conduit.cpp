@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,10 +30,12 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/image.hpp"
+#include "lbann/utils/opencv.hpp"
+#include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
+#include "lbann/transforms/scale_and_translate.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
-#include "lbann/data_readers/opencv_extensions.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
 #include <numeric>    // accumulate
@@ -41,7 +43,6 @@
 #include <type_traits>// is_same
 #include <set>
 #include <map>
-#include "lbann/data_readers/image_utils.hpp"
 #include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
@@ -146,15 +147,9 @@ bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
   return true;
 }
 
-data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
+data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   : generic_data_reader(shuffle) {
   set_defaults();
-
-  if (!pp) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*pp);
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
@@ -172,12 +167,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
-
-  if (!rhs.m_master_pps) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -291,35 +280,6 @@ void data_reader_jag_conduit::set_defaults() {
 
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
-  replicate_processor(*m_master_pps, num_io_threads);
-}
-
-/// Replicate image processor for each I/O thread
-bool data_reader_jag_conduit::replicate_processor(const cv_process& pp, const int nthreads) {
-  m_pps.resize(nthreads);
-
-  // Construct thread private preprocessing objects out of a shared pointer
-  for (int i = 0; i < nthreads; ++i) {
-    m_pps[i] = lbann::make_unique<cv_process>(pp);
-  }
-
-  bool ok = true;
-  for (int i = 0; ok && (i < nthreads); ++i) {
-    if (!m_pps[i]) ok = false;
-  }
-
-  if (!ok || (nthreads <= 0)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " cannot replicate image processor");
-    return false;
-  }
-
-  const std::vector<unsigned int> dims = pp.get_data_dims();
-  if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
-    m_image_width = static_cast<int>(dims[0]);
-    m_image_height = static_cast<int>(dims[1]);
-  }
-
-  return true;
 }
 
 const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::Node& n_base, const std::string key) {
@@ -1254,102 +1214,6 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
   return image_ptrs;
 }
 
-cv::Mat data_reader_jag_conduit::cast_to_cvMat(
-  const std::pair<size_t, const ch_t*> img, const int height, const int num_ch) {
-  const int num_pixels = static_cast<int>(img.first);
-  const ch_t* ptr = img.second;
-
-  // add a zero copying view to data
-  using InputBuf_T = cv_image_type<ch_t>;
-  const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
-                      reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
-  // reshape the image. Furter need to clone (deep-copy) the image
-  // to preserve the constness of the original data
-  return (image.reshape(num_ch, height));
-}
-
-/// Assumes the same parameters for the same channel from different views
-void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t ch) const {
-  const auto& tr = m_image_normalization_params.at(ch);
-  img.convertTo(img, -1, tr.first, tr.second);
-}
-
-std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
-  const std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<cv::Mat> images;
-
-  if (m_split_channels) {
-    images.reserve(img_data.size()*m_image_num_channels);
-    for (size_t i = 0u; i < img_data.size(); ++i) {
-      const auto& img = img_data[i];
-      cv::Mat ch[m_image_num_channels];
-      cv::split(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels), ch);
-      for(int c = 0; c < m_image_num_channels; ++c) {
-    #if 1 // with normalization
-        image_normalization(ch[c], i, static_cast<size_t>(c));
-    #endif
-        images.emplace_back(ch[c].clone());
-      }
-    }
-  } else {
-    images.reserve(img_data.size());
-    for (size_t i = 0u; i < img_data.size(); ++i) {
-      const auto& img = img_data[i];
-    #if 1 // with normalization
-      cv::Mat ch[m_image_num_channels];
-      cv::split(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels), ch);
-      for(int c = 0; c < m_image_num_channels; ++c) {
-        image_normalization(ch[c], i, static_cast<size_t>(c));
-      }
-      cv::Mat img_normalized;
-      cv::merge(ch, m_image_num_channels, img_normalized);
-      images.emplace_back(img_normalized);
-    #else
-      images.emplace_back(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels).clone());
-    #endif
-    }
-  }
-  return images;
-}
-
-std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<ch_t> images;
-
-  if (m_split_channels) {
-    images.resize(get_linearized_size(JAG_Image));
-    size_t i = 0u;
-    size_t j = 0u;
-    for (const auto& img: img_data) {
-      const ch_t * const ptr_end = img.data() + img.size();
-      for (int c=0; c < m_image_num_channels; ++c) {
-        const auto& tr = m_image_normalization_params.at(c);
-        for (const ch_t* ptr = img.data() + c; ptr < ptr_end; ptr += m_image_num_channels) {
-        #if 1 // with normalization
-          images[i++] = cv::saturate_cast<ch_t>(*ptr * tr.first + tr.second);
-        #else
-          images[i++] = *ptr;
-        #endif
-        }
-      }
-      j ++;
-    }
-  } else {
-    images.reserve(get_linearized_size(JAG_Image));
-    for (const auto& img: img_data) {
-    #if 1 // with normalization
-      // TODO: normalization needed
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : normalization not implemented yet");
-      (void) img;
-    #else
-      images.insert(images.end(), img.cbegin(), ptr + img.cend());
-    #endif
-    }
-  }
-
-  return images;
-}
-
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
   std::vector<scalar_t> scalars;
   scalars.reserve(m_scalar_keys.size());
@@ -1439,7 +1303,6 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   return inputs;
 }
 
-
 std::vector<CPUMat>
 data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
   std::vector<CPUMat> X_v(sizes.size());
@@ -1450,28 +1313,46 @@ data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>
     El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
     h = h_end;
   }
-  return X_v;
+  return std::move(X_v);
 }
 
 bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
-      const size_t num_images = get_num_img_srcs()
-                              * static_cast<size_t>(m_split_channels? m_image_num_channels : 1u);
-      const size_t image_size = m_split_channels? get_linearized_1ch_image_size() : get_linearized_image_size();
+      const size_t num_images = get_num_img_srcs();
+      const size_t num_channels = m_image_num_channels;
+      const size_t image_size = get_linearized_image_size();
       const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector<cv::Mat> images = get_cv_images(data_id, sample);
+      std::vector< std::vector<ch_t> > img_data(get_image_data(data_id, sample));
 
-      if (images.size() != num_images) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
-          std::to_string(images.size()) + "!=" + std::to_string(num_images));
+      if (img_data.size() != num_images) {
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected ", \
+          std::to_string(img_data.size()) + "!=" + std::to_string(num_images));
+      }
+      if (!m_split_channels && m_image_num_channels != 1) {
+        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : transform pipeline now requires single channel images: num_channels=", \
+          std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
       }
 
+      std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      std::vector<size_t> ch_dims = {static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      auto tll = lbann::transform::repack_HWC_to_CHW_layout();
+
       for(size_t i=0u; i < num_images; ++i) {
-        int width, height, img_type;
-        image_utils::process_image(images[i], width, height, img_type, *(m_pps[tid]), X_v[i]);
+        CPUMat img_mat = CPUMat(utils::get_linearized_size(dims), 1, img_data[i].data(), utils::get_linearized_size(dims));
+        utils::type_erased_matrix te_img(std::move(img_mat));
+        CPUMat tgt_mat = CPUMat(utils::get_linearized_size(dims), 1);
+        tll.apply(te_img, X_v[i], dims);
+        const std::vector<size_t> ch_sizes(num_channels, m_image_height * m_image_width);
+        std::vector<CPUMat> X_ch_v = create_datum_views(X_v[i], ch_sizes, mb_idx);
+        for(size_t ch = 0; ch < num_channels; ch++) {
+          const auto& tr = m_image_normalization_params.at(ch);
+          auto s = lbann::transform::scale_and_translate(tr.first, tr.second);
+          utils::type_erased_matrix te_img_plane(std::move(X_ch_v[ch]));
+          s.apply(te_img_plane, ch_dims);
+        }
       }
       break;
     }
@@ -1606,10 +1487,6 @@ void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
    }
 }
 
-void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-  internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
-}
-
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {
   //@TODO revisit later -- don't know how to handle this yet
   if (m_data_store != nullptr) {
@@ -1648,4 +1525,3 @@ void data_reader_jag_conduit::add_input_normalization_param(const data_reader_ja
 } // end of namespace lbann
 
 #undef _CN_
-#endif // LBANN_HAS_CONDUIT

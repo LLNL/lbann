@@ -8,7 +8,7 @@ Building LBANN with `CMake <https://cmake.org>`_
 ==================================================
 
 LBANN uses `CMake <https://cmake.org>`_ for its build system and a
-version newer than or equal to 3.9.0 is required. LBANN development is
+version newer than or equal to 3.12.0 is required. LBANN development is
 done primarily on UNIX-based platforms. As such, the build is tested
 regularly on Linux-based machines, occasionally on OSX, and never on
 Windows machines.
@@ -21,6 +21,83 @@ is missing, please `open an issue <https://github.com/LLNL/lbann/issues/new>`_.
 
 It is required that LBANN be built out-of-source. That is, CMake must
 not be invoked in a directory containing a CMakeLists.
+
+--------------------
+Dependencies
+--------------------
+
+The following packages and tools are required to build LBANN. All
+packages listed below may be installed using `Spack
+<https://github.com/llnl/spack>`_. See :ref:`the Spack installation
+instructions <building-with-spack>` for more details on using Spack to
+build a complete LBANN environment.
+
+The following basic tools are **required**.
+
++ A C++11-compliant compiler.
+
++ OpenMP, version 3.0 or newer.
+
++ An MPI-3.0 implementation.
+
++ `CEREAL <https://github.com/USCiLab/cereal>`_ is used to handle
+  complex serialization tasks.
+
++ `CMake <https://cmake.org>`_, version 3.12 or newer.
+
+The following LLNL-maintained packages are **required**.
+
++ `Hydrogen <https://github.com/llnl/elemental>`_ is a fork of the
+  `Elemental <https://github.com/elemental/elemental>`_ distributed
+  dense linear-algebra library and it may be installed via
+  `Spack <https://github.com/llnl/spack>`_ using the package name
+  "hydrogen". If CUDA support is enabled in Hydrogen, LBANN will
+  inherit this support.
+
+The following third-party packages are **required**.
+
++ `CNPY <https://github.com/rogersce/cnpy.git>`_ is used to ingest data
+  in NumPy format. In principle this should be optional, but at time
+  of writing, LBANN will not build without it.
+
++ `OpenCV <https://github.com/opencv/opencv>`_ is used to preprocess
+  image data. For performance reasons, it is recommend to build OpenCV
+  with `JPEG-turbo <https://github.com/libjpeg-turbo/libjpeg-turbo>`_
+  for JPEG format support.
+
++ `ProtoBuf <https://github.com/protocolbuffers/protobuf>`_ is used to
+  express models in a portable format.
+
+The following LLNL-maintained packages are **optional**.
+
++ `Aluminum <https://github.com/llnl/aluminum>`_ is a
+  communication library optimized for machine learning and interaction
+  with GPUs. We cannot recommend its use strongly enough. It can be
+  built using `Spack <https://github.com/llnl/spack>`_.
+
++ `CONDUIT <https://github.com/llnl/conduit>`_ is used to ingest
+  structured data produced by scientific simulations.
+
+The following third-party packages are **optional**.
+
++ `CUDA <https://developer.nvidia.com/cuda-toolkit>`_. The development
+  team currently uses CUDA version 9.2. Building with CUDA support
+  requires that Hydrogen has been built with CUDA support (see below).
+
++ `cuDNN <https://developer.nvidia.com/cudnn>`_ is required if
+  building LBANN with CUDA support. It is freely available as a binary
+  distribution from NVIDIA.
+
++ `HWLOC <https://www.open-mpi.org/projects/hwloc/>`_. HWLOC enables
+  LBANN to make certain optimizations based on the hardware
+  topology. Its use is strongly recommended.
+
++ NVTX. LBANN supports some improved annotations for NVPROF using
+  NVTX. NVTX is provided as part of the CUDA toolkit.
+
++ VTune. LBANN supports some improved annotations for VTune.
+
+
 
 --------------------
 LBANN CMake options

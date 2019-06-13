@@ -1,5 +1,3 @@
-if (LBANN_HAS_CONDUIT)
-
   add_executable( build_index-bin build_index.cpp )
   target_link_libraries(build_index-bin lbann )
   set_target_properties(build_index-bin PROPERTIES OUTPUT_NAME build_index)
@@ -55,5 +53,15 @@ if (LBANN_HAS_CONDUIT)
   add_executable( generate_corrupt_samples-bin generate_corrupt_samples.cpp )
   target_link_libraries(generate_corrupt_samples-bin lbann )
   set_target_properties(generate_corrupt_samples-bin PROPERTIES OUTPUT_NAME generate_corrupt_samples)
+  
+  add_executable( compute_hydra_normalization-bin compute_hydra_normalization.cpp )
+  target_link_libraries(compute_hydra_normalization-bin lbann )
+  set_target_properties(compute_hydra_normalization-bin PROPERTIES OUTPUT_NAME compute_hydra_normalization)
 
-endif ()
+  add_executable( test_reading_speed-bin test_reading_speed.cpp )
+  target_link_libraries(test_reading_speed-bin lbann )
+  set_target_properties(test_reading_speed-bin PROPERTIES OUTPUT_NAME test_reading_speed)
+
+  add_executable( convert-bin convert.cpp )
+  target_link_libraries(convert-bin lbann )
+  set_target_properties(convert-bin PROPERTIES OUTPUT_NAME convert)

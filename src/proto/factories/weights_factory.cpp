@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,7 +31,7 @@ namespace proto {
 
 namespace {
 
-/** Construct a weights initialization specified with prototext. */  
+/** Construct a weights initialization specified with prototext. */
 weights_initializer* construct_initializer(const lbann_data::Weights& proto_weights) {
 
   // Constant initialization
@@ -45,7 +45,7 @@ weights_initializer* construct_initializer(const lbann_data::Weights& proto_weig
     const auto& params = proto_weights.value_initializer();
     return new value_initializer(parse_list<DataType>(params.values()));
   }
-  
+
   // Random initialization
   if (proto_weights.has_uniform_initializer()) {
     const auto& params = proto_weights.uniform_initializer();
@@ -94,7 +94,7 @@ weights* construct_weights(lbann_comm* comm,
 
   // Instantiate weights
   weights* w = new weights(comm);
-  
+
   // Set weights name if provided
   const auto& name = proto_weights.name();
   const auto& parsed_name = parse_list<std::string>(name);

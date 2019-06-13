@@ -14,11 +14,13 @@ set_full_path(THIS_DIR_HEADERS
   file_utils.hpp
   glob.hpp
   im2col.hpp
+  image.hpp
   jag_utils.hpp
   lbann_library.hpp
   mild_exception.hpp
   number_theory.hpp
   omp_diagnostics.hpp
+  opencv.hpp
   options.hpp
   profiling.hpp
   prototext.hpp

@@ -12,82 +12,6 @@ Download
 LBANN source code can be obtained from the `Github
 repo <https://github.com/LLNL/lbann>`_.
 
---------------------
-Dependencies
---------------------
-
-The following packages and tools are required to build LBANN. All
-packages listed below may be installed using `Spack
-<https://github.com/llnl/spack>`_. See :ref:`below
-<building-with-spack>` for more details on using Spack to build a
-complete LBANN environment.
-
-The following basic tools are **required**.
-
-+ A C++11-compliant compiler.
-
-+ OpenMP, version 3.0 or newer.
-
-+ An MPI-3.0 implementation.
-
-+ `CEREAL <https://github.com/USCiLab/cereal>`_ is used to handle
-  complex serialization tasks.
-
-+ `CMake <https://cmake.org>`_, version 3.9 or newer.
-
-The following LLNL-maintained packages are **required**.
-
-+ `Hydrogen <https://github.com/llnl/elemental>`_ is a fork of the
-  `Elemental <https://github.com/elemental/elemental>`_ distributed
-  dense linear-algebra library and it may be installed via
-  `Spack <https://github.com/llnl/spack>`_ using the package name
-  "hydrogen". If CUDA support is enabled in Hydrogen, LBANN will
-  inherit this support.
-
-The following third-party packages are **required**.
-
-+ `CNPY <https://github.com/rogersce/cnpy.git>`_ is used to ingest data
-  in NumPy format. In principle this should be optional, but at time
-  of writing, LBANN will not build without it.
-
-+ `OpenCV <https://github.com/opencv/opencv>`_ is used to preprocess
-  image data. For performance reasons, it is recommend to build OpenCV
-  with `JPEG-turbo <https://github.com/libjpeg-turbo/libjpeg-turbo>`_
-  for JPEG format support.
-
-+ `ProtoBuf <https://github.com/protocolbuffers/protobuf>`_ is used to
-  express models in a portable format.
-
-The following LLNL-maintained packages are **optional**.
-
-+ `Aluminum <https://github.com/llnl/aluminum>`_ is a
-  communication library optimized for machine learning and interaction
-  with GPUs. We cannot recommend its use strongly enough. It can be
-  built using `Spack <https://github.com/llnl/spack>`_.
-
-+ `CONDUIT <https://github.com/llnl/conduit>`_ is used to ingest
-  structured data produced by scientific simulations.
-
-The following third-party packages are **optional**.
-
-+ `CUDA <https://developer.nvidia.com/cuda-toolkit>`_. The development
-  team currently uses CUDA version 9.2. Building with CUDA support
-  requires that Hydrogen has been built with CUDA support (see below).
-
-+ `cuDNN <https://developer.nvidia.com/cudnn>`_ is required if
-  building LBANN with CUDA support. It is freely available as a binary
-  distribution from NVIDIA.
-
-+ `HWLOC <https://www.open-mpi.org/projects/hwloc/>`_. HWLOC enables
-  LBANN to make certain optimizations based on the hardware
-  topology. Its use is strongly recommended.
-
-+ NVTX. LBANN supports some improved annotations for NVPROF using
-  NVTX. NVTX is provided as part of the CUDA toolkit.
-
-+ VTune. LBANN supports some improved annotations for VTune.
-
-
 .. _building-with-spack:
 
 ------------------------------------------------------------
@@ -104,7 +28,7 @@ Setup Spack and local base tools
 
     .. code-block:: bash
 
-        . ${SPACK_ROOT}/share/spack/setup-env.sh
+        source ${SPACK_ROOT}/share/spack/setup-env.sh
 
 
 2.  Setup your compiler and external software environment. For example,
@@ -125,6 +49,18 @@ Setup Spack and local base tools
       package names prepended with a dash, e.g.: :bash:`ml -intel`. To
       unload all currently loaded modules, use :bash:`ml purge`.
 
+3.  Optionally, setup your spack environment to take advantage of
+    locally installed tools.  Note that unless your spack environment
+    is explicitly told about tools such as cmake, python, mpi, etc. it
+    will install everything that LBANN and all of its dependencies
+    require. This can take quite a long time, but only has to be done
+    once for a given spack repository.  Once all of the standard tools
+    are installed, rebuilding LBANN with spack is quite fast.
+
+    + Advice on setting up paths to external installations is beyond
+      the scope of this document, but is covered in the `Spack
+      Documentation <https://spack.readthedocs.io/>`_.
+
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Building & Installing LBANN as a user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -143,30 +79,35 @@ that want to train new or existing models using the python front-end.
 
 Here are three easy ways to install LBANN:
 
-- Building with the latest released versions and GPU support:
+- Using the Spack environment method, (e.g., for an x86_64 LLNL LC
+  system with GPU support):
+
+  .. note:: This method provides a consistent set of dependencies during
+      installation.
+
+  .. code-block:: bash
+
+      cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_cuda/ # where <arch> = x86_64 | ppc64le
+      spack install
+      spack env loads
+      source ./loads
+
+- Building with the latest released versions and GPU support (use the
+  user's defaults for specifying the compiler, MPI library, etc.):
 
   .. code-block:: bash
 
       spack install lbann +gpu +nccl
-      ml load spack
+      ml load lbann
 
 - Building with the head of develop branch for lbann, hydrogen and
-  aluminum with GPU support:
+  aluminum with GPU support (use the user's defaults for specifying
+  the compiler, MPI library, etc.):
 
   .. code-block:: bash
 
       spack install lbann@develop +gpu +nccl ^hydrogen@develop ^aluminum@master
-      ml load spack
-
-- Using the Spack environment method, (e.g., for an x86_64 LLNL LC
-  system with GPU support):
-
-  .. code-block:: bash
-
-      cd <path to spack repo>/spack_environments/users/llnl_lc/x86_64_gpu/
-      spack install
-      spack env loads
-      source loads
+      ml load lbann
 
 There are numerous options for all of these packages. These options
 can be viewed via commands such as :bash:`spack info lbann`. To
@@ -205,6 +146,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
         export LBANN_INSTALL_DIR=/path/to/an/install/directory
         cd ${LBANN_BUILD_DIR}
         spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+        cp ${LBANN_HOME}/spack_environments/std_versions_and_variants_llnl_lc_cz.yaml .
+        cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml . # where <arch> = x86_64 | ppc64le
         spack install
         spack env loads # Spack creates a file named loads that has all of the correct modules
         source loads
@@ -275,6 +218,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
           ${LBANN_HOME}/superbuild
 
         ninja
+        ml use ${LBANN_INSTALL_DIR}/etc/modulefiles/
+        ml load lbann-0.99.0
 
 
 The complete documentation for building LBANN directly with CMake can
