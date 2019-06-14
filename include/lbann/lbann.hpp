@@ -108,12 +108,10 @@
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
-#include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_cosmoflow.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
-#include "lbann/data_readers/data_reader_mnist_siamese.hpp"
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"

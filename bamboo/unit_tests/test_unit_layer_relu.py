@@ -27,16 +27,12 @@ def test_unit_layer_relu_clang4(cluster, exes, dirname):
     skeleton_layer_relu(cluster, exes, dirname, 'clang4')
 
 
-def test_unit_layer_relu_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_relu(cluster, exes, dirname, 'gcc4')
-
-
 def test_unit_layer_relu_gcc7(cluster, exes, dirname):
     skeleton_layer_relu(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_relu_intel18(cluster, exes, dirname):
-    skeleton_layer_relu(cluster, exes, dirname, 'intel18')
+def test_unit_layer_relu_intel19(cluster, exes, dirname):
+    skeleton_layer_relu(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_layer_relu.py -k 'test_unit_layer_relu_exe' --exe=<executable>
