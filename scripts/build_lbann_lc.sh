@@ -342,7 +342,8 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.12.1
+    module use /usr/workspace/wsb/brain/utils/coral/modulefiles
+    module load cmake/3.14.0
 else
     use git
 fi
