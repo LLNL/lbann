@@ -312,6 +312,8 @@ protected :
   void fillin_shared_images(const std::vector<char> &images, const std::unordered_map<int,int> &image_sizes, const std::vector<int> &indices); 
 
   void *m_mem_seg = 0;
+
+  const std::string m_seg_name = "our_town";
 };
 
 }  // namespace lbann

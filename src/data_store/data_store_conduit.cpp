@@ -33,8 +33,9 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
-#include <sys/shm.h>
-#include <sys/ipc.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 namespace lbann {
 
@@ -91,7 +92,7 @@ data_store_conduit::~data_store_conduit() {
     m_output.close();
   }
   if (m_is_local_cache && m_mem_seg) {
-    shmdt(m_mem_seg);
+    shm_unlink(m_seg_name.c_str());
   }
 }
 
@@ -1090,29 +1091,35 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
   }
 
   int node_id = m_comm->get_rank_in_node();
-  key_t key = ftok(",", 'x');
-  int shm_id;
   if (node_id == 0) {
-    shm_id = shmget(key, size, (IPC_CREAT | 0666));
-    if (shm_id < 0) {
-      LBANN_ERROR("shm_id < 0; shmget() failed to create shared memory segment of " + std::to_string(size) + " bytes");
+    int shm_fd = shm_open(m_seg_name.c_str(), O_CREAT | O_RDWR, 0666);
+    if (shm_fd == -1) {
+      LBANN_ERROR("shm_open failed");
     }
-    m_mem_seg = shmat(shm_id, NULL, 0);
+    int v = ftruncate(shm_fd, size);
+    if (v != 0) {
+      LBANN_ERROR("ftruncate failed");
+    }
+    m_mem_seg = mmap(0, size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
     if (*(int*)m_mem_seg == -1) {
-      LBANN_ERROR("m_mem_seg == -1; call to shmat() failed");
+      LBANN_ERROR("mmap failed");
     }
-  }
+  }  
 
   m_comm->barrier(m_comm->get_node_comm());
 
   if (node_id != 0) {
-    shm_id = shmget(key, size, 0666);
-    if (shm_id < 0) {
-      LBANN_ERROR("shm_id < 0; shmget() failed to create shared memory segment of " + std::to_string(size) + " bytes");
+    int shm_fd = shm_open(m_seg_name.c_str(), O_RDONLY, 0666);
+    if (shm_fd == -1) {
+      LBANN_ERROR("shm_open failed");
     }
-    m_mem_seg = shmat(shm_id, NULL, 0);
+    int v = ftruncate(shm_fd, size);
+    if (v != 0) {
+      LBANN_ERROR("ftruncate failed");
+    }
+    m_mem_seg = mmap(0, size, PROT_READ, MAP_SHARED, shm_fd, 0);
     if (*(int*)m_mem_seg == -1) {
-      LBANN_ERROR("m_mem_seg == -1; call to shmat() failed");
+      LBANN_ERROR("mmap failed");
     }
   }
 }
