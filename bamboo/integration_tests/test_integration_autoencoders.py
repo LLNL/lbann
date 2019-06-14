@@ -53,7 +53,7 @@ DATA_FIELDS = [
 
 def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
                                   weekly):
-  if cluster in ['surface', 'pascal']:
+  if cluster in ['pascal']:
       e = 'skeleton_autoencoder_imagenet: does not run on GPU'
       print('Skip - ' + e)
       pytest.skip(e)
@@ -79,17 +79,13 @@ def test_integration_autoencoder_imagenet_clang4(cluster, dirname, exes,
     skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang4', weekly)
 
 
-def test_integration_autoencoder_imagenet_gcc4(cluster, dirname, exes, weekly):
-    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc4', weekly)
-
-
 def test_integration_autoencoder_imagenet_gcc7(cluster, dirname, exes, weekly):
     skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc7', weekly)
 
 
-def test_integration_autoencoder_imagenet_intel18(cluster, dirname, exes,
+def test_integration_autoencoder_imagenet_intel19(cluster, dirname, exes,
                                                   weekly):
-    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel18', weekly)
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel19', weekly)
 
 
 # Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>

@@ -31,7 +31,6 @@
 #include <string>
 #include <vector>
 #include "lbann/base.hpp"
-#include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 
 namespace lbann {
@@ -106,8 +105,6 @@ class data_reader_jag : public generic_data_reader {
 
   /// Return the pointer to the raw image data
   data_t* get_image_ptr(const size_t i) const;
-  /// Return the image data as a 1-D vector of lbann::DataType
-  cv::Mat get_image(const size_t i) const;
 
   /// Return the pointer to the raw scalar data
   scalar_t* get_scalar_ptr(const size_t i) const;
@@ -118,8 +115,6 @@ class data_reader_jag : public generic_data_reader {
   input_t* get_input_ptr(const size_t i) const;
   /// Return the input values of the simulation correspoding to the i-th sample
   std::vector<DataType> get_input(const size_t i) const;
-
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
 
  protected:
   /// add data type for independent variable

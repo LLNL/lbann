@@ -27,16 +27,12 @@ def test_unit_layer_covariance_clang4(cluster, exes, dirname):
     skeleton_layer_covariance(cluster, exes, dirname, 'clang4')
 
 
-def test_unit_layer_covariance_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_covariance(cluster, exes, dirname, 'gcc4')
-
-
 def test_unit_layer_covariance_gcc7(cluster, exes, dirname):
     skeleton_layer_covariance(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_covariance_intel18(cluster, exes, dirname):
-    skeleton_layer_covariance(cluster, exes, dirname, 'intel18')
+def test_unit_layer_covariance_intel19(cluster, exes, dirname):
+    skeleton_layer_covariance(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_covariance_exe' --exe=<executable>
