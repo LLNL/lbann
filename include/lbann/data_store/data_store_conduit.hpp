@@ -294,27 +294,24 @@ protected :
   bool m_have_sample_sizes;
 
   /// fills in m_image_offsets; returns the segment size (which is the
-  /// sum of the file sizes)
-  int get_image_offsets();
+  /// sum of the file sizes). Currently only used for imagenet
+  void get_image_sizes(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
   /// offset at which the raw image will be stored in a shared memory segment
-  std::vector<int> m_image_offsets;
+  std::unordered_map<int,int> m_image_offsets;
+  void compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
-  void allocate_shared_segment(int size);
+  void allocate_shared_segment(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
-  std::string m_image_base_dir;
-  std::vector<int> m_my_files;
-  std::vector<int> m_my_sizes;
+  void read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices);
 
-  void load_files();
+  void build_conduit_nodes(std::unordered_map<int,int> &sizes);
+
+  void exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices); 
+
+  void fillin_shared_images(const std::vector<char> &images, const std::unordered_map<int,int> &image_sizes, const std::vector<int> &indices); 
 
   void *m_mem_seg = 0;
-
-  //m_loaded_images[j] = true if the j'th image has been loaded
-  bool *m_loaded_images;
-
-  std::vector<std::string> m_image_filenames;
-  std::vector<int> m_labels;
 };
 
 }  // namespace lbann

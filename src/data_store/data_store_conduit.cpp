@@ -28,6 +28,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_image.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
@@ -1014,98 +1015,80 @@ void data_store_conduit::set_preload() {
   m_preload = true;
 }
 
-int data_store_conduit::get_image_offsets() {
-  int segment_length = 0;
-  options *opts = options::get();
+void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes, std::vector<std::vector<int>> &indices) {
   /// this block fires if image sizes have been precomputed
-  if (opts->has_string("image_sizes_filename")) {
+  if (options::get()->has_string("image_sizes_filename")) {
     LBANN_ERROR("not yet implemented");
+    //TODO dah - implement, if this becomes a bottleneck (but I don't think it will)
   }
 
   else {
     // get list of image file names
-    const std::string image_list_file = m_reader->get_data_filename();
-    m_image_base_dir = m_reader->get_file_dir();
-    FILE *fplist = fopen(image_list_file.c_str(), "rt");
-    int imagelabel;
-    while (!feof(fplist)) {
-      char imagepath[512];
-      if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
-        break;
-      }
-      m_image_filenames.emplace_back(imagepath);
-      m_labels.emplace_back(imagelabel);
+    image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+    if (image_reader == nullptr) {
+      LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
     }
-    fclose(fplist);
+    const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
 
     // get sizes of files for which I'm responsible
-    for (size_t h=m_rank_in_trainer; h<m_image_filenames.size(); h += m_np_in_trainer) {
-      const std::string fn = m_reader->get_file_dir() + '/' + m_image_filenames[h];
+    std::vector<int> my_image_sizes;
+    for (size_t h=m_rank_in_trainer; h<image_list.size(); h += m_np_in_trainer) {
+      const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
       std::ifstream in(fn.c_str());
       if (!in) {
         LBANN_ERROR("failed to open " + fn + " for reading");
       }
       in.seekg(0, std::ios::end);
-      m_my_sizes.push_back(in.tellg());
-      m_my_files.push_back(h);
+      my_image_sizes.push_back(h);
+      my_image_sizes.push_back(in.tellg());
       in.close();
     }
+    int my_count = my_image_sizes.size();
 
-    if (m_output) {
-      m_output << "my image sizes:\n";
-      for (size_t k=0; k<m_my_sizes.size(); k++) {
-        m_output << k << " " << m_my_sizes[k] << "\n";
-      }
-    }  
-
-    // globally exchange files sizes within trainer
-    int my_count = m_my_sizes.size();
     std::vector<int> counts(m_np_in_trainer);
     m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
-    size_t g_count = std::accumulate(counts.begin(), counts.end(), 0);
-    if (g_count != m_image_filenames.size()) {
-      LBANN_ERROR("g_count != m_image_filenames.size()");
-    }
-    std::vector<int> work(m_image_filenames.size());
-    std::vector<int> disp(m_np_in_trainer);
+
+    std::vector<int> work(image_list.size()*2);
+    std::vector<int> disp(m_np_in_trainer + 1);
     disp[0] = 0;
-    for (size_t h=0; h<counts.size()-1; h++) {
-      disp[h+1] = disp[0] + counts[h];
+    for (size_t h=0; h<counts.size(); ++h) {
+      disp[h+1] = disp[h] + counts[h];
     }
-    m_comm->trainer_all_gather(m_my_sizes, work, counts, disp);
 
-    // fill in  m_image_offsets
-    m_image_offsets.resize(m_image_filenames.size()+1);
-    m_image_offsets[0] = 0;
-    for (int rank = 0; rank < m_np_in_trainer; rank++) {
-      size_t offset = disp[rank];
-      size_t count = counts[rank];
-      size_t i = rank;
-      for (size_t j=offset; j<offset+count; j++) {
-        m_image_offsets[i+1] = m_image_offsets[i] + work[j];
-        i += m_np_in_trainer;
-      }
-    }
-    segment_length = m_image_offsets.back() + sizeof(bool)*m_image_offsets.size();
-
-    if (m_output) {
-      if (m_world_master) {
-        std::cout << "image offsets:\n";
-      }
-      m_output << "image offsets:\n";
-      for (size_t h=0; h<m_image_offsets.size(); h++) {
-        m_output << h << " " << m_image_offsets[h] << "\n";
-        if (m_world_master) {
-          std::cout << h << " " << m_image_offsets[h] << "\n";
-        }
+    m_comm->trainer_all_gather<int>(my_image_sizes, work, counts, disp);
+    indices.resize(m_np_in_trainer);
+    for (int h=0; h<m_np_in_trainer; h++) {
+      indices[h].reserve(counts[h]);
+      size_t start = disp[h];
+      size_t end = disp[h+1];
+      for (size_t k=start; k<end; k+= 2) {
+        int idx = work[k];
+        int size = work[k+1];
+        indices[h].push_back(idx);
+        file_sizes[idx] = size;
       }
     }
   }
-
-  return segment_length;
 }
 
-void data_store_conduit::allocate_shared_segment(int size) {
+void data_store_conduit::compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices) {
+  int offset = 0;
+  for (size_t p=0; p<indices.size(); p++) {
+    for (auto idx : indices[p]) {
+      int sz = sizes[idx];
+      m_image_offsets[idx] = offset;
+      offset += sz;
+    }
+  }
+}
+
+
+void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices) {
+  int size = 0;
+  for (auto &&t : sizes) {
+    size += t.second;
+  }
+
   int node_id = m_comm->get_rank_in_node();
   key_t key = ftok(",", 'x');
   int shm_id;
@@ -1117,10 +1100,6 @@ void data_store_conduit::allocate_shared_segment(int size) {
     m_mem_seg = shmat(shm_id, NULL, 0);
     if (*(int*)m_mem_seg == -1) {
       LBANN_ERROR("m_mem_seg == -1; call to shmat() failed");
-    }
-    m_loaded_images = (bool*)((char*)m_mem_seg + m_image_offsets.back());
-    for (size_t j=0; j<m_image_offsets.size(); j++) {
-      *(m_loaded_images + j*sizeof(bool)) = false;
     }
   }
 
@@ -1139,27 +1118,94 @@ void data_store_conduit::allocate_shared_segment(int size) {
 }
 
 void data_store_conduit::preload_local_cache() {
-  int segment_size = get_image_offsets();
-  allocate_shared_segment(segment_size);
-  load_files();
+  std::unordered_map<int,int> file_sizes; 
+  std::vector<std::vector<int>> indices;
+  get_image_sizes(file_sizes, indices);
+
+  //debug block; will go away
+  if (m_world_master) {
+    for (int h=0; h<m_np_in_trainer; h++) {
+      const std::vector<int> &idx = indices[h];
+      std::cout << "P_"<<h<<std::endl;
+      for (auto t : idx) {
+        if (file_sizes.find(t) == file_sizes.end()) {
+          LBANN_ERROR("failed to find index " + std::to_string(t) + " in file_sizes map");
+        }
+        std::cout << "  image index: " << t << " image size: " << file_sizes[t] << "\n";
+      }
+    }
+  }
+
+  std::vector<char> work;
+  read_files(work, file_sizes, indices[m_rank_in_trainer]);
+
+  allocate_shared_segment(file_sizes, indices);
+  compute_image_offsets(file_sizes, indices);
+  exchange_images(work, file_sizes, indices);
+  build_conduit_nodes(file_sizes);
 }
 
-void data_store_conduit::load_files() {
-  for (auto j : m_my_files) {
-    const std::string fn = m_image_base_dir + '/' + m_image_filenames[j];
-    std::ifstream in(fn, std::ios::in | std::ios::binary);
-    if (!in) {
-      LBANN_ERROR("failed to open " + fn + " for binary read");
-    }
-    char *c = (char*)m_mem_seg + m_image_offsets[j];
-    in.read(c, m_image_offsets[j+1] - m_image_offsets[j]);
-    in.close();
+void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices) {
+  int n = 0;
+  for (auto t : indices) {
+    n += sizes[t];
   }
-MPI_Barrier(MPI_COMM_WORLD);
-if (m_world_master) std::cout << "all files loaded\n";
-MPI_Barrier(MPI_COMM_WORLD);
-exit(0);
+  work.resize(n);
+
+  image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  int offset = 0;
+  for (auto h : indices) {
+    int s = sizes[h];
+    const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
+    std::ifstream in(fn, std::ios::in | std::ios::binary);
+    in.read(work.data()+offset, s);
+    in.close();
+    offset += s;
+  }
 }
+
+void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes) {
+  image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  for (size_t idx=0; idx<image_list.size(); idx++) {
+    int label = image_list[idx].second;
+    int offset = m_image_offsets[idx];
+    int sz = sizes[idx];
+    conduit::Node node;
+    node[LBANN_DATA_ID_STR(idx) + "/label"].set(label);
+    node[LBANN_DATA_ID_STR(idx) + "/buffer_size"] = sz;
+    conduit::int8 *c = (conduit::int8*)m_mem_seg + offset;
+    node[LBANN_DATA_ID_STR(idx) + "/buffer"].set_external_int8_ptr(c, sz);
+  }
+}
+
+void data_store_conduit::fillin_shared_images(const std::vector<char> &images, const std::unordered_map<int,int> &image_sizes, const std::vector<int> &indices) {
+}
+
+void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices) {
+  std::vector<char> work2;
+  int node_rank = m_comm->get_rank_in_node();
+  for (int p=0; p<m_np_in_trainer; p++) {
+    if (m_rank_in_trainer == p) {
+      m_comm->trainer_broadcast<char>(p, work.data(), work.size());
+      if (node_rank == 0) {
+        fillin_shared_images(work, image_sizes, indices[p]);
+      }
+    } else {
+      int sz = 0;
+      for (auto idx : indices[p]) {
+        sz += image_sizes[idx];
+      }
+      work2.resize(sz);
+      m_comm->trainer_broadcast<char>(p, work2.data(), work.size());
+      if (node_rank == 0) {
+        fillin_shared_images(work2, image_sizes, indices[p]);
+      }
+    }
+  }
+}
+
 
 }  // namespace lbann
 
