@@ -31,7 +31,7 @@ option(CONDUIT_BUILD_SHARED_LIBS
 
 # CONDUIT-specific configuration options explicitly exposed
 option(CONDUIT_ENABLE_MPI "Enable MPI support in CONDUIT." ON)
-option(CONDUIT_ENABLE_PYTHON "Enable CONDUIT Python module support." ON)
+option(CONDUIT_ENABLE_PYTHON "Enable CONDUIT Python module support." OFF)
 option(CONDUIT_ENABLE_TESTS "Build CONDUIT unit tests." OFF)
 option(CONDUIT_ENABLE_FORTRAN "Build CONDUIT with fortran support" OFF)
 

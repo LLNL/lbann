@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,9 +27,8 @@
 #ifndef _DATA_READER_JAG_CONDUIT_HPP_
 #define _DATA_READER_JAG_CONDUIT_HPP_
 
-#include "lbann_config.hpp" // may define LBANN_HAS_CONDUIT
+#include "lbann_config.hpp" 
 
-#ifdef LBANN_HAS_CONDUIT
 #include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
@@ -257,7 +256,7 @@ class data_reader_jag_conduit : public generic_data_reader {
  protected:
 
   /// once the sample_list class and file formats are generalized and
-  /// finalized, it should (may?) be possible to code a single 
+  /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
   void preload_data_store() override;
 
@@ -602,5 +601,4 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
 }
 
 } // end of namespace lbann
-#endif // LBANN_HAS_CONDUIT
 #endif // _DATA_READER_JAG_CONDUIT_HPP_

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -80,7 +80,6 @@ std::unique_ptr<Layer> construct_layer(
 
     if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
       num_neurons_method_name = "get_num_neurons_of_slice_from_reader";
-    #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
       if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
@@ -97,7 +96,6 @@ std::unique_ptr<Layer> construct_layer(
           num_neurons += diff;
         }
       }
-    #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       num_neurons_method_name = "num_neurons";
       num_neurons = params.num_neurons();
@@ -240,11 +238,9 @@ std::unique_ptr<Layer> construct_layer(
 
     if (params.get_slice_points_from_reader() != "") {
       slice_point_method_name = "'get_slice_points_from_reader'";
-    #if defined(LBANN_HAS_CONDUIT)
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const std::string& var = params.get_slice_points_from_reader();
       slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
-    #endif // defined(LBANN_HAS_CONDUIT)
     } else {
       slice_point_method_name = "'slice_points'";
       slice_points = parse_list<El::Int>(params.slice_points());
@@ -649,7 +645,6 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
                                                   bool& is_supported) {
   std::vector<El::Int> slice_points;
   is_supported = false;
-#if defined(LBANN_HAS_CONDUIT)
   // TODO: remove the dynamic cast when this feature gets merged into the base class
   const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
 
@@ -664,7 +659,6 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
                   + "\". Must be either \"independent\" or \"dependent\".");
     }
   }
-#endif
   return slice_points;
 }
 

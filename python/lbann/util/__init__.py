@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from os.path import dirname, abspath
 
 def make_iterable(obj):
     """Convert to an iterable object.
@@ -12,7 +11,3 @@ def make_iterable(obj):
         return obj
     else:
         return (obj,)
-
-def lbann_dir():
-    """LBANN root directory."""
-    return dirname(dirname(dirname(dirname(abspath(__file__)))))

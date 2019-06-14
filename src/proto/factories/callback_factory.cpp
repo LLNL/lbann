@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -104,6 +104,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    parse_set<std::string>(params.weights()),
                                    params.low_score_wins(),
                                    lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
+                                   params.exchange_hyperparameters(),
                                    summarizer);
   }
   /// @todo
@@ -236,6 +237,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
       return new lbann_callback_save_model(params.dir(),
                                            params.disable_save_after_training());
     }
+  }
+
+  if (proto_cb.has_save_topk_models()) {
+    const auto& params = proto_cb.save_topk_models();
+    return new lbann_callback_save_topk_models(params.dir(),
+                                               params.k(),
+                                               params.metric(),
+                                               params.ascending_ordering());
   }
 
   //////////////////////////////////////////////////////////////
@@ -420,6 +429,12 @@ lbann_callback* construct_callback(lbann_comm* comm,
                  parse_set<std::string>(params.weights()));
   }
 
+  if (proto_cb.has_perturb_dropout()) {
+    const auto& params = proto_cb.perturb_dropout();
+    return new lbann_callback_perturb_dropout(
+                 params.keep_dropout_factor(),
+                 parse_set<std::string>(params.layers()));
+  }
   return nullptr;
 }
 

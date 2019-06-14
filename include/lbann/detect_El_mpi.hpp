@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -84,7 +84,7 @@ struct is_instantiated_El_mpi_type<
  */
 template<bool B, class T = void>
 struct interpret_as_byte_if_needed {
-  using type = El::byte; 
+  using type = El::byte;
 };
 
 /// Use type T as is if Elemental has instantiated MPI wrappers for type T.

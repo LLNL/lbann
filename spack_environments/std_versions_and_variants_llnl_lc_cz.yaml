@@ -1,0 +1,45 @@
+  packages:
+    all:
+      providers: {}
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: []
+
+    cereal::
+      buildable: true
+      version: [1.2.2]
+
+    cub::
+      buildable: true
+      version: [1.7.1]
+
+    nccl::
+      buildable: true
+      version: [2.4.6-1]
+
+    protobuf::
+      buildable: True
+      variants: build_type=Release +shared
+      version: [3.7.1]
+
+    python::
+      buildable: True
+      version: [3.7.2]
+
+    py-cython::
+      buildable: True
+      version: [0.29]
+
+    py-matplotlib::
+      buildable: True
+      variants: ~tk ~image
+
+    py-numpy::
+      buildable: True
+      version: [1.16.2]
+
+    zlib::
+      buildable: True
+      version: [1.2.11]

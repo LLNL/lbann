@@ -56,9 +56,7 @@ void init_data_readers(
   bool is_shareable_testing_data_reader,
   bool is_shareable_validation_data_reader)
 {
-#ifdef LBANN_HAS_CONDUIT
   static std::unordered_map<std::string, data_reader_jag_conduit*> leading_reader_jag_conduit;
-#endif
   const bool master = comm->am_world_master();
   std::ostringstream err;
 
@@ -142,7 +140,6 @@ void init_data_readers(
       reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
       set_up_generic_preprocessor = false;
-#ifdef LBANN_HAS_CONDUIT
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
@@ -182,7 +179,6 @@ void init_data_readers(
     } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_up_generic_preprocessor = false;
-#endif // LBANN_HAS_CONDUIT
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -253,12 +249,10 @@ void init_data_readers(
           reader_numpy_npz->set_has_responses(!readme.disable_responses());
           reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
           npy_readers.push_back(reader_numpy_npz);
-#ifdef LBANN_HAS_CONDUIT
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
           set_up_generic_preprocessor = false;
           npy_readers.push_back(reader);
-#endif
         } else if (readme.format() == "pilot2_molecular_reader") {
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
           reader_pilot2_molecular->set_data_filename(path);
@@ -442,7 +436,7 @@ void init_data_readers(
       } else if (name == "numpy_npz_conduit_reader") {
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader), reader->get_unused_indices());
       } else if (name == "imagenet_patches") {
         reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "multihead_siamese") {
@@ -454,7 +448,6 @@ void init_data_readers(
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
-#ifdef LBANN_HAS_CONDUIT
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
@@ -484,7 +477,6 @@ void init_data_readers(
           reader_jag_conduit->set_role(role);
           leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
-#endif // LBANN_HAS_CONDUIT
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -542,12 +534,10 @@ void init_data_readers(
         double train_percent = ((double) num_train / (double) (num_train+num_validate))*100.0;
         std::cout << "Training using " << train_percent << "% of the training data set, which is " << reader->get_num_data() << " samples." << std::endl
                   << "Validating training using " << validate_percent << "% of the training data set, which is " << reader_validation->get_num_data() << " samples.";
-#ifdef LBANN_HAS_CONDUIT
         if (name == "jag_conduit") {
           std::cout << " jag conduit leading reader " << dynamic_cast<data_reader_jag_conduit*>(reader)->get_leading_reader()
                     << " of " << (is_shareable_training_data_reader? "shared" : "unshared") << " reader " << reader << " for " << reader->get_role() << std::endl;
         }
-#endif // LBANN_HAS_CONDUIT
         std::cout << std::endl;
       }
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -156,6 +156,7 @@
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_save_topk_models.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
@@ -170,6 +171,7 @@
 #include "lbann/callbacks/callback_check_gradients.hpp"
 #include "lbann/callbacks/callback_check_metric.hpp"
 #include "lbann/callbacks/callback_perturb_adam.hpp"
+#include "lbann/callbacks/callback_perturb_dropout.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

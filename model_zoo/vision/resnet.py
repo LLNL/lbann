@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from os.path import join
+from os.path import dirname, join
 import google.protobuf.text_format as txtf
 import lbann
 import lbann.models
@@ -9,13 +9,15 @@ import lbann.proto
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 
+# Default data reader
+model_zoo_dir = dirname(dirname(__file__))
+data_reader_prototext = join(model_zoo_dir,
+                             'data_readers',
+                             'data_reader_imagenet.prototext')
+
 # Command-line arguments
 desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
-data_reader_prototext = join(lbann.lbann_dir(),
-                             'model_zoo',
-                             'data_readers',
-                             'data_reader_imagenet.prototext')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
@@ -50,6 +52,9 @@ parser.add_argument(
 parser.add_argument(
     '--num-labels', action='store', default=1000, type=int,
     help='number of data classes (default: 1000)', metavar='NUM')
+parser.add_argument(
+    '--random-seed', action='store', default=0, type=int,
+    help='random seed for LBANN RNGs', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 parser.add_argument(
     '--data-reader', action='store',
@@ -143,7 +148,8 @@ model = lbann.Model(args.mini_batch_size,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
-                    callbacks=callbacks)
+                    callbacks=callbacks,
+                    random_seed=args.random_seed)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)

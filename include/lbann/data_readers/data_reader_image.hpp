@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -32,6 +32,7 @@
 #include "data_reader.hpp"
 #include "image_preprocessor.hpp"
 #include "cv_process.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 
 namespace lbann {
 class image_data_reader : public generic_data_reader {
@@ -42,6 +43,8 @@ class image_data_reader : public generic_data_reader {
 
   image_data_reader(bool shuffle = true);
   image_data_reader(const image_data_reader&);
+  image_data_reader(const image_data_reader&, const std::vector<int>& ds_sample_move_list);
+  image_data_reader(const image_data_reader&, const std::vector<int>& ds_sample_move_list, std::string role);
   image_data_reader& operator=(const image_data_reader&);
 
   /** Set up imagenet specific input parameters
@@ -100,13 +103,16 @@ class image_data_reader : public generic_data_reader {
     return m_image_list.at(idx);
   }
 
+  void preload_data_store() override; 
+
  protected:
+   void copy_members(const image_data_reader &rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
+
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();
   bool fetch_label(Mat& Y, int data_id, int mb_idx) override;
   void set_linearized_image_size();
 
- protected:
   std::string m_image_dir; ///< where images are stored
   std::vector<sample_t> m_image_list; ///< list of image files and labels
   int m_image_width; ///< image width
@@ -115,6 +121,8 @@ class image_data_reader : public generic_data_reader {
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
   std::vector<cv::Mat> m_thread_cv_buffer;
+
+  void load_conduit_node_from_file(int data_id, conduit::Node &node);
 };
 
 }  // namespace lbann
