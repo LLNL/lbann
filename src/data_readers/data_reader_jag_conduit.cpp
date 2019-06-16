@@ -1207,9 +1207,9 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 }
 
 
-std::vector< std::vector<data_reader_jag_conduit::ch_t> >
+std::vector< std::vector<DataType> >
 data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > image_ptrs;
+  std::vector< std::vector<DataType> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
@@ -1231,6 +1231,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
     conduit_ch_t emi = sample[conduit_obj].value();
     const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = sample[conduit_obj].value();
+    // Note that data will be cast from ch_t to DataType format
     image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
@@ -1348,7 +1349,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       const size_t image_size = get_linearized_image_size();
       const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector< std::vector<ch_t> > img_data(get_image_data(data_id, sample));
+      std::vector< std::vector<DataType> > img_data(get_image_data(data_id, sample));
 
       if (img_data.size() != num_images) {
         _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected ", \

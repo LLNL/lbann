@@ -27,16 +27,12 @@ def test_unit_layer_selu_clang4(cluster, exes, dirname):
     skeleton_layer_selu(cluster, exes, dirname, 'clang4')
 
 
-def test_unit_layer_selu_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_selu(cluster, exes, dirname, 'gcc4')
-
-
 def test_unit_layer_selu_gcc7(cluster, exes, dirname):
     skeleton_layer_selu(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_selu_intel18(cluster, exes, dirname):
-    skeleton_layer_selu(cluster, exes, dirname, 'intel18')
+def test_unit_layer_selu_intel19(cluster, exes, dirname):
+    skeleton_layer_selu(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_layer_selu.py -k 'test_unit_layer_selu_exe' --exe=<executable>

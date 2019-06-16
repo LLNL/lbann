@@ -38,7 +38,7 @@ void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, std::vecto
 
 void repack_HWC_to_CHW_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
                             std::vector<size_t>& dims) {
-  CPUMat &src = data.template get<float>();
+  CPUMat &src = data.template get<DataType>();
   if (!src.Contiguous()) {
     LBANN_ERROR("RepackHWCtoCHWLayout does not support non-contiguous src.");
   }

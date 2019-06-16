@@ -27,16 +27,12 @@ def test_unit_layer_softplus_clang4(cluster, exes, dirname):
     skeleton_layer_softplus(cluster, exes, dirname, 'clang4')
 
 
-def test_unit_layer_softplus_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_softplus(cluster, exes, dirname, 'gcc4')
-
-
 def test_unit_layer_softplus_gcc7(cluster, exes, dirname):
     skeleton_layer_softplus(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_softplus_intel18(cluster, exes, dirname):
-    skeleton_layer_softplus(cluster, exes, dirname, 'intel18')
+def test_unit_layer_softplus_intel19(cluster, exes, dirname):
+    skeleton_layer_softplus(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_layer_softplus.py -k 'test_unit_layer_softplus_exe' --exe=<executable>
