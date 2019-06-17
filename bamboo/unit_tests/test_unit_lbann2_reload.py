@@ -124,18 +124,14 @@ def test_unit_lbann2_reload_clang4(cluster, exes, dirname):
     skeleton_lbann2_reload(cluster, exes, dirname, 'clang4')
 
 
-def test_unit_lbann2_reload_gcc4(cluster, exes, dirname):
-  skeleton_lbann2_reload(cluster, exes, dirname, 'gcc4')
-
-
 def test_unit_lbann2_reload_gcc7(cluster, exes, dirname):
     if cluster in ['catalyst', 'pascal']:  # STILL ERRORS
         pytest.skip('FIXME')
     skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_lbann2_reload_intel18(cluster, exes, dirname):
-    skeleton_lbann2_reload(cluster, exes, dirname, 'intel18')
+def test_unit_lbann2_reload_intel19(cluster, exes, dirname):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_lbann2_reload.py -k 'test_unit_lbann2_reload_exe' --exe=<executable>

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -134,18 +134,23 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
   return true;
 }
 
-bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m) {
+bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
   std::vector<std::string> weight_list = std::vector<std::string>();
-  int epochLast = -1;
-  int stepLast = -1;
-  std::string active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
+  std::string active_ckpt_dir;
+  if(ckptdir_is_fullpath) {
+    active_ckpt_dir = ckpt_dir;
+  }else {
+    int epochLast = -1;
+    int stepLast = -1;
+    active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
 
-  // get last epoch and step saved.
-  int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
-  if(!success) {
-    return false;
+    // get last epoch and step saved.
+    int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
+    if(!success) {
+      return false;
+    }
+    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
   }
-  active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
   lbann_comm *comm = m->get_comm();
   if(comm->am_trainer_master()) {
     std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -72,17 +72,6 @@ protected:
    */
   DataType m_bias_scaling_factor;
 
-  /** Convolutional kernel gradient.
-   *  This is this layer's contribution to the objective function
-   *  gradient w.r.t. the convolutional kernel weights.
-   */
-  StarMat<Device> m_kernel_gradient;
-  /** Bias gradient.
-   *  This is this layer's contribution to the objective function
-   *  gradient w.r.t. the bias weights.
-   */
-  StarMat<Device> m_bias_gradient;
-
 #ifdef LBANN_HAS_CUDNN
 
   /** Convolution kernel cuDNN descriptor. */
@@ -93,6 +82,12 @@ protected:
   cudnnTensorDescriptor_t m_bias_cudnn_desc = nullptr;
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  /** Forward algorithm cache (mini-batch size -> algo). */
+  std::unordered_map<int, cudnnConvolutionFwdAlgo_t> m_fwd_cudnn_algos;
+  /** Backward data algorithm cache (mini-batch size -> algo). */
+  std::unordered_map<int, cudnnConvolutionBwdDataAlgo_t> m_bwd_data_cudnn_algos;
+  /** Backward filter algorithm cache (mini-batch size -> algo). */
+  std::unordered_map<int, cudnnConvolutionBwdFilterAlgo_t> m_bwd_filter_cudnn_algos;
 
 #endif // LBANN_HAS_CUDNN
 
@@ -114,9 +109,7 @@ public:
       m_strides(std::move(strides)),
       m_dilations(std::move(dilations)),
       m_groups(groups),
-      m_bias_scaling_factor(has_bias ? 1 : 0),
-      m_kernel_gradient(this->get_comm()->get_trainer_grid()),
-      m_bias_gradient(this->get_comm()->get_trainer_grid())
+      m_bias_scaling_factor(has_bias ? 1 : 0)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
@@ -130,11 +123,12 @@ public:
       m_strides(other.m_strides),
       m_dilations(other.m_dilations),
       m_groups(other.m_groups),
-      m_bias_scaling_factor(other.m_bias_scaling_factor),
-      m_kernel_gradient(other.m_kernel_gradient),
-      m_bias_gradient(other.m_bias_gradient)
+      m_bias_scaling_factor(other.m_bias_scaling_factor)
 #ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc)
+    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
+      m_fwd_cudnn_algos(other.m_fwd_cudnn_algos),
+      m_bwd_data_cudnn_algos(other.m_bwd_data_cudnn_algos),
+      m_bwd_filter_cudnn_algos(other.m_bwd_filter_cudnn_algos)
 #endif // LBANN_HAS_CUDNN
   {
 #ifdef LBANN_HAS_CUDNN
@@ -159,8 +153,6 @@ public:
     m_dilations = other.m_dilations;
     m_groups = other.m_groups;
     m_bias_scaling_factor = other.m_bias_scaling_factor;
-    m_kernel_gradient = other.m_kernel_gradient;
-    m_bias_gradient = other.m_bias_gradient;
 
 #ifdef LBANN_HAS_CUDNN
     // Copy cuDNN objects
@@ -174,6 +166,9 @@ public:
     }
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
+    m_fwd_cudnn_algos = other.m_fwd_cudnn_algos;
+    m_bwd_data_cudnn_algos = other.m_bwd_data_cudnn_algos;
+    m_bwd_filter_cudnn_algos = other.m_bwd_filter_cudnn_algos;
 #endif // LBANN_HAS_CUDNN
 
     return *this;
@@ -383,11 +378,6 @@ public:
     kernel_weights.set_dims(kernel_dims);
     kernel_weights.set_matrix_distribution(dist);
 
-    // Initialize gradients
-    El::Zeros(m_kernel_gradient,
-              kernel_weights.get_matrix_height(),
-              kernel_weights.get_matrix_width());
-
     // Set up bias if needed.
     if (m_bias_scaling_factor != DataType(0)) {
       if (this->m_weights[1] == nullptr) {
@@ -401,9 +391,6 @@ public:
       auto& bias_weights = *this->m_weights[1];
       bias_weights.set_dims(output_dims[0]);
       bias_weights.set_matrix_distribution(dist);
-      El::Zeros(m_bias_gradient,
-                bias_weights.get_matrix_height(),
-                bias_weights.get_matrix_width());
     }
 
     // Initialize freeze state
@@ -525,15 +512,11 @@ protected:
     // Perform convolution on the GPU
     // Determine convolution algorithm
     cudnnConvolutionFwdAlgo_t convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM;
-    CHECK_CUDNN(cudnnGetConvolutionForwardAlgorithm(cudnn::get_handle(),
-                                                    input_desc,
-                                                    m_kernel_cudnn_desc,
-                                                    m_convolution_cudnn_desc,
-                                                    output_desc,
-                                                    CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT,
-                                                    workspace_size,
-                                                    &convolution_cudnn_algorithm));
+      = get_forward_algo_cudnn(input.Width(), input_desc, input.LockedBuffer(),
+                               m_kernel_cudnn_desc, kernel.LockedBuffer(),
+                               m_convolution_cudnn_desc,
+                               output_desc, output.Buffer(),
+                               workspace_size, workspace.Buffer());
 
     // Apply convolution
     CHECK_CUDNN(cudnnConvolutionForward(cudnn::get_handle(),
@@ -606,21 +589,13 @@ protected:
 
     // Perform transposed convolution on the GPU
     // Determine transposed convolution algorithm
-    #ifndef LBANN_DETERMINISTIC
     cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_0;
-    CHECK_CUDNN(cudnnGetConvolutionBackwardDataAlgorithm(cudnn::get_handle(),
-                                                         m_kernel_cudnn_desc,
-                                                         input_desc,
-                                                         m_convolution_cudnn_desc,
-                                                         output_desc,
-                                                         CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT,
-                                                         workspace_size,
-                                                         &transposed_convolution_cudnn_algorithm));
-    #else
-    cudnnConvolutionBwdDataAlgo_t transposed_convolution_cudnn_algorithm
-      = CUDNN_CONVOLUTION_BWD_DATA_ALGO_1;
-    #endif
+      = get_backward_data_algo_cudnn(input.Width(),
+                                     m_kernel_cudnn_desc, kernel.LockedBuffer(),
+                                     input_desc, input.LockedBuffer(),
+                                     m_convolution_cudnn_desc,
+                                     output_desc, output.Buffer(),
+                                     workspace_size, workspace.Buffer());
     // Perform transposed convolution
     CHECK_CUDNN(cudnnConvolutionBackwardData(cudnn::get_handle(),
                                              &one,
@@ -670,9 +645,6 @@ protected:
     const auto& local_input = get_local_prev_activations();
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
 
-    // Useful constants
-    const DataType zero = DataType(0);
-    const DataType one = DataType(1);
     const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     const int effective_mini_batch_size = c.get_effective_mini_batch_size();
     const bool has_local_data = (local_input.Height() > 0
@@ -681,35 +653,35 @@ protected:
                                  && local_gradient_wrt_output.Width() > 0);
 
     // Compute bias gradient
-    if (m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != DataType(0)
+        && m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = m_weights[1]->get_optimizer();
-      if (bias_optimizer != nullptr) {
-        if (!has_local_data) {
-          El::Zero(m_bias_gradient);
-        } else {
-          CHECK_CUDNN(cudnnConvolutionBackwardBias(
-                        cudnn::get_handle(),
-                        &one,
-                        m_tensors_cudnn_desc.get_prev_error_signals(),
-                        local_gradient_wrt_output.LockedBuffer(),
-                        &zero,
-                        m_bias_cudnn_desc,
-                        m_bias_gradient.Buffer()));
-        }
-        bias_optimizer->add_to_gradient(
-          m_bias_gradient,
-          m_bias_scaling_factor / effective_mini_batch_size,
-          true);
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
+      if (has_local_data) {
+        CHECK_CUDNN(cudnnConvolutionBackwardBias(
+                      cudnn::get_handle(),
+                      &gradient_scale,
+                      m_tensors_cudnn_desc.get_prev_error_signals(),
+                      local_gradient_wrt_output.LockedBuffer(),
+                      &dst_scale,
+                      m_bias_cudnn_desc,
+                      bias_gradient.Buffer()));
+      } else {
+        El::Scale(dst_scale, bias_gradient);
       }
     }
 
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
-      if (!has_local_data) {
-        El::Zero(m_kernel_gradient);
-      } else {
-
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
+      if (has_local_data) {
         // Initialize GPU workspace
         GPUMat workspace;
 #ifdef HYDROGEN_HAVE_CUB
@@ -724,72 +696,56 @@ protected:
         auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
 
         // Determine algorithm and compute kernel gradient
-        #ifndef LBANN_DETERMINISTIC
-        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
-          = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0;
-        #else
-        cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
-          = CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1;
-        #endif
         if (using_transposed_convolution) {
-          #ifndef LBANN_DETERMINISTIC
-          CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
-                                                                 gradient_wrt_output_desc,
-                                                                 input_desc,
-                                                                 m_convolution_cudnn_desc,
-                                                                 m_kernel_cudnn_desc,
-                                                                 CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-                                                                 workspace_size,
-                                                                 &kernel_gradient_cudnn_algorithm));
-          #endif
-          CHECK_CUDNN(cudnnConvolutionBackwardFilter(cudnn::get_handle(),
-                                                     &one,
-                                                     gradient_wrt_output_desc,
-                                                     local_gradient_wrt_output.LockedBuffer(),
-                                                     input_desc,
-                                                     local_input.LockedBuffer(),
-                                                     m_convolution_cudnn_desc,
-                                                     kernel_gradient_cudnn_algorithm,
-                                                     workspace.Buffer(),
-                                                     workspace_size,
-                                                     &zero,
-                                                     m_kernel_cudnn_desc,
-                                                     m_kernel_gradient.Buffer()));
+          cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
+            = get_backward_filter_algo_cudnn(
+              local_input.Width(),
+              gradient_wrt_output_desc, local_gradient_wrt_output.LockedBuffer(),
+              input_desc, local_input.LockedBuffer(),
+              m_convolution_cudnn_desc,
+              m_kernel_cudnn_desc,
+              workspace_size, workspace.Buffer());
+          CHECK_CUDNN(cudnnConvolutionBackwardFilter(
+                        cudnn::get_handle(),
+                        &gradient_scale,
+                        gradient_wrt_output_desc,
+                        local_gradient_wrt_output.LockedBuffer(),
+                        input_desc,
+                        local_input.LockedBuffer(),
+                        m_convolution_cudnn_desc,
+                        kernel_gradient_cudnn_algorithm,
+                        workspace.Buffer(),
+                        workspace_size,
+                        &dst_scale,
+                        m_kernel_cudnn_desc,
+                        kernel_gradient.Buffer()));
+        } else {
+          cudnnConvolutionBwdFilterAlgo_t kernel_gradient_cudnn_algorithm
+            = get_backward_filter_algo_cudnn(
+              local_input.Width(),
+              input_desc, local_input.LockedBuffer(),
+              gradient_wrt_output_desc, local_gradient_wrt_output.LockedBuffer(),
+              m_convolution_cudnn_desc,
+              m_kernel_cudnn_desc,
+              workspace_size, workspace.Buffer());
+          CHECK_CUDNN(cudnnConvolutionBackwardFilter(
+                        cudnn::get_handle(),
+                        &gradient_scale,
+                        input_desc,
+                        local_input.LockedBuffer(),
+                        gradient_wrt_output_desc,
+                        local_gradient_wrt_output.LockedBuffer(),
+                        m_convolution_cudnn_desc,
+                        kernel_gradient_cudnn_algorithm,
+                        workspace.Buffer(),
+                        workspace_size,
+                        &dst_scale,
+                        m_kernel_cudnn_desc,
+                        kernel_gradient.Buffer()));
         }
-        else {
-          #ifndef LBANN_DETERMINISTIC
-          CHECK_CUDNN(cudnnGetConvolutionBackwardFilterAlgorithm(cudnn::get_handle(),
-                                                                 input_desc,
-                                                                 gradient_wrt_output_desc,
-                                                                 m_convolution_cudnn_desc,
-                                                                 m_kernel_cudnn_desc,
-                                                                 CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT,
-                                                                 workspace_size,
-                                                                 &kernel_gradient_cudnn_algorithm));
-          #endif
-          CHECK_CUDNN(cudnnConvolutionBackwardFilter(cudnn::get_handle(),
-                                                     &one,
-                                                     input_desc,
-                                                     local_input.LockedBuffer(),
-                                                     gradient_wrt_output_desc,
-                                                     local_gradient_wrt_output.LockedBuffer(),
-                                                     m_convolution_cudnn_desc,
-                                                     kernel_gradient_cudnn_algorithm,
-                                                     workspace.Buffer(),
-                                                     workspace_size,
-                                                     &zero,
-                                                     m_kernel_cudnn_desc,
-                                                     m_kernel_gradient.Buffer()));
-
-        }
-
+      } else {
+        El::Scale(dst_scale, kernel_gradient);
       }
-
-      // Add gradient contribution
-      kernel_optimizer->add_to_gradient(m_kernel_gradient,
-                                        one / effective_mini_batch_size,
-                                        true);
-
     }
 
 #endif // LBANN_HAS_CUDNN
@@ -953,7 +909,8 @@ protected:
     // Local matrices
     const DMat<Device>& local_input = get_local_prev_activations();
     const DMat<Device>& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_kernel_gradient = m_kernel_gradient.Matrix();
+    const bool has_local_data = (!local_input.IsEmpty()
+                                 && !local_gradient_wrt_output.IsEmpty());
 
     // Get convolution parameters
     const El::Int local_width = local_input.Width();
@@ -971,10 +928,15 @@ protected:
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
-    if (m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != DataType(0)
+        && this->m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-      if (bias_optimizer != nullptr) {
-        auto& local_bias_gradient = m_bias_gradient.Matrix();
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
+      if (has_local_data) {
+        auto& local_bias_gradient = bias_gradient.Matrix();
         LBANN_OMP_PARALLEL_FOR
         for (int channel = 0; channel < num_output_channels; ++channel) {
           const El::Int row_start = channel * num_per_output_channel;
@@ -990,10 +952,11 @@ protected:
               sum = next_sum;
             }
           }
-          local_bias_gradient(channel, 0) = m_bias_scaling_factor * sum;
+          local_bias_gradient(channel, 0) = dst_scale*local_bias_gradient(channel, 0)
+            + gradient_scale*sum;
         }
-        const DataType bias_scale = m_bias_scaling_factor / effective_mini_batch_size;
-        bias_optimizer->add_to_gradient(m_bias_gradient, bias_scale, true);
+      } else {
+        El::Scale(dst_scale, bias_gradient);
       }
     }
 
@@ -1011,9 +974,13 @@ protected:
     const int k = (using_transposed_convolution ?
                    get_input_size() / num_input_channels :
                    get_output_size() / num_output_channels);
+    DataType dst_scale = 0, gradient_scale = 0;
+    auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, true);
+    El::Scale(dst_scale, kernel_gradient);
+    gradient_scale /= effective_mini_batch_size;
     DMat<Device> im2col_matrix(m, k);
-    DMat<Device> kernel_gradient_matrix(m, n, local_kernel_gradient.Buffer(), m);
-    El::Zero(kernel_gradient_matrix);
+    DMat<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
 
     // Compute kernel gradient contributions from each data sample
     for (El::Int col = 0; col < local_width; ++col) {
@@ -1030,7 +997,7 @@ protected:
                &kernel_dims[2],
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
-                 DataType(1), im2col_matrix, input_col,
+                 gradient_scale, im2col_matrix, input_col,
                  DataType(1), kernel_gradient_matrix);
       }
       else {
@@ -1046,16 +1013,10 @@ protected:
                &kernel_dims[2],
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
-                 DataType(1), im2col_matrix, gradient_wrt_output_col,
+                 gradient_scale, im2col_matrix, gradient_wrt_output_col,
                  DataType(1), kernel_gradient_matrix);
       }
     }
-
-    // Scale and accumulate gradients
-    const DataType kernel_scale = DataType(1) / effective_mini_batch_size;
-    kernel_optimizer->add_to_gradient(m_kernel_gradient,
-                                      kernel_scale,
-                                      true);
 
   }
 
@@ -1153,6 +1114,105 @@ private:
                                                 num_groups));
     }
 
+  }
+
+  /** Get the cuDNN algorithm to use for forward prop. */
+  cudnnConvolutionFwdAlgo_t get_forward_algo_cudnn(
+    const int local_mini_batch_size,
+    const cudnnTensorDescriptor_t& input_desc,
+    const DataType* input,
+    const cudnnFilterDescriptor_t& kernel_desc,
+    const DataType* kernel,
+    const cudnnConvolutionDescriptor_t& conv_desc,
+    const cudnnTensorDescriptor_t& output_desc,
+    DataType* output,
+    size_t ws_size,
+    DataType* ws) {
+    if (m_fwd_cudnn_algos.count(local_mini_batch_size) == 0) {
+#ifdef LBANN_DETERMINISTIC
+      bool deterministic = true;
+#else
+      bool deterministic = false;
+#endif
+      m_fwd_cudnn_algos[local_mini_batch_size] =
+        cudnn::get_fwd_algorithm(
+          true, deterministic,
+          input_desc, input,
+          kernel_desc, kernel,
+          conv_desc,
+          output_desc, output,
+          ws_size, ws);
+    }
+    return m_fwd_cudnn_algos[local_mini_batch_size];
+  }
+
+  /** Get the cuDNN algorithm to use for backward-data. */
+  cudnnConvolutionBwdDataAlgo_t get_backward_data_algo_cudnn(
+    const int local_mini_batch_size,
+    const cudnnFilterDescriptor_t& kernel_desc,
+    const DataType* kernel,
+    const cudnnTensorDescriptor_t& prev_error_signal_desc,
+    const DataType* prev_error_signal,
+    const cudnnConvolutionDescriptor_t& conv_desc,
+    const cudnnTensorDescriptor_t& error_signal_desc,
+    DataType* error_signal,
+    size_t ws_size,
+    DataType* ws) {
+    if (m_bwd_data_cudnn_algos.count(local_mini_batch_size) == 0) {
+#ifdef LBANN_DETERMINISTIC
+      bool deterministic = true;
+#else
+      bool deterministic = false;
+#endif
+      m_bwd_data_cudnn_algos[local_mini_batch_size] =
+        cudnn::get_bwd_data_algorithm(
+          true, deterministic,
+          kernel_desc, kernel,
+          prev_error_signal_desc, prev_error_signal,
+          conv_desc,
+          error_signal_desc, error_signal,
+          ws_size, ws);
+    }
+    return m_bwd_data_cudnn_algos[local_mini_batch_size];
+  }
+
+  /**
+   * Get the cuDNN algorithm to use for backward-filter.
+   * Buffer space for kernel_gradient is allocated via temporary workspace.
+   */
+  cudnnConvolutionBwdFilterAlgo_t get_backward_filter_algo_cudnn(
+    const int local_mini_batch_size,
+    const cudnnTensorDescriptor_t& input_desc,
+    const DataType* input,
+    const cudnnTensorDescriptor_t& prev_error_signal_desc,
+    const DataType* prev_error_signal,
+    const cudnnConvolutionDescriptor_t& conv_desc,
+    const cudnnFilterDescriptor_t& kernel_gradient_desc,
+    size_t ws_size,
+    DataType* ws) {
+    if (m_bwd_filter_cudnn_algos.count(local_mini_batch_size) == 0) {
+#ifdef LBANN_DETERMINISTIC
+      bool deterministic = true;
+#else
+      bool deterministic = false;
+#endif
+      // Temporary filter gradient buffer.
+      GPUMat kernel_gradient;
+#ifdef HYDROGEN_HAVE_CUB
+      kernel_gradient.SetMemoryMode(1);
+#endif
+      kernel_gradient.Resize(this->m_weights[0]->get_matrix_height(),
+                             this->m_weights[0]->get_matrix_width());
+      m_bwd_filter_cudnn_algos[local_mini_batch_size] =
+        cudnn::get_bwd_filter_algorithm(
+          true, deterministic,
+          input_desc, input,
+          prev_error_signal_desc, prev_error_signal,
+          conv_desc,
+          kernel_gradient_desc, kernel_gradient.Buffer(),
+          ws_size, ws);
+    }
+    return m_bwd_filter_cudnn_algos[local_mini_batch_size];
   }
 
 #endif // LBANN_HAS_CUDNN

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -206,6 +206,10 @@ public:
   /** @details Must be called after model specification and before
    *  execution. */
   virtual void setup();
+
+  virtual void make_data_store_preloaded(execution_mode mode);
+
+  virtual void mark_data_store_explicitly_loading(execution_mode mode);
 
   // ===========================================
   // Summarizer

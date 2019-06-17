@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,7 +35,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new MCMRMat<El::Device::CPU>(grid);
   m_bias_gradient = new MCStarMat<El::Device::CPU>(grid);
 }
 
@@ -44,7 +43,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new StarMat<El::Device::CPU>(grid);
   m_bias_gradient = new StarMat<El::Device::CPU>(grid);
 }
 
@@ -54,8 +52,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new MCMRMat<El::Device::GPU>(grid);
-  m_bias_gradient = new MCStarMat<El::Device::GPU>(grid);
 }
 
 template <>
@@ -63,8 +59,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   ::setup_matrices(const El::Grid& grid) {
   learning_layer::setup_matrices(grid);
   deallocate_matrices();
-  m_linearity_gradient = new StarMat<El::Device::GPU>(grid);
-  m_bias_gradient = new StarMat<El::Device::GPU>(grid);
 }
 #endif // LBANN_HAS_GPU
 
@@ -140,33 +134,33 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
   // Note: Perform GEMMs independently if possible
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
+    DataType dst_scale = DataType(0), gradient_scale = DataType(1);
     if (linearity.DistSize() == 1) {
+      auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), local_input, local_gradient_wrt_output,
-                 DataType(0), m_linearity_gradient->Matrix());
+                 gradient_scale, local_input, local_gradient_wrt_output,
+                 dst_scale, linearity_gradient.Matrix());
       } else {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), local_gradient_wrt_output, local_input,
-                 DataType(0), m_linearity_gradient->Matrix());
+                 gradient_scale, local_gradient_wrt_output, local_input,
+                 dst_scale, linearity_gradient.Matrix());
       }
-      linearity_optimizer->add_to_gradient(
-        *m_linearity_gradient,
-        DataType(1) / mini_batch_size,
-        true);
     } else {
+      auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), input, gradient_wrt_output,
-                 DataType(0), *m_linearity_gradient);
+                 gradient_scale, input, gradient_wrt_output,
+                 dst_scale, linearity_gradient);
       } else {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), gradient_wrt_output, input,
-                 DataType(0), *m_linearity_gradient);
+                 gradient_scale, gradient_wrt_output, input,
+                 dst_scale, linearity_gradient);
       }
-      linearity_optimizer->add_to_gradient(
-        *m_linearity_gradient,
-        DataType(1) / mini_batch_size);
     }
   }
 
@@ -244,19 +238,19 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   // Compute gradient w.r.t. linearity if needed
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+    auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, true);
+    gradient_scale /= mini_batch_size;
     if (m_transpose) {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_input, local_gradient_wrt_output,
-               DataType(0), m_linearity_gradient->Matrix());
+               gradient_scale, local_input, local_gradient_wrt_output,
+               dst_scale, linearity_gradient.Matrix());
     } else {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_gradient_wrt_output, local_input,
-               DataType(0), m_linearity_gradient->Matrix());
+               gradient_scale, local_gradient_wrt_output, local_input,
+               dst_scale, linearity_gradient.Matrix());
     }
-    linearity_optimizer->add_to_gradient(
-      *m_linearity_gradient,
-      DataType(1) / mini_batch_size,
-      true);
   }
 
   // Compute gradient w.r.t. input
@@ -317,9 +311,13 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   if (m_bias_scaling_factor != DataType(0)) {
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
-        El::Zero(*m_bias_gradient);
+        El::Scale(dst_scale, bias_gradient);
       } else {
         GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
@@ -328,32 +326,28 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
         ones.Resize(local_gradient_wrt_output.Width(), 1);
         El::Fill(ones, DataType(1));
         El::Gemv(El::NORMAL,
-                 m_bias_scaling_factor, local_gradient_wrt_output, ones,
-                 DataType(0), m_bias_gradient->Matrix());
+                 gradient_scale, local_gradient_wrt_output, ones,
+                 dst_scale, bias_gradient.Matrix());
       }
-      bias_optimizer->add_to_gradient(
-        *m_bias_gradient,
-        m_bias_scaling_factor / mini_batch_size,
-        true);
     }
   }
 
   // Compute gradient w.r.t. linearity if needed
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+    auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, true);
+    gradient_scale /= mini_batch_size;
     if (m_transpose) {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_input, local_gradient_wrt_output,
-               DataType(0), m_linearity_gradient->Matrix());
+               gradient_scale, local_input, local_gradient_wrt_output,
+               dst_scale, linearity_gradient.Matrix());
     } else {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), local_gradient_wrt_output, local_input,
-               DataType(0), m_linearity_gradient->Matrix());
+               gradient_scale, local_gradient_wrt_output, local_input,
+               dst_scale, linearity_gradient.Matrix());
     }
-    linearity_optimizer->add_to_gradient(
-      *m_linearity_gradient,
-      DataType(1) / mini_batch_size,
-      true);
   }
 
   // Compute gradient w.r.t. input
@@ -425,9 +419,13 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   if (m_bias_scaling_factor != DataType(0)) {
     optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
+      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
-        El::Zero(*m_bias_gradient);
+        El::Scale(dst_scale, bias_gradient);
       } else {
         GPUMat ones;
 #ifdef HYDROGEN_HAVE_CUB
@@ -436,13 +434,9 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
         ones.Resize(local_gradient_wrt_output.Width(), 1);
         El::Fill(ones, DataType(1));
         El::Gemv(El::NORMAL,
-                 m_bias_scaling_factor, local_gradient_wrt_output, ones,
-                 DataType(0), m_bias_gradient->Matrix());
+                 gradient_scale, local_gradient_wrt_output, ones,
+                 dst_scale, bias_gradient.Matrix());
       }
-      bias_optimizer->add_to_gradient(
-        *m_bias_gradient,
-        m_bias_scaling_factor / mini_batch_size,
-        true);
     }
   }
 
@@ -450,33 +444,33 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   // Note: Perform GEMMs independently if possible
   optimizer* linearity_optimizer = this->m_weights[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     if (linearity.DistSize() == 1) {
+      auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), local_input, local_gradient_wrt_output,
-                 DataType(0), m_linearity_gradient->Matrix());
+                 gradient_scale, local_input, local_gradient_wrt_output,
+                 dst_scale, linearity_gradient.Matrix());
       } else {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), local_gradient_wrt_output, local_input,
-                 DataType(0), m_linearity_gradient->Matrix());
+                 gradient_scale, local_gradient_wrt_output, local_input,
+                 dst_scale, linearity_gradient.Matrix());
       }
-      linearity_optimizer->add_to_gradient(
-        *m_linearity_gradient,
-        DataType(1) / mini_batch_size,
-        true);
     } else {
+      auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale);
+      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), input, gradient_wrt_output,
-                 DataType(0), *m_linearity_gradient);
+                 gradient_scale, input, gradient_wrt_output,
+                 dst_scale, linearity_gradient);
       } else {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
-                 DataType(1), gradient_wrt_output, input,
-                 DataType(0), *m_linearity_gradient);
+                 gradient_scale, gradient_wrt_output, input,
+                 dst_scale, linearity_gradient);
       }
-      linearity_optimizer->add_to_gradient(
-        *m_linearity_gradient,
-        DataType(1) / mini_batch_size);
     }
   }
 

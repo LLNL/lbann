@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -66,7 +66,7 @@ __global__ void fp_compute_3d_kernel(
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
-    
+
     // Iterate through output entries in mini-batch sample
     for (El::Int output_pos = gidx;
          output_pos < output_size;
@@ -89,10 +89,10 @@ __global__ void fp_compute_3d_kernel(
 
       // Copy entry
       output_entry = input_entry;
-      
+
     }
   }
-  
+
 }
 
 /** CUDA kernel for 3D tensor crop backprop.
@@ -130,7 +130,7 @@ __global__ void bp_compute_3d_kernel(
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
-    
+
     // Iterate through output entries in mini-batch sample
     for (El::Int output_pos = gidx;
          output_pos < output_size;
@@ -153,14 +153,14 @@ __global__ void bp_compute_3d_kernel(
 
       // Copy entry
       input_entry = output_entry;
-      
+
     }
   }
-  
+
 }
-  
+
 } // namespace
-  
+
 template <>
 void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
 
@@ -190,7 +190,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
       local_output.Buffer(), local_output.LDim(),
       local_crop_pos.LockedBuffer(), local_crop_pos.LDim());
   }
-  
+
 }
 
 template <>
@@ -204,7 +204,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   const auto& local_crop_pos = get_local_prev_activations(1);
   auto& local_gradient_wrt_input = get_local_error_signals(0);
-  
+
   // Tensor dimensions
   const auto& local_width = local_gradient_wrt_input.Width();
   const auto input_dims = get_input_dims();
@@ -226,7 +226,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
       local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
       local_crop_pos.LockedBuffer(), local_crop_pos.LDim());
   }
-  
+
 }
 
 } // namespace lbann

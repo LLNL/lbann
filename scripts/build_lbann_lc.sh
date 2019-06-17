@@ -12,9 +12,8 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
-    # NVCC in CUDA 9.1 does not support GCC versions later than 6
-    COMPILER=gnu
-    module load gcc/4.9.3
+    module load gcc/7.3.0
+    module load opt cudatoolkit/9.2
 elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
     module load gcc/7.3.1
 fi
@@ -69,13 +68,10 @@ INSTRUMENT=
 WITH_ALUMINUM=
 ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
-WITH_CONDUIT=OFF
+WITH_CONDUIT=ON
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
-WITH_PYTHON=OFF
-PYTHON_LIBRARY=/usr/tce/packages/python/python-3.6.4/lib/libpython3.6m.so
-PYTHON_INCLUDE_DIR=/usr/tce/packages/python/python-3.6.4/include/python3.6m
 # In case that autoconf fails during on-demand buid on surface, try the newer
 # version of autoconf installed under '/p/lscratchh/brainusr/autoconf/bin'
 # by putting it at the beginning of the PATH or use the preinstalled library
@@ -133,7 +129,6 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
-  ${C}--python${N}                Build with Python/C API.
 EOF
 }
 
@@ -278,9 +273,6 @@ while :; do
         --reconfigure)
             RECONFIGURE=1
             ;;
-        --python)
-            WITH_PYTHON=ON
-            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -321,22 +313,9 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    if [ "${WITH_CONDUIT}" = "ON" ] ; then
-        module load cmake/3.12.1
-        HDF5_CMAKE_EXE=$(which cmake)
-    fi
-    module load cmake/3.9.2
-
-    CMAKE_PATH=$(dirname $(which cmake))
+    module load cmake/3.12.1
 else
     use git
-    CMAKE_PATH=/usr/workspace/wsb/brain/utils/toss2/cmake-3.9.6/bin
-fi
-
-if [[ ${CORAL} -eq 1 ]]; then
-	# the latest version, 3.12.1, has several issues
-    module load cmake/3.9.2
-    CMAKE_PATH=$(dirname $(which cmake))
 fi
 
 ################################################################
@@ -594,7 +573,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
 		module del cuda
 		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
 	else
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.2.12-1+cuda9.0_x86_64
+		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_x86_64
 	fi
 
     # Hack for surface
@@ -636,7 +615,7 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	# CUDNN
 	if [ -z "${CUDNN_DIR}" ]; then
 		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.4.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
+			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
 			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 		fi
@@ -738,9 +717,6 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable MAKE_NUM_PROCESSES
     print_variable GEN_DOC
     print_variable WITH_TOPO_AWARE
-    print_variable WITH_PYTHON
-    print_variable PYTHON_LIBRARY
-    print_variable PYTHON_INCLUDE_DIR
     echo ""
 fi
 
@@ -781,7 +757,7 @@ fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
- ${CMAKE_PATH}/cmake \
+cmake \
 -G ${GENERATOR} \
 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
 -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
@@ -801,7 +777,6 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \
--D HDF5_CMAKE_COMMAND=${HDF5_CMAKE_EXE} \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
@@ -820,9 +795,6 @@ CONFIGURE_COMMAND=$(cat << EOF
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
--D LBANN_WITH_PYTHON=${WITH_PYTHON} \
--D LBANN_PYTHON_LIBRARY=${PYTHON_LIBRARY} \
--D LBANN_PYTHON_INCLUDE_DIR=${PYTHON_INCLUDE_DIR} \
 ${SUPERBUILD_DIR}
 EOF
 )

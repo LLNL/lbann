@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -111,11 +111,9 @@
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
-#include "lbann/data_readers/data_reader_imagenet_patches.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_multi_images.hpp"
-#include "lbann/data_readers/data_reader_mnist_siamese.hpp"
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag.hpp"
@@ -123,6 +121,7 @@
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"
 #include "lbann/data_readers/data_reader_numpy_npz.hpp"
+#include "lbann/data_readers/data_reader_numpy_npz_conduit.hpp"
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
@@ -133,7 +132,7 @@
 #include "lbann/data_readers/data_reader_python.hpp"
 
 /// Data stores
-#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/callback_check_init.hpp"
@@ -157,6 +156,7 @@
 #include "lbann/callbacks/callback_ltfb.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/callback_save_topk_models.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/callback_hang.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
@@ -171,6 +171,7 @@
 #include "lbann/callbacks/callback_check_gradients.hpp"
 #include "lbann/callbacks/callback_check_metric.hpp"
 #include "lbann/callbacks/callback_perturb_adam.hpp"
+#include "lbann/callbacks/callback_perturb_dropout.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

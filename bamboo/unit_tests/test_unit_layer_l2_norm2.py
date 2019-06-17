@@ -26,17 +26,12 @@ def skeleton_layer_l2_norm2(cluster, executables, dir_name, compiler_name):
 def test_unit_layer_l2_norm2_clang4(cluster, exes, dirname):
     skeleton_layer_l2_norm2(cluster, exes, dirname, 'clang4')
 
-
-def test_unit_layer_l2_norm2_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_l2_norm2(cluster, exes, dirname, 'gcc4')
-
-
 def test_unit_layer_l2_norm2_gcc7(cluster, exes, dirname):
     skeleton_layer_l2_norm2(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_l2_norm2_intel18(cluster, exes, dirname):
-    skeleton_layer_l2_norm2(cluster, exes, dirname, 'intel18')
+def test_unit_layer_l2_norm2_intel19(cluster, exes, dirname):
+    skeleton_layer_l2_norm2(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_l2_norm2_exe' --exe=<executable>

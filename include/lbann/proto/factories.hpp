@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,6 +29,8 @@
 
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/transforms/transform.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 
 namespace lbann {
 namespace proto {
@@ -85,6 +87,13 @@ optimizer* construct_optimizer(lbann_comm* comm,
 
 /** Construct an objective function specified with prototext. */
 objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
+
+/** Construct a transform given a prototext. */
+std::unique_ptr<transform::transform> construct_transform(
+  const lbann_data::Transform& trans);
+/** Construct a transform pipeline given a data reader prototext. */
+transform::transform_pipeline construct_transform_pipeline(
+  const lbann_data::Reader& data_reader);
 
 /** Parse a space-separated list. */
 template <typename T = std::string>

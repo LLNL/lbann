@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/data_store/generic_data_store.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
@@ -296,7 +296,6 @@ bool generic_data_reader::update(bool is_active_reader) {
     }
 
     set_initial_position();
-
   }
 
   post_update();
@@ -709,13 +708,63 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
+void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
+  options *opts = options::get();
+  if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store"))) {
+    if (m_data_store != nullptr) {
+      delete m_data_store;
+      m_data_store = nullptr;
+    }
+    return;
+  }
+
+  if (is_master()) {
+    std::cout << "\nUSING DATA_STORE\n\n";
+  }
+  m_data_store = new data_store_conduit(this);  // *data_store_conduit
+  if (m_shuffled_indices.size() == 0) {
+    LBANN_ERROR("shuffled_indices.size() == 0");
+  }
+
+  if (opts->get_bool("node_sizes_vary")) {
+    m_data_store->set_node_sizes_vary();
+  }
+
+  //a call to m_data_store->check_mem_capacity(...) should go here, but
+  //at the moment that depends on the sample_list class, which it shouldn't
+  //TODO: revisit
+
+  m_data_store->set_shuffled_indices(&m_shuffled_indices);
+
+  // optionally preload the data store
+  if (opts->get_bool("preload_data_store")) {
+    if(is_master()) {
+      std::cout << "Starting the preload" << std::endl;
+    }
+    if (local_list_sizes.size() != 0) {
+      m_data_store->build_preloaded_owner_map(local_list_sizes);
+    }
+    preload_data_store();
+    if(is_master()) {
+      std::cout << "preload complete" << std::endl;
+    }
+  }
+
+  if(is_master()) {
+    std::cout << "Setting up the data store is complete" << std::endl;
+  }
+}
+
 void generic_data_reader::setup_data_store(int mini_batch_size) {
-  m_data_store = nullptr;
+  if (m_data_store == nullptr) {
+    LBANN_ERROR("m_data_store == nullptr; you shouldn't be here");
+  }
+  m_data_store->setup(mini_batch_size);
 }
 
 bool generic_data_reader::data_store_active() const {
   const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
-  if (m_data_store != nullptr && m_data_store->preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return true;
   }
   /// Use the data store for all modes except testing
@@ -729,7 +778,7 @@ bool generic_data_reader::data_store_active() const {
 
 bool generic_data_reader::priming_data_store() const {
   const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
-  if (m_data_store != nullptr && m_data_store->preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return false;
   }
   /// Use the data store for all modes except testing
@@ -738,10 +787,11 @@ bool generic_data_reader::priming_data_store() const {
           && (((c.get_execution_mode() == execution_mode::training)
                && c.get_epoch() == 0)
               || ((c.get_execution_mode() == execution_mode::validation)
-                  && c.get_epoch() == 1)));
+                  && c.get_epoch() == 1)
+              || m_data_store->is_explicitly_loading()));
 }
 
-void generic_data_reader::set_data_store(generic_data_store *g) {
+void generic_data_reader::set_data_store(data_store_conduit *g) {
     if (m_data_store != nullptr) {
       delete m_data_store;
     }
@@ -764,6 +814,20 @@ void generic_data_reader::set_partitioned(bool partitioned_yes, double overlap, 
 
 void generic_data_reader::set_mini_batch_size(const int s) {
   m_mini_batch_size = s;
+}
+
+void generic_data_reader::set_role(std::string role) {
+  m_role = role;
+  if (options::get()->has_string("jag_partitioned")
+      && get_role() == "train") {
+    m_jag_partitioned = true;
+    if (is_master()) {
+      std::cerr << "USING JAG DATA PARTITIONING\n";
+    }
+  }
+  if (m_data_store != nullptr) {
+    m_data_store->set_role(role);
+  }
 }
 
 }  // namespace lbann

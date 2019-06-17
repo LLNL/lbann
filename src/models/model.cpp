@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,6 +38,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
+#include "lbann/data_store/data_store_conduit.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -697,6 +698,14 @@ void model::setup_weights() {
                     m_weights.end());
   }
 
+  // For run-to-run reproducibility, make sure the weights are
+  // initialized in the same order no matter how they are ordered in
+  // the prototext file.
+  std::sort(m_weights.begin(), m_weights.end(),
+            [](weights* const &x, weights* const &y) {
+              return x->get_name().compare(y->get_name()) < 0;
+            });
+
   // Setup weights
   for (auto* w : m_weights) { w->setup(); }
 
@@ -918,6 +927,31 @@ void model::collect_background_data_fetch(execution_mode mode) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
       input->collect_background_data_fetch(mode);
+    }
+  }
+}
+
+void model::make_data_store_preloaded(execution_mode mode) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    if (input != nullptr) {
+      auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
+      if(data_store != nullptr && !data_store->is_preloaded()) {
+        input->get_data_reader(mode)->get_data_store_ptr()->set_preload();
+        input->get_data_reader(mode)->get_data_store_ptr()->set_explicit_loading(false);
+      }
+    }
+  }
+}
+
+void model::mark_data_store_explicitly_loading(execution_mode mode) {
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    if (input != nullptr) {
+      auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
+      if(data_store != nullptr && !data_store->is_preloaded()) {
+        input->get_data_reader(mode)->get_data_store_ptr()->set_explicit_loading(true);
+      }
     }
   }
 }

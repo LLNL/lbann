@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -155,8 +155,6 @@ std::unique_ptr<model> build_model_from_prototext(
 
   std::ostringstream err;
 
-  customize_data_readers_index_list(*comm, pb);
-
   lbann_data::Model *pb_model = pb.mutable_model();
 
   // Check to see if the model wants to reduce the I/O parallelism
@@ -205,6 +203,9 @@ std::unique_ptr<model> build_model_from_prototext(
     display_omp_setup();
   }
 
+  // Update the index lists to accomodate multi-trainer / multi-model specification
+  customize_data_readers_index_list(*comm, pb);
+
   // Initialize data readers
   //@todo: code not in place for correctly handling image preprocessing
   std::map<execution_mode, generic_data_reader *> data_readers;
@@ -241,7 +242,7 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.model());
   ret_model->setup();
 
-  if (opts->get_bool("use_data_store")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }

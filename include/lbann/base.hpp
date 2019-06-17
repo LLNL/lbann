@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////xecu
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,6 +30,7 @@
 #include "El.hpp"
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
+#include "lbann/utils/file_utils.hpp"
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"

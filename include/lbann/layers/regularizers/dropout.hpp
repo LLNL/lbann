@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,6 +29,7 @@
 
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
@@ -120,6 +121,14 @@ public:
     auto&& desc = regularizer_layer::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
+  }
+  /** @brief get prob for keep each unit. */
+  EvalType get_keep_prob() const {
+    return m_keep_prob;
+  }
+  /** @brief set prob for keep each unit. */
+  void set_keep_prob(EvalType keep_prob) {
+    m_keep_prob = keep_prob;
   }
 
 protected:

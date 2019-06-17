@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -162,6 +162,8 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   switch (m_gradient_status) {
   case optimizer_gradient_status::ready:
     if (allreduce_needed) {
+      // Properly scale contributions that have already been allreduced or that
+      // do not need allreduces.
       El::Scale(DataType(1) / m_gradient->RedundantSize(), *m_gradient);
       m_gradient_status = optimizer_gradient_status::allreduce_needed;
     }
@@ -176,6 +178,7 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
     break;
   case optimizer_gradient_status::allreduce_needed:
     {
+      // Properly scale data that does not need to be allreduced.
       const auto& scale_ = (allreduce_needed ?
                             scale :
                             scale / m_gradient->RedundantSize());
@@ -199,6 +202,49 @@ void optimizer::clear_gradient() {
   }
   m_gradient_status = optimizer_gradient_status::cleared;
   m_gradient_sources.clear();
+}
+
+AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
+                                           DataType& in_scale,
+                                           bool allreduce_needed) {
+  if (m_gradient == nullptr) {
+    LBANN_ERROR("attempted to access gradient before it is set up");
+  }
+
+  // Complete outstanding allreduce.
+  if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
+    finish_gradient_allreduce();
+  }
+  // Determine scaling factor and transition state.
+  switch (m_gradient_status) {
+  case optimizer_gradient_status::ready:
+    buf_scale = DataType(1);
+    in_scale = DataType(1);
+    if (allreduce_needed) {
+      buf_scale /= m_gradient->RedundantSize();
+      m_gradient_status = optimizer_gradient_status::allreduce_needed;
+    }
+    break;
+  case optimizer_gradient_status::cleared:
+    buf_scale = DataType(0);
+    in_scale = DataType(1);
+    m_gradient_status = (allreduce_needed ?
+                         optimizer_gradient_status::allreduce_needed :
+                         optimizer_gradient_status::ready);
+    break;
+  case optimizer_gradient_status::allreduce_needed:
+    buf_scale = DataType(1);
+    // Properly scale data that does not need to be allreduced.
+    in_scale = (allreduce_needed ?
+                DataType(1) :
+                DataType(1) / m_gradient->RedundantSize());
+    break;
+  case optimizer_gradient_status::allreduce_started:
+  default:
+    LBANN_ERROR("unexpected gradient status ("
+                + to_string(m_gradient_status) + ")");
+  }
+  return *m_gradient;
 }
 
 El::Int optimizer::get_num_gradient_sources() const {

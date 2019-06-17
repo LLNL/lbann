@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -46,11 +46,11 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   auto& local_indices = *m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
-  
+
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
   cuda::thrust::allocator<> alloc(stream);
-  
+
   // Sort each matrix column
   El::Copy(local_input, local_output);
   for (El::Int col = 0; col < local_width; ++col) {
@@ -68,7 +68,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
                             ::thrust::less<DataType>());
     }
   }
-  
+
 }
 
 template <>
@@ -81,11 +81,11 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   const auto& local_indices = *m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
-  
+
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
   cuda::thrust::allocator<> alloc(stream);
-  
+
   // Scatter gradients based on sorted indices
   for (El::Int col = 0; col < local_width; ++col) {
     const ::thrust::device_ptr<const El::Int> inds(m_indices->LockedBuffer(0, col));
@@ -95,7 +95,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
                       grad_wrt_out, grad_wrt_out + local_height, inds,
                       grad_wrt_in);
   }
-  
+
 }
 
 } // namespace lbann

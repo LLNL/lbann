@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,7 +36,7 @@ __global__ void fp_kernel(El::Int local_height,
                           const DataType* __restrict__ input,
                           El::Int input_ldim,
                           DataType* __restrict__ contribution) {
-  
+
   // Indices
   const El::Int tid = threadIdx.x;
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -66,11 +66,11 @@ __global__ void fp_kernel(El::Int local_height,
     if (tid == 0) {
       cuda::atomic_add(&contribution[col], shared_contribution[0]);
     }
-    
+
   }
-    
+
 }
-  
+
 void local_fp_gpu(const AbsMat& local_input, AbsMat& local_contribution) {
   El::Zero(local_contribution);
   if (!local_input.IsEmpty()) {
