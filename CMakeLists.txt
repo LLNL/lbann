@@ -422,9 +422,17 @@ if (LBANN_WITH_CONDUIT)
     set_property(TARGET conduit::conduit
       PROPERTY
       INTERFACE_INCLUDE_DIRECTORIES
-      "${CONDUIT_INCLUDE_DIRS}" "${HDF5_INCLUDE_DIRS}")
+      "${HDF5_INCLUDE_DIRS}")
   endif ()
 
+  get_filename_component(CONDUIT_INCLUDE_DIR_
+    "${CONDUIT_INCLUDE_DIRS}" DIRECTORY)
+
+  set_property(TARGET conduit::conduit
+    PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES
+    "${CONDUIT_INCLUDE_DIR_}")
+    
   set_target_properties(conduit::conduit
     PROPERTIES
     INTERFACE_LINK_LIBRARIES
