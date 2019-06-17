@@ -54,24 +54,9 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-// This macro may be moved to a global scope
-#define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
-  std::stringstream _err; \
-  _err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << (_CLASS_NAME_) << "::" << (_MSG_); \
-  throw lbann_exception(_err.str()); \
-}
-
-#define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) { \
-  std::stringstream _err; \
-  _err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << (_CLASS_NAME_) << "::" << (_MSG1_) << (_MSG2_); \
-  throw lbann_exception(_err.str()); \
-}
-
 // This comes after all the headers, and is only visible within the current implementation file.
 // To make sure, we put '#undef _CN_' at the end of this file
-#define _CN_ "data_reader_jag_conduit"
+#define _CN_ std::string("data_reader_jag_conduit")
 
 namespace lbann {
 
@@ -138,7 +123,7 @@ int data_reader_jag_conduit::compute_max_num_parallel_readers() {
     set_sample_stride(get_num_parallel_readers());
     set_iteration_stride(1);
   } else {
-    _THROW_LBANN_EXCEPTION_(get_type(), " unknown io_buffer type: " + m_io_buffer_type);
+    LBANN_ERROR(get_type() + ":: unknown io_buffer type: " + m_io_buffer_type);
   }
   return get_num_parallel_readers();
 }
@@ -273,7 +258,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_normalization_params.clear();
   m_input_normalization_params.clear();
 
-  m_sample_list.clear();
+  //m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
 }
@@ -281,6 +266,31 @@ void data_reader_jag_conduit::set_defaults() {
 void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 }
+
+#ifdef _USE_IO_HANDLE_
+bool data_reader_jag_conduit::has_path(const data_reader_jag_conduit::file_handle_t& h,
+                                       const std::string& path) const {
+  return m_sample_list.is_file_handle_valid(h) && h->has_path(path);
+}
+
+void data_reader_jag_conduit::read_node(const data_reader_jag_conduit::file_handle_t& h,
+                                        const std::string& path,
+                                        conduit::Node& n) const {
+  if (!h) {
+    return;
+  }
+  h->read(path, n);
+}
+#else
+bool data_reader_jag_conduit::has_path(const hid_t& h, const std::string& path) const {
+  return (m_sample_list.is_file_handle_valid(h) &&
+          conduit::relay::io::hdf5_has_path(h, path));
+}
+
+void data_reader_jag_conduit::read_node(const hid_t& h, const std::string& path, conduit::Node& n) const {
+  conduit::relay::io::hdf5_read(h, path, n);
+}
+#endif
 
 const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::Node& n_base, const std::string key) {
   return n_base[key];
@@ -297,10 +307,10 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const std::string path = sample_name + key;
 
   sample_file_id_t id = s.first;
-  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+  auto h = m_sample_list.get_samples_file_handle(id);
+  if (!has_path(h, path)) {
+    const std::string& file_name = m_sample_list.get_samples_filename(id);
     if (m_data_store != nullptr) {
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
       if (! m_data_store->is_preloaded()) {
         const conduit::Node obj = m_data_store->get_random_node();
         node = obj["data"];
@@ -314,13 +324,11 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
                   <<" and key: " << key << "\n";
         return false;
       } else {
-        if (h <= static_cast<hid_t>(0) ) {
+        if (!m_sample_list.is_file_handle_valid(h)) {
           LBANN_ERROR("failed to get file handle for file " + file_name);
-        } else if (!conduit::relay::io::hdf5_has_path(h, path)) {
+        } else {
           LBANN_ERROR("got file handle for file " + file_name + \
                       " but the path doesn't exist in the file: " + path);
-        } else {
-          LBANN_ERROR("it should not be possible to be here");
         }
       }
     }
@@ -328,8 +336,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     // this block fires if we cannot load a conduit node, either from file
     // or from the data_store
     else {
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
-      if (h <= static_cast<hid_t>(0)) {
+      if (!m_sample_list.is_file_handle_valid(h)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
                     " in dir: " + m_sample_list.get_samples_dirname() +
                     " for sample "+ sample_name + " ran_in_trainer: " \
@@ -347,9 +354,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     }
   }
 
-  /// @todo explore the possibility of putting the sample name in
-  /// node's hierarchy, e.g. node[sample_name]
-  conduit::relay::io::hdf5_read(h, path, node);
+  read_node(h, path, node);
 
   return true;
 }
@@ -358,16 +363,16 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
   const std::string& sample_name = s.second;
-  const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  const auto h = m_sample_list.get_samples_file_handle(id);
   const std::string path = sample_name + key;
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+  if (!has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
-    _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
-                                        " for sample "+ sample_name);
+    LBANN_ERROR(get_type() +  ":: Cannot open file " + file_name + \
+                " for sample "+ sample_name);
     return false;
   }
 
-  return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
+  return true;
 }
 
 
@@ -386,7 +391,7 @@ void data_reader_jag_conduit::set_independent_variable_type(
 void data_reader_jag_conduit::add_independent_variable_type(
   const data_reader_jag_conduit::variable_t independent) {
   if (!(independent == JAG_Image || independent == JAG_Scalar || independent == JAG_Input)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized independent variable type ");
+    LBANN_ERROR(_CN_ + ":: unrecognized independent variable type ");
   }
   m_independent.push_back(independent);
 }
@@ -406,7 +411,7 @@ void data_reader_jag_conduit::set_dependent_variable_type(
 void data_reader_jag_conduit::add_dependent_variable_type(
   const data_reader_jag_conduit::variable_t dependent) {
   if (!(dependent == JAG_Image || dependent == JAG_Scalar || dependent == JAG_Input)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized dependent variable type ");
+    LBANN_ERROR(_CN_ + ":: unrecognized dependent variable type ");
   }
   m_dependent.push_back(dependent);
 }
@@ -427,7 +432,7 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
     m_image_height = height;
     m_image_num_channels = ch;
   } else if (!((width == 0) && (height == 0) && (ch == 1))) { // set but not valid
-    _THROW_LBANN_EXCEPTION_(_CN_, "set_image_dims() : invalid image dims");
+    LBANN_ERROR(_CN_ + ":: set_image_dims() : invalid image dims");
   }
   set_linearized_image_size();
 }
@@ -561,7 +566,7 @@ void data_reader_jag_conduit::check_image_data() {
 
   size_t first_idx = (m_sample_list[0]).first;
   if (!has_conduit_path(first_idx, "")) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no sample by " + m_sample_list[first_idx].second);
+    LBANN_ERROR(_CN_ + ":: check_image_data() : no sample by " + m_sample_list[first_idx].second);
     return;
   }
   conduit::Node n_imageset;
@@ -574,7 +579,7 @@ void data_reader_jag_conduit::check_image_data() {
   }
   for (const auto& emi_tag: m_emi_image_keys) {
     if (!has_conduit_path(first_idx, m_output_image_prefix + emi_tag)) {
-      _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
+      LBANN_ERROR(_CN_ + ":: check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
@@ -589,18 +594,18 @@ void data_reader_jag_conduit::check_image_data() {
       m_image_num_channels = 1;
       set_linearized_image_size();
     } else {
-      std::string msg = "expected linearized emi image size: "
+      std::string msg = ":: expected linearized emi image size: "
                       + std::to_string(emi.number_of_elements()) + '\n';
-      _THROW_LBANN_EXCEPTION_(_CN_, msg + get_description());
+      LBANN_ERROR(_CN_ +  msg + get_description());
     }
   }
 
   if (m_image_normalization_params.empty()) {
     m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 0.0));
   } else if (m_image_normalization_params.size() != static_cast<size_t>(m_image_num_channels)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of image normalization parameter sets!" \
-                                + std::to_string(m_image_normalization_params.size()) + " != " \
-                                + std::to_string(m_image_num_channels));
+    LBANN_ERROR(_CN_ + ":: Incorrect number of image normalization parameter sets!" \
+                + std::to_string(m_image_normalization_params.size()) + " != " \
+                + std::to_string(m_image_num_channels));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "image normalization parameters: " << std::endl;
@@ -660,15 +665,15 @@ void data_reader_jag_conduit::check_scalar_keys() {
         msg += ' ' + m_scalar_keys[i];
       }
     }
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_scalar_keys() : " + msg);
+    LBANN_ERROR(_CN_ + ":: check_scalar_keys() : " + msg);
   }
 
   if (m_scalar_normalization_params.empty()) {
     m_scalar_normalization_params.assign(m_scalar_keys.size(), linear_transform_t(1.0, 0.0));
   } else if (m_scalar_normalization_params.size() != m_scalar_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of scalar normalization parameter sets! " \
-                                 + std::to_string(m_scalar_normalization_params.size()) + " != " \
-                                 + std::to_string(m_scalar_keys.size()));
+     LBANN_ERROR(_CN_ + ":: Incorrect number of scalar normalization parameter sets! " \
+                 + std::to_string(m_scalar_normalization_params.size()) + " != " \
+                 + std::to_string(m_scalar_keys.size()));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "scalar normalization parameters: " << std::endl;
@@ -731,7 +736,7 @@ void data_reader_jag_conduit::check_input_keys() {
         msg += ' ' + m_input_keys[i];
       }
     }
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_input_keys() : " + msg);
+    LBANN_ERROR(_CN_ + ":: check_input_keys() : " + msg);
   }
 
   m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_input_t;
@@ -739,9 +744,9 @@ void data_reader_jag_conduit::check_input_keys() {
   if (m_input_normalization_params.empty()) {
     m_input_normalization_params.assign(m_input_keys.size(), linear_transform_t(1.0, 0.0));
   } else if (m_input_normalization_params.size() != m_input_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of input normalization parameter sets! " \
-                                 + std::to_string(m_input_normalization_params.size()) + " != " \
-                                 + std::to_string(m_input_keys.size()));
+     LBANN_ERROR(_CN_ + ":: Incorrect number of input normalization parameter sets! " \
+                 + std::to_string(m_input_normalization_params.size()) + " != " \
+                 + std::to_string(m_input_keys.size()));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "input normalization parameters: " << std::endl;
@@ -792,7 +797,7 @@ void data_reader_jag_conduit::load() {
     m_is_data_loaded = true;
 
     /// Open the first sample to make sure that all of the fields are correct
-    m_sample_list.open_samples_hdf5_handle(0, true);
+    m_sample_list.open_samples_file_handle(0, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
@@ -806,7 +811,7 @@ void data_reader_jag_conduit::load() {
 
     check_image_data();
 
-    m_sample_list.close_if_done_samples_hdf5_handle(0);
+    m_sample_list.close_if_done_samples_file_handle(0);
   }
   if(is_master()) {
     std::cout << "Done with data checking" << std::endl;
@@ -870,7 +875,7 @@ void data_reader_jag_conduit::preload_data_store() {
     }
     try {
       work.reset();
-      m_sample_list.open_samples_hdf5_handle(idx, true);
+      m_sample_list.open_samples_file_handle(idx, true);
       load_conduit_node(idx, key, work);
       conduit::Node & node = m_data_store->get_empty_node(idx);
       const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
@@ -886,7 +891,7 @@ void data_reader_jag_conduit::preload_data_store() {
     if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
       continue;
     }
-    m_sample_list.close_if_done_samples_hdf5_handle(idx);
+    m_sample_list.close_if_done_samples_file_handle(idx);
   }
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
@@ -952,8 +957,8 @@ size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_condui
     case JAG_Input:
       return get_linearized_input_size();
     default: { // includes Unefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_size() : ", \
-                                     "unknown or undefined variable type");
+      LBANN_ERROR(_CN_ + ":: get_linearized_size() : " \
+                  + "unknown or undefined variable type");
     }
   }
   return 0u;
@@ -1009,8 +1014,8 @@ const std::vector<int> data_reader_jag_conduit::get_dims(const data_reader_jag_c
     case JAG_Input:
       return {static_cast<int>(get_linearized_input_size())};
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_dims() : ", \
-                                     "unknown or undefined variable type");
+      LBANN_ERROR(_CN_ + ":: get_dims() : " \
+                  + "unknown or undefined variable type");
     }
   }
   return {};
@@ -1074,7 +1079,7 @@ int data_reader_jag_conduit::get_linearized_size(const std::string& desc) const 
   } else if (desc == "JAG_Input") {
     return get_linearized_size(JAG_Input);
   } else {
-    _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_size() : unknown key " + desc);
+    LBANN_ERROR(_CN_ + ":: get_linearized_size() : unknown key " + desc);
   }
   return generic_data_reader::get_linearized_size(desc);
 }
@@ -1329,12 +1334,12 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       std::vector< std::vector<DataType> > img_data(get_image_data(data_id, sample));
 
       if (img_data.size() != num_images) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected ", \
-          std::to_string(img_data.size()) + "!=" + std::to_string(num_images));
+        LBANN_ERROR(_CN_ + ":: fetch() : the number of images is not as expected " \
+                    + std::to_string(img_data.size()) + "!=" + std::to_string(num_images));
       }
       if (!m_split_channels && m_image_num_channels != 1) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : transform pipeline now requires single channel images: num_channels=", \
-          std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
+        LBANN_ERROR(_CN_ + ":: fetch() : transform pipeline now requires single channel images: num_channels=" \
+                    + std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
       }
 
       std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
@@ -1368,7 +1373,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       break;
     }
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_" + tag + "() : unknown or undefined variable type");
+      LBANN_ERROR(_CN_ + ":: fetch_" + tag + "() : unknown or undefined variable type");
     }
   }
   return true;
@@ -1431,7 +1436,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }else {
-    m_sample_list.open_samples_hdf5_handle(data_id);
+    m_sample_list.open_samples_file_handle(data_id);
   }
 
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
@@ -1444,7 +1449,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_data_store->set_conduit_node(data_id, node);
   }
 
-  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
+  m_sample_list.close_if_done_samples_file_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
   return ok;
 }
