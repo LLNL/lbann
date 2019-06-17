@@ -430,7 +430,7 @@ if (LBANN_WITH_CONDUIT)
     PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES
     "${_conduit_include_dirs}")
-    
+
   set_target_properties(conduit::conduit
     PROPERTIES
     INTERFACE_LINK_LIBRARIES
