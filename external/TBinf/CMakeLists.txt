@@ -9,7 +9,6 @@ if (LBANN_HAS_PROTOBUF)
   set_full_path(TB_HDRS TBinf.hpp tbext.hpp)
 
   add_library(TBinf ${TB_SRCS} ${TB_HDRS} ${PROTO_SRCS} ${PROTO_HDRS})
-  target_link_libraries(TBinf PUBLIC ${HYDROGEN_LIBRARIES} ${OpenCV_LIBRARIES})
   target_link_libraries(TBinf PUBLIC protobuf::libprotobuf)
   target_include_directories(TBinf SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
