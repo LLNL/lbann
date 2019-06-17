@@ -421,7 +421,8 @@ if (LBANN_WITH_CONDUIT)
 
     set_target_properties(conduit::conduit
       PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES "${HDF5_INCLUDE_DIRS}")
+      INTERFACE_INCLUDE_DIRECTORIES
+      "${CONDUIT_INCLUDE_DIRS}" "${HDF5_INCLUDE_DIRS}")
   endif ()
 
   set_target_properties(conduit::conduit
