@@ -361,7 +361,6 @@ inline void sample_list<sample_name_t>
   all_samples.resize(static_cast<size_t>(total_packed_size));
 
   std::vector<El::byte> local_data(archive.begin(), archive.end());
-  //std::vector<El::byte> packed_data(all_samples.begin(), all_samples.end());
   std::vector<El::byte> packed_data(all_samples.size() * sizeof(decltype(all_samples)::value_type));
   comm.trainer_all_gather(local_data,
                           packed_data,

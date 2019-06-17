@@ -127,8 +127,6 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
     return;
   }
   generic_data_reader::shuffle_indices(gen);
-std::cout << "data reader role : " << m_role << std::endl;
-std::cout << "shuffled_indieces size and minibatch size " << get_shuffled_indices().size() << ' ' << get_mini_batch_size() << std::endl;
   m_sample_list.compute_epochs_file_usage(get_shuffled_indices(), get_mini_batch_size(), *m_comm);
 }
 

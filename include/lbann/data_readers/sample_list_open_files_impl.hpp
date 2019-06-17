@@ -7,15 +7,6 @@ inline sample_list_open_files<sample_name_t, file_handle_t>::sample_list_open_fi
 
 template <typename sample_name_t, typename file_handle_t>
 inline sample_list_open_files<sample_name_t, file_handle_t>::~sample_list_open_files() {
-#if 0 // put this block in the destructor of the derived class
-  // Close the existing open files
-  for(auto& f : this->m_file_id_stats_map) {
-    file_handle_t& h = std::get<1>(f);
-    close_file_handle(h);
-    clear_file_handle(h);
-  }
-  this->m_file_id_stats_map.clear();
-#endif
   m_open_fd_pq.clear();
 }
 
@@ -638,8 +629,9 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
     }
     auto& e = m_file_id_stats_map[id];
     std::get<1>(e) = h;
+    /// If a new file is opened, place it in the priority queue
+    manage_open_file_handles(id, pre_open_fd);
   }
-  manage_open_file_handles(id, pre_open_fd);
   return h;
 }
 
