@@ -419,8 +419,8 @@ if (LBANN_WITH_CONDUIT)
     list(APPEND _conduit_interface_link_libs
       ${HDF5_LIBRARIES})
 
-    set_target_properties(conduit::conduit
-      PROPERTIES
+    set_property(TARGET conduit::conduit
+      PROPERTY
       INTERFACE_INCLUDE_DIRECTORIES
       "${CONDUIT_INCLUDE_DIRS}" "${HDF5_INCLUDE_DIRS}")
   endif ()
