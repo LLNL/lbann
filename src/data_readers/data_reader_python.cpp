@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_python.hpp"
+#include "lbann/models/model.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
 #include <algorithm>
@@ -224,7 +225,7 @@ python_reader::python_reader(std::string module,
   }
   manager.check_error();
 
-  // Get sample function
+  // Get sample access function
   m_sample_function = PyObject_GetAttrString(data_module,
                                              sample_function.c_str());
 
@@ -232,6 +233,7 @@ python_reader::python_reader(std::string module,
 
 python_reader::~python_reader() {
   if (Py_IsInitialized() && m_process_pool != nullptr) {
+    python::global_interpreter_lock gil(python::manager::get_instance());
     PyObject_CallMethod(m_process_pool, "terminate", nullptr);
   }
 }
@@ -266,32 +268,43 @@ bool python_reader::fetch_data_block(CPUMat& X,
   auto& manager = python::manager::get_instance();
   python::global_interpreter_lock gil(manager);
 
-  // Get sample indices
-  python::object indices = PyList_New(0);
+  // Check that shared memory array is large enough
+  const El::Int sample_size = get_linearized_data_size();
+  const El::Int array_size = PyObject_Length(m_shared_memory_array);
+  if (array_size < sample_size * mb_size) {
+    std::stringstream err;
+    err << "Python data reader attempted to load "
+        << sample_size * mb_size * sizeof(DataType) << " B "
+        << "into shared memory array, but only "
+        << array_size * sizeof(DataType) << " B is available";
+    LBANN_ERROR(err.str());
+  }
+
+  // Get arguments for sample access function
+  python::object args_list = PyList_New(0);
   for (El::Int i = 0; i < mb_size; ++i) {
-    El::Int index = m_shuffled_indices[m_current_pos + i * m_sample_stride];
-    PyList_Append(indices, python::object(index));
-    indices_fetched.Set(i, 0, index);
+    El::Int sample_index = m_shuffled_indices[m_current_pos + i * m_sample_stride];
+    El::Int array_offset = sample_size * i;
+    PyList_Append(args_list,
+                  python::object(Py_BuildValue("(l,l)",
+                                               sample_index,
+                                               array_offset)));
+    indices_fetched.Set(i, 0, sample_index);
   }
 
   // Get samples using Python process pool
   python::object samples = PyObject_CallMethod(m_process_pool,
-                                               "map",
+                                               "starmap",
                                                "(O,O)",
-                                               m_sample_function.get(),
-                                               indices.get());
+                                               m_sample_function_wrapper.get(),
+                                               args_list.get());
 
-  // Extract sample entries from Python objects
-  const El::Int sample_size = get_linearized_data_size();
-  samples = PyObject_GetIter(samples);
-  for (El::Int col = 0; col < mb_size; ++col) {
-    python::object sample = PyIter_Next(samples);
-    sample = PyObject_GetIter(sample);
-    for (El::Int row = 0; row < sample_size; ++row) {
-      python::object val = PyIter_Next(sample);
-      X(row, col) = PyFloat_AsDouble(val);
-    }
-  }
+  // Copy data from shared memory to output matrix
+  CPUMat shared_memory_matrix(sample_size,
+                              mb_size,
+                              m_shared_memory_array_ptr,
+                              sample_size);
+  El::Copy(shared_memory_matrix, X);
 
   return true;
 }
@@ -304,11 +317,67 @@ void python_reader::setup(int num_io_threads,
                           std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 
-  // Initialize Python process pool
+  // Acquire Python GIL
   auto& manager = python::manager::get_instance();
   python::global_interpreter_lock gil(manager);
+
+  // Import modules
+  python::object main_module = PyImport_ImportModule("__main__");
+  python::object ctypes_module = PyImport_ImportModule("ctypes");
   python::object multiprocessing_module
     = PyImport_ImportModule("multiprocessing");
+
+  // Stop process pool if needed
+  if (m_process_pool != nullptr) {
+    PyObject_CallMethod(m_process_pool, "terminate", nullptr);
+    m_process_pool = nullptr;
+  }
+
+  // Allocate shared memory array
+  /// @todo Figure out more robust way to get max mini-batch size
+  const El::Int sample_size = get_linearized_data_size();
+  const El::Int mini_batch_size
+    = generic_data_reader::get_model()->get_max_mini_batch_size();
+  std::string typecode;
+  switch (sizeof(DataType)) {
+  case 4: typecode = "f"; break;
+  case 8: typecode = "d"; break;
+  default: LBANN_ERROR("invalid data type for Python data reader "
+                       "(only float and double are supported)");
+  }
+  m_shared_memory_array
+    = PyObject_CallMethod(multiprocessing_module,
+                          "RawArray",
+                          "(s, l)",
+                          typecode.c_str(),
+                          sample_size * mini_batch_size);
+
+  // Get address of shared memory buffer
+  python::object shared_memory_ptr
+    = PyObject_CallMethod(ctypes_module,
+                          "addressof",
+                          "(O)",
+                          m_shared_memory_array.get());
+  m_shared_memory_array_ptr
+    = reinterpret_cast<DataType*>(PyLong_AsLong(shared_memory_ptr));
+
+  // Create wrapper around sample access function
+  PyRun_SimpleString(
+    "def _create_sample_func_wrapper(sample_func, array):\n"
+    "    def sample_func_wrapper(sample_index, array_offset):\n"
+    "        for i, val in enumerate(sample_func(index)):\n"
+    "            array[i+array_offset] = val\n"
+    "    return sample_func_wrapper\n"
+  );
+  manager.check_error();
+  m_sample_function_wrapper
+    = PyObject_CallMethod(main_module,
+                          "_create_sample_func_wrapper",
+                          "(O,O)",
+                          m_sample_function.get(),
+                          m_shared_memory_array.get());
+
+  // Start Python process pool
   m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",
                                        "(L)", num_io_threads);
 

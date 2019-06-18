@@ -161,10 +161,47 @@ protected:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
+
+  /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
+  /** @brief Number of data samples in data set. */
   El::Int m_num_samples;
+
+  /** @brief User-provided Python function to access data samples.
+   *
+   *  The function is expected to take one integer argument for the
+   *  sample index. It must return an iterator that defines the
+   *  entries in a data sample.
+   */
   python::object m_sample_function;
+
+  /** @brief Wrapper function around sample access function.
+   *
+   *  This function is intended to facilitate inter-process
+   *  communication in the Python @c multiprocessing module. Data
+   *  samples are copied into a shared memory array.
+   *
+   *  @todo Performance optimizations for NumPy data.
+   */
+  python::object m_sample_function_wrapper;
+
+  /** @brief Pool of worker processes.
+   *
+   *  From the Python @c multiprocessing module.
+   */
   python::object m_process_pool;
+
+  /** @brief Shared memory array.
+   *
+   *  @c RawArray the Python @c multiprocessing module.
+   */
+  python::object m_shared_memory_array;
+
+  /** @brief Pointer into shared memory array.
+   *
+   *  Points to buffer for @c m_shared_memory_array.
+   */
+  DataType* m_shared_memory_array_ptr = nullptr;
 
 };
 
