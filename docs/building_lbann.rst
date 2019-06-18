@@ -104,7 +104,7 @@ Setup Spack and local base tools
 
     .. code-block:: bash
 
-        . ${SPACK_ROOT}/share/spack/setup-env.sh
+        source ${SPACK_ROOT}/share/spack/setup-env.sh
 
 
 2.  Setup your compiler and external software environment. For example,
@@ -225,6 +225,7 @@ Hydrogen, and LBANN separately, by whatever means they choose.
         cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml . # where <arch> = x86_64 | ppc64le
         spack install
         spack env loads # Spack creates a file named loads that has all of the correct modules
+        source ${SPACK_ROOT}/share/spack/setup-env.sh # Rerun setup since spack doesn't modify MODULEPATH unless there are module files defined
         source loads
 
 

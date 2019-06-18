@@ -51,8 +51,12 @@
     lmod::
       hash_length: 3
       core_compilers:
-        - 'gcc@4.9.3'
+        - 'gcc@7.3.0'
+        - 'gcc@7.3.1'
       naming_scheme: '${PACKAGE}/${VERSION}-${COMPILERNAME}-${COMPILERVER}'
+      blacklist:
+        - '%gcc@4.8'
+        - '%gcc@4.9.3'
       hierarchy:
         - 'mpi'
         - 'lapack'
@@ -70,12 +74,14 @@
     tcl:
       hash_length: 3
       core_compilers:
-        - 'gcc@4.9.3'
+        - 'gcc@7.3.0'
+        - 'gcc@7.3.1'
       naming_scheme: '${PACKAGE}/${VERSION}-${COMPILERNAME}-${COMPILERVER}'
       whitelist:
         - gcc
       blacklist:
         - '%gcc@4.8'
+        - '%gcc@4.9.3'
       all:
         autoload: 'direct'
         suffixes:
