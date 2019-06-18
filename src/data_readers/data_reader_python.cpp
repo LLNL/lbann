@@ -361,21 +361,41 @@ void python_reader::setup(int num_io_threads,
   m_shared_memory_array_ptr
     = reinterpret_cast<DataType*>(PyLong_AsLong(shared_memory_ptr));
 
-  // Create wrapper around sample access function
-  PyRun_SimpleString(
-    "def _create_sample_func_wrapper(sample_func, array):\n"
-    "    def sample_func_wrapper(sample_index, array_offset):\n"
-    "        for i, val in enumerate(sample_func(index)):\n"
-    "            array[i+array_offset] = val\n"
-    "    return sample_func_wrapper\n"
-  );
+  // Create global variables in Python
+  // Note: We maintain a static counter to make sure variable names
+  // are unique.
+  static El::Int instance_id = 0;
+  instance_id++;
+  const std::string sample_func_name
+    = ("_DATA_READER_PYTHON_CPP_sample_function_wrapper"
+       + std::to_string(instance_id));
+  PyObject_SetAttrString(main_module,
+                         sample_func_name.c_str(),
+                         m_sample_function);
+  manager.check_error();
+  const std::string shared_array_name
+    = ("_DATA_READER_PYTHON_CPP_shared_memory_array"
+       + std::to_string(instance_id));
+  PyObject_SetAttrString(main_module,
+                         shared_array_name.c_str(),
+                         m_shared_memory_array);
+  manager.check_error();
+
+  // Create wrapper around sample function
+  // Note: We make sure wrapper function name is unique.
+  const std::string wrapper_func_name
+    = ("_DATA_READER_PYTHON_CPP_sample_function"
+       + std::to_string(instance_id));
+  std::ostringstream wrapper_func_def;
+  wrapper_func_def
+    << "def " << wrapper_func_name << "(sample_index, array_offset):\n"
+    << "    for i, val in enumerate(" << sample_func_name << "(sample_index)):\n"
+    << "        " << shared_array_name << "[i+array_offset] = val\n";
+  PyRun_SimpleString(wrapper_func_def.str().c_str());
   manager.check_error();
   m_sample_function_wrapper
-    = PyObject_CallMethod(main_module,
-                          "_create_sample_func_wrapper",
-                          "(O,O)",
-                          m_sample_function.get(),
-                          m_shared_memory_array.get());
+    = PyObject_GetAttrString(main_module,
+                             wrapper_func_name.c_str());
 
   // Start Python process pool
   m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",

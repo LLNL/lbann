@@ -177,9 +177,9 @@ private:
 
   /** @brief Wrapper function around sample access function.
    *
-   *  This function is intended to facilitate inter-process
-   *  communication in the Python @c multiprocessing module. Data
-   *  samples are copied into a shared memory array.
+   *  This function will be executed on worker processes (see @c
+   *  m_process_pool). It will obtain a data sample from @c
+   *  m_sample_function and copy it into a @c m_shared_memory_array.
    *
    *  @todo Performance optimizations for NumPy data.
    */
