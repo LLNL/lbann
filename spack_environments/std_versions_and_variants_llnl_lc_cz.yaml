@@ -43,3 +43,53 @@
     zlib::
       buildable: True
       version: [1.2.11]
+
+  modules::
+    enable::
+      - tcl
+      - lmod
+    lmod::
+      hash_length: 3
+      core_compilers:
+        - 'gcc@7.3.0'
+        - 'gcc@7.3.1'
+      naming_scheme: '${PACKAGE}/${VERSION}-${COMPILERNAME}-${COMPILERVER}'
+      blacklist:
+        - '%gcc@4.8'
+        - '%gcc@4.9.3'
+      hierarchy:
+        - 'mpi'
+        - 'lapack'
+      all:
+        autoload: 'direct'
+        suffixes:
+          '^openblas': openblas
+          '^netlib-lapack': netlib
+          '^python@3.7.2': python-3.7.2
+        filter:
+          # Exclude changes to any of these variables
+          environment_blacklist: ['CPATH', 'LIBRARY_PATH']
+      ^python:
+        autoload:  'direct'
+    tcl:
+      hash_length: 3
+      core_compilers:
+        - 'gcc@7.3.0'
+        - 'gcc@7.3.1'
+      naming_scheme: '${PACKAGE}/${VERSION}-${COMPILERNAME}-${COMPILERVER}'
+      whitelist:
+        - gcc
+      blacklist:
+        - '%gcc@4.8'
+        - '%gcc@4.9.3'
+      all:
+        autoload: 'direct'
+        suffixes:
+          '^openblas': openblas
+          '^netlib-lapack': netlib
+          '^python@3.7.2': python-3.7.2
+        filter:
+          # Exclude changes to any of these variables
+          environment_blacklist: ['CPATH', 'LIBRARY_PATH']
+      ^python:
+        autoload:  'direct'
