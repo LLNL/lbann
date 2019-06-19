@@ -26,25 +26,25 @@ def test_compiler_build_script(cluster, dirname):
         pytest.skip(e)
 
 
-def test_compiler_clang4_release(cluster, dirname):
+def test_compiler_clang6_release(cluster, dirname):
     try:
-        skeleton_clang4(cluster, dirname, False)
+        skeleton_clang6(cluster, dirname, False)
     except AssertionError as e:
         print(e)
-        build_script(cluster, dirname, 'clang4', False)
-    path = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_rel/build/model_zoo/lbann' % (dirname, cluster)
+        build_script(cluster, dirname, 'clang6', False)
+    path = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_rel/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
         assert os.path.exists(path)
 
 
-def test_compiler_clang4_debug(cluster, dirname):
+def test_compiler_clang6_debug(cluster, dirname):
     try:
-        skeleton_clang4(cluster, dirname, True)
+        skeleton_clang6(cluster, dirname, True)
     except AssertionError as e:
         print(e)
-        build_script(cluster, dirname, 'clang4', True)
-    path = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_debug/build/model_zoo/lbann' % (dirname, cluster)
+        build_script(cluster, dirname, 'clang6', True)
+    path = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_debug/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
         assert os.path.exists(path)
@@ -98,12 +98,12 @@ def test_compiler_intel19_debug(cluster, dirname):
         assert os.path.exists(path)
 
 
-def skeleton_clang4(cluster, dir_name, debug, should_log=False):
+def skeleton_clang6(cluster, dir_name, debug, should_log=False):
     if cluster in ['catalyst']:
-        spack_skeleton(dir_name, 'clang@4.0.0', 'mvapich2@2.2', debug, should_log)
-        build_skeleton(dir_name, 'clang@4.0.0', debug, should_log)
+        spack_skeleton(dir_name, 'clang@6.0.0', 'mvapich2@2.2', debug, should_log)
+        build_skeleton(dir_name, 'clang@6.0.0', debug, should_log)
     else:
-        e = 'skeleton_clang4: Unsupported Cluster %s' % cluster
+        e = 'skeleton_clang6: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
 

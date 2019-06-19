@@ -23,8 +23,8 @@ def skeleton_layer_squared_difference(cluster, executables, dir_name, compiler_n
     assert return_code == 0
 
 
-def test_unit_layer_squared_difference_clang4(cluster, exes, dirname):
-    skeleton_layer_squared_difference(cluster, exes, dirname, 'clang4')
+def test_unit_layer_squared_difference_clang6(cluster, exes, dirname):
+    skeleton_layer_squared_difference(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_squared_difference_gcc7(cluster, exes, dirname):

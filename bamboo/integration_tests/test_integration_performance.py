@@ -174,17 +174,17 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
             cluster)
 
 
-def test_integration_performance_lenet_mnist_clang4(cluster, dirname, exes):
-  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang4')
+def test_integration_performance_lenet_mnist_clang6(cluster, dirname, exes):
+  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang6')
 
 
-def test_integration_performance_alexnet_clang4(cluster, dirname, exes, weekly):
-  skeleton_performance_alexnet(cluster, dirname, exes, 'clang4', weekly)
+def test_integration_performance_alexnet_clang6(cluster, dirname, exes, weekly):
+  skeleton_performance_alexnet(cluster, dirname, exes, 'clang6', weekly)
 
 
-def test_integration_performance_full_alexnet_clang4(cluster, dirname, exes,
+def test_integration_performance_full_alexnet_clang6(cluster, dirname, exes,
                                                      weekly, run):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang4', weekly,
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang6', weekly,
                                     run)
 
 

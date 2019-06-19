@@ -123,9 +123,9 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
      assert diff_test == 0
 
 
-def test_unit_checkpoint_lenet_clang4(cluster, exes, dirname):
-    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang4')
-    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang4')
+def test_unit_checkpoint_lenet_clang6(cluster, exes, dirname):
+    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang6')
+    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_checkpoint_lenet_gcc7(cluster, exes, dirname):
