@@ -38,6 +38,7 @@ namespace lbann {
  *
  * In general the schema for npz files, after conversion to conduit, is:
  *
+ * @code{.unparsed}
  * {
  *   data_id (int) :
  *   // one or more of the following sections
@@ -52,11 +53,14 @@ namespace lbann {
  *     }
  *   }
  * }
+ * @endcode
  *
  * cosmoflow has the following sections:
+ * @code{.unparsed}
  *    "data":
  *    "frm":
  *    "responses":
+ * @endcode
  */
 
 class numpy_conduit_converter {
