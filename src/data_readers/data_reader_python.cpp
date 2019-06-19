@@ -29,6 +29,7 @@
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
 #include <algorithm>
+#include <regex>
 
 namespace lbann {
 
@@ -338,10 +339,10 @@ void python_reader::setup(int num_io_threads,
   const El::Int sample_size = get_linearized_data_size();
   const El::Int mini_batch_size
     = generic_data_reader::get_model()->get_max_mini_batch_size();
-  std::string typecode;
+  std::string datatype_typecode;
   switch (sizeof(DataType)) {
-  case 4: typecode = "f"; break;
-  case 8: typecode = "d"; break;
+  case 4: datatype_typecode = "f"; break;
+  case 8: datatype_typecode = "d"; break;
   default: LBANN_ERROR("invalid data type for Python data reader "
                        "(only float and double are supported)");
   }
@@ -349,7 +350,7 @@ void python_reader::setup(int num_io_threads,
     = PyObject_CallMethod(multiprocessing_module,
                           "RawArray",
                           "(s, l)",
-                          typecode.c_str(),
+                          datatype_typecode.c_str(),
                           sample_size * mini_batch_size);
 
   // Get address of shared memory buffer
@@ -362,8 +363,7 @@ void python_reader::setup(int num_io_threads,
     = reinterpret_cast<DataType*>(PyLong_AsLong(shared_memory_ptr));
 
   // Create global variables in Python
-  // Note: We maintain a static counter to make sure variable names
-  // are unique.
+  // Note: The static counter makes sure variable names are unique.
   static El::Int instance_id = 0;
   instance_id++;
   const std::string sample_func_name
@@ -382,16 +382,53 @@ void python_reader::setup(int num_io_threads,
   manager.check_error();
 
   // Create wrapper around sample function
-  // Note: We make sure wrapper function name is unique.
+  // Note: We attempt accessing the sample with the buffer protocol
+  // since they can be copied more efficiently. If this fails, we just
+  // iterate through the sample entries.
+  /// @todo Handle multi-dimensional NumPy arrays.
   const std::string wrapper_func_name
     = ("_DATA_READER_PYTHON_CPP_sample_function"
        + std::to_string(instance_id));
-  std::ostringstream wrapper_func_def;
-  wrapper_func_def
-    << "def " << wrapper_func_name << "(sample_index, array_offset):\n"
-    << "    for i, val in enumerate(" << sample_func_name << "(sample_index)):\n"
-    << "        " << shared_array_name << "[i+array_offset] = val\n";
-  PyRun_SimpleString(wrapper_func_def.str().c_str());
+  std::string wrapper_func_def = R"(
+def @wrapper_func@(sample_index, array_offset):
+    """Get data sample and copy to shared memory array."""
+
+    # Get sample
+    sample = @sample_func@(sample_index)
+
+    # Copy entries from sample to shared memory array
+    # Note: We attempt to copy via the buffer protocol since it is
+    # much more efficient than naively looping through the arrays.
+    try:
+        # Note: ctypes arrays explicitly specify their endianness, but
+        # memoryview copies only work when the endianness is
+        # explicitly set to the system default. We need to do some
+        # type casting to get around this excessive error checking.
+        input_buffer = memoryview(sample)
+        output_buffer = memoryview(@shared_array@)
+        output_buffer = output_buffer[array_offset:array_offset+@sample_size@]
+        output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
+        output_buffer[:] = input_buffer
+    except:
+        for i, val in enumerate(sample):
+            @shared_array@[i + array_offset] = val
+)";
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@wrapper_func\\@"),
+                                        wrapper_func_name);
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@sample_func\\@"),
+                                        sample_func_name);
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@shared_array\\@"),
+                                        shared_array_name);
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@sample_size\\@"),
+                                        std::to_string(sample_size));
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@datatype_typecode\\@"),
+                                        datatype_typecode);
+  PyRun_SimpleString(wrapper_func_def.c_str());
   manager.check_error();
   m_sample_function_wrapper
     = PyObject_GetAttrString(main_module,
