@@ -34,6 +34,7 @@ namespace transform {
 
 /**
  * Adjust the contrast of an image.
+ * 
  * This operates similarly to the contrast control on a television.
  */
 class adjust_contrast : public transform {

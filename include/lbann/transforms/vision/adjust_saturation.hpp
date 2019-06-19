@@ -34,8 +34,10 @@ namespace transform {
 
 /**
  * Adjust the saturation of an image.
+ *
  * This operates similarly to the controls on a color television
- * (as opposed to a direct adjustment of saturation).
+ * (as opposed to a direct adjustment of saturation) by interpolating
+ * between the original value and its grayscale value.
  */
 class adjust_saturation : public transform {
 public:
