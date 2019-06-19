@@ -75,7 +75,7 @@ void save_image(const std::string& filename, const CPUMat& src,
  * @param dims The dimensions of the image.
  * @returns El::Matrix<uint8_t> Returns image in El::Matrix<uint8_t> format
  */
-El::Matrix<uint8_t> get_uint8_t_image(const lbann::CPUMat& image,
+El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
                                       const std::vector<size_t>& dims);
 /**
  * @brief Encodes image to std:string format
