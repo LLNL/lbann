@@ -38,8 +38,6 @@ namespace lbann {
  */
 class lbann_callback_check_dataset : public lbann_callback {
  public:
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_end;
 
   lbann_callback_check_dataset() :
     lbann_callback() {}

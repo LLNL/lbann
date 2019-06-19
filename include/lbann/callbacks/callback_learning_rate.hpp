@@ -53,8 +53,6 @@ class lbann_callback_learning_rate : public lbann_callback {
   void setup(model *m) override;
   /** Apply global learning rate schedules. */
   void on_epoch_end(model *m) override;
-
-  using lbann_callback::on_backward_prop_end;
   /** Apply local/per-optimizer learning rate schedules. */
   void on_backward_prop_end(model *m) override;
  protected:

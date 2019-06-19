@@ -46,7 +46,6 @@ namespace lbann {
  */
 class lbann_callback_dump_gradients : public lbann_callback {
  public:
-  using lbann_callback::on_backward_prop_end;
 
   /**
    * @param basename The basename for writing files.

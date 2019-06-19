@@ -41,12 +41,6 @@ namespace lbann {
  */
 class lbann_callback_debug_io : public lbann_callback {
  public:
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback::on_backward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_begin;
-  using lbann_callback::on_evaluate_forward_prop_end;
 
   /**
    * Debug a particular phase; use invalid to debug every phase.

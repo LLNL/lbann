@@ -91,11 +91,6 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
    * Then, populate the layer pointers */
   void setup(model *m) override;
 
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback_sync_layers::on_forward_prop_end;
-  using lbann_callback_sync_layers::on_backward_prop_end;
-
   /// Synchronize at the beginning of the forward prop of layer l
   void on_forward_prop_begin(model* m, Layer* l) override;
   /// Synchronize at the end of the forward prop of layer l

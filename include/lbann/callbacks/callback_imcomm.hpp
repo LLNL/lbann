@@ -42,7 +42,6 @@ namespace lbann {
  */
 class lbann_callback_imcomm : public lbann_callback {
  public:
-  using lbann_callback::on_backward_prop_end;
 
   enum comm_type {
     NONE,  /** Do no gradient updates. */
