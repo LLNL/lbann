@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -28,9 +28,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
-#include "lbann/data_readers/image_utils.hpp"
-#include "lbann/data_store/data_store_multihead_siamese.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/image.hpp"
 #include <fstream>
 #include <sstream>
 #include <omp.h>
@@ -39,14 +38,14 @@
 
 namespace lbann {
 
-data_reader_multihead_siamese::data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, unsigned int nimages, bool shuffle) : data_reader_multi_images(pp, shuffle) {
+data_reader_multihead_siamese::data_reader_multihead_siamese(unsigned int nimages, bool shuffle) : data_reader_multi_images(shuffle) {
   set_defaults();
   m_num_img_srcs = nimages;
   m_samples = offline_patches_npz (m_num_img_srcs);
 }
 
-data_reader_multihead_siamese::data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, bool shuffle)
-  : data_reader_multi_images(pp, shuffle) {
+data_reader_multihead_siamese::data_reader_multihead_siamese(bool shuffle)
+  : data_reader_multi_images(shuffle) {
   set_defaults();
 }
 
@@ -89,35 +88,14 @@ void data_reader_multihead_siamese::set_input_params(const int width, const int 
 
 
 bool data_reader_multihead_siamese::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  int tid = m_io_thread_pool->get_local_thread_id();
-
+  std::vector<CPUMat> X_v = create_datum_views(X, mb_idx);
   sample_t sample = m_samples.get_sample(data_id);
-  for(size_t i=0u; i < m_num_img_srcs; ++i) {
-    int width=0, height=0, img_type=0;
-    const std::string imagepath = get_file_dir() + sample.first[i];
-    bool ret = true;
-    if (m_data_store != nullptr) {
-      std::vector<unsigned char> *image_buf;
-      m_data_store->get_data_buf(data_id, image_buf, i);
-      // This could probably have used image_utils::import_image()
-      ret = lbann::image_utils::load_image(*image_buf, width, height, img_type, *(m_pps[tid]), X_v[i]);
-    } else {
-      ret = lbann::image_utils::load_image(imagepath, width, height, img_type, *(m_pps[tid]), X_v[i], m_thread_buffer[tid], &m_thread_cv_buffer[tid]);
-    }
-
-    if(!ret) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                            + get_type() + ": image_utils::load_image failed to load - "
-                            + imagepath);
-    }
-    if((width * height * CV_MAT_CN(img_type)) != m_image_linearized_size) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " "
-                            + get_type() + ": mismatch data size -- either width, height or channel - "
-                            + imagepath + " [w,h,c]=[" + std::to_string(width) + "x" + std::to_string(height)
-                            + "x" + std::to_string(CV_MAT_CN(img_type)) + "] != " + std::to_string(m_image_linearized_size));
-    }
+  for (size_t i = 0; i < m_num_img_srcs; ++i) {
+    El::Matrix<uint8_t> image;
+    std::vector<size_t> dims;
+    load_image(get_file_dir() + sample.first[i], image, dims);
+    m_transform_pipeline.apply(image, X_v[i], dims);
   }
-
   return true;
 }
 
@@ -176,16 +154,6 @@ void data_reader_multihead_siamese::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
 
   select_subset_of_data();
-}
-
-void data_reader_multihead_siamese::setup_data_store(model *m) {
-  if (m_data_store != nullptr) {
-    delete m_data_store;
-  }
-  m_data_store = new data_store_multihead_siamese(this, m);
-  if (m_data_store != nullptr) {
-    m_data_store->setup();
-  }
 }
 
 }  // namespace lbann

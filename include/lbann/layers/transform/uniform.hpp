@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -60,15 +60,15 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = transform_layer::get_description();
     std::stringstream ss;
-    ss << "Range: [" << m_min << "," << m_max << ")";
-    desc.push_back(ss.str());
+    ss << "[" << m_min << "," << m_max << ")";
+    desc.add("Range", ss.str());
     return desc;
   }
+
+protected:
 
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / 2;

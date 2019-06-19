@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,13 +55,55 @@ namespace lbann {
  *    - Can this be used to explore model architectures?
  *
  *  @todo Exchange optimizer state.
- *  @todo Exchange using checkpointing.
  *  @todo Support heterogeneous models.
  */
 class lbann_callback_ltfb : public lbann_callback {
 public:
 
-  /** @brief
+  /** Inter-trainer communication scheme for LTFB.
+   *
+   *  The specifics of these algorithms are experimental and will be
+   *  in flux.
+   */
+  enum class communication_algorithm {
+    /** Directly exchange weights values with sendrecv.
+     *
+     *  Corresponding ranks in partner trainers will iterate through
+     *  their weights and exchange values with sendrecvs.
+     *
+     *  Notes:
+     *    - Requires all models to be identical aside from their
+     *      weights values, so this is not suitable for hyperparameter
+     *      or model architecture exploration.
+     *    - Optimizer state is not exchanged, so there may be wonky
+     *      learning behavior immediately after a tournament.
+     *    - Optimal if communication performance between ranks is
+     *      uniform and independent. If intra-trainer communication is
+     *      fast or if communication performance is sensitive to
+     *      network traffic, it may be advantageous to gather model
+     *      data on the trainer master ranks and only perform
+     *      inter-trainer communication between them.
+     */
+    sendrecv_weights,
+
+    /** Save and load model data with checkpoint files.
+     *
+     *  @todo Implement.
+     *
+     *  Notes:
+     *    - Supports hyperparameter exploration.
+     *    - Checkpoint files currently do not store model architecture
+     *      information, so this is not suitable for model
+     *      architecture exploraiton.
+     *    - This approach is temporary and experimental, since going
+     *      through the file system is very suboptimal. When a wire
+     *      format for model checkpoints is developed, it should be
+     *      used instead.
+     */
+    checkpoint_file
+  };
+
+  /** @brief Construct the LTFB callback
    *  @param batch_interval Number of training mini-batch steps between
    *                        tournaments.
    *  @param metric_name    Metric for tournament evaluation.
@@ -69,19 +111,32 @@ public:
    *                        If empty, then all weights are exchanged.
    *  @param low_score_wins Whether low-scoring or high-scoring models
    *                        survive a tournament.
+   *  @param comm_algo      Inter-trainer communication scheme.
+   *  @param summarizer     The summarizer to use for this callback
    */
-  lbann_callback_ltfb(El::Int batch_interval,
-                      std::string metric_name,
-                      std::set<std::string> weights_names = {},
-                      bool low_score_wins = false,
-                      lbann_summary *summarizer = nullptr);
+  lbann_callback_ltfb(
+    El::Int batch_interval,
+    std::string metric_name,
+    std::set<std::string> weights_names = std::set<std::string>(),
+    bool low_score_wins = false,
+    communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
+    bool exchange_hyperparameters = false,
+    lbann_summary *summarizer = nullptr);
   lbann_callback_ltfb(const lbann_callback_ltfb& other);
   lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
   lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
   std::string name() const override { return "LTFB"; }
 
   void setup(model *m) override;
+  void on_train_begin(model *m) override;
   void on_batch_begin(model *m) override;
+
+  /** Convert string to LTFB communication algorithm.
+   *
+   *  If an empty string is provided, returns @c
+   *  communication_algorithm::sendrecv_weights.
+   */
+  static communication_algorithm string_to_comm_algo(const std::string& str);
 
 private:
 
@@ -97,6 +152,13 @@ private:
   /** Whether low-scoring or high-scoring models survive a
    *  tournament. */
   bool m_low_score_wins;
+
+  /** Inter-trainer communication scheme. */
+  communication_algorithm m_comm_algo;
+ 
+  /** Whether to exchange training hyperparameters between trainers
+  */
+  bool m_exchange_hyperparameters;
 
   /** Workspace weights.
    *

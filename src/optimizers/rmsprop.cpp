@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,101 +35,87 @@ rmsprop::rmsprop(lbann_comm *comm,
                  DataType eps)
   : optimizer(comm, learning_rate),
     m_decay_rate(decay_rate),
-    m_eps(eps),
-    m_cache(nullptr) {}
+    m_eps(eps) {}
 
 rmsprop::rmsprop(const rmsprop& other) :
   optimizer(other),
   m_decay_rate(other.m_decay_rate),
   m_eps(other.m_eps),
-  m_cache(other.m_cache) {
-  if (m_cache != nullptr) { m_cache = m_cache->Copy(); }
-}
+  m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
 rmsprop& rmsprop::operator=(const rmsprop& other) {
   optimizer::operator=(other);
   m_decay_rate = other.m_decay_rate;
   m_eps = other.m_eps;
-
-  // Copy cache matrix
-  if (m_cache != nullptr && other.m_cache != nullptr
-      && m_cache->DistData() == other.m_cache->DistData()) {
-    El::Copy(*other.m_cache, *m_cache);
-  }
-  else {
-    if (m_cache != nullptr) { delete m_cache; }
-    m_cache = other.m_cache;
-    if (m_cache != nullptr) { m_cache = m_cache->Copy(); }
-  }
-
+  m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
   return *this;
 }
 
-rmsprop::~rmsprop() {
-  if (m_cache != nullptr) { delete m_cache; }
+description rmsprop::get_description() const {
+  auto&& desc = optimizer::get_description();
+  desc.add("Decay rate", m_decay_rate);
+  desc.add("eps", m_eps);
+  return desc;
 }
 
-std::string rmsprop::get_description() const {
-  std::stringstream ss;
-  ss << optimizer::get_description() << ", "
-     << "decay_rate=" << m_decay_rate << ", "
-     << "eps=" << m_eps;
-  return ss.str();
-}
-
-void rmsprop::setup(weights& w) {
+void rmsprop::setup(weights* w) {
   optimizer::setup(w);
-  m_cache = m_gradient->Construct(m_gradient->Grid(),
-                                  m_gradient->Root());
-  El::Zeros(*m_cache, m_gradient->Height(), m_gradient->Width());
+  const auto& gradient = this->get_gradient();
+  m_cache.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
 
 void rmsprop::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
-
-  // Get local matrix data
-  const int local_height = values.LocalHeight();
-  const int local_width = values.LocalWidth();
-  DataType* __restrict__ values_buffer = values.Buffer();
-  const int values_ldim = values.LDim();
-  const DataType* __restrict__ gradient_buffer = gradient.LockedBuffer();
-  const int gradient_ldim = gradient.LDim();
-  DataType* __restrict__ cache_buffer = m_cache->Buffer();
-  const int cache_ldim = m_cache->LDim();
-
-  // Check if matrix data is contiguous
-  if (values_ldim != local_height
-      || gradient_ldim != local_height
-      || cache_ldim != local_height) {
-    // Update with non-contiguous data
-    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-    for (int j=0; j<local_width; ++j) {
-      for (int i=0; i<local_height; ++i) {
-        DataType& x = values_buffer[i+j*values_ldim];
-        const DataType g = gradient_buffer[i+j*gradient_ldim];
-        DataType& c = cache_buffer[i+j*cache_ldim];
-        c = m_decay_rate * c + (DataType(1) - m_decay_rate) * g * g;
-        x -= m_learning_rate * g / (std::sqrt(c) + m_eps);
-      }
-    }
-  } else {
-    // Update with contiguous data
-    LBANN_OMP_PARALLEL_FOR
-    for (int i=0; i<local_height*local_width; ++i) {
-      DataType& x = values_buffer[i];
-      const DataType g = gradient_buffer[i];
-      DataType& c = cache_buffer[i];
-      c = m_decay_rate * c + (DataType(1) - m_decay_rate) * g * g;
-      x -= m_learning_rate * g / (std::sqrt(c) + m_eps);
-    }
+  switch (values.GetLocalDevice()) {
+  case El::Device::CPU: step_compute_cpu(values, gradient); break;
+#ifdef LBANN_HAS_CUDA
+  case El::Device::GPU: step_compute_gpu(values, gradient); break;
+#endif // LBANN_HAS_CUDA
+  default:
+    std::ostringstream err;
+    err << "unsupported device type "
+        << "(" << static_cast<int>(values.GetLocalDevice()) << ")";
+    LBANN_ERROR(err.str());
   }
 }
+
+void rmsprop::step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
+
+  // Get local matrix data
+  const size_t local_height = values.LocalHeight();
+  const size_t local_width = values.LocalWidth();
+  auto* __restrict__ values_buffer = values.Buffer();
+  const size_t values_ldim = values.LDim();
+  const auto* __restrict__ gradient_buffer = gradient.LockedBuffer();
+  const size_t gradient_ldim = gradient.LDim();
+  auto* __restrict__ cache_buffer = m_cache->Buffer();
+  const size_t cache_ldim = m_cache->LDim();
+
+  // Apply RMSprop step
+  const auto& learning_rate = get_learning_rate();
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
+  for (size_t col = 0; col < local_width; ++col) {
+    for (size_t row = 0; row < local_height; ++row) {
+      auto& x = values_buffer[row+col*values_ldim];
+      const auto& g = gradient_buffer[row+col*gradient_ldim];
+      auto& c = cache_buffer[row+col*cache_ldim];
+      c = m_decay_rate * c + (DataType(1) - m_decay_rate) * g * g;
+      x -= learning_rate * g / (std::sqrt(c) + m_eps);
+    }
+  }
+
+}
+
+// =============================================
+// Checkpointing
+// =============================================
 
 bool rmsprop::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   optimizer::save_to_checkpoint_shared(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.write_distmat(persist_type::train, l_name, m_cache);
+  p.write_distmat(persist_type::train, l_name, m_cache.get());
 
   return true;
 }
@@ -139,7 +125,7 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
-  p.read_distmat(persist_type::train, l_name, m_cache);
+  p.read_distmat(persist_type::train, l_name, m_cache.get());
 
   return true;
 }
@@ -164,4 +150,4 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
    return true;
  }
 
-}  // namespace lbann
+} // namespace lbann

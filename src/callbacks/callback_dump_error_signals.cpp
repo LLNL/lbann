@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,9 +36,9 @@ void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l)
     // File name
     std::stringstream file;
     file << m_basename
-         << "model" << m->get_comm()->get_model_rank() << "-"
-         << "epoch" << m->get_cur_epoch() << "-"
-         << "step" << m->get_cur_step() << "-"
+         << "model" << m->get_comm()->get_trainer_rank() << "-"
+         << "epoch" << m->get_epoch() << "-"
+         << "step" << m->get_step() << "-"
          << l->get_name() << "-"
          << "ErrorSignals";
     if (l->get_num_parents() > 1) { file << i; }

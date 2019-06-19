@@ -4,7 +4,7 @@ model {
   block_size: 256
   num_epochs: 20
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -68,7 +68,7 @@ model {
   }
   callback {
     imcomm {
-      intermodel_comm_method: "normal"
+      intertrainer_comm_method: "normal"
       all_optimizers: true
     }
   }
@@ -92,9 +92,7 @@ model {
     name: "data"
     children: "images labels"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     name: "images"

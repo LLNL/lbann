@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -58,7 +58,7 @@ void lbann_callback_print::on_epoch_begin(model *m) {
     // Print message
     std::cout << "--------------------------------------------------------------------------------"
               << std::endl;
-    std::cout << "[" << m->get_cur_epoch() << "] Epoch : stats formated [tr/v/te]"
+    std::cout << "[" << m->get_epoch() << "] Epoch : stats formated [tr/v/te]"
               << " iter/epoch ="
               << " ["
               << input->get_num_iterations_per_epoch(execution_mode::training)
@@ -135,7 +135,7 @@ void lbann_callback_print::report_results(model *m) {
   std::string mode_string;
   switch (mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m->get_cur_epoch()-1);
+    mode_string = "training epoch " + std::to_string(m->get_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";
@@ -150,23 +150,25 @@ void lbann_callback_print::report_results(model *m) {
     throw lbann_exception(err.str());
   }
 
-  if (comm->am_model_master()) {
-    const int num_models = comm->get_num_models();
-    
+  if (comm->am_trainer_master()) {
+    const int num_trainers = comm->get_num_trainers();
+
     // Report objective function value
     const EvalType obj_fn = m->get_objective_function()->get_mean_value(mode);
     const int obj_fn_samples = m->get_objective_function()->get_statistics_num_samples(mode);
     if (comm->am_world_master()) {
-      std::vector<EvalType> obj_fn_list(comm->get_num_models());
-      std::vector<int> num_samples_list(comm->get_num_models());
-      comm->intermodel_gather(obj_fn, obj_fn_list);
-      comm->intermodel_gather(obj_fn_samples, num_samples_list);
-      for (int i = 0; i < num_models; ++i) {
-        std::cout << m->get_name() << " (instance " <<  i <<  ") "  << mode_string << " "
-                  << "objective function : " << obj_fn_list[i]
-                  << std::endl;
+      std::vector<EvalType> obj_fn_list(comm->get_num_trainers());
+      std::vector<int> num_samples_list(comm->get_num_trainers());
+      comm->intertrainer_gather(obj_fn, obj_fn_list);
+      comm->intertrainer_gather(obj_fn_samples, num_samples_list);
+      if(!m_print_global_stat_only) {
+        for (int i = 0; i < num_trainers; ++i) {
+          std::cout << m->get_name() << " (instance " <<  i <<  ") "  << mode_string << " "
+                    << "objective function : " << obj_fn_list[i]
+                    << std::endl;
+        }
       }
-      if (num_models > 1) {
+      if (num_trainers > 1) {
         const EvalType avg_obj_fn = (std::inner_product(num_samples_list.begin(),
                                                         num_samples_list.end(),
                                                         obj_fn_list.begin(),
@@ -179,8 +181,8 @@ void lbann_callback_print::report_results(model *m) {
                   << std::endl;
       }
     } else {
-      comm->intermodel_gather(obj_fn, comm->get_world_master());
-      comm->intermodel_gather(obj_fn_samples, comm->get_world_master());
+      comm->intertrainer_gather(obj_fn, comm->get_world_master());
+      comm->intertrainer_gather(obj_fn_samples, comm->get_world_master());
     }
 
     // Report score for each metric
@@ -188,17 +190,20 @@ void lbann_callback_print::report_results(model *m) {
       const EvalType score = met->get_mean_value(mode);
       const int score_samples = met->get_statistics_num_samples(mode);
       if (comm->am_world_master()) {
-        std::vector<EvalType> score_list(comm->get_num_models());
-        std::vector<int> num_samples_list(comm->get_num_models());
-        comm->intermodel_gather(score, score_list);
-        comm->intermodel_gather(score_samples, num_samples_list);
-        for (int i = 0; i < num_models; ++i) {
-          std::cout << m->get_name() << " (instance " << i <<  ") " << mode_string << " "
-                    << met->name() << " : "
-                    << score_list[i] << met->get_unit()
-                    << std::endl;
+        std::vector<EvalType> score_list(comm->get_num_trainers());
+        std::vector<int> num_samples_list(comm->get_num_trainers());
+        comm->intertrainer_gather(score, score_list);
+        comm->intertrainer_gather(score_samples, num_samples_list);
+        if(!m_print_global_stat_only) {
+          for (int i = 0; i < num_trainers; ++i) {
+            std::cout << m->get_name() << " (instance " << i <<  ") " << mode_string << " "
+                      << met->name() << " : "
+                      << score_list[i] << met->get_unit()
+                      << std::endl;
+          }
         }
-        if (num_models > 1) {
+        if (num_trainers > 1) {
+          const EvalType min_score = *std::min_element(score_list.begin(), score_list.end());
           const EvalType avg_score = (std::inner_product(num_samples_list.begin(),
                                                          num_samples_list.end(),
                                                          score_list.begin(),
@@ -206,14 +211,34 @@ void lbann_callback_print::report_results(model *m) {
                                       / std::accumulate(num_samples_list.begin(),
                                                         num_samples_list.end(),
                                                         0));
-          std::cout << m->get_name() << " (global) "  << mode_string << " "
+          const EvalType max_score = *std::max_element(score_list.begin(), score_list.end());
+          EvalType scores_stdev = EvalType(0);
+          for (const auto& t : score_list) {
+            const auto& diff = t - avg_score;
+            scores_stdev += diff * diff;
+          }
+          scores_stdev /= score_list.size() - 1;
+          scores_stdev = std::sqrt(std::max(scores_stdev, EvalType(0)));
+          std::cout << m->get_name() << " (global average) "  << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()
                     << std::endl;
+          std::cout << m->get_name() << " (global min) "  << mode_string << " "
+                    << met->name() << " : "
+                    << min_score << met->get_unit()
+                    << std::endl;
+          std::cout << m->get_name() << " (global max) "  << mode_string << " "
+                    << met->name() << " : "
+                    << max_score << met->get_unit()
+                    << std::endl;
+          std::cout << m->get_name() << " (global stdev) "  << mode_string << " "
+                    << met->name() << " : "
+                    << scores_stdev << met->get_unit()
+                    << std::endl;
         }
       } else {
-        comm->intermodel_gather(score, comm->get_intermodel_master());
-        comm->intermodel_gather(score_samples, comm->get_intermodel_master());
+        comm->intertrainer_gather(score, comm->get_intertrainer_master());
+        comm->intertrainer_gather(score_samples, comm->get_intertrainer_master());
       }
     }
 

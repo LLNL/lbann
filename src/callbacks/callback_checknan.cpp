@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -22,19 +22,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_checknan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_checknan.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 namespace {
 
-/** Check whether a matrix contains a NaN. 
+/** Check whether a matrix contains a NaN.
  *  If a NaN entry is detected, return true and output the local entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
@@ -54,7 +51,7 @@ bool has_nan(const AbsDistMat& mat, El::Int& row, El::Int& col) {
   return false;
 }
 
-/** Check whether a matrix contains an inf. 
+/** Check whether a matrix contains an inf.
  *  If an inf entry is detected, return true and output the entry
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
@@ -81,10 +78,10 @@ bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
 void dump_network(model *m) {
   for (const auto* l : m->get_layers()) {
     std::stringstream ss;
-    ss << "model" << m->get_comm()->get_model_rank()
-       << "-rank" << m->get_comm()->get_rank_in_model()
-       << "-epoch" << m->get_cur_epoch()
-       << "-step" << m->get_cur_step()
+    ss << "model" << m->get_comm()->get_trainer_rank()
+       << "-rank" << m->get_comm()->get_rank_in_trainer()
+       << "-epoch" << m->get_epoch()
+       << "-step" << m->get_step(execution_mode::training)
        << "-" << l->get_name() << "-";
     const std::string prefix = ss.str();
     for (int i = 0; i < l->get_num_children(); ++i) {
@@ -100,10 +97,10 @@ void dump_network(model *m) {
   }
   for (auto* w : m->get_weights()) {
     std::stringstream ss;
-    ss << "model" << m->get_comm()->get_model_rank()
-       << "-rank" << m->get_comm()->get_rank_in_model()
-       << "-epoch" << m->get_cur_epoch()
-       << "-step" << m->get_cur_step()
+    ss << "model" << m->get_comm()->get_trainer_rank()
+       << "-rank" << m->get_comm()->get_rank_in_trainer()
+       << "-epoch" << m->get_epoch()
+       << "-step" << m->get_step(execution_mode::training)
        << "-" << w->get_name() << "-";
     const std::string prefix = ss.str();
     El::Write(w->get_values().LockedMatrix(),

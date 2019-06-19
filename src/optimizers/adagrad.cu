@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,40 +30,42 @@ namespace lbann {
 
 namespace {
 
-__global__ void adagrad_kernel(int height,
-                               int width,
+__global__ void adagrad_kernel(size_t height,
+                               size_t width,
                                DataType learning_rate,
                                DataType eps,
                                DataType * __restrict__ values,
-                               int values_ldim,
+                               size_t values_ldim,
                                const DataType * __restrict__ gradient,
-                               int gradient_ldim,
+                               size_t gradient_ldim,
                                DataType * __restrict__ cache,
-                               int cache_ldim) {
-  const int gid = blockIdx.x * blockDim.x + threadIdx.x;
-  const int num_threads = gridDim.x * blockDim.x;
-  for (int pos = gid; pos < height * width; pos += num_threads) {
-    const auto& i = pos % height;
-    const auto& j = pos / height;
-    auto& x = values[i + j * values_ldim];
-    const auto& g = gradient[i + j * gradient_ldim];
-    auto& c = cache[i + j * cache_ldim];
+                               size_t cache_ldim) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t nthreads = blockDim.x * gridDim.x;
+  for (size_t pos = gid; pos < height * width; pos += nthreads) {
+    const auto& row = pos % height;
+    const auto& col = pos / height;
+    auto& x = values[row + col * values_ldim];
+    const auto& g = gradient[row + col * gradient_ldim];
+    auto& c = cache[row + col * cache_ldim];
     c += g * g;
     x -= learning_rate * g / (cuda::sqrt(c) + eps);
   }
 }
 
-}
+} // namespace
 
 void adagrad::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
-  const int local_height = values.LocalHeight();
-  const int local_width = values.LocalWidth();
-  const int size = local_height * local_width;
-  const int block_dim = 256;
-  const int grid_dim = (size + block_dim - 1) / block_dim;
-  if (grid_dim > 0) {
-    adagrad_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
-      local_height, local_width, m_learning_rate, m_eps,
+  const size_t local_height = values.LocalHeight();
+  const size_t local_width = values.LocalWidth();
+  const size_t local_size = local_height * local_width;
+  if (local_size > 0) {
+    constexpr size_t block_size = 256;
+    const size_t grid_size = (local_size + block_size - 1) / block_size;
+    auto&& stream = El::GPUManager::Stream();
+    adagrad_kernel<<<grid_size, block_size, 0, stream>>>(
+      local_height, local_width,
+      this->get_learning_rate(), m_eps,
       values.Buffer(), values.LDim(),
       gradient.LockedBuffer(), gradient.LDim(),
       m_cache->Buffer(), m_cache->LDim());

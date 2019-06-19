@@ -8,7 +8,7 @@ model {
   block_size: 256
   num_epochs: 40
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -44,7 +44,7 @@ model {
   callback { timer {} }
   callback {
     dump_outputs {
-      prefix: "dump_acts/"
+      directory: "dump_acts/"
       layers: "data sigmoid"
       execution_modes: "test"
     }
@@ -66,22 +66,21 @@ model {
   layer {
     name: "input"
     children: "data dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     input {
-      io_buffer: "distributed"
       target_mode: "reconstruction"
     }
   }
   layer {
     parents: "input"
     name: "data"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     split {}
   }
   layer {
     parents: "input"
     name: "dummy"
-    data_layout: "model_parallel"
+    data_layout: "data_parallel"
     dummy {}
   }
 

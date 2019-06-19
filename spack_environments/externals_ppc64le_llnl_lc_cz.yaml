@@ -1,0 +1,68 @@
+  packages:
+    all:
+      providers:
+        mpi: [spectrum-mpi@rolling-release arch=linux-rhel7-ppc64le]
+        lapack: [openblas threads=openmp]
+        blas: [openblas threasd=openmp]
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: [gcc@7.3.1 arch=linux-rhel7-ppc64le]
+
+    cmake::
+      variants: ~openssl ~ncurses
+      version: [3.12.1]
+      paths:
+        cmake@3.12.1 arch=linux-rhel7-ppc64le: /usr/tce/packages/cmake/cmake-3.12.1
+
+    cuda::
+      buildable: False
+      version: [9.2.88, 10.1.105]
+      paths:
+        cuda@9.2.88 arch=linux-rhel7-ppc64le: /usr/tce/packages/cuda/cuda-9.2.88/
+        cuda@10.1.105 arch=linux-rhel7-ppc64le: /usr/tce/packages/cuda/cuda-10.1.105
+
+    cudnn::
+      buildable: true
+      version: [7.4.2. 7.5.1, 7.5.1-10.1-ppc64le]
+      paths:
+        cudnn@7.5.1 arch=linux-rhel7-ppc64le: /usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-10.1_ppc64le/
+        cudnn@7.4.2 arch=linux-rhel7-ppc64le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppc64le
+
+    hwloc::
+      buildable: False
+      version: [2.0.2]
+      paths:
+        hwloc@2.0.2 arch=linux-rhel7-ppc64le: /usr/lib64/libhwloc.so
+
+    openblas::
+      buildable: True
+      variants: threads=openmp ~avx2 ~avx512
+      version: [0.3.6]
+
+    opencv::
+      buildable: true
+      variants: +powerpc +vsx
+      version: [4.1.0]
+
+    spectrum-mpi::
+      buildable: False
+      version: [rolling-release]
+      paths:
+        spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel7-ppc64le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: rhel7
+      paths:
+        cc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gcc
+        cxx: /usr/tce/packages/gcc/gcc-7.3.1/bin/g++
+        f77: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
+        fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
+      spec: gcc@7.3.1
+      target: ppc64le

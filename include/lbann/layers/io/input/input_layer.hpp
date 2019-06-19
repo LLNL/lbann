@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -50,8 +50,8 @@ class input_layer : public generic_input_layer {
     : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {
     validate_data_layout();
     // Initialize two buffers
-    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
-    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_model()), data_readers);
+    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_trainer()), data_readers);
+    initialize_io_buffer(comm, std::min(num_parallel_readers, Layer::m_comm->get_procs_per_trainer()), data_readers);
     for (auto io_buffer : m_io_buffers) {
       io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
       io_buffer->update_data_reader_fn = new update_data_reader_functor();
@@ -63,18 +63,13 @@ class input_layer : public generic_input_layer {
     return new input_layer(*this);
   }
 
-  std::string get_type() const override {
-    return std::string {}
-      + "input:"
-      + m_io_buffers[0]->get_type();
-  }
-
   inline void validate_data_layout();
 
   inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
     generic_input_layer::initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
   }
 
+  std::string get_type() const override { return "input"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 

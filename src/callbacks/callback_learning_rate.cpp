@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -68,10 +68,10 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
   lbann_comm *comm = m->get_comm();
-  if (comm->am_model_master() && new_lr != old_global_lr) {
-    std::cout << "Model " << comm->get_model_rank() << ": "
+  if (comm->am_trainer_master() && new_lr != old_global_lr) {
+    std::cout << "Model " << comm->get_trainer_rank() << ": "
               << "changing global learning rate to " << new_lr
-              << " at epoch " << m->get_cur_epoch() << std::endl;
+              << " at epoch " << m->get_epoch() << std::endl;
   }
   for (weights *w : m_weights) {
     optimizer *opt = w->get_optimizer();
@@ -102,7 +102,7 @@ lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
   lbann_callback_learning_rate(weights_list), m_step(step), m_amt(amt) {}
 
 float lbann_callback_step_learning_rate::global_schedule(model *m) {
-  if (m->get_cur_epoch() % m_step == 0) {
+  if (m->get_epoch() % m_step == 0) {
     return m_cur_global_lr * m_amt;
   } else {
     return m_cur_global_lr;
@@ -120,8 +120,8 @@ lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
 
 float lbann_callback_adaptive_learning_rate::global_schedule(model *m) {
   // Determine behavior the first time this is called in an epoch
-  if (m_cur_epoch != m->get_cur_epoch()) {
-    m_cur_epoch = m->get_cur_epoch();
+  if (m_cur_epoch != m->get_epoch()) {
+    m_cur_epoch = m->get_epoch();
     const execution_mode mode = m->get_execution_mode();
     const EvalType score = m->get_objective_function()->get_mean_value(mode);
     if (score < m_last_score) {
@@ -164,12 +164,12 @@ lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate
 float lbann_callback_drop_fixed_learning_rate::global_schedule(model* m) {
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
-         && m->get_cur_epoch() > m_drop_epochs.back()) {
+         && m->get_epoch() > m_drop_epochs.back()) {
     m_drop_epochs.pop_back();
   }
 
   // Adjust learning rate if at a drop epoch
-  if (!m_drop_epochs.empty() && m->get_cur_epoch() == m_drop_epochs.back()) {
+  if (!m_drop_epochs.empty() && m->get_epoch() == m_drop_epochs.back()) {
     return m_cur_global_lr * m_amt;
   } else {
     return m_cur_global_lr;
@@ -203,10 +203,10 @@ void lbann_callback_linear_growth_learning_rate::setup(model *m) {
 }
 
 float lbann_callback_linear_growth_learning_rate::global_schedule(model *m) {
-  if (m->get_cur_epoch() < m_delay) {
+  if (m->get_epoch() < m_delay) {
     return m_cur_global_lr;
-  } else if (m->get_cur_epoch() <= m_num_epochs + m_delay) {
-    int num_left = m_num_epochs + m_delay - m->get_cur_epoch();
+  } else if (m->get_epoch() <= m_num_epochs + m_delay) {
+    int num_left = m_num_epochs + m_delay - m->get_epoch();
     return m_base_lr + m_inc*(m_num_epochs - num_left);
   } else {
     return m_cur_global_lr;
@@ -223,12 +223,14 @@ lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
   double p, uint64_t n_epochs, uint64_t max_iter)
   : lbann_callback_learning_rate(std::unordered_set<weights *>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
+    m_end_lr(0.0f),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
 lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
-  double p, uint64_t n_epochs, uint64_t max_iter, std::unordered_set<weights *> weights_list)
+  double p, uint64_t n_epochs, uint64_t max_iter, double end_lr,  std::unordered_set<weights *> weights_list)
   : lbann_callback_learning_rate(weights_list),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
+    m_end_lr(end_lr),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
 /**
@@ -248,19 +250,19 @@ void lbann_callback_poly_learning_rate::setup(model *m) {
 float lbann_callback_poly_learning_rate::global_schedule(model *m) {
   const float scale = m_lr / m_last_epoch_lr;
   m_last_epoch_lr = m_lr;
-  return m_cur_global_lr * scale;
+  return (m_cur_global_lr - m_end_lr) * scale + m_end_lr;
 }
 
 /**
  * Compute the learning rate for the next iteration.
  */
 float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const uint64_t cur_iter = static_cast<uint64_t>(m->get_cur_step());
+  const uint64_t cur_iter = static_cast<uint64_t>(m->get_step(execution_mode::training));
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
   const float scale = m_lr / m_last_epoch_lr;
-  return m_cur_global_lr * scale;
+  return (m_cur_global_lr - m_end_lr) * scale + m_end_lr;
 }
 
 lbann_callback_optimizerwise_adaptive_learning_rate::lbann_callback_optimizerwise_adaptive_learning_rate(

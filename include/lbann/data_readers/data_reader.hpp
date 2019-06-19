@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -35,14 +35,15 @@
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <unistd.h>
+#include <unordered_set>
 
 
 #define NOT_IMPLEMENTED(n) { \
@@ -52,7 +53,7 @@
 
 namespace lbann {
 
-class generic_data_store;
+class data_store_conduit;
 class model;
 
 /**
@@ -61,7 +62,7 @@ class model;
  * classes should implement load and the appropriate subset of fetch_datum,
  * fetch_label, and fetch_response.
  */
-class generic_data_reader : public lbann_image_preprocessor {
+class generic_data_reader {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
@@ -86,12 +87,10 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_world_master_mini_batch_adjustment(0),
     m_num_parallel_readers(0), m_rank_in_model(0),
     m_max_files_to_load(0),
-    m_file_dir(""), m_data_fn(""), m_label_fn(""),
+    m_file_dir(""), m_data_index_list(""), m_data_fn(""), m_label_fn(""),
     m_shuffle(shuffle), m_absolute_sample_count(0), m_validation_percent(0.0),
     m_use_percent(1.0),
     m_master(false),
-    m_save_minibatch_indices(false),
-    m_compound_rank(0),
     m_gan_labelling(false), //default, not GAN
     m_gan_label_value(0),  //If GAN, default for fake label, discriminator model
     m_is_partitioned(false),
@@ -100,12 +99,13 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr)
+    m_model(nullptr),
+    m_issue_warning(true)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  ~generic_data_reader() override {}
+  virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
 
   /// set the comm object
@@ -151,6 +151,18 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If set_local_file_dir was not called, returns the empty string
    */
   std::string get_local_file_dir() const;
+
+  /**
+   * Set the index list for your data (images, etc).
+   * The index lists contains an enumeration of all samples in the
+   * data set.
+   */
+  void set_data_index_list(std::string s);
+
+  /**
+   * Returns the complete index list for your data set.
+   */
+  std::string get_data_index_list() const;
 
   /**
    * Set the filename for your data (images, etc).
@@ -238,16 +250,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * Set an idenifier for the dataset.
    * The role should be one of "train", "test", or "validate".
    */
-  virtual void set_role(std::string role) {
-    m_role = role;
-    if (options::get()->has_string("jag_partitioned")
-        && get_role() == "train") {
-      m_jag_partitioned = true;
-      if (is_master()) {
-        std::cerr << "USING JAG DATA PARTITIONING\n";
-      }
-    }
-  }
+  virtual void set_role(std::string role);
 
   /**
    * Get the role for this dataset.
@@ -282,15 +285,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
 
-  /**
-   * Save pixels to an image. The implementing data reader is responsible for
-   * handling format detection, conversion, etc.
-   */
-  // TODO: This function needs to go away from here
-  void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) override {
-    NOT_IMPLEMENTED("save_image");
-  }
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
@@ -344,7 +338,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
-    return (m_current_pos < (int)m_shuffled_indices.size());
+    return (m_current_pos < get_num_data());
+  }
+  /// True if the data reader's current position is not valid but within # ranks per model
+  /// of the end of the data set (e.g. it is a rank with no valid data on the last iteration)
+  virtual bool position_is_overrun() const {
+    int end_pos = (int)m_shuffled_indices.size();
+    return (m_current_pos >= end_pos && (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
   }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const {
@@ -354,9 +354,7 @@ class generic_data_reader : public lbann_image_preprocessor {
             && (m_current_mini_batch_idx == 0));
   }
   /// Set the mini batch size
-  void set_mini_batch_size(const int s) {
-    m_mini_batch_size = s;
-  }
+  void set_mini_batch_size(const int s);
   /// Get the mini batch size
   int get_mini_batch_size() const {
     return m_mini_batch_size;
@@ -514,6 +512,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   int *get_unused_data() {
     return &m_unused_indices[0];
   }
+  const std::vector<int>& get_unused_indices() {
+    return m_unused_indices;
+  }
   /// Set the number of iterations in each epoch.
   void set_num_iterations_per_epoch(int num_iterations_per_epoch) {
     m_num_iterations_per_epoch = num_iterations_per_epoch;  /// @todo BVE FIXME merge this with alternate approach
@@ -567,6 +568,12 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   /// returns true if the data set is partitioned
   bool is_partitioned() const { return m_is_partitioned; }
+
+  /// Does the data reader have a unqiue index list per model
+  virtual bool has_list_per_model() const { return false; }
+  /// Does the data reader have a unqiue index list per trainer
+  virtual bool has_list_per_trainer() const { return false; }
+
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
   bool save_to_checkpoint_shared(persist& p, const char *name);
@@ -660,41 +667,34 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
   }
 
-  /// returns the data store
-  generic_data_store * get_data_store() const {
+  /// returns a const ref to the data store
+  virtual const data_store_conduit& get_data_store() const {
     if (m_data_store == nullptr) {
-      std::stringstream err;
-      err << __FILE__  << " :: " << __LINE__ << " :: "
-          << " m_data_store is nullptr";
+      LBANN_ERROR("m_data_store is nullptr");
     }
+    return *m_data_store;
+  }
+
+  data_store_conduit* get_data_store_ptr() const {
     return m_data_store;
   }
 
-  /// sets up a data_store.
-  virtual void setup_data_store(model *m);
+  /// sets up a data_store; this is called from build_model_from_prototext()
+  /// in utils/lbann_library.cpp. This is a bit awkward: would like to call it
+  /// when we instantiate the data_store, but we don;t know the mini_batch_size
+  /// until later.
+  void setup_data_store(int mini_batch_size);
 
-  /** This call changes the functionality of fetch_data(); when set,
-    * indices are added to m_my_minibatch_indices, but fetch_datum()
-    * is not called. This method is added to support data store functionality.
-    */
-  void set_save_minibatch_entries(bool b);
+  void instantiate_data_store(const std::vector<int>& local_list_sizes = std::vector<int>());
 
-  /// support of data store functionality
-  void init_minibatch();
-
-  /// support of data store functionality
-  const std::vector<std::vector<int> > & get_minibatch_indices() const {
-    return m_my_minibatch_indices;
-  }
-
-  /// support of data store functionality
-  int get_compound_rank() {
-    return m_compound_rank;
-  }
-
-  /// support of data store functionality
-  void set_compound_rank(int r) {
-    m_compound_rank = r;
+  // note: don't want to make this virtual, since then all derived classes
+  //       would have to override. But, this should only be called from within
+  //       derived classes where it makes sense to do so.
+  //       Once the sample_list class and file formats are generalized and
+  //       finalized, it should (may?) be possible to code a single
+  //       preload_data_store method.
+  virtual void preload_data_store() {
+    LBANN_ERROR("you should not be here");
   }
 
   void set_gan_labelling(bool has_gan_labelling) {
@@ -703,15 +703,29 @@ class generic_data_reader : public lbann_image_preprocessor {
   void set_gan_label_value(int gan_label_value) { m_gan_label_value = gan_label_value; }
 
   /// support of data store functionality
-  void set_data_store(generic_data_store *g);
+  void set_data_store(data_store_conduit *g);
+
+  virtual bool data_store_active() const;
+
+  virtual bool priming_data_store() const;
 
   void set_model(model *m) { m_model = m; }
+
+  model * get_model() const { return m_model; }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
   virtual void post_update() {}
 
+  /** Set the transform pipeline this data reader will use. */
+  void set_transform_pipeline(transform::transform_pipeline&& tp) {
+    m_transform_pipeline = std::move(tp);
+  }
+
  protected:
+
+  // For use with conduit when samples are corrupt.
+  mutable std::unordered_set<int> m_using_random_node;
 
   /**
    * Return the absolute number of data samples that will be used for training
@@ -731,13 +745,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    */
   double get_validation_percent() const;
 
-  int m_rank;
-
-  generic_data_store *m_data_store;
+  data_store_conduit *m_data_store;
 
   lbann_comm *m_comm;
 
-  bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
+  virtual bool fetch_data_block(CPUMat& X, El::Int thread_index, El::Int mb_size, El::Matrix<El::Int>& indices_fetched);
 
   /**
    * Fetch a single sample into a matrix.
@@ -827,6 +839,7 @@ class generic_data_reader : public lbann_image_preprocessor {
   size_t m_max_files_to_load;
   std::string m_file_dir;
   std::string m_local_file_dir;
+  std::string m_data_index_list;
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;
@@ -842,16 +855,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   friend class data_reader_merge_samples;
 
  protected :
-   /// added to support data store functionality
-   bool m_save_minibatch_indices;
-
-   /// added to support data store functionality
-   std::vector<std::vector<int> > m_my_minibatch_indices;
-
-   /// added to support data store functionality
-   int m_compound_rank;
-
-
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
@@ -874,11 +877,11 @@ class generic_data_reader : public lbann_image_preprocessor {
    int m_num_partitions;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_model_rank())
+   /// comm->get_trainer_rank())
    int m_my_partition;
 
    /// only relevant if m_is_partitioned = true.  Currently this is same as
-   /// comm->get_procs_per_model)
+   /// comm->get_procs_per_trainer)
    int m_procs_per_partition;
 
   std::vector<std::vector<char>> m_thread_buffer;
@@ -894,6 +897,15 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// etc.
   void set_jag_variables(int mb_size);
   model *m_model;
+
+
+  /** Transform pipeline for preprocessing data. */
+  transform::transform_pipeline m_transform_pipeline;
+
+  /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
+  /// but we're not retrieving a conduit::Node from the store. This typically occurs
+  /// during the test phase
+  bool m_issue_warning;
 };
 
 template<typename T>

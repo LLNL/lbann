@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -56,13 +56,13 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-protected:
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = Layer::get_description();
-    desc.push_back("Negative slope: "
-                   + std::to_string(m_negative_slope));
+    desc.add("Negative slope", m_negative_slope);
     return desc;
   }
+
+protected:
   void setup_dims() override {
     Layer::setup_dims();
     set_output_dims(get_input_dims());

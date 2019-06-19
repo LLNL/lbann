@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -60,6 +60,18 @@
       }                                                                 \
     }                                                                   \
   } while (0)
+#define FORCE_CHECK_CUBLAS_NOSYNC(cublas_call)                          \
+  do {                                                                  \
+    {                                                                   \
+      /* Make cuBLAS call and check for errors. */                      \
+      const cublasStatus_t status_FORCE_CHECK_CUBLAS = (cublas_call);   \
+      if (status_FORCE_CHECK_CUBLAS != CUBLAS_STATUS_SUCCESS) {         \
+        cudaDeviceReset();                                              \
+        LBANN_ERROR(std::string("cuBLAS error: ")                       \
+                    + lbann::cublas::get_error_string(status_FORCE_CHECK_CUBLAS)); \
+      }                                                                 \
+    }                                                                   \
+  } while (0)
 #define FORCE_CHECK_CUBLAS_SYNC(cuda_call)                                    \
   do {                                                                        \
     const cudaError_t cuda_status = cuda_call;                                \
@@ -77,7 +89,7 @@
       FORCE_CHECK_CUBLAS_SYNC(cudaDeviceSynchronize()); \
   } while (0)
 #else
-#define CHECK_CUBLAS(cublas_call) (cublas_call)
+#define CHECK_CUBLAS(cublas_call) FORCE_CHECK_CUBLAS_NOSYNC(cublas_call)
 #endif // LBANN_DEBUG
 
 namespace lbann {

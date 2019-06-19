@@ -1,0 +1,53 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+
+################################################################################
+# Notes on building a environment file:
+# 1) Packages that should be explicitly installed to satisfy dependencies
+#    for LBANN, Hydrogen, or Aluminum are in the specs list.
+# 2) Packages and their variants that are secondary dependencies of
+#    the primary dependencies should be in the packages list.  This
+#    ensures that all primary dependenies build with a consistent set
+#    of secondary (and tertiary, ...) dependencies.
+################################################################################
+
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - conduit@master~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
+  - cnpy@master build_type=RelWithDebInfo
+  - opencv build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
+  - cereal
+  - ninja
+  - zlib
+  - cmake
+  - cudnn@7.5.1-10.0-x86_64
+  - cub
+  - nccl
+  - hwloc
+  - py-argparse
+  - py-configparser
+  - py-cython
+  - py-graphviz
+  - py-matplotlib
+  - py-onnx
+  - py-pandas
+  - protobuf
+  - py-protobuf+cpp
+  - py-setuptools
+  - py-texttable
+  mirrors: {}
+  modules:
+    enable: []
+  repos: []
+  config: {}
+################################################################################
+# Include paths to standard compilers and packages on LLNL LC systems
+# Remove and/or replace these with your site specific packages and paths
+# Note that the include files are expected to be local to this yaml file
+################################################################################
+  include:
+    - std_versions_and_variants_llnl_lc_cz.yaml
+    - externals_x86_64_llnl_lc_cz.yaml

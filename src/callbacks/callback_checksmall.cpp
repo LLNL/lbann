@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -22,27 +22,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_checksmall .hpp .cpp - Check matrices for small values
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_checksmall.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/layers/io/target/target_layer.hpp"
 
 namespace lbann {
 
 void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
-  if (dynamic_cast<generic_target_layer*>(l) != nullptr) {
-    return;
-  }
   const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
     std::stringstream ss;
     ss << name() << ": "
        << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
        << "error in activations of " << l->get_name() << " "
-       << "(step=" << std::to_string(m->get_cur_step()) << ")";
+       << "(step=" << std::to_string(m->get_step(execution_mode::training)) << ")";
     throw lbann_exception(ss.str());
   }
 }
@@ -55,7 +49,7 @@ void lbann_callback_checksmall::on_backward_prop_end(model *m) {
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights gradient of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()) << ")";
+         << "(step=" << std::to_string(m->get_step(execution_mode::training)) << ")";
       throw lbann_exception(ss.str());
     }
   }
@@ -68,7 +62,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_cur_step()-1) << ")";
+         << "(step=" << std::to_string(m->get_step(execution_mode::training)-1) << ")";
       throw lbann_exception(ss.str());
     }
   }

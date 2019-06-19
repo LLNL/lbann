@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -79,7 +79,7 @@ void lbann_callback_check_metric::check_metric(const model& m) const {
         << "but found a value of " << value;
     if (m_error_on_failure) {
       LBANN_ERROR(err.str());
-    } else if (m.get_comm()->am_model_master()) {
+    } else if (m.get_comm()->am_trainer_master()) {
       LBANN_WARNING(err.str());
     }
   }

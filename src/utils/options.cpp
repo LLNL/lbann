@@ -9,10 +9,15 @@
 #include <cstring>
 #include <cstdlib>
 #include <stdexcept>
+#include <algorithm>
+
+namespace lbann {
 
 options * options::s_instance = new options;
 
 //============================================================================
+
+namespace {
 
 void m_parse_opt(std::string tmp, std::string &key, std::string &val)
 {
@@ -35,6 +40,8 @@ void m_parse_opt(std::string tmp, std::string &key, std::string &val)
     }
   }
 }
+
+} // namespace
 
 void options::init(int argc, char **argv)
 {
@@ -65,6 +72,8 @@ void options::init(int argc, char **argv)
 
 //============================================================================
 
+namespace {
+
 void lower(std::string &s)
 {
   for (char & j : s) {
@@ -74,16 +83,7 @@ void lower(std::string &s)
   }
 }
 
-void lower(char *s)
-{
-  size_t len = strlen(s);
-  for (size_t j=0; j<len; j++) {
-    if (isalpha(s[j])) {
-      char a = tolower(s[j]);
-      s[j] = a;
-    }
-  }
-}
+} // namespace
 
 //============================================================================
 
@@ -107,16 +107,15 @@ bool options::get_bool(std::string option, bool the_default)
 
 bool options::get_bool(std::string option)
 {
+  if (m_opts.find(option) != m_opts.end()) {
+    std::string s1 = m_opts[option];
+    std::transform(s1.begin(), s1.end(), s1.begin(), ::tolower);
+    if (s1 == "true") return true;
+    if (s1 == "false") return false;
+  }
   int result;
   if (!m_test_int(option, result)) {
     return false;
-    /*
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " ::options::get_int() - failed to find option: " << option
-        << ", or to convert to int";
-    throw std::runtime_error(err.str());
-    */
   }
   if (result == 0) return false;
   return true;
@@ -246,13 +245,6 @@ bool options::has_int(std::string option)
   return false;
 }
 
-bool options::has_bool(std::string option)
-{
-  int test;
-  if (m_test_int(option, test)) return true;
-  return false;
-}
-
 bool options::has_string(std::string option) {
   std::string test;
   if (m_test_string(option, test)) return true;
@@ -342,3 +334,5 @@ void options::print(std::ostream &out) {
   }
   out << std::endl;
 }
+
+} // namespace lbann

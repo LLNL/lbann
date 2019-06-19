@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// data_reader_multihead_siamese .hpp .cpp - data reader to use m patches 
+// data_reader_multihead_siamese .hpp .cpp - data reader to use m patches
 //                                 generated offline.
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -31,7 +31,6 @@
 #define DATA_READER_MULTIHEAD_SIAMESE_HPP
 
 #include "data_reader_multi_images.hpp"
-#include "cv_process.hpp"
 #include "offline_patches_npz.hpp"
 #include <vector>
 #include <string>
@@ -44,8 +43,8 @@ class data_reader_multihead_siamese : public data_reader_multi_images {
   using label_t = offline_patches_npz::label_t;
   using sample_t = offline_patches_npz::sample_t;
 
-  data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, unsigned int nimages, bool shuffle = true);
-  data_reader_multihead_siamese(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_multihead_siamese(unsigned int nimages, bool shuffle = true);
+  data_reader_multihead_siamese(bool shuffle = true);
 
   data_reader_multihead_siamese(const data_reader_multihead_siamese&);
   data_reader_multihead_siamese& operator=(const data_reader_multihead_siamese&);
@@ -79,9 +78,6 @@ class data_reader_multihead_siamese : public data_reader_multi_images {
   sample_t get_sample(size_t idx) const {
     return m_samples.get_sample(idx);
   }
-
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
 
  protected:
   void set_defaults() override;

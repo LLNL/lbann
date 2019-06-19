@@ -1,0 +1,76 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - protobuf@3.6.1 build_type=Release +shared
+  - conduit@master~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
+  - cnpy@master build_type=RelWithDebInfo
+  - opencv@3.4.3 build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png+powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab+vsx~vtk+zlib
+  - cereal@1.2.2 build_type=RelWithDebInfo patches=2dfa0bff9816d0ebd8a1bcc70ced4483b3cda83a982ea5027f1aaadceaa15aac,720265382f29b744488d67e8df5000f2ca1b4dceb2018835fb5dc7a3a1c23f75,91f968e9ac3964e1a689a9ad379ab16f7803ac3d34d24f87ebcaecaa3f9a2f16
+  - ninja@1.8.2
+  - zlib@1.2.11
+  - openblas@0.3.4 cpu_target=auto ~ilp64+pic+shared threads=none ~virtual_machine
+  - hwloc@2.0.2
+  - cmake@3.12.1
+  - py-cython@0.29
+  - py-breathe
+  - py-m2r
+  - py-sphinx
+  - py-certifi
+  - py-urllib3
+  - py-idna
+  - py-chardet
+  - doxygen
+  mirrors: {}
+  modules:
+    enable: []
+  repos: []
+  config: {}
+################################################################################
+# Include paths to standard compilers and packages on LLNL LC systems
+# Remove and/or replace these with your site specific packages and paths
+################################################################################
+# include:
+#   - externals_llnl_lc_cz.yaml
+  packages:
+    all:
+      providers:
+        mpi: [openmpi@4.0 arch=darwin-highsierra-x86_64]
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: [clang@7.0.1 arch=darwin-highsierra-x86_64]
+
+    cmake:
+      variants: ~openssl ~ncurses
+      paths:
+        cmake@3.14.0 arch=darwin-highsierra--x86_64:  /usr/local/
+    python:
+      buildable: True
+      variants: +shared
+      version: [3.7.2]
+
+    openmpi:
+      buildable: False
+      version: [4.0]
+      paths:
+        openmpi@4.0 arch=darwin-highsierra-x86_64: /usr/local/
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: highsierra
+      paths:
+        cc: /usr/local/Cellar/llvm/7.0.1/bin/clang
+        cxx: /usr/local/Cellar/llvm/7.0.1/bin/clang++
+        f77: /usr/local/bin/gfortran
+        fc: /usr/local/bin/gfortran
+      spec: clang@7.0.1
+      target: x86_64

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -49,7 +49,7 @@ void lbann_callback_perturb_adam::setup(model* m) {
 }
 
 void lbann_callback_perturb_adam::on_batch_begin(model* m) {
-  if (m_perturb_during_training && m->get_cur_step() > 0) {
+  if (m_perturb_during_training && m->get_step() > 0) {
     perturb(*m);
   }
 }
@@ -95,7 +95,7 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
 
   // Perturb hyperparameters on master process
   std::vector<DataType> hyperparameters(4);
-  if (comm.am_model_master()) {
+  if (comm.am_trainer_master()) {
 
     // Useful constants
     // Note: half_epsilon is the difference between 1.0 and the next
@@ -148,7 +148,7 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
   }
 
   // Communicate hyperparameters from master processes
-  comm.model_broadcast(comm.get_model_master(),
+  comm.trainer_broadcast(comm.get_trainer_master(),
                        hyperparameters.data(),
                        hyperparameters.size());
 

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -47,12 +47,13 @@
 
 namespace lbann {
 
-lbann_comm* initialize(int& argc, char**& argv, int seed) {
+world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
   // Create a new comm object.
   // Initial creation with every process in one model.
-  auto* comm = new lbann_comm(0);
+  auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
+
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
   hwloc_topology_t topo;
@@ -95,8 +96,6 @@ void finalize(lbann_comm* comm) {
   El::Finalize();
 }
 
-}  // namespace lbann
-
 /** hack to avoid long switch/case statement; users should ignore; of interest to developers */
 static std::vector<std::string> pool_mode_names = { "invalid", "max", "average", "average_no_pad" };
 
@@ -108,3 +107,5 @@ std::string get_pool_mode_name(pool_mode m) {
   }
   return pool_mode_names[(int)m];
 }
+
+} // namespace lbann

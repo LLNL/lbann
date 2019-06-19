@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -31,6 +31,27 @@
 
 #include <iostream>
 #include <exception>
+#include <sstream>
+
+// Macro to throw an LBANN exception
+#define LBANN_ERROR(message)                                    \
+  do {                                                          \
+    std::stringstream ss_LBANN_ERROR;                           \
+    ss_LBANN_ERROR << "LBANN error ";                           \
+    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
+                     << ": " << (message);                      \
+    throw lbann::lbann_exception(ss_LBANN_ERROR.str());               \
+  } while (0)
+
+// Macro to print a warning to standard error stream.
+#define LBANN_WARNING(message)                                          \
+  do {                                                                  \
+    std::stringstream ss_LBANN_WARNING;                                 \
+    ss_LBANN_WARNING << "LBANN warning ";                               \
+    ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"       \
+                     << ": " << (message) << std::endl;                 \
+    std::cerr << ss_LBANN_WARNING.str();                                \
+  } while (0)
 
 namespace lbann {
 class lbann_exception : public std::exception {

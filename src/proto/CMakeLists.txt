@@ -8,12 +8,14 @@ if (LBANN_HAS_PROTOBUF)
   # touched, CMake will rebuild the LbannProto library.
   set(PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.cc")
   set(PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.h")
+  set(PROTO_PY "${CMAKE_CURRENT_BINARY_DIR}/lbann_pb2.py")
   add_custom_command(
     COMMAND protobuf::protoc
     "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
+    "--python_out=${CMAKE_CURRENT_BINARY_DIR}"
     "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto"
-    OUTPUT ${PROTO_SRCS} ${PROTO_HDRS}
+    OUTPUT ${PROTO_SRCS} ${PROTO_HDRS} ${PROTO_PY}
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto" protobuf::protoc
     COMMENT "Running protoc on lbann.proto"
     VERBATIM)
@@ -41,6 +43,10 @@ if (LBANN_HAS_PROTOBUF)
 
   # Install the newly built headers
   install(FILES ${PROTO_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+  # Install the Python module into the site-packages directory
+  install(FILES ${PROTO_PY} DESTINATION
+                ${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 
 endif (LBANN_HAS_PROTOBUF)
 

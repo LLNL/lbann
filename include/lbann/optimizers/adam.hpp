@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,51 +24,104 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OPTIMIZER_ADAM_HPP
-#define LBANN_OPTIMIZER_ADAM_HPP
+#ifndef LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
+#define LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
-/** Adam optimizer.
+/** @brief Adam optimizer.
+ *
  *  Reference:
- *  Kingma, D. and Ba, J. 2014. Adam: A Method for Stochastic Optimization.
+ *
+ *  Diederik P. Kingma and Jimmy Ba. "Adam: A method for stochastic
+ *  optimization." arXiv preprint arXiv:1412.6980 (2014).
  */
 class adam : public optimizer {
 public:
 
-  /** Constructor. */
-  adam(lbann_comm *comm,
+  /** @name Life cycle functions */
+  ///@{
+
+  adam(lbann_comm* comm,
        DataType learning_rate,
-       DataType beta1 = DataType(0.9),
-       DataType beta2 = DataType(0.99),
-       DataType eps = DataType(1e-8));
-
-
-  /** Copy constructor. */
+       DataType beta1 = 0.9,
+       DataType beta2 = 0.99,
+       DataType eps = 1e-8);
   adam(const adam& other);
-  /** Copy assignment operator. */
   adam& operator=(const adam& other);
-  /** Destructor. */
-  ~adam() override;
-  /** Create a copy. */
+  ~adam() = default;
   adam* copy() const override { return new adam(*this); }
 
-  /** Returns the optimizer name. */
+  ///@}
+
+  /** @name Descriptions */
+  ///@{
+
+  /** Human-readable type name. */
   std::string get_type() const override { return "Adam"; }
-  /** Get a human-readable description of the optimizer. */
-  std::string get_description() const override;
+  /** Human-readable description. */
+  description get_description() const override;
 
-  /** Setup optimizer. */
-  void setup(weights& w) override;
+  ///@}
 
-  /** Perform the computation in an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
-#ifdef LBANN_HAS_CUDNN
-  /** Perform the computation in an optimization step on GPU. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) override;
-#endif // LBANN_HAS_CUDNN
+  /** @name Access functions */
+  ///@{
+
+  /** Update factor for first moment estimate. */
+  DataType get_beta1() const noexcept { return m_beta1; }
+  /** Update factor for first moment estimate. */
+  void set_beta1(DataType beta1) { m_beta1 = beta1; }
+  /** Update factor for second moment estimate. */
+  DataType get_beta2() const noexcept { return m_beta2; }
+  /** Update factor for second moment estimate. */
+  void set_beta2(DataType beta2) { m_beta2 = beta2; }
+  /** Small factor to avoid division by zero. */
+  DataType get_eps() const noexcept { return m_eps; }
+  /** Small factor to avoid division by zero. */
+  void set_eps(DataType eps) { m_eps = eps; }
+
+  /** First moment estimates. */
+  const AbsDistMat& get_moment1() const;
+  /** First moment estimates. */
+  AbsDistMat& get_moment1();
+  /** Second moment estimates. */
+  const AbsDistMat& get_moment2() const;
+  /** Second moment estimates. */
+  AbsDistMat& get_moment2();
+
+  /** beta1 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  DataType get_current_beta1() const noexcept { return m_current_beta1; }
+  /** beta1 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  void set_current_beta1(DataType current_beta1) { m_current_beta1 = current_beta1; }
+  /** beta2 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  DataType get_current_beta2() const noexcept { return m_current_beta2; }
+  /** beta2 ^ iteration.
+   *  @todo This probably shouldn't be exposed.
+   */
+  void set_current_beta2(DataType current_beta2) { m_current_beta2 = current_beta2; }
+
+  ///@}
+
+  /** @name Setup */
+  ///@{
+
+  void setup(weights* w = nullptr) override;
+
+  ///@}
+
+protected:
+
+  /** Computation for an optimization step. */
+  void step_compute(AbsDistMat& values,
+                    const AbsDistMat& gradient) override;
 
 private:
 
@@ -79,20 +132,26 @@ private:
   /** Small factor to avoid division by zero. */
   DataType m_eps;
   /** beta1 ^ iteration. */
-  DataType m_current_beta1;
+  DataType m_current_beta1 = 1;
   /** beta2 ^ iteration. */
-  DataType m_current_beta2;
+  DataType m_current_beta2 = 1;
   /** First moment estimates. */
-  AbsDistMat *m_moment1;
+  std::unique_ptr<AbsDistMat> m_moment1;
   /** Second moment estimates. */
-  AbsDistMat *m_moment2;
+  std::unique_ptr<AbsDistMat> m_moment2;
 
   /** Hyperparameter exploration. */
   friend class lbann_callback_perturb_adam;
 
-  // ===========================================
-  // Checkpointing
-  // ===========================================
+  /** CPU implementation of optimization step. */
+  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+#ifdef LBANN_HAS_CUDA
+  /** GPU implementation of optimization step. */
+  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+#endif // LBANN_HAS_CUDA
+
+  /** @name Checkpointing */
+  ///@{
 
   /* struct used to serialize mode fields in file and MPI transfer */
   struct packing_header {
@@ -142,8 +201,10 @@ private:
   bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
+  ///@}
+
 };
 
 } // namespace lbann
 
-#endif  // LBANN_OPTIMIZER_ADAM_HPP
+#endif // LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED

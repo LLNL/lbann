@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,11 +27,9 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -44,7 +42,7 @@ using namespace lbann;
 
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
   if (master) {
@@ -63,18 +61,17 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
       if (master) {
-        std::cout << "usage: " << argv[0] << " --filelist=<string> --output_fn=<string>\n"
+        std::cout << "usage: " << argv[0] << " --filelist=<string> --base_dir=<string> --output_fn=<string>\n"
           "where: filelist contains a list of conduit filenames;\n"
           "       base_dir / <name from filelist> should fully specify\n"
           "       a conduit filepath\n"
           "function: constructs an index that lists number of samples\n"
           "          in each file, indices of invalid samples, etc\n";
       }
-      finalize(comm);
       return EXIT_SUCCESS;
     }
 
-    if (! (opts->has_string("filelist") && opts->has_string("output_fn") )) {
+    if (! (opts->has_string("filelist") && opts->has_string("output_fn") &&  opts->has_string("base_dir") )) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: improper invocation; run with no cmd line args for proper invocation");
     }
 
@@ -85,24 +82,27 @@ int main(int argc, char *argv[]) {
     int rank = comm->get_rank_in_world();
     std::stringstream ss;
     ss << output_fn << "." << rank;
-    std::ofstream out(ss.str().c_str());
+    std::ofstream out(ss.str());
+    std::cerr << rank << " :: opened for writing: " << ss.str() << "\n";
     if (!out.good()) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: failed to open " + output_fn + " for writing");
     }
     if (master) {
       std::cerr << "writing index file: " << output_fn << "\n";
-      out << base_dir << "\n";
     }
 
     // get list of input filenames
     std::vector<std::string> filenames;
-    read_filelist(comm, input_fn, filenames);
+    read_filelist(comm.get(), input_fn, filenames);
 
-    int global_num_samples = 0;
+    int num_samples = 0;
+    int num_samples_bad = 0;
     int np = comm->get_procs_in_world();
-    size_t total_good = 0;
     hid_t hdf5_file_hnd;
     for (size_t j=rank; j<filenames.size(); j+=np) {
+if (j >= 400) break;
+      int local_num_samples = 0;
+      int local_num_samples_bad = 0;
       std::cerr << rank << " :: processing: " << filenames[j] << "\n";
       try {
         std::string fn = filenames[j];
@@ -124,12 +124,23 @@ int main(int argc, char *argv[]) {
          std::cerr << "exception hdf5_group_list_child_names\n";
          continue;
       }
-      size_t is_good = 0;
-      size_t is_bad = 0;
       std::stringstream s5;
       conduit::Node n_ok;
       for (size_t h=0; h<cnames.size(); h++) {
         const std::string key_1 = "/" + cnames[h] + "/performance/success";
+
+        // adding this since hydra has one top-level child in each file
+        // that is not the root or a complete sample. Instead it's some
+        // sort of meta-data 
+        bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
+        if (!good) {
+          std::cerr << "missing path: " << key_1 << " (this is probably OK for hydra)\n";
+          s5 << cnames[h] << " ";
+          ++num_samples_bad;
+          ++local_num_samples_bad;
+          continue;
+        }
+
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key_1, n_ok);
         } catch (...) {
@@ -138,15 +149,15 @@ int main(int argc, char *argv[]) {
         }
         int success = n_ok.to_int64();
         if (success == 1) {
-          ++is_good;
-          ++total_good;
+          ++num_samples;
+          ++local_num_samples;
         } else {
-          s5 << h << " ";
-          ++is_bad;
+          s5 << cnames[h] << " ";
+          ++num_samples_bad;
+          ++local_num_samples_bad;
         }
       }
-      global_num_samples += is_good;
-      out << is_good << " " << is_bad << " " << s5.str() << "\n";
+      out << local_num_samples << " " << local_num_samples_bad << " " << s5.str() << "\n";
       try {
         conduit::relay::io::hdf5_close_file(hdf5_file_hnd);
       } catch (...) {
@@ -157,26 +168,38 @@ int main(int argc, char *argv[]) {
     out.close();
     comm->global_barrier();
 
-    int num_samples;
-    MPI_Reduce(&global_num_samples, &num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    int global_num_samples;
+    int global_num_samples_bad;
+    MPI_Reduce(&num_samples, &global_num_samples, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&num_samples_bad, &global_num_samples_bad, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
     if (master) {
+
+      std::ofstream out2("num_samples_tmp");
+      if (!out2) {
+        LBANN_ERROR("failed to open output file");
+      }
+      out2 << "CONDUIT_HDF5_EXCLUSION\n" << global_num_samples << " " << global_num_samples_bad
+           << " " << filenames.size() << "\n" << base_dir << "\n";
+      out2.close();
+
       std::stringstream s3;
-      s3 << "echo " << num_samples << " " << filenames.size() << " >  num_samples_tmp";
-      if (master) std::cerr << "NUM SAMPLES: " << num_samples << "\n";
-      system(s3.str().c_str());
-      s3.clear();
-      s3.str("");
       s3 << "cat num_samples_tmp ";
       for (int k=0; k<np; k++) {
         s3 << output_fn << "." << k << " ";
       }
       s3 << "> " << output_fn;
       system(s3.str().c_str());
+
       s3.clear();
       s3.str("");
       s3 << "chmod 660 " << output_fn;
       system(s3.str().c_str());
+      s3.clear();
+      s3.str("");
+      s3 << "chgrp brain " << output_fn;
+      system(s3.str().c_str());
+
       s3.clear();
       s3.str("");
       s3 << "rm -f num_samples_tmp ";
@@ -184,24 +207,10 @@ int main(int argc, char *argv[]) {
         s3 << output_fn << "." << k << " ";
       }
       system(s3.str().c_str());
-    }
+    } // if (master)
 
-  } catch (exception& e) {
-    std::cerr << "caught exception, outer loop!!!!\n";
-    if (options::get()->has_bool("stack_trace_to_file")) {
-      std::stringstream ss("stack_trace");
-      const auto& rank = get_rank_in_world();
-      if (rank >= 0) { ss << "_rank" << rank; }
-      ss << ".txt";
-      std::ofstream fs(ss.str().c_str());
-      e.print_report(fs);
-    }
-    El::ReportException(e);
-    finalize(comm);
-    return EXIT_FAILURE;
-  } catch (std::exception& e) {
-    El::ReportException(e);
-    finalize(comm);
+  } catch (std::exception const &e) {
+    if (master) std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
   } catch (...) {
     std::cerr << "unknown exception in main\n";
@@ -209,8 +218,6 @@ int main(int argc, char *argv[]) {
   }
 
   // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }
 
-#endif //#ifdef LBANN_HAS_CONDUIT

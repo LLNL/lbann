@@ -5,7 +5,7 @@ model {
   block_size: 256
   num_epochs: 18
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   objective_function {
     layer_term { layer: "mean_absolute_error" }
@@ -24,7 +24,6 @@ model {
     children: "DARK_MATTER SECRETS_OF_THE_UNIVERSE"
     data_layout: "data_parallel"
     input {
-      io_buffer: "partitioned"
       target_mode: "regression"
     }
   }

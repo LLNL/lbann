@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,11 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_PROTO_FACTORIES_HPP
-#define LBANN_PROTO_FACTORIES_HPP
+#ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
+#define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/transforms/transform.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 
 namespace lbann {
 namespace proto {
@@ -40,16 +42,18 @@ model* construct_model(lbann_comm* comm,
                        const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
-std::vector<Layer*> construct_layer_graph(lbann_comm* comm,
-                                          const std::map<execution_mode, generic_data_reader *>& data_readers,
-                                          const lbann_data::Model& proto_model);
+std::vector<std::unique_ptr<Layer>> construct_layer_graph(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <data_layout layout, El::Device Dev>
-Layer* construct_layer(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       int num_parallel_readers,
-                       const lbann_data::Layer& proto_layer);
+std::unique_ptr<Layer> construct_layer(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int num_parallel_readers,
+  const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
 weights* construct_weights(lbann_comm* comm,
@@ -78,6 +82,13 @@ optimizer* construct_optimizer(lbann_comm* comm,
 /** Construct an objective function specified with prototext. */
 objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
 
+/** Construct a transform given a prototext. */
+std::unique_ptr<transform::transform> construct_transform(
+  const lbann_data::Transform& trans);
+/** Construct a transform pipeline given a data reader prototext. */
+transform::transform_pipeline construct_transform_pipeline(
+  const lbann_data::Reader& data_reader);
+
 /** Parse a space-separated list. */
 template <typename T = std::string>
 std::vector<T> parse_list(std::string str) {
@@ -104,4 +115,4 @@ std::set<T> parse_set(std::string str) {
 } // namespace proto
 } // namespace lbann
 
-#endif // LBANN_PROTO_FACTORIES_HPP
+#endif // LBANN_PROTO_FACTORIES_HPP_INCLUDED

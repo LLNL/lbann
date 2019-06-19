@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -36,13 +36,13 @@
 namespace lbann {
 
 /**
- * Dump gradient matrices to files.
- * This will dump each hidden layer's gradient matrix after each minibatch.
- * The matrices are written to files using Elemental's simple ASCII format. This
- * is not meant for checkpointing, but for exporting gradient matrices for
- * analysis that isn't easily done in LBANN.
- * Note this dumps matrices during each mini-batch. This will be slow and
- * produce a lot of output.
+ * @brief Dump gradient matrices to files.
+ * @details This will dump each hidden layer's gradient matrix after
+ * each minibatch.  The matrices are written to files using
+ * Elemental's simple ASCII format. This is not meant for
+ * checkpointing, but for exporting gradient matrices for analysis
+ * that isn't easily done in LBANN.  Note this dumps matrices during
+ * each mini-batch. This will be slow and produce a lot of output.
  */
 class lbann_callback_dump_gradients : public lbann_callback {
  public:
@@ -50,6 +50,7 @@ class lbann_callback_dump_gradients : public lbann_callback {
 
   /**
    * @param basename The basename for writing files.
+   * @param batch_interval The frequency at which to dump the gradients
    */
   lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
     lbann_callback(batch_interval), m_basename(std::move(basename)) {}
@@ -63,7 +64,7 @@ class lbann_callback_dump_gradients : public lbann_callback {
   void on_backward_prop_end(model *m) override;
   std::string name() const override { return "dump gradients"; }
  private:
-  /** Basename for writing files. */
+  /** @brief Basename for writing files. */
   std::string m_basename;
 };
 

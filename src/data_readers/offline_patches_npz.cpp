@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,7 +41,7 @@ offline_patches_npz::offline_patches_npz(size_t npatches, std::string divider)
   m_num_patches = npatches;
   m_variant_divider = divider;
 }
-  
+
 offline_patches_npz::offline_patches_npz(size_t npatches)
   : m_checked_ok(false), m_lbann_format(false)
 {

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -77,7 +77,7 @@ class lbann_callback_debug_io : public lbann_callback {
   /** Common format for printing I/O stats at the start of a phase */
   void print_phase_start(model *m, execution_mode mode);
 
-  std::string name() const override { return "debug"; }
+  std::string name() const override { return "debug_io"; }
  private:
   /** The phase to debug. */
   execution_mode m_debug_phase;

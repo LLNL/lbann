@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -71,8 +71,9 @@ void layer_metric::set_layer_pointers(std::vector<Layer*> layers) {
                                                  layers.end() - 1));
   m_layer = layers.back();
 }
-  
+
 void layer_metric::setup(model& m) {
+  metric::setup(m);
   get_evaluation_layer();
 }
 

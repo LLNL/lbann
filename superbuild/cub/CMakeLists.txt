@@ -9,7 +9,7 @@ else ()
     CACHE STRING "The URL from which to clone CUB.")
 endif ()
 
-set(CUB_TAG "1.5.2" CACHE STRING "The git tag or hash to checkout for CUB")
+set(CUB_TAG "1.8.0" CACHE STRING "The git tag or hash to checkout for CUB")
 
 # Where to install CUB
 set(CUB_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
@@ -29,7 +29,8 @@ ExternalProject_Add(CUB
   PATCH_COMMAND
   ${CMAKE_COMMAND} -E copy_if_different
   ${CMAKE_CURRENT_SOURCE_DIR}/CUBCMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/src/CMakeLists.txt
+  ${CMAKE_CURRENT_BINARY_DIR}/src/CMakeLists.txt &&
+  patch -p1 < ${LBANN_SRC_DIR}/external/cub/cub_enable_alloc_free_logging.patch
   INSTALL_DIR ${CUB_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
   LOG_DOWNLOAD 1

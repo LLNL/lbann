@@ -3,7 +3,7 @@ model {
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ##############################################
   # Objective function
@@ -35,9 +35,7 @@ model {
     name: "input"
     children: "data label"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
   layer {
     parents: "input"

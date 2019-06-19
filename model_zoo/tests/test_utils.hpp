@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -71,7 +71,7 @@ inline void assert_false(bool x, const char *xname, const char *file,
   }
 }
 
-inline void assert_mat_eq(const Mat& x, const Mat& y, lbann::DataType tol,
+inline void assert_mat_eq(const lbann::Mat& x, const lbann::Mat& y, lbann::DataType tol,
                           const char *xname, const char *yname,
                           const char *file, size_t line) {
   // There are better ways to compare floating point values, but this should be
@@ -92,14 +92,14 @@ inline void assert_mat_eq(const Mat& x, const Mat& y, lbann::DataType tol,
   }
 }
 
-inline void assert_mat_eq(const DistMat& x, const DistMat& y, lbann::DataType tol,
+inline void assert_mat_eq(const lbann::DistMat& x, const lbann::DistMat& y, lbann::DataType tol,
                           const char *xname, const char *yname,
                           const char *file, size_t line) {
   assert_mat_eq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
                 line);
 }
 
-inline void assert_mat_neq(const Mat& x, const Mat& y, lbann::DataType tol,
+inline void assert_mat_neq(const lbann::Mat& x, const lbann::Mat& y, lbann::DataType tol,
                            const char *xname, const char *yname,
                            const char *file, size_t line) {
   // Still ensure these matrices are the same size.
@@ -117,7 +117,7 @@ inline void assert_mat_neq(const Mat& x, const Mat& y, lbann::DataType tol,
   exit(1);
 }
 
-inline void assert_mat_neq(const DistMat& x, const DistMat& y, lbann::DataType tol,
+inline void assert_mat_neq(const lbann::DistMat& x, const lbann::DistMat& y, lbann::DataType tol,
                            const char *xname, const char *yname,
                            const char *file, size_t line) {
   assert_mat_neq(x.LockedMatrix(), y.LockedMatrix(), tol, xname, yname, file,
@@ -168,11 +168,11 @@ inline void assert_vector_neq(const std::vector<T> x, const std::vector<T> y,
  * Compute the absolute error between approx_val and true_val, both overall
  * (in the return value) and element-wise (in elemerr).
  */
-lbann::DataType absolute_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& elemerr) {
+lbann::DataType absolute_error(lbann::CPUMat& approx_val, lbann::CPUMat& true_val, lbann::CPUMat& elemerr) {
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   elemerr = true_val;
-  elemerr -= approx_val;
+  El::Axpy(lbann::DataType{-1}, approx_val, elemerr);
   lbann::DataType abs_err = El::EntrywiseNorm(elemerr, 1);
   El::EntrywiseMap(elemerr, std::function<lbann::DataType(const lbann::DataType&)>(
   [](const lbann::DataType& x) {
@@ -185,18 +185,18 @@ lbann::DataType absolute_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& ele
  * Compute the relative error between approx_val and true_val, both overall
  * (in the return value) and element-wise (in elemerr).
  */
-lbann::DataType relative_error(CPUMat& approx_val, CPUMat& true_val, CPUMat& elemerr) {
+lbann::DataType relative_error(lbann::CPUMat& approx_val, lbann::CPUMat& true_val, lbann::CPUMat& elemerr) {
   ASSERT_EQ(approx_val.Width(), true_val.Width());
   ASSERT_EQ(approx_val.Height(), true_val.Height());
   lbann::DataType abs_err = absolute_error(approx_val, true_val, elemerr);
   lbann::DataType rel_err = abs_err / El::EntrywiseNorm(true_val, 1);
-  Mat true_copy(true_val);
+  lbann::Mat true_copy(true_val);
   El::EntrywiseMap(true_copy, std::function<lbann::DataType(const lbann::DataType&)>(
   [](const lbann::DataType& x) {
     return 1.0f / fabs(x);
   }));
-  Mat elemerr_copy(elemerr);
-  El::Hadamard(static_cast<AbsMat&>(elemerr_copy), static_cast<AbsMat&>(true_copy), static_cast<AbsMat&>(elemerr));
+  lbann::Mat elemerr_copy(elemerr);
+  El::Hadamard(static_cast<lbann::AbsMat&>(elemerr_copy), static_cast<lbann::AbsMat&>(true_copy), static_cast<lbann::AbsMat&>(elemerr));
   return rel_err;
 }
 

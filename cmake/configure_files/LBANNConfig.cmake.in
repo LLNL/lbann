@@ -35,8 +35,8 @@ set(LBANN_DATATYPE @LBANN_DATATYPE@)
 set(LBANN_DETERMINISTIC @LBANN_DETERMINISTIC@)
 set(LBANN_GNU_LINUX @LBANN_GNU_LINUX@)
 set(LBANN_HAS_ALUMINUM @LBANN_HAS_ALUMINUM@)
+set(LBANN_HAS_CEREAL @LBANN_HAS_CEREAL@)
 set(LBANN_HAS_CNPY @LBANN_HAS_CNPY@)
-set(LBANN_HAS_CONDUIT @LBANN_HAS_CONDUIT@)
 set(LBANN_HAS_CUDA @LBANN_HAS_CUDA@)
 set(LBANN_HAS_CUDNN @LBANN_HAS_CUDNN@)
 set(LBANN_HAS_DOXYGEN @LBANN_HAS_DOXYGEN@)
@@ -54,7 +54,22 @@ set(LBANN_TOPO_AWARE @LBANN_TOPO_AWARE@)
 
 # Setup dependencies
 
-# Start with Hydrogen. We can probably inherit Aluminum-ness from
+# First, CEREAL.
+if (LBANN_HAS_CEREAL)
+  find_package(CEREAL NO_MODULE
+    HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
+    PATH_SUFFIXES share/cmake/cereal
+    NO_DEFAULT_PATH)
+  if (NOT CEREAL_FOUND)
+    find_package(CEREAL NO_MODULE)
+  endif ()
+  if (NOT CEREAL_FOUND AND NOT CEREAL_DIR)
+    set(CEREAL_DIR "@CEREAL_DIR@")
+    find_package(CEREAL NO_MODULE REQUIRED)
+  endif ()
+endif ()
+
+# Next, Hydrogen. We can probably inherit Aluminum-ness from
 # there, as well as MPI and OpenMP.
 if (LBANN_HAS_HYDROGEN)
   if (NOT Hydrogen_DIR AND NOT HYDROGEN_DIR)

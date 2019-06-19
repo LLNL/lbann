@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,25 +24,27 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
-#define LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
+#ifndef LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
+#define LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
 
 #include "lbann/objective_functions/objective_function_term.hpp"
 
 namespace lbann {
 
-/** Objective function term for L2 weight regularization.
- *  Given weights \f$w_1,\cdots,w_n\f$, the L2 weight regularization
- *  term is
- *    \f[
- *    L2(w) = \frac{1}{2} \sum\limits_{i} w_i^2
- *    \f]
- *  Note the \f$1/2\f$ scaling factor.
+/** @class l2_weight_regularization
+ *  @brief Apply L2 regularization to a set of weights.
+ *
+ *  Given a weights tensor @f$ w @f$,
+ *  @f[ L2(w) = \frac{1}{2} \sum\limits_{i} w(i)^2 @f]
+ *  Note the @f$ 1/2 @f$ scaling factor.
  */
 class l2_weight_regularization : public objective_function_term {
- public:
+public:
 
-  l2_weight_regularization(EvalType scale_factor = EvalType(1));
+  /** @param scale_factor   The objective function term is
+   *                        @f$ \text{scale\_factor} \times \sum L2(w_i) @f$
+   */
+  l2_weight_regularization(EvalType scale_factor = 1);
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
@@ -50,39 +52,44 @@ class l2_weight_regularization : public objective_function_term {
   EvalType finish_evaluation() override;
 
   /** Compute the gradient w.r.t. the activations.
-   *  L2 weight regularization is independent of the activations.
+   *
+   *  L2 regularization is independent of forward prop output, so
+   *  nothing needs to be done here.
+   *
+   *  @todo Come up with a better function name in the base class.
    */
   void differentiate() override {};
 
   /** Compute the gradient w.r.t. the weights.
-   *  The gradient w.r.t. the weights is
-   *    \f[
-   *    \nabla_w L2(w) = w
-   *    \f]
+   *
+   *  @f[ \nabla_w L2(w) = w @f]
    */
   void compute_weight_regularization() override;
 
- private:
+private:
 
   /** Contributions to evaluated value. */
   std::map<El::Device, CPUMat> m_contributions;
-  /** Non-blocking allreduce request. */
+
+  /** For non-blocking allreduces. */
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
-  /** CUDA event after a non-blocking GPU-CPU memory copy. */
+  /** For non-blocking GPU-CPU memory copies. */
   cuda::event_wrapper m_copy_event;
 #endif // LBANN_HAS_GPU
 
-  /** Accumulate contribution to L2 regularization term.
-   *  The sum of squares of 'vals' is added to the value in
-   *  'contribution'.
+  /** Add the sum of squares of @c vals to @c contribution.
+   *
+   *  @param vals           The values to accumulate
+   *  @param contribution   @f$ 1 \times 1 @f$ matrix. Used as an
+   *                        accumulation variable.
    */
   template <El::Device Device>
   static void accumulate_contribution(const DMat<Device>& vals,
                                       DMat<Device>& contribution);
-  
+
 };
 
 } // namespace lbann
 
-#endif // LBANN_OBJECTIVE_FUNCTION_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED
+#endif // LBANN_OBJECTIVE_FUNCTIONS_WEIGHT_REGULARIZATION_L2_WEIGHT_REGULARIZATION_HPP_INCLUDED

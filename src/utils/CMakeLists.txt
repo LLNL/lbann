@@ -3,16 +3,17 @@ set_full_path(THIS_DIR_SOURCES
   cnpy_utils.cpp
   cublas.cpp
   cudnn.cpp
+  description.cpp
   exception.cpp
   file_utils.cpp
   graph.cpp
   im2col.cpp
+  image.cpp
   number_theory.cpp
   omp_diagnostics.cpp
   options.cpp
   profiling.cpp
   protobuf_utils.cpp
-  quantizer.cpp
   random.cpp
   stack_profiler.cpp
   stack_trace.cpp

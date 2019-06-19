@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -66,8 +66,9 @@ lbann_callback* construct_callback(lbann_comm* comm,
   //////////////////////////////////////////////////////////////
 
   if (proto_cb.has_print()) {
-    const auto& interval = proto_cb.print().interval();
-    return new lbann_callback_print(interval);
+    const auto& params = proto_cb.print();
+    return new lbann_callback_print(params.interval(),
+                                    params.print_global_stat_only());
   }
   if (proto_cb.has_timer()) {
     return new lbann_callback_timer(summarizer);
@@ -102,23 +103,19 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                    params.metric(),
                                    parse_set<std::string>(params.weights()),
                                    params.low_score_wins(),
+                                   lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
+                                   params.exchange_hyperparameters(),
                                    summarizer);
   }
   /// @todo
   if (proto_cb.has_imcomm()) {
     const auto& params = proto_cb.imcomm();
-    const auto& type_str = params.intermodel_comm_method();
+    const auto& type_str = params.intertrainer_comm_method();
     lbann_callback_imcomm::comm_type type = lbann_callback_imcomm::comm_type::NONE;
     if (type_str == "none") {
       type = lbann_callback_imcomm::comm_type::NONE;
     } else if (type_str == "normal") {
       type = lbann_callback_imcomm::comm_type::NORMAL;
-    } else if (type_str == "onebit_quantization") {
-      type = lbann_callback_imcomm::comm_type::ONEBIT_QUANTIZATION;
-    } else if (type_str == "thresh_quantization") {
-      type = lbann_callback_imcomm::comm_type::THRESH_QUANTIZATION;
-    } else if (type_str == "adaptive_quantization") {
-      type = lbann_callback_imcomm::comm_type::ADAPTIVE_QUANTIZATION;
     } else {
       err << "invalid inter-model communication type (" << type_str << ")";
       LBANN_ERROR(err.str());
@@ -188,6 +185,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_poly_learning_rate(params.power(),
                                                  params.num_epochs(),
                                                  params.max_iter(),
+                                                 params.end_lr(),
                                                  selected_weights);
   }
 
@@ -241,6 +239,14 @@ lbann_callback* construct_callback(lbann_comm* comm,
     }
   }
 
+  if (proto_cb.has_save_topk_models()) {
+    const auto& params = proto_cb.save_topk_models();
+    return new lbann_callback_save_topk_models(params.dir(),
+                                               params.k(),
+                                               params.metric(),
+                                               params.ascending_ordering());
+  }
+
   //////////////////////////////////////////////////////////////
   // Weight exchange/replace
   //////////////////////////////////////////////////////////////
@@ -265,7 +271,8 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                       params.mat_interval());
   }
   if (proto_cb.has_profiler()) {
-    return new lbann_callback_profiler(proto_cb.profiler().sync());
+    return new lbann_callback_profiler(proto_cb.profiler().sync(),
+                                       proto_cb.profiler().skip_init());
   }
   if (proto_cb.has_sync_layers()) {
     const auto& params = proto_cb.sync_layers();
@@ -345,7 +352,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_dump_outputs(layer_names,
                                            modes,
                                            params.batch_interval(),
-                                           params.prefix(),
+                                           params.directory(),
                                            params.format());
   }
   if (proto_cb.has_dump_error_signals()) {
@@ -422,6 +429,12 @@ lbann_callback* construct_callback(lbann_comm* comm,
                  parse_set<std::string>(params.weights()));
   }
 
+  if (proto_cb.has_perturb_dropout()) {
+    const auto& params = proto_cb.perturb_dropout();
+    return new lbann_callback_perturb_dropout(
+                 params.keep_dropout_factor(),
+                 parse_set<std::string>(params.layers()));
+  }
   return nullptr;
 }
 

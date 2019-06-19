@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -27,11 +27,9 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_hdf5.hpp"
+#include "conduit/conduit_relay_io_hdf5.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -47,7 +45,7 @@ void get_input_names(std::unordered_set<std::string> &s);
 //==========================================================================
 int main(int argc, char *argv[]) {
   int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
   const int np = comm->get_procs_in_world();
@@ -71,7 +69,7 @@ int main(int argc, char *argv[]) {
     // read list of conduit filenames
     std::vector<std::string> files;
     const std::string fn = opts->get_string("filelist");
-    read_filelist(comm, fn, files);
+    read_filelist(comm.get(), fn, files);
 
     std::unordered_set<std::string> input_names;
     get_input_names(input_names);
@@ -126,7 +124,7 @@ int main(int argc, char *argv[]) {
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             double d = tmp.value();
             ss << d << " ";
-          }  
+          }
         } catch (...) {
           throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception reading input from file: " + files[j]);
         }
@@ -141,25 +139,21 @@ int main(int argc, char *argv[]) {
     }
   } catch (exception const &e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   } catch (std::exception const &e) {
     El::ReportException(e);
-    finalize(comm);
     return EXIT_FAILURE;
   }
 
   // Clean up
-  finalize(comm);
   return EXIT_SUCCESS;
 }
 
 void get_input_names(std::unordered_set<std::string> &s) {
-  s.insert("shape_model_initial_modes:(4,3)"); 
-  s.insert("betti_prl15_trans_u"); 
-  s.insert("betti_prl15_trans_v"); 
-  s.insert("shape_model_initial_modes:(2,1)"); 
-  s.insert("shape_model_initial_modes:(1,0)"); 
+  s.insert("shape_model_initial_modes:(4,3)");
+  s.insert("betti_prl15_trans_u");
+  s.insert("betti_prl15_trans_v");
+  s.insert("shape_model_initial_modes:(2,1)");
+  s.insert("shape_model_initial_modes:(1,0)");
 }
 
-#endif //#ifdef LBANN_HAS_CONDUIT

@@ -1,17 +1,16 @@
-#ifndef __OPTIONS_HPP__
-#define __OPTIONS_HPP__
+#ifndef LBANN_UTILS_OPTIONS_HPP_INCLUDED
+#define LBANN_UTILS_OPTIONS_HPP_INCLUDED
 
 #include <iostream>
 #include <map>
 #include <vector>
 #include <string>
 
+namespace lbann {
 
-/*
- * This is a singleton, globally accessible class, for setting
- * and retrieving options (key/value pairs)
+/** Singleton, globally accessible class, for setting and retrieving
+ *  options (key/value pairs).
  */
-
 class options
 {
 public :
@@ -20,7 +19,7 @@ public :
   static options * get() {
     return s_instance;
   }
-  
+
   /** if cmd line contains "--loadme=<string>" then initialize
    *  options database from that file. Next, intialize
    *  from all other options on cmd line. */
@@ -32,7 +31,6 @@ public :
   //@{
   /** Returns true if the database contains the option */
   bool has_int(std::string option);
-  bool has_bool(std::string option);
   bool has_string(std::string option);
   bool has_float(std::string option) { return has_double(option); }
   bool has_double(std::string option);
@@ -46,14 +44,14 @@ public :
   void set_option(std::string name, float value);
   void set_option(std::string name, double value);
   //@}
-  
+
   //@{ hack to pass around data structures
   void set_ptr(void *p) { m_ptrs.push_back(p); }
   std::vector<void*> & get_ptrs() { return m_ptrs; }
   void clear_ptrs() { m_ptrs.clear(); }
   //@}
 
-  //@{ 
+  //@{
   /** returns the value of the option; throws exception if option doesn't exist,
    *  or if it's associated value (which is stored internally as a string)
    *  cannot be cast to the specified return type
@@ -65,8 +63,8 @@ public :
   double get_double(std::string option);
   //@}
 
-  //@{ 
-  /** returns the value of the option; if option isn't found, 
+  //@{
+  /** returns the value of the option; if option isn't found,
    * inserts the option in the internal db, with the specified
    * default value, and returns the the_default
    */
@@ -109,5 +107,6 @@ private:
   std::vector<void*> m_ptrs;
 };
 
-#endif
+} // namespace lbann
 
+#endif // LBANN_UTILS_OPTIONS_HPP_INCLUDED

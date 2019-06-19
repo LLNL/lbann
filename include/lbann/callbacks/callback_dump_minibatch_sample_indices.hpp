@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -37,11 +37,11 @@
 namespace lbann {
 
 /**
- * Dump sample indices for each minibatch to files.
- * This will dump the list of indices from the training / validation /
- * testing data that was processed
- * Note this dumps vectors during each mini-batch. This will be slow and
- * produce a lot of output.
+ * @brief Dump sample indices for each minibatch to files.
+ * @details This will dump the list of indices from the training /
+ * validation / testing data that was processed Note this dumps
+ * vectors during each mini-batch. This will be slow and produce a lot
+ * of output.
  */
 class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
  public:
@@ -50,8 +50,10 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
 
   /**
    * @param basename The basename for writing files.
+   * @param batch_interval The frequency at which to dump sample indices
    */
-  lbann_callback_dump_minibatch_sample_indices(std::string basename, int batch_interval = 1) :
+  lbann_callback_dump_minibatch_sample_indices(std::string basename,
+                                               int batch_interval = 1) :
     lbann_callback(batch_interval), m_basename(std::move(basename)) {}
   lbann_callback_dump_minibatch_sample_indices(
     const lbann_callback_dump_minibatch_sample_indices&) = default;

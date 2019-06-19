@@ -84,11 +84,11 @@ void stack_profiler::activate(int thread) {
   c_hash_thread_id = thread;
   options *opts = options::get();
 
-  if (opts->has_bool("st_on") and opts->get_bool("st_on")) {
+  if (opts->get_bool("st_on")) {
     std::cerr << "creating hash table!\n";
     c_hash_create(10000);
     c_hash_profiling_is_turned_on = 1;
-    if (opts->has_bool("st_full_trace") and opts->get_bool("st_full_trace")) {
+    if (opts->get_bool("st_full_trace")) {
       m_full_stack_trace = true;
       if (m_thread_id == 0) {
         c_hash_fp_full_stack_trace = fopen("full_stack_trace.bin", "wb");

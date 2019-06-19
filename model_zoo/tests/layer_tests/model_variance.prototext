@@ -4,7 +4,7 @@ model {
   block_size: 256
   num_epochs: 0
   num_parallel_readers: 0
-  procs_per_model: 0
+  procs_per_trainer: 0
 
   ###################################################
   # Objective function and metrics
@@ -49,9 +49,7 @@ model {
   layer {
     name: "data"
     data_layout: "data_parallel"
-    input {
-      io_buffer: "partitioned"
-    }
+    input {}
   }
 
   # Input data

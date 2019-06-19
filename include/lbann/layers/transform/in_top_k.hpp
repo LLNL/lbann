@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -55,6 +55,12 @@ class in_top_k_layer : public transform_layer {
   std::string get_type() const override { return "in_top_k"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+
+  description get_description() const override {
+    auto&& desc = transform_layer::get_description();
+    desc.add("k", m_k);
+    return desc;
+  }
 
  protected:
 

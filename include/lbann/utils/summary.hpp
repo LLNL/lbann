@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -79,7 +79,7 @@ class lbann_summary {
   void reduce_stdev(const std::string tag, const AbsDistMat& mat, int step);
   /** Report a scalar from each model (only meaningful on model masters). */
   void reduce_scalar(const std::string tag, DataType s, int step);
-  /** Do a model_reduce (sum) on a scalar, then report that sum. */
+  /** Do a trainer_reduce (sum) on a scalar, then report that sum. */
   void sum_reduce_scalar(const std::string tag, DataType s, int step);
   /** Report a scalar from every rank. */
   void reduce_scalar_all(const std::string tag, DataType s, int step);

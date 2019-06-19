@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -91,62 +91,67 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
   // read current epoch and step counters from model
   El::Timer timer;
   lbann_comm *comm = m->get_comm();
-  comm->model_barrier();
+  comm->trainer_barrier();
   // let user know we're saving the weights
-  int epoch = m->get_cur_epoch();
-  int step = m->get_cur_step();
-  if (comm->am_model_master()) {
+  int epoch = m->get_epoch();
+  int step = m->get_step(execution_mode::training);
+  if (comm->am_trainer_master()) {
     timer.Start();
-    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_model_rank(), epoch, step);
+    printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_trainer_rank(), epoch, step);
     fflush(stdout);
   }
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
   std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), epoch, step);
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     p.open_checkpoint(epochdir.c_str());
   }
   // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-  comm->model_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+  comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
   m->save_weights(p);
   // close our checkpoint
   p.close_checkpoint();
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     std::string latest_file = get_last_shared_checkpoint_filename(m, m_dir.c_str());
     write_latest(latest_file, epoch, step);
   }
 
   uint64_t bytes_count = p.get_bytes();
 
-  if (comm->am_model_master()) {
+  if (comm->am_trainer_master()) {
     EvalType secs = timer.Stop();
     EvalType bw = 0;
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
     printf("[%s.%d] Saving model weights complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           m->get_name().c_str(), comm->get_model_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
+           m->get_name().c_str(), comm->get_trainer_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw);
     fflush(stdout);
   }
   p.reset_bytes();
   return true;
 }
 
-bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m) {
+bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
   std::vector<std::string> weight_list = std::vector<std::string>();
-  int epochLast = -1;
-  int stepLast = -1;
-  std::string active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
+  std::string active_ckpt_dir;
+  if(ckptdir_is_fullpath) {
+    active_ckpt_dir = ckpt_dir;
+  }else {
+    int epochLast = -1;
+    int stepLast = -1;
+    active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
 
-  // get last epoch and step saved.
-  int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
-  if(!success) {
-    return false;
+    // get last epoch and step saved.
+    int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
+    if(!success) {
+      return false;
+    }
+    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
   }
-  active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
   lbann_comm *comm = m->get_comm();
-  if(comm->am_model_master()) {
+  if(comm->am_trainer_master()) {
     std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
   }
 

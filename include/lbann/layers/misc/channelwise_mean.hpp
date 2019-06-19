@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -41,7 +41,7 @@ public:
     static_assert(Layout == data_layout::DATA_PARALLEL,
                   "channelwise_mean_layer only supports "
                   "data-parallel data layout");
-    if (comm->am_model_master()) {
+    if (comm->am_trainer_master()) {
       LBANN_WARNING("channelwise_mean_layer is experimental "
                     "and may be deprecated at any time");
     }

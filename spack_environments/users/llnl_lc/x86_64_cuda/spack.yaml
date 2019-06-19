@@ -1,0 +1,37 @@
+# This is a Spack Environment file.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - lbann@develop+docs+gpu+nccl
+  mirrors: {}
+  modules:
+    enable: []
+  repos: []
+  config: {}
+################################################################################
+# Include paths to standard compilers and packages on LLNL LC systems
+# Remove and/or replace these with your site specific packages and paths
+################################################################################
+  include:
+  - ../../../std_versions_and_variants_llnl_lc_cz.yaml
+  - ../../../externals_x86_64_llnl_lc_cz.yaml
+  packages:
+    aluminum:
+      buildable: true
+      version: [master]
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+    hydrogen:
+      buildable: true
+      version: [develop]
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+  upstreams: {}

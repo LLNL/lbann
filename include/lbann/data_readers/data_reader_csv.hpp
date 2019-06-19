@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -30,7 +30,6 @@
 #define LBANN_DATA_READER_CSV_HPP
 
 #include "data_reader.hpp"
-#include "image_preprocessor.hpp"
 #include <unordered_map>
 
 namespace lbann {
@@ -128,9 +127,6 @@ class csv_reader : public generic_data_reader {
    * (Made public to support data store functionality)
    */
   std::vector<DataType> fetch_line_label_response(int data_id);
-
-  /// sets up a data_store.
-  void setup_data_store(model *m) override;
 
  protected:
   /**

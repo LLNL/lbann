@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,6 +29,7 @@
 
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/random.hpp"
 
 namespace lbann {
 
@@ -58,7 +59,7 @@ public:
   {
 #if defined(LBANN_HAS_CUDNN) && defined(LBANN_DETERMINISTIC)
     /// @todo GPU implementation of dropout with sequential consistency
-    if (Dev == El::Device::GPU && get_comm()->am_model_master()) {
+    if (Dev == El::Device::GPU && get_comm()->am_trainer_master()) {
       std::cerr << "Warning: GPU dropout currently does not guarantee "
                 << "sequential consistency" << std::endl;
     }
@@ -116,13 +117,21 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-protected:
-
-  std::vector<std::string> get_description() const override {
+  description get_description() const override {
     auto&& desc = regularizer_layer::get_description();
-    desc.push_back("Keep probability: " + std::to_string(m_keep_prob));
+    desc.add("Keep probability", m_keep_prob);
     return desc;
   }
+  /** @brief get prob for keep each unit. */
+  EvalType get_keep_prob() const {
+    return m_keep_prob;
+  }
+  /** @brief set prob for keep each unit. */
+  void set_keep_prob(EvalType keep_prob) {
+    m_keep_prob = keep_prob;
+  }
+
+protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();
@@ -184,7 +193,7 @@ protected:
     m_mask->Resize(height, width);
 #ifdef LBANN_DETERMINISTIC
     bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
-    *m_mask *= scale;
+    El::Scale(scale, *m_mask);
 #else
     El::EntrywiseMap(*m_mask,
                      (std::function<DataType(const DataType&)>)

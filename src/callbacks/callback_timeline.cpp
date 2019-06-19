@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -42,14 +42,14 @@ void lbann_callback_timeline::on_train_begin(model *m) {
     m_opt_times.emplace(w->get_name(), std::vector<std::pair<EvalType,EvalType>>());
   }
   // Ensure the model is synchronized at the start.
-  m->get_comm()->model_barrier();
+  m->get_comm()->trainer_barrier();
   m_start_time = get_time();
 }
 
 void lbann_callback_timeline::on_train_end(model *m) {
   const std::string path = m_outdir + "/timeline.m" +
-    std::to_string(m->get_comm()->get_model_rank()) + "." +
-    std::to_string(m->get_comm()->get_rank_in_model()) + ".txt";
+    std::to_string(m->get_comm()->get_trainer_rank()) + "." +
+    std::to_string(m->get_comm()->get_rank_in_trainer()) + ".txt";
   std::ofstream f(path);
   for (const auto& kv : m_fp_times) {
     const std::string layer_name = "fp-" + kv.first;

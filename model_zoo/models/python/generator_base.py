@@ -46,7 +46,7 @@ def callbacks(f, tab, checkpoint_dir=None):
 %scallback { timer {} }
 %scallback {
 %s%simcomm {
-%s%s%sintermodel_comm_method: "normal"
+%s%s%sintertrainer_comm_method: "normal"
 %s%s%sall_optimizers: true
 %s%s}
 %s}
@@ -175,7 +175,7 @@ def concatenation(f, tab, name, index_num, parents):
   f.write('%s}\n' % tab)
   return (name, index_num + 1)
 
-# sum() is a Python built-in function, so this function cannot have that name. 
+# sum() is a Python built-in function, so this function cannot have that name.
 def sum_layer(f, tab, name, index_num, parents):
   #if len(parents) != 2:
   #  raise Exception('sum must have exactly two parents, but was given %d: %s' % (len(parents), str(parents)))

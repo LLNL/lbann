@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,7 +38,7 @@ __global__ void variance_contribution_kernel(El::Int height,
                                              El::Int input_ldim,
                                              const DataType* __restrict__ means,
                                              DataType* __restrict__ contribution) {
-  
+
   // Indices
   const El::Int tid = threadIdx.x;
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -48,7 +48,7 @@ __global__ void variance_contribution_kernel(El::Int height,
   // Compute local contribution for each matrix column
   for (El::Int col = bidy; col < width; col += gridDim.y) {
     const auto& mean = means[col];
-    
+
     // Compute contributions for each thread
     DataType private_contribution = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
@@ -70,9 +70,9 @@ __global__ void variance_contribution_kernel(El::Int height,
       cuda::atomic_add(&contribution[col],
                        scale * shared_contribution[0]);
     }
-    
+
   }
-  
+
 }
 
 __global__
@@ -98,7 +98,7 @@ void variance_backprop_kernel(El::Int height,
     dx = dy * scale * (x - mean);
   }
 }
-  
+
 /** GPU forward prop implementation.
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
@@ -113,7 +113,7 @@ void fp_gpu(const AbsDistMat& input,
   const auto& local_input = static_cast<const GPUMat&>(input.LockedMatrix());
   auto& local_means = static_cast<GPUMat&>(means.Matrix());
   auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input.Height();
   const auto& width = input.Width();
@@ -155,7 +155,7 @@ void fp_gpu(const AbsDistMat& input,
   }
   El::AllReduce(workspace, workspace.RedundantComm());
   El::Copy(workspace, output);
-  
+
 }
 
 /** GPU backprop implementation.
@@ -173,7 +173,7 @@ void bp_gpu(const AbsDistMat& input,
   auto& local_gradient_wrt_input = static_cast<GPUMat&>(gradient_wrt_input.Matrix());
   const auto& local_means = static_cast<const GPUMat&>(means.LockedMatrix());
   auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
-  
+
   // Dimensions
   const auto& height = input.Height();
   const auto& local_height = local_input.Height();
@@ -199,7 +199,7 @@ void bp_gpu(const AbsDistMat& input,
 }
 
 } // namespace
-  
+
 template <>
 void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
