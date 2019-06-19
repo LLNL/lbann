@@ -38,7 +38,7 @@ namespace utils {
  * Check whether data is an image.
  * Currently requires data to be a uint8_t CPUMat, with 3 dimensions, the first
  * (channel) being 1 or 3.
- * 
+ *
  * @param data The data to check.
  * @param dims The dimensions associated with data.
  */
@@ -48,7 +48,7 @@ inline bool check_is_image(const utils::type_erased_matrix& data,
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
     (void) unused;
-  } catch (utils::bad_any_cast) {
+  } catch (utils::bad_any_cast const&) {
     return false;
   }
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
@@ -62,7 +62,7 @@ inline bool check_is_image(const utils::type_erased_matrix& data,
  * Currently requires data to be a uint8_t CPUMat, with 3 dimensions, the first
  * (channel) being 1 or 3.
  * Also throws an error if OpenCV is not supported.
- * 
+ *
  * @param data The data to check.
  * @param dims The dimensions associated with data.
  */
@@ -72,7 +72,7 @@ inline void assert_is_image(const utils::type_erased_matrix& data,
     // Check if we can do the conversion.
     const auto& unused = data.template get<uint8_t>();
     (void) unused;
-  } catch (utils::bad_any_cast) {
+  } catch (utils::bad_any_cast const&) {
     LBANN_ERROR("Data is not an image: not uint8_t.");
   }
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {

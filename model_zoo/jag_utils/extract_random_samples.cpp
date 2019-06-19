@@ -413,7 +413,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
 
     try {
       conduit::relay::io::hdf5_close_file( hdf5_file_hnd );
-    } catch (exception e) {
+    } catch (exception const& e) {
        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception hdf5_close_file; " + filenames[j] + "; " + e.what());
     }
 
@@ -432,7 +432,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
               << "_" << file_id++ << ".bundle";
     try {
       conduit::relay::io::save(save_me, fn.str(), "hdf5");
-    } catch (exception e) {
+    } catch (exception const& e) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save(); what: " + e.what());
     }
   }

@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       try {
 
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (std::exception e) {
+      } catch (std::exception const&) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
       }
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (std::exception const&) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         continue;
       }
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (std::exception e) {
+        } catch (std::exception const&) {
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
         }
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
                 save_me["/" + cnames[i]] = node;
 
-            } catch (std::exception e) {
+            } catch (std::exception const&) {
               throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: rank " + std::to_string(rank) + " :: " + "exception reading sample: " + cnames[i] + " which is " + std::to_string(i) + " of " + std::to_string(cnames[i].size()) + "; " + files[j]);
             }
 
@@ -210,4 +210,3 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 }
-

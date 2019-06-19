@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> cnames;
     try {
       hndl.list_child_names(cnames);
-    } catch (std::exception e) {
+    } catch (std::exception const&) {
       err << "list_child_names failed for this file: " << files[j];
       LBANN_ERROR(err.str());
     }
