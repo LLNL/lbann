@@ -29,5 +29,4 @@
 #include "mpi.h"
 
 namespace lbann {
-
 }  // namespace lbann

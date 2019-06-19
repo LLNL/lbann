@@ -30,11 +30,19 @@
 #include "lbann/callbacks/callback_checkpoint.hpp"
 
 namespace lbann {
-// Load from checkpoint occurs during setup callbacks
+// Reloading the model from checkpoint occurs during setup callbacks
 void lbann_callback_checkpoint::setup(model *m) {
   p.set_cb_type(callback_type::invalid);
+  reload_model(m);
+}
+
+// Restoring the execution context from checkpoint occurs during just
+// before execution phase
+void lbann_callback_checkpoint::on_train_begin(model *m) {
+  p.set_cb_type(callback_type::epoch);
   restart(m);
 }
+
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
 void lbann_callback_checkpoint::on_epoch_end(model *m) {
   p.set_cb_type(callback_type::epoch);
@@ -207,23 +215,12 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
   return true;
 }
 
-// Restart Shared/Distributed
-bool lbann_callback_checkpoint::restart(model *m) {
-  // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
-    return false;
-  }
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+std::string lbann_callback_checkpoint::find_latest_checkpoint(model *m, std::string& latest_file, int &epoch, int& step, int& shared) {
   constexpr unsigned int max_len_dirname = 1024;
-  // get top level directory
   char dir[max_len_dirname];
-  std::string latest_file;
-  int epoch = -1;
-  int step = -1;
   int epoch_dist = -1;
   int step_dist = -1;
   lbann_comm *comm = m->get_comm();
-  int shared = 1;
   // Grab latest checkpoint information, checks for latest in dist and shared, restarts from most recent between the two.
   if (comm->am_trainer_master()) {
     if(m_per_rank_dir.length()){
@@ -275,6 +272,30 @@ bool lbann_callback_checkpoint::restart(model *m) {
   comm->trainer_broadcast(0, shared);
   comm->trainer_broadcast(0, &(dir[0]), sizeof(dir));
 #endif
+  return dir;
+}
+
+// Open latest Shared/Distributed checkpoint
+bool lbann_callback_checkpoint::open_latest_checkpoint(
+  model *m,
+  const std::string& task_label,
+  std::function<bool(/*const */persist&)> reload_shared_ckpt,
+  std::function<bool(/*const */persist&)> reload_distributed_ckpt) {
+  // if the checkpoint directory is not defined, bail
+  if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
+    return false;
+  }
+
+  // constexpr unsigned int max_len_dirname = 1024;
+  // get top level directory
+  // char dir[max_len_dirname];
+  std::string latest_file;
+  int epoch = -1;
+  int step = -1;
+  int shared = 1;
+  lbann_comm *comm = m->get_comm();
+
+  std::string dir = find_latest_checkpoint(m, latest_file, epoch, step, shared);
 
   // if we couldn't find the latest epoch, just return
   if (epoch < 0) {
@@ -285,8 +306,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   // let user know we're restarting from a checkpoint
   if (comm->am_trainer_master()) {
     timer.Start();
-    printf("Restart: epoch %d ...\n", epoch);
-    fflush(stdout);
+    std::cout << task_label << "ing: epoch " << epoch << " ..." << std::endl;
   }
 
   std::string epochdir;
@@ -294,8 +314,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
   if(!shared){
     epochdir = get_distributed_checkpoint_dirname(m, dir, epoch, step);
     p.open_restart(epochdir.c_str());
-    c.load_from_checkpoint_distributed(p);
-    m->load_from_checkpoint_distributed(p);
+    reload_distributed_ckpt(p);
     p.close_restart();
   }
   else {
@@ -305,8 +324,7 @@ bool lbann_callback_checkpoint::restart(model *m) {
     }
     // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
-    c.load_from_checkpoint_shared(p);
-    m->load_from_checkpoint_shared(p);
+    reload_shared_ckpt(p);
     if(comm->am_trainer_master())
       p.close_restart();
   }
@@ -320,12 +338,59 @@ bool lbann_callback_checkpoint::restart(model *m) {
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("[%s.%d] Restart complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
-           m->get_name().c_str(), comm->get_trainer_rank(), epoch, step, secs, (unsigned long long) bytes_count, bw
+    printf("[%s.%d] %s complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+           m->get_name().c_str(), comm->get_trainer_rank(), task_label.c_str(), epoch, step,
+           secs, (unsigned long long) bytes_count, bw
           );
     fflush(stdout);
   }
   p.reset_bytes();
+  return true;
+}
+
+// Reload a model from a Shared/Distributed checkpoint
+bool lbann_callback_checkpoint::reload_model(model *m) {
+  auto reload_shared_model = std::function<bool(/*const */persist&)>
+    ([m](/*const */persist& p_ref)
+     ->bool {
+      return m->load_from_checkpoint_shared(p_ref);
+    });
+
+  auto reload_distributed_model = std::function<bool(/*const */persist&)>
+    ([m](/*const */persist& p_ref)
+     ->bool {
+      return m->load_from_checkpoint_distributed(p_ref);
+    });
+
+
+  open_latest_checkpoint(m, "Reload", reload_shared_model, reload_distributed_model);
+
+  return true;
+}
+
+
+// Restart previously saved Shared/Distributed execution contexts
+bool lbann_callback_checkpoint::restart(model *m) {
+  sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+
+
+  auto restart_shared_model = std::function<bool(/*const */persist&)>
+    ([&c](/*const */persist& p_ref)
+     ->bool {
+    //    for each execution context, reload it
+      return c.load_from_checkpoint_shared(p_ref);
+    });
+
+  auto restart_distributed_model = std::function<bool(/*const */persist&)>
+    ([&c](/*const */persist& p_ref)
+     ->bool {
+      //    for each execution context, reload it
+      return c.load_from_checkpoint_distributed(p_ref);
+    });
+
+
+  open_latest_checkpoint(m, "Restart", restart_shared_model, restart_distributed_model);
+
   return true;
 }
 

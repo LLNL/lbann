@@ -47,6 +47,8 @@ struct lbann_execution_context_header {
 };
 
 bool sgd_execution_context::save_to_checkpoint_shared(persist& p) {
+  execution_context::save_to_checkpoint_shared(p);
+
   // write out fields we need to save for execution_context
   const persist_type pt = execution_mode_to_persist_type(get_execution_mode());
 
@@ -60,6 +62,8 @@ bool sgd_execution_context::save_to_checkpoint_shared(persist& p) {
 }
 
 bool sgd_execution_context::load_from_checkpoint_shared(persist& p) {
+  execution_context::load_from_checkpoint_shared(p);
+
   // have rank 0 read the file
   // read state from file
   struct lbann_execution_context_header header;
@@ -86,6 +90,8 @@ bool sgd_execution_context::load_from_checkpoint_shared(persist& p) {
 }
 
 bool sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
+  execution_context::save_to_checkpoint_distributed(p);
+
   // write out fields we need to save for execution_context
   const persist_type pt = execution_mode_to_persist_type(get_execution_mode());
 
@@ -97,6 +103,8 @@ bool sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
 }
 
 bool sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
+  execution_context::load_from_checkpoint_distributed(p);
+
   struct lbann_execution_context_header header;
 
   callback_type cb = p.get_cb_type();

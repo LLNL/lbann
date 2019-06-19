@@ -70,6 +70,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
   lbann_callback_checkpoint* copy() const override { return new lbann_callback_checkpoint(*this); }
   void setup(model *m) override;
+  void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
   void on_validation_end(model *m) override;
@@ -104,6 +105,12 @@ class lbann_callback_checkpoint : public lbann_callback {
 
   bool need_checkpoint(model *m);
   bool checkpoint(model *m);
+  std::string find_latest_checkpoint(model *m, std::string& latest_file, int &epoch, int& step, int& shared);
+  bool open_latest_checkpoint(model *m,
+                              const std::string& task_label,
+                              std::function<bool(/*const */persist&)> reload_shared_ckpt,
+                              std::function<bool(/*const */persist&)> reload_distributed_ckpt);
+  bool reload_model(model *m);
   bool restart(model *m);
   std::string name() const override { return "checkpoint"; }
  protected:
@@ -128,7 +135,7 @@ class lbann_callback_checkpoint : public lbann_callback {
   };
 };
 
-static inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir) {
+static inline std::string get_last_shared_checkpoint_filename(model *m, const std::string& dir) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/";
@@ -137,7 +144,7 @@ static inline std::string get_last_shared_checkpoint_filename(model *m, std::str
   return ss.str();
 }
 
-static inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+static inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, int epoch, int step) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
@@ -147,7 +154,7 @@ static inline std::string get_shared_checkpoint_dirname(model *m, std::string di
   return ss.str();
 }
 
-static inline std::string get_last_distributed_checkpoint_filename(model *m, std::string dir) {
+static inline std::string get_last_distributed_checkpoint_filename(model *m, const std::string& dir) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/";
@@ -156,7 +163,7 @@ static inline std::string get_last_distributed_checkpoint_filename(model *m, std
   return ss.str();
 }
 
-static inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+static inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, int epoch, int step) {
   lbann_comm *comm = m->get_comm();
   std::stringstream ss;
   ss << dir << "/" << m->get_name().c_str();
