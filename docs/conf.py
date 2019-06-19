@@ -21,7 +21,7 @@ import subprocess, os, runpy
 rebuild_doxygen = not os.path.isdir("doxy_out/xml")
 
 if rebuild_doxygen:
-    subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
+    subprocess.call('doxygen RTDDoxyfile', shell=True)
 
 #exec(open("./BuildRSTDocs.py").read())
 runpy.run_path("BuildRSTDocs.py")
