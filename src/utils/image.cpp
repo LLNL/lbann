@@ -31,6 +31,8 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/opencv.hpp"
 
+namespace lbann {
+
 namespace {
 
 // Read filename into buf.
@@ -135,7 +137,7 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
                    std::vector<size_t>& dims, const std::string filename) {
   const size_t encoded_size = buf.Height() * buf.Width();
   std::vector<size_t> buf_dims = {1, encoded_size, 1};
-  cv::Mat cv_encoded = lbann::utils::get_opencv_mat(buf, buf_dims);
+  cv::Mat cv_encoded = utils::get_opencv_mat(buf, buf_dims);
   // Attempt to guess the decoded size.
   // Warning: These may be wrong.
   size_t height, width, channels;
@@ -145,7 +147,7 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
     dst.Resize(height*width*channels, 1);
     std::vector<size_t> guessed_dims = {channels, height, width};
     // Decode the image.
-    cv::Mat cv_dst = lbann::utils::get_opencv_mat(dst, guessed_dims);
+    cv::Mat cv_dst = utils::get_opencv_mat(dst, guessed_dims);
     cv::Mat real_decoded = cv::imdecode(cv_encoded,
                                         cv::IMREAD_ANYCOLOR | cv::IMREAD_ANYDEPTH,
                                         &cv_dst);
@@ -158,8 +160,8 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
             static_cast<size_t>(real_decoded.cols)};
     // If we did not guess the size right, need to copy.
     if (real_decoded.ptr() != dst.Buffer()) {
-      dst.Resize(lbann::utils::get_linearized_size(dims), 1);
-      cv_dst = lbann::utils::get_opencv_mat(dst, dims);
+      dst.Resize(utils::get_linearized_size(dims), 1);
+      cv_dst = utils::get_opencv_mat(dst, dims);
       real_decoded.copyTo(cv_dst);
     }
   } else {
@@ -172,15 +174,13 @@ void opencv_decode(El::Matrix<uint8_t>& buf, El::Matrix<uint8_t>& dst,
             static_cast<size_t>(decoded.rows),
             static_cast<size_t>(decoded.cols)};
     // Copy to dst.
-    dst.Resize(lbann::utils::get_linearized_size(dims), 1);
-    cv::Mat cv_dst = lbann::utils::get_opencv_mat(dst, dims);
+    dst.Resize(utils::get_linearized_size(dims), 1);
+    cv::Mat cv_dst = utils::get_opencv_mat(dst, dims);
     decoded.copyTo(cv_dst);
   }
 }
 
 }  // anonymous namespace
-
-namespace lbann {
 
 void load_image(const std::string& filename, El::Matrix<uint8_t>& dst,
                 std::vector<size_t>& dims) {
@@ -248,7 +248,7 @@ El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
 }
 
 std::string encode_image(const El::Matrix<uint8_t>& image,
-                                 const std::vector<size_t>& dims)
+                         const std::vector<size_t>& dims)
 {
   cv::Mat Mat_img = utils::get_opencv_mat(
     const_cast<El::Matrix<uint8_t>&>(image), dims);
