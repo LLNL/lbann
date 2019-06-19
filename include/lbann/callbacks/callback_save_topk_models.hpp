@@ -33,17 +33,25 @@
 
 namespace lbann {
 
-/** Save_topk_models for (e.g., inference and other analysis).
-   * @param dir directory to save model
-   * @param k number of models to save, should be less than number of trainers
-   * @param metric_name, evaluation metric
-   * @ordering for the topk, descending order is default
-   * Note: may end up saving more than k models if multiple models (trainers) have the same metric score
+/** @class lbann_callback_save_topk_models
+ *  @brief Save top-k models
+ *  @details This is useful, e.g., for inference and other analysis.
  */
 class lbann_callback_save_topk_models : public lbann_callback_save_model {
  public:
-  lbann_callback_save_topk_models(std::string dir, int k, std::string metric_name, bool ascending_ordering=false) : 
-  lbann_callback_save_model(dir,true), m_k(k),m_metric_name(metric_name),m_ascending_ordering(ascending_ordering) {}
+
+  /** @brief Constructor
+   *  @param[in] dir Directory in which to save model.
+   *  @param[in] k Number of models to save; should be less than
+   *             number of trainers.
+   *  @param[in] metric_name Evaluation metric to use.
+   *  @param[in] ascending_ordering Whether to use ascending ordering
+   *             for the top-k; descending order is default.
+   *  @note May end up saving more than k models if multiple models
+   *        (trainers) have the same metric score.
+   */
+  lbann_callback_save_topk_models(const std::string& dir, int k, const std::string& metric_name, bool ascending_ordering=false) :
+    lbann_callback_save_model(dir,true),m_k(k),m_metric_name(metric_name),m_ascending_ordering(ascending_ordering) {}
   lbann_callback_save_topk_models(const lbann_callback_save_topk_models&) = default;
   lbann_callback_save_topk_models& operator=(const lbann_callback_save_topk_models&) = default;
   lbann_callback_save_topk_models* copy() const override { return new lbann_callback_save_topk_models(*this); }
@@ -51,14 +59,13 @@ class lbann_callback_save_topk_models : public lbann_callback_save_model {
   std::string name() const override { return "save_topk_models"; }
 
  private:
-  /*determine if a trainer's model is in top k, computation done by trainer master processes*/
+  /** @brief Determine if a trainer's model is in top-k.
+   *  @details Computation done by trainer master processes.
+   */
   bool am_in_topk(model *m);
-  int m_k ;  
-  std::string m_metric_name; 
-  bool m_ascending_ordering; 
-
+  int m_k ;
+  std::string m_metric_name;
+  bool m_ascending_ordering;
 };
-
 }  // namespace lbann
-
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_TOPK_MODELS_HPP_INCLUDED
