@@ -112,7 +112,8 @@ public:
    *  @param low_score_wins Whether low-scoring or high-scoring models
    *                        survive a tournament.
    *  @param comm_algo      Inter-trainer communication scheme.
-   *  @param summarizer     The summarizer to use for this callback
+   *  @param exchange_hyperparameters Whether to exchange hyperparameters.
+   *  @param summarizer     The summarizer to use for this callback.
    */
   lbann_callback_ltfb(
     El::Int batch_interval,
@@ -155,7 +156,7 @@ private:
 
   /** Inter-trainer communication scheme. */
   communication_algorithm m_comm_algo;
- 
+
   /** Whether to exchange training hyperparameters between trainers
   */
   bool m_exchange_hyperparameters;
