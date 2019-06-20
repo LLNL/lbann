@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (std::exception const&) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: hdf5_group_list_child_names failed; " + files[j]);
       }
 
@@ -156,4 +156,3 @@ void get_input_names(std::unordered_set<std::string> &s) {
   s.insert("shape_model_initial_modes:(2,1)");
   s.insert("shape_model_initial_modes:(1,0)");
 }
-

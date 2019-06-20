@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
       if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
       try {
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j] );
-      } catch (std::exception e) {
+      } catch (std::exception const&) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
       } catch (...) {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (std::exception const&) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names: " << files[j] << "\n";
         continue;
       }
