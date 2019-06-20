@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
+// data_reader_cifar10 .hpp .cpp - Data reader for CIFAR-10/100
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_DATA_READER_CIFAR10_HPP
@@ -33,14 +33,23 @@
 
 namespace lbann {
 
+/**
+ * A data reader for the CIFAR-10/100 datasets.
+ *
+ * This requires the binary distributions of the datasets, which
+ * must retain their original filenames.
+ * CIFAR-10 vs -100 is inferred by the number of labels set.
+ * @note This does not store the coarse labels from CIFAR-100.
+ *
+ * See:
+ *     https://www.cs.toronto.edu/~kriz/cifar.html
+ */
 class cifar10_reader : public image_data_reader {
  public:
-  /// constructor
   cifar10_reader(bool shuffle = true);
   cifar10_reader(const cifar10_reader&) = default;
   cifar10_reader& operator=(const cifar10_reader&) = default;
 
-  /// destructor
   ~cifar10_reader() override;
 
   cifar10_reader* copy() const override { return new cifar10_reader(*this); }
@@ -58,7 +67,13 @@ class cifar10_reader : public image_data_reader {
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
  private:
-  std::vector<std::vector<unsigned char> > m_data;
+  /**
+   * Loaded image data.
+   * This will be stored in "OpenCV" format for ease of preprocessing.
+   */
+  std::vector<std::vector<unsigned char>> m_images;
+  /** Loaded label information. */
+  std::vector<uint8_t> m_labels;
 };
 
 }  // namespace lbann
