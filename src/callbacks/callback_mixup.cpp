@@ -40,17 +40,26 @@ void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
     return;  // No mixup outside of training.
   }
 
-  auto& samples = l->get_local_activations(0);
-  auto& targets = l->get_local_activations(1);
+  auto& samples_orig = l->get_local_activations(0);
+  auto& labels_orig = l->get_local_activations(1);
+  if (samples_orig.GetDevice() != El::Device::CPU ||
+      labels_orig.GetDevice() != El::Device::CPU) {
+    LBANN_ERROR("Mixup requires CPU data.");
+  }
+  // Copy samples.
+  // Assumes data are on CPU.
+  CPUMat samples, labels;
+  El::Copy(samples_orig, samples);
+  El::Copy(labels_orig, labels);
   El::Int mbsize = samples.Width();
   const El::Int samples_height = samples.Height();
-  const El::Int targets_height = targets.Height();
+  const El::Int labels_height = labels.Height();
   auto& gen = get_fast_generator();
   beta_distribution<float> dist(m_alpha, m_alpha);
 
   // For now, data must be on the CPU.
   if (samples.GetDevice() != El::Device::CPU ||
-      targets.GetDevice() != El::Device::CPU) {
+      labels.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("mixup only works with CPU data");
   }
 
@@ -59,6 +68,7 @@ void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
   std::iota(shuffled_indices.begin(), shuffled_indices.end(), 0);
   std::shuffle(shuffled_indices.begin(), shuffled_indices.end(), gen);
 
+  LBANN_OMP_PARALLEL_FOR
   for (El::Int i = 0; i < mbsize; ++i) {
     const El::Int j = shuffled_indices[i];
     if (i == j) {
@@ -67,15 +77,17 @@ void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
     float lambda = dist(gen);
     lambda = std::max(lambda, 1.0f - lambda);
     const float lambda_sub = 1.0f - lambda;
-    DataType* __restrict__ x1_buf = samples.Buffer() + i*samples.LDim();
-    const DataType* __restrict__ x2_buf = samples.LockedBuffer() + j*samples.LDim();
-    DataType* __restrict__ y1_buf = targets.Buffer() + i*targets.LDim();
-    const DataType* __restrict__ y2_buf = targets.LockedBuffer() + j*targets.LDim();
+    const DataType* __restrict__ x1_buf = samples.LockedBuffer(0, i);
+    const DataType* __restrict__ x2_buf = samples.LockedBuffer(0, j);
+    DataType* __restrict__ x = samples_orig.Buffer(0, i);
+    const DataType* __restrict__ y1_buf = labels.LockedBuffer(0, i);
+    const DataType* __restrict__ y2_buf = labels.LockedBuffer(0, j);
+    DataType* __restrict__ y = labels_orig.Buffer(0, i);
     for (El::Int k = 0; k < samples_height; ++k) {
-      x1_buf[k] = lambda*x1_buf[k] + lambda_sub*x2_buf[k];
+      x[k] = lambda*x1_buf[k] + lambda_sub*x2_buf[k];
     }
-    for (El::Int k = 0; k < targets_height; ++k) {
-      y1_buf[k] = lambda*y1_buf[k] + lambda_sub*y2_buf[k];
+    for (El::Int k = 0; k < labels_height; ++k) {
+      y[k] = lambda*y1_buf[k] + lambda_sub*y2_buf[k];
     }
   }
 }
