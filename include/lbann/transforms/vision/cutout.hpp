@@ -51,7 +51,7 @@ public:
   /**
    * Cutout with a given number of squares of a given size.
    * @param num_holes Number of squares to mask out (must be positive).
-   * @param size Length of a side of the square (must be positive).
+   * @param length Length of a side of the square (must be positive).
    */
   cutout(size_t num_holes, size_t length) :
     transform(), m_num_holes(num_holes), m_length(length) {
