@@ -439,6 +439,7 @@ message Callback {
    CallbackPerturbAdam perturb_adam = 38;
    CallbackPerturbDropout perturb_dropout = 39;
    CallbackSaveTopKModels save_topk_models = 40;
+   CallbackMixup mixup = 41;
 }
 
 message CallbackLTFB {
@@ -692,6 +693,12 @@ message CallbackSaveTopKModels {
   string metric = 3; //metrics to use in evaluating models
   bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
 }
+
+message CallbackMixup {
+  string layers = 1;
+  float alpha = 2;
+}
+
 //========================================================================
 // Weights
 //========================================================================
