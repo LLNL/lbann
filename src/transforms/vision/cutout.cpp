@@ -38,12 +38,10 @@ void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
     const ssize_t center_y = transform::get_uniform_random_int(0, dims[1]);
     // Compute top-left corner and bottom-right corners of the hole.
     const ssize_t length = static_cast<ssize_t>(m_length);
-    const size_t x1 = std::max(center_x - length / 2, 0);
-    const size_t x2 = std::min(x1 + length,
-                               static_cast<ssize_t>(dims[2]) - 1);
-    const size_t y1 = std::max(center_y - length / 2, 0);
-    const size_t y2 = std::min(y1 + length,
-                               static_cast<ssize_t>(dims[1]) - 1);
+    const size_t x1 = std::max(center_x - length / 2, 0l);
+    const size_t x2 = std::min(x1 + length, dims[2] - 1);
+    const size_t y1 = std::max(center_y - length / 2, 0l);
+    const size_t y2 = std::min(y1 + length, dims[1] - 1);
     // Convert to height/width.
     const size_t h = y2 - y1;
     const size_t w = x2 - x1;
