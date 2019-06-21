@@ -34,7 +34,9 @@ namespace transform {
 
 /**
  * Cutout data augmentation which randomly masks out square regions of input.
+ * 
  * See:
+ * 
  *     DeVries and Taylor. "Improved Regularization of Convolutional Neural
  *     Networks with Cutout". arXiv preprint arXiv:1708.04552 (2017).
  *
