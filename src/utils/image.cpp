@@ -240,7 +240,7 @@ El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
         const DataType norm_img_val =
           (img_buf[img_offset + row + col*dims[1]] - min) / norm_denom;
         cv_buf[dims[0]*(col + row*dims[2]) + channel] =
-          static_cast<uint8_t>(std::round(norm_img_val) * 255);
+          static_cast<uint8_t>(std::min(std::floor(norm_img_val) * 256, DataType(255)));
       }
     }
   }
