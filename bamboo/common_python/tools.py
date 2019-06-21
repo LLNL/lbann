@@ -6,7 +6,7 @@ def check_list(substrings, strings):
     errors = []
     for string in strings:
         for substring in substrings:
-            if (string != None) and (substring in string):
+            if (string is not None) and (substring in string):
                 errors.append('%s contains %s' % (string, substring))
     return errors
 
@@ -79,6 +79,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('SLURM_JOB_NUM_NODES') is None:
+            print('Allocating slurm nodes.')
             command_allocate = 'salloc'
             option_num_nodes = ''
             option_partition = ''
@@ -105,6 +106,8 @@ def get_command(cluster,
             command_allocate = '%s%s%s%s' % (
                 command_allocate, option_num_nodes, option_partition,
                 option_time_limit)
+        else:
+            print('slurm nodes already allocated.')
 
         # Create run command
         if command_allocate == '':
@@ -123,6 +126,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('LSB_HOSTS') is None:
+            print('Allocating lsf nodes.')
             command_allocate = 'bsub'
             # x => Puts the host running your job into exclusive execution
             # mode.
@@ -160,6 +164,8 @@ def get_command(cluster,
                 command_allocate, option_exclusive, option_group,
                 option_interactive, option_num_processes, option_partition,
                 option_processes_per_node, option_time_limit)
+        else:
+            print('lsf nodes already allocated.')
 
         # Create run command
         if command_allocate == '':
@@ -261,7 +267,7 @@ def get_command(cluster,
             # option_data_filename_train = data_filename_train_default
             # option_data_filedir_test = data_filedir_test_default
             # option_data_filename_train = data_filename_test_default
-            pass # No need to pass in a parameter
+            pass  # No need to pass in a parameter
         elif cluster == 'ray':
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
