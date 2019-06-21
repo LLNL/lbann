@@ -129,6 +129,11 @@ message Transform {
     float min_saturation_factor = 5;
     float max_saturation_factor = 6;
   }
+  // Apply cutout augmentation.
+  message Cutout {
+    uint64 num_holes = 1;
+    uint64 length = 2;
+  }
   // Convert to grayscale.
   message Grayscale {}
   // Horizontal flip with probability p.
@@ -215,6 +220,7 @@ message Transform {
     AdjustContrast adjust_contrast = 114;
     AdjustSaturation adjust_saturation = 115;
     ColorJitter color_jitter = 116;
+    Cutout cutout = 117;
   }
 }
 

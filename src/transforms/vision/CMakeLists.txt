@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_SOURCES
   center_crop.cpp
   colorize.cpp
   color_jitter.cpp
+  cutout.cpp
   grayscale.cpp
   horizontal_flip.cpp
   normalize_to_lbann_layout.cpp
