@@ -6,7 +6,7 @@ def check_list(substrings, strings):
     errors = []
     for string in strings:
         for substring in substrings:
-            if (string != None) and (substring in string):
+            if (string is not None) and (substring in string):
                 errors.append('%s contains %s' % (string, substring))
     return errors
 
@@ -57,7 +57,7 @@ def get_command(cluster,
 
     # Never give lbannusr an allocation for over 12 hours though.
     strict_time_limit = 60*6  # 6 hours.
-    if time_limit > strict_time_limit:
+    if (time_limit is None) or (time_limit > strict_time_limit):
         time_limit = strict_time_limit
 
     # Check executable existence
@@ -65,7 +65,7 @@ def get_command(cluster,
         process_executable_existence(executable, skip_no_exe)
 
     # Determine scheduler
-    if cluster in ['catalyst', 'pascal', 'quartz', 'surface']:
+    if cluster in ['catalyst', 'pascal']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
@@ -79,6 +79,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('SLURM_JOB_NUM_NODES') is None:
+            print('Allocating slurm nodes.')
             command_allocate = 'salloc'
             option_num_nodes = ''
             option_partition = ''
@@ -90,8 +91,8 @@ def get_command(cluster,
                 # maxnodes.
                 option_num_nodes = ' --nodes=%d' % num_nodes
             if partition is not None:
-                # Surface does not have pdebug, so switch to pbatch
-                if (cluster in ['surface', 'pascal']) and \
+                # If cluster doesn't have pdebug switch to pbatch.
+                if (cluster in ['pascal']) and \
                         (partition == 'pdebug'):
                     partition = 'pbatch'
                 # --partition => Request a specific partition for the resource
@@ -105,6 +106,8 @@ def get_command(cluster,
             command_allocate = '%s%s%s%s' % (
                 command_allocate, option_num_nodes, option_partition,
                 option_time_limit)
+        else:
+            print('slurm nodes already allocated.')
 
         # Create run command
         if command_allocate == '':
@@ -123,6 +126,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('LSB_HOSTS') is None:
+            print('Allocating lsf nodes.')
             command_allocate = 'bsub'
             # x => Puts the host running your job into exclusive execution
             # mode.
@@ -160,6 +164,8 @@ def get_command(cluster,
                 command_allocate, option_exclusive, option_group,
                 option_interactive, option_num_processes, option_partition,
                 option_processes_per_node, option_time_limit)
+        else:
+            print('lsf nodes already allocated.')
 
         # Create run command
         if command_allocate == '':
@@ -249,27 +255,19 @@ def get_command(cluster,
     # Determine data file paths
     # If there is no regex match, then re.sub keeps the original string
     if data_filedir_default is not None:
-        if cluster in ['catalyst', 'pascal', 'surface']:
+        if cluster in ['catalyst', 'pascal',]:
             # option_data_filedir = data_filedir_default # lscratchh, presumably
             pass  # No need to pass in a parameter
-        elif cluster == 'quartz':
-            option_data_filedir = ' --data_filedir=%s' % re.sub(
-                '[a-z]scratch[a-z]', 'lscratchh', data_filedir_default)
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
     elif None not in data_file_parameters:
-        if cluster in ['catalyst', 'pascal', 'surface']:
+        if cluster in ['catalyst', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
             # option_data_filedir_test = data_filedir_test_default
             # option_data_filename_train = data_filename_test_default
-            pass # No need to pass in a parameter
-        elif cluster == 'quartz':
-            option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filedir_train_default)
-            option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filename_train_default)
-            option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filedir_test_default)
-            option_data_filename_train = ' --data_filename_test=%s'  % re.sub('[a-z]scratch[a-z]', 'lscratchh', data_filename_test_default)
+            pass  # No need to pass in a parameter
         elif cluster == 'ray':
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
@@ -303,7 +301,7 @@ def get_command(cluster,
             lbann_errors.append(
                 ('data_filedir_default set but neither data_reader_name'
                  ' or data_reader_path are.'))
-        elif filter(lambda x: x is not None, data_file_parameters) != []:
+        elif list(filter(lambda x: x is not None, data_file_parameters)) != []:
             # If the list of non-None data_file parameters is not empty
             lbann_errors.append(
                 ('At least one of [data_filedir_train_default, data_filename'
@@ -368,15 +366,13 @@ def process_executable_existence(executable, skip_no_exe=True):
 def get_spack_exes(default_dirname, cluster):
     exes = {}
 
-    exes['clang4'] = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['gcc4'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+    exes['clang6'] = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
     exes['gcc7'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['intel18'] = '%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+    exes['intel19'] = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
 
-    exes['clang4_debug'] = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['gcc4_debug'] = '%s/bamboo/compiler_tests/builds/%s_gcc-4.9.3_debug/build/model_zoo/lbann' % (default_dirname, cluster)
+    exes['clang6_debug'] = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
     exes['gcc7_debug'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
-    exes['intel18_debug'] = '%s/bamboo/compiler_tests/builds/%s_intel-18.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
+    exes['intel19_debug'] = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
 
     return exes
 
@@ -384,38 +380,32 @@ def get_spack_exes(default_dirname, cluster):
 def get_default_exes(default_dirname, cluster):
     exes = get_spack_exes(default_dirname, cluster)
     # Use build script as a backup if the Spack build doesn't work.
-    if not os.path.exists(exes['clang4']):
-        exes['clang4'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
+    if not os.path.exists(exes['clang6']):
+        exes['clang6'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if not os.path.exists(exes['gcc7']):
         exes['gcc7'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if not os.path.exists(exes['intel18']):
-        exes['intel18'] = '%s/build/intel.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
+    if not os.path.exists(exes['intel19']):
+        exes['intel19'] = '%s/build/intel.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
 
-    if not os.path.exists(exes['clang4_debug']):
-        exes['clang4_debug'] = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
+    if not os.path.exists(exes['clang6_debug']):
+        exes['clang6_debug'] = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if not os.path.exists(exes['gcc7_debug']):
         exes['gcc7_debug'] = '%s/build/gnu.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if not os.path.exists(exes['intel18_debug']):
-        exes['intel18_debug'] = '%s/build/intel.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
+    if not os.path.exists(exes['intel19_debug']):
+        exes['intel19_debug'] = '%s/build/intel.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'quartz', 'pascal']:
-        # x86_cpu - catalyst, quartz
+    if cluster in ['catalyst', 'pascal']:
+        # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
-        default_exes['clang4'] = exes['clang4']
-        default_exes['gcc4'] = exes['gcc4']
+        default_exes['clang6'] = exes['clang6']
         default_exes['gcc7'] = exes['gcc7']
-        default_exes['intel18'] = exes['intel18']
+        default_exes['intel19'] = exes['intel19']
 
-        default_exes['clang4_debug'] = exes['clang4_debug']
-        default_exes['gcc4_debug'] = exes['gcc4_debug']
+        default_exes['clang6_debug'] = exes['clang6_debug']
         default_exes['gcc7_debug'] = exes['gcc7_debug']
-        default_exes['intel18_debug'] = exes['intel18_debug']
-    elif cluster in ['surface']:
-        # x86_gpu - surface
-        default_exes['gcc4'] = exes['gcc4']
-        default_exes['gcc4_debug'] = exes['gcc4_debug']
+        default_exes['intel19_debug'] = exes['intel19_debug']
 
     print('default_exes={d}'.format(d=default_exes))
     return default_exes

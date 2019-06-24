@@ -435,6 +435,18 @@ lbann_callback* construct_callback(lbann_comm* comm,
                  params.keep_dropout_factor(),
                  parse_set<std::string>(params.layers()));
   }
+
+  //////////////////////////////////////////////////////////////
+  // Data augmentation
+  //////////////////////////////////////////////////////////////
+  if (proto_cb.has_mixup()) {
+    const auto& params = proto_cb.mixup();
+    const auto& layers_list = parse_list<std::string>(params.layers());
+    std::unordered_set<std::string> layers(layers_list.begin(),
+                                           layers_list.end());
+    return new callback_mixup(layers, params.alpha());
+  }
+
   return nullptr;
 }
 

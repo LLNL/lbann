@@ -26,7 +26,7 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
             error_file_name=error_file_name)
     elif model_name in ['conv_autoencoder_mnist', 'lenet_mnist']:
         if (model_name == 'lenet_mnist') and \
-                (compiler_name in ['clang4', 'intel18']):
+                (compiler_name in ['clang6', 'intel19']):
             partition = 'pbatch'
             time_limit = 600
         else:

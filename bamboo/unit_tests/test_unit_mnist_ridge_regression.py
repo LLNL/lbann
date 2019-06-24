@@ -24,20 +24,16 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name, compiler_nam
     assert return_code == 0
 
 
-def test_unit_mnist_ridge_regression_clang4(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_mnist_ridge_regression_gcc4(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'gcc4')
+def test_unit_mnist_ridge_regression_clang6(cluster, exes, dirname):
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_mnist_ridge_regression_gcc7(cluster, exes, dirname):
     skeleton_mnist_ridge_regression(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_mnist_ridge_regression_intel18(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'intel18')
+def test_unit_mnist_ridge_regression_intel19(cluster, exes, dirname):
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_mnist_ridge_regression_exe' --exe=<executable>

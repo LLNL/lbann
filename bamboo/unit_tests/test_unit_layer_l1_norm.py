@@ -23,20 +23,16 @@ def skeleton_layer_l1_norm(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_l1_norm_clang4(cluster, exes, dirname):
-    skeleton_layer_l1_norm(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_layer_l1_norm_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_l1_norm(cluster, exes, dirname, 'gcc4')
+def test_unit_layer_l1_norm_clang6(cluster, exes, dirname):
+    skeleton_layer_l1_norm(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_l1_norm_gcc7(cluster, exes, dirname):
     skeleton_layer_l1_norm(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_l1_norm_intel18(cluster, exes, dirname):
-    skeleton_layer_l1_norm(cluster, exes, dirname, 'intel18')
+def test_unit_layer_l1_norm_intel19(cluster, exes, dirname):
+    skeleton_layer_l1_norm(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_l1_norm_exe' --exe=<executable>

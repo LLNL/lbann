@@ -86,7 +86,7 @@ model = lbann.Model(mini_batch_size,
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
 # Load data reader from prototext
-model_zoo_dir = os.path.dirname(os.path.dirname(__file__))
+model_zoo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_reader_file = os.path.join(model_zoo_dir,
                                 'data_readers',
                                 'data_reader_mnist.prototext')

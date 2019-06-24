@@ -118,20 +118,16 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
     assert num_defective == 0
 
 
-def test_unit_models_clang4(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'clang4')
-
-
-def test_unit_models_gcc4(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'gcc4')
+def test_unit_models_clang6(cluster, dirname, exes):
+    skeleton_models(cluster, dirname, exes, 'clang6')
 
 
 def test_unit_models_gcc7(cluster, dirname, exes):
     skeleton_models(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_models_intel18(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'intel18')
+def test_unit_models_intel19(cluster, dirname, exes):
+    skeleton_models(cluster, dirname, exes, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>

@@ -24,20 +24,16 @@ def skeleton_mnist_softmax_classifier(cluster, executables, dir_name, compiler_n
     assert return_code == 0
 
 
-def test_unit_mnist_softmax_classifier_clang4(cluster, exes, dirname):
-    skeleton_mnist_softmax_classifier(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_mnist_softmax_classifier_gcc4(cluster, exes, dirname):
-    skeleton_mnist_softmax_classifier(cluster, exes, dirname, 'gcc4')
+def test_unit_mnist_softmax_classifier_clang6(cluster, exes, dirname):
+    skeleton_mnist_softmax_classifier(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_mnist_softmax_classifier_gcc7(cluster, exes, dirname):
     skeleton_mnist_softmax_classifier(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_mnist_softmax_classifier_intel18(cluster, exes, dirname):
-    skeleton_mnist_softmax_classifier(cluster, exes, dirname, 'intel18')
+def test_unit_mnist_softmax_classifier_intel19(cluster, exes, dirname):
+    skeleton_mnist_softmax_classifier(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_softmax_classifier.py -k 'test_unit_mnist_softmax_classifier_exe' --exe=<executable>

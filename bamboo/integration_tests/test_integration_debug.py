@@ -6,10 +6,10 @@ import common_code
 
 
 def skeleton_mnist_debug(cluster, dir_name, executables, compiler_name, weekly,
-                         debug, should_log=False):
-    # If weekly or debug are true, then run the test.
-    if (not weekly) and (not debug):
-        e = 'skeleton_mnist_debug: Not doing weekly or debug testing'
+                         debug_build, should_log=False):
+    # If weekly or debug_build are true, then run the test.
+    if not (weekly or debug_build):
+        e = 'skeleton_mnist_debug: Not doing weekly or debug_build testing'
         print('Skip - ' + e)
         pytest.skip(e)
     if compiler_name not in executables:
@@ -26,15 +26,15 @@ def skeleton_mnist_debug(cluster, dir_name, executables, compiler_name, weekly,
         data_reader_name='mnist', model_folder='models/' + model_name,
         model_name=model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
-    output_value = common_code.run_lbann(command, model_name, output_file_name, error_file_name)
+    output_value = common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
     assert output_value == 0
 
 
 def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
-                         debug, should_log=False):
-    # If weekly or debug are true, then run the test.
-    if (not weekly) and (not debug):
-        e = 'skeleton_cifar_debug: Not doing weekly or debug testing'
+                         debug_build, should_log=False):
+    # If weekly or debug_build are true, then run the test.
+    if not (weekly or debug_build):
+        e = 'skeleton_cifar_debug: Not doing weekly or debug_build testing'
         print('Skip - ' + e)
         pytest.skip(e)
     if cluster == 'ray':
@@ -56,40 +56,32 @@ def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
         data_reader_name='cifar10', data_reader_percent=0.01, model_folder='models/' + model_name,
         model_name='conv_' + model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
-    output_value = common_code.run_lbann(command, model_name, output_file_name, error_file_name)
+    output_value = common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
     assert output_value == 0
 
 
-def test_integration_mnist_clang4_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_mnist_debug(cluster, dirname, exes, 'clang4_debug', weekly, debug)
+def test_integration_mnist_clang6_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_mnist_debug(cluster, dirname, exes, 'clang6_debug', weekly, debug_build)
 
 
-def test_integration_cifar_clang4_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_cifar_debug(cluster, dirname, exes, 'clang4_debug', weekly, debug)
+def test_integration_cifar_clang6_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_cifar_debug(cluster, dirname, exes, 'clang6_debug', weekly, debug_build)
 
 
-def test_integration_mnist_gcc4_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_mnist_debug(cluster, dirname, exes, 'gcc4_debug', weekly, debug)
+def test_integration_mnist_gcc7_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_mnist_debug(cluster, dirname, exes, 'gcc7_debug', weekly, debug_build)
 
 
-def test_integration_cifar_gcc4_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_cifar_debug(cluster, dirname, exes, 'gcc4_debug', weekly, debug)
+def test_integration_cifar_gcc7_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_cifar_debug(cluster, dirname, exes, 'gcc7_debug', weekly, debug_build)
 
 
-def test_integration_mnist_gcc7_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_mnist_debug(cluster, dirname, exes, 'gcc7_debug', weekly, debug)
+def test_integration_mnist_intel19_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_mnist_debug(cluster, dirname, exes, 'intel19_debug', weekly, debug_build)
 
 
-def test_integration_cifar_gcc7_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_cifar_debug(cluster, dirname, exes, 'gcc7_debug', weekly, debug)
-
-
-def test_integration_mnist_intel18_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_mnist_debug(cluster, dirname, exes, 'intel18_debug', weekly, debug)
-
-
-def test_integration_cifar_intel18_debug(cluster, dirname, exes, weekly, debug):
-    skeleton_cifar_debug(cluster, dirname, exes, 'intel18_debug', weekly, debug)
+def test_integration_cifar_intel19_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_cifar_debug(cluster, dirname, exes, 'intel19_debug', weekly, debug_build)
 
 
 # Run with python -m pytest -s test_integration_debug.py -k 'test_integration_mnist_exe' --exe=<executable>

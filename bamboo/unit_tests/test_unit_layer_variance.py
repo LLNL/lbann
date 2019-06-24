@@ -23,20 +23,16 @@ def skeleton_layer_variance(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_variance_clang4(cluster, exes, dirname):
-    skeleton_layer_variance(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_layer_variance_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_variance(cluster, exes, dirname, 'gcc4')
+def test_unit_layer_variance_clang6(cluster, exes, dirname):
+    skeleton_layer_variance(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_variance_gcc7(cluster, exes, dirname):
     skeleton_layer_variance(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_variance_intel18(cluster, exes, dirname):
-    skeleton_layer_variance(cluster, exes, dirname, 'intel18')
+def test_unit_layer_variance_intel19(cluster, exes, dirname):
+    skeleton_layer_variance(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_variance_exe' --exe=<executable>

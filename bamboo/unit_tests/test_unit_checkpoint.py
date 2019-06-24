@@ -123,14 +123,9 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
      assert diff_test == 0
 
 
-def test_unit_checkpoint_lenet_clang4(cluster, exes, dirname):
-    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang4')
-    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_checkpoint_lenet_gcc4(cluster, exes, dirname):
-    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'gcc4')
-    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'gcc4')
+def test_unit_checkpoint_lenet_clang6(cluster, exes, dirname):
+    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'clang6')
+    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_checkpoint_lenet_gcc7(cluster, exes, dirname):
@@ -138,9 +133,9 @@ def test_unit_checkpoint_lenet_gcc7(cluster, exes, dirname):
     skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_checkpoint_lenet_intel18(cluster, exes, dirname):
-    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'intel18')
-    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'intel18')
+def test_unit_checkpoint_lenet_intel19(cluster, exes, dirname):
+    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'intel19')
+    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_exe' --exe=<executable>

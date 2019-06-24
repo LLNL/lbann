@@ -23,20 +23,16 @@ def skeleton_layer_clamp(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_clamp_clang4(cluster, exes, dirname):
-    skeleton_layer_clamp(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_layer_clamp_gcc4_check(cluster, exes, dirname):
-    skeleton_layer_clamp(cluster, exes, dirname, 'gcc4')
+def test_unit_layer_clamp_clang6(cluster, exes, dirname):
+    skeleton_layer_clamp(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_clamp_gcc7(cluster, exes, dirname):
     skeleton_layer_clamp(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_layer_clamp_intel18(cluster, exes, dirname):
-    skeleton_layer_clamp(cluster, exes, dirname, 'intel18')
+def test_unit_layer_clamp_intel19(cluster, exes, dirname):
+    skeleton_layer_clamp(cluster, exes, dirname, 'intel19')
 
 
 # Run with python -m pytest -s test_unit_layer_clamp.py -k 'test_unit_layer_clamp_exe' --exe=<executable>
