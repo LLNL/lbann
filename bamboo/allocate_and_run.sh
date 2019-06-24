@@ -31,7 +31,7 @@ if [ "${CLUSTER}" = 'pascal' ]; then
 fi
 
 if [ ${WEEKLY} -ne 0 ]; then
-    salloc -N16 -t 900 ./run.sh --weekly
+    salloc -N16 --partition=pbatch -t 900 ./run.sh --weekly
     if [ "${CLUSTER}" = 'catalyst' ]; then
         cd integration_tests
         python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=alexnet_clang6_results.xml
@@ -40,5 +40,5 @@ if [ ${WEEKLY} -ne 0 ]; then
         cd ..
     fi
 else
-    salloc -N16 -t 900 ./run.sh
+    salloc -N16 --partition=pbatch -t 900 ./run.sh
 fi

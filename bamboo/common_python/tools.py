@@ -65,7 +65,7 @@ def get_command(cluster,
         process_executable_existence(executable, skip_no_exe)
 
     # Determine scheduler
-    if cluster in ['catalyst', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'pascal']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
@@ -255,14 +255,14 @@ def get_command(cluster,
     # Determine data file paths
     # If there is no regex match, then re.sub keeps the original string
     if data_filedir_default is not None:
-        if cluster in ['catalyst', 'pascal',]:
+        if cluster in ['catalyst', 'corona', 'pascal',]:
             # option_data_filedir = data_filedir_default # lscratchh, presumably
             pass  # No need to pass in a parameter
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
     elif None not in data_file_parameters:
-        if cluster in ['catalyst', 'pascal']:
+        if cluster in ['catalyst', 'corona', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
             # option_data_filedir_test = data_filedir_test_default
@@ -396,7 +396,7 @@ def get_default_exes(default_dirname, cluster):
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'pascal']:
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
         default_exes['clang6'] = exes['clang6']
