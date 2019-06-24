@@ -139,21 +139,16 @@ bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 }
 
 void image_data_reader::load() {
-  //const std::string imageDir = get_file_dir();
-  const std::string imageListFile = get_data_filename();
-
   options *opts = options::get();
 
-  m_image_list.clear();
+  const std::string imageListFile = get_data_filename();
 
   // load image list
+  m_image_list.clear();
   FILE *fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: failed to open: " + imageListFile);
+    LBANN_ERROR("failed to open: " + imageListFile + " for reading");
   }
-
   while (!feof(fplist)) {
     char imagepath[512];
     label_t imagelabel;

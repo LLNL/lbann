@@ -36,8 +36,33 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 
 namespace lbann {
+
+// Macro to throw an LBANN exception
+#undef LBANN_ERROR
+#define LBANN_ERROR(message)                                    \
+  do {                                                          \
+    std::stringstream ss_LBANN_ERROR;                           \
+    ss_LBANN_ERROR << "LBANN error ";                           \
+    const int rank_LBANN_ERROR = lbann::get_rank_in_world();    \
+    if (rank_LBANN_ERROR >= 0) {                                \
+      ss_LBANN_ERROR << "on rank " << rank_LBANN_ERROR << " ";  \
+    }                                                           \
+    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
+                     << ": " << (message);                      \
+    if (errno) {                                                \
+      ss_LBANN_ERROR << "\nerrno: " << errno << " msg: "        \
+                     << strerror(errno);                        \
+    }                                                           \
+    if (m_output) {                                             \
+      m_output << "ERROR: " << ss_LBANN_ERROR.str()             \
+               << std::endl;                                    \
+      m_output.close();                                         \
+    }                                                           \
+    throw lbann::exception(ss_LBANN_ERROR.str());               \
+  } while (0)
 
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
@@ -196,7 +221,10 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
+  double tm1 = get_time();
+
   if (m_world_master) {
+    std::cout << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
     if (m_super_node) {
       std::cout << "data store mode: exchange_data via super nodes\n";
     } else {
@@ -204,13 +232,7 @@ void data_store_conduit::setup(int mini_batch_size) {
     }
   }
 
-  double tm1 = get_time();
-  if (m_world_master && !m_preload) {
-    std::cout << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
-  }
-
   if (!m_preload) {
-    // generic_data_store::setup(mini_batch_size);
     build_owner_map(mini_batch_size);
   } else {
     m_owner_map_mb_size = mini_batch_size;
@@ -1113,10 +1135,17 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
     if (shm_fd == -1) {
       LBANN_ERROR("shm_open failed");
     }
+    #if 0
     int v = ftruncate(shm_fd, size);
     if (v != 0) {
-      LBANN_ERROR("ftruncate failed");
+      struct stat b;
+      int sanity = fstat(shm_fd, &b);
+      if (sanity != 0) {
+        LBANN_ERROR("ftruncate failed, and fstat failed");
+      }
+      LBANN_ERROR("ftruncate failed; file size: " + std::to_string(b.st_size) + " bytes; requested size: " + std::to_string(size));
     }
+    #endif
     m_mem_seg = mmap(0, size, PROT_READ, MAP_SHARED, shm_fd, 0);
     if (*(int*)m_mem_seg == -1) {
       LBANN_ERROR("mmap failed");
@@ -1144,11 +1173,16 @@ void data_store_conduit::preload_local_cache() {
   }
 
   std::vector<char> work;
+  if (m_world_master) { std::cerr << "calling read_files\n"; }
   read_files(work, file_sizes, indices[m_rank_in_trainer]);
-
+  if (m_world_master) { std::cerr << "calling allocate_shared_segment\n"; }
   allocate_shared_segment(file_sizes, indices);
+  if (m_world_master) { std::cerr << "calling compute_image_offsets\n"; }
   compute_image_offsets(file_sizes, indices);
+  if (m_output) m_output << "calling exchange_images\n";
+  if (m_world_master) { std::cerr << "calling exchange_images\n"; }
   exchange_images(work, file_sizes, indices);
+  if (m_world_master) { std::cerr << "calling build_conduit_nodes\n"; }
   build_conduit_nodes(file_sizes);
 }
 
@@ -1196,6 +1230,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
   for (int p=0; p<m_np_in_trainer; p++) {
     if (m_rank_in_trainer == p) {
       m_comm->trainer_broadcast<char>(p, work.data(), work.size());
+      std::cerr << "data_store_conduit::exchange_images, P_" + std::to_string(m_rank_in_trainer) + " is bcasting size: " + std::to_string(work.size()) << std::endl;
       if (node_rank == 0) {
         fillin_shared_images(work, image_sizes, indices[p]);
       }
@@ -1205,7 +1240,8 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
         sz += image_sizes[idx];
       }
       work2.resize(sz);
-      m_comm->trainer_broadcast<char>(p, work2.data(), work.size());
+      std::cerr << "data_store_conduit::exchange_images, P_" + std::to_string(m_rank_in_trainer) + " is receiving bcast of size: " + std::to_string(sz) << std::endl;
+      m_comm->trainer_broadcast<char>(p, work2.data(), sz);
       if (node_rank == 0) {
         fillin_shared_images(work2, image_sizes, indices[p]);
       }
