@@ -21,6 +21,7 @@ set_full_path(THIS_DIR_HEADERS
   callback_io.hpp
   callback_learning_rate.hpp
   callback_ltfb.hpp
+  callback_mixup.hpp
   callback_perturb_adam.hpp
   callback_print.hpp
   callback_save_images.hpp

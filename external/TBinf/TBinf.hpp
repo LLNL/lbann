@@ -39,27 +39,40 @@
 namespace TBinf {
 
 /**
- * Write data to a Tensorboard logging directory.
- * This writes data in the same format as Tensorflow does.
+ * @brief Write data to Tensorboard logging directory in Tensorflow format.
  */
 class SummaryWriter {
  public:
   /**
-   * Create a new event file in logdir to write to.
+   * @brief Create a new event file in logdir to write to.
    * @param logdir The directory where the event file will be written.
    */
   SummaryWriter(const std::string logdir);
   ~SummaryWriter();
 
   /**
-   * Add a scalar value to the event file.
+   * @brief Add a scalar value to the event file.
    * @param tag The tag for this summary.
    * @param value The scalar value.
    * @param step Optional global step.
    */
   void add_scalar(const std::string tag, float value, int64_t step = -1);
+
   /**
-   * Add a histogram of values to the event file.
+   * @brief Add an image to the event file.
+   * @param tag The tag for this summary.
+   * @param encoded_img The image to be written.
+   * @param dims The dimensions of the image.
+   * @param step Optional global step.
+   */
+
+ void add_image(const std::string& tag,
+                std::string encoded_img,
+                const std::vector<size_t>& dims,
+                int64_t step = -1);
+
+  /**
+   * @brief Add a histogram of values to the event file.
    * @param tag The tag for this summary.
    * @param first Iterator to the first value to add.
    * @param last Iterator past the last value to add.
@@ -70,7 +83,7 @@ class SummaryWriter {
                      std::vector<float>::const_iterator last,
                      int64_t step = -1);
   /**
-   * Add a histogram based upon buckets to the event file.
+   * @brief Add a histogram based upon buckets to the event file.
    * @param tag The tag for this summary.
    * @param buckets The histogram buckets.
    * @param min The minimum value in the dataset.
@@ -85,44 +98,44 @@ class SummaryWriter {
                      double min, double max, double num,
                      double sum, double sqsum,
                      int64_t step = -1);
-  /** Return the current histogram buckets. */
+  /** @brief Return the current histogram buckets. */
   const std::vector<double>& get_histogram_buckets() const;
-  /** Return the default histogram buckets. */
+  /** @brief Return the default histogram buckets. */
   static std::vector<double> get_default_histogram_buckets();
 
-  /** Ensure all events are written out. */
+  /** @brief Ensure all events are written out. */
   void flush();
 
  private:
   /**
-   * Write a summary to the event file.
+   * @brief Write a summary to the event file.
    * @param s The summary to write.
    * @param step Optional global step for the event.
    */
   void write_summary_event(tensorflow::Summary *s, int64_t step = -1);
 
   /**
-   * Write an event to the event file.
+   * @brief Write an event to the event file.
    * @param e The event to write.
    */
   void write_event(tensorflow::Event& e);
 
-  /** Get current wall time in fractional seconds. */
+  /** @brief Get current wall time in fractional seconds. */
   double get_time_in_seconds();
 
-  /** Initialize histogram buckets. */
+  /** @brief Initialize histogram buckets. */
   void init_histogram_buckets();
 
-  /** Current event version. */
+  /** @brief Current event version. */
   static constexpr const char *EVENT_VERSION = "brain.Event:2";
 
-  /** Filename to write to. */
+  /** @brief Filename to write to. */
   std::string filename;
 
-  /** File stream for writing. */
+  /** @brief File stream for writing. */
   std::fstream file;
 
-  /** Current histogram buckets. */
+  /** @brief Current histogram buckets. */
   std::vector<double> histogram_buckets;
 };
 

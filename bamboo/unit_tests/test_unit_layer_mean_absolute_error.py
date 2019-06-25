@@ -23,8 +23,8 @@ def skeleton_layer_mean_absolute_error(cluster, executables, dir_name, compiler_
     assert return_code == 0
 
 
-def test_unit_layer_mean_absolute_error_clang4(cluster, exes, dirname):
-    skeleton_layer_mean_absolute_error(cluster, exes, dirname, 'clang4')
+def test_unit_layer_mean_absolute_error_clang6(cluster, exes, dirname):
+    skeleton_layer_mean_absolute_error(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_mean_absolute_error_gcc7(cluster, exes, dirname):

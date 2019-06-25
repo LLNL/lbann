@@ -31,15 +31,14 @@ if [ "${CLUSTER}" = 'pascal' ]; then
 fi
 
 if [ ${WEEKLY} -ne 0 ]; then
-    salloc -N16 -t 600 ./run.sh --weekly
+    salloc -N16 -t 900 ./run.sh --weekly
     if [ "${CLUSTER}" = 'catalyst' ]; then
         cd integration_tests
-        python -m pytest -s test_integration_performance_full_alexnet_clang4 --weekly --run
-        python -m pytest -s test_integration_performance_full_alexnet_gcc4 --weekly --run
+        python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run
         python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run
-        python -m pytest -s test_integration_performance_full_alexnet_intel18 --weekly --run
+        python -m pytest -s test_integration_performance_full_alexnet_intel19 --weekly --run
         cd ..
     fi
 else
-    salloc -N16 -t 600 ./run.sh
+    salloc -N16 -t 900 ./run.sh
 fi
