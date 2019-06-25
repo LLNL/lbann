@@ -65,6 +65,12 @@ def run(model, data_reader, optimizer,
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
 
+    Returns:
+        int: Exit status from scheduler. This is really only
+            meaningful if LBANN is run on an existing node
+            allocation. If a batch job is submitted, the scheduler
+            will probably return 0 trivially.
+
     """
 
     # Construct experiment directory if needed
@@ -95,31 +101,31 @@ def run(model, data_reader, optimizer,
 
     # Run experiment
     if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
-        slurm.run(experiment_dir=experiment_dir,
-                  command='{} {}'.format(lbann_exe, lbann_args),
-                  nodes=nodes,
-                  procs_per_node=procs_per_node,
-                  time_limit=time_limit,
-                  job_name=job_name,
-                  partition=partition,
-                  account=account,
-                  reservation=reservation,
-                  srun_args=launcher_args,
-                  environment=environment,
-                  setup_only=setup_only)
+        return slurm.run(experiment_dir=experiment_dir,
+                         command='{} {}'.format(lbann_exe, lbann_args),
+                         nodes=nodes,
+                         procs_per_node=procs_per_node,
+                         time_limit=time_limit,
+                         job_name=job_name,
+                         partition=partition,
+                         account=account,
+                         reservation=reservation,
+                         srun_args=launcher_args,
+                         environment=environment,
+                         setup_only=setup_only)
     elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
-        lsf.run(experiment_dir=experiment_dir,
-                command='{} {}'.format(lbann_exe, lbann_args),
-                nodes=nodes,
-                procs_per_node=procs_per_node,
-                time_limit=time_limit,
-                job_name=job_name,
-                partition=partition,
-                account=account,
-                reservation=reservation,
-                jsrun_args=launcher_args,
-                environment=environment,
-                setup_only=setup_only)
+        return lsf.run(experiment_dir=experiment_dir,
+                       command='{} {}'.format(lbann_exe, lbann_args),
+                       nodes=nodes,
+                       procs_per_node=procs_per_node,
+                       time_limit=time_limit,
+                       job_name=job_name,
+                       partition=partition,
+                       account=account,
+                       reservation=reservation,
+                       jsrun_args=launcher_args,
+                       environment=environment,
+                       setup_only=setup_only)
     else:
         raise RuntimeError('unsupported job scheduler ({})'
                            .format(scheduler))
