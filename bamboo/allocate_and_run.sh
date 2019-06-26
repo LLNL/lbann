@@ -5,6 +5,8 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 echo "allocate_and_run.sh CLUSTER="
 echo $CLUSTER
 
+export PYTHONPATH=${HOME}/.local/lib/python3.7/site-packages:${PYTHONPATH}
+
 WEEKLY=0
 while :; do
     case ${1} in
@@ -53,4 +55,7 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
     else
         timeout -k 5 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh
     fi
+else
+    echo "allocate_and_run.sh. Unsupported cluster CLUSTER="
+    echo $CLUSTER
 fi
