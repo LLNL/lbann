@@ -34,9 +34,9 @@ if [ ${WEEKLY} -ne 0 ]; then
     salloc -N16 -t 900 ./run.sh --weekly
     if [ "${CLUSTER}" = 'catalyst' ]; then
         cd integration_tests
-        python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run
-        python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run
-        python -m pytest -s test_integration_performance_full_alexnet_intel19 --weekly --run
+        python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=alexnet_clang6_results.xml
+        python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run --junitxml=alexnet_gcc7_results.xml
+        # python -m pytest -s test_integration_performance_full_alexnet_intel19 --weekly --run --junitxml=alexnet_intel19_results.xml
         cd ..
     fi
 else
