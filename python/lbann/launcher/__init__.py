@@ -42,8 +42,8 @@ def run(model, data_reader, optimizer,
         model (lbann.model.Model or lbann_pb2.Model): Neural network
             model.
         data_reader (lbann_pb2.DataReader): Data reader.
-        optimizer (lbann.model.Model or lbann_pb2.Optimizer): Default
-            optimizer for model.
+        optimizer (lbann.model.Optimizer or lbann_pb2.Optimizer):
+            Default optimizer for model.
         lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
@@ -94,9 +94,9 @@ def run(model, data_reader, optimizer,
     # Create experiment prototext file
     prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
-                               model = model,
-                               data_reader = data_reader,
-                               optimizer = optimizer)
+                               model=model,
+                               data_reader=data_reader,
+                               optimizer=optimizer)
     lbann_args += ' --prototext=' + prototext_file
 
     # Run experiment
