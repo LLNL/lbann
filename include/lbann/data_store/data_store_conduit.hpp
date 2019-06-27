@@ -80,17 +80,6 @@ class data_store_conduit {
 
   void setup(int mini_batch_size);
 
-  /*
-   * dah - may be needed in the future, but not needed for bare-bones squashing
-  void set_is_subsidiary_store() {
-    m_is_subsidiary_store = true;
-  }
-
-  bool is_subsidiary_store() const {
-    return m_is_subsidiary_store;
-  }
-  */
-
   void preload_local_cache();
 
   void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
@@ -200,12 +189,6 @@ protected :
   /// set to true if data_store is being explicitly loaded
   bool m_explicit_loading;
 
-  /// maps an index to the processor that owns the associated data
-  mutable std::unordered_map<int, int> m_owner;
-
-  /// convenience handle
-  const std::vector<int> *m_shuffled_indices;
-
   /// The size of the mini-batch that was used to calculate ownership
   /// of samples when building the owner map.  This size has to be
   /// used consistently when computing the indices that will be sent
@@ -215,6 +198,12 @@ protected :
   /// if true, use exchange_data_by_super_node, else use
   /// exchange_data_by_sample; default if false
   bool m_super_node;
+
+  /// maps an index to the processor that owns the associated data
+  mutable std::unordered_map<int, int> m_owner;
+
+  /// convenience handle
+  const std::vector<int> *m_shuffled_indices;
 
   void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
@@ -293,27 +282,35 @@ protected :
   /// used in exchange_data_by_sample, when sample sizes are non-uniform
   bool m_have_sample_sizes;
 
-  /// fills in m_image_offsets; returns the segment size (which is the
-  /// sum of the file sizes). Currently only used for imagenet
+  /// Currently only used for imagenet. On return, 'sizes' maps a sample_id to image size, and indices[p] contains the sample_ids that P_p owns
+  /// for use in local cache mode
   void get_image_sizes(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
-  /// offset at which the raw image will be stored in a shared memory segment
+  /// offset at which the raw image will be stored in a shared memory segment;
+  /// for use in local cache mode
   std::unordered_map<int,int> m_image_offsets;
+  /// fills in m_image_offsets for use in local cache mode
   void compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
+  /// for use in local cache mode
   void allocate_shared_segment(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
+  /// for use in local cache mode
   void read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices);
 
+  /// for use in local cache mode
   void build_conduit_nodes(std::unordered_map<int,int> &sizes);
 
+  /// for use in local cache mode
   void exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices); 
 
-  void fillin_shared_images(const std::vector<char> &images, const std::unordered_map<int,int> &image_sizes, const std::vector<int> &indices); 
+  /// for use in local cache mode
+  void fillin_shared_images(const std::vector<char> &images, int offset);
 
-  void *m_mem_seg = 0;
-
-  const std::string m_seg_name = "our_town";
+  /// for use in local cache mode
+  char *m_mem_seg = 0;
+  size_t m_mem_seg_length = 0;
+  std::string m_seg_name;
 };
 
 }  // namespace lbann

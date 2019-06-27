@@ -246,19 +246,16 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   read_raw_data(filename, data);
   node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);
   node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set(data);
-  //node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set_char_ptr(data.data(), data.size());
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node) {
   node.reset();
   const std::string filename = get_file_dir() + m_image_list[data_id].first;
   int label = m_image_list[data_id].second;
-  //std::vector<conduit::uint8> data;
   std::vector<char> data;
   read_raw_data(filename, data);
   node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);
   node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set(data);
-  //node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set_char_ptr(data.data(), data.size());
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 

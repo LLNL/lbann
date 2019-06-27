@@ -95,19 +95,23 @@ data_store_conduit::data_store_conduit(
     ss << "debug_" << m_reader->get_role() << "." << m_comm->get_rank_in_world();
     m_output.open(ss.str().c_str());
     if (m_world_master) {
-      std::cout << "opened " << ss.str() << " for writing\n";
+      std::cerr << "opened " << ss.str() << " for writing\n";
     }
   }
 
   m_is_local_cache = opts->get_bool("data_store_cache");
+  m_preload = opts->get_bool("preload_data_store");
+  if (m_is_local_cache && !m_preload) {
+    LBANN_ERROR("data_store_cache is currently only implemented for preload mode; this will change in the future. For now, pleas pass both flags: data_store_cache and --preload_data_store");
+  }
 
   if (m_world_master) {
     if (m_is_local_cache) {
-      std::cout << "data_store_conduit is running in local_cache mode\n";
+      std::cerr << "data_store_conduit is running in local_cache mode\n";
     } else if (m_super_node) {
-      std::cout << "data_store_conduit is running in super_node mode\n";
+      std::cerr << "data_store_conduit is running in super_node mode\n";
     } else {
-      std::cout << "data_store_conduit is running in multi-message mode\n";
+      std::cerr << "data_store_conduit is running in multi-message mode\n";
     }
   }
 }
@@ -224,11 +228,11 @@ void data_store_conduit::setup(int mini_batch_size) {
   double tm1 = get_time();
 
   if (m_world_master) {
-    std::cout << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
+    std::cerr << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
     if (m_super_node) {
-      std::cout << "data store mode: exchange_data via super nodes\n";
+      std::cerr << "data store mode: exchange_data via super nodes\n";
     } else {
-      std::cout << "data store mode: exchange_data via individual samples\n";
+      std::cerr << "data store mode: exchange_data via individual samples\n";
     }
   }
 
@@ -240,12 +244,12 @@ void data_store_conduit::setup(int mini_batch_size) {
 
   m_is_setup = true;
 
-  if (m_is_local_cache) {
+  if (m_is_local_cache && m_preload) {
     preload_local_cache();
   }
 
   if (m_world_master && !m_preload) {
-    std::cout << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
+    std::cerr << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
   }
 }
 
@@ -425,6 +429,9 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 
 
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
+  if (m_is_local_cache && m_preload) {
+    LBANN_ERROR("you called data_store_conduit::set_conduit_node, but you're running in local cache mode with preloading; something is broken; please contact Dave Hysom");
+  }
   m_mutex.lock();
   if (already_have == false && m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
@@ -741,7 +748,7 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
 }
 
 void data_store_conduit::build_owner_map(int mini_batch_size) {
-  if (m_world_master) std::cout << "starting data_store_conduit::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << " num indices: " << m_shuffled_indices->size() << "\n";
+  if (m_world_master) std::cerr << "starting data_store_conduit::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << " num indices: " << m_shuffled_indices->size() << "\n";
   if (mini_batch_size == 0) {
     LBANN_ERROR("mini_batch_size == 0; can't build owner_map");
   }
@@ -957,7 +964,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
     double mem_this_proc = bytes_per_sample * my_sample_count;
     double mem_this_node = mem_this_proc * procs_per_node;
 
-    std::cout
+    std::cerr
       << "\n"
       << "==============================================================\n"
       << "Estimated memory requirements for JAG samples:\n"
@@ -968,12 +975,12 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
       << "Total mem for all ranks on a node: " << mem_this_node << " kB\n"
       << "Available memory: " << a_mem << " kB (RAM only; not virtual)\n";
     if (mem_this_node > static_cast<double>(a_mem)) {
-      std::cout << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
+      std::cerr << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
         << "==============================================================\n\n";
       LBANN_ERROR("insufficient memory to load data\n");
     } else {
       double m = 100 * mem_this_node / a_mem;
-      std::cout << "Estimate that data will consume at least " << m << " % of memory\n"
+      std::cerr << "Estimate that data will consume at least " << m << " % of memory\n"
         << "==============================================================\n\n";
     }
   }
@@ -1071,13 +1078,17 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
     std::vector<int> counts(m_np_in_trainer);
     m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
 
-    std::vector<int> work(image_list.size()*2);
+    //counts[h*2] contains the image index
+    //counts[h*2+1] contains the image sizee
+
+    //fill in displacement vector for gathering the actual image sizes
     std::vector<int> disp(m_np_in_trainer + 1);
     disp[0] = 0;
     for (size_t h=0; h<counts.size(); ++h) {
       disp[h+1] = disp[h] + counts[h];
     }
 
+    std::vector<int> work(image_list.size()*2);
     m_comm->trainer_all_gather<int>(my_image_sizes, work, counts, disp);
     indices.resize(m_np_in_trainer);
     for (int h=0; h<m_np_in_trainer; h++) {
@@ -1098,6 +1109,9 @@ void data_store_conduit::compute_image_offsets(std::unordered_map<int,int> &size
   int offset = 0;
   for (size_t p=0; p<indices.size(); p++) {
     for (auto idx : indices[p]) {
+      if (sizes.find(idx) == sizes.end()) {
+        LBANN_ERROR("sizes.find(idx) == sizes.end() for idx: " + std::to_string(idx));
+      }
       int sz = sizes[idx];
       m_image_offsets[idx] = offset;
       offset += sz;
@@ -1111,10 +1125,14 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
   for (auto &&t : sizes) {
     size += t.second;
   }
+  m_mem_seg_length = size;
+
+  //need to ensure name is unique across all data readers
+  m_seg_name = "our_town_" + m_reader->get_role();
 
   int node_id = m_comm->get_rank_in_node();
   if (node_id == 0) {
-    int shm_fd = shm_open(m_seg_name.c_str(), O_CREAT | O_RDWR, 0666);
+    int shm_fd = shm_open(m_seg_name.c_str(), O_CREAT | O_RDWR | O_EXCL, 0666);
     if (shm_fd == -1) {
       LBANN_ERROR("shm_open failed");
     }
@@ -1122,33 +1140,33 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
     if (v != 0) {
       LBANN_ERROR("ftruncate failed");
     }
-    m_mem_seg = mmap(0, size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (*(int*)m_mem_seg == -1) {
+    void *m = mmap(0, size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (*static_cast<int*>(m) == -1) {
       LBANN_ERROR("mmap failed");
     }
+    m_mem_seg = reinterpret_cast<char*>(m);
   }  
 
   m_comm->barrier(m_comm->get_node_comm());
 
   if (node_id != 0) {
-    int shm_fd = shm_open(m_seg_name.c_str(), O_RDONLY, 0666);
+    int shm_fd = shm_open(m_seg_name.c_str(), O_RDONLY | O_EXCL, 0666);
     if (shm_fd == -1) {
       LBANN_ERROR("shm_open failed");
     }
-    #if 0
-    int v = ftruncate(shm_fd, size);
-    if (v != 0) {
-      struct stat b;
-      int sanity = fstat(shm_fd, &b);
-      if (sanity != 0) {
-        LBANN_ERROR("ftruncate failed, and fstat failed");
-      }
-      LBANN_ERROR("ftruncate failed; file size: " + std::to_string(b.st_size) + " bytes; requested size: " + std::to_string(size));
-    }
-    #endif
-    m_mem_seg = mmap(0, size, PROT_READ, MAP_SHARED, shm_fd, 0);
-    if (*(int*)m_mem_seg == -1) {
+    void *m = mmap(0, size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (*static_cast<int*>(m) == -1) {
       LBANN_ERROR("mmap failed");
+    }
+    m_mem_seg = reinterpret_cast<char*>(m);
+
+    struct stat b;
+    int sanity = fstat(shm_fd, &b);
+    if (sanity == -1) {
+      LBANN_ERROR("fstat failed");
+    }
+    if (b.st_size != size) {
+      LBANN_ERROR("b.st_size= " + std::to_string(b.st_size) + " should be equal to " + std::to_string(size));
     }
   }
 }
@@ -1158,31 +1176,56 @@ void data_store_conduit::preload_local_cache() {
   std::vector<std::vector<int>> indices;
   get_image_sizes(file_sizes, indices);
 
-  //debug block; will go away
   if (m_world_master) {
-    for (int h=0; h<m_np_in_trainer; h++) {
-      const std::vector<int> &idx = indices[h];
-      std::cout << "P_"<<h<<std::endl;
-      for (auto t : idx) {
-        if (file_sizes.find(t) == file_sizes.end()) {
-          LBANN_ERROR("failed to find index " + std::to_string(t) + " in file_sizes map");
-        }
-        std::cout << "  image index: " << t << " image size: " << file_sizes[t] << "\n";
+    //verify that file_sizes map is correct
+    //verify that indices is correct
+  }
+  
+  std::vector<char> work;
+  read_files(work, file_sizes, indices[m_rank_in_trainer]);
+  allocate_shared_segment(file_sizes, indices);
+  compute_image_offsets(file_sizes, indices);
+  exchange_images(work, file_sizes, indices);
+
+#if 0
+  if (m_world_master) {
+    //verify that images in shared segment are correct
+    image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+    const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+    for (size_t h=0; h<image_list.size(); h++) {
+      errno = 0;
+      const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
+      std::cerr << "\nXX checking data_id " << h << " file: " << fn << "\n";
+      std::ifstream in(fn, std::ios::in | std::ios::binary);
+      in.seekg(0, std::ios::end);
+      int n = in.tellg();
+      in.seekg(0, std::ios::beg);
+      std::cerr << "  XX file size: " << n << " from sizes map: " << file_sizes[h] << "\n";
+      if (n != file_sizes[h]) {
+        LBANN_ERROR("n != sizes[h]");
       }
+      char *c = m_mem_seg + m_image_offsets[h];
+      std::vector<char> w(n);
+      in.read(w.data(), n);
+      in.close();
+      for (int i=0; i<n; i++) {
+        if (c[i] != w[i]) {
+          std::cerr << "  XX file sizes: ";
+          for (size_t g=0; g<image_list.size(); g++) {
+            if (file_sizes.find(g) == file_sizes.end()) {
+              LBANN_ERROR("file_sizes.find(g) == file_sizes.end()");
+            }
+            std::cerr << "("<<g<<", "<< file_sizes[g] << ") ";
+          }
+          std::cerr << "\n\n";
+          LBANN_ERROR("mismatch at i= " + std::to_string(i));
+        }
+      }
+      std::cerr << "  XX PASSED!\n";
     }
   }
+#endif
 
-  std::vector<char> work;
-  if (m_world_master) { std::cerr << "calling read_files\n"; }
-  read_files(work, file_sizes, indices[m_rank_in_trainer]);
-  if (m_world_master) { std::cerr << "calling allocate_shared_segment\n"; }
-  allocate_shared_segment(file_sizes, indices);
-  if (m_world_master) { std::cerr << "calling compute_image_offsets\n"; }
-  compute_image_offsets(file_sizes, indices);
-  if (m_output) m_output << "calling exchange_images\n";
-  if (m_world_master) { std::cerr << "calling exchange_images\n"; }
-  exchange_images(work, file_sizes, indices);
-  if (m_world_master) { std::cerr << "calling build_conduit_nodes\n"; }
   build_conduit_nodes(file_sizes);
 }
 
@@ -1212,27 +1255,29 @@ void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes)
   for (size_t idx=0; idx<image_list.size(); idx++) {
     int label = image_list[idx].second;
     int offset = m_image_offsets[idx];
-    int sz = sizes[idx];
-    conduit::Node node;
+    size_t sz = sizes[idx];
+    conduit::Node &node = m_data[idx];
     node[LBANN_DATA_ID_STR(idx) + "/label"].set(label);
     node[LBANN_DATA_ID_STR(idx) + "/buffer_size"] = sz;
-    conduit::int8 *c = (conduit::int8*)m_mem_seg + offset;
-    node[LBANN_DATA_ID_STR(idx) + "/buffer"].set_external_int8_ptr(c, sz);
+    char *c = m_mem_seg + offset;
+    node[LBANN_DATA_ID_STR(idx) + "/buffer"].set_external_char_ptr(c, sz);
   }
 }
 
-void data_store_conduit::fillin_shared_images(const std::vector<char> &images, const std::unordered_map<int,int> &image_sizes, const std::vector<int> &indices) {
+void data_store_conduit::fillin_shared_images(const std::vector<char> &images, int offset) {
+  if (m_world_master) std::cerr << "YY data_store_conduit::fillin_shared_images; offest: " << offset << " seg size: " << m_mem_seg_length << std::endl;
+  memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size()); 
 }
 
 void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices) {
   std::vector<char> work2;
   int node_rank = m_comm->get_rank_in_node();
+  int offset = 0;
   for (int p=0; p<m_np_in_trainer; p++) {
     if (m_rank_in_trainer == p) {
       m_comm->trainer_broadcast<char>(p, work.data(), work.size());
-      std::cerr << "data_store_conduit::exchange_images, P_" + std::to_string(m_rank_in_trainer) + " is bcasting size: " + std::to_string(work.size()) << std::endl;
       if (node_rank == 0) {
-        fillin_shared_images(work, image_sizes, indices[p]);
+        fillin_shared_images(work, offset);
       }
     } else {
       int sz = 0;
@@ -1240,13 +1285,30 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
         sz += image_sizes[idx];
       }
       work2.resize(sz);
-      std::cerr << "data_store_conduit::exchange_images, P_" + std::to_string(m_rank_in_trainer) + " is receiving bcast of size: " + std::to_string(sz) << std::endl;
       m_comm->trainer_broadcast<char>(p, work2.data(), sz);
       if (node_rank == 0) {
-        fillin_shared_images(work2, image_sizes, indices[p]);
+        fillin_shared_images(work2, offset);
       }
     }
+    for (size_t r=0; r<indices[p].size(); r++) {
+      offset += image_sizes[indices[p][r]];
+    }
+    if (m_world_master) std::cerr << "YY offset: " << offset << " seg size: " << m_mem_seg_length << std::endl;
   }
+
+  m_comm->barrier(m_comm->get_node_comm());
+
+if (m_world_master) {
+ if (m_reader->get_role() == "train") {
+  FILE *f = fopen("xyz", "w");
+  for (size_t j=0; j<m_mem_seg_length; j++) {
+    fprintf(f, "%d\n", m_mem_seg[j]);
+  }
+  fclose(f);
+  std::cerr << "WROTE: xyz\n";
+ }
+}
+
 }
 
 
