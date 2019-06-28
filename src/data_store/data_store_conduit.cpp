@@ -169,6 +169,10 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_owner = rhs.m_owner;
   m_shuffled_indices = rhs.m_shuffled_indices;
   m_sample_sizes = rhs.m_sample_sizes;
+  m_mem_seg = rhs.m_mem_seg;
+  m_mem_seg_length = rhs.m_mem_seg_length;
+  m_seg_name = rhs.m_seg_name;
+  m_image_offsets = rhs.m_image_offsets;
 
   /// This block needed when carving a validation set from the training set
   if (options::get()->get_bool("debug") && !m_output) {
