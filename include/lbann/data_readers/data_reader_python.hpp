@@ -39,17 +39,13 @@ namespace python {
  *
  *  This is very experimental. Be warned.
  */
-class manager {
+class session {
 public:
 
   /** @brief Get singleton instance. */
-  static manager& get_instance();
-  /** @brief Construct singleton instance.
-   *  @details If there is already an instance, it is destroyed.
-   */
-  static void create();
-  /** Destroy singleton instance. */
-  static void destroy();
+  static session& get();
+
+  static bool is_active();
 
   /** @brief Check if a Python error has occurred.
    *
@@ -57,22 +53,19 @@ public:
    *
    *  @param force_error Whether to force an exception to be thrown.
    */
-  void check_error(bool force_error = false) const;
+  static void check_error(bool force_error = false);
 
-  ~manager();
+  ~session();
 
 private:
-
-  /** @brief Singleton instance. */
-  static std::unique_ptr<manager> m_instance;
 
   /** @brief State on main Python thread. */
   PyThreadState* m_thread_state = nullptr;
 
   // Lifetime functions
-  manager();
-  manager(const manager&) = delete;
-  manager& operator=(const manager&) = delete;
+  session();
+  session(const session&) = delete;
+  session& operator=(const session&) = delete;
 
 };
 
@@ -92,16 +85,13 @@ private:
 class global_interpreter_lock {
 public:
 
-  global_interpreter_lock(const manager&);
+  global_interpreter_lock();
   ~global_interpreter_lock();
 
 private:
-
   global_interpreter_lock(const global_interpreter_lock&) = delete;
   global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
-
   PyGILState_STATE m_gil_state;
-
 };
 
 /** @brief Convenience wrapper around @c PyObject pointer.
@@ -110,21 +100,28 @@ private:
  */
 class object {
 public:
-  object(PyObject* obj = nullptr);
-  object(std::string val);
-  object(El::Int val);
-  object(DataType val);
+
+  // Lifetime functions
+  object() {}
+  object(PyObject* ptr);
+  object(const std::string& val);
+  object(long val);
+  object(double val);
   object(const object& other);
   object& operator=(const object& other);
   object(object&& other);
   object& operator=(object&& other);
   ~object();
+
+  // Access functions
   inline PyObject* get()                  { return m_ptr; }
   inline const PyObject* get() const      { return m_ptr; }
   inline operator PyObject*()             { return get(); }
   inline operator const PyObject*() const { return get(); }
+
 private:
-  PyObject* m_ptr;
+  PyObject* m_ptr = nullptr;
+
 };
 
 } // namespace python

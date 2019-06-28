@@ -35,24 +35,19 @@ namespace lbann {
 
 namespace python {
 
-// Static variables
-std::unique_ptr<manager> manager::m_instance;
-
-manager& manager::get_instance() {
-  if (m_instance == nullptr) { create(); }
-  return *m_instance;
+session& session::get() {
+  // Thread-safe, see
+  // https://en.wikipedia.org/wiki/Double-checked_locking
+  static session instance;
+  return instance;
 }
 
-void manager::create() {
-  m_instance.reset(new manager());
+bool session::is_active() {
+  return Py_IsInitialized();
 }
 
-void manager::destroy() {
-  m_instance.reset(nullptr);
-}
-
-manager::manager() {
-  if (!Py_IsInitialized()) {
+session::session() {
+  if (!is_active()) {
 
     // Hack to display output from Python
     // Note: Python outputs didn't appear because MPI intercepts
@@ -68,105 +63,120 @@ manager::manager() {
     m_thread_state = PyEval_SaveThread();
 
   }
-  if (!Py_IsInitialized()) {
-    LBANN_ERROR("error creating embedded Python session");
+  if (!is_active()) {
+    LBANN_ERROR("error initializing embedded Python session");
   }
 }
 
-manager::~manager() {
-  if (Py_IsInitialized()) {
+session::~session() {
+  if (is_active()) {
     if (m_thread_state != nullptr) {
       PyEval_RestoreThread(m_thread_state);
     }
     Py_Finalize();
   }
+  if (is_active()) {
+    LBANN_WARNING("error finalizing embedded Python session");
+  }
 }
 
-void manager::check_error(bool force_error) const {
-  global_interpreter_lock gil(*this);
+void session::check_error(bool force_error) {
+  if (!is_active()) {
+    LBANN_ERROR("embedded Python session has terminated unexpectedly");
+  }
+  global_interpreter_lock gil;
   if (force_error || PyErr_Occurred()) {
 
     // Get error information from Python session
-    PyObject *type, *value, *traceback;
-    PyErr_Fetch(&type, &value, &traceback);
+    PyObject *type_ptr, *value_ptr, *traceback_ptr;
+    PyErr_Fetch(&type_ptr, &value_ptr, &traceback_ptr);
+    object type(type_ptr), value(value_ptr), traceback(traceback_ptr);
 
     // Construct error message
     std::ostringstream err;
     err << "detected Python error";
     if (value != nullptr) {
-      auto msg = PyObject_Repr(value);
-      auto msg_str = PyUnicode_AsEncodedString(msg, "utf-8", "Error -");
-      err << " (" << PyBytes_AS_STRING(msg_str) << ")";
-      Py_XDECREF(msg_str);
-      Py_XDECREF(msg);
+      object msg = PyObject_Repr(value);
+      msg = PyUnicode_AsEncodedString(msg, "utf-8", "Error -");
+      err << " (" << PyBytes_AS_STRING(msg.get()) << ")";
     }
 
     // Print Python traceback if available
     if (traceback != nullptr) {
 
       // Format traceback
-      auto module = PyImport_ImportModule("traceback");
-      auto func = PyObject_GetAttrString(module, "format_tb");
-      auto args = PyTuple_Pack(1, traceback);
-      auto message = PyObject_CallObject(func, args);
+      object module = PyImport_ImportModule("traceback");
+      object func = PyObject_GetAttrString(module, "format_tb");
+      object message = PyObject_CallMethod(module,
+                                           "format_tb",
+                                           "(O)",
+                                           traceback.get());
 
       // Print traceback
       err << "\n\n" << "Python traceback:";
-      auto iter = PyObject_GetIter(message);
-      for (auto line = PyIter_Next(iter);
+      object iter = PyObject_GetIter(message);
+      for (object line = PyIter_Next(iter);
            line != nullptr;
            line = PyIter_Next(iter)) {
         const char* line_ = PyUnicode_AsUTF8(line);
         err << "\n" << (line_ ? line_ : "");
-        Py_DECREF(line);
       }
-
-      // Clean up
-      Py_XDECREF(iter);
-      Py_XDECREF(message);
-      Py_XDECREF(args);
-      Py_XDECREF(func);
-      Py_XDECREF(module);
 
     }
 
     // Clean up and throw exception
-    Py_XDECREF(type);
-    Py_XDECREF(value);
-    Py_XDECREF(traceback);
+    PyErr_Restore(type, value, traceback);
     LBANN_ERROR(err.str());
 
   }
 }
 
-global_interpreter_lock::global_interpreter_lock(const manager&)
-  : m_gil_state(PyGILState_Ensure()) {}
+global_interpreter_lock::global_interpreter_lock() {
+  session::get();
+  if (!session::is_active()) {
+    LBANN_ERROR("embedded Python session has terminated unexpectedly");
+  }
+  m_gil_state = PyGILState_Ensure();
+}
 
 global_interpreter_lock::~global_interpreter_lock() {
-  if (Py_IsInitialized()) {
+  if (session::is_active()) {
     PyGILState_Release(m_gil_state);
   }
 }
 
 object::object(PyObject* ptr) : m_ptr(ptr) {
-  if (Py_IsInitialized() && PyErr_Occurred()) {
-    manager::get_instance().check_error();
-  }
+  session::get().check_error();
+}
+object::object(const std::string& val) {
+  global_interpreter_lock gil;
+  m_ptr = PyUnicode_FromStringAndSize(val.c_str(), val.size());
+  session::check_error();
+}
+object::object(long val) {
+  global_interpreter_lock gil;
+  m_ptr = PyLong_FromLong(val);
+  session::check_error();
+}
+object::object(double val) {
+  global_interpreter_lock gil;
+  m_ptr = PyFloat_FromDouble(val);
+  session::check_error();
 }
 
-object::object(std::string val)
-  : object(PyUnicode_FromStringAndSize(val.c_str(), val.size())) {}
-object::object(El::Int val) : object(PyLong_FromLong(val)) {}
-object::object(DataType val) : object(PyFloat_FromDouble(val)) {}
-
 object::object(const object& other) : m_ptr(other.m_ptr) {
+  global_interpreter_lock gil;
+  m_ptr = other.m_ptr;
   Py_XINCREF(m_ptr);
+  session::check_error();
 }
 
 object& object::operator=(const object& other) {
+  global_interpreter_lock gil;
   Py_XDECREF(m_ptr);
   m_ptr = other.m_ptr;
   Py_XINCREF(m_ptr);
+  session::check_error();
   return *this;
 }
 
@@ -175,14 +185,17 @@ object::object(object&& other) : m_ptr(other.m_ptr) {
 }
 
 object& object::operator=(object&& other) {
+  global_interpreter_lock gil;
   Py_XDECREF(m_ptr);
   m_ptr = other.m_ptr;
   other.m_ptr = nullptr;
+  session::check_error();
   return *this;
 }
 
 object::~object() {
-  if (Py_IsInitialized()) {
+  if (session::is_active()) {
+    global_interpreter_lock gil;
     Py_XDECREF(m_ptr);
   }
 }
@@ -197,14 +210,13 @@ python_reader::python_reader(std::string module,
   : generic_data_reader(true) {
 
   // Acquire Python GIL
-  auto& manager = python::manager::get_instance();
-  python::global_interpreter_lock gil(manager);
+  python::global_interpreter_lock gil;
 
   // Import Python module for data
   if (!module_dir.empty()) {
     auto path = PySys_GetObject("path");  // Borrowed reference
     PyList_Append(path, python::object(module_dir));
-    manager.check_error();
+    python::session::check_error();
   }
   python::object data_module = PyImport_ImportModule(module.c_str());
 
@@ -213,7 +225,7 @@ python_reader::python_reader(std::string module,
     = PyObject_GetAttrString(data_module, num_samples_function.c_str());
   python::object num = PyObject_CallObject(num_func, nullptr);
   m_num_samples = PyLong_AsLong(num);
-  manager.check_error();
+  python::session::check_error();
 
   // Get sample dimensions
   python::object dims_func
@@ -224,7 +236,7 @@ python_reader::python_reader(std::string module,
     m_sample_dims.push_back(PyLong_AsLong(d));
     Py_DECREF(d);
   }
-  manager.check_error();
+  python::session::check_error();
 
   // Get sample access function
   m_sample_function = PyObject_GetAttrString(data_module,
@@ -234,8 +246,9 @@ python_reader::python_reader(std::string module,
 
 python_reader::~python_reader() {
   if (Py_IsInitialized() && m_process_pool != nullptr) {
-    python::global_interpreter_lock gil(python::manager::get_instance());
+    python::global_interpreter_lock gil;
     PyObject_CallMethod(m_process_pool, "terminate", nullptr);
+    PyObject_CallMethod(m_process_pool, "join", nullptr);
   }
 }
 
@@ -266,8 +279,7 @@ bool python_reader::fetch_data_block(CPUMat& X,
   // Acquire Python GIL on first IO thread
   // Note: Do nothing on other IO threads.
   if (thread_id != 0) { return true; }
-  auto& manager = python::manager::get_instance();
-  python::global_interpreter_lock gil(manager);
+  python::global_interpreter_lock gil;
 
   // Check that shared memory array is large enough
   const El::Int sample_size = get_linearized_data_size();
@@ -319,8 +331,7 @@ void python_reader::setup(int num_io_threads,
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 
   // Acquire Python GIL
-  auto& manager = python::manager::get_instance();
-  python::global_interpreter_lock gil(manager);
+  python::global_interpreter_lock gil;
 
   // Import modules
   python::object main_module = PyImport_ImportModule("__main__");
@@ -372,14 +383,14 @@ void python_reader::setup(int num_io_threads,
   PyObject_SetAttrString(main_module,
                          sample_func_name.c_str(),
                          m_sample_function);
-  manager.check_error();
+  python::session::check_error();
   const std::string shared_array_name
     = ("_DATA_READER_PYTHON_CPP_shared_memory_array"
        + std::to_string(instance_id));
   PyObject_SetAttrString(main_module,
                          shared_array_name.c_str(),
                          m_shared_memory_array);
-  manager.check_error();
+  python::session::check_error();
 
   // Create wrapper around sample function
   // Note: We attempt accessing the sample with the buffer protocol
@@ -429,7 +440,7 @@ def @wrapper_func@(sample_index, array_offset):
                                         std::regex("\\@datatype_typecode\\@"),
                                         datatype_typecode);
   PyRun_SimpleString(wrapper_func_def.c_str());
-  manager.check_error();
+  python::session::check_error();
   m_sample_function_wrapper
     = PyObject_GetAttrString(main_module,
                              wrapper_func_name.c_str());
