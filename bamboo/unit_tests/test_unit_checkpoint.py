@@ -27,7 +27,8 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
     if return_code_nockpt != 0:
         sys.stderr.write('LeNet (no checkpoint) execution failed, exiting with error')
         sys.exit(1)
-    os.system('mv ckpt ckpt_baseline')
+    ckpt_pre = 'ckpt_pre_lenet_shared_{c}'.format(c=compiler_name)
+    os.system('mv ckpt {c}'.format(c=ckpt_pre))
 
     # Run to checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -59,8 +60,8 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         sys.stderr.write('LeNet execution (restart from checkpoint) failed, exiting with error')
         sys.exit(1)
 
-    diff_test = os.system('diff -rq ckpt ckpt_baseline')
-    os.system('rm -rf ckpt*')
+    diff_test = os.system('diff -rq ckpt {c}'.format(c=ckpt_pre))
+    os.system('mv ckpt ckpt_post_lenet_shared_{c}'.format(c=compiler_name))
     assert diff_test == 0
 
 
@@ -86,7 +87,8 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
      if return_code_nockpt != 0:
          sys.stderr.write('LeNet (no checkpoint) execution failed, exiting with error')
          sys.exit(1)
-     os.system('mv ckpt ckpt_baseline')
+     ckpt_pre = 'ckpt_pre_lenet_distributed_{c}'.format(c=compiler_name)
+     os.system('mv ckpt {c}'.format(c=ckpt_pre))
 
      # Run to checkpoint, printing weights to files.
      output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -118,8 +120,8 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
          sys.stderr.write('LeNet execution (restart from checkpoint) failed, exiting with error')
          sys.exit(1)
 
-     diff_test = os.system('diff -rq ckpt ckpt_baseline')
-     os.system('rm -rf ckpt*')
+     diff_test = os.system('diff -rq ckpt {c}'.format(c=ckpt_pre))
+     os.system('mv ckpt ckpt_post_lenet_distributed_{c}'.format(c=compiler_name))
      assert diff_test == 0
 
 
