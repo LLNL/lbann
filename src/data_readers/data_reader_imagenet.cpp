@@ -87,8 +87,8 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
         if (is_master()) {
           LBANN_WARNING("m_data_store != nullptr, but we are not retrivieving a node from the store; role: " + get_role() + "; this is probably OK for test mode, but may be an error for train or validate modes");
         }
-        m_issue_warning = false;
       }
+      m_issue_warning = false;
       load_image(image_path, image, dims);
       have_node = false;
     }

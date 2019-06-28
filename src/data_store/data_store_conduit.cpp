@@ -37,6 +37,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <unistd.h>
 
 namespace lbann {
 
@@ -66,17 +67,8 @@ namespace lbann {
 
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
-  m_n(0),
-  m_is_setup(false),
-  m_reader(reader),
-  m_preload(false),
-  m_explicit_loading(false),
-  m_owner_map_mb_size(0),
-  m_super_node(false),
-  m_compacted_sample_size(0),
-  m_is_local_cache(false), 
-  m_node_sizes_vary(false),
-  m_have_sample_sizes(false) {
+  m_reader(reader) {
+
   m_comm = m_reader->get_comm();
   if (m_comm == nullptr) {
     LBANN_ERROR(" m_comm is nullptr");
@@ -121,7 +113,14 @@ data_store_conduit::~data_store_conduit() {
     m_output.close();
   }
   if (m_is_local_cache && m_mem_seg) {
-    shm_unlink(m_seg_name.c_str());
+    int sanity = shm_unlink(m_seg_name.c_str());
+    if (sanity != 0) {
+      std::cerr << "\nWARNING: shm_unlink failed in data_store_conduit::~data_store_conduit()\n";
+    }
+    sanity = munmap(reinterpret_cast<void*>(m_mem_seg), m_mem_seg_length);
+    if (sanity != 0) {
+      std::cerr << "\nWARNING: munmap failed in data_store_conduit::~data_store_conduit()\n";
+    }
   }
 }
 
@@ -153,21 +152,22 @@ void data_store_conduit::set_role(const std::string role) {
 void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
   m_n = rhs.m_n;
   m_is_setup = rhs.m_is_setup;
-  m_reader = rhs.m_reader;
-  m_comm = rhs.m_comm;
-  m_rank_in_trainer = rhs.m_rank_in_trainer;
-  m_np_in_trainer = rhs.m_np_in_trainer;
-  m_world_master = rhs.m_world_master;
-  m_trainer_master = rhs.m_trainer_master;
   m_preload = rhs.m_preload;
   m_explicit_loading = rhs.m_explicit_loading;
-  m_owner = rhs.m_owner;
-  m_shuffled_indices = rhs.m_shuffled_indices;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_super_node = rhs.m_super_node;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_is_local_cache = rhs.m_is_local_cache;
   m_node_sizes_vary = rhs.m_node_sizes_vary;
+  m_have_sample_sizes = rhs.m_have_sample_sizes;
+  m_reader = rhs.m_reader;
+  m_comm = rhs.m_comm;
+  m_world_master = rhs.m_world_master;
+  m_trainer_master = rhs.m_trainer_master;
+  m_rank_in_trainer = rhs.m_rank_in_trainer;
+  m_np_in_trainer = rhs.m_np_in_trainer;
+  m_owner = rhs.m_owner;
+  m_shuffled_indices = rhs.m_shuffled_indices;
   m_sample_sizes = rhs.m_sample_sizes;
 
   /// This block needed when carving a validation set from the training set
@@ -177,9 +177,15 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   }
 
   if(ds_sample_move_list.size() == 0) {
+    if (m_trainer_master) {
+      std::cout << "data_store_conduit::copy_members; ds_sample_move_list.size = 0; copying all entries in m_data\n";
+    }
     m_data = rhs.m_data;
   } else {
     /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
+    if (m_trainer_master) {
+      std::cout << "data_store_conduit::copy_members; ds_sample_move_list.size != 0; copying ONLY SOME entries in m_data\n";
+    }
     for(auto&& i : ds_sample_move_list) {
 
       if(rhs.m_data.find(i) != rhs.m_data.end()){
@@ -641,12 +647,13 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   for (int p=0; p<m_np_in_trainer; p++) {
     const std::unordered_set<int> &indices = m_indices_to_recv[p];
+    int sanity = 0;
     for (auto index : indices) {
-
+      ++sanity;
       int sz = m_compacted_sample_size;
       if (m_node_sizes_vary) {
         if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
-          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index) + "; m_sample_sizes.size(): " + std::to_string(m_sample_sizes.size()) + " role: " + m_reader->get_role());
+          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index) + "; m_sample_sizes.size(): " + std::to_string(m_sample_sizes.size()) + " role: " + m_reader->get_role() + " for index: " + std::to_string(sanity) + " of " + std::to_string(indices.size()));
         }
         sz = m_sample_sizes[index];
       }
@@ -1128,11 +1135,39 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
   m_mem_seg_length = size;
 
   //need to ensure name is unique across all data readers
-  m_seg_name = "our_town_" + m_reader->get_role();
+  m_seg_name = "/our_town_" + m_reader->get_role();
 
+  //in case a previous run was aborted, attempt to remove the file, which
+  //may or may not exist
   int node_id = m_comm->get_rank_in_node();
   if (node_id == 0) {
-    int shm_fd = shm_open(m_seg_name.c_str(), O_CREAT | O_RDWR | O_EXCL, 0666);
+    std::stringstream s;
+    s << "rm -rf /dev/shm/" << m_seg_name;
+    system(s.str().c_str());
+  }
+
+  #if 0
+  debug block; may go away
+  for (int i=0; i<m_np_in_trainer; i++) {
+    if (m_rank_in_trainer == i) {
+      if (node_id == 0) {
+        std::stringstream s;
+        std::cout << "\nls -l /dev/shm; then calling rm -rf " << m_seg_name << "; role: " << m_reader->get_role() << "; m_rank_in_trainer: " << m_rank_in_trainer << std::endl;
+        system("ls -l /dev/shm");
+        s << "rm -rf /dev/shm/" << m_seg_name;
+        system(s.str().c_str());
+        std::cerr << "\nls -l /dev/shm; AFTER rm -rf; role: " << m_reader->get_role() << "; m_rank_in_trainer: " << m_rank_in_trainer << std::endl;
+        system("ls -l /dev/shm");
+      }
+    }
+    m_comm->trainer_barrier();
+  }
+  #endif
+
+  int shm_fd;
+
+  if (node_id == 0) {
+    shm_fd = shm_open(m_seg_name.c_str(), O_CREAT | O_RDWR | O_EXCL, 0666);
     if (shm_fd == -1) {
       LBANN_ERROR("shm_open failed");
     }
@@ -1140,22 +1175,27 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
     if (v != 0) {
       LBANN_ERROR("ftruncate failed");
     }
-    void *m = mmap(0, size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (*static_cast<int*>(m) == -1) {
+    void *m = mmap(0, size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
+    if (m == MAP_FAILED) {
       LBANN_ERROR("mmap failed");
     }
     m_mem_seg = reinterpret_cast<char*>(m);
+    std::fill_n(m_mem_seg, m_mem_seg_length, 1);
+    int sanity = msync(static_cast<void*>(m_mem_seg), m_mem_seg_length, MS_SYNC);
+    if (sanity != 0) {
+      LBANN_ERROR("msync failed");
+    }
   }  
 
   m_comm->barrier(m_comm->get_node_comm());
 
   if (node_id != 0) {
-    int shm_fd = shm_open(m_seg_name.c_str(), O_RDONLY | O_EXCL, 0666);
+    shm_fd = shm_open(m_seg_name.c_str(), O_RDONLY, 0666);
     if (shm_fd == -1) {
-      LBANN_ERROR("shm_open failed");
+      LBANN_ERROR("shm_open failed for filename: " + m_seg_name);
     }
-    void *m = mmap(0, size, PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (*static_cast<int*>(m) == -1) {
+    void *m = mmap(0, size, PROT_READ, MAP_SHARED, shm_fd, 0);
+    if (m == MAP_FAILED) {
       LBANN_ERROR("mmap failed");
     }
     m_mem_seg = reinterpret_cast<char*>(m);
@@ -1169,6 +1209,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
       LBANN_ERROR("b.st_size= " + std::to_string(b.st_size) + " should be equal to " + std::to_string(size));
     }
   }
+  close(shm_fd);
 }
 
 void data_store_conduit::preload_local_cache() {
@@ -1265,7 +1306,6 @@ void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes)
 }
 
 void data_store_conduit::fillin_shared_images(const std::vector<char> &images, int offset) {
-  if (m_world_master) std::cerr << "YY data_store_conduit::fillin_shared_images; offest: " << offset << " seg size: " << m_mem_seg_length << std::endl;
   memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size()); 
 }
 
@@ -1293,22 +1333,9 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
     for (size_t r=0; r<indices[p].size(); r++) {
       offset += image_sizes[indices[p][r]];
     }
-    if (m_world_master) std::cerr << "YY offset: " << offset << " seg size: " << m_mem_seg_length << std::endl;
   }
 
   m_comm->barrier(m_comm->get_node_comm());
-
-if (m_world_master) {
- if (m_reader->get_role() == "train") {
-  FILE *f = fopen("xyz", "w");
-  for (size_t j=0; j<m_mem_seg_length; j++) {
-    fprintf(f, "%d\n", m_mem_seg[j]);
-  }
-  fclose(f);
-  std::cerr << "WROTE: xyz\n";
- }
-}
-
 }
 
 
