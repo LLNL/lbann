@@ -35,25 +35,39 @@ namespace lbann {
 
 namespace python {
 
-/** @brief Singleton class to manage embedded Python session.
+/** @brief Singleton to manage embedded Python session.
  *
- *  This is very experimental. Be warned.
+ *  This mostly manages the initialization and finalization of the
+ *  Python session. It is rarely necessary to interact with the
+ *  singleton instance directly.
+ *
+ *  All static functions are thread-safe.
  */
 class session {
 public:
 
-  /** @brief Get singleton instance. */
-  static session& get();
+  /** @brief Start embedded Python session if not already running.
+   *  @details Does nothing if Python has already been started.
+   */
+  static void start_once();
 
-  static bool is_active();
+  /** @brief Check if embedded Python session is running. */
+  static bool is_active() noexcept;
 
   /** @brief Check if a Python error has occurred.
    *
-   *  Throw an exception if an error is detected.
+   *  Throws an exception if a Python error is detected.
    *
    *  @param force_error Whether to force an exception to be thrown.
    */
   static void check_error(bool force_error = false);
+
+  /** @brief Get singleton instance.
+   *
+   *  Initializes an embedded Python session the first time it is
+   *  called.
+   */
+  static session& get();
 
   ~session();
 
@@ -79,47 +93,76 @@ private:
  *  operations, e.g. I/O and numerical kernels in NumPy, can be
  *  efficiently parallelized because they yield control of the GIL
  *  while working.
- *
- *  This is very experimental. Be warned.
  */
 class global_interpreter_lock {
 public:
-
   global_interpreter_lock();
   ~global_interpreter_lock();
-
 private:
   global_interpreter_lock(const global_interpreter_lock&) = delete;
   global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
   PyGILState_STATE m_gil_state;
 };
 
-/** @brief Convenience wrapper around @c PyObject pointer.
+/** @brief Wrapper around a Python object pointer.
  *
- *  This is very experimental. Be warned.
+ *  Manages the reference count for a @c PyObject pointer and is
+ *  implicitly convertible to the pointer. This is especially
+ *  convenient for interacting with Python C API functions that @a
+ *  borrow references to their arguments and return @a new references
+ *  (this is the most common kind).
+ *
+ *  Handling reference counts is a tricky part of the Python C API. Be
+ *  careful when using functions that @a steal references to their
+ *  arguments or return @a borrowed references. See
+ *
+ *    https://docs.python.org/3.7/c-api/intro.html#reference-counts
+ *
+ *  for an explanation of reference counts.
  */
 class object {
 public:
 
-  // Lifetime functions
-  object() {}
+  /** @brief Take ownership of a Python object pointer.
+   *  @details @a Steals the reference.
+   */
   object(PyObject* ptr);
+
+  /** @brief Create a Python string. */
   object(const std::string& val);
+  /** @brief Create a Python integer. */
   object(long val);
+  /** @brief Create a Python floating point number. */
   object(double val);
+
+  object() {}
+  /** @details @a Borrows the reference. */
   object(const object& other);
+  /** @details @a Borrows the reference. */
   object& operator=(const object& other);
-  object(object&& other);
+  /** @details @a Steals the reference. */
+  object(object&& other) noexcept;
+  /** @details @a Steals the reference. */
   object& operator=(object&& other);
   ~object();
 
-  // Access functions
-  inline PyObject* get()                  { return m_ptr; }
-  inline const PyObject* get() const      { return m_ptr; }
-  inline operator PyObject*()             { return get(); }
-  inline operator const PyObject*() const { return get(); }
+  /** @returns @a Borrowed reference. */
+  inline PyObject* get() noexcept                  { return m_ptr; }
+  /** @returns @a Borrowed reference. */
+  inline const PyObject* get() const noexcept      { return m_ptr; }
+  /** @returns @a Borrowed reference. */
+  inline operator PyObject*() noexcept             { return get(); }
+  /** @returns @a Borrowed reference. */
+  inline operator const PyObject*() const noexcept { return get(); }
+
+  /** @brief Release ownership of Python object pointer.
+   *  @returns @a New reference.
+   */
+  PyObject* release() noexcept;
 
 private:
+
+  /** Python object pointer. */
   PyObject* m_ptr = nullptr;
 
 };
@@ -177,8 +220,6 @@ private:
    *  This function will be executed on worker processes (see @c
    *  m_process_pool). It will obtain a data sample from @c
    *  m_sample_function and copy it into a @c m_shared_memory_array.
-   *
-   *  @todo Performance optimizations for NumPy data.
    */
   python::object m_sample_function_wrapper;
 
@@ -190,7 +231,7 @@ private:
 
   /** @brief Shared memory array.
    *
-   *  @c RawArray the Python @c multiprocessing module.
+   *  @c RawArray from the Python @c multiprocessing module.
    */
   python::object m_shared_memory_array;
 

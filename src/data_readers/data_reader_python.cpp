@@ -35,52 +35,12 @@ namespace lbann {
 
 namespace python {
 
-session& session::get() {
-  // Thread-safe, see
-  // https://en.wikipedia.org/wiki/Double-checked_locking
-  static session instance;
-  return instance;
-}
+void session::start_once() { get(); }
 
-bool session::is_active() {
-  return Py_IsInitialized();
-}
-
-session::session() {
-  if (!is_active()) {
-
-    // Hack to display output from Python
-    // Note: Python outputs didn't appear because MPI intercepts
-    // stdout and stderr. See
-    // https://stackoverflow.com/questions/29352485/python-print-not-working-when-embedded-into-mpi-program
-    Py_UnbufferedStdioFlag = 1;
-
-    // Initialize embedded Python session
-    Py_Initialize();
-    PyEval_InitThreads();
-
-    // Release GIL
-    m_thread_state = PyEval_SaveThread();
-
-  }
-  if (!is_active()) {
-    LBANN_ERROR("error initializing embedded Python session");
-  }
-}
-
-session::~session() {
-  if (is_active()) {
-    if (m_thread_state != nullptr) {
-      PyEval_RestoreThread(m_thread_state);
-    }
-    Py_Finalize();
-  }
-  if (is_active()) {
-    LBANN_WARNING("error finalizing embedded Python session");
-  }
-}
+bool session::is_active() noexcept { return Py_IsInitialized(); }
 
 void session::check_error(bool force_error) {
+  start_once();
   if (!is_active()) {
     LBANN_ERROR("embedded Python session has terminated unexpectedly");
   }
@@ -125,14 +85,54 @@ void session::check_error(bool force_error) {
     }
 
     // Clean up and throw exception
-    PyErr_Restore(type, value, traceback);
+    PyErr_Restore(type.release(), value.release(), traceback.release());
     LBANN_ERROR(err.str());
 
   }
 }
 
+session& session::get() {
+  // Initializing static local variables is thread-safe as of C++11
+  static session instance;
+  return instance;
+}
+
+session::session() {
+  if (!is_active()) {
+
+    // Hack to display output from Python
+    // Note: Python outputs didn't appear because MPI intercepts
+    // stdout and stderr. See
+    // https://stackoverflow.com/questions/29352485/python-print-not-working-when-embedded-into-mpi-program
+    Py_UnbufferedStdioFlag = 1;
+
+    // Initialize embedded Python session
+    Py_Initialize();
+    PyEval_InitThreads();
+
+    // Release GIL
+    m_thread_state = PyEval_SaveThread();
+
+  }
+  if (!is_active()) {
+    LBANN_ERROR("error initializing embedded Python session");
+  }
+}
+
+session::~session() {
+  if (is_active()) {
+    if (m_thread_state != nullptr) {
+      PyEval_RestoreThread(m_thread_state);
+    }
+    Py_Finalize();
+  }
+  if (is_active()) {
+    LBANN_WARNING("error finalizing embedded Python session");
+  }
+}
+
 global_interpreter_lock::global_interpreter_lock() {
-  session::get();
+  session::start_once();
   if (!session::is_active()) {
     LBANN_ERROR("embedded Python session has terminated unexpectedly");
   }
@@ -146,7 +146,7 @@ global_interpreter_lock::~global_interpreter_lock() {
 }
 
 object::object(PyObject* ptr) : m_ptr(ptr) {
-  session::get().check_error();
+  session::check_error();
 }
 object::object(const std::string& val) {
   global_interpreter_lock gil;
@@ -180,7 +180,7 @@ object& object::operator=(const object& other) {
   return *this;
 }
 
-object::object(object&& other) : m_ptr(other.m_ptr) {
+object::object(object&& other) noexcept : m_ptr(other.m_ptr) {
   other.m_ptr = nullptr;
 }
 
@@ -200,6 +200,12 @@ object::~object() {
   }
 }
 
+PyObject* object::release() noexcept {
+  auto old_ptr = m_ptr;
+  m_ptr = nullptr;
+  return old_ptr;
+}
+
 } // namespace python
 
 python_reader::python_reader(std::string module,
@@ -209,7 +215,8 @@ python_reader::python_reader(std::string module,
                              std::string sample_dims_function)
   : generic_data_reader(true) {
 
-  // Acquire Python GIL
+  // Make sure Python is running and acquire GIL
+  python::session::start_once();
   python::global_interpreter_lock gil;
 
   // Import Python module for data
@@ -245,7 +252,7 @@ python_reader::python_reader(std::string module,
 }
 
 python_reader::~python_reader() {
-  if (Py_IsInitialized() && m_process_pool != nullptr) {
+  if (python::session::is_active() && m_process_pool != nullptr) {
     python::global_interpreter_lock gil;
     PyObject_CallMethod(m_process_pool, "terminate", nullptr);
     PyObject_CallMethod(m_process_pool, "join", nullptr);
