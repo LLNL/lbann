@@ -37,8 +37,13 @@
 #include <unordered_map>
 #include <map>
 #include <memory>
-#include "lbann/data_readers/sample_list_jag.hpp"
-#include <opencv2/core.hpp>
+
+//#define _USE_IO_HANDLE_
+#ifdef _USE_IO_HANDLE_
+#include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
+#else
+#include "lbann/data_readers/sample_list_hdf5.hpp"
+#endif
 
 namespace lbann {
 
@@ -56,8 +61,16 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type for the pair of the key string of a sample and the handle of the file that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
-  using sample_t = sample_list_jag::sample_t;
-  using sample_file_id_t = sample_list_jag::sample_file_id_t;
+  using sample_name_t = std::string;
+#ifdef _USE_IO_HANDLE_
+  using sample_list_t = sample_list_conduit_io_handle<sample_name_t>;
+#else
+  using sample_list_t = sample_list_hdf5<sample_name_t>;
+#endif
+  using file_handle_t = sample_list_t::file_handle_t;
+  using sample_file_id_t = sample_list_t::sample_file_id_t;
+  using sample_t = std::pair<sample_file_id_t, sample_name_t>;
+  //using sample_t = sample_list_t::sample_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
@@ -331,6 +344,9 @@ class data_reader_jag_conduit : public generic_data_reader {
    */
   static bool check_non_numeric(const std::string key);
 
+  bool has_path(const file_handle_t& h, const std::string& path) const;
+  void read_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
+
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
   /** Load the conduit node with the data of the sample i identified by key
@@ -343,7 +359,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool has_conduit_path(const size_t i, const std::string& key) const;
 
   /// Obtain image data
-  std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
+  std::vector< std::vector<DataType> > get_image_data(const size_t i, conduit::Node& sample) const;
 
   bool data_store_active() const {
     bool flag = generic_data_reader::data_store_active();
@@ -445,7 +461,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<linear_transform_t> m_input_normalization_params;
 
   typedef std::pair<std::string, std::string> conduit_sample;
-  sample_list_jag m_sample_list;
+  sample_list_t m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
 };

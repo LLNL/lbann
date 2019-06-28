@@ -150,8 +150,8 @@ Hydrogen, and LBANN separately, by whatever means they choose.
         cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml . # where <arch> = x86_64 | ppc64le
         spack install
         spack env loads # Spack creates a file named loads that has all of the correct modules
+        source ${SPACK_ROOT}/share/spack/setup-env.sh # Rerun setup since spack doesn't modify MODULEPATH unless there are module files defined
         source loads
-        unset LIBRARY_PATH
 
 
     + Note that the environments provided here have a set of external

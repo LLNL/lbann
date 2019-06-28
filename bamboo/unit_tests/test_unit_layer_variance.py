@@ -23,8 +23,8 @@ def skeleton_layer_variance(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_variance_clang4(cluster, exes, dirname):
-    skeleton_layer_variance(cluster, exes, dirname, 'clang4')
+def test_unit_layer_variance_clang6(cluster, exes, dirname):
+    skeleton_layer_variance(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_variance_gcc7(cluster, exes, dirname):

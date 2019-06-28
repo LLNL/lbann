@@ -14,6 +14,7 @@ set_full_path(THIS_DIR_SOURCES
   options.cpp
   profiling.cpp
   protobuf_utils.cpp
+  python.cpp
   random.cpp
   stack_profiler.cpp
   stack_trace.cpp
