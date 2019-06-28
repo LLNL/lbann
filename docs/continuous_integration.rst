@@ -97,9 +97,15 @@ your fork for commits.
 They do not run nightly.
 If you push new commits to your fork, a new build should start automatically.
 You can also manually start a build by navigating to your individual plan and
-clicking Run > Run Plan.
+clicking Run > Run plan
+(this will say "Run branch" if you have plan branches set up).
 Once again, keep in mind that the tests will run off what has been pushed to
 your GitHub fork of LBANN and not your local copy of the LBANN repository.
+
+Plan branches allow you to test multiple branches simultaneously instead
+of simply testing "<fork-name>/develop".
+You can create plan branches by navigating to your individual plan,
+clicking Actions > Configure plan > Branches > Create plan branch.
 
 Navigating Bamboo
 ----------------------------------------
