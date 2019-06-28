@@ -88,7 +88,8 @@ private:
  *  The Python interpreter is not thread-safe, so it uses the "global
  *  interpreter lock" to ensure only one thread is executing at a
  *  time. Make sure to acquire the GIL before calling Python C API
- *  functions.
+ *  functions. The GIL can be acquired recursively, i.e. you can
+ *  acquire the GIL even if you already control it.
  */
 class global_interpreter_lock {
 public:
@@ -111,7 +112,7 @@ private:
  *  This class is @a not thread-safe. However, it's best practice to
  *  acquire the GIL before doing any Python operations, so access will
  *  typically be serialized.
-
+ *
  *  Handling reference counts is a tricky part of the Python C API. Be
  *  especially careful with functions that @a steal references or
  *  return @a borrowed references. See
