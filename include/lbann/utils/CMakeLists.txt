@@ -24,6 +24,7 @@ set_full_path(THIS_DIR_HEADERS
   options.hpp
   profiling.hpp
   prototext.hpp
+  python.hpp
   random.hpp
   statistics.hpp
   summary.hpp

@@ -23,8 +23,8 @@ def skeleton_layer_sigmoid(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_sigmoid_clang4(cluster, exes, dirname):
-    skeleton_layer_sigmoid(cluster, exes, dirname, 'clang4')
+def test_unit_layer_sigmoid_clang6(cluster, exes, dirname):
+    skeleton_layer_sigmoid(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_sigmoid_gcc7(cluster, exes, dirname):

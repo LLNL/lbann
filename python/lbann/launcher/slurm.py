@@ -40,6 +40,12 @@ def run(command,
         setup_only (bool, optional): If true, the experiment is not
             run after the batch script is created.
 
+    Returns:
+        int: Exit status from Slurm. This is really only meaningful if
+            the script is run on an existing node allocation. If a
+            batch job is submitted, Slurm will probably return 0
+            trivially.
+
     """
 
     # Check for an existing job allocation from Slurm
@@ -111,7 +117,9 @@ def run(command,
 
     # Launch job if needed
     # Note: Pipes output to log files
-    if not setup_only:
+    if setup_only:
+        return 0
+    else:
         run_exe = 'sh' if has_allocation else 'sbatch'
         run_proc = subprocess.Popen([run_exe, batch_file],
                                     stdout = subprocess.PIPE,
@@ -128,3 +136,4 @@ def run(command,
         run_proc.wait()
         out_proc.wait()
         err_proc.wait()
+        return run_proc.returncode

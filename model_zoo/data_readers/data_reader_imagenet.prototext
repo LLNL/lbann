@@ -6,7 +6,7 @@ data_reader {
     data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/"
     data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
     label_filename: ""
-    validation_percent: 0.01
+    validation_percent: 0.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 1000
@@ -35,7 +35,7 @@ data_reader {
 
   reader {
     name: "imagenet"
-    role: "test"
+    role: "validate"
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/"
     data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
