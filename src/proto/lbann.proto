@@ -414,6 +414,7 @@ message Callback {
    CallbackPerturbAdam perturb_adam = 38;
    CallbackPerturbDropout perturb_dropout = 39;
    CallbackSaveTopKModels save_topk_models = 40;
+   CallbackDumpImageResults dump_image_results = 41;
 }
 
 message CallbackLTFB {
@@ -666,6 +667,20 @@ message CallbackSaveTopKModels {
   int32  k = 2;    //number of (top) models to save
   string metric = 3; //metrics to use in evaluating models
   bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
+}
+
+message CallbackDumpImageResults {
+  enum MatchType{
+  NOMATCH = 0;//NOMATCH = dump failed categorization
+  MATCH = 1;//MATCH = dump successful categorization
+  ALL = 2;//ALL = dump all
+  }
+
+  //string dir = 1; //directory for the lbann_summary
+  string cat_accuracy_layer = 1; //name of categorical accuracy layer
+  string image_layer = 2; //name of image layer
+  MatchType criterion = 3; //criterion for dumping image
+  uint64 interval = 4; // interval for dumping images
 }
 //========================================================================
 // Weights

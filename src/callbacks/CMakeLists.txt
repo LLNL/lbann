@@ -13,6 +13,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_dump_outputs.cpp
   callback_dump_error_signals.cpp
   callback_dump_gradients.cpp
+  callback_dump_image_results.cpp
   callback_dump_minibatch_sample_indices.cpp
   callback_dump_weights.cpp
   callback_early_stopping.cpp

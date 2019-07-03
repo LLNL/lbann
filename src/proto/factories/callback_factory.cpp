@@ -364,6 +364,21 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_dump_gradients(params.basename(),
                                              params.interval());
   }
+  if (proto_cb.has_dump_image_results()) {
+    const auto& params = proto_cb.dump_image_results();
+    /* Add criterion->MatchType function */
+    auto ConvertToLbannType = [](lbann_data::CallbackDumpImageResults_MatchType a)
+    {
+      return static_cast<lbann_callback_dump_image_results::MatchType>(a);
+    };
+
+    return new lbann_callback_dump_image_results(
+      summarizer,
+      params.cat_accuracy_layer(),
+      params.image_layer(),
+      ConvertToLbannType(params.criterion()),
+      params.interval());
+  }
   if (proto_cb.has_dump_mb_indices()) {
     const auto& params = proto_cb.dump_mb_indices();
     return new lbann_callback_dump_minibatch_sample_indices(params.basename(),
@@ -406,6 +421,7 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                            params.upper_bound(),
                                            params.error_on_failure());
   }
+
 
   //////////////////////////////////////////////////////////////
   // GPU memory profiling

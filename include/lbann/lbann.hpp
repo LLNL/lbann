@@ -166,6 +166,7 @@
 #include "lbann/callbacks/callback_check_metric.hpp"
 #include "lbann/callbacks/callback_perturb_adam.hpp"
 #include "lbann/callbacks/callback_perturb_dropout.hpp"
+#include "lbann/callbacks/callback_dump_image_results.hpp"
 
 /// Weights and weight initializers
 #include "lbann/weights/weights.hpp"

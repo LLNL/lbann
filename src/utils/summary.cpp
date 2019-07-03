@@ -185,6 +185,18 @@ void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
   sum_reduce_scalar(tag, local_norm * local_norm, step);
 }
 
+void lbann_summary::report_image(std::string const& tag,
+                                 CPUMat const& image,
+                                 std::vector<int> dims,
+                                 int step) {
+  ASSERT(image.Height() == get_linearize_size(dims));
+
+  auto uint8_img = get_uint8_t_image(image, dims);
+  auto img_str = encode_image(uint8_img, dims);
+  m_sw->add_image(tag, img_str, dims, step);
+
+}
+
 void lbann_summary::flush() {
   flush_means();
   flush_mins();

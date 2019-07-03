@@ -216,8 +216,7 @@ void save_image(const std::string& filename, const CPUMat& src,
 }
 
 El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
-                            const std::vector<size_t>& dims)
-{
+                            const std::vector<size_t>& dims) {
   // Need to convert to uint8_t matrix in OpenCV format.
   // We will normalize to [0, 1], then map to [0, 255].
   const size_t size = utils::get_linearized_size(dims);
@@ -248,8 +247,7 @@ El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
 }
 
 std::string encode_image(const El::Matrix<uint8_t>& image,
-                         const std::vector<size_t>& dims)
-{
+                         const std::vector<size_t>& dims) {
   cv::Mat Mat_img = utils::get_opencv_mat(
     const_cast<El::Matrix<uint8_t>&>(image), dims);
   std::vector<uint8_t> encoded_img;

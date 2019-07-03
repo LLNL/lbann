@@ -87,6 +87,11 @@ class lbann_summary {
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step);
   /** Report the (squared) 2-norm of mat. */
   void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step);
+  /** Report image to be dumped */
+  void report_image(std::string const& tag,
+                    CPUMat const& image,
+                    std::vector<int> dims,
+                    int step);
 
   /**
    * Write all summaries out.
