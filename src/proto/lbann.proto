@@ -856,6 +856,7 @@ message Layer {
    FullyConnected fully_connected = 11;
    Convolution convolution = 13;
    Deconvolution deconvolution = 305;
+   Embedding embedding = 328;
 
    // Loss layers
    CrossEntropy cross_entropy = 60;
@@ -1280,6 +1281,11 @@ message Deconvolution {
   bool has_bias = 10;                   //default: true
   double bias_initial_value = 11;       //default: 0
   double l2_regularization_factor = 12; //default: 0
+}
+
+message Embedding {
+  int64 dictionary_size = 1;
+  int64 embedding_size = 2;
 }
 
 //////////////////

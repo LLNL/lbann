@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   base_convolution.hpp
   convolution.hpp
   deconvolution.hpp
+  embedding.hpp
   fully_connected.hpp
   fully_connected_cuda.hpp
   learning.hpp

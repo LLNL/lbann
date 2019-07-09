@@ -198,6 +198,19 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
 
+  // Embedding layer
+  if (proto_layer.has_embedding()) {
+    const auto& params = proto_layer.embedding();
+    if (Layout == data_layout::DATA_PARALLEL
+        && Device == El::Device::CPU) {
+      return lbann::make_unique<embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(
+               comm, params.dictionary_size(), params.embedding_size());
+    } else {
+      LBANN_ERROR("embedding layer is only supported with "
+                  "data-parallel data layout and on CPU");
+    }
+  }
+
   // Transform layers
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
