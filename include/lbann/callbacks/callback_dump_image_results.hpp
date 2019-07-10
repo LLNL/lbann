@@ -30,6 +30,8 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_DUMP_IMAGE_RESULTS_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DUMP_IMAGE_RESULTS_HPP_INCLUDED
 
+#include <string>
+#include <vector>
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
@@ -85,6 +87,14 @@ private:
 
   /** @brief Add image to event file */
   void dump_image_to_summary(const std::vector<El::Int>& img_indices);
+  void dump_image(std::string prefix,
+                  std::string format,
+                  const std::vector<El::Int>& img_indices);
+  //FIXME: Delete after cb success
+  void save_image(std::string prefix,
+                  std::string format,
+                  const std::vector<El::Int>& img_indices);
+
 private:
   /* Name of categorical accuracy layer */
   std::string const& m_cat_accuracy_layer_name;

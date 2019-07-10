@@ -27,6 +27,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/summary.hpp"
+#include <lbann/utils/image.hpp>
+#include <lbann/utils/opencv.hpp>
 
 namespace lbann {
 
@@ -187,9 +189,14 @@ void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
 
 void lbann_summary::report_image(std::string const& tag,
                                  CPUMat const& image,
-                                 std::vector<int> dims,
+                                 std::vector<int> const& dims_in,
                                  int step) {
-  ASSERT(image.Height() == get_linearize_size(dims));
+  std::vector<size_t> dims(dims_in.begin(), dims_in.end());
+
+  if (static_cast<size_t>(image.Height()) != utils::get_linearized_size(dims))
+  {
+    throw std::runtime_error("Everything is the worst.");
+  }
 
   auto uint8_img = get_uint8_t_image(image, dims);
   auto img_str = encode_image(uint8_img, dims);

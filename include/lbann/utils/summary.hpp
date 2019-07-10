@@ -90,7 +90,7 @@ class lbann_summary {
   /** Report image to be dumped */
   void report_image(std::string const& tag,
                     CPUMat const& image,
-                    std::vector<int> dims,
+                    std::vector<int> const& dims,
                     int step);
 
   /**
@@ -217,6 +217,12 @@ class lbann_summary {
   void reduce_scalar_all(const std::string tag, DataType s, int step) {}
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step) {}
   void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step) {}
+  void report_image(std::string const& tag,
+                    CPUMat const& image,
+                    std::vector<int> const& dims,
+                    int step)
+  {}
+
   void flush() {}
 };
 
