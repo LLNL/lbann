@@ -99,18 +99,9 @@ model {
     data_layout: "data_parallel"
     elu {}
   }
-  layer {
-    parents: "encodeelu"
-    name: "encodedropout"
-    data_layout: "data_parallel"
-    dropout {
-      keep_prob: 0.9
-    }
-  }
-
   #Y'(reconstructed images and scalar) 
   layer {
-    parents: "encodedropout"
+    parents: "encodeelu"
     name: "decode"
     data_layout: "data_parallel"
     fully_connected {
