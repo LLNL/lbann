@@ -86,7 +86,7 @@ private:
   bool meets_criteria( const DataType& match );
 
   /** @brief Add image to event file */
-  void dump_image_to_summary(const std::vector<El::Int>& img_indices);
+  void dump_image_to_summary(const std::vector<El::Int>& img_indices, const uint64_t& step);
   void dump_image(std::string prefix,
                   std::string format,
                   const std::vector<El::Int>& img_indices);
@@ -97,9 +97,9 @@ private:
 
 private:
   /* Name of categorical accuracy layer */
-  std::string const& m_cat_accuracy_layer_name;
+  std::string m_cat_accuracy_layer_name;
   /* Name of image layer*/
-  std::string const& m_img_layer_name;
+  std::string m_img_layer_name;
 
   /* Criterion for selecting images to dump */
   MatchType m_match_type;

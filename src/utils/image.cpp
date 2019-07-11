@@ -209,42 +209,8 @@ void save_image(const std::string& filename, const CPUMat& src,
   if (dims.size() != 3 || (dims[0] != 1 && dims[0] != 3)) {
     LBANN_ERROR("Unsupported dimensions for saving an image.");
   }
-
   El::Matrix<uint8_t> cv_mat = get_uint8_t_image(src, dims);
-
   save_image(filename, cv_mat, dims);
-}
-
-El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
-                            const std::vector<size_t>& dims)
-{
-  // Need to convert to uint8_t matrix in OpenCV format.
-  // We will normalize to [0, 1], then map to [0, 255].
-  const size_t size = utils::get_linearized_size(dims);
-  El::Matrix<uint8_t> cv_mat = El::Matrix<uint8_t>(size, 1);
-  // Find the minimum and maximum to normalize with.
-  const DataType* __restrict__ img_buf = image.LockedBuffer();
-  DataType min = std::numeric_limits<DataType>::max();
-  DataType max = std::numeric_limits<DataType>::lowest();
-  for (size_t i = 0; i < size; ++i) {
-    min = std::min(min, img_buf[i]);
-    max = std::max(max, img_buf[i]);
-  }
-  const DataType norm_denom = max - min;
-  // Construct the OpenCV buffer.
-  uint8_t* __restrict__ cv_buf = cv_mat.Buffer();
-  for (size_t channel = 0; channel < dims[0]; ++channel) {
-    const size_t img_offset = channel*dims[1]*dims[2];
-    for (size_t col = 0; col < dims[2]; ++col) {
-      for (size_t row = 0; row < dims[1]; ++row) {
-        const DataType norm_img_val =
-          (img_buf[img_offset + row + col*dims[1]] - min) / norm_denom;
-        cv_buf[dims[0]*(col + row*dims[2]) + channel] =
-          static_cast<uint8_t>(std::min(std::floor(norm_img_val) * 256, DataType(255)));
-      }
-    }
-  }
-  return cv_mat;
 }
 
 std::string encode_image(const El::Matrix<uint8_t>& image,
@@ -282,22 +248,11 @@ El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
     (largest > smallest
      ? static_cast<double>(256 / (largest - smallest))
      : 1.0);
+  double beta = -smallest * scaling_factor;
 
-  source.convertTo(target, target.type(), scaling_factor, -smallest);
+  source.convertTo(target, target.type(), scaling_factor, beta);
 
   return output_mat;
-}
-
-std::string encode_image(const El::Matrix<uint8_t>& image,
-                         const std::vector<size_t>& dims) {
-  cv::Mat Mat_img = utils::get_opencv_mat(
-    const_cast<El::Matrix<uint8_t>&>(image), dims);
-  std::vector<uint8_t> encoded_img;
-  std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 20};
-
-  cv::imencode(".jpg", Mat_img, encoded_img, params);
-
-  return std::string{encoded_img.begin(), encoded_img.end()};
 }
 
 }  // namespace lbann
