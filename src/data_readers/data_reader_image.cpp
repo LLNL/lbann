@@ -238,16 +238,6 @@ std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_cu
   return ret;
 }
 
-
-void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node, std::vector<char> &data) {
-  node.reset();
-  const std::string filename = get_file_dir() + m_image_list[data_id].first;
-  int label = m_image_list[data_id].second;
-  read_raw_data(filename, data);
-  node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);
-  node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set(data);
-  node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
-}
 void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node) {
   node.reset();
   const std::string filename = get_file_dir() + m_image_list[data_id].first;
