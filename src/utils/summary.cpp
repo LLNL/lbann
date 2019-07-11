@@ -188,6 +188,7 @@ void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
 }
 
 void lbann_summary::report_image(std::string const& tag,
+                                 std::string const& img_format,
                                  CPUMat const& image,
                                  std::vector<int> const& dims_in,
                                  int step) {
@@ -199,7 +200,7 @@ void lbann_summary::report_image(std::string const& tag,
   }
 
   auto uint8_img = get_uint8_t_image(image, dims);
-  auto img_str = encode_image(uint8_img, dims);
+  auto img_str = encode_image(uint8_img, dims, img_format);
   m_sw->add_image(tag, img_str, dims, step);
 
 }

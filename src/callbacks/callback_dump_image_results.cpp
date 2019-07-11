@@ -80,23 +80,37 @@ Layer const* lbann_callback_dump_image_results::get_layer_by_name(
 }
 
 std::vector<El::Int> lbann_callback_dump_image_results::get_image_indices() {
-  const AbsDistMat& categorized_correctly = m_cat_accuracy_layer->get_activations();
-  auto const& local_cat_correctly = categorized_correctly.LockedMatrix();
-  El::AbstractMatrixReadDeviceProxy<DataType,El::Device::CPU> cpu_proxy(local_cat_correctly);
-  CPUMat const& local_cpu_mat = cpu_proxy.GetLocked();
+  const AbsDistMat& categorized_correctly_dist = m_cat_accuracy_layer->get_activations();
+  CircMat<El::Device::CPU> categorized_correctly(
+    categorized_correctly_dist.Grid(), categorized_correctly_dist.Root());
+  categorized_correctly = categorized_correctly_dist;
 
+  if (categorized_correctly.Height() != El::Int(1))
+    LBANN_ERROR("Tom was wrong about this matrix. Oops.");
+
+  // Create return value
   std::vector<El::Int> img_indices;
-  for(El::Int ii = 0; ii < local_cpu_mat.Width(); ++ii) {
-    // Validate data
-    if( local_cpu_mat(0,ii) != 0 && local_cpu_mat(0,ii) != 1 )
-      ThrowLBANNError( "Invalid data from ", m_cat_accuracy_layer, ". Received ",
-                       local_cpu_mat(0,ii), ", expected 0 or 1.");
-    if( meets_criteria(local_cpu_mat(0,ii)) )
-      img_indices.push_back(ii);
-//FIXME: pass in img limit?
-    if(img_indices.size() > 10)
-      break;
+
+  // Fill return value if root process
+  if (categorized_correctly.CrossRank() == categorized_correctly.Root()) {
+    // Loop over all samples -- samples are the *width* of the matrix
+    auto const num_samples = categorized_correctly.LocalWidth();
+    for (auto sample = decltype(num_samples){0}; sample < num_samples; ++sample) {
+      auto const& correctness_value = categorized_correctly.LockedMatrix()(0, sample);
+
+      if ((correctness_value != DataType(0))
+          && (correctness_value != DataType(1)))
+        ThrowLBANNError("Invalid data from ", m_cat_accuracy_layer->get_name(),
+                        ". Received ", correctness_value, ", expected 0 or 1.");
+
+      if (meets_criteria(correctness_value))
+        img_indices.push_back(sample);
+
+      if(img_indices.size() > 10)
+        break;
+    }
   }
+
   return img_indices;
 }
 
@@ -116,21 +130,23 @@ void lbann_callback_dump_image_results::dump_image_to_summary(
   static size_t img_number = 0;
 
   const AbsDistMat& img_layer_activations = m_img_layer->get_activations();
-  auto sample_view = std::unique_ptr<AbsDistMat>{img_layer_activations.Construct(
-      img_layer_activations.Grid(), img_layer_activations.Root())};
-  CircMat<El::Device::CPU> circ_image(
-    img_layer_activations.Grid(), img_layer_activations.Root());
 
-  for (const El::Int& col_index : img_indices) {
-    El::LockedView(*sample_view, img_layer_activations, El::ALL, El::IR(col_index));
-    circ_image = *sample_view;
+  CircMat<El::Device::CPU> all_images(
+      img_layer_activations.Grid(), img_layer_activations.Root());
+  all_images = img_layer_activations;
 
-    if (circ_image.CrossRank() == circ_image.Root()) {
-      auto const& local_image = circ_image.LockedMatrix();
-      auto dims = m_img_layer->get_output_dims();
+  if (all_images.CrossRank() == all_images.Root()) {
+    auto const& local_images = all_images.LockedMatrix();
+    auto dims = m_img_layer->get_output_dims();
+
+    for (const El::Int& col_index : img_indices) {
+      if (col_index > local_images.Width())
+        LBANN_ERROR("Bad col index.");
+
+      auto const local_image = local_images(El::ALL, El::IR(col_index));
 
       std::string image_tag("image-" + std::to_string(img_number++));
-      this->m_summarizer->report_image(image_tag, local_image, dims, step);
+      this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
     }
   }
 }

@@ -89,6 +89,7 @@ class lbann_summary {
   void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step);
   /** Report image to be dumped */
   void report_image(std::string const& tag,
+                    std::string const& img_format,
                     CPUMat const& image,
                     std::vector<int> const& dims,
                     int step);
@@ -218,6 +219,7 @@ class lbann_summary {
   void reduce_histogram(const std::string tag, const AbsDistMat& mat, int step) {}
   void reduce_2norm(const std::string tag, const AbsDistMat& mat, int step) {}
   void report_image(std::string const& tag,
+                    std::string const& img_format,
                     CPUMat const& image,
                     std::vector<int> const& dims,
                     int step)

@@ -54,14 +54,14 @@ public:
    *  @param cat_accuracy_layer Categorical accuracy layer object
    *  @param img_layer Image layer object
    *  @param summarizer lbann_summary object
-   *  @param image_format Image file format (e.g. jpg, png, pgm)
+   *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
    */
   lbann_callback_dump_image_results(lbann_summary *summarizer,
                                     std::string const& cat_accuracy_layer_name,
                                     std::string const& img_layer_name,
                                     MatchType match_type,
                                     uint64_t interval,
-                                    std::string img_format = "jpg");
+                                    std::string img_format = ".jpg");
 /** @brief Destructor */
 //  ~lbann_callback_dump_image_results();
 
@@ -101,11 +101,17 @@ private:
   /* Name of image layer*/
   std::string m_img_layer_name;
 
+  std::string m_label_layer_name;
+
+  std::string m_classifier_layer_name;
+
   /* Criterion for selecting images to dump */
   MatchType m_match_type;
   /** lbann::Layer objects */
   Layer const* m_cat_accuracy_layer = nullptr;
   Layer const* m_img_layer = nullptr;
+  Layer const* m_label_layer = nullptr;
+  Layer const* m_classifier_layer = nullptr;
 
   /* Interval for dumping images */
   uint64_t m_interval;

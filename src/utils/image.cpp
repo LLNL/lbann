@@ -214,14 +214,15 @@ void save_image(const std::string& filename, const CPUMat& src,
 }
 
 std::string encode_image(const El::Matrix<uint8_t>& image,
-                         const std::vector<size_t>& dims)
+                         const std::vector<size_t>& dims,
+                         std::string const& img_format)
 {
   cv::Mat Mat_img = utils::get_opencv_mat(
     const_cast<El::Matrix<uint8_t>&>(image), dims);
   std::vector<uint8_t> encoded_img;
   std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 20};
 
-  cv::imencode(".jpg", Mat_img, encoded_img, params);
+  cv::imencode(img_format, Mat_img, encoded_img, params);
 
   return std::string{encoded_img.begin(), encoded_img.end()};
 }
