@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -22,47 +22,41 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann_config.hpp"
+#ifndef LBANN_TRANSFORMS_ADJUST_BRIGHTNESS_HPP_INCLUDED
+#define LBANN_TRANSFORMS_ADJUST_BRIGHTNESS_HPP_INCLUDED
 
-#ifdef LBANN_HAS_CONDUIT
+#include "lbann/transforms/transform.hpp"
 
-#include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include "lbann/lbann.hpp"
-#include "lbann/utils/jag_utils.hpp"
-#include "lbann/data_readers/numpy_conduit_cache.hpp"
+namespace lbann {
+namespace transform {
 
-using namespace lbann;
-
-int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
-
-  try {
-
-  numpy_conduit_cache n(comm.get());
-  n.load("/g/g10/hysom/test.npz", 42);
-
-  } catch (std::exception const &e) {
-    if (master) std::cerr << "caught exception: " << e.what() << "\n";
-    return EXIT_FAILURE;
-  } catch (...) {
-    std::cerr << "unknown exception in main\n";
-    return EXIT_FAILURE;
+/** Adjust the brightness of an image. */
+class adjust_brightness : public transform {
+public:
+  /**
+   * Adjust brightness with given factor.
+   * @param factor A non-negative factor. 0 gives a black image, 1 the original.
+   */
+  adjust_brightness(float factor) : transform(), m_factor(factor) {
+    if (factor < 0.0f) {
+      LBANN_ERROR("Brightness factor must be non-negative.");
+    }
   }
+  
+  transform* copy() const override { return new adjust_brightness(*this); }
 
-  // Clean up
-  return EXIT_SUCCESS;
-}
+  std::string get_type() const override { return "adjust_brightness"; }
 
-#endif //#ifdef LBANN_HAS_CONDUIT
+  void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
+
+private:
+  /** Factor to adjust brightness by. */
+  float m_factor;
+};
+
+}  // namespace transform
+}  // namespace lbann
+
+#endif  // LBANN_TRANSFORMS_ADJUST_BRIGHTNESS_HPP_INCLUDED

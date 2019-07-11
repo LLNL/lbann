@@ -6,7 +6,7 @@ def check_list(substrings, strings):
     errors = []
     for string in strings:
         for substring in substrings:
-            if (string != None) and (substring in string):
+            if (string is not None) and (substring in string):
                 errors.append('%s contains %s' % (string, substring))
     return errors
 
@@ -79,6 +79,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('SLURM_JOB_NUM_NODES') is None:
+            print('Allocating slurm nodes.')
             command_allocate = 'salloc'
             option_num_nodes = ''
             option_partition = ''
@@ -105,6 +106,8 @@ def get_command(cluster,
             command_allocate = '%s%s%s%s' % (
                 command_allocate, option_num_nodes, option_partition,
                 option_time_limit)
+        else:
+            print('slurm nodes already allocated.')
 
         # Create run command
         if command_allocate == '':
@@ -123,6 +126,7 @@ def get_command(cluster,
         command_allocate = ''
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('LSB_HOSTS') is None:
+            print('Allocating lsf nodes.')
             command_allocate = 'bsub'
             # x => Puts the host running your job into exclusive execution
             # mode.
@@ -160,6 +164,8 @@ def get_command(cluster,
                 command_allocate, option_exclusive, option_group,
                 option_interactive, option_num_processes, option_partition,
                 option_processes_per_node, option_time_limit)
+        else:
+            print('lsf nodes already allocated.')
 
         # Create run command
         if command_allocate == '':
@@ -261,7 +267,7 @@ def get_command(cluster,
             # option_data_filename_train = data_filename_train_default
             # option_data_filedir_test = data_filedir_test_default
             # option_data_filename_train = data_filename_test_default
-            pass # No need to pass in a parameter
+            pass  # No need to pass in a parameter
         elif cluster == 'ray':
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
@@ -360,11 +366,11 @@ def process_executable_existence(executable, skip_no_exe=True):
 def get_spack_exes(default_dirname, cluster):
     exes = {}
 
-    exes['clang4'] = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
+    exes['clang6'] = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
     exes['gcc7'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
     exes['intel19'] = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_rel/build/model_zoo/lbann' % (default_dirname, cluster)
 
-    exes['clang4_debug'] = '%s/bamboo/compiler_tests/builds/%s_clang-4.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
+    exes['clang6_debug'] = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
     exes['gcc7_debug'] = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
     exes['intel19_debug'] = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_debug/build/model_zoo/lbann' % (default_dirname, cluster)
 
@@ -374,15 +380,15 @@ def get_spack_exes(default_dirname, cluster):
 def get_default_exes(default_dirname, cluster):
     exes = get_spack_exes(default_dirname, cluster)
     # Use build script as a backup if the Spack build doesn't work.
-    if not os.path.exists(exes['clang4']):
-        exes['clang4'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
+    if not os.path.exists(exes['clang6']):
+        exes['clang6'] = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if not os.path.exists(exes['gcc7']):
         exes['gcc7'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if not os.path.exists(exes['intel19']):
         exes['intel19'] = '%s/build/intel.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
 
-    if not os.path.exists(exes['clang4_debug']):
-        exes['clang4_debug'] = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
+    if not os.path.exists(exes['clang6_debug']):
+        exes['clang6_debug'] = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if not os.path.exists(exes['gcc7_debug']):
         exes['gcc7_debug'] = '%s/build/gnu.Debug.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
     if not os.path.exists(exes['intel19_debug']):
@@ -393,11 +399,11 @@ def get_default_exes(default_dirname, cluster):
     if cluster in ['catalyst', 'pascal']:
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
-        default_exes['clang4'] = exes['clang4']
+        default_exes['clang6'] = exes['clang6']
         default_exes['gcc7'] = exes['gcc7']
         default_exes['intel19'] = exes['intel19']
 
-        default_exes['clang4_debug'] = exes['clang4_debug']
+        default_exes['clang6_debug'] = exes['clang6_debug']
         default_exes['gcc7_debug'] = exes['gcc7_debug']
         default_exes['intel19_debug'] = exes['intel19_debug']
 

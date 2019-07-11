@@ -45,6 +45,7 @@
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
+#include "lbann/layers/learning/embedding.hpp"
 
 /// Loss layers
 #include "lbann/layers/loss/categorical_accuracy.hpp"
@@ -148,6 +149,7 @@
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/callbacks/callback_early_stopping.hpp"
 #include "lbann/callbacks/callback_ltfb.hpp"
+#include "lbann/callbacks/callback_mixup.hpp"
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/callbacks/callback_save_model.hpp"
 #include "lbann/callbacks/callback_save_topk_models.hpp"

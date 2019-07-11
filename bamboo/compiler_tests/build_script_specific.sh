@@ -30,8 +30,8 @@ while :; do
     shift
 done
 
-if [ "${COMPILER}" == 'clang4' ]; then
-    module load clang/4.0.0
+if [ "${COMPILER}" == 'clang6' ]; then
+    module load clang/6.0.0
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --compiler clang ${DEBUG} --reconfigure --with-conduit
 fi
 

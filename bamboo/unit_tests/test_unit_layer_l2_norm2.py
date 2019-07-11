@@ -23,8 +23,8 @@ def skeleton_layer_l2_norm2(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_l2_norm2_clang4(cluster, exes, dirname):
-    skeleton_layer_l2_norm2(cluster, exes, dirname, 'clang4')
+def test_unit_layer_l2_norm2_clang6(cluster, exes, dirname):
+    skeleton_layer_l2_norm2(cluster, exes, dirname, 'clang6')
 
 def test_unit_layer_l2_norm2_gcc7(cluster, exes, dirname):
     skeleton_layer_l2_norm2(cluster, exes, dirname, 'gcc7')

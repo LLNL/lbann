@@ -24,8 +24,8 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name, compiler_nam
     assert return_code == 0
 
 
-def test_unit_mnist_ridge_regression_clang4(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'clang4')
+def test_unit_mnist_ridge_regression_clang6(cluster, exes, dirname):
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_mnist_ridge_regression_gcc7(cluster, exes, dirname):
