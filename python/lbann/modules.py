@@ -291,13 +291,13 @@ class LSTMCell(Module):
         if len(self.weights) == 0:
             self.weights.append(
                 lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
-                                                                   max=-1/sqrt(self.size)),
+                                                                   max=1/sqrt(self.size)),
                               name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
-                                                                   max=-1/sqrt(self.size)),
-                           name=self.name+'_bias'))
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_bias'))
 
         # Linearity
         self.fc = FullyConnectedModule(4*size, bias=bias,
