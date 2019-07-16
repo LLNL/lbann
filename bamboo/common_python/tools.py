@@ -27,6 +27,7 @@ def get_command(cluster,
                 data_reader_path=None,
                 data_reader_percent=None,
                 exit_after_setup=False,
+                metadata=None,
                 mini_batch_size=None,
                 model_folder=None,
                 model_name=None,
@@ -196,6 +197,7 @@ def get_command(cluster,
     option_data_reader = ''
     option_data_reader_percent = ''
     option_exit_after_setup = ''
+    option_metadata = ''
     option_mini_batch_size = ''
     option_model = ''
     option_num_epochs = ''
@@ -313,6 +315,8 @@ def get_command(cluster,
         option_data_reader_percent = ' --data_reader_percent=%f' % data_reader_percent
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
+    if metadata is not None:
+        option_metadata = ' --metadata={d}/{m}'.format(d=dir_name, m=metadata)
     if mini_batch_size is not None:
         option_mini_batch_size = ' --mini_batch_size=%d' % mini_batch_size
     if num_epochs is not None:
@@ -324,12 +328,12 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
         executable, option_ckpt_dir, option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
-        option_exit_after_setup, option_mini_batch_size,
+        option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
         option_processes_per_model)
 
