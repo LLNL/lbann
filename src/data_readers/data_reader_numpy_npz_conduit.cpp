@@ -317,8 +317,15 @@ bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   }
   */
   Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
-  std::memcpy(Y_v.Buffer(), responses,
-              m_num_response_features * m_response_word_size);
+  if (std::getenv("COSMOFLOW_SINGLE_RESPONSE")) {
+    int response_idx = std::atoi(std::getenv("COSMOFLOW_SINGLE_RESPONSE"));
+    std::memcpy(Y_v.Buffer(), ((char*)responses) +
+                m_response_word_size * response_idx,
+                m_response_word_size);
+  } else {
+    std::memcpy(Y_v.Buffer(), responses,
+                m_num_response_features * m_response_word_size);
+  }
   return true;
 }
 
@@ -383,6 +390,11 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     m_num_response_features = 1;
     for (int k=1; k<n; k++) {
       m_num_response_features *= r_shape[k];
+    }
+    if (std::getenv("COSMOFLOW_SINGLE_RESPONSE")) {
+      m_num_response_features = 1;
+      int response_idx = std::atoi(std::getenv("COSMOFLOW_SINGLE_RESPONSE"));
+      std::cout << "Using response " << response_idx << std::endl;
     }
     if (is_master()) {
       std::cout << "response word size: " << m_response_word_size << "\n";
