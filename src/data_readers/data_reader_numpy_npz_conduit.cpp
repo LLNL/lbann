@@ -357,6 +357,9 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
   for (int k=1; k<shape_num_elts; k++) {
     m_data_dims.push_back(shape[k]);
   }
+  if (std::getenv("COSMOFLOW_IGNORE_REDSHIFTS")) {
+    m_data_dims[0] = 1;
+  }
   m_num_features = std::accumulate(m_data_dims.begin() + 1,
                                    m_data_dims.end(),
                                    (unsigned) 1,
