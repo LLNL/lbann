@@ -30,6 +30,54 @@ namespace lbann {
 
 namespace {
 
+#ifdef DISPLAY_INDIVIDUAL_MSE
+template <int block_size>
+__global__ void fp_kernel(int global_height,
+                          int local_height, int local_width,
+                          const DataType* __restrict__ prediction,
+                          int prediction_ldim,
+                          const DataType* __restrict__ ground_truth,
+                          int ground_truth_ldim,
+                          DataType* __restrict__ contribution,
+                          DataType* __restrict__ contribution_pc) {
+
+  // Indices
+  const int tid = threadIdx.x;
+  const int gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const int bidy = blockIdx.y;
+  const int nthreadsx = blockDim.x * gridDim.x;
+
+  // Compute local contribution for each matrix column
+  for (int col = bidy; col < local_width; col += gridDim.y) {
+
+    // Compute contributions for each thread
+    DataType private_contribution = DataType(0);
+    for (int row = gidx; row < local_height; row += nthreadsx) {
+      const auto& err = (prediction[row + col * prediction_ldim]
+                         - ground_truth[row + col * ground_truth_ldim]);
+      private_contribution += err * err;
+      contribution_pc[row + local_height * col] = err * err;
+    }
+
+    // Shared memory reduction to get contribution for each block
+    /// @todo unroll loops
+    __shared__ DataType shared_contribution[block_size];
+    shared_contribution[tid] = private_contribution;
+    for (int stride = block_size / 2; stride > 0; stride /= 2) {
+      __syncthreads();
+      if (tid < stride) {
+        shared_contribution[tid] += shared_contribution[tid + stride];
+      }
+    }
+    if (tid == 0) {
+      shared_contribution[0] /= global_height;
+      cuda::atomic_add(&contribution[col], shared_contribution[0]);
+    }
+
+  }
+
+}
+#else
 template <int block_size>
 __global__ void fp_kernel(int global_height,
                           int local_height, int local_width,
@@ -74,7 +122,34 @@ __global__ void fp_kernel(int global_height,
   }
 
 }
+#endif // DISPLAY_INDIVIDUAL_MSE
 
+#ifdef DISPLAY_INDIVIDUAL_MSE
+void local_fp_gpu(El::Int height,
+                  const AbsMat& local_prediction,
+                  const AbsMat& local_ground_truth,
+                  AbsMat& local_contribution,
+                  AbsMat& local_contribution_pc) {
+  El::Zero(local_contribution);
+  const auto& local_height = local_prediction.Height();
+  const auto& local_width = local_prediction.Width();
+  if (local_height > 0 && local_width > 0) {
+    const int block_size = 256;
+    dim3 block_dims, grid_dims;
+    block_dims.x = block_size;
+    grid_dims.x = (local_height + block_size - 1) / block_size;
+    grid_dims.y = local_width;
+    CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
+    fp_kernel<block_size>
+      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+        height, local_height, local_width,
+        local_prediction.LockedBuffer(), local_prediction.LDim(),
+        local_ground_truth.LockedBuffer(), local_ground_truth.LDim(),
+        local_contribution.Buffer(),
+        local_contribution_pc.Buffer());
+  }
+}
+#else
 void local_fp_gpu(El::Int height,
                   const AbsMat& local_prediction,
                   const AbsMat& local_ground_truth,
@@ -97,7 +172,7 @@ void local_fp_gpu(El::Int height,
         local_contribution.Buffer());
   }
 }
-
+#endif
 template <int block_size>
 __global__ void bp_kernel(int global_height,
                           int local_height, int local_width,
@@ -161,6 +236,18 @@ void local_bp_gpu(El::Int height,
 
 } // namespace
 
+#ifdef DISPLAY_INDIVIDUAL_MSE
+template <>
+void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
+     ::local_fp_compute(El::Int height,
+                        const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        AbsMat& local_contribution,
+                        AbsMat& local_contribution_pc) {
+  local_fp_gpu(height, local_prediction, local_ground_truth,
+               local_contribution, local_contribution_pc);
+}
+#else
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::local_fp_compute(El::Int height,
@@ -170,6 +257,7 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
   local_fp_gpu(height, local_prediction, local_ground_truth,
                local_contribution);
 }
+#endif
 
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
@@ -186,7 +274,18 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
                local_gradient_wrt_prediction,
                local_gradient_wrt_ground_truth);
 }
-
+#ifdef DISPLAY_INDIVIDUAL_MSE
+template <>
+void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
+     ::local_fp_compute(El::Int height,
+                        const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        AbsMat& local_contribution,
+                        AbsMat& local_contribution_pc) {
+  local_fp_gpu(height, local_prediction, local_ground_truth,
+               local_contribution, local_contribution_pc);
+}
+#else
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::local_fp_compute(El::Int height,
@@ -196,6 +295,7 @@ void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   local_fp_gpu(height, local_prediction, local_ground_truth,
                local_contribution);
 }
+#endif
 
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>

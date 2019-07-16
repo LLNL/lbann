@@ -81,6 +81,18 @@ void local_bp_cpu(El::Int height,
 
 } // namespace
 
+#ifdef DISPLAY_INDIVIDUAL_MSE
+template <>
+void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
+     ::local_fp_compute(El::Int height,
+                        const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        AbsMat& local_contribution,
+                        AbsMat& local_contribution_pc) {
+  local_fp_cpu(height, local_prediction, local_ground_truth,
+               local_contribution);
+}
+#else
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::local_fp_compute(El::Int height,
@@ -90,6 +102,7 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   local_fp_cpu(height, local_prediction, local_ground_truth,
                local_contribution);
 }
+#endif
 
 template <>
 void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
@@ -107,6 +120,18 @@ void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
                local_gradient_wrt_ground_truth);
 }
 
+#ifdef DISPLAY_INDIVIDUAL_MSE
+template <>
+void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
+     ::local_fp_compute(El::Int height,
+                        const AbsMat& local_prediction,
+                        const AbsMat& local_ground_truth,
+                        AbsMat& local_contribution,
+                        AbsMat& local_contribution_pc) {
+  local_fp_cpu(height, local_prediction, local_ground_truth,
+               local_contribution);
+}
+#else
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::local_fp_compute(El::Int height,
@@ -116,6 +141,7 @@ void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   local_fp_cpu(height, local_prediction, local_ground_truth,
                local_contribution);
 }
+#endif
 
 template <>
 void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
