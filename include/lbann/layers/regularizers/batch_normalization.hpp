@@ -71,14 +71,24 @@ private:
    */
   std::unordered_map<El::Int, El::Int> m_num_per_sum_cache;
 
-  /** Current minibatch means. */
-  std::unique_ptr<AbsDistMat> m_mean;
-  /** Current minibatch standard deviations. */
-  std::unique_ptr<AbsDistMat> m_var;
-  /** Gradient w.r.t. means. */
-  std::unique_ptr <AbsDistMat> m_mean_gradient;
-  /** Gradient w.r.t. standard deviations. */
-  std::unique_ptr<AbsDistMat> m_var_gradient;
+  /** @brief Current minibatch means and standard deviations.
+   *
+   * These are fused for performance when doing non-local batchnorm.
+   */
+  std::unique_ptr<AbsDistMat> m_mean_and_var;
+  /** View of current mini-batch means. */
+  std::unique_ptr<AbsDistMat> m_mean_v;
+  /** View of current mini-batch standard deviations. */
+  std::unique_ptr<AbsDistMat> m_var_v;
+  /** @brief Gradients w.r.t. means and standard deviations.
+   *
+   * These are fused for performance when doing non-local batchnorm.
+   */
+  std::unique_ptr<AbsDistMat> m_mean_and_var_gradient;
+  /** View of gradient w.r.t. means. */
+  std::unique_ptr<AbsDistMat> m_mean_gradient_v;
+  /** View of gradient w.r.t. standard deviations. */
+  std::unique_ptr<AbsDistMat> m_var_gradient_v;
   /** Gradient w.r.t. scaling terms. */
   std::unique_ptr<AbsDistMat> m_scale_gradient;
   /** Gradient w.r.t. bias terms. */
@@ -116,12 +126,16 @@ public:
       m_epsilon(other.m_epsilon),
       m_stats_aggregation(other.m_stats_aggregation),
       m_num_per_sum_cache(other.m_num_per_sum_cache),
-      m_mean(other.m_mean ? other.m_mean->Copy() : nullptr),
-      m_var(other.m_var ? other.m_var->Copy() : nullptr),
-      m_mean_gradient(other.m_mean_gradient ?
-                      other.m_mean_gradient->Copy() : nullptr),
-      m_var_gradient(other.m_var_gradient ?
-                     other.m_var_gradient->Copy() : nullptr),
+      m_mean_and_var(other.m_mean_and_var ?
+                     other.m_mean_and_var->Copy() : nullptr),
+      m_mean_v(other.m_mean_v ? other.m_mean_v->Copy() : nullptr),
+      m_var_v(other.m_var_v ? other.m_var_v->Copy() : nullptr),
+      m_mean_and_var_gradient(other.m_mean_and_var_gradient ?
+                              other.m_mean_and_var_gradient->Copy() : nullptr),
+      m_mean_gradient_v(other.m_mean_gradient_v ?
+                        other.m_mean_gradient_v->Copy() : nullptr),
+      m_var_gradient_v(other.m_var_gradient_v ?
+                       other.m_var_gradient_v->Copy() : nullptr),
       m_scale_gradient(other.m_scale_gradient ?
                        other.m_scale_gradient->Copy() : nullptr),
       m_bias_gradient(other.m_bias_gradient ?
@@ -135,12 +149,18 @@ public:
     m_num_per_sum_cache = other.m_num_per_sum_cache;
 
     // Deep copy matrices
-    m_mean.reset(other.m_mean ? other.m_mean->Copy() : nullptr);
-    m_var.reset(other.m_var ? other.m_var->Copy() : nullptr);
-    m_mean_gradient.reset(other.m_mean_gradient ?
-                          other.m_mean_gradient->Copy() : nullptr);
-    m_var_gradient.reset(other.m_var_gradient ?
-                         other.m_var_gradient->Copy() : nullptr);
+    m_mean_and_var.reset(other.m_mean_and_var ?
+                         other.m_mean_and_var->Copy() : nullptr);
+    m_mean_v.reset(other.m_mean_v ?
+                   other.m_mean_v->Copy() : nullptr);
+    m_var_v.reset(other.m_var_v ?
+                  other.m_var_v->Copy() : nullptr);
+    m_mean_and_var_gradient.reset(other.m_mean_and_var_gradient ?
+                                  other.m_mean_and_var_gradient->Copy() : nullptr);
+    m_mean_gradient_v.reset(other.m_mean_gradient_v ?
+                            other.m_mean_gradient_v->Copy() : nullptr);
+    m_var_gradient_v.reset(other.m_var_gradient_v ?
+                           other.m_var_gradient_v->Copy() : nullptr);
     m_scale_gradient.reset(other.m_scale_gradient ?
                            other.m_scale_gradient->Copy() : nullptr);
     m_bias_gradient.reset(other.m_bias_gradient ?
@@ -176,10 +196,12 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
-    m_mean.reset(new StarMat<Dev>(grid));
-    m_var.reset(new StarMat<Dev>(grid));
-    m_mean_gradient.reset(new StarMat<Dev>(grid));
-    m_var_gradient.reset(new StarMat<Dev>(grid));
+    m_mean_and_var.reset(new StarMat<Dev>(grid));
+    m_mean_v.reset(new StarMat<Dev>(grid));
+    m_var_v.reset(new StarMat<Dev>(grid));
+    m_mean_and_var_gradient.reset(new StarMat<Dev>(grid));
+    m_mean_gradient_v.reset(new StarMat<Dev>(grid));
+    m_var_gradient_v.reset(new StarMat<Dev>(grid));
     m_scale_gradient.reset(new StarMat<Dev>(grid));
     m_bias_gradient.reset(new StarMat<Dev>(grid));
   }
@@ -285,12 +307,18 @@ protected:
     }
 
     // Initialize matrices
-    El::Zeros(*m_mean,           num_channels, 1);
-    El::Zeros(*m_var,            num_channels, 1);
-    El::Zeros(*m_mean_gradient,  num_channels, 1);
-    El::Zeros(*m_var_gradient,   num_channels, 1);
+    El::Zeros(*m_mean_and_var,   num_channels, 2);
+    El::Zeros(*m_mean_and_var_gradient, num_channels, 2);
     El::Zeros(*m_scale_gradient, num_channels, 1);
     El::Zeros(*m_bias_gradient,  num_channels, 1);
+
+    // Initialize views.
+    El::View(*m_mean_v, *m_mean_and_var, El::ALL, El::IR(0, 1));
+    El::View(*m_var_v, *m_mean_and_var, El::ALL, El::IR(1, 2));
+    El::View(*m_mean_gradient_v, *m_mean_and_var_gradient,
+             El::ALL, El::IR(0, 1));
+    El::View(*m_var_gradient_v, *m_mean_and_var_gradient,
+             El::ALL, El::IR(1, 2));
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {
