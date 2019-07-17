@@ -6,7 +6,7 @@ import os, re, subprocess
 
 
 def test_compiler_build_script(cluster, dirname):
-    if cluster in ['pascal']:
+    if cluster in ['corona', 'pascal']:
         output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
         error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
         command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (

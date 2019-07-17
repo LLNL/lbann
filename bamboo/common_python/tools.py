@@ -27,6 +27,7 @@ def get_command(cluster,
                 data_reader_path=None,
                 data_reader_percent=None,
                 exit_after_setup=False,
+                metadata=None,
                 mini_batch_size=None,
                 model_folder=None,
                 model_name=None,
@@ -65,7 +66,7 @@ def get_command(cluster,
         process_executable_existence(executable, skip_no_exe)
 
     # Determine scheduler
-    if cluster in ['catalyst', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'pascal']:
         scheduler = 'slurm'
     elif cluster == 'ray':
         scheduler = 'lsf'
@@ -196,6 +197,7 @@ def get_command(cluster,
     option_data_reader = ''
     option_data_reader_percent = ''
     option_exit_after_setup = ''
+    option_metadata = ''
     option_mini_batch_size = ''
     option_model = ''
     option_num_epochs = ''
@@ -255,14 +257,14 @@ def get_command(cluster,
     # Determine data file paths
     # If there is no regex match, then re.sub keeps the original string
     if data_filedir_default is not None:
-        if cluster in ['catalyst', 'pascal',]:
+        if cluster in ['catalyst', 'corona', 'pascal',]:
             # option_data_filedir = data_filedir_default # lscratchh, presumably
             pass  # No need to pass in a parameter
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
     elif None not in data_file_parameters:
-        if cluster in ['catalyst', 'pascal']:
+        if cluster in ['catalyst', 'corona', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
             # option_data_filedir_test = data_filedir_test_default
@@ -313,6 +315,8 @@ def get_command(cluster,
         option_data_reader_percent = ' --data_reader_percent=%f' % data_reader_percent
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
+    if metadata is not None:
+        option_metadata = ' --metadata={d}/{m}'.format(d=dir_name, m=metadata)
     if mini_batch_size is not None:
         option_mini_batch_size = ' --mini_batch_size=%d' % mini_batch_size
     if num_epochs is not None:
@@ -324,12 +328,12 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
         executable, option_ckpt_dir, option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
-        option_exit_after_setup, option_mini_batch_size,
+        option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
         option_processes_per_model)
 
@@ -396,7 +400,7 @@ def get_default_exes(default_dirname, cluster):
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'pascal']:
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
         default_exes['clang6'] = exes['clang6']
