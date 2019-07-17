@@ -220,9 +220,10 @@ std::string encode_image(const El::Matrix<uint8_t>& image,
   cv::Mat Mat_img = utils::get_opencv_mat(
     const_cast<El::Matrix<uint8_t>&>(image), dims);
   std::vector<uint8_t> encoded_img;
-  std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 20};
-
-  cv::imencode(img_format, Mat_img, encoded_img, params);
+  //Defulat for IMWRITE_JPEG_QUALITY is 95. Can lower if files are too big
+  //std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 20};
+  //cv::imencode(img_format, Mat_img, encoded_img, params);
+  cv::imencode(img_format, Mat_img, encoded_img);
 
   return std::string{encoded_img.begin(), encoded_img.end()};
 }
@@ -251,8 +252,25 @@ El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
      : 1.0);
   double beta = -smallest * scaling_factor;
 
-  source.convertTo(target, target.type(), scaling_factor, beta);
-
+  if (dims[0] == 1)
+  {
+    source.convertTo(target, target.type(), scaling_factor, beta);
+  }
+  else
+  {
+    auto* image_data = image.LockedBuffer();
+    size_t offset = dims[1]*dims[2]; // size of the image
+    for (size_t col = 0; col < dims[2]; ++col)
+      for (size_t row = 0; row < dims[1]; ++row)
+      {
+        size_t const idx = row + col*dims[1];
+        cv::Vec3b pixel;
+        pixel[0] = cv::saturate_cast<uchar>(scaling_factor*image_data[idx] + beta);
+        pixel[1] = cv::saturate_cast<uchar>(scaling_factor*image_data[idx+offset] + beta);
+        pixel[2] = cv::saturate_cast<uchar>(scaling_factor*image_data[idx+2*offset] + beta);
+        target.at<cv::Vec3b>(row, col) = pixel;
+      }
+  }
   return output_mat;
 }
 

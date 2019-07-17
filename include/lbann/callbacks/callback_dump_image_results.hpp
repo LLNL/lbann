@@ -86,12 +86,11 @@ private:
   bool meets_criteria( const DataType& match );
 
   /** @brief Add image to event file */
-  void dump_image_to_summary(const std::vector<El::Int>& img_indices, const uint64_t& step);
+  void dump_image_to_summary(const std::vector<El::Int>& img_indices,
+                             const uint64_t& step,
+                             const El::Int& epoch);
+
   void dump_image(std::string prefix,
-                  std::string format,
-                  const std::vector<El::Int>& img_indices);
-  //FIXME: Delete after cb success
-  void save_image(std::string prefix,
                   std::string format,
                   const std::vector<El::Int>& img_indices);
 
@@ -112,6 +111,7 @@ private:
   Layer const* m_img_layer = nullptr;
   Layer const* m_label_layer = nullptr;
   Layer const* m_classifier_layer = nullptr;
+  Layer const* m_input_layer = nullptr;
 
   /* Interval for dumping images */
   uint64_t m_interval;

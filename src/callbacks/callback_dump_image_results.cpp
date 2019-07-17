@@ -105,8 +105,8 @@ std::vector<El::Int> lbann_callback_dump_image_results::get_image_indices() {
 
       if (meets_criteria(correctness_value))
         img_indices.push_back(sample);
-
-      if(img_indices.size() > 10)
+//FIXME: Add parameter to control number of images per epoch
+      if(img_indices.size() > 200)
         break;
     }
   }
@@ -125,7 +125,7 @@ bool lbann_callback_dump_image_results::meets_criteria( const DataType& match ) 
 }
 
 void lbann_callback_dump_image_results::dump_image_to_summary(
-  const std::vector<El::Int>& img_indices, const uint64_t& step) {
+  const std::vector<El::Int>& img_indices, const uint64_t& step, const El::Int& epoch) {
 
   static size_t img_number = 0;
 
@@ -143,9 +143,12 @@ void lbann_callback_dump_image_results::dump_image_to_summary(
       if (col_index > local_images.Width())
         LBANN_ERROR("Bad col index.");
 
+      auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
+      auto sample_index = sample_indices->Get(col_index,0);
       auto const local_image = local_images(El::ALL, El::IR(col_index));
-
-      std::string image_tag("image-" + std::to_string(img_number++));
+      std::string image_tag( "epoch-" + std::to_string(epoch) +
+                             "/ sample_index-" + std::to_string(sample_index) +
+                             "/ image-" + std::to_string(img_number++));
       this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
     }
   }
@@ -160,6 +163,8 @@ void lbann_callback_dump_image_results::on_batch_evaluate_end(model* m) {
     /* find layers in model based on string */
     m_cat_accuracy_layer = get_layer_by_name(layers, m_cat_accuracy_layer_name);
     m_img_layer = get_layer_by_name(layers, m_img_layer_name);
+ //FIXME: use private date member std::string m_input_layer_name?
+    m_input_layer = get_layer_by_name(layers, "input");
   }
 
   // Check widths of img_layer.activations and cat_accuracy_layer are equal
@@ -169,7 +174,7 @@ void lbann_callback_dump_image_results::on_batch_evaluate_end(model* m) {
     ThrowLBANNError("Invalid data. Categorical accuracy activations and image activations widths do not match.");
   std::vector<El::Int> img_indices = get_image_indices();
 
-  dump_image_to_summary(img_indices, m->get_step());
+  dump_image_to_summary(img_indices, m->get_step(), m->get_epoch());
 }
 
 } // namespace lbann
