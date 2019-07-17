@@ -364,15 +364,15 @@ lbann_callback* construct_callback(lbann_comm* comm,
     return new lbann_callback_dump_gradients(params.basename(),
                                              params.interval());
   }
-  if (proto_cb.has_dump_image_results()) {
-    const auto& params = proto_cb.dump_image_results();
+  if (proto_cb.has_summarize_images()) {
+    const auto& params = proto_cb.summarize_images();
     /* Add criterion->MatchType function */
-    auto ConvertToLbannType = [](lbann_data::CallbackDumpImageResults_MatchType a)
+    auto ConvertToLbannType = [](lbann_data::CallbackSummarizeImages_MatchType a)
     {
-      return static_cast<lbann_callback_dump_image_results::MatchType>(a);
+      return static_cast<lbann_callback_summarize_images::MatchType>(a);
     };
 
-    return new lbann_callback_dump_image_results(
+    return new lbann_callback_summarize_images(
       summarizer,
       params.cat_accuracy_layer(),
       params.image_layer(),

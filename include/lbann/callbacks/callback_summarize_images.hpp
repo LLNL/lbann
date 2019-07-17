@@ -23,12 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_image_results .hpp .cpp - Callback hooks to dump
+// lbann_callback_summarize_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_DUMP_IMAGE_RESULTS_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_DUMP_IMAGE_RESULTS_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
 
 #include <string>
 #include <vector>
@@ -36,10 +36,10 @@
 
 namespace lbann {
 
-/** @class lbann_callback_dump_image_results
+/** @class lbann_callback_summarize_images
  *  @brief Dump images with testing results to event files
  */
-class lbann_callback_dump_image_results : public lbann_callback{
+class lbann_callback_summarize_images : public lbann_callback{
  public:
 
   enum class MatchType
@@ -56,17 +56,17 @@ public:
    *  @param summarizer lbann_summary object
    *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
    */
-  lbann_callback_dump_image_results(lbann_summary *summarizer,
+  lbann_callback_summarize_images(lbann_summary *summarizer,
                                     std::string const& cat_accuracy_layer_name,
                                     std::string const& img_layer_name,
                                     MatchType match_type,
                                     uint64_t interval,
                                     std::string img_format = ".jpg");
 /** @brief Destructor */
-//  ~lbann_callback_dump_image_results();
+//  ~lbann_callback_summarize_images();
 
-  lbann_callback* copy() const override { return new lbann_callback_dump_image_results(*this); }
-  std::string name() const override { return "callback_dump_image_results"; }
+  lbann_callback* copy() const override { return new lbann_callback_summarize_images(*this); }
+  std::string name() const override { return "callback_summarize_images"; }
 
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
@@ -90,9 +90,9 @@ private:
                              const uint64_t& step,
                              const El::Int& epoch);
 
-  void dump_image(std::string prefix,
-                  std::string format,
-                  const std::vector<El::Int>& img_indices);
+    //void dump_image(std::string prefix,
+    //              std::string format,
+    //              const std::vector<El::Int>& img_indices);
 
 private:
   /* Name of categorical accuracy layer */
@@ -124,4 +124,4 @@ private:
 
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED

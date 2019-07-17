@@ -13,7 +13,6 @@ set_full_path(THIS_DIR_HEADERS
   callback_dump_outputs.hpp
   callback_dump_error_signals.hpp
   callback_dump_gradients.hpp
-  callback_dump_image_results.hpp
   callback_dump_minibatch_sample_indices.hpp
   callback_dump_weights.hpp
   callback_early_stopping.hpp
@@ -27,6 +26,7 @@ set_full_path(THIS_DIR_HEADERS
   callback_print.hpp
   callback_save_images.hpp
   callback_save_model.hpp
+  callback_summarize_images.hpp
   callback_summary.hpp
   callback_timer.hpp
   callback_variable_minibatch.hpp

@@ -23,20 +23,20 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_image_results .hpp .cpp - Callback hooks to dump
+// lbann_callback_summarize_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann_config.hpp>
 #include <lbann/utils/image.hpp>
 #include <lbann/utils/summary.hpp>
-#include "lbann/callbacks/callback_dump_image_results.hpp"
+#include "lbann/callbacks/callback_summarize_images.hpp"
 #include <iostream>
 
 namespace lbann {
 
 //FIXME: Should any of these params be const?
-lbann_callback_dump_image_results::lbann_callback_dump_image_results(
+lbann_callback_summarize_images::lbann_callback_summarize_images(
   lbann_summary *summarizer,
   std::string const& cat_accuracy_layer_name,
   std::string const& img_layer_name,
@@ -67,7 +67,7 @@ void ThrowLBANNError(Ts... args)
 }
 }
 
-Layer const* lbann_callback_dump_image_results::get_layer_by_name(
+Layer const* lbann_callback_summarize_images::get_layer_by_name(
   const std::vector<Layer*>& layers,
   const std::string& layer_name)
 {
@@ -79,7 +79,7 @@ Layer const* lbann_callback_dump_image_results::get_layer_by_name(
   return nullptr;
 }
 
-std::vector<El::Int> lbann_callback_dump_image_results::get_image_indices() {
+std::vector<El::Int> lbann_callback_summarize_images::get_image_indices() {
   const AbsDistMat& categorized_correctly_dist = m_cat_accuracy_layer->get_activations();
   CircMat<El::Device::CPU> categorized_correctly(
     categorized_correctly_dist.Grid(), categorized_correctly_dist.Root());
@@ -114,7 +114,7 @@ std::vector<El::Int> lbann_callback_dump_image_results::get_image_indices() {
   return img_indices;
 }
 
-bool lbann_callback_dump_image_results::meets_criteria( const DataType& match ) {
+bool lbann_callback_summarize_images::meets_criteria( const DataType& match ) {
   if( (match && (m_match_type == MatchType::MATCH)) ||
       (!match && (m_match_type == MatchType::NOMATCH)) ||
       (m_match_type == MatchType::ALL))
@@ -124,7 +124,7 @@ bool lbann_callback_dump_image_results::meets_criteria( const DataType& match ) 
 
 }
 
-void lbann_callback_dump_image_results::dump_image_to_summary(
+void lbann_callback_summarize_images::dump_image_to_summary(
   const std::vector<El::Int>& img_indices, const uint64_t& step, const El::Int& epoch) {
 
   static size_t img_number = 0;
@@ -154,7 +154,7 @@ void lbann_callback_dump_image_results::dump_image_to_summary(
   }
 }
 
-void lbann_callback_dump_image_results::on_batch_evaluate_end(model* m) {
+void lbann_callback_summarize_images::on_batch_evaluate_end(model* m) {
   if (m->get_step() % m_interval != 0)
     return;
 

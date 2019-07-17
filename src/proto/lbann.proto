@@ -446,7 +446,7 @@ message Callback {
    CallbackPerturbDropout perturb_dropout = 39;
    CallbackSaveTopKModels save_topk_models = 40;
    CallbackMixup mixup = 41;
-   CallbackDumpImageResults dump_image_results = 42;
+   CallbackSummarizeImages summarize_images = 42;
 }
 
 message CallbackLTFB {
@@ -706,7 +706,7 @@ message CallbackMixup {
   float alpha = 2;
 }
 
-message CallbackDumpImageResults {
+message CallbackSummarizeImages {
   enum MatchType{
   NOMATCH = 0;//NOMATCH = dump failed categorization
   MATCH = 1;//MATCH = dump successful categorization
