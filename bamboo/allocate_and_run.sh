@@ -31,7 +31,8 @@ if [ "${CLUSTER}" = 'pascal' ]; then
 fi
 
 if [ ${WEEKLY} -ne 0 ]; then
-    salloc -N16 --partition=pbatch -t 1440 ./run.sh --weekly
+    ALLOCATION_TIME_LIMIT=720
+    timeout 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh --weekly
     if [ "${CLUSTER}" = 'catalyst' ]; then
         cd integration_tests
         python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=alexnet_clang6_results.xml
@@ -40,5 +41,10 @@ if [ ${WEEKLY} -ne 0 ]; then
         cd ..
     fi
 else
-    salloc -N16 --partition=pbatch -t 1440 ./run.sh
+    if [ "${CLUSTER}" = 'catalyst' ]; then
+        ALLOCATION_TIME_LIMIT=240
+    elif [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
+        ALLOCATION_TIME_LIMIT=660
+    fi
+    timeout 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh
 fi

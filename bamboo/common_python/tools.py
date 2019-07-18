@@ -73,6 +73,7 @@ def get_command(cluster,
     else:
         raise Exception('Unsupported Cluster: %s' % cluster)
 
+    MAX_TIME = 60
     # Description of command line options are from the appropriate command's
     # man pages
     if scheduler == 'slurm':
@@ -112,9 +113,15 @@ def get_command(cluster,
 
         # Create run command
         if command_allocate == '':
-            command_run = 'srun --mpibind=off'
+            space = ''
+            # If nodes have already been allocated,
+            # then an individual test should not take longer than MAX_TIME.
+            if time_limit > MAX_TIME:
+                time_limit = MAX_TIME
         else:
-            command_run = ' srun --mpibind=off'
+            space = ' '
+        command_run = '{s}srun --mpibind=off --time={t}'.format(
+            s=space, t=time_limit)
         option_num_processes = ''
         if num_processes is not None:
             # --ntasks => Specify  the  number of tasks to run.
@@ -170,9 +177,14 @@ def get_command(cluster,
 
         # Create run command
         if command_allocate == '':
-            command_run = 'mpirun'
+            space = ''
+            # If nodes have already been allocated,
+            # then an individual test should not take longer than MAX_TIME.
+            if time_limit > MAX_TIME:
+                time_limit = MAX_TIME
         else:
-            command_run = ' mpirun'
+            space = ' '
+        command_run = '{s}mpirun --timeout {t}'.format(s=space, t=time_limit)
         option_num_processes = ''
         option_processes_per_node = ''
         if num_processes is not None:
