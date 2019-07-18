@@ -74,7 +74,8 @@ def test_unit_bad_params(cluster, exes):
     exe = exes['gcc7']
     sys.stderr.write('TESTING: run lbann with ill-formed param (missing -) lbann should throw exception\n')
     (command_allocate, command_run, _, _) = tools.get_command(cluster=cluster, executable=exe, return_tuple=True)
-    return_code = os.system('%s%s %s -exit_after_setup --reader=prototext/data_reader_mnist.prototext --model={prototext/model_mnist_simple_1.prototext,prototext/model_mnist_simple_1.prototext} --optimizer=prototext/opt_sgd.prototext' % (command_allocate, command_run, exe))
+    command_string = '%s%s %s -exit_after_setup --reader=prototext/data_reader_mnist.prototext --model={prototext/model_mnist_simple_1.prototext,prototext/model_mnist_simple_1.prototext} --optimizer=prototext/opt_sgd.prototext' % (command_allocate, command_run, exe)
+    return_code = os.system(command_string)
     assert return_code != 0
 
 

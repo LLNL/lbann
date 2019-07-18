@@ -6,32 +6,27 @@ import os, re, subprocess
 
 
 def test_compiler_build_script(cluster, dirname):
-    if cluster in ['corona', 'pascal']:
-        output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
-        error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
-        command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (
-            dirname, output_file_name, error_file_name)
-        return_code = os.system(command)
-        if return_code != 0:
-            output_file = open(output_file_name, 'r')
-            for line in output_file:
-                print('%s: %s' % (output_file_name, line))
-            error_file = open(error_file_name, 'r')
-            for line in error_file:
-                print('%s: %s' % (error_file_name, line))
-        assert return_code == 0
-    else:
+    if cluster not in ['corona', 'lassen', 'pascal']:
         e = 'test_compiler_build_script: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
+    output_file_name = '%s/bamboo/compiler_tests/output/build_script_output.txt' % (dirname)
+    error_file_name = '%s/bamboo/compiler_tests/error/build_script_error.txt' % (dirname)
+    command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (
+        dirname, output_file_name, error_file_name)
+    return_code = os.system(command)
+    if return_code != 0:
+        output_file = open(output_file_name, 'r')
+        for line in output_file:
+            print('%s: %s' % (output_file_name, line))
+        error_file = open(error_file_name, 'r')
+        for line in error_file:
+            print('%s: %s' % (error_file_name, line))
+    assert return_code == 0
 
 
 def test_compiler_clang6_release(cluster, dirname):
-    try:
-        skeleton_clang6(cluster, dirname, False)
-    except AssertionError as e:
-        print(e)
-        build_script(cluster, dirname, 'clang6', False)
+    skeleton_clang6(cluster, dirname, False)
     path = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_rel/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/clang.Release.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
@@ -39,11 +34,7 @@ def test_compiler_clang6_release(cluster, dirname):
 
 
 def test_compiler_clang6_debug(cluster, dirname):
-    try:
-        skeleton_clang6(cluster, dirname, True)
-    except AssertionError as e:
-        print(e)
-        build_script(cluster, dirname, 'clang6', True)
+    skeleton_clang6(cluster, dirname, True)
     path = '%s/bamboo/compiler_tests/builds/%s_clang-6.0.0_debug/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/clang.Debug.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
@@ -51,11 +42,7 @@ def test_compiler_clang6_debug(cluster, dirname):
 
 
 def test_compiler_gcc7_release(cluster, dirname):
-    try:
-        skeleton_gcc7(cluster, dirname, False)
-    except AssertionError as e:
-        print(e)
-        build_script(cluster, dirname, 'gcc7', False)
+    skeleton_gcc7(cluster, dirname, False)
     path = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_rel/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
@@ -63,11 +50,7 @@ def test_compiler_gcc7_release(cluster, dirname):
 
 
 def test_compiler_gcc7_debug(cluster, dirname):
-    try:
-        skeleton_gcc7(cluster, dirname, True)
-    except AssertionError as e:
-        print(e)
-        build_script(cluster, dirname, 'gcc7', True)
+    skeleton_gcc7(cluster, dirname, True)
     path = '%s/bamboo/compiler_tests/builds/%s_gcc-7.1.0_debug/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/gnu.Debug.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
@@ -75,11 +58,7 @@ def test_compiler_gcc7_debug(cluster, dirname):
 
 
 def test_compiler_intel19_release(cluster, dirname):
-    try:
-        skeleton_intel19(cluster, dirname, False)
-    except AssertionError as e:
-        print(e)
-        build_script(cluster, dirname, 'intel19', False)
+    skeleton_intel19(cluster, dirname, False)
     path = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_rel/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/intel.Release.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
@@ -87,11 +66,7 @@ def test_compiler_intel19_release(cluster, dirname):
 
 
 def test_compiler_intel19_debug(cluster, dirname):
-    try:
-        skeleton_intel19(cluster, dirname, True)
-    except AssertionError as e:
-        print(e)
-        build_script(cluster, dirname, 'intel19', True)
+    skeleton_intel19(cluster, dirname, True)
     path = '%s/bamboo/compiler_tests/builds/%s_intel-19.0.0_debug/build/model_zoo/lbann' % (dirname, cluster)
     if not os.path.exists(path):
         path = '%s/build/intel.Debug.%s.llnl.gov/install/bin/lbann' % (dirname, cluster)
@@ -99,33 +74,44 @@ def test_compiler_intel19_debug(cluster, dirname):
 
 
 def skeleton_clang6(cluster, dir_name, debug, should_log=False):
-    if cluster in ['catalyst']:
-        spack_skeleton(dir_name, 'clang@6.0.0', 'mvapich2@2.2', debug, should_log)
-        build_skeleton(dir_name, 'clang@6.0.0', debug, should_log)
-    else:
+    if cluster not in ['catalyst']:
         e = 'skeleton_clang6: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
+    try:
+        spack_skeleton(dir_name, 'clang@6.0.0', 'mvapich2@2.2', debug,
+                       should_log)
+        build_skeleton(dir_name, 'clang@6.0.0', debug, should_log)
+    except AssertionError as e:
+        print(e)
+        build_script(cluster, dir_name, 'clang6', debug)
 
 
 def skeleton_gcc7(cluster, dir_name, debug, should_log=False):
-    if cluster in ['catalyst']:
-        spack_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug, should_log)
-        build_skeleton(dir_name, 'gcc@7.1.0', debug, should_log)
-    else:
+    if cluster not in ['catalyst', 'pascal']:
         e = 'skeleton_gcc7: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
+    try:
+        spack_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug, should_log)
+        build_skeleton(dir_name, 'gcc@7.1.0', debug, should_log)
+    except AssertionError as e:
+        print(e)
+        build_script(cluster, dir_name, 'gcc7', debug)
 
 
 def skeleton_intel19(cluster, dir_name, debug, should_log=False):
-    if cluster in []:  # ['catalyst']:
-        spack_skeleton(dir_name, 'intel@19.0.0', 'mvapich2@2.2', debug, should_log)
-        build_skeleton(dir_name, 'intel@19.0.0', debug, should_log)
-    else:
+    if cluster not in []:  # Taking out 'catalyst'
         e = 'skeleton_intel19: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
+    try:
+        spack_skeleton(dir_name, 'intel@19.0.0', 'mvapich2@2.2', debug,
+                       should_log)
+        build_skeleton(dir_name, 'intel@19.0.0', debug, should_log)
+    except AssertionError as e:
+        print(e)
+        build_script(cluster, dir_name, 'intel19', debug)
 
 
 def spack_skeleton(dir_name, compiler, mpi_lib, debug, should_log):
