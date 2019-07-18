@@ -49,7 +49,7 @@ class lbann_callback_checksmall : public lbann_callback {
   lbann_callback_checksmall() : lbann_callback() {}
   lbann_callback_checksmall(const lbann_callback_checksmall&) = default;
   lbann_callback_checksmall& operator=(
-    const lbann_callback_checksmall&) = default;
+    const lbann_callback_checksmall&) = delete;
   lbann_callback_checksmall* copy() const override {
     return new lbann_callback_checksmall(*this);
   }

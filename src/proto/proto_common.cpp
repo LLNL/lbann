@@ -345,7 +345,7 @@ void init_data_readers(
 
     if (set_transform_pipeline) {
       reader->set_transform_pipeline(
-        std::move(proto::construct_transform_pipeline(readme)));
+        proto::construct_transform_pipeline(readme));
     }
 
     if (readme.data_filename() != "") {
