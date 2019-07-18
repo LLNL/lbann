@@ -278,9 +278,41 @@ def @wrapper_func@(sample_index, array_offset):
     = PyObject_GetAttrString(main_module,
                              wrapper_func_name.c_str());
 
+  // Create initializer function for worker processes
+  const std::string init_func_name
+    = "_DATA_READER_PYTHON_CPP_init_function";
+  std::string init_func_def = R"(
+def @init_func@():
+    """Initialize worker process.
+
+    Disables the LBANN signal handler since it reports a spurious error
+    when the worker process recieves SIGTERM from the master process.
+
+    """
+
+    # Disable LBANN signal handler for SIGTERM
+    #import signal
+    for sig in range(signal.NSIG):
+        try:
+            signal.signal(sig, signal.SIG_DFL)
+            pass
+        except: pass
+)";
+  init_func_def = std::regex_replace(init_func_def,
+                                     std::regex("\\@init_func\\@"),
+                                     init_func_name);
+  PyRun_SimpleString(init_func_def.c_str());
+  python::session::check_error();
+  python::object init_func
+    = PyObject_GetAttrString(main_module,
+                             init_func_name.c_str());
+
   // Start Python process pool
-  m_process_pool = PyObject_CallMethod(multiprocessing_module, "Pool",
-                                       "(L)", num_io_threads);
+  m_process_pool = PyObject_CallMethod(multiprocessing_module,
+                                       "Pool",
+                                       "(L,O)",
+                                       num_io_threads,
+                                       init_func.get());
 
 }
 
