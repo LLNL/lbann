@@ -53,7 +53,7 @@ sgd& sgd::operator=(const sgd& other) {
 }
 
 description sgd::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("Momentum", m_momentum);
   desc.add("Nesterov acceleration", m_nesterov);
   return desc;

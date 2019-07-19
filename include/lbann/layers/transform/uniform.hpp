@@ -61,7 +61,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = transform_layer::get_description();
+    auto desc = transform_layer::get_description();
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << ")";
     desc.add("Range", ss.str());

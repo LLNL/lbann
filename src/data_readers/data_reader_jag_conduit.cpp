@@ -831,8 +831,10 @@ void data_reader_jag_conduit::load() {
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
-    const std::string msg = " writing sample list " + sample_list_file;
-    log_msg(msg.c_str());
+    {
+      const std::string msg = " writing sample list " + sample_list_file;
+      LBANN_WARNING(msg);
+    }
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
@@ -866,7 +868,7 @@ void data_reader_jag_conduit::preload_data_store() {
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " for role: " << get_role() << " starting preload";
-    log_msg(msg.str().c_str());
+    LBANN_WARNING(msg.str());
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
@@ -897,7 +899,7 @@ void data_reader_jag_conduit::preload_data_store() {
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
-    log_msg(msg.str().c_str());
+    LBANN_WARNING(msg.str());
   }
 }
 
@@ -1319,7 +1321,7 @@ data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>
     El::View(X_v[i], X, El::IR(h, h_end), El::IR(mb_idx, mb_idx + 1));
     h = h_end;
   }
-  return std::move(X_v);
+  return X_v;
 }
 
 bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sample, int mb_idx, int tid,

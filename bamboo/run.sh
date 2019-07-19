@@ -5,7 +5,7 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 echo "run.sh CLUSTER="
 echo $CLUSTER
 
-if [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ]; then
+if [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'lassen' ]; then
     PYTHON=python
 fi
 
@@ -42,22 +42,22 @@ echo "Task: Cleaning"
 echo "Task: Compiler Tests"
 cd compiler_tests
 module load cmake/3.9.2
-$PYTHON -m pytest -s --junitxml=results.xml
+$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 cd ..
 
 echo "Task: Integration Tests"
 cd integration_tests
 if [ ${WEEKLY} -ne 0 ]; then
-    $PYTHON -m pytest -s --weekly --junitxml=results.xml
+    $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
 else
-    $PYTHON -m pytest -s --junitxml=results.xml
+    $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 fi
 
 cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
-$PYTHON -m pytest -s --junitxml=results.xml
+$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 cd ..
 
 echo "Task: Finished"

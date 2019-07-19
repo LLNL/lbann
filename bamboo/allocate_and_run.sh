@@ -1,3 +1,5 @@
+#!/bin/bash -l
+
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
 echo "allocate_and_run.sh CLUSTER="
@@ -30,15 +32,30 @@ if [ "${CLUSTER}" = 'pascal' ]; then
     export MV2_USE_CUDA=1
 fi
 
-if [ ${WEEKLY} -ne 0 ]; then
-    salloc -N16 --partition=pbatch -t 1440 ./run.sh --weekly
-    if [ "${CLUSTER}" = 'catalyst' ]; then
-        cd integration_tests
-        python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=alexnet_clang6_results.xml
-        python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run --junitxml=alexnet_gcc7_results.xml
-        # python -m pytest -s test_integration_performance_full_alexnet_intel19 --weekly --run --junitxml=alexnet_intel19_results.xml
-        cd ..
+if [ "${CLUSTER}" = 'lassen' ]; then
+    ALLOCATION_TIME_LIMIT=600
+    if [ ${WEEKLY} -ne 0 ]; then
+        timeout 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh --weekly
+    else
+        timeout 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh
     fi
-else
-    salloc -N16 --partition=pbatch -t 1440 ./run.sh
+elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        ALLOCATION_TIME_LIMIT=720
+        timeout 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh --weekly
+        if [ "${CLUSTER}" = 'catalyst' ]; then
+            cd integration_tests
+            python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=alexnet_clang6_results.xml
+            python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run --junitxml=alexnet_gcc7_results.xml
+            # python -m pytest -s test_integration_performance_full_alexnet_intel19 --weekly --run --junitxml=alexnet_intel19_results.xml
+            cd ..
+        fi
+    else
+        if [ "${CLUSTER}" = 'catalyst' ]; then
+            ALLOCATION_TIME_LIMIT=240
+        elif [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
+            ALLOCATION_TIME_LIMIT=660
+        fi
+        timeout 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh
+    fi
 fi
