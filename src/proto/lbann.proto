@@ -857,6 +857,7 @@ message Layer {
    Convolution convolution = 13;
    Deconvolution deconvolution = 305;
    Embedding embedding = 328;
+   ChannelwiseScaleBias channelwise_scale_bias = 329;
 
    // Loss layers
    CrossEntropy cross_entropy = 60;
@@ -1287,6 +1288,8 @@ message Embedding {
   int64 dictionary_size = 1;
   int64 embedding_size = 2;
 }
+
+message ChannelwiseScaleBias {}
 
 //////////////////
 // Image layers //
