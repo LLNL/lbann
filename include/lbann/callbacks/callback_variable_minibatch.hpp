@@ -44,7 +44,7 @@ class lbann_callback_variable_minibatch : public lbann_callback {
   lbann_callback_variable_minibatch(
     const lbann_callback_variable_minibatch&) = default;
   lbann_callback_variable_minibatch& operator=(
-    const lbann_callback_variable_minibatch&) = delete;
+    const lbann_callback_variable_minibatch&) = default;
   /// Set the initial mini-batch size.
   void on_train_begin(model *m) override;
   /// Potentially change the mini-batch size.
@@ -71,7 +71,7 @@ class lbann_callback_variable_minibatch : public lbann_callback {
   float get_current_learning_rate(model *m) const;
 
   /// Initial mini-batch size.
-  const int m_starting_mbsize;
+  int m_starting_mbsize;
   /**
    * The current mini-batch size for this epoch.
    * This is kept separately from the model's get_current_mini_batch_size()

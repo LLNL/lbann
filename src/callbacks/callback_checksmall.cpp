@@ -85,4 +85,7 @@ bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
   return true;
 }
 
+const DataType lbann_callback_checksmall::m_threshold
+  = std::sqrt(std::numeric_limits<DataType>::min());
+
 }  // namespace lbann
