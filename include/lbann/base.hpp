@@ -189,24 +189,6 @@ static void __attribute__((used)) _print_local_matrix_dims(AbsMat *m, const char
 }
 #define PRINT_LOCAL_MATRIX_DIMS(x) _print_local_matrix_dims(x, #x);
 
-// FIXME
-#if 1
-// __FILE__
-#define log_msg(...) {\
-  char str[256];\
-  sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << m_comm->get_trainer_rank() << "." << m_comm->get_rank_in_trainer() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
-  }
-#define log_simple_msg(...) {\
-  char str[256];\
-  sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
-  }
-#else
-#define log_msg(...)
-#define log_simple_msg(...)
-#endif
-
 #define LBANN_MAKE_STR(x) _LBANN_MAKE_STR(x)
 #define _LBANN_MAKE_STR(x) #x
 
