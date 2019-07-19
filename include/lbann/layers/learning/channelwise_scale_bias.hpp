@@ -115,15 +115,15 @@ public:
     }
 
     // Setup weights
-    auto matrix_dist = get_prev_activations().DistData();
-    matrix_dist.colDist = El::STAR;
-    matrix_dist.rowDist = El::STAR;
+    auto dist = get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
     m_weights[0]->set_dims({static_cast<int>(num_channels)},
                            {static_cast<int>(2)});
-    m_weights[0]->set_matrix_distribution(matrix_dist);
+    m_weights[0]->set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
-    m_weights_gradient->AlignWith(matrix_dist);
+    m_weights_gradient->AlignWith(dist);
     m_weights_gradient->Resize(num_channels, 2);
 
   }
