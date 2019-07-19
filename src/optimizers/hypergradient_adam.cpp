@@ -72,7 +72,7 @@ hypergradient_adam& hypergradient_adam::operator=(const hypergradient_adam& othe
 }
 
 description hypergradient_adam::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("Hypergradient learning rate", m_hyper_learning_rate);
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);

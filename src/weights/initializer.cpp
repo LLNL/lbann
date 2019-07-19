@@ -35,7 +35,7 @@ description weights_initializer::get_description() const {
 }
 
 description constant_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   desc.add("Value", m_value);
   return desc;
 }
@@ -91,7 +91,7 @@ void value_initializer::fill(AbsDistMat& matrix) {
 }
 
 description uniform_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   std::stringstream ss;
   ss << "[" << m_min << "," << m_max << ")";
   desc.add("Range", ss.str());
@@ -104,7 +104,7 @@ void uniform_initializer::fill(AbsDistMat& matrix) {
 }
 
 description normal_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   desc.add("Mean", m_mean);
   desc.add("Standard deviation", m_standard_deviation);
   return desc;

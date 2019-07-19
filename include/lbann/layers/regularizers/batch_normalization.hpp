@@ -175,7 +175,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     switch (m_stats_aggregation) {
