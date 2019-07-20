@@ -162,7 +162,7 @@ build_callback_save_images_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSaveImages&>(proto_msg);
   return make_unique<lbann_callback_save_images>(
-    proto::parse_list<>(params.layers()),
+    parse_list<>(params.layers()),
     params.image_format(),
     params.image_prefix());
 }

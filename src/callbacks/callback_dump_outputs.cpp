@@ -186,9 +186,9 @@ build_callback_dump_outputs_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDumpOutputs&>(proto_msg);
-  const auto& layer_names = proto::parse_set<>(params.layers());
+  const auto& layer_names = parse_set<>(params.layers());
   const auto& modes =
-    proto::parse_set<execution_mode>(params.execution_modes());
+    parse_set<execution_mode>(params.execution_modes());
   return make_unique<lbann_callback_dump_outputs>(layer_names,
                                                   modes,
                                                   params.batch_interval(),

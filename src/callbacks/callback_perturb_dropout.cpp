@@ -124,7 +124,7 @@ build_callback_perturb_dropout_from_pbuf(
     dynamic_cast<const lbann_data::CallbackPerturbDropout&>(proto_msg);
   return make_unique<lbann_callback_perturb_dropout>(
     params.keep_dropout_factor(),
-    proto::parse_set<std::string>(params.layers()));
+    parse_set<std::string>(params.layers()));
 }
 
 } // namespace lbann

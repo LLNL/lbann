@@ -173,7 +173,7 @@ build_callback_perturb_adam_from_pbuf(
     params.eps_factor(),
     params.perturb_during_training(),
     params.batch_interval(),
-    proto::parse_set<std::string>(params.weights()));
+    parse_set<std::string>(params.weights()));
 }
 
 } // namespace lbann

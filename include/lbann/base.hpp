@@ -153,6 +153,10 @@ inline std::string to_string(execution_mode m) {
       throw std::runtime_error("Invalid execution mode specified");
   }
 }
+/** @brief Convert a string to an execution_mode. */
+execution_mode from_string(std::string const& str);
+/** @brief Extract an execution_mode from a stream. */
+std::istream& operator>>(std::istream& os, execution_mode& e);
 
 /** Pooling layer mode */
 enum class pool_mode {invalid, max, average, average_no_pad};

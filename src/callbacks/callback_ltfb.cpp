@@ -533,7 +533,7 @@ build_callback_ltfb_from_pbuf(
   return make_unique<lbann_callback_ltfb>(
     params.batch_interval(),
     params.metric(),
-    proto::parse_set<std::string>(params.weights()),
+    parse_set<std::string>(params.weights()),
     params.low_score_wins(),
     lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
     params.exchange_hyperparameters(),

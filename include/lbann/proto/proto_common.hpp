@@ -95,6 +95,27 @@ bool write_prototext_file(
   const std::string& fn,
   lbann_data::LbannPB& pb);
 
+/** @brief Parse a space-separated list. */
+template <typename T = std::string>
+std::vector<T> parse_list(std::string str) {
+  std::vector<T> list;
+  std::istringstream ss(str);
+  for (T entry; ss >> entry;) {
+    list.push_back(entry);
+  }
+  return list;
+}
+
+/** @brief Parse a space-separated set. */
+template <typename T = std::string>
+std::set<T> parse_set(std::string str) {
+  std::set<T> set;
+  std::istringstream iss(str);
+  for (T entry; iss >> entry;) {
+    set.insert(entry);
+  }
+  return set;
+}
 } // namespace lbann
 
 #endif // LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED

@@ -108,4 +108,26 @@ std::string get_pool_mode_name(pool_mode m) {
   return pool_mode_names[(int)m];
 }
 
+execution_mode from_string(std::string const& str) {
+  if (str == "training")
+    return execution_mode::training;
+  else if (str == "validation")
+      return execution_mode::validation;
+  else if (str == "testing")
+    return execution_mode::testing;
+  else if (str == "prediction")
+    return execution_mode::prediction;
+  else if (str == "invalid")
+    return execution_mode::invalid;
+  else
+    LBANN_ERROR("\"" + str + "\" is not a valid execution mode.");
+}
+
+std::istream& operator>>(std::istream& is, execution_mode& m) {
+  std::string tmp;
+  is >> tmp;
+  m = from_string(tmp);
+  return is;
+}
+
 } // namespace lbann

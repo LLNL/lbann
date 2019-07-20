@@ -102,7 +102,7 @@ build_callback_mixup_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackMixup&>(proto_msg);
-  const auto& layers_list = proto::parse_list<std::string>(params.layers());
+  const auto& layers_list = parse_list<std::string>(params.layers());
   std::unordered_set<std::string> layers(layers_list.begin(),
                                          layers_list.end());
   return make_unique<callback_mixup>(layers, params.alpha());

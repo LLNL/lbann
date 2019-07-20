@@ -86,29 +86,6 @@ std::unique_ptr<transform::transform> construct_transform(
 transform::transform_pipeline construct_transform_pipeline(
   const lbann_data::Reader& data_reader);
 
-/** Parse a space-separated list. */
-template <typename T = std::string>
-std::vector<T> parse_list(std::string str) {
-  std::vector<T> list;
-  std::stringstream ss(str);
-  for (T entry; ss >> entry;) {
-    list.push_back(entry);
-  }
-  return list;
-}
-template <>
-std::vector<execution_mode> parse_list<execution_mode>(std::string str);
-
-/** Parse a space-separated set. */
-template <typename T = std::string>
-std::set<T> parse_set(std::string str) {
-  std::set<T> set;
-  for (const auto& entry : parse_list<T>(str)) {
-    set.insert(entry);
-  }
-  return set;
-}
-
 } // namespace proto
 } // namespace lbann
 
