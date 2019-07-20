@@ -29,7 +29,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include "lbann.pb.h"
+#include "callbacks.pb.h"
 
 namespace lbann {
 

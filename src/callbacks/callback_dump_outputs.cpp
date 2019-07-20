@@ -30,7 +30,7 @@
 // FIXME TRB
 #include "lbann/proto/factories.hpp"
 
-#include <lbann.pb.h>
+#include <callbacks.pb.h>
 
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>

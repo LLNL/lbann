@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/callback_dump_gradients.hpp"
 
-#include <lbann.pb.h>
+#include <callbacks.pb.h>
 
 #include <vector>
 

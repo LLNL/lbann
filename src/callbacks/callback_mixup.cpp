@@ -31,7 +31,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/image.hpp"
 
-#include <lbann.pb.h>
+#include <callbacks.pb.h>
 
 #include <unordered_set>
 

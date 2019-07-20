@@ -28,7 +28,7 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 
-#include "lbann.pb.h"
+#include "callbacks.pb.h"
 
 namespace lbann {
 

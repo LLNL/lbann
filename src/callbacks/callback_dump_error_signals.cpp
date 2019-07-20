@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/callback_dump_error_signals.hpp"
 
-#include <lbann.pb.h>
+#include <callbacks.pb.h>
 
 namespace lbann {
 

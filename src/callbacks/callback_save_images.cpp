@@ -27,7 +27,7 @@
 #include "lbann/callbacks/callback_save_images.hpp"
 #include "lbann/proto/factories.hpp"
 
-#include <lbann.pb.h>
+#include <callbacks.pb.h>
 
 #ifdef LBANN_HAS_OPENCV
 #include <opencv2/imgcodecs.hpp>
