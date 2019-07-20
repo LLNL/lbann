@@ -39,6 +39,7 @@
 #include "lbann/utils/omp_pragma.hpp"
 
 #include <functional>
+#include <stdexcept>
 
 namespace lbann {
 
@@ -118,7 +119,7 @@ enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid
 
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL, invalid};
-static matrix_format __attribute__((used)) data_layout_to_matrix_format(data_layout layout) {
+inline matrix_format data_layout_to_matrix_format(data_layout layout) {
   matrix_format format;
   switch(layout) {
   case data_layout::MODEL_PARALLEL:
@@ -129,14 +130,14 @@ static matrix_format __attribute__((used)) data_layout_to_matrix_format(data_lay
     format = matrix_format::STAR_STAR;
     break;
   default:
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid data layout selected");
+    throw std::runtime_error("Invalid data layout selected");
   }
   return format;
 }
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
-static const char *__attribute__((used)) _to_string(execution_mode m) {
+inline std::string to_string(execution_mode m) {
   switch(m) {
   case execution_mode::training:
     return "training";
@@ -149,7 +150,7 @@ static const char *__attribute__((used)) _to_string(execution_mode m) {
   case execution_mode::invalid:
     return "invalid";
   default:
-    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+      throw std::runtime_error("Invalid execution mode specified");
   }
 }
 
@@ -168,7 +169,7 @@ enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, 
  * It checks if the string 'mainStr' ends with given string
  * 'toMatch'
  */
-static bool __attribute__((used)) endsWith(const std::string mainStr, const std::string &toMatch)
+inline bool endsWith(const std::string mainStr, const std::string &toMatch)
 {
   if(mainStr.size() >= toMatch.size() &&
      mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
@@ -178,19 +179,19 @@ static bool __attribute__((used)) endsWith(const std::string mainStr, const std:
 }
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _print_matrix_dims(AbsDistMat *m, const char *name) {
+inline void print_matrix_dims(AbsDistMat *m, const char *name) {
   std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
 }
-#define PRINT_MATRIX_DIMS(x) _print_matrix_dims(x, #x);
+#define PRINT_MATRIX_DIMS(x) print_matrix_dims(x, #x);
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _print_local_matrix_dims(AbsMat *m, const char *name) {
+inline void print_local_matrix_dims(AbsMat *m, const char *name) {
   std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
 }
-#define PRINT_LOCAL_MATRIX_DIMS(x) _print_local_matrix_dims(x, #x);
+#define PRINT_LOCAL_MATRIX_DIMS(x) print_local_matrix_dims(x, #x);
 
-#define LBANN_MAKE_STR(x) _LBANN_MAKE_STR(x)
-#define _LBANN_MAKE_STR(x) #x
+#define LBANN_MAKE_STR_(x) #x
+#define LBANN_MAKE_STR(x) LBANN_MAKE_STR_(x)
 
 } // namespace lbann
 

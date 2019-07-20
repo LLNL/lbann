@@ -58,7 +58,7 @@ void lbann_callback_debug_io::print_fp_start(model *m, generic_input_layer *inpu
   std::cout << "[" << m->get_comm()->get_trainer_rank()
             << "." << m->get_comm()->get_rank_in_trainer()
             << "] @" << m->get_epoch() << "." << step
-            << " Phase: " << _to_string(m->get_execution_mode())
+            << " Phase: " << to_string(m->get_execution_mode())
             << " starting forward propagation for layer " << input->get_name()
             << " type: " << input->get_type()
             << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
@@ -92,7 +92,7 @@ void lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
     std::cout << "[" << m->get_comm()->get_trainer_rank()
               << "." << m->get_comm()->get_rank_in_trainer()
               << "] @" << 0 << "." << step
-              << " Starting Phase: " << _to_string(mode)
+              << " Starting Phase: " << to_string(mode)
               << " " << (data_reader->get_num_iterations_per_epoch() - 1)
               << "i @ " << data_reader->get_global_mini_batch_size()
               << "s (=" << m->get_comm()->get_num_trainers()
@@ -112,7 +112,7 @@ void lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
     std::cout << "[" << m->get_comm()->get_trainer_rank()
               << "." << m->get_comm()->get_rank_in_trainer()
               << "] @" << 0 << "." << step
-              << " Starting Phase: " << _to_string(mode)
+              << " Starting Phase: " << to_string(mode)
               << " " << (data_reader->get_num_iterations_per_epoch())
               << "i "
               << " par. readers = " << data_reader->get_num_parallel_readers()

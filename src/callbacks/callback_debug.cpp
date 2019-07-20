@@ -66,7 +66,7 @@ std::string weights_string(const weights& w) {
 std::string batch_step_string(const model& m) {
   std::stringstream msg;
   const auto& mode = m.get_execution_mode();
-  msg << _to_string(mode) << " batch " << m.get_step();
+  msg << to_string(mode) << " batch " << m.get_step();
   msg << " (epoch " << m.get_epoch() << ")";
   return msg.str();
 }

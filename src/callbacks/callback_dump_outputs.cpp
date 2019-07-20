@@ -157,7 +157,7 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
       const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
       const std::string file_name = (m_directory
                                      + m.get_name()
-                                     + "-" + _to_string(mode)
+                                     + "-" + to_string(mode)
                                      + "-epoch" + std::to_string(epoch)
                                      + "-step" + std::to_string(step)
                                      + "-" + l.get_name()
