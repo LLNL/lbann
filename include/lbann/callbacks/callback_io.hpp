@@ -55,6 +55,11 @@ class lbann_callback_io : public lbann_callback {
   std::unordered_set<Layer *> m_layer_indices;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_disp_io_stats_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED

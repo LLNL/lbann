@@ -404,48 +404,50 @@ message SGD {
 // Callbacks
 //========================================================================
 message Callback {
-   // a Callback should contain exactly one of the following
-   CallbackPrint print = 1;
-   CallbackTimer timer = 2;
-   CallbackSummary summary = 3;
-   CallbackDumpWeights dump_weights = 4;
-   CallbackDumpOutputs dump_outputs = 5;
-   CallbackDumpErrorSignals dump_error_signals = 35;
-   CallbackDumpGradients dump_gradients = 6;
-   CallbackDumpMBIndices dump_mb_indices = 7;
-   CallbackDispIOStats disp_io_stats = 8;
-   CallbackImComm imcomm = 9;
-   CallbackSaveImages save_images = 10;
-   CallbackDebug debug = 11;
-   CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
-   CallbackStepLearningRate step_learning_rate = 13;
-   CallbackCustomLearningRate custom_learning_rate = 14;
-   CallbackCheckSmall check_small = 15;
-   CallbackCheckNaN check_nan = 16;
-   CallbackCheckDataset check_dataset = 17;
-   CallbackHang hang = 18;
-   CallbackDropFixedLearningRate drop_fixed_learning_rate = 19;
-   CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
-   CallbackProfiler profiler = 21;
-   CallbackStepMinibatch step_minibatch = 22;
-   CallbackCheckGradients check_gradients = 23;
-   CallbackLTFB ltfb = 24;
-   CallbackDebugIO debug_io = 25;
-   CallbackMinibatchSchedule minibatch_schedule = 26;
-   CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
-   CallbackCheckpoint checkpoint = 28;
-   CallbackSaveModel save_model = 29;
-   CallbackPolyLearningRate poly_learning_rate = 30;
-   CallbackReplaceWeights replace_weights = 31;
-   CallbackGPUMemoryUsage gpu_memory_usage = 32;
-   CallbackSyncLayers sync_layers = 33;
-   CallbackSyncSelected sync_selected = 34;
-   CallbackConfusionMatrix confusion_matrix = 36;
-   CallbackCheckMetric check_metric = 37;
-   CallbackPerturbAdam perturb_adam = 38;
-   CallbackPerturbDropout perturb_dropout = 39;
-   CallbackSaveTopKModels save_topk_models = 40;
-   CallbackMixup mixup = 41;
+  // a Callback should contain exactly one of the following
+  oneof callback_type {
+    CallbackPrint print = 1;
+    CallbackTimer timer = 2;
+    CallbackSummary summary = 3;
+    CallbackDumpWeights dump_weights = 4;
+    CallbackDumpOutputs dump_outputs = 5;
+    CallbackDumpErrorSignals dump_error_signals = 35;
+    CallbackDumpGradients dump_gradients = 6;
+    CallbackDumpMBIndices dump_mb_indices = 7;
+    CallbackDispIOStats disp_io_stats = 8;
+    CallbackImComm imcomm = 9;
+    CallbackSaveImages save_images = 10;
+    CallbackDebug debug = 11;
+    CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
+    CallbackStepLearningRate step_learning_rate = 13;
+    CallbackCustomLearningRate custom_learning_rate = 14;
+    CallbackCheckSmall check_small = 15;
+    CallbackCheckNaN check_nan = 16;
+    CallbackCheckDataset check_dataset = 17;
+    CallbackHang hang = 18;
+    CallbackDropFixedLearningRate drop_fixed_learning_rate = 19;
+    CallbackLinearGrowthLearningRate linear_growth_learning_rate = 20;
+    CallbackProfiler profiler = 21;
+    CallbackStepMinibatch step_minibatch = 22;
+    CallbackCheckGradients check_gradients = 23;
+    CallbackLTFB ltfb = 24;
+    CallbackDebugIO debug_io = 25;
+    CallbackMinibatchSchedule minibatch_schedule = 26;
+    CallbackOptimizerwiseAdaptiveLearningRate optimizerwise_adaptive_learning_rate = 27;
+    CallbackCheckpoint checkpoint = 28;
+    CallbackSaveModel save_model = 29;
+    CallbackPolyLearningRate poly_learning_rate = 30;
+    CallbackReplaceWeights replace_weights = 31;
+    CallbackGPUMemoryUsage gpu_memory_usage = 32;
+    CallbackSyncLayers sync_layers = 33;
+    CallbackSyncSelected sync_selected = 34;
+    CallbackConfusionMatrix confusion_matrix = 36;
+    CallbackCheckMetric check_metric = 37;
+    CallbackPerturbAdam perturb_adam = 38;
+    CallbackPerturbDropout perturb_dropout = 39;
+    CallbackSaveTopKModels save_topk_models = 40;
+    CallbackMixup mixup = 41;
+  }
 }
 
 message CallbackLTFB {

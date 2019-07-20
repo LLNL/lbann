@@ -103,11 +103,17 @@ class lbann_callback_step_minibatch : public lbann_callback_variable_minibatch {
  protected:
   bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time) override;
 
+ private:
   /// Number of epochs between mini-batch size increases.
   int m_step;
   /// Number of steps to ramp the learning rate over.
   int m_ramp_time;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_step_minibatch_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibatch {
  public:
@@ -137,10 +143,15 @@ class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibat
   std::string name() const override { return "minibatch schedule"; }
  protected:
   bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time) override;
-
+ private:
   /// Steps in the mini-batch schedule, stored in reverse sorted order.
   std::vector<minibatch_step> m_steps;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_minibatch_schedule_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 }  // namespace lbann
 

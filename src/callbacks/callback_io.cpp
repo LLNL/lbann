@@ -70,4 +70,16 @@ void lbann_callback_io::on_test_end(model *m) {
   }
 }
 
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_disp_io_stats_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  //const auto& params =
+  //  dynamic_cast<const lbann_data::CallbackDispIOStats&>(proto_msg);
+  //auto&& l = select_from_list<Layer>(params.layers(),
+  //                                   layer_list);
+  std::unordered_set<Layer*> selected_layers;//(l.begin(), l.end());
+  return make_unique<lbann_callback_io>(selected_layers);
+}
+
 }  // namespace lbann

@@ -66,6 +66,11 @@ class lbann_callback_replace_weights : public lbann_callback {
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_replace_weights_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_REPLACE_WEIGHTS_HPP_INCLUDED

@@ -24,35 +24,31 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_replace_weights.hpp"
+#include "lbann/callbacks/callback_hang.hpp"
+
+#include <lbann.pb.h>
 
 namespace lbann {
 
-void lbann_callback_replace_weights::on_batch_end(model *m) {
-  const auto& step = m->get_step(execution_mode::training);
-  if(step % m_batch_interval == 0) {
-    for(size_t i = 0; i < m_src_layers.size(); i++) {
-      m_dst_layers[i]->replace_weights(m_src_layers[i]);
+void lbann_callback_hang::setup(model* m)
+{
+  if (m->get_comm()->am_world_master()) {
+    if (m_rank_to_hang == -1) {
+      std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***"
+                << std::endl;
+    } else {
+      std::cout << "*** HANGING RANK " << m_rank_to_hang
+                << " IN HANG CALLBACK ***" << std::endl;
     }
   }
 }
 
 std::unique_ptr<lbann_callback>
-build_callback_replace_weights_from_pbuf(
+build_callback_hang_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackReplaceWeights&>(proto_msg);
-  /*
-  auto&& src_layers = select_from_list<Layer>(params.source_layers(),
-                                              layer_list);
-  auto&& dst_layers = select_from_list<Layer>(params.destination_layers(),
-                                              layer_list);
-  */
-  std::vector<Layer*> src_layers, dst_layers;// FIXME TRB
-  return make_unique<lbann_callback_replace_weights>(
-    src_layers,
-    dst_layers,
-    params.batch_interval());
+    dynamic_cast<const lbann_data::CallbackHang&>(proto_msg);
+  return make_unique<lbann_callback_hang>(params.rank());
 }
 
-}  // namespace lbann
+}// namespace lbann

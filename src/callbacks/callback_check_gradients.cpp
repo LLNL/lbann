@@ -28,6 +28,8 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 
+#include "lbann.pb.h"
+
 namespace lbann {
 
 namespace {
@@ -224,6 +226,17 @@ void lbann_callback_check_gradients::on_test_end(model *m) {
     met->reset_statistics(mode);
   }
 
+}
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_check_gradients_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackCheckGradients&>(proto_msg);
+  return make_unique<lbann_callback_check_gradients>(params.step_size(),
+                                                     params.verbose(),
+                                                     params.error_on_failure());
 }
 
 } // namespace lbann

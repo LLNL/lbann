@@ -68,6 +68,11 @@ class lbann_callback_dump_gradients : public lbann_callback {
   std::string m_basename;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_dump_gradients_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED

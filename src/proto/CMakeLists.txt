@@ -54,6 +54,7 @@ endif (LBANN_HAS_PROTOBUF)
 set_full_path(THIS_DIR_SOURCES
   init_image_data_readers.cpp
   proto_common.cpp
+  proto_helpers.cpp
   )
 
 # Add the subdirectories

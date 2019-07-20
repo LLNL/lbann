@@ -174,4 +174,23 @@ bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model *
   return true;
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_save_model_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackSaveModel&>(proto_msg);
+  if(params.extension().size() != 0) {
+    return make_unique<lbann_callback_save_model>(
+      params.dir(),
+      params.disable_save_after_training(),
+      params.extension());
+  }
+  else {
+    return make_unique<lbann_callback_save_model>(
+      params.dir(),
+      params.disable_save_after_training());
+  }
+}
+
+
 }  // namespace lbann

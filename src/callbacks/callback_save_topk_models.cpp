@@ -35,7 +35,7 @@ void lbann_callback_save_topk_models::on_test_end(model *m) {
   if(m->get_comm()->am_trainer_master()) {
     in_topk = am_in_topk(m);
   }
-  m->get_comm()->trainer_broadcast(0, in_topk); 
+  m->get_comm()->trainer_broadcast(0, in_topk);
   if(in_topk) save_model(m);
 }
 
@@ -62,8 +62,8 @@ bool lbann_callback_save_topk_models::am_in_topk(model *m) {
 
   if (m_k > num_trainers) {
     std::stringstream err;
-    err << "k ( " << m_k << ") " 
-        << " can not be greater than number of trainers (" 
+    err << "k ( " << m_k << ") "
+        << " can not be greater than number of trainers ("
         << num_trainers << ") " ;
     LBANN_ERROR(err.str());
   }
@@ -76,16 +76,28 @@ bool lbann_callback_save_topk_models::am_in_topk(model *m) {
   //top-k in an descending order
   else  std::sort(top_scores.begin(), top_scores.end(),std::greater<EvalType>());
   top_scores.resize(m_k);
-  
+
   if (comm->am_world_master()) {
     std::cout << "Top " << m_k << " " << m_metric_name << " average "
               << std::accumulate(top_scores.begin(), top_scores.end(), EvalType(0))/m_k << std::endl;
-  } 
-  if(std::find(top_scores.begin(), top_scores.end(), 
-                 score_list[comm->get_trainer_rank()]) != top_scores.end()) { 
+  }
+  if(std::find(top_scores.begin(), top_scores.end(),
+                 score_list[comm->get_trainer_rank()]) != top_scores.end()) {
     return true;
-  } 
+  }
   return false;
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_save_topk_models_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackSaveTopKModels&>(proto_msg);
+  return make_unique<lbann_callback_save_topk_models>(
+    params.dir(),
+    params.k(),
+    params.metric(),
+    params.ascending_ordering());
 }
 
 }  // namespace lbann

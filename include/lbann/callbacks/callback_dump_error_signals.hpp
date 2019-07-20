@@ -58,6 +58,11 @@ class lbann_callback_dump_error_signals : public lbann_callback {
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_dump_error_signals_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED

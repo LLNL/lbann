@@ -202,6 +202,11 @@ static inline bool read_latest(std::string filename, int *epochLast, int *trainL
   return true;
 }
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_checkpoint_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECKPOINT_HPP_INCLUDED

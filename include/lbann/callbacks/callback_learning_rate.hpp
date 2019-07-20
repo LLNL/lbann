@@ -113,6 +113,11 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   float m_amt;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_step_learning_rate_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 /**
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
@@ -151,6 +156,11 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   bool m_adjust_learning_rate = false;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_adaptive_learning_rate_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 /**
  * Decrease learning rate by a fixed amount at fixed times.
  */
@@ -185,6 +195,11 @@ class lbann_callback_drop_fixed_learning_rate :
    */
   std::vector<int64_t> m_drop_epochs;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_drop_fixed_learning_rate_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 /**
  * Linearly increase the learning rate to reach a target value over a
@@ -229,6 +244,11 @@ class lbann_callback_linear_growth_learning_rate :
   int64_t m_delay;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_linear_growth_learning_rate_from_pbuf(
+  const google::protobuf::Message&,lbann_summary*);
+
 /**
  * Decrease the learning rate by polynomial policy
  * base_lr*(1 - i_cur/i_max)^p, where
@@ -267,6 +287,11 @@ class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
   float m_last_epoch_lr;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_poly_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*);
+
 /**
  * This implements an adaptive scheme for adjust each optimizer's
  * learning rate based on the ratio of the norms of its weights and
@@ -291,6 +316,11 @@ class lbann_callback_optimizerwise_adaptive_learning_rate : public lbann_callbac
  private:
   float m_scale;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_optimizerwise_adaptive_learning_rate_from_pbuf(
+  const google::protobuf::Message&,lbann_summary*);
 
 }  // namespace lbann
 

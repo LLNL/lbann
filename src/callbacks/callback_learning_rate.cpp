@@ -151,7 +151,7 @@ float lbann_callback_adaptive_learning_rate::global_schedule(model *m) {
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt) :
-  lbann_callback_drop_fixed_learning_rate(drop_epochs, amt,
+  lbann_callback_drop_fixed_learning_rate(std::move(drop_epochs), amt,
                                           std::unordered_set<weights *>()) {}
 
 lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
@@ -284,6 +284,99 @@ float lbann_callback_optimizerwise_adaptive_learning_rate::optimizer_schedule(
   } else {
     return opt.get_learning_rate();
   }
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_step_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackStepLearningRate&>(proto_msg);
+  //auto&& w = select_from_list<weights>(params.weights(),
+  //                                     weights_list);
+  std::unordered_set<weights*> selected_weights;//(w.begin(), w.end());
+  return make_unique<lbann_callback_step_learning_rate>(params.step(),
+                                                        params.amt(),
+                                                        selected_weights);
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_adaptive_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackAdaptiveLearningRate&>(proto_msg);
+  //auto&& w = select_from_list<weights>(params.weights(),
+  //                                     weights_list);
+  std::unordered_set<weights*> selected_weights;//(w.begin(), w.end());
+  return make_unique<lbann_callback_adaptive_learning_rate>(params.patience(),
+                                                            params.amt(),
+                                                            selected_weights);
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_drop_fixed_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackDropFixedLearningRate&>(proto_msg);
+  std::vector<int64_t> drop_epochs;
+  for (int i = 0; i < params.drop_epoch_size(); ++i) {
+    drop_epochs.push_back(params.drop_epoch(i));
+  }
+  //auto&& w = select_from_list<weights>(params.weights(),
+  //                                     weights_list);
+  std::unordered_set<weights*> selected_weights;//(w.begin(), w.end());
+  return make_unique<lbann_callback_drop_fixed_learning_rate>(
+    std::move(drop_epochs),
+    params.amt(),
+    selected_weights);
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_linear_growth_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg,lbann_summary*) {
+  using MsgType = lbann_data::CallbackLinearGrowthLearningRate;
+  using CallbackType = lbann_callback_linear_growth_learning_rate;
+  const auto& params =
+    dynamic_cast<const MsgType&>(proto_msg);
+  //auto&& w = select_from_list<weights>(params.weights(),
+  //                                     weights_list);
+  std::unordered_set<weights*> selected_weights;//(w.begin(), w.end());
+  return make_unique<CallbackType>(params.target(),
+                                   params.num_epochs(),
+                                   params.delay(),
+                                   selected_weights);
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_optimizerwise_adaptive_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg,lbann_summary*) {
+  using MsgType = lbann_data::CallbackOptimizerwiseAdaptiveLearningRate;
+  using CallbackType = lbann_callback_optimizerwise_adaptive_learning_rate;
+  const auto& params = dynamic_cast<const MsgType&>(proto_msg);
+  //auto&& w = select_from_list<weights>(params.weights(),
+  //                                     weights_list);
+  std::unordered_set<weights*> selected_weights;//(w.begin(), w.end());
+  return make_unique<CallbackType>(params.scale(), selected_weights);
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_poly_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackPolyLearningRate&>(proto_msg);
+  //auto&& w = select_from_list<weights>(params.weights(),
+  //                                     weights_list);
+  std::unordered_set<weights*> selected_weights;//(w.begin(), w.end());
+  return make_unique<lbann_callback_poly_learning_rate>(params.power(),
+                                                        params.num_epochs(),
+                                                        params.max_iter(),
+                                                        params.end_lr(),
+                                                        selected_weights);
 }
 
 }  // namespace lbann

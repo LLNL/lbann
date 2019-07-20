@@ -24,35 +24,39 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/callback_replace_weights.hpp"
+#ifndef LBANN_PROTO_PROTO_HELPERS_HPP_INCLUDED
+#define LBANN_PROTO_PROTO_HELPERS_HPP_INCLUDED
 
-namespace lbann {
+#include <google/protobuf/message.h>
 
-void lbann_callback_replace_weights::on_batch_end(model *m) {
-  const auto& step = m->get_step(execution_mode::training);
-  if(step % m_batch_interval == 0) {
-    for(size_t i = 0; i < m_src_layers.size(); i++) {
-      m_dst_layers[i]->replace_weights(m_src_layers[i]);
-    }
-  }
-}
+#include <functional>
+#include <memory>
+#include <string>
 
-std::unique_ptr<lbann_callback>
-build_callback_replace_weights_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
-  const auto& params =
-    dynamic_cast<const lbann_data::CallbackReplaceWeights&>(proto_msg);
-  /*
-  auto&& src_layers = select_from_list<Layer>(params.source_layers(),
-                                              layer_list);
-  auto&& dst_layers = select_from_list<Layer>(params.destination_layers(),
-                                              layer_list);
-  */
-  std::vector<Layer*> src_layers, dst_layers;// FIXME TRB
-  return make_unique<lbann_callback_replace_weights>(
-    src_layers,
-    dst_layers,
-    params.batch_interval());
-}
+namespace lbann
+{
+namespace proto
+{
 
-}  // namespace lbann
+template <typename OutT, typename... Args>
+struct GenerateBuilderType_struct
+{
+  using type = std::function<std::unique_ptr<OutT>(Args...)>;
+};
+
+template <typename OutT, typename... Args>
+using generate_builder_type =
+  typename GenerateBuilderType_struct<OutT, Args...>::type;
+
+namespace proto_helpers
+{
+
+/** @brief Get a "derived type" message from the given message. */
+google::protobuf::Message const&
+get_oneof_message(
+  google::protobuf::Message const& msg_in, std::string const& oneof_name);
+
+}// namespace proto_helpers
+}// namespace proto
+}// namespace lbann
+#endif /* LBANN_PROTO_PROTO_HELPERS_HPP_INCLUDED */

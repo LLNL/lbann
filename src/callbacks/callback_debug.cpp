@@ -26,6 +26,10 @@
 
 #include "lbann/callbacks/callback_debug.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include "lbann.pb.h"
 
 namespace lbann {
 
@@ -151,6 +155,17 @@ void lbann_callback_debug::on_optimize_end(model *m, weights *w) {
       << " is   ending optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_debug_from_pbuf(const google::protobuf::Message& proto_msg,
+                               lbann_summary* summarizer) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackDebug&>(proto_msg);
+  // FIXME TRB
+  const auto& modes =
+    proto::parse_set<execution_mode>(params.phase());
+  return make_unique<lbann_callback_debug>(modes, summarizer);
 }
 
 } // namespace lbann

@@ -27,6 +27,11 @@
 #include "lbann/callbacks/callback_dump_outputs.hpp"
 #include "lbann/utils/file_utils.hpp"
 
+// FIXME TRB
+#include "lbann/proto/factories.hpp"
+
+#include <lbann.pb.h>
+
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
 #endif // LBANN_HAS_CNPY
@@ -173,6 +178,22 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
     }
   }
 
+}
+
+// FIXME TRB
+std::unique_ptr<lbann_callback>
+build_callback_dump_outputs_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackDumpOutputs&>(proto_msg);
+  const auto& layer_names = proto::parse_set<>(params.layers());
+  const auto& modes =
+    proto::parse_set<execution_mode>(params.execution_modes());
+  return make_unique<lbann_callback_dump_outputs>(layer_names,
+                                                  modes,
+                                                  params.batch_interval(),
+                                                  params.directory(),
+                                                  params.format());
 }
 
 } // namespace lbann

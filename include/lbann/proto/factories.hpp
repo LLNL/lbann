@@ -61,12 +61,9 @@ weights* construct_weights(lbann_comm* comm,
                            const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
-lbann_callback* construct_callback(lbann_comm* comm,
-                                   const lbann_data::Callback& proto_cb,
-                                   const std::map<execution_mode, generic_data_reader*>& data_readers,
-                                   std::vector<Layer*> layer_list,
-                                   std::vector<weights*> weights_list,
-                                   lbann_summary* summarizer);
+std::unique_ptr<lbann_callback>
+construct_callback(const google::protobuf::Message& proto_cb,
+                   lbann_summary* summarizer);
 
 /** Construct a summarizer specified with prototext.
  *  The summarizer is only constructed if the summarizer callback is
