@@ -108,14 +108,14 @@ std::string get_pool_mode_name(pool_mode m) {
   return pool_mode_names[(int)m];
 }
 
-execution_mode from_string(std::string const& str) {
-  if (str == "training")
+execution_mode exe_mode_from_string(std::string const& str) {
+  if (str == "training" || str == "train")
     return execution_mode::training;
-  else if (str == "validation")
+  else if (str == "validation" || str == "validate")
       return execution_mode::validation;
-  else if (str == "testing")
+  else if (str == "testing" || str == "test")
     return execution_mode::testing;
-  else if (str == "prediction")
+  else if (str == "prediction" || str == "predict")
     return execution_mode::prediction;
   else if (str == "invalid")
     return execution_mode::invalid;
@@ -126,7 +126,7 @@ execution_mode from_string(std::string const& str) {
 std::istream& operator>>(std::istream& is, execution_mode& m) {
   std::string tmp;
   is >> tmp;
-  m = from_string(tmp);
+  m = exe_mode_from_string(tmp);
   return is;
 }
 

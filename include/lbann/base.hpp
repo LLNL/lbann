@@ -154,7 +154,7 @@ inline std::string to_string(execution_mode m) {
   }
 }
 /** @brief Convert a string to an execution_mode. */
-execution_mode from_string(std::string const& str);
+execution_mode exe_mode_from_string(std::string const& str);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, execution_mode& e);
 
