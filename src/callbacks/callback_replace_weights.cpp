@@ -25,8 +25,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_replace_weights.hpp"
+#include "lbann/proto/proto_common.hpp"
+
+#include "callback_helpers.hpp"
 
 namespace lbann {
+
+void lbann_callback_replace_weights::setup(model *m) {
+  auto const layers = m->get_layers();
+  m_src_layers = select_things_by_name(layers, m_src_layer_names);
+  m_dst_layers = select_things_by_name(layers, m_dst_layer_names);
+
+  // Pretend the extra storage space matters
+  std::vector<std::string>().swap(m_src_layer_names);
+  std::vector<std::string>().swap(m_dst_layer_names);
+}
 
 void lbann_callback_replace_weights::on_batch_end(model *m) {
   const auto& step = m->get_step(execution_mode::training);
@@ -42,16 +55,9 @@ build_callback_replace_weights_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackReplaceWeights&>(proto_msg);
-  /*
-  auto&& src_layers = select_from_list<Layer>(params.source_layers(),
-                                              layer_list);
-  auto&& dst_layers = select_from_list<Layer>(params.destination_layers(),
-                                              layer_list);
-  */
-  std::vector<Layer*> src_layers, dst_layers;// FIXME TRB
   return make_unique<lbann_callback_replace_weights>(
-    src_layers,
-    dst_layers,
+    parse_list<std::string>(params.source_layers()),
+    parse_list<std::string>(params.destination_layers()),
     params.batch_interval());
 }
 

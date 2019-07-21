@@ -162,7 +162,6 @@ build_callback_debug_from_pbuf(const google::protobuf::Message& proto_msg,
                                lbann_summary* summarizer) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDebug&>(proto_msg);
-  // FIXME TRB
   const auto& modes =
     parse_set<execution_mode>(params.phase());
   return make_unique<lbann_callback_debug>(modes, summarizer);

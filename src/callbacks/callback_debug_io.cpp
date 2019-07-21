@@ -152,20 +152,19 @@ void lbann_callback_debug_io::on_test_begin(model *m) {
   }
 }
 
-// FIXME TRB
 std::unique_ptr<lbann_callback>
 build_callback_debug_io_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
-  const auto& params = dynamic_cast<const lbann_data::CallbackDebugIO&>(proto_msg);
-  const auto& phase = params.phase();
+  const auto& params =
+    dynamic_cast<const lbann_data::CallbackDebugIO&>(proto_msg);
+  const auto& phase = exe_mode_from_string(params.phase());
   const auto& lvl = params.lvl();
-  if (phase == "train" || phase == "training") {
-    return make_unique<lbann_callback_debug_io>(execution_mode::training, lvl);
-  } else if (phase == "validate" || phase == "validation") {
-    return make_unique<lbann_callback_debug_io>(execution_mode::validation, lvl);
-  } else if (phase == "test" || phase == "testing") {
-    return make_unique<lbann_callback_debug_io>(execution_mode::testing, lvl);
-  } else {
+  switch (phase) {
+  case execution_mode::training:
+  case execution_mode::validation:
+  case execution_mode::testing:
+    return make_unique<lbann_callback_debug_io>(phase, lvl);
+  default:
     return make_unique<lbann_callback_debug_io>();
   }
 }
