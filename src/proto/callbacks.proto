@@ -72,6 +72,9 @@ message Callback {
     CallbackPerturbDropout perturb_dropout = 39;
     CallbackSaveTopKModels save_topk_models = 40;
     CallbackMixup mixup = 41;
+    CallbackCheckInit init = 42;
+    CallbackEarlyStopping early_stopping = 43;
+    CallbackTimeline timeline = 44;
   }
 }
 
@@ -330,4 +333,15 @@ message CallbackSaveTopKModels {
 message CallbackMixup {
   string layers = 1;
   float alpha = 2;
+}
+
+message CallbackCheckInit {
+}
+
+message CallbackEarlyStopping {
+  int64 patience = 1;
+}
+
+message CallbackTimeline {
+  string directory = 1;
 }

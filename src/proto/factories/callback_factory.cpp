@@ -96,6 +96,8 @@ void register_default_builders(factory_type& factory)
                            build_callback_check_dataset_from_pbuf);
   factory.register_builder("CallbackCheckGradients",
                            build_callback_check_gradients_from_pbuf);
+  factory.register_builder("CallbackCheckInit",
+                           build_callback_check_init_from_pbuf);
   factory.register_builder("CallbackCheckMetric",
                            build_callback_check_metric_from_pbuf);
   factory.register_builder("CallbackCheckNaN",
@@ -124,6 +126,8 @@ void register_default_builders(factory_type& factory)
                            build_callback_dump_outputs_from_pbuf);
   factory.register_builder("CallbackDumpWeights",
                            build_callback_dump_weights_from_pbuf);
+  factory.register_builder("CallbackEarlyStopping",
+                           build_callback_early_stopping_from_pbuf);
   factory.register_builder("CallbackGPUMemoryUsage",
                            build_callback_gpu_memory_usage_from_pbuf);
   factory.register_builder("CallbackHang",
@@ -170,6 +174,8 @@ void register_default_builders(factory_type& factory)
                            build_callback_sync_layers_from_pbuf);
   factory.register_builder("CallbackSyncSelected",
                            build_callback_sync_selected_from_pbuf);
+  factory.register_builder("CallbackTimeline",
+                           build_callback_timeline_from_pbuf);
   factory.register_builder("CallbackTimer",
                            build_callback_timer_from_pbuf);
 }

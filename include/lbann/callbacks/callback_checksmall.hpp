@@ -69,7 +69,7 @@ class lbann_callback_checksmall : public lbann_callback {
 
 // Builder function
 ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_checksmall, build_callback_check_small_from_pbuf);
+  lbann_callback_checksmall, build_callback_check_small_from_pbuf)
 
 }  // namespace lbann
 
