@@ -72,7 +72,7 @@ def get_command(cluster,
     else:
         raise Exception('Unsupported Cluster: %s' % cluster)
 
-    MAX_TIME = 60
+    MAX_TIME = 600
     # Description of command line options are from the appropriate command's
     # man pages
     if scheduler == 'slurm':
