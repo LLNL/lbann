@@ -1132,11 +1132,15 @@ void data_store_conduit::compute_image_offsets(std::unordered_map<int,int> &size
 
 
 void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices) {
-  int size = 0;
+  off_t size = 0;
+
   for (auto &&t : sizes) {
     size += t.second;
   }
   m_mem_seg_length = size;
+  if (m_world_master) {
+    std::cout << "size of shared memory segment: " << m_mem_seg_length << std::endl;
+  }
 
   //need to ensure name is unique across all data readers
   m_seg_name = "/our_town_" + m_reader->get_role();
@@ -1177,7 +1181,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
     }
     int v = ftruncate(shm_fd, size);
     if (v != 0) {
-      LBANN_ERROR("ftruncate failed");
+      LBANN_ERROR("ftruncate failed for size: " + std::to_string(size));
     }
     void *m = mmap(0, size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
     if (m == MAP_FAILED) {
