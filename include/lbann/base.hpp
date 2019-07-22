@@ -39,7 +39,9 @@
 #include "lbann/utils/omp_pragma.hpp"
 
 #include <functional>
-#include <stdexcept>
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace lbann {
 
