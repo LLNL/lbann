@@ -32,7 +32,7 @@
 #include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/callbacks/callback_imcomm.hpp"
+#include "lbann/callbacks/imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 
 #include <future>

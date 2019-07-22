@@ -110,7 +110,7 @@ message CallbackSaveImages {
 }
 
 message CallbackPrint {
-  int64 interval = 1; //default in lbann_callback_print.hpp is 1
+  int64 interval = 1; //default in lbann/callbacks/print.hpp is 1
   bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
 }
 
@@ -124,8 +124,8 @@ message CallbackTimer {
 
 message CallbackSummary {
   string dir = 1; //directory for the lbann_summary
-  int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
-  int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
+  int64 batch_interval = 2; //default in lbann/callbacks/summary.hpp is 1
+  int64 mat_interval = 3; //default in lbann/callbacks/summary.hpp is 25
 }
 
 message CallbackDumpWeights {

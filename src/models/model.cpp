@@ -26,7 +26,7 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"

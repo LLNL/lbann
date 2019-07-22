@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 
 namespace lbann {
 
