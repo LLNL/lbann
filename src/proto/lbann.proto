@@ -1060,7 +1060,9 @@ message BatchNormalization {
   double scale_init = 2;     //default: 1.0
   double bias_init = 3;      //default: 0.0
   double epsilon = 4;        //default: 1e-5
-  string stats_aggregation = 5; // default: local
+  string stats_aggregation = 5; // default: local; deprecated
+  int64 statistics_group_size = 6;  // default: 1 (local)
+  bool global_statistics = 7;
 }
 
 message SeluDropout {
