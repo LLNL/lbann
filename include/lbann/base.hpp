@@ -119,40 +119,12 @@ enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid
 
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL, invalid};
-inline matrix_format data_layout_to_matrix_format(data_layout layout) {
-  matrix_format format;
-  switch(layout) {
-  case data_layout::MODEL_PARALLEL:
-    format = matrix_format::MC_MR;
-    break;
-  case data_layout::DATA_PARALLEL:
-    /// Weights are stored in STAR_STAR and data in STAR_VC
-    format = matrix_format::STAR_STAR;
-    break;
-  default:
-    throw std::runtime_error("Invalid data layout selected");
-  }
-  return format;
-}
+matrix_format data_layout_to_matrix_format(data_layout layout);
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
-inline std::string to_string(execution_mode m) {
-  switch(m) {
-  case execution_mode::training:
-    return "training";
-  case execution_mode::validation:
-    return "validation";
-  case execution_mode::testing:
-    return "testing";
-  case execution_mode::prediction:
-    return "prediction";
-  case execution_mode::invalid:
-    return "invalid";
-  default:
-      throw std::runtime_error("Invalid execution mode specified");
-  }
-}
+std::string to_string(execution_mode m);
+
 /** @brief Convert a string to an execution_mode. */
 execution_mode exe_mode_from_string(std::string const& str);
 /** @brief Extract an execution_mode from a stream. */
@@ -173,26 +145,15 @@ enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, 
  * It checks if the string 'mainStr' ends with given string
  * 'toMatch'
  */
-inline bool endsWith(const std::string mainStr, const std::string &toMatch)
-{
-  if(mainStr.size() >= toMatch.size() &&
-     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
-    return true;
-  else
-    return false;
-}
+bool endsWith(const std::string mainStr, const std::string &toMatch);
 
 /// Print the dimensions and name of a Elemental matrix
-inline void print_matrix_dims(AbsDistMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
-}
-#define PRINT_MATRIX_DIMS(x) print_matrix_dims(x, #x);
+void print_matrix_dims(AbsDistMat *m, const char *name);
+#define LBANN_PRINT_MATRIX_DIMS(x) print_matrix_dims(x, #x);
 
 /// Print the dimensions and name of a Elemental matrix
-inline void print_local_matrix_dims(AbsMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
-}
-#define PRINT_LOCAL_MATRIX_DIMS(x) print_local_matrix_dims(x, #x);
+void print_local_matrix_dims(AbsMat *m, const char *name);
+#define LBANN_PRINT_LOCAL_MATRIX_DIMS(x) print_local_matrix_dims(x, #x);
 
 #define LBANN_MAKE_STR_(x) #x
 #define LBANN_MAKE_STR(x) LBANN_MAKE_STR_(x)

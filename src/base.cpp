@@ -108,6 +108,39 @@ std::string get_pool_mode_name(pool_mode m) {
   return pool_mode_names[(int)m];
 }
 
+matrix_format data_layout_to_matrix_format(data_layout layout) {
+  matrix_format format;
+  switch(layout) {
+  case data_layout::MODEL_PARALLEL:
+    format = matrix_format::MC_MR;
+    break;
+  case data_layout::DATA_PARALLEL:
+    /// Weights are stored in STAR_STAR and data in STAR_VC
+    format = matrix_format::STAR_STAR;
+    break;
+  default:
+    throw std::runtime_error("Invalid data layout selected");
+  }
+  return format;
+}
+
+std::string to_string(execution_mode m) {
+  switch(m) {
+  case execution_mode::training:
+    return "training";
+  case execution_mode::validation:
+    return "validation";
+  case execution_mode::testing:
+    return "testing";
+  case execution_mode::prediction:
+    return "prediction";
+  case execution_mode::invalid:
+    return "invalid";
+  default:
+      throw std::runtime_error("Invalid execution mode specified");
+  }
+}
+
 execution_mode exe_mode_from_string(std::string const& str) {
   if (str == "training" || str == "train")
     return execution_mode::training;
@@ -128,6 +161,23 @@ std::istream& operator>>(std::istream& is, execution_mode& m) {
   is >> tmp;
   m = exe_mode_from_string(tmp);
   return is;
+}
+
+bool endsWith(const std::string mainStr, const std::string &toMatch)
+{
+  if(mainStr.size() >= toMatch.size() &&
+     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
+    return true;
+  else
+    return false;
+}
+
+void print_matrix_dims(AbsDistMat *m, const char *name) {
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
+}
+
+void print_local_matrix_dims(AbsMat *m, const char *name) {
+  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
 }
 
 } // namespace lbann
