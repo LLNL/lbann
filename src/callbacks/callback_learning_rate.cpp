@@ -305,7 +305,6 @@ float optimizerwise_adaptive_learning_rate::optimizer_schedule(
   }
 }
 
-// FIXME TRB
 std::unique_ptr<callback_base>
 build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
@@ -317,7 +316,6 @@ build_step_learning_rate_callback_from_pbuf(
     parse_list<std::string>(params.weights()));
 }
 
-// FIXME TRB
 std::unique_ptr<callback_base>
 build_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
@@ -329,7 +327,6 @@ build_adaptive_learning_rate_callback_from_pbuf(
     parse_list<std::string>(params.weights()));
 }
 
-// FIXME TRB
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
@@ -345,7 +342,6 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
     parse_list<std::string>(params.weights()));
 }
 
-// FIXME TRB
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,lbann_summary*) {
@@ -359,7 +355,6 @@ build_linear_growth_learning_rate_callback_from_pbuf(
                                    parse_list<std::string>(params.weights()));
 }
 
-// FIXME TRB
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,lbann_summary*) {
@@ -370,7 +365,6 @@ build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
                                    parse_list<std::string>(params.weights()));
 }
 
-// FIXME TRB
 std::unique_ptr<callback_base>
 build_poly_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
