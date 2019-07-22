@@ -216,7 +216,7 @@ lbann_summary* construct_summarizer(lbann_comm* comm,
   for (int j=0; j<size; j++) {
     const lbann_data::Callback& callback = m.callback(j);
     if (callback.has_summary()) {
-      const lbann_data::CallbackSummary& c = callback.summary();
+      const lbann_data::Callback::CallbackSummary& c = callback.summary();
       if (master) {
         std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
       }

@@ -81,7 +81,7 @@ std::unique_ptr<lbann_callback>
 build_callback_dump_mb_indices_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackDumpMBIndices&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackDumpMBIndices&>(proto_msg);
   return make_unique<lbann_callback_dump_minibatch_sample_indices>(
     params.basename(),
     params.interval());

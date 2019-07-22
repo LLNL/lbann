@@ -233,7 +233,7 @@ std::unique_ptr<lbann_callback>
 build_callback_check_gradients_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackCheckGradients&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
   return make_unique<lbann_callback_check_gradients>(params.step_size(),
                                                      params.verbose(),
                                                      params.error_on_failure());

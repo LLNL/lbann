@@ -182,7 +182,7 @@ std::unique_ptr<lbann_callback>
 build_callback_dump_outputs_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackDumpOutputs&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackDumpOutputs&>(proto_msg);
   const auto& layer_names = parse_set<std::string>(params.layers());
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());

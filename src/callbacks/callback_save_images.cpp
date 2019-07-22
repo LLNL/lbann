@@ -160,7 +160,7 @@ std::unique_ptr<lbann_callback>
 build_callback_save_images_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackSaveImages&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
   return make_unique<lbann_callback_save_images>(
     parse_list<>(params.layers()),
     params.image_format(),

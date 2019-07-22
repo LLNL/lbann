@@ -281,7 +281,7 @@ std::unique_ptr<lbann_callback>
 build_callback_sync_selected_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackSyncSelected&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackSyncSelected&>(proto_msg);
   const int num_layers = params.layer_to_sync_size();
   if (num_layers == 0) {
     throw lbann_exception("sync_selected requires at least a layer "

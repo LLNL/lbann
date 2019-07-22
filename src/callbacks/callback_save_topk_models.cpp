@@ -92,7 +92,7 @@ std::unique_ptr<lbann_callback>
 build_callback_save_topk_models_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackSaveTopKModels&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackSaveTopKModels&>(proto_msg);
   return make_unique<lbann_callback_save_topk_models>(
     params.dir(),
     params.k(),

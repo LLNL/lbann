@@ -76,272 +76,272 @@ message Callback {
     CallbackEarlyStopping early_stopping = 43;
     CallbackTimeline timeline = 44;
   }
-}
 
-message CallbackLTFB {
-  int64 batch_interval = 1;
-  string metric = 2;
-  string weights = 3;       // default: all weights
-  bool low_score_wins = 4;
-  string communication_algorithm = 5;   // default: "sendrecv_weights"
-  bool exchange_hyperparameters = 6;
-}
-
-message CallbackStepLearningRate {
-  string weights = 1; //default: all weights
-  int64 step = 2;
-  double amt = 3;
-}
-
-message CallbackCustomLearningRate {
-  //don't know how to support this, since it takes an std::function as an argument
-}
-
-message CallbackAdaptiveLearningRate {
-  string weights = 1; //default: all weights
-  int64 patience = 2;
-  double amt = 3;
-}
-
-message CallbackSaveImages {
-  string layers       = 1; // Layer outputs to save as images
-  string image_format = 2; // Image format (e.g. jpg, png, pgm)
-  string image_prefix = 3; // Prefix for saved image files
-}
-
-message CallbackPrint {
-  int64 interval = 1; //default in lbann_callback_print.hpp is 1
-  bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
-}
-
-message CallbackProfiler {
-  bool sync = 1;
-  bool skip_init = 2;
-}
-
-message CallbackTimer {
-}
-
-message CallbackSummary {
-  string dir = 1; //directory for the lbann_summary
-  int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
-  int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
-}
-
-message CallbackDumpWeights {
-  string basename = 1;
-}
-
-message CallbackDumpOutputs {
-  string layers = 1;          // Default: all layers
-  string execution_modes = 2; // Default: all modes
-  int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
-  string directory = 4;       // Directory for output files
-  string format = 5;          // Options: csv, tsv, npy, npz (default: csv)
-}
-
-message CallbackDumpErrorSignals {
-  string basename = 1;
-}
-
-message CallbackDumpGradients {
-  string basename = 1;
-  int64 interval = 2;
-}
-
-message CallbackDumpMBIndices {
-  string basename = 1;
-  int64 interval = 2;
-}
-
-message CallbackDispIOStats {
-  string layers = 1; //e.g: "2 4 5"; use "10000" to apply to all layers
-}
-
-message CallbackImComm {
-  string intertrainer_comm_method = 1;
-  bool all_optimizers = 2;
-}
-
-message CallbackDebug {
-  string phase = 1; //should be called "modes"
-}
-
-message CallbackDebugIO {
-  string phase = 1;
-  int32 lvl = 2;
-}
-
-message CallbackCheckSmall {
-}
-
-message CallbackCheckNaN {
-}
-
-message CallbackCheckDataset {
-}
-
-message CallbackHang {
-  int64 rank = 1;
-}
-
-message CallbackDropFixedLearningRate {
-  string weights = 1;
-  repeated int64 drop_epoch = 2;
-  double amt = 3;
-}
-
-message CallbackLinearGrowthLearningRate {
-  string weights = 1;
-  double target = 2;
-  int64 num_epochs = 3;
-  int64 delay = 4;
-}
-
-message CallbackPolyLearningRate {
-  string weights = 1;
-  double power = 2;
-  uint64 num_epochs = 3;
-  uint64 max_iter = 4;
-  double end_lr = 5;
-}
-
-message CallbackStepMinibatch {
-  int64 starting_mbsize = 1;
-  int64 step = 2;
-  int64 ramp_time = 3;
-}
-
-message MinibatchScheduleStep {
-  int64 epoch = 1;
-  int64 mbsize = 2;
-  double lr = 3;
-  int64 ramp_time = 4;
-}
-
-message CallbackOptimizerwiseAdaptiveLearningRate {
-  string weights = 1;
-  double scale = 2;
-}
-
-message CallbackMinibatchSchedule {
-  int64 starting_mbsize = 1;
-  repeated MinibatchScheduleStep step = 2;
-}
-
-message CallbackCheckGradients {
-  double step_size = 1;
-  bool verbose = 2;
-  bool error_on_failure = 3; // Throw error if gradient check fails
-}
-
-message CallbackCheckMetric {
-  string metric = 1;
-  double lower_bound = 2;
-  double upper_bound = 3;
-  bool error_on_failure = 4;  // Throw error if metric check fails
-  string execution_modes = 5; // Default: all modes
-}
-
-message CallbackCheckpoint {
-  string checkpoint_dir = 1;
-  int64 checkpoint_epochs = 2;
-  int64 checkpoint_steps = 3;
-  double checkpoint_secs = 4;
-  string per_rank_dir = 5;
-  int64 ckpt_dist_epochs = 6;
-  int64 ckpt_dist_steps = 7;
-}
-
-
-message CallbackSaveModel {
-  string dir = 1;
-  string extension = 2;
-  bool disable_save_after_training = 3;
-}
-
-message CallbackReplaceWeights {
-  string source_layers = 1; //set of layers to copy weights from
-  string destination_layers = 2;  //set of layers to copy weights to
-  int64 batch_interval = 3;
-}
-message CallbackGPUMemoryUsage {
-}
-
-message CallbackSyncLayers {
-  bool sync_gpus = 1;
-  bool sync_mpi = 2;
-  bool only_input = 3;
-}
-
-message CallbackSyncSelected {
-  message LayerToSync {
-    enum PropDirection {
-      Both = 0;
-      Forward = 1;
-      Backward = 2;
-    }
-    string name = 1; // name of the layer to synchronize
-    PropDirection prop = 2; // propagation setep to synchronize
+  message CallbackLTFB {
+    int64 batch_interval = 1;
+    string metric = 2;
+    string weights = 3;       // default: all weights
+    bool low_score_wins = 4;
+    string communication_algorithm = 5;   // default: "sendrecv_weights"
+    bool exchange_hyperparameters = 6;
   }
 
-  message CudaProfilerSetup {
-    enum OutputMode {
-      KeyValuePair = 0;
-      CSV = 1;
-    }
-    bool no_init = 1;
-    string config_file = 2;
-    string output_dir = 3;
-    OutputMode output_mode = 4;
+  message CallbackStepLearningRate {
+    string weights = 1; //default: all weights
+    int64 step = 2;
+    double amt = 3;
   }
 
-  bool async_gpus = 1;
-  bool async_mpi = 2;
-  repeated LayerToSync layer_to_sync = 3;
-  CudaProfilerSetup cuda_profiler_setup = 4;
-}
+  message CallbackCustomLearningRate {
+    //don't know how to support this, since it takes an std::function as an argument
+  }
 
-message CallbackConfusionMatrix {
-  string prediction = 1; // Prediction layer
-  string label = 2;      // Label layer
-  string prefix = 3;     // Prefix for output files
-}
+  message CallbackAdaptiveLearningRate {
+    string weights = 1; //default: all weights
+    int64 patience = 2;
+    double amt = 3;
+  }
 
-message CallbackPerturbAdam {
-  float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
-  float beta1_factor = 2;           // beta1 perturbation (in log space)
-  float beta2_factor = 3;           // beta2 perturbation (in log space)
-  float eps_factor = 4;             // eps perturbation (in log space)
-  bool perturb_during_training = 5; // Whether to periodically perturb during training
-  int64 batch_interval = 6;         // Frequency of perturbation if perturb_during_training is true
-  string weights = 7;               // Weights with Adam optimizer
-}
+  message CallbackSaveImages {
+    string layers       = 1; // Layer outputs to save as images
+    string image_format = 2; // Image format (e.g. jpg, png, pgm)
+    string image_prefix = 3; // Prefix for saved image files
+  }
 
-message CallbackPerturbDropout {
-  float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
-  string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
-}
+  message CallbackPrint {
+    int64 interval = 1; //default in lbann_callback_print.hpp is 1
+    bool  print_global_stat_only = 2; //useful in large scale multi-trainer, default is false
+  }
 
-message CallbackSaveTopKModels {
-  string dir = 1;  //directory to save model
-  int32  k = 2;    //number of (top) models to save
-  string metric = 3; //metrics to use in evaluating models
-  bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
-}
+  message CallbackProfiler {
+    bool sync = 1;
+    bool skip_init = 2;
+  }
 
-message CallbackMixup {
-  string layers = 1;
-  float alpha = 2;
-}
+  message CallbackTimer {
+  }
 
-message CallbackCheckInit {
-}
+  message CallbackSummary {
+    string dir = 1; //directory for the lbann_summary
+    int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
+    int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
+  }
 
-message CallbackEarlyStopping {
-  int64 patience = 1;
-}
+  message CallbackDumpWeights {
+    string basename = 1;
+  }
 
-message CallbackTimeline {
-  string directory = 1;
+  message CallbackDumpOutputs {
+    string layers = 1;          // Default: all layers
+    string execution_modes = 2; // Default: all modes
+    int64 batch_interval = 3;   // Frequency for output dumping (default: all steps)
+    string directory = 4;       // Directory for output files
+    string format = 5;          // Options: csv, tsv, npy, npz (default: csv)
+  }
+
+  message CallbackDumpErrorSignals {
+    string basename = 1;
+  }
+
+  message CallbackDumpGradients {
+    string basename = 1;
+    int64 interval = 2;
+  }
+
+  message CallbackDumpMBIndices {
+    string basename = 1;
+    int64 interval = 2;
+  }
+
+  message CallbackDispIOStats {
+    string layers = 1; //e.g: "2 4 5"; use "10000" to apply to all layers
+  }
+
+  message CallbackImComm {
+    string intertrainer_comm_method = 1;
+    bool all_optimizers = 2;
+  }
+
+  message CallbackDebug {
+    string phase = 1; //should be called "modes"
+  }
+
+  message CallbackDebugIO {
+    string phase = 1;
+    int32 lvl = 2;
+  }
+
+  message CallbackCheckSmall {
+  }
+
+  message CallbackCheckNaN {
+  }
+
+  message CallbackCheckDataset {
+  }
+
+  message CallbackHang {
+    int64 rank = 1;
+  }
+
+  message CallbackDropFixedLearningRate {
+    string weights = 1;
+    repeated int64 drop_epoch = 2;
+    double amt = 3;
+  }
+
+  message CallbackLinearGrowthLearningRate {
+    string weights = 1;
+    double target = 2;
+    int64 num_epochs = 3;
+    int64 delay = 4;
+  }
+
+  message CallbackPolyLearningRate {
+    string weights = 1;
+    double power = 2;
+    uint64 num_epochs = 3;
+    uint64 max_iter = 4;
+    double end_lr = 5;
+  }
+
+  message CallbackStepMinibatch {
+    int64 starting_mbsize = 1;
+    int64 step = 2;
+    int64 ramp_time = 3;
+  }
+
+  message MinibatchScheduleStep {
+    int64 epoch = 1;
+    int64 mbsize = 2;
+    double lr = 3;
+    int64 ramp_time = 4;
+  }
+
+  message CallbackOptimizerwiseAdaptiveLearningRate {
+    string weights = 1;
+    double scale = 2;
+  }
+
+  message CallbackMinibatchSchedule {
+    int64 starting_mbsize = 1;
+    repeated MinibatchScheduleStep step = 2;
+  }
+
+  message CallbackCheckGradients {
+    double step_size = 1;
+    bool verbose = 2;
+    bool error_on_failure = 3; // Throw error if gradient check fails
+  }
+
+  message CallbackCheckMetric {
+    string metric = 1;
+    double lower_bound = 2;
+    double upper_bound = 3;
+    bool error_on_failure = 4;  // Throw error if metric check fails
+    string execution_modes = 5; // Default: all modes
+  }
+
+  message CallbackCheckpoint {
+    string checkpoint_dir = 1;
+    int64 checkpoint_epochs = 2;
+    int64 checkpoint_steps = 3;
+    double checkpoint_secs = 4;
+    string per_rank_dir = 5;
+    int64 ckpt_dist_epochs = 6;
+    int64 ckpt_dist_steps = 7;
+  }
+
+
+  message CallbackSaveModel {
+    string dir = 1;
+    string extension = 2;
+    bool disable_save_after_training = 3;
+  }
+
+  message CallbackReplaceWeights {
+    string source_layers = 1; //set of layers to copy weights from
+    string destination_layers = 2;  //set of layers to copy weights to
+    int64 batch_interval = 3;
+  }
+  message CallbackGPUMemoryUsage {
+  }
+
+  message CallbackSyncLayers {
+    bool sync_gpus = 1;
+    bool sync_mpi = 2;
+    bool only_input = 3;
+  }
+
+  message CallbackSyncSelected {
+    message LayerToSync {
+      enum PropDirection {
+        Both = 0;
+        Forward = 1;
+        Backward = 2;
+      }
+      string name = 1; // name of the layer to synchronize
+      PropDirection prop = 2; // propagation setep to synchronize
+    }
+
+    message CudaProfilerSetup {
+      enum OutputMode {
+        KeyValuePair = 0;
+        CSV = 1;
+      }
+      bool no_init = 1;
+      string config_file = 2;
+      string output_dir = 3;
+      OutputMode output_mode = 4;
+    }
+
+    bool async_gpus = 1;
+    bool async_mpi = 2;
+    repeated LayerToSync layer_to_sync = 3;
+    CudaProfilerSetup cuda_profiler_setup = 4;
+  }
+
+  message CallbackConfusionMatrix {
+    string prediction = 1; // Prediction layer
+    string label = 2;      // Label layer
+    string prefix = 3;     // Prefix for output files
+  }
+
+  message CallbackPerturbAdam {
+    float learning_rate_factor = 1;   // Learning rate perturbation (in log space)
+    float beta1_factor = 2;           // beta1 perturbation (in log space)
+    float beta2_factor = 3;           // beta2 perturbation (in log space)
+    float eps_factor = 4;             // eps perturbation (in log space)
+    bool perturb_during_training = 5; // Whether to periodically perturb during training
+    int64 batch_interval = 6;         // Frequency of perturbation if perturb_during_training is true
+    string weights = 7;               // Weights with Adam optimizer
+  }
+
+  message CallbackPerturbDropout {
+    float keep_dropout_factor = 1; //Keep dropout prob perturbation (in log space)
+    string layers = 2; // dropout layers to perturb keep prob, all dropout layers by default
+  }
+
+  message CallbackSaveTopKModels {
+    string dir = 1;  //directory to save model
+    int32  k = 2;    //number of (top) models to save
+    string metric = 3; //metrics to use in evaluating models
+    bool  ascending_ordering = 4; //whether to sort metrics per model in ascending order, descending order is default
+  }
+
+  message CallbackMixup {
+    string layers = 1;
+    float alpha = 2;
+  }
+
+  message CallbackCheckInit {
+  }
+
+  message CallbackEarlyStopping {
+    int64 patience = 1;
+  }
+
+  message CallbackTimeline {
+    string directory = 1;
+  }
 }

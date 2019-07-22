@@ -178,7 +178,7 @@ std::unique_ptr<lbann_callback>
 build_callback_save_model_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackSaveModel&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackSaveModel&>(proto_msg);
   if(params.extension().size() != 0) {
     return make_unique<lbann_callback_save_model>(
       params.dir(),
