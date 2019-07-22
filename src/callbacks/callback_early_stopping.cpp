@@ -29,13 +29,14 @@
 #include "lbann/callbacks/callback_early_stopping.hpp"
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :
-  lbann_callback(), m_patience(patience) {}
+early_stopping::early_stopping(int64_t patience) :
+  callback_base(), m_patience(patience) {}
 
 /// Monitor the objective function to see if the validation score
 /// continues to improve
-void lbann_callback_early_stopping::on_validation_end(model *m) {
+void early_stopping::on_validation_end(model *m) {
   execution_mode mode = m->get_execution_mode();
   EvalType score = m->get_objective_function()->get_mean_value(mode);
   if (score < m_last_score) {
@@ -60,12 +61,13 @@ void lbann_callback_early_stopping::on_validation_end(model *m) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_early_stopping_from_pbuf(
+std::unique_ptr<callback_base>
+build_early_stopping_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackEarlyStopping&>(proto_msg);
-  return make_unique<lbann_callback_early_stopping>(params.patience());
+  return make_unique<early_stopping>(params.patience());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

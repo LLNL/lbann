@@ -34,27 +34,28 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
-// Different schedules should inherit from lbann_callback_learning_rate.
+// Different schedules should inherit from learning_rate.
 
 /**
  * Base class for learning rate schedules.
  * Child classes should implement the schedule method to make changes.
  */
-class lbann_callback_learning_rate : public lbann_callback {
+class learning_rate : public callback_base {
  public:
-  lbann_callback_learning_rate();
-  lbann_callback_learning_rate(const lbann_callback_learning_rate&) = default;
-  lbann_callback_learning_rate& operator=(
-    const lbann_callback_learning_rate&) = default;
+  learning_rate();
+  learning_rate(const learning_rate&) = default;
+  learning_rate& operator=(
+    const learning_rate&) = default;
   /** Only apply to specific weights. */
-  lbann_callback_learning_rate(std::vector<std::string> weights_names);
+  learning_rate(std::vector<std::string> weights_names);
   /** Do some initialization. */
   void setup(model *m) override;
   /** Apply global learning rate schedules. */
   void on_epoch_end(model *m) override;
 
-  using lbann_callback::on_backward_prop_end;
+  using callback_base::on_backward_prop_end;
   /** Apply local/per-optimizer learning rate schedules. */
   void on_backward_prop_end(model *m) override;
  protected:
@@ -109,18 +110,18 @@ class lbann_callback_learning_rate : public lbann_callback {
 /**
  * Decrease the learning rate by a fixed proportion every X epochs.
  */
-class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
+class step_learning_rate : public learning_rate {
  public:
   /** Decrease the learning rate by amt every step epochs. */
-  lbann_callback_step_learning_rate(int step, float amt);
-  lbann_callback_step_learning_rate(int step, float amt,
+  step_learning_rate(int step, float amt);
+  step_learning_rate(int step, float amt,
                                     std::vector<std::string> weights_names);
-  lbann_callback_step_learning_rate(
-    const lbann_callback_step_learning_rate&) = default;
-  lbann_callback_step_learning_rate& operator=(
-    const lbann_callback_step_learning_rate&) = default;
-  lbann_callback_step_learning_rate* copy() const override {
-    return new lbann_callback_step_learning_rate(*this);
+  step_learning_rate(
+    const step_learning_rate&) = default;
+  step_learning_rate& operator=(
+    const step_learning_rate&) = default;
+  step_learning_rate* copy() const override {
+    return new step_learning_rate(*this);
   }
   std::string name() const override { return "step learning rate"; }
  protected:
@@ -133,29 +134,29 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_step_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
 /**
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
  */
-class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rate {
+class adaptive_learning_rate : public learning_rate {
  public:
   /**
    * Decrease the learning rate by amt if accuracy does not improve for patience
    * epochs.
    */
-  lbann_callback_adaptive_learning_rate(int64_t patience, float amt);
-  lbann_callback_adaptive_learning_rate(int64_t patience, float amt,
+  adaptive_learning_rate(int64_t patience, float amt);
+  adaptive_learning_rate(int64_t patience, float amt,
                                         std::vector<std::string> weights_names);
-  lbann_callback_adaptive_learning_rate(
-    const lbann_callback_adaptive_learning_rate&) = default;
-  lbann_callback_adaptive_learning_rate& operator=(
-    const lbann_callback_adaptive_learning_rate&) = default;
-  lbann_callback_adaptive_learning_rate* copy() const override {
-    return new lbann_callback_adaptive_learning_rate(*this);
+  adaptive_learning_rate(
+    const adaptive_learning_rate&) = default;
+  adaptive_learning_rate& operator=(
+    const adaptive_learning_rate&) = default;
+  adaptive_learning_rate* copy() const override {
+    return new adaptive_learning_rate(*this);
   }
   std::string name() const override { return "adaptive learning rate"; }
  protected:
@@ -176,31 +177,31 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_adaptive_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
 /**
  * Decrease learning rate by a fixed amount at fixed times.
  */
-class lbann_callback_drop_fixed_learning_rate :
-    public lbann_callback_learning_rate {
+class drop_fixed_learning_rate :
+    public learning_rate {
  public:
   /**
    * Decrease the learning rate by amt when each epoch in drop_epochs is
    * reached.
    */
-  lbann_callback_drop_fixed_learning_rate(
+  drop_fixed_learning_rate(
     std::vector<int64_t> drop_epochs, float amt);
-  lbann_callback_drop_fixed_learning_rate(
+  drop_fixed_learning_rate(
     std::vector<int64_t> drop_epochs, float amt,
     std::vector<std::string> weights_names);
-  lbann_callback_drop_fixed_learning_rate(
-    const lbann_callback_drop_fixed_learning_rate&) = default;
-  lbann_callback_drop_fixed_learning_rate& operator=(
-    const lbann_callback_drop_fixed_learning_rate&) = default;
-  lbann_callback_drop_fixed_learning_rate* copy() const override {
-    return new lbann_callback_drop_fixed_learning_rate(*this);
+  drop_fixed_learning_rate(
+    const drop_fixed_learning_rate&) = default;
+  drop_fixed_learning_rate& operator=(
+    const drop_fixed_learning_rate&) = default;
+  drop_fixed_learning_rate* copy() const override {
+    return new drop_fixed_learning_rate(*this);
   }
   std::string name() const override { return "drop fixed learning rate"; }
  protected:
@@ -216,8 +217,8 @@ class lbann_callback_drop_fixed_learning_rate :
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_drop_fixed_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
 /**
@@ -227,25 +228,25 @@ build_callback_drop_fixed_learning_rate_from_pbuf(
  * learning rate.  This also *forces* its schedule and will stomp over
  * other changes.
  */
-class lbann_callback_linear_growth_learning_rate :
-    public lbann_callback_learning_rate {
+class linear_growth_learning_rate :
+    public learning_rate {
  public:
   /**
    * Linearly increase the learning rate to reach target after num_epochs.
    */
-  lbann_callback_linear_growth_learning_rate(
+  linear_growth_learning_rate(
     float target, int64_t num_epochs);
-  lbann_callback_linear_growth_learning_rate(
+  linear_growth_learning_rate(
     float target, int64_t num_epochs, int64_t delay);
-  lbann_callback_linear_growth_learning_rate(
+  linear_growth_learning_rate(
     float target, int64_t num_epochs, int64_t delay,
     std::vector<std::string> weights_names);
-  lbann_callback_linear_growth_learning_rate(
-    const lbann_callback_linear_growth_learning_rate&) = default;
-  lbann_callback_linear_growth_learning_rate& operator=(
-    const lbann_callback_linear_growth_learning_rate&) = default;
-  lbann_callback_linear_growth_learning_rate* copy() const override {
-    return new lbann_callback_linear_growth_learning_rate(*this); }
+  linear_growth_learning_rate(
+    const linear_growth_learning_rate&) = default;
+  linear_growth_learning_rate& operator=(
+    const linear_growth_learning_rate&) = default;
+  linear_growth_learning_rate* copy() const override {
+    return new linear_growth_learning_rate(*this); }
   void setup(model *m) override;
   std::string name() const override { return "linear growth learning rate"; }
  protected:
@@ -264,8 +265,8 @@ class lbann_callback_linear_growth_learning_rate :
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_linear_growth_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_linear_growth_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&,lbann_summary*);
 
 /**
@@ -274,17 +275,17 @@ build_callback_linear_growth_learning_rate_from_pbuf(
  * base_lr is the initial learning rate, i_cur is the current iteration,
  * i_max is the maximum iteration, and p is a parameter.
  */
-class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
+class poly_learning_rate : public learning_rate {
  public:
-  lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter);
-  lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter, double endl_r,
+  poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter);
+  poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter, double endl_r,
     std::vector<std::string> weights_names);
-  lbann_callback_poly_learning_rate(
-    const lbann_callback_poly_learning_rate&) = default;
-  lbann_callback_poly_learning_rate& operator=(
-    const lbann_callback_poly_learning_rate&) = default;
-  lbann_callback_poly_learning_rate* copy() const override {
-    return new lbann_callback_poly_learning_rate(*this);
+  poly_learning_rate(
+    const poly_learning_rate&) = default;
+  poly_learning_rate& operator=(
+    const poly_learning_rate&) = default;
+  poly_learning_rate* copy() const override {
+    return new poly_learning_rate(*this);
   }
   void setup(model *m) override;
   std::string name() const override { return "poly learning rate"; }
@@ -307,9 +308,9 @@ class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_poly_learning_rate_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*);
+std::unique_ptr<callback_base>
+build_poly_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 /**
  * This implements an adaptive scheme for adjust each optimizer's
@@ -318,17 +319,17 @@ build_callback_poly_learning_rate_from_pbuf(
  * See: You et al. "Scaling SGD Batch Size to 32K for ImageNet
  * Training", 2017.
  */
-class lbann_callback_optimizerwise_adaptive_learning_rate : public lbann_callback_learning_rate {
+class optimizerwise_adaptive_learning_rate : public learning_rate {
  public:
-  lbann_callback_optimizerwise_adaptive_learning_rate(float scale);
-  lbann_callback_optimizerwise_adaptive_learning_rate(
+  optimizerwise_adaptive_learning_rate(float scale);
+  optimizerwise_adaptive_learning_rate(
     float scale, std::vector<std::string> weights_names);
-  lbann_callback_optimizerwise_adaptive_learning_rate(
-    const lbann_callback_optimizerwise_adaptive_learning_rate&) = default;
-  lbann_callback_optimizerwise_adaptive_learning_rate& operator=(
-    const lbann_callback_optimizerwise_adaptive_learning_rate&) = default;
-  lbann_callback_optimizerwise_adaptive_learning_rate* copy() const override {
-    return new lbann_callback_optimizerwise_adaptive_learning_rate(*this); }
+  optimizerwise_adaptive_learning_rate(
+    const optimizerwise_adaptive_learning_rate&) = default;
+  optimizerwise_adaptive_learning_rate& operator=(
+    const optimizerwise_adaptive_learning_rate&) = default;
+  optimizerwise_adaptive_learning_rate* copy() const override {
+    return new optimizerwise_adaptive_learning_rate(*this); }
   std::string name() const override { return "optimizerwise adaptive learning rate"; }
  protected:
   float optimizer_schedule(model *m, optimizer &opt) override;
@@ -337,10 +338,11 @@ class lbann_callback_optimizerwise_adaptive_learning_rate : public lbann_callbac
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_optimizerwise_adaptive_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&,lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_LEARNING_RATE_HPP_INCLUDED

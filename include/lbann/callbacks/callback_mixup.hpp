@@ -33,6 +33,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Apply mixup to named input layers.
@@ -54,11 +55,11 @@ namespace lbann {
  *
  * The recommended default alpha (from the paper) is 0.4.
  */
-class callback_mixup : public lbann_callback {
+class callback_mixup : public callback_base {
 public:
   /** Apply mixup to layers named in layers with mixup parameter alpha. */
   callback_mixup(std::unordered_set<std::string> layers, float alpha) :
-    lbann_callback(), m_layers(layers), m_alpha(alpha) {
+    callback_base(), m_layers(layers), m_alpha(alpha) {
     if (alpha < 0.0f) {
       LBANN_ERROR("Mixup alpha must be non-negative.");
     }
@@ -77,10 +78,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_mixup_from_pbuf(
+std::unique_ptr<callback_base>
+build_mixup_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_MIXUP_HPP

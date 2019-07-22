@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_model .hpp .cpp - Callbacks to save a models description and weights
+// save_model .hpp .cpp - Callbacks to save a models description and weights
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <string>
@@ -38,22 +38,23 @@
 #include <cstdlib>
 
 namespace lbann {
+namespace callback {
 
 
 /// Save the model's prototext and weights
-void lbann_callback_save_model::on_train_end(model *m) {
+void save_model::on_train_end(model *m) {
   if(!m_disable_save_after_training){
-    save_model(m);
+    do_save_model(m);
   }
 }
 
-void lbann_callback_save_model::write_proto_binary(const lbann_data::Model& proto,
+void save_model::write_proto_binary(const lbann_data::Model& proto,
                                                    const std::string filename) {
   std::fstream output(filename.c_str(), std::ios::out | std::ios::trunc | std::ios::binary);
   proto.SerializeToOstream(&output);
 }
 
-void lbann_callback_save_model::write_proto_text(const lbann_data::Model& proto,
+void save_model::write_proto_text(const lbann_data::Model& proto,
                                                  const std::string filename) {
   int fd = openwrite(filename.c_str());
   auto output = new google::protobuf::io::FileOutputStream(fd);
@@ -62,11 +63,11 @@ void lbann_callback_save_model::write_proto_text(const lbann_data::Model& proto,
   close(fd);
 }
 
-bool lbann_callback_save_model::save_model(model *m) {
+bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 
   p.set_cb_type(callback_type::inference);
-  save_model_weights(m);
+  do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
 #if 0 /// @todo BVE FIXME this method for writing out the prototext does not seem to work
@@ -82,7 +83,7 @@ bool lbann_callback_save_model::save_model(model *m) {
 }
 
 // Save model weights
-bool lbann_callback_save_model::save_model_weights(model *m) {
+bool save_model::do_save_model_weights(model *m) {
   // if the checkpoint directory is not defined, bail
   if (m_dir.length() == 0) {
     return false;
@@ -133,7 +134,7 @@ bool lbann_callback_save_model::save_model_weights(model *m) {
   return true;
 }
 
-bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
+bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
   std::vector<std::string> weight_list = std::vector<std::string>();
   std::string active_ckpt_dir;
   if(ckptdir_is_fullpath) {
@@ -174,23 +175,23 @@ bool lbann_callback_save_model::load_model_weights(std::string ckpt_dir, model *
   return true;
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_save_model_from_pbuf(
+std::unique_ptr<callback_base>
+build_save_model_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSaveModel&>(proto_msg);
   if(params.extension().size() != 0) {
-    return make_unique<lbann_callback_save_model>(
+    return make_unique<save_model>(
       params.dir(),
       params.disable_save_after_training(),
       params.extension());
   }
   else {
-    return make_unique<lbann_callback_save_model>(
+    return make_unique<save_model>(
       params.dir(),
       params.disable_save_after_training());
   }
 }
 
-
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

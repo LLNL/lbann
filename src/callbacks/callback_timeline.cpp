@@ -31,8 +31,9 @@
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_timeline::on_train_begin(model *m) {
+void timeline::on_train_begin(model *m) {
   // Set up layers and weights.
   for (const auto& l : m->get_layers()) {
     m_fp_times.emplace(l->get_name(), std::vector<std::pair<EvalType,EvalType>>());
@@ -46,7 +47,7 @@ void lbann_callback_timeline::on_train_begin(model *m) {
   m_start_time = get_time();
 }
 
-void lbann_callback_timeline::on_train_end(model *m) {
+void timeline::on_train_end(model *m) {
   const std::string path = m_outdir + "/timeline.m" +
     std::to_string(m->get_comm()->get_trainer_rank()) + "." +
     std::to_string(m->get_comm()->get_rank_in_trainer()) + ".txt";
@@ -71,39 +72,40 @@ void lbann_callback_timeline::on_train_end(model *m) {
   }
 }
 
-void lbann_callback_timeline::on_forward_prop_begin(model *m, Layer *l) {
+void timeline::on_forward_prop_begin(model *m, Layer *l) {
   m_fp_start_time = get_rel_time();
 }
 
-void lbann_callback_timeline::on_forward_prop_end(model *m, Layer *l) {
+void timeline::on_forward_prop_end(model *m, Layer *l) {
   EvalType end = get_rel_time();
   m_fp_times[l->get_name()].emplace_back(m_fp_start_time, end);
 }
 
-void lbann_callback_timeline::on_backward_prop_begin(model *m, Layer *l) {
+void timeline::on_backward_prop_begin(model *m, Layer *l) {
   m_bp_start_time = get_rel_time();
 }
 
-void lbann_callback_timeline::on_backward_prop_end(model *m, Layer *l) {
+void timeline::on_backward_prop_end(model *m, Layer *l) {
   EvalType end = get_rel_time();
   m_bp_times[l->get_name()].emplace_back(m_bp_start_time, end);
 }
 
-void lbann_callback_timeline::on_optimize_begin(model *m, weights *w) {
+void timeline::on_optimize_begin(model *m, weights *w) {
   m_opt_start_time = get_rel_time();
 }
 
-void lbann_callback_timeline::on_optimize_end(model *m, weights *w) {
+void timeline::on_optimize_end(model *m, weights *w) {
   EvalType end = get_rel_time();
   m_opt_times[w->get_name()].emplace_back(m_opt_start_time, end);
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_timeline_from_pbuf(
+std::unique_ptr<callback_base>
+build_timeline_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackTimeline&>(proto_msg);
-  return make_unique<lbann_callback_timeline>(params.directory());
+  return make_unique<timeline>(params.directory());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

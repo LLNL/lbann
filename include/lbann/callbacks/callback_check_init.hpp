@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_check_init .hpp .cpp - Check multi-model init
+// check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
@@ -32,18 +32,19 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Verify that every model uses the same initialization.
  */
-class lbann_callback_check_init : public lbann_callback {
+class check_init : public callback_base {
  public:
-  lbann_callback_check_init() : lbann_callback() {}
-  lbann_callback_check_init(const lbann_callback_check_init&) = default;
-  lbann_callback_check_init& operator=(
-    const lbann_callback_check_init&) = default;
-  lbann_callback_check_init* copy() const override {
-    return new lbann_callback_check_init(*this);
+  check_init() : callback_base() {}
+  check_init(const check_init&) = default;
+  check_init& operator=(
+    const check_init&) = default;
+  check_init* copy() const override {
+    return new check_init(*this);
   }
   /** Check initializations. */
   void on_train_begin(model *m) override;
@@ -55,8 +56,9 @@ class lbann_callback_check_init : public lbann_callback {
 
 // Builder function
 ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_check_init, build_callback_check_init_from_pbuf)
+  check_init, build_check_init_callback_from_pbuf)
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED

@@ -29,24 +29,25 @@
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_perturb_dropout::lbann_callback_perturb_dropout(EvalType keep_prob_factor,
+perturb_dropout::perturb_dropout(EvalType keep_prob_factor,
                                                          std::set<std::string> layer_names)
-  : lbann_callback(1),
+  : callback_base(1),
     m_keep_prob_factor(keep_prob_factor),
     m_layer_names(std::move(layer_names)) {}
 
-void lbann_callback_perturb_dropout::setup(model* m) {
+void perturb_dropout::setup(model* m) {
   perturb(*m);
 }
 
 template <data_layout T_layout, El::Device Dev>
-dropout<T_layout, Dev>* lbann_callback_perturb_dropout::get_dropout_layer(Layer* l) {
+dropout<T_layout, Dev>* perturb_dropout::get_dropout_layer(Layer* l) {
   if(auto d_layer = dynamic_cast<dropout<T_layout, Dev>*>(l)) return d_layer;
   else return nullptr;
 }
 
-void lbann_callback_perturb_dropout::perturb(model& m) {
+void perturb_dropout::perturb(model& m) {
   auto* comm = m.get_comm();
   for (auto* l : m.get_layers()) {
     if (l == nullptr) {
@@ -117,14 +118,15 @@ void lbann_callback_perturb_dropout::perturb(model& m) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_perturb_dropout_from_pbuf(
+std::unique_ptr<callback_base>
+build_perturb_dropout_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackPerturbDropout&>(proto_msg);
-  return make_unique<lbann_callback_perturb_dropout>(
+  return make_unique<perturb_dropout>(
     params.keep_dropout_factor(),
     parse_set<std::string>(params.layers()));
 }
 
+} // namespace callback
 } // namespace lbann

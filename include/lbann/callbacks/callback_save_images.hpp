@@ -32,12 +32,13 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** Save layer outputs as image files.
  *  Image files are in the form
  *  "<prefix><tag>-<layer name>.<format>".
  */
-class lbann_callback_save_images : public lbann_callback {
+class save_images : public callback_base {
 public:
 
   /** Constructor.
@@ -45,14 +46,14 @@ public:
    *  @param image_format Image file format (e.g. jpg, png, pgm).
    *  @param image_prefix Prefix for image file names.
    */
-  lbann_callback_save_images(std::vector<std::string> layer_names,
+  save_images(std::vector<std::string> layer_names,
                              std::string image_format = "jpg",
                              std::string image_prefix = "");
-  lbann_callback_save_images(const lbann_callback_save_images&) = default;
-  lbann_callback_save_images& operator=(
-    const lbann_callback_save_images&) = default;
-  lbann_callback_save_images* copy() const override {
-    return new lbann_callback_save_images(*this);
+  save_images(const save_images&) = default;
+  save_images& operator=(
+    const save_images&) = default;
+  save_images* copy() const override {
+    return new save_images(*this);
   }
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
@@ -72,10 +73,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_save_images_from_pbuf(
+std::unique_ptr<callback_base>
+build_save_images_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED

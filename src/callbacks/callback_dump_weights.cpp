@@ -23,23 +23,24 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_weights .hpp .cpp - Callbacks to dump weight matrices
+// dump_weights .hpp .cpp - Callbacks to dump weight matrices
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
 #include "lbann/callbacks/callback_dump_weights.hpp"
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_dump_weights::on_train_begin(model *m) {
-  dump_weights(m, "initial");
+void dump_weights::on_train_begin(model *m) {
+  do_dump_weights(m, "initial");
 }
 
-void lbann_callback_dump_weights::on_epoch_end(model *m) {
-  dump_weights(m);
+void dump_weights::on_epoch_end(model *m) {
+  do_dump_weights(m);
 }
 
-void lbann_callback_dump_weights::dump_weights(model *m, std::string s) {
+void dump_weights::do_dump_weights(model *m, std::string s) {
   for (weights *w : m->get_weights()) {
     std::string epoch = "-epoch" + std::to_string(m->get_epoch()-1);
     if(s != "") {
@@ -55,12 +56,13 @@ void lbann_callback_dump_weights::dump_weights(model *m, std::string s) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_dump_weights_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDumpWeights&>(proto_msg);
-  return make_unique<lbann_callback_dump_weights>(params.basename());
+  return make_unique<dump_weights>(params.basename());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

@@ -49,5 +49,5 @@ std::vector<T*> select_things_by_name(
   }
   return out_things;
 }
-}// namespace
-}// namespace lbann
+} // namespace
+} // namespace lbann

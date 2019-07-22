@@ -33,21 +33,22 @@
 #include <vector>
 
 namespace lbann {
+namespace callback {
 
 /** Record and report model timing results.
  *  Reports the total time and mini-batch time statistics for training
  *  epochs and for model evaluations. This reports times for the
  *  master process in each model.
  */
-class lbann_callback_timer : public lbann_callback {
+class timer : public callback_base {
 public:
 
-  lbann_callback_timer(lbann_summary *summarizer = nullptr)
-    : lbann_callback(1, summarizer) {}
-  lbann_callback_timer(const lbann_callback_timer&) = default;
-  lbann_callback_timer& operator=(const lbann_callback_timer&) = default;
-  lbann_callback_timer* copy() const override {
-    return new lbann_callback_timer(*this);
+  timer(lbann_summary *summarizer = nullptr)
+    : callback_base(1, summarizer) {}
+  timer(const timer&) = default;
+  timer& operator=(const timer&) = default;
+  timer* copy() const override {
+    return new timer(*this);
   }
 
   /** Start timing for a training epoch. */
@@ -99,10 +100,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_timer_from_pbuf(
+std::unique_ptr<callback_base>
+build_timer_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED

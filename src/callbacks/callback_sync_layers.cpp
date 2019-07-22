@@ -31,8 +31,9 @@
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_sync_layers::on_forward_prop_end(model *m, Layer *l) {
+void sync_layers::on_forward_prop_end(model *m, Layer *l) {
   if (m_only_input && dynamic_cast<generic_input_layer*>(l) == nullptr) {
     return;  // Skip non-input layers.
   }
@@ -41,7 +42,7 @@ void lbann_callback_sync_layers::on_forward_prop_end(model *m, Layer *l) {
   l->m_fp_time += get_time() - start;
 }
 
-void lbann_callback_sync_layers::on_backward_prop_end(model *m, Layer *l) {
+void sync_layers::on_backward_prop_end(model *m, Layer *l) {
   if (m_only_input) {
     return;
   }
@@ -50,7 +51,7 @@ void lbann_callback_sync_layers::on_backward_prop_end(model *m, Layer *l) {
   l->m_bp_time += get_time() - start;
 }
 
-void lbann_callback_sync_layers::do_sync(Layer *l) {
+void sync_layers::do_sync(Layer *l) {
   #ifdef LBANN_HAS_CUDNN
   if (m_sync_gpus) {
     El::GPUManager::SynchronizeDevice();
@@ -61,14 +62,15 @@ void lbann_callback_sync_layers::do_sync(Layer *l) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_sync_layers_from_pbuf(
+std::unique_ptr<callback_base>
+build_sync_layers_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSyncLayers&>(proto_msg);
-  return make_unique<lbann_callback_sync_layers>(params.sync_gpus(),
+  return make_unique<sync_layers>(params.sync_gpus(),
                                                  params.sync_mpi(),
                                                  params.only_input());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

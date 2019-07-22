@@ -28,6 +28,7 @@
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
+namespace callback {
 
 namespace {
 
@@ -117,7 +118,7 @@ void dump_network(model *m) {
 
 } // namespace
 
-void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
+void check_nan::on_forward_prop_end(model *m, Layer *l) {
   std::stringstream err;
   const auto& num_outputs = l->get_num_children();
   for (int i = 0; i < num_outputs; ++i) {
@@ -144,7 +145,7 @@ void lbann_callback_checknan::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 
-void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
+void check_nan::on_backward_prop_end(model *m, Layer *l) {
   std::stringstream err;
   const auto& num_inputs = l->get_num_parents();
   for (int i = 0; i < num_inputs; ++i) {
@@ -171,7 +172,7 @@ void lbann_callback_checknan::on_backward_prop_end(model *m, Layer *l) {
   }
 }
 
-void lbann_callback_checknan::on_backward_prop_end(model *m) {
+void check_nan::on_backward_prop_end(model *m) {
   std::stringstream err;
   for (weights *w : m->get_weights()) {
     auto* opt = w->get_optimizer();
@@ -196,7 +197,7 @@ void lbann_callback_checknan::on_backward_prop_end(model *m) {
   }
 }
 
-void lbann_callback_checknan::on_batch_end(model *m) {
+void check_nan::on_batch_end(model *m) {
   std::stringstream err;
   for (weights *w : m->get_weights()) {
     El::Int row, col;
@@ -218,4 +219,5 @@ void lbann_callback_checknan::on_batch_end(model *m) {
   }
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_gradients .hpp .cpp - Callbacks to dump gradients
+// dump_gradients .hpp .cpp - Callbacks to dump gradients
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED
@@ -34,6 +34,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * @brief Dump gradient matrices to files.
@@ -44,22 +45,22 @@ namespace lbann {
  * that isn't easily done in LBANN.  Note this dumps matrices during
  * each mini-batch. This will be slow and produce a lot of output.
  */
-class lbann_callback_dump_gradients : public lbann_callback {
+class dump_gradients : public callback_base {
  public:
-  using lbann_callback::on_backward_prop_end;
+  using callback_base::on_backward_prop_end;
 
   /**
    * @param basename The basename for writing files.
    * @param batch_interval The frequency at which to dump the gradients
    */
-  lbann_callback_dump_gradients(std::string basename, int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
-  lbann_callback_dump_gradients(
-    const lbann_callback_dump_gradients&) = default;
-  lbann_callback_dump_gradients& operator=(
-    const lbann_callback_dump_gradients&) = default;
-  lbann_callback_dump_gradients* copy() const override {
-    return new lbann_callback_dump_gradients(*this);
+  dump_gradients(std::string basename, int batch_interval = 1) :
+    callback_base(batch_interval), m_basename(std::move(basename)) {}
+  dump_gradients(
+    const dump_gradients&) = default;
+  dump_gradients& operator=(
+    const dump_gradients&) = default;
+  dump_gradients* copy() const override {
+    return new dump_gradients(*this);
   }
   void on_backward_prop_end(model *m) override;
   std::string name() const override { return "dump gradients"; }
@@ -69,10 +70,11 @@ class lbann_callback_dump_gradients : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_dump_gradients_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_gradients_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_GRADIENTS_HPP_INCLUDED

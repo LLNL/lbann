@@ -26,30 +26,33 @@
 // callback_gpu_memory_usage .hpp .cpp - Callbacks for printing GPU memory usage
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
-#define __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
+
 /** Callback hooks for printing GPU memory usage. */
-class lbann_callback_gpu_memory_usage : public lbann_callback {
+class gpu_memory_usage : public callback_base {
  public:
 
   /** Constructor.
    */
-  lbann_callback_gpu_memory_usage() = default;
-  lbann_callback_gpu_memory_usage(const lbann_callback_gpu_memory_usage&) = default;
-  lbann_callback_gpu_memory_usage& operator=(const lbann_callback_gpu_memory_usage&) = default;
-  lbann_callback_gpu_memory_usage* copy() const override { return new lbann_callback_gpu_memory_usage(*this); }
+  gpu_memory_usage() = default;
+  gpu_memory_usage(const gpu_memory_usage&) = default;
+  gpu_memory_usage& operator=(const gpu_memory_usage&) = default;
+  gpu_memory_usage* copy() const override { return new gpu_memory_usage(*this); }
   void on_epoch_begin(model *m) override;
   std::string name() const override { return "GPU memory usage"; }
 };
 
 // Builder function
 ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_gpu_memory_usage, build_callback_gpu_memory_usage_from_pbuf);
+  gpu_memory_usage, build_gpu_memory_usage_callback_from_pbuf);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
-#endif  // __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED

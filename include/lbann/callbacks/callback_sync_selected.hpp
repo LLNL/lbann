@@ -34,6 +34,7 @@
 #include <unordered_set>
 
 namespace lbann {
+namespace callback {
 
 /**
  * Synchronize at the beginning and the end of the propagation operation(s) of
@@ -45,9 +46,9 @@ namespace lbann {
  * comes after the local GPU sychronization and before the global MPI barrier
  * inserted at the end of the selected prop step(s).
  * Note that this callback should come before the summarizer callback
- * as the base callback lbann_callback_sync_layers requires.
+ * as the base callback sync_layers requires.
  */
-class lbann_callback_sync_selected : public lbann_callback_sync_layers {
+class sync_selected : public sync_layers {
  public:
   ///type of propagation toch synchronize
   enum prop_t {Both = 0, Forward = 1, Backward = 2};
@@ -61,19 +62,19 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
    * @param async_gpus sets not to synchronize gpus. The default is false.
    * @param async_mpi sets not to synchronize mpi. The default is false.
    */
-  lbann_callback_sync_selected(const layers_t& layers,
+  sync_selected(const layers_t& layers,
                                bool async_gpus = false, bool async_mpi = false);
 
-  lbann_callback_sync_selected(const lbann_callback_sync_selected&) = default;
+  sync_selected(const sync_selected&) = default;
 
-  lbann_callback_sync_selected& operator=(
-    const lbann_callback_sync_selected&) = default;
+  sync_selected& operator=(
+    const sync_selected&) = default;
 
-  lbann_callback_sync_selected* copy() const override {
-    return new lbann_callback_sync_selected(*this);
+  sync_selected* copy() const override {
+    return new sync_selected(*this);
   }
 
-  ~lbann_callback_sync_selected() override;
+  ~sync_selected() override;
 
   std::string name() const override { return "sync_selected"; }
   std::string get_description() const;
@@ -91,10 +92,10 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
    * Then, populate the layer pointers */
   void setup(model *m) override;
 
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback_sync_layers::on_forward_prop_end;
-  using lbann_callback_sync_layers::on_backward_prop_end;
+  using callback_base::on_forward_prop_begin;
+  using callback_base::on_backward_prop_begin;
+  using sync_layers::on_forward_prop_end;
+  using sync_layers::on_backward_prop_end;
 
   /// Synchronize at the beginning of the forward prop of layer l
   void on_forward_prop_begin(model* m, Layer* l) override;
@@ -134,10 +135,11 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_sync_selected_from_pbuf(
+std::unique_ptr<callback_base>
+build_sync_selected_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SYNC_SELECTED_HPP_INCLUDED

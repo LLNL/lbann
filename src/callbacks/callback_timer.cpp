@@ -29,13 +29,14 @@
 #include <algorithm>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_timer::batch_timing_begin(const model& m) {
+void timer::batch_timing_begin(const model& m) {
   const auto& mode = m.get_execution_mode();
   m_batch_start_times[mode] = get_time();
 }
 
-void lbann_callback_timer::batch_timing_end(const model& m) {
+void timer::batch_timing_end(const model& m) {
   const auto& mode = m.get_execution_mode();
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
@@ -45,13 +46,13 @@ void lbann_callback_timer::batch_timing_end(const model& m) {
   }
 }
 
-void lbann_callback_timer::timing_begin(const model& m) {
+void timer::timing_begin(const model& m) {
   const auto& mode = m.get_execution_mode();
   m_start_times[mode] = get_time();
   m_batch_times[mode].clear();
 }
 
-void lbann_callback_timer::timing_end(model& m) {
+void timer::timing_end(model& m) {
   constexpr EvalType zero = 0;
 
   // Get run time
@@ -167,10 +168,11 @@ void lbann_callback_timer::timing_end(model& m) {
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_timer_from_pbuf(
+std::unique_ptr<callback_base>
+build_timer_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary* summarizer) {
-  return make_unique<lbann_callback_timer>(summarizer);
+  return make_unique<timer>(summarizer);
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

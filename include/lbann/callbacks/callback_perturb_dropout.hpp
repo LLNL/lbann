@@ -32,12 +32,13 @@
 #include <set>
 
 namespace lbann {
+namespace callback {
 
 /** @brief Hyperparameter exploration with dropouts.
  *
  *  Goes through the dropout layers in a model and perturbs keep probability
  */
-class lbann_callback_perturb_dropout : public lbann_callback {
+class perturb_dropout : public callback_base {
 public:
 
   /** @param keep_prob_factor   Standard deviation of learning rate
@@ -46,10 +47,10 @@ public:
    *                        empty, all dropout layers  in the model are
    *                        perturbed.
    */
-  lbann_callback_perturb_dropout(EvalType keep_prob_factor,
+  perturb_dropout(EvalType keep_prob_factor,
                               std::set<std::string> layer_names
                               = std::set<std::string>());
-  lbann_callback_perturb_dropout* copy() const override { return new lbann_callback_perturb_dropout(*this); }
+  perturb_dropout* copy() const override { return new perturb_dropout(*this); }
   std::string name() const override { return "perturb dropout"; }
 
   void setup(model* m) override;
@@ -77,10 +78,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_perturb_dropout_from_pbuf(
+std::unique_ptr<callback_base>
+build_perturb_dropout_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_PERTURB_DROPOUT_HPP_INCLUDED

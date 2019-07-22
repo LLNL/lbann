@@ -32,6 +32,7 @@
 #include <set>
 
 namespace lbann {
+namespace callback {
 
 /** @brief Hyperparameter exploration with Adam optimizers.
  *
@@ -44,7 +45,7 @@ namespace lbann {
  *  @f$\log(\text{learning rate})@f$, @f$\log(1-\beta_1)@f$,
  *  @f$\log(1-\beta_2)@f$, and @f$\log\epsilon@f$.
  */
-class lbann_callback_perturb_adam : public lbann_callback {
+class perturb_adam : public callback_base {
 public:
 
   /** @param learning_rate_factor   Standard deviation of learning rate
@@ -66,7 +67,7 @@ public:
    *                        empty, all Adam optimizers in the model are
    *                        perturbed.
    */
-  lbann_callback_perturb_adam(DataType learning_rate_factor,
+  perturb_adam(DataType learning_rate_factor,
                               DataType beta1_factor,
                               DataType beta2_factor,
                               DataType eps_factor = 0,
@@ -74,7 +75,7 @@ public:
                               El::Int batch_interval = 1,
                               std::set<std::string> weights_names
                               = std::set<std::string>());
-  lbann_callback_perturb_adam* copy() const override { return new lbann_callback_perturb_adam(*this); }
+  perturb_adam* copy() const override { return new perturb_adam(*this); }
   std::string name() const override { return "perturb Adam"; }
 
   void setup(model* m) override;
@@ -123,10 +124,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_perturb_adam_from_pbuf(
+std::unique_ptr<callback_base>
+build_perturb_adam_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_PERTURB_ADAM_HPP_INCLUDED

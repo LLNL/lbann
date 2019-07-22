@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_imcomm .hpp .cpp - Send gradient updates between models
+// imcomm .hpp .cpp - Send gradient updates between models
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <typeinfo>
@@ -33,28 +33,29 @@
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
+imcomm::imcomm(imcomm::comm_type ct,
     lbann_summary *summarizer) :
-  lbann_callback(1, summarizer), m_default_ct(ct) {}
+  callback_base(1, summarizer), m_default_ct(ct) {}
 
-lbann_callback_imcomm::lbann_callback_imcomm(lbann_callback_imcomm::comm_type ct,
+imcomm::imcomm(imcomm::comm_type ct,
     std::unordered_set<weights *> weights_list,
     lbann_summary *summarizer) :
-  lbann_callback_imcomm(ct, summarizer) {
+  imcomm(ct, summarizer) {
   for (weights *w : weights_list) {
     m_weights_params[w] = {};
     m_weights_params[w].ct = ct;
   }
 }
 
-void lbann_callback_imcomm::set_weights_comm(weights *w,
+void imcomm::set_weights_comm(weights *w,
                                              comm_type ct) {
   m_weights_params[w] = {};
   m_weights_params[w].ct = ct;
 }
 
-void lbann_callback_imcomm::setup(model *m) {
+void imcomm::setup(model *m) {
   for (weights *w : m->get_weights()) {
 
     // Add weights if not already in list
@@ -81,7 +82,7 @@ void lbann_callback_imcomm::setup(model *m) {
   }
 }
 
-void lbann_callback_imcomm::on_train_begin(model *m) {
+void imcomm::on_train_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_trainers() == 1) {
     return;  // No point with only one model.
@@ -94,7 +95,7 @@ void lbann_callback_imcomm::on_train_begin(model *m) {
   }
 }
 
-void lbann_callback_imcomm::on_backward_prop_end(model *m) {
+void imcomm::on_backward_prop_end(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_trainers() == 1 ||
       m->get_execution_mode() != execution_mode::training) {
@@ -125,7 +126,7 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
   }
 }
 
-void lbann_callback_imcomm::do_summary(model *m, weights *w,
+void imcomm::do_summary(model *m, weights *w,
                                        EvalType im_time) {
   if (m_summarizer == nullptr) {
     return;
@@ -150,7 +151,7 @@ static std::vector<std::string> comm_type_names  =
     { "none", "normal" };
 
 /** returns a string representation of the weight_initialization */
-std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
+std::string get_comm_type_name(imcomm::comm_type m) {
   if ((int)m < 0 or (int)m >= (int)comm_type_names.size()) {
     throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
            + " Invalid comm_type");
@@ -158,24 +159,25 @@ std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
   return comm_type_names[(int)m];
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_imcomm_from_pbuf(
+std::unique_ptr<callback_base>
+build_imcomm_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   lbann_summary* summarizer) {
   const auto& params = dynamic_cast<const lbann_data::CallbackImComm&>(proto_msg);
   const auto& type_str = params.intertrainer_comm_method();
-  lbann_callback_imcomm::comm_type type = lbann_callback_imcomm::comm_type::NONE;
+  imcomm::comm_type type = imcomm::comm_type::NONE;
   if (type_str == "none") {
-    type = lbann_callback_imcomm::comm_type::NONE;
+    type = imcomm::comm_type::NONE;
   } else if (type_str == "normal") {
-    type = lbann_callback_imcomm::comm_type::NORMAL;
+    type = imcomm::comm_type::NORMAL;
   } else {
     std::ostringstream err;
     err << "invalid inter-model communication type (" << type_str << ")";
     LBANN_ERROR(err.str());
   }
   std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
-  return make_unique<lbann_callback_imcomm>(type, selected_weights, summarizer);
+  return make_unique<imcomm>(type, selected_weights, summarizer);
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

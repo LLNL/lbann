@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
+// debug .hpp .cpp - Callback hooks to debug LBANN
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED
@@ -35,30 +35,31 @@
 #include "lbann/layers/io/input/input_layer.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Print status updates on where training is.
  */
-class lbann_callback_debug_io : public lbann_callback {
+class debug_io : public callback_base {
  public:
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback::on_backward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_begin;
-  using lbann_callback::on_evaluate_forward_prop_end;
+  using callback_base::on_forward_prop_begin;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_backward_prop_begin;
+  using callback_base::on_backward_prop_end;
+  using callback_base::on_evaluate_forward_prop_begin;
+  using callback_base::on_evaluate_forward_prop_end;
 
   /**
    * Debug a particular phase; use invalid to debug every phase.
    */
-  lbann_callback_debug_io(execution_mode phase = execution_mode::invalid,
+  debug_io(execution_mode phase = execution_mode::invalid,
                           int debug_lvl = 0,
                           lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer), m_debug_phase(phase), m_debug_lvl(debug_lvl) {}
-  lbann_callback_debug_io(const lbann_callback_debug_io&) = default;
-  lbann_callback_debug_io& operator=(
-    const lbann_callback_debug_io&) = default;
-  lbann_callback_debug_io* copy() const override { return new lbann_callback_debug_io(*this); }
+    callback_base(1, summarizer), m_debug_phase(phase), m_debug_lvl(debug_lvl) {}
+  debug_io(const debug_io&) = default;
+  debug_io& operator=(
+    const debug_io&) = default;
+  debug_io* copy() const override { return new debug_io(*this); }
   /** Print that a training epoch is being started. */
   void on_epoch_begin(model *m) override;
   /** Print that forward prop for a layer is beginning. */
@@ -85,10 +86,11 @@ class lbann_callback_debug_io : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_debug_io_from_pbuf(
+std::unique_ptr<callback_base>
+build_debug_io_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED

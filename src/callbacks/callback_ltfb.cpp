@@ -33,6 +33,7 @@
 #include "lbann/proto/factories.hpp"
 
 namespace lbann {
+namespace callback {
 
 namespace {
 
@@ -321,22 +322,22 @@ EvalType evaluate(model& m, const std::string& metric_name) {
 
 } // namespace
 
-lbann_callback_ltfb::lbann_callback_ltfb(El::Int batch_interval,
+ltfb::ltfb(El::Int batch_interval,
                                          std::string metric_name,
                                          std::set<std::string> weights_names,
                                          bool low_score_wins,
                                          communication_algorithm comm_algo,
                                          bool exchange_hyperparameters,
                                          lbann_summary *summarizer)
-  : lbann_callback(batch_interval, summarizer),
+  : callback_base(batch_interval, summarizer),
     m_metric_name(std::move(metric_name)),
     m_weights_names(std::move(weights_names)),
     m_low_score_wins(low_score_wins),
     m_comm_algo(comm_algo),
     m_exchange_hyperparameters(exchange_hyperparameters) {}
 
-lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
-  lbann_callback(other),
+ltfb::ltfb(const ltfb& other) :
+  callback_base(other),
   m_metric_name(other.m_metric_name),
   m_weights_names(other.m_weights_names),
   m_low_score_wins(other.m_low_score_wins),
@@ -352,8 +353,8 @@ lbann_callback_ltfb::lbann_callback_ltfb(const lbann_callback_ltfb& other) :
 
 }
 
-lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& other) {
-  lbann_callback::operator=(other);
+ltfb& ltfb::operator=(const ltfb& other) {
+  callback_base::operator=(other);
 
   // Shallow copies
   m_metric_name = other.m_metric_name;
@@ -372,7 +373,7 @@ lbann_callback_ltfb& lbann_callback_ltfb::operator=(const lbann_callback_ltfb& o
   return *this;
 }
 
-void lbann_callback_ltfb::setup(model *m) {
+void ltfb::setup(model *m) {
 
   // Create workspace objects
   const auto& model_weights = m->get_weights();
@@ -384,14 +385,14 @@ void lbann_callback_ltfb::setup(model *m) {
 
   // Make sure model does not have inter-trainer communication callback
   for (auto&& cb : m->get_callbacks()) {
-    if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
+    if (dynamic_cast<imcomm*>(cb) != nullptr) {
       LBANN_ERROR("Detected both LTFB and imcomm callbacks. ");
     }
   }
 
 }
 
-void lbann_callback_ltfb::on_train_begin(model *m) {
+void ltfb::on_train_begin(model *m) {
   auto&& comm = *m->get_comm();
 
   if (comm.am_world_master()) {
@@ -406,7 +407,7 @@ void lbann_callback_ltfb::on_train_begin(model *m) {
   }
 }
 
-void lbann_callback_ltfb::on_batch_begin(model *m) {
+void ltfb::on_batch_begin(model *m) {
   auto&& comm = *m->get_comm();
 
   // Check whether to start LTFB round
@@ -507,8 +508,8 @@ void lbann_callback_ltfb::on_batch_begin(model *m) {
 
 }
 
-lbann_callback_ltfb::communication_algorithm
-lbann_callback_ltfb::string_to_comm_algo(const std::string& str) {
+ltfb::communication_algorithm
+ltfb::string_to_comm_algo(const std::string& str) {
   if (str.empty() || str == "sendrecv_weights") {
     return communication_algorithm::sendrecv_weights;
   }
@@ -524,20 +525,21 @@ lbann_callback_ltfb::string_to_comm_algo(const std::string& str) {
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_ltfb_from_pbuf(
+std::unique_ptr<callback_base>
+build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   lbann_summary* summarizer) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackLTFB&>(proto_msg);
-  return make_unique<lbann_callback_ltfb>(
+  return make_unique<ltfb>(
     params.batch_interval(),
     params.metric(),
     parse_set<std::string>(params.weights()),
     params.low_score_wins(),
-    lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
+    ltfb::string_to_comm_algo(params.communication_algorithm()),
     params.exchange_hyperparameters(),
     summarizer);
 }
 
+} // namespace callback
 } // namespace lbann

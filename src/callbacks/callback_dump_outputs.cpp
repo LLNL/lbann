@@ -35,6 +35,7 @@
 #endif // LBANN_HAS_CNPY
 
 namespace lbann {
+namespace callback {
 
 namespace {
 
@@ -96,12 +97,12 @@ void save_npz(const std::string& file_name,
 
 } // namespace
 
-lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> layer_names,
-                                                         std::set<execution_mode> modes,
-                                                         El::Int batch_interval,
-                                                         std::string directory,
-                                                         std::string file_format)
-  : lbann_callback(std::max(batch_interval, El::Int(1))),
+dump_outputs::dump_outputs(std::set<std::string> layer_names,
+                           std::set<execution_mode> modes,
+                           El::Int batch_interval,
+                           std::string directory,
+                           std::string file_format)
+  : callback_base(std::max(batch_interval, El::Int(1))),
     m_layer_names(std::move(layer_names)),
     m_modes(std::move(modes)),
     m_directory(std::move(directory)),
@@ -133,7 +134,7 @@ lbann_callback_dump_outputs::lbann_callback_dump_outputs(std::set<std::string> l
 
 }
 
-void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
+void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
 
   // Get mini-batch step information
   const auto& mode = m.get_execution_mode();
@@ -178,19 +179,20 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_dump_outputs_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_outputs_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDumpOutputs&>(proto_msg);
   const auto& layer_names = parse_set<std::string>(params.layers());
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<lbann_callback_dump_outputs>(layer_names,
+  return make_unique<dump_outputs>(layer_names,
                                                   modes,
                                                   params.batch_interval(),
                                                   params.directory(),
                                                   params.format());
 }
 
+} // namespace callback
 } // namespace lbann

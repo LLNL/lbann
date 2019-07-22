@@ -23,15 +23,16 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_checksmall .hpp .cpp - Check matrices for small values
+// check_small .hpp .cpp - Check matrices for small values
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Check matrices for whether they include any very small values to avoid
@@ -41,17 +42,17 @@ namespace lbann {
  * smallest floating point value.
  * This will kill the rank if such values are discovered.
  */
-class lbann_callback_checksmall : public lbann_callback {
+class check_small : public callback_base {
  public:
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_end;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_backward_prop_end;
 
-  lbann_callback_checksmall() : lbann_callback() {}
-  lbann_callback_checksmall(const lbann_callback_checksmall&) = default;
-  lbann_callback_checksmall& operator=(
-    const lbann_callback_checksmall&) = default;
-  lbann_callback_checksmall* copy() const override {
-    return new lbann_callback_checksmall(*this);
+  check_small() : callback_base() {}
+  check_small(const check_small&) = default;
+  check_small& operator=(
+    const check_small&) = default;
+  check_small* copy() const override {
+    return new check_small(*this);
   }
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l) override;
@@ -59,7 +60,7 @@ class lbann_callback_checksmall : public lbann_callback {
   void on_backward_prop_end(model *m) override;
   /** Check that weights are good. */
   void on_batch_end(model *m) override;
-  std::string name() const override { return "checksmall"; }
+  std::string name() const override { return "check_small"; }
  private:
   /** Smallest allowable value. */
   static const DataType m_threshold;
@@ -69,8 +70,9 @@ class lbann_callback_checksmall : public lbann_callback {
 
 // Builder function
 ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_checksmall, build_callback_check_small_from_pbuf)
+  check_small, build_check_small_callback_from_pbuf)
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_minibatch_sample_indices .hpp .cpp - Callbacks
+// dump_minibatch_sample_indices .hpp .cpp - Callbacks
 // to dump the list of indices per minibatch
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -35,6 +35,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * @brief Dump sample indices for each minibatch to files.
@@ -43,24 +44,24 @@ namespace lbann {
  * vectors during each mini-batch. This will be slow and produce a lot
  * of output.
  */
-class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
+class dump_minibatch_sample_indices : public callback_base {
  public:
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_end;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_evaluate_forward_prop_end;
 
   /**
    * @param basename The basename for writing files.
    * @param batch_interval The frequency at which to dump sample indices
    */
-  lbann_callback_dump_minibatch_sample_indices(std::string basename,
+  dump_minibatch_sample_indices(std::string basename,
                                                int batch_interval = 1) :
-    lbann_callback(batch_interval), m_basename(std::move(basename)) {}
-  lbann_callback_dump_minibatch_sample_indices(
-    const lbann_callback_dump_minibatch_sample_indices&) = default;
-  lbann_callback_dump_minibatch_sample_indices& operator=(
-    const lbann_callback_dump_minibatch_sample_indices&) = default;
-  lbann_callback_dump_minibatch_sample_indices* copy() const override {
-    return new lbann_callback_dump_minibatch_sample_indices(*this);
+    callback_base(batch_interval), m_basename(std::move(basename)) {}
+  dump_minibatch_sample_indices(
+    const dump_minibatch_sample_indices&) = default;
+  dump_minibatch_sample_indices& operator=(
+    const dump_minibatch_sample_indices&) = default;
+  dump_minibatch_sample_indices* copy() const override {
+    return new dump_minibatch_sample_indices(*this);
   }
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_evaluate_forward_prop_end(model *m, Layer *l) override;
@@ -74,10 +75,11 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_dump_mb_indices_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_mb_indices_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED

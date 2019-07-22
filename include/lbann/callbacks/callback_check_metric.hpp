@@ -31,26 +31,27 @@
 #include <set>
 
 namespace lbann {
+namespace callback {
 
 /** Metric checking callback.
  *  Checks if a metric value falls within an expected range.
  */
-class lbann_callback_check_metric : public lbann_callback {
+class check_metric : public callback_base {
 public:
 
-  lbann_callback_check_metric(std::string metric_name,
-                              std::set<execution_mode> modes,
-                              EvalType lower_bound,
-                              EvalType upper_bound,
-                              bool error_on_failure);
-  lbann_callback_check_metric* copy() const override {
-    return new lbann_callback_check_metric(*this);
+  check_metric(std::string metric_name,
+               std::set<execution_mode> modes,
+               EvalType lower_bound,
+               EvalType upper_bound,
+               bool error_on_failure);
+  check_metric* copy() const override {
+    return new check_metric(*this);
   }
   std::string name() const override { return "check metric"; }
 
-  void on_epoch_end(model* m) override      { check_metric(*m); }
-  void on_validation_end(model* m) override { check_metric(*m); }
-  void on_test_end(model* m) override       { check_metric(*m); }
+  void on_epoch_end(model* m) override      { do_check_metric(*m); }
+  void on_validation_end(model* m) override { do_check_metric(*m); }
+  void on_test_end(model* m) override       { do_check_metric(*m); }
 
 private:
 
@@ -71,15 +72,16 @@ private:
   /** Perform metric check.
    *  Does nothing if current execution mode is not in m_modes;
    */
-  void check_metric(const model& m) const;
+  void do_check_metric(const model& m) const;
 
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_check_metric_from_pbuf(
+std::unique_ptr<callback_base>
+build_check_metric_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_CHECK_METRIC_HPP_INCLUDED

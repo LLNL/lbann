@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_minibatch_sample_indices .hpp .cpp - Callbacks
+// dump_minibatch_sample_indices .hpp .cpp - Callbacks
 // to dump the list of indices per minibatch
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -37,8 +37,9 @@
 #include <cstdlib>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
+void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
   // Print minibatch sample indices of input layers
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input != nullptr) {
@@ -69,21 +70,23 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
   }
 }
 
-void lbann_callback_dump_minibatch_sample_indices::on_forward_prop_end(model *m, Layer *l) {
+void dump_minibatch_sample_indices::on_forward_prop_end(model *m, Layer *l) {
   dump_to_file(m, l, m->get_step());
 }
 
-void lbann_callback_dump_minibatch_sample_indices::on_evaluate_forward_prop_end(model *m, Layer *l) {
+void dump_minibatch_sample_indices::on_evaluate_forward_prop_end(model *m, Layer *l) {
   dump_to_file(m, l, m->get_step());
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_dump_mb_indices_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_mb_indices_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDumpMBIndices&>(proto_msg);
-  return make_unique<lbann_callback_dump_minibatch_sample_indices>(
+  return make_unique<dump_minibatch_sample_indices>(
     params.basename(),
     params.interval());
 }
-}  // namespace lbann
+
+} // namespace callback
+} // namespace lbann

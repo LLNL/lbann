@@ -29,15 +29,16 @@
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_perturb_adam::lbann_callback_perturb_adam(DataType learning_rate_factor,
+perturb_adam::perturb_adam(DataType learning_rate_factor,
                                                          DataType beta1_factor,
                                                          DataType beta2_factor,
                                                          DataType eps_factor,
                                                          bool perturb_during_training,
                                                          El::Int batch_interval,
                                                          std::set<std::string> weights_names)
-  : lbann_callback(batch_interval),
+  : callback_base(batch_interval),
     m_learning_rate_factor(learning_rate_factor),
     m_beta1_factor(beta1_factor),
     m_beta2_factor(beta2_factor),
@@ -45,17 +46,17 @@ lbann_callback_perturb_adam::lbann_callback_perturb_adam(DataType learning_rate_
     m_perturb_during_training(perturb_during_training),
     m_weights_names(std::move(weights_names)) {}
 
-void lbann_callback_perturb_adam::setup(model* m) {
+void perturb_adam::setup(model* m) {
   perturb(*m);
 }
 
-void lbann_callback_perturb_adam::on_batch_begin(model* m) {
+void perturb_adam::on_batch_begin(model* m) {
   if (m_perturb_during_training && m->get_step() > 0) {
     perturb(*m);
   }
 }
 
-void lbann_callback_perturb_adam::perturb(model& m) const {
+void perturb_adam::perturb(model& m) const {
   auto* comm = m.get_comm();
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
@@ -92,7 +93,7 @@ void lbann_callback_perturb_adam::perturb(model& m) const {
   }
 }
 
-void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
+void perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
 
   // Perturb hyperparameters on master process
   std::vector<DataType> hyperparameters(4);
@@ -161,12 +162,12 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_perturb_adam_from_pbuf(
+std::unique_ptr<callback_base>
+build_perturb_adam_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackPerturbAdam&>(proto_msg);
-  return make_unique<lbann_callback_perturb_adam>(
+  return make_unique<perturb_adam>(
     params.learning_rate_factor(),
     params.beta1_factor(),
     params.beta2_factor(),
@@ -176,4 +177,5 @@ build_callback_perturb_adam_from_pbuf(
     parse_set<std::string>(params.weights()));
 }
 
+} // namespace callback
 } // namespace lbann

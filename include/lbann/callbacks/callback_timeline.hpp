@@ -33,6 +33,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Record a timeline of training runtime on each rank and output it to a
@@ -41,25 +42,25 @@ namespace lbann {
  * Each line is a separate event, written as name:start-time:end-time.
  * Times are relative to the beginning of training.
  */
-class lbann_callback_timeline : public lbann_callback {
+class timeline : public callback_base {
  public:
-  lbann_callback_timeline(std::string outdir) : lbann_callback(1),
+  timeline(std::string outdir) : callback_base(1),
                                                 m_outdir(outdir) {}
-  lbann_callback_timeline(const lbann_callback_timeline&) = default;
-  lbann_callback_timeline& operator=(const lbann_callback_timeline&) = default;
-  lbann_callback_timeline* copy() const override {
-    return new lbann_callback_timeline(*this);
+  timeline(const timeline&) = default;
+  timeline& operator=(const timeline&) = default;
+  timeline* copy() const override {
+    return new timeline(*this);
   }
   std::string name() const override { return "timeline"; }
   void on_train_begin(model *m) override;
   void on_train_end(model *m) override;
 
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback::on_backward_prop_end;
-  using lbann_callback::on_optimize_begin;
-  using lbann_callback::on_optimize_end;
+  using callback_base::on_forward_prop_begin;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_backward_prop_begin;
+  using callback_base::on_backward_prop_end;
+  using callback_base::on_optimize_begin;
+  using callback_base::on_optimize_end;
 
   void on_forward_prop_begin(model *m, Layer *l) override;
   void on_forward_prop_end(model *m, Layer *l) override;
@@ -88,10 +89,11 @@ class lbann_callback_timeline : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_timeline_from_pbuf(
+std::unique_ptr<callback_base>
+build_timeline_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED

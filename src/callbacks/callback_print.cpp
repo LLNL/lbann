@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_print .hpp .cpp - Callback hooks to print information
+// print .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
@@ -32,8 +32,9 @@
 #include <iomanip>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_print::setup(model *m) {
+void print::setup(model *m) {
 #ifdef LBANN_VERSION
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
@@ -43,7 +44,7 @@ void lbann_callback_print::setup(model *m) {
 #endif
 }
 
-void lbann_callback_print::on_epoch_begin(model *m) {
+void print::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
 
@@ -115,19 +116,19 @@ void lbann_callback_print::on_epoch_begin(model *m) {
   }
 }
 
-void lbann_callback_print::on_epoch_end(model *m) {
+void print::on_epoch_end(model *m) {
   report_results(m);
 }
 
-void lbann_callback_print::on_validation_end(model *m) {
+void print::on_validation_end(model *m) {
   report_results(m);
 }
 
-void lbann_callback_print::on_test_end(model *m) {
+void print::on_test_end(model *m) {
   report_results(m);
 }
 
-void lbann_callback_print::report_results(model *m) {
+void print::report_results(model *m) {
   lbann_comm *comm = m->get_comm();
 
   // Get string for execution mode
@@ -246,13 +247,14 @@ void lbann_callback_print::report_results(model *m) {
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_print_from_pbuf(
+std::unique_ptr<callback_base>
+build_print_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackPrint&>(proto_msg);
-  return make_unique<lbann_callback_print>(params.interval(),
+  return make_unique<print>(params.interval(),
                                            params.print_global_stat_only());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

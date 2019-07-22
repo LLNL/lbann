@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
+// io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <utility>
@@ -33,8 +33,9 @@
 #include "lbann/proto/proto_common.hpp"
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_io::on_epoch_end(model *m) {
+void io::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
@@ -50,7 +51,7 @@ void lbann_callback_io::on_epoch_end(model *m) {
   }
 }
 
-void lbann_callback_io::on_test_end(model *m) {
+void io::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
@@ -66,13 +67,14 @@ void lbann_callback_io::on_test_end(model *m) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_disp_io_stats_from_pbuf(
+std::unique_ptr<callback_base>
+build_disp_io_stats_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDispIOStats&>(proto_msg);
-  return make_unique<lbann_callback_io>(
+  return make_unique<io>(
     parse_list<std::string>(params.layers()));
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

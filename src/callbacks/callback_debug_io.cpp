@@ -23,21 +23,22 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_debug .hpp .cpp - Callback hooks to debug LBANN
+// debug .hpp .cpp - Callback hooks to debug LBANN
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_debug_io.hpp"
 
 namespace lbann {
+namespace callback {
 
 /// BVE FIXME @todo The use of execution_mode invalid needs to be reconsidered
-void lbann_callback_debug_io::on_epoch_begin(model *m) {
+void debug_io::on_epoch_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::training) {
     print_phase_start(m, execution_mode::training);
   }
 }
 
-void lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
+void debug_io::on_forward_prop_begin(model *m, Layer *l) {
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
@@ -53,7 +54,7 @@ void lbann_callback_debug_io::on_forward_prop_begin(model *m, Layer *l) {
   /// I think that the reset mini batch index may be off
 }
 
-void lbann_callback_debug_io::print_fp_start(model *m, generic_input_layer *input) {
+void debug_io::print_fp_start(model *m, generic_input_layer *input) {
   const auto& step = m->get_step();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
             << "." << m->get_comm()->get_rank_in_trainer()
@@ -73,7 +74,7 @@ void lbann_callback_debug_io::print_fp_start(model *m, generic_input_layer *inpu
 }
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
-void lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
+void debug_io::print_phase_start(model *m, execution_mode mode) {
 
   // Get data reader from first input layer in model
   generic_data_reader* data_reader = nullptr;
@@ -124,13 +125,13 @@ void lbann_callback_debug_io::print_phase_start(model *m, execution_mode mode) {
 ////////////////////////////////////////////////////////////////////////////////
 // Evaluation phase debugging
 ////////////////////////////////////////////////////////////////////////////////
-void lbann_callback_debug_io::on_validation_begin(model *m) {
+void debug_io::on_validation_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::validation) {
     print_phase_start(m, execution_mode::validation);
   }
 }
 
-void lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+void debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
@@ -146,14 +147,14 @@ void lbann_callback_debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l)
 ////////////////////////////////////////////////////////////////////////////////
 // Testing phase debugging
 ////////////////////////////////////////////////////////////////////////////////
-void lbann_callback_debug_io::on_test_begin(model *m) {
+void debug_io::on_test_begin(model *m) {
   if(m_debug_phase == execution_mode::invalid || m_debug_phase == execution_mode::testing) {
     print_phase_start(m, execution_mode::testing);
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_debug_io_from_pbuf(
+std::unique_ptr<callback_base>
+build_debug_io_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDebugIO&>(proto_msg);
@@ -163,10 +164,11 @@ build_callback_debug_io_from_pbuf(
   case execution_mode::training:
   case execution_mode::validation:
   case execution_mode::testing:
-    return make_unique<lbann_callback_debug_io>(phase, lvl);
+    return make_unique<debug_io>(phase, lvl);
   default:
-    return make_unique<lbann_callback_debug_io>();
+    return make_unique<debug_io>();
   }
 }
 
-}// namespace lbann
+} // namespace callback
+} // namespace lbann

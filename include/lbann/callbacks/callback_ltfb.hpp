@@ -33,6 +33,7 @@
 #include <vector>
 
 namespace lbann {
+namespace callback {
 
 /** @brief Tournament training.
  *
@@ -57,7 +58,7 @@ namespace lbann {
  *  @todo Exchange optimizer state.
  *  @todo Support heterogeneous models.
  */
-class lbann_callback_ltfb : public lbann_callback {
+class ltfb : public callback_base {
 public:
 
   /** Inter-trainer communication scheme for LTFB.
@@ -114,7 +115,7 @@ public:
    *  @param comm_algo      Inter-trainer communication scheme.
    *  @param summarizer     The summarizer to use for this callback
    */
-  lbann_callback_ltfb(
+  ltfb(
     El::Int batch_interval,
     std::string metric_name,
     std::set<std::string> weights_names = std::set<std::string>(),
@@ -122,9 +123,9 @@ public:
     communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
     bool exchange_hyperparameters = false,
     lbann_summary *summarizer = nullptr);
-  lbann_callback_ltfb(const lbann_callback_ltfb& other);
-  lbann_callback_ltfb& operator=(const lbann_callback_ltfb& other);
-  lbann_callback_ltfb* copy() const override { return new lbann_callback_ltfb(*this); }
+  ltfb(const ltfb& other);
+  ltfb& operator=(const ltfb& other);
+  ltfb* copy() const override { return new ltfb(*this); }
   std::string name() const override { return "LTFB"; }
 
   void setup(model *m) override;
@@ -169,10 +170,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_ltfb_from_pbuf(
+std::unique_ptr<callback_base>
+build_ltfb_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED

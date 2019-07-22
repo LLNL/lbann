@@ -34,21 +34,22 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Stop training after validation error stops improving.
  */
-class lbann_callback_early_stopping : public lbann_callback {
+class early_stopping : public callback_base {
  public:
   /**
    * Continue training until score has not improved for patience epochs.
    */
-  lbann_callback_early_stopping(int64_t patience);
-  lbann_callback_early_stopping(const lbann_callback_early_stopping&) = default;
-  lbann_callback_early_stopping& operator=(
-    const lbann_callback_early_stopping&) = default;
-  lbann_callback_early_stopping* copy() const override {
-    return new lbann_callback_early_stopping(*this);
+  early_stopping(int64_t patience);
+  early_stopping(const early_stopping&) = default;
+  early_stopping& operator=(
+    const early_stopping&) = default;
+  early_stopping* copy() const override {
+    return new early_stopping(*this);
   }
   /** Update validation score and check for early stopping. */
   void on_validation_end(model *m) override;
@@ -63,10 +64,11 @@ class lbann_callback_early_stopping : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_early_stopping_from_pbuf(
+std::unique_ptr<callback_base>
+build_early_stopping_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED

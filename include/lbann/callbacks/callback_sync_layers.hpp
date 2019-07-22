@@ -32,13 +32,14 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** Synchronize layers after forward and backward prop.
  * Additionally updates layer timing information to account for this.
  * Note that this callback should come before the summarizer callback to report
  * time correctly (otherwise it will be shifted by one mini-batch).
  */
-class lbann_callback_sync_layers : public lbann_callback {
+class sync_layers : public callback_base {
  public:
   /**
    * @param sync_gpus The GPU stream will be synchronized.
@@ -46,20 +47,20 @@ class lbann_callback_sync_layers : public lbann_callback {
    * @param only_input The only synchronization will be after the input layer in
    * forward prop.
    */
-  lbann_callback_sync_layers(bool sync_gpus = true, bool sync_mpi = true,
+  sync_layers(bool sync_gpus = true, bool sync_mpi = true,
                              bool only_input = false) :
-    lbann_callback(1), m_sync_gpus(sync_gpus), m_sync_mpi(sync_mpi),
+    callback_base(1), m_sync_gpus(sync_gpus), m_sync_mpi(sync_mpi),
     m_only_input(only_input) {}
-  lbann_callback_sync_layers(const lbann_callback_sync_layers&) = default;
-  lbann_callback_sync_layers& operator=(
-    const lbann_callback_sync_layers&) = default;
-  lbann_callback_sync_layers* copy() const override {
-    return new lbann_callback_sync_layers(*this);
+  sync_layers(const sync_layers&) = default;
+  sync_layers& operator=(
+    const sync_layers&) = default;
+  sync_layers* copy() const override {
+    return new sync_layers(*this);
   }
   std::string name() const override { return "sync_layers"; }
 
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_end;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_backward_prop_end;
 
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_backward_prop_end(model *m, Layer *l) override;
@@ -76,10 +77,11 @@ class lbann_callback_sync_layers : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_sync_layers_from_pbuf(
+std::unique_ptr<callback_base>
+build_sync_layers_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SYNC_LAYERS_HPP_INCLUDED

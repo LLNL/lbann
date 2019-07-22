@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_checkpoint .hpp .cpp - Callback hooks to checkpoint model
+// checkpoint .hpp .cpp - Callback hooks to checkpoint model
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECKPOINT_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECKPOINT_HPP_INCLUDED
@@ -32,9 +32,10 @@
 #include "lbann/io/persist.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** @brief Checkpoint at given interval in given directory */
-class lbann_callback_checkpoint : public lbann_callback {
+class checkpoint : public callback_base {
  public:
 
   /** @brief Construct the checkpoint callback
@@ -51,14 +52,14 @@ class lbann_callback_checkpoint : public lbann_callback {
    *  @param ckpt_dist_epochs The frequency of distributed checkpoints in epochs
    *  @param ckpt_dist_steps The frequence of distributed checkpoints in steps
    */
-  lbann_callback_checkpoint(std::string checkpoint_dir,
-                            int checkpoint_epochs,
-                            int checkpoint_steps,
-                            int checkpoint_secs,
-                            std::string per_rank_dir,
-                            int ckpt_dist_epochs,
-                            int ckpt_dist_steps) :
-    lbann_callback(),
+  checkpoint(std::string checkpoint_dir,
+             int checkpoint_epochs,
+             int checkpoint_steps,
+             int checkpoint_secs,
+             std::string per_rank_dir,
+             int ckpt_dist_epochs,
+             int ckpt_dist_steps) :
+    callback_base(),
     m_checkpoint_dir(checkpoint_dir),
     m_checkpoint_epochs(checkpoint_epochs),
     m_checkpoint_steps(checkpoint_steps),
@@ -66,9 +67,9 @@ class lbann_callback_checkpoint : public lbann_callback {
     m_per_rank_dir(per_rank_dir),
     m_ckpt_dist_epochs(ckpt_dist_epochs),
     m_ckpt_dist_steps(ckpt_dist_steps) {}
-  lbann_callback_checkpoint(const lbann_callback_checkpoint&) = default;
-  lbann_callback_checkpoint& operator=(const lbann_callback_checkpoint&) = default;
-  lbann_callback_checkpoint* copy() const override { return new lbann_callback_checkpoint(*this); }
+  checkpoint(const checkpoint&) = default;
+  checkpoint& operator=(const checkpoint&) = default;
+  checkpoint* copy() const override { return new checkpoint(*this); }
   void setup(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
@@ -103,10 +104,11 @@ class lbann_callback_checkpoint : public lbann_callback {
   }
 
   bool need_checkpoint(model *m);
-  bool checkpoint(model *m);
   bool restart(model *m);
   std::string name() const override { return "checkpoint"; }
  protected:
+  bool do_checkpoint(model *m);
+ private:
   std::string m_checkpoint_dir;
   int m_checkpoint_epochs;
   int m_checkpoint_steps;
@@ -203,10 +205,11 @@ static inline bool read_latest(std::string filename, int *epochLast, int *trainL
 }
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_checkpoint_from_pbuf(
+std::unique_ptr<callback_base>
+build_checkpoint_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECKPOINT_HPP_INCLUDED

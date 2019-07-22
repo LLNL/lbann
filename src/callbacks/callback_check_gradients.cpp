@@ -31,6 +31,7 @@
 #include "callbacks.pb.h"
 
 namespace lbann {
+namespace callback {
 
 namespace {
 
@@ -57,15 +58,15 @@ DataType compute_objective_function(model& m) {
 
 } // namespace
 
-lbann_callback_check_gradients
-  ::lbann_callback_check_gradients(DataType step_size,
+check_gradients
+  ::check_gradients(DataType step_size,
                                    bool verbose,
                                    bool error_on_failure)
   : m_step_size(step_size),
     m_verbose(verbose),
     m_error_on_failure(error_on_failure) {}
 
-void lbann_callback_check_gradients::on_test_end(model *m) {
+void check_gradients::on_test_end(model *m) {
 
   // Get objects from model
   lbann_comm *comm = m->get_comm();
@@ -229,14 +230,15 @@ void lbann_callback_check_gradients::on_test_end(model *m) {
 }
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_check_gradients_from_pbuf(
+std::unique_ptr<callback_base>
+build_check_gradients_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackCheckGradients&>(proto_msg);
-  return make_unique<lbann_callback_check_gradients>(params.step_size(),
+  return make_unique<check_gradients>(params.step_size(),
                                                      params.verbose(),
                                                      params.error_on_failure());
 }
 
+} // namespace callback
 } // namespace lbann

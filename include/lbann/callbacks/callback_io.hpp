@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
+// io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
@@ -37,21 +37,22 @@
 #include <vector>
 
 namespace lbann {
+namespace callback {
 
 /**
  * Print information on the amount of IO that layers do.
  */
-class lbann_callback_io : public lbann_callback {
+class io : public callback_base {
  public:
-  lbann_callback_io() = default;
+  io() = default;
   /** Only apply to specific layers. */
-  lbann_callback_io(std::vector<std::string> const& layers)
+  io(std::vector<std::string> const& layers)
     : m_layers(layers.begin(), layers.end()) {}
 
-  lbann_callback_io(const lbann_callback_io&) = default;
-  lbann_callback_io& operator=(const lbann_callback_io&) = default;
-  lbann_callback_io* copy() const override {
-    return new lbann_callback_io(*this);
+  io(const io&) = default;
+  io& operator=(const io&) = default;
+  io* copy() const override {
+    return new io(*this);
   }
   /** Report how much I/O has occured per data reader */
   void on_epoch_end(model *m) override;
@@ -63,10 +64,11 @@ class lbann_callback_io : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_disp_io_stats_from_pbuf(
+std::unique_ptr<callback_base>
+build_disp_io_stats_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED

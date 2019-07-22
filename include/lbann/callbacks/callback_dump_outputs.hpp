@@ -33,6 +33,7 @@
 #include <string>
 
 namespace lbann {
+namespace callback {
 
 /** @brief Dump layer output tensors to files.
  *
@@ -50,7 +51,7 @@ namespace lbann {
  *
  *  CNPY is required to export to NumPy file formats (npy and npz).
  */
-class lbann_callback_dump_outputs : public lbann_callback {
+class dump_outputs : public callback_base {
 public:
 
   /** @brief Construct a callback to dump outputs.
@@ -66,23 +67,25 @@ public:
    *  @param file_format    Output file format. Options are csv, tsv,
    *                        npy, npz (default: csv).
    */
-  lbann_callback_dump_outputs(
+  dump_outputs(
     std::set<std::string> layer_names,// = std::set<std::string>(),
     std::set<execution_mode> modes, // = std::set<std::string>(),
     El::Int batch_interval = 0,
     std::string directory = "",
     std::string file_format = "");
 
-  lbann_callback_dump_outputs* copy() const override {
-    return new lbann_callback_dump_outputs(*this);
+  dump_outputs* copy() const override {
+    return new dump_outputs(*this);
   }
   std::string name() const override { return "dump outputs"; }
 
-  void on_forward_prop_end(model* m, Layer* l) override          { dump_outputs(*m, *l); }
+  void on_forward_prop_end(model* m, Layer* l) override {
+    do_dump_outputs(*m, *l);
+  }
   void on_evaluate_forward_prop_end(model* m, Layer* l) override {
-       if(m->get_step() % m_batch_interval == 0) {
-         dump_outputs(*m, *l);
-       }
+    if(m->get_step() % m_batch_interval == 0) {
+      do_dump_outputs(*m, *l);
+    }
   }
 
 private:
@@ -108,15 +111,16 @@ private:
   /** @brief   Dump outputs to file.
    *  @details Returns immediately if an output dump is not needed.
    */
-  void dump_outputs(const model& m, const Layer& l);
+  void do_dump_outputs(const model& m, const Layer& l);
 
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_dump_outputs_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_outputs_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_DUMP_OUTPUTS_HPP_INCLUDED

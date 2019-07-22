@@ -30,6 +30,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** @brief Gradient checking callback.
  *
@@ -40,7 +41,7 @@ namespace lbann {
  *  derivative computed during backprop, the gradient check has
  *  failed.
  */
-class lbann_callback_check_gradients : public lbann_callback {
+class check_gradients : public callback_base {
 public:
 
   /**
@@ -53,11 +54,11 @@ public:
    *  @param error_on_failure   Whether to throw an exception for
    *                            large gradient errors.
    */
-  lbann_callback_check_gradients(DataType step_size = DataType(0),
+  check_gradients(DataType step_size = DataType(0),
                                  bool verbose = false,
                                  bool error_on_failure = false);
-  lbann_callback_check_gradients* copy() const override {
-    return new lbann_callback_check_gradients(*this);
+  check_gradients* copy() const override {
+    return new check_gradients(*this);
   }
   void on_test_end(model *m) override;
   std::string name() const override { return "check gradients"; }
@@ -74,10 +75,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_check_gradients_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*);
+std::unique_ptr<callback_base>
+build_check_gradients_callback_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED

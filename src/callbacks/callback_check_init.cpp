@@ -23,15 +23,16 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_check_init .hpp .cpp - Check multi-model init
+// check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_check_init.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_check_init::on_train_begin(model *m) {
+void check_init::on_train_begin(model *m) {
   // Skip after the first epoch.
   if (m->get_epoch() != 0) {
     return;
@@ -71,7 +72,7 @@ void lbann_callback_check_init::on_train_begin(model *m) {
   }
 }
 
-bool lbann_callback_check_init::check_equal(const AbsMat& x, const AbsMat& y) const {
+bool check_init::check_equal(const AbsMat& x, const AbsMat& y) const {
   const El::Int height = x.Height();
   const El::Int width = x.Width();
   if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {
@@ -87,4 +88,5 @@ bool lbann_callback_check_init::check_equal(const AbsMat& x, const AbsMat& y) co
   return true;
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

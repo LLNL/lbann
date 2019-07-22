@@ -422,7 +422,7 @@ void model::add_weights(weights* w) {
 
 }
 
-void model::add_callback(lbann_callback *cb) {
+void model::add_callback(callback_base *cb) {
   if (cb == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a callback.");
   }
@@ -1728,12 +1728,11 @@ bool model::reload_weights(const std::string latest, const std::vector<std::stri
 
 bool model::save_model() {
   for (auto* c : m_callbacks) {
-    auto *cb = dynamic_cast<lbann_callback_save_model*>(c);
-    if(cb != nullptr) {
-      return cb->save_model(this);
+    if (auto *cb = dynamic_cast<callback::save_model*>(c)) {
+      return cb->do_save_model(this);
     }
   }
-  if(m_comm->am_trainer_master()) {
+  if (m_comm->am_trainer_master()) {
     LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
   }
   return false;

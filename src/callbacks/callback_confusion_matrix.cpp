@@ -27,21 +27,22 @@
 #include "lbann/callbacks/callback_confusion_matrix.hpp"
 
 namespace lbann {
+namespace callback {
 
 // ---------------------------------------------------------
 // Constructors
 // ---------------------------------------------------------
 
-lbann_callback_confusion_matrix::lbann_callback_confusion_matrix(std::string prediction_layer,
+confusion_matrix::confusion_matrix(std::string prediction_layer,
                                                                  std::string label_layer,
                                                                  std::string prefix)
-  : lbann_callback(1, nullptr),
+  : callback_base(1, nullptr),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
     m_prefix(std::move(prefix)) {}
 
-lbann_callback_confusion_matrix::lbann_callback_confusion_matrix(const lbann_callback_confusion_matrix& other)
-  : lbann_callback(other),
+confusion_matrix::confusion_matrix(const confusion_matrix& other)
+  : callback_base(other),
     m_prediction_layer(other.m_prediction_layer),
     m_label_layer(other.m_label_layer),
     m_prefix(other.m_prefix),
@@ -49,8 +50,8 @@ lbann_callback_confusion_matrix::lbann_callback_confusion_matrix(const lbann_cal
     m_predictions_v(other.m_predictions_v ? other.m_predictions_v->Copy() : nullptr),
     m_labels_v(other.m_labels_v ? other.m_labels_v->Copy() : nullptr) {}
 
-lbann_callback_confusion_matrix& lbann_callback_confusion_matrix::operator=(const lbann_callback_confusion_matrix& other) {
-  lbann_callback::operator=(other);
+confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other) {
+  callback_base::operator=(other);
   m_prediction_layer = other.m_prediction_layer;
   m_label_layer = other.m_label_layer;
   m_prefix = other.m_prefix;
@@ -64,8 +65,8 @@ lbann_callback_confusion_matrix& lbann_callback_confusion_matrix::operator=(cons
 // Setup
 // ---------------------------------------------------------
 
-void lbann_callback_confusion_matrix::setup(model* m) {
-  lbann_callback::setup(m);
+void confusion_matrix::setup(model* m) {
+  callback_base::setup(m);
 
   // Initialize matrix views/copies
   const auto& predictions = get_predictions(*m);
@@ -93,7 +94,7 @@ void lbann_callback_confusion_matrix::setup(model* m) {
 // Matrix access functions
 // ---------------------------------------------------------
 
-const AbsDistMat& lbann_callback_confusion_matrix::get_predictions(const model& m) const {
+const AbsDistMat& confusion_matrix::get_predictions(const model& m) const {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_prediction_layer) {
       return l->get_activations();
@@ -106,7 +107,7 @@ const AbsDistMat& lbann_callback_confusion_matrix::get_predictions(const model& 
   return m.get_layers()[0]->get_activations();
 }
 
-const AbsDistMat& lbann_callback_confusion_matrix::get_labels(const model& m) const {
+const AbsDistMat& confusion_matrix::get_labels(const model& m) const {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_label_layer) {
       return l->get_activations();
@@ -123,13 +124,13 @@ const AbsDistMat& lbann_callback_confusion_matrix::get_labels(const model& m) co
 // Count management functions
 // ---------------------------------------------------------
 
-void lbann_callback_confusion_matrix::reset_counts(const model& m) {
+void confusion_matrix::reset_counts(const model& m) {
   auto& counts = m_counts[m.get_execution_mode()];
   const auto& num_classes = get_predictions(m).Height();
   counts.assign(num_classes * num_classes, 0);
 }
 
-void lbann_callback_confusion_matrix::update_counts(const model& m) {
+void confusion_matrix::update_counts(const model& m) {
   constexpr DataType zero = 0;
 
   // Get predictions
@@ -177,7 +178,7 @@ void lbann_callback_confusion_matrix::update_counts(const model& m) {
 
 }
 
-void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
+void confusion_matrix::save_confusion_matrix(const model& m) {
 
   // Get counts
   const auto& mode = m.get_execution_mode();
@@ -232,14 +233,15 @@ void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_confusion_matrix_from_pbuf(
+std::unique_ptr<callback_base>
+build_confusion_matrix_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackConfusionMatrix&>(proto_msg);
-  return make_unique<lbann_callback_confusion_matrix>(params.prediction(),
+  return make_unique<confusion_matrix>(params.prediction(),
                                                       params.label(),
                                                       params.prefix());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

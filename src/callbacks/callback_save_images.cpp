@@ -34,6 +34,7 @@
 #endif // LBANN_HAS_OPENCV
 
 namespace lbann {
+namespace callback {
 
 namespace {
 
@@ -130,10 +131,10 @@ void save_image(std::string prefix,
 
 } // namespace
 
-lbann_callback_save_images::lbann_callback_save_images(std::vector<std::string> layer_names,
+save_images::save_images(std::vector<std::string> layer_names,
                                                        std::string image_format,
                                                        std::string image_prefix)
-  : lbann_callback(),
+  : callback_base(),
     m_layer_names(std::move(layer_names)),
     m_image_format(image_format.empty() ? "jpg" : image_format),
     m_image_prefix(std::move(image_prefix)) {
@@ -142,29 +143,30 @@ lbann_callback_save_images::lbann_callback_save_images(std::vector<std::string> 
 #endif // LBANN_HAS_OPENCV
 }
 
-void lbann_callback_save_images::on_epoch_end(model *m) {
+void save_images::on_epoch_end(model *m) {
   save_image(m_image_prefix + "epoch" + std::to_string(m->get_epoch()),
              m_image_format,
              m->get_layers(),
              m_layer_names);
 }
 
-void lbann_callback_save_images::on_test_end(model *m) {
+void save_images::on_test_end(model *m) {
   save_image(m_image_prefix + "test",
              m_image_format,
              m->get_layers(),
              m_layer_names);
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_save_images_from_pbuf(
+std::unique_ptr<callback_base>
+build_save_images_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSaveImages&>(proto_msg);
-  return make_unique<lbann_callback_save_images>(
+  return make_unique<save_images>(
     parse_list<>(params.layers()),
     params.image_format(),
     params.image_prefix());
 }
 
+} // namespace callback
 } // namespace lbann

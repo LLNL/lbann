@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_topk_models .hpp .cpp - Callback to save top k models
+// save_topk_models .hpp .cpp - Callback to save top k models
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_SAVE_TOPK_MODELS_HPP_INCLUDED
@@ -32,6 +32,7 @@
 #include "lbann/callbacks/callback_save_model.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** Save_topk_models for (e.g., inference and other analysis).
    * @param dir directory to save model
@@ -40,13 +41,13 @@ namespace lbann {
    * @ordering for the topk, descending order is default
    * Note: may end up saving more than k models if multiple models (trainers) have the same metric score
  */
-class lbann_callback_save_topk_models : public lbann_callback_save_model {
+class save_topk_models : public save_model {
  public:
-  lbann_callback_save_topk_models(std::string dir, int k, std::string metric_name, bool ascending_ordering=false) :
-  lbann_callback_save_model(dir,true), m_k(k),m_metric_name(metric_name),m_ascending_ordering(ascending_ordering) {}
-  lbann_callback_save_topk_models(const lbann_callback_save_topk_models&) = default;
-  lbann_callback_save_topk_models& operator=(const lbann_callback_save_topk_models&) = default;
-  lbann_callback_save_topk_models* copy() const override { return new lbann_callback_save_topk_models(*this); }
+  save_topk_models(std::string dir, int k, std::string metric_name, bool ascending_ordering=false) :
+  save_model(dir,true), m_k(k),m_metric_name(metric_name),m_ascending_ordering(ascending_ordering) {}
+  save_topk_models(const save_topk_models&) = default;
+  save_topk_models& operator=(const save_topk_models&) = default;
+  save_topk_models* copy() const override { return new save_topk_models(*this); }
   void on_test_end(model *m) override;
   std::string name() const override { return "save_topk_models"; }
 
@@ -60,10 +61,11 @@ class lbann_callback_save_topk_models : public lbann_callback_save_model {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_save_topk_models_from_pbuf(
+std::unique_ptr<callback_base>
+build_save_topk_models_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_TOPK_MODELS_HPP_INCLUDED

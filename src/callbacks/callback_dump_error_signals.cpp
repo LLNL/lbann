@@ -29,8 +29,9 @@
 #include <callbacks.pb.h>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
+void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
 
   // Write each activation matrix to file
   for (int i = 0; i < l->get_num_parents(); ++i) {
@@ -52,12 +53,13 @@ void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l)
 
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_dump_error_signals_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_error_signals_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDumpErrorSignals&>(proto_msg);
-  return make_unique<lbann_callback_dump_error_signals>(params.basename());
+  return make_unique<dump_error_signals>(params.basename());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_gradients .hpp .cpp - Callbacks to dump gradients
+// dump_gradients .hpp .cpp - Callbacks to dump gradients
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_dump_gradients.hpp"
@@ -33,8 +33,9 @@
 #include <vector>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
+void dump_gradients::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
@@ -50,13 +51,14 @@ void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_dump_gradients_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_gradients_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDumpGradients&>(proto_msg);
-  return make_unique<lbann_callback_dump_gradients>(params.basename(),
+  return make_unique<dump_gradients>(params.basename(),
                                                     params.interval());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

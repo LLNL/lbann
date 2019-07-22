@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_dump_weights .hpp .cpp - Callbacks to dump weight matrices
+// dump_weights .hpp .cpp - Callbacks to dump weight matrices
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED
@@ -34,6 +34,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Dump weight matrices to files.
@@ -42,18 +43,18 @@ namespace lbann {
  * is not meant for checkpointing, but for exporting weight matrices for
  * analysis that isn't easily done in LBANN.
  */
-class lbann_callback_dump_weights : public lbann_callback {
+class dump_weights : public callback_base {
  public:
   /**
    * @param basename The basename for writing files.
    */
-  lbann_callback_dump_weights(std::string basename) :
-    lbann_callback(), m_basename(std::move(basename)) {}
-  lbann_callback_dump_weights(const lbann_callback_dump_weights&) = default;
-  lbann_callback_dump_weights& operator=(
-    const lbann_callback_dump_weights&) = default;
-  lbann_callback_dump_weights* copy() const override {
-    return new lbann_callback_dump_weights(*this);
+  dump_weights(std::string basename) :
+    callback_base(), m_basename(std::move(basename)) {}
+  dump_weights(const dump_weights&) = default;
+  dump_weights& operator=(
+    const dump_weights&) = default;
+  dump_weights* copy() const override {
+    return new dump_weights(*this);
   }
   void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
@@ -62,14 +63,15 @@ class lbann_callback_dump_weights : public lbann_callback {
   /** Basename for writing files. */
   std::string m_basename;
   /// Dump weights from learning layers.
-  void dump_weights(model *m, std::string s = "");
+  void do_dump_weights(model *m, std::string s = "");
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_dump_weights_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*);
+std::unique_ptr<callback_base>
+build_dump_weights_callback_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED

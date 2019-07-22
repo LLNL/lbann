@@ -36,6 +36,7 @@
 #include <unordered_set>
 
 namespace lbann {
+namespace callback {
 
 void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
   if (!m_layers.count(l->get_name())) {
@@ -97,8 +98,8 @@ void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_mixup_from_pbuf(
+std::unique_ptr<callback_base>
+build_mixup_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackMixup&>(proto_msg);
@@ -107,4 +108,6 @@ build_callback_mixup_from_pbuf(
                                          layers_list.end());
   return make_unique<callback_mixup>(layers, params.alpha());
 }
-}  // namespace lbann
+
+} // namespace callback
+} // namespace lbann

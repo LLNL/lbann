@@ -35,17 +35,18 @@
 #endif // LBANN_NVPROF
 
 namespace lbann {
+namespace callback {
 
-bool lbann_callback_sync_selected::m_cuda_profiler_initialized = false;
-const std::map<lbann_callback_sync_selected::prop_t, std::string>
-  lbann_callback_sync_selected::m_prop_str
-    = {std::make_pair(lbann_callback_sync_selected::prop_t::Both, "Both"),
-       std::make_pair(lbann_callback_sync_selected::prop_t::Forward, "Forward"),
-       std::make_pair(lbann_callback_sync_selected::prop_t::Backward, "Backward")};
+bool sync_selected::m_cuda_profiler_initialized = false;
+const std::map<sync_selected::prop_t, std::string>
+  sync_selected::m_prop_str
+    = {std::make_pair(sync_selected::prop_t::Both, "Both"),
+       std::make_pair(sync_selected::prop_t::Forward, "Forward"),
+       std::make_pair(sync_selected::prop_t::Backward, "Backward")};
 
-lbann_callback_sync_selected::lbann_callback_sync_selected(
-  const lbann_callback_sync_selected::layers_t& layers, bool async_gpus, bool async_mpi)
-  : lbann_callback_sync_layers(!async_gpus, !async_mpi, false),
+sync_selected::sync_selected(
+  const sync_selected::layers_t& layers, bool async_gpus, bool async_mpi)
+  : sync_layers(!async_gpus, !async_mpi, false),
     m_layers(layers), m_all_set(false) {
   #ifdef LBANN_NVPROF
   cudaProfilerStop(); // make sure to flush out profile data
@@ -64,13 +65,13 @@ lbann_callback_sync_selected::lbann_callback_sync_selected(
   m_bwd_ptrs.reserve(cnt_bwd);
 }
 
-lbann_callback_sync_selected::~lbann_callback_sync_selected() {
+sync_selected::~sync_selected() {
   #ifdef LBANN_NVPROF
   cudaProfilerStop(); // make sure to flush out profile data
   #endif
 }
 
-std::string lbann_callback_sync_selected::get_description() const {
+std::string sync_selected::get_description() const {
   std::string selection;
   for (const auto& l: m_layers) {
     std::map<prop_t, std::string>::const_iterator it = m_prop_str.find(l.second);
@@ -79,11 +80,11 @@ std::string lbann_callback_sync_selected::get_description() const {
   return "sync_selected : { " + selection + '}';
 }
 
-void lbann_callback_sync_selected::turn_off_init_cuda_profiler() {
+void sync_selected::turn_off_init_cuda_profiler() {
   m_cuda_profiler_initialized = true;
 }
 
-bool lbann_callback_sync_selected::check_if_cuda_profiler_initialized() {
+bool sync_selected::check_if_cuda_profiler_initialized() {
   return m_cuda_profiler_initialized;
 }
 
@@ -98,7 +99,7 @@ bool lbann_callback_sync_selected::check_if_cuda_profiler_initialized() {
  * @param comm global world communicator.
  * The profile output will be wrttien to out_dir/layer_name.prop.rank.prof
  */
-void lbann_callback_sync_selected::init_cuda_profiler(
+void sync_selected::init_cuda_profiler(
   const std::string cfg_file, const std::string out_dir, int out_mode, lbann_comm* comm) const {
 #ifdef LBANN_NVPROF
   if (check_if_cuda_profiler_initialized()) {
@@ -151,7 +152,7 @@ void lbann_callback_sync_selected::init_cuda_profiler(
 #endif
 }
 
-void lbann_callback_sync_selected::setup(model *m) {
+void sync_selected::setup(model *m) {
   const std::vector<Layer *>& layers = m->get_layers();
   for (auto l: layers) {
     populate_layer_ptrs(l, Forward);
@@ -163,7 +164,7 @@ void lbann_callback_sync_selected::setup(model *m) {
 }
 
 
-void lbann_callback_sync_selected::on_forward_prop_begin(model *m, Layer *l) {
+void sync_selected::on_forward_prop_begin(model *m, Layer *l) {
   const layer_ptrs_t::const_iterator it = m_fwd_ptrs.find(l);
 
   if (it == m_fwd_ptrs.cend()) {
@@ -175,7 +176,7 @@ void lbann_callback_sync_selected::on_forward_prop_begin(model *m, Layer *l) {
   do_pre_sync(l);
 }
 
-void lbann_callback_sync_selected::on_forward_prop_end(model *m, Layer *l) {
+void sync_selected::on_forward_prop_end(model *m, Layer *l) {
   const layer_ptrs_t::const_iterator it = m_fwd_ptrs.find(l);
   if (it == m_fwd_ptrs.cend()) {
     return;
@@ -185,7 +186,7 @@ void lbann_callback_sync_selected::on_forward_prop_end(model *m, Layer *l) {
   l->m_fp_time += get_time() - start;
 }
 
-void lbann_callback_sync_selected::on_backward_prop_begin(model *m, Layer *l) {
+void sync_selected::on_backward_prop_begin(model *m, Layer *l) {
   const layer_ptrs_t::const_iterator it = m_bwd_ptrs.find(l);
 
   if (it == m_bwd_ptrs.cend()) {
@@ -194,7 +195,7 @@ void lbann_callback_sync_selected::on_backward_prop_begin(model *m, Layer *l) {
   do_pre_sync(l);
 }
 
-void lbann_callback_sync_selected::on_backward_prop_end(model *m, Layer *l) {
+void sync_selected::on_backward_prop_end(model *m, Layer *l) {
   const layer_ptrs_t::const_iterator it = m_bwd_ptrs.find(l);
   if (it == m_bwd_ptrs.cend()) {
     return;
@@ -204,7 +205,7 @@ void lbann_callback_sync_selected::on_backward_prop_end(model *m, Layer *l) {
   l->m_bp_time += get_time() - start;
 }
 
-bool lbann_callback_sync_selected::check_if_all_accounted_for() const {
+bool sync_selected::check_if_all_accounted_for() const {
   return (m_fwd_ptrs.size() + m_bwd_ptrs.size()
          == m_layers.size() + m_both_ptrs.size());
 }
@@ -214,9 +215,9 @@ bool lbann_callback_sync_selected::check_if_all_accounted_for() const {
  * to match. When the first time the match is found, save the pointer of the
  * selected layer and use it for the subsequent matching instead of name.
  */
-lbann_callback_sync_selected::layer_ptrs_t::iterator
-lbann_callback_sync_selected::populate_layer_ptrs(
-  Layer* l, const lbann_callback_sync_selected::prop_t current_prop) {
+sync_selected::layer_ptrs_t::iterator
+sync_selected::populate_layer_ptrs(
+  Layer* l, const sync_selected::prop_t current_prop) {
 
   std::pair<layer_ptrs_t::iterator, bool> ret
     = std::make_pair(((current_prop == Forward)? m_fwd_ptrs.end() : m_bwd_ptrs.end()), false);
@@ -253,14 +254,14 @@ lbann_callback_sync_selected::populate_layer_ptrs(
 }
 
 
-void lbann_callback_sync_selected::do_pre_sync(Layer *l) {
-  lbann_callback_sync_layers::do_sync(l);
+void sync_selected::do_pre_sync(Layer *l) {
+  sync_layers::do_sync(l);
   #ifdef LBANN_NVPROF
   cudaProfilerStart();
   #endif
 }
 
-void lbann_callback_sync_selected::do_sync(Layer *l) {
+void sync_selected::do_sync(Layer *l) {
 #ifdef LBANN_NVPROF //(also deinfed LBANN_HAS_GPU)
   if (m_sync_gpus) {
     El::GPUManager::SynchronizeDevice();
@@ -273,12 +274,12 @@ void lbann_callback_sync_selected::do_sync(Layer *l) {
     cudaProfilerStop();
   }
 #else
-  lbann_callback_sync_layers::do_sync(l);
+  sync_layers::do_sync(l);
 #endif
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_sync_selected_from_pbuf(
+std::unique_ptr<callback_base>
+build_sync_selected_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSyncSelected&>(proto_msg);
@@ -288,8 +289,8 @@ build_callback_sync_selected_from_pbuf(
                           "to synchronize.");
   }
 
-  using layers_t = lbann_callback_sync_selected::layers_t;
-  using prop_t = lbann_callback_sync_selected::prop_t;
+  using layers_t = sync_selected::layers_t;
+  using prop_t = sync_selected::prop_t;
 
   layers_t selected_layers;
   selected_layers.reserve(num_layers);
@@ -301,14 +302,14 @@ build_callback_sync_selected_from_pbuf(
   }
 
   auto cb_ptr
-    = make_unique<lbann_callback_sync_selected>(selected_layers,
+    = make_unique<sync_selected>(selected_layers,
                                                 params.async_gpus(),
                                                 params.async_mpi());
 
 #ifdef LBANN_NVPROF
   const auto& cp_setup = params.cuda_profiler_setup();
   if (cp_setup.no_init()) {
-    lbann_callback_sync_selected::turn_off_init_cuda_profiler();
+    sync_selected::turn_off_init_cuda_profiler();
   } else {
     cb_ptr->init_cuda_profiler(cp_setup.config_file(),
                                cp_setup.output_dir(),
@@ -319,4 +320,5 @@ build_callback_sync_selected_from_pbuf(
   return cb_ptr;
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

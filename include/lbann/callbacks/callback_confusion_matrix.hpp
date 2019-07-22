@@ -30,6 +30,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** Compute confusion matrix.
  *  Confusion matrices are saved in CSV files of the form
@@ -37,16 +38,16 @@ namespace lbann {
  *  with prediction i and label j. The prediction and label layers are
  *  assumed to output one-hot vectors for each mini-batch sample.
  */
-class lbann_callback_confusion_matrix : public lbann_callback {
+class confusion_matrix : public callback_base {
 public:
 
-  lbann_callback_confusion_matrix(std::string prediction_layer,
+  confusion_matrix(std::string prediction_layer,
                                   std::string label_layer,
                                   std::string prefix);
-  lbann_callback_confusion_matrix(const lbann_callback_confusion_matrix&);
-  lbann_callback_confusion_matrix& operator=(const lbann_callback_confusion_matrix&);
-  lbann_callback_confusion_matrix* copy() const override {
-    return new lbann_callback_confusion_matrix(*this);
+  confusion_matrix(const confusion_matrix&);
+  confusion_matrix& operator=(const confusion_matrix&);
+  confusion_matrix* copy() const override {
+    return new confusion_matrix(*this);
   }
   std::string name() const override { return "confusion matrix"; }
 
@@ -111,10 +112,11 @@ private:
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_confusion_matrix_from_pbuf(
+std::unique_ptr<callback_base>
+build_confusion_matrix_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CONFUSION_MATRIX_HPP_INCLUDED

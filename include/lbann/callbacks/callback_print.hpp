@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_print .hpp .cpp - Callback hooks to print information
+// print .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
@@ -32,18 +32,19 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** Periodically print computational results.
  *  Prints average objective function value and metric scores after
  *  each training epoch and evaluation.
  */
-class lbann_callback_print : public lbann_callback {
+class print : public callback_base {
  public:
-  lbann_callback_print(int batch_interval = 1, bool print_global_stat_only=false) :
-  lbann_callback(batch_interval), m_print_global_stat_only(print_global_stat_only) {}
-  lbann_callback_print(const lbann_callback_print&) = default;
-  lbann_callback_print& operator=(const lbann_callback_print&) = default;
-  lbann_callback_print* copy() const override { return new lbann_callback_print(*this); }
+  print(int batch_interval = 1, bool print_global_stat_only=false) :
+  callback_base(batch_interval), m_print_global_stat_only(print_global_stat_only) {}
+  print(const print&) = default;
+  print& operator=(const print&) = default;
+  print* copy() const override { return new print(*this); }
   void setup(model *m) override;
   void on_epoch_begin(model *m) override;
   void on_epoch_end(model *m) override;
@@ -59,10 +60,11 @@ class lbann_callback_print : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_print_from_pbuf(
+std::unique_ptr<callback_base>
+build_print_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED

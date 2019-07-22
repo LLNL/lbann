@@ -53,8 +53,9 @@ T get_min(const std::vector<T> &v) {
 }
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
+void gpu_memory_usage::on_epoch_begin(model *m) {
 #ifdef LBANN_HAS_CUDA
   size_t available;
   size_t total;
@@ -91,4 +92,5 @@ void lbann_callback_gpu_memory_usage::on_epoch_begin(model *m) {
 #endif
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

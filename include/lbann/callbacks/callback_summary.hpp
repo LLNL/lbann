@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summary .hpp .cpp - Callback hooks to summarize to Tensorboard
+// summary .hpp .cpp - Callback hooks to summarize to Tensorboard
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_SUMMARY_HPP_INCLUDED
@@ -33,11 +33,12 @@
 #include "lbann/utils/summary.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Summarize information to Tensorboard using LBANN's summary interface.
  */
-class lbann_callback_summary : public lbann_callback {
+class summary : public callback_base {
  public:
   /**
    * @param summarizer The summary object to write to; this callback takes
@@ -46,13 +47,13 @@ class lbann_callback_summary : public lbann_callback {
    * @param mat_interval FIXME
    * @todo Document mat_interval parameter.
    */
-  lbann_callback_summary(lbann_summary *summarizer, int batch_interval = 1,
+  summary(lbann_summary *summarizer, int batch_interval = 1,
     int mat_interval = 25);
-  ~lbann_callback_summary() override;
-  lbann_callback_summary(const lbann_callback_summary&) = default;
-  lbann_callback_summary& operator=(const lbann_callback_summary&) = default;
-  lbann_callback_summary* copy() const override {
-    return new lbann_callback_summary(*this);
+  ~summary() override;
+  summary(const summary&) = default;
+  summary& operator=(const summary&) = default;
+  summary* copy() const override {
+    return new summary(*this);
   }
   void on_train_begin(model *m) override;
   void on_batch_end(model *m) override;
@@ -67,10 +68,11 @@ class lbann_callback_summary : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_summary_from_pbuf(
+std::unique_ptr<callback_base>
+build_summary_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SUMMARY_HPP_INCLUDED

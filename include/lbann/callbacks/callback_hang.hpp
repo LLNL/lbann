@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_hang .hpp .cpp - Callback to hang LBANN for debuggers
+// hang .hpp .cpp - Callback to hang LBANN for debuggers
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_HANG_HPP_INCLUDED
@@ -32,6 +32,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Hang LBANN as training starts so debuggers can attach.
@@ -39,16 +40,16 @@ namespace lbann {
  * Attach to the hung ranks and set the hang flag to false with a debugger to
  * proceed.
  */
-class lbann_callback_hang : public lbann_callback {
+class hang : public callback_base {
  public:
   /**
    * @param rank_to_hang The rank to hang; -1 for every rank (default).
    */
-  lbann_callback_hang(int rank_to_hang = -1) :
+  hang(int rank_to_hang = -1) :
     m_rank_to_hang(rank_to_hang) {}
-  lbann_callback_hang(const lbann_callback_hang&) = default;
-  lbann_callback_hang& operator=(const lbann_callback_hang&) = default;
-  lbann_callback_hang* copy() const override { return new lbann_callback_hang(*this); }
+  hang(const hang&) = default;
+  hang& operator=(const hang&) = default;
+  hang* copy() const override { return new hang(*this); }
 
   void setup(model* m) override;
 
@@ -68,10 +69,11 @@ class lbann_callback_hang : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_hang_from_pbuf(
+std::unique_ptr<callback_base>
+build_hang_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_HANG_HPP_INCLUDED

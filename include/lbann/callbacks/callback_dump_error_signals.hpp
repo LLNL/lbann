@@ -30,22 +30,23 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /** Dump gradients w.r.t. inputs to file.
  *  After each layer performs a backward prop step, this callback will
  *  dump the gradients w.r.t. inputs (the "error signals") to a
  *  human-readable ASCII file. This is slow and produces a lot of output.
  */
-class lbann_callback_dump_error_signals : public lbann_callback {
+class dump_error_signals : public callback_base {
  public:
 
   /** Constructor.
    *  @param basename The basename for output files.
    */
-  lbann_callback_dump_error_signals(std::string basename = "")
-    : lbann_callback(), m_basename(basename) {}
-  lbann_callback_dump_error_signals* copy() const override {
-    return new lbann_callback_dump_error_signals(*this);
+  dump_error_signals(std::string basename = "")
+    : callback_base(), m_basename(basename) {}
+  dump_error_signals* copy() const override {
+    return new dump_error_signals(*this);
   }
   std::string name() const override { return "dump error signals"; }
 
@@ -59,10 +60,11 @@ class lbann_callback_dump_error_signals : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_dump_error_signals_from_pbuf(
+std::unique_ptr<callback_base>
+build_dump_error_signals_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_ERROR_SIGNALS_HPP_INCLUDED

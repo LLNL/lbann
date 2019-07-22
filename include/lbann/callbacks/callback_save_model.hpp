@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_model .hpp .cpp - Callbacks to save model, currently as protobuf
+// save_model .hpp .cpp - Callbacks to save model, currently as protobuf
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_SAVE_MODEL_HPP_INCLUDED
@@ -36,54 +36,65 @@
 #include <google/protobuf/message.h>
 
 namespace lbann {
+namespace callback {
 
 /**
  * Save model to as protobuf file and set of weights
  */
-class lbann_callback_save_model : public lbann_callback {
+class save_model : public callback_base {
  public:
   /**
    * @param dir directory to save model
    * @param disable_save_after_training Don't save after training
    * @param extension file extension e.g., model, state ......
    */
-  lbann_callback_save_model(std::string dir,
+  save_model(std::string dir,
                             bool disable_save_after_training,
                             std::string extension="prototext") :
-    lbann_callback(), m_dir(std::move(dir)),
+    callback_base(), m_dir(std::move(dir)),
     m_disable_save_after_training(disable_save_after_training),
     m_extension(std::move(extension))
-    {}
-  lbann_callback_save_model(const lbann_callback_save_model&) = default;
-  lbann_callback_save_model& operator=(
-    const lbann_callback_save_model&) = default;
-  lbann_callback_save_model* copy() const override {
-    return new lbann_callback_save_model(*this);
+  {}
+  save_model(const save_model&) = default;
+  save_model& operator=(
+    const save_model&) = default;
+  save_model* copy() const override {
+    return new save_model(*this);
   }
   void on_train_end(model *m) override;
-  bool save_model(model *m);
-  bool save_model_weights(model *m);
   /* ckptdir_is_fullpath flag if true
  * allow user to specify full path to model weights to load
  * and allow system to ignore appending trainer id, num of epochs/steps
  * to default ckpt_dir*/
-  static bool load_model_weights(std::string ckpt_dir, model *m, bool ckptdir_is_fullpath=false);
+  static bool load_model_weights(std::string ckpt_dir,
+                                 model *m,
+                                 bool ckptdir_is_fullpath=false);
 
   std::string name() const override { return "save model"; }
+
+ protected:
+  friend class lbann::model;
+
+  bool do_save_model(model *m);
+  bool do_save_model_weights(model *m);
+
  private:
   std::string m_dir; //directory to save file
-  bool m_disable_save_after_training; /// Disables the normal behavior of saving when training is complete
+  /// Disables the normal behavior of saving when training is complete
+  bool m_disable_save_after_training;
   std::string m_extension; //file extension
   persist p;
+
   void write_proto_binary(const lbann_data::Model& proto, const std::string filename);
   void write_proto_text(const lbann_data::Model& proto, const std::string filename);
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_save_model_from_pbuf(
+std::unique_ptr<callback_base>
+build_save_model_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_MODEL_HPP_INCLUDED

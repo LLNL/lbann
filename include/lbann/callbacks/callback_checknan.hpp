@@ -23,31 +23,32 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_checknan .hpp .cpp - Check matrices for invalid numbers
+// check_nan .hpp .cpp - Check matrices for invalid numbers
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_CHECKNAN_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_CHECKNAN_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Check matrices for whether they include any NaNs or infs to help debugging.
  * This will kill the rank if such values are discovered.
  */
-class lbann_callback_checknan : public lbann_callback {
+class check_nan : public callback_base {
  public:
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_end;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_backward_prop_end;
 
-  lbann_callback_checknan() : lbann_callback() {}
-  lbann_callback_checknan(const lbann_callback_checknan&) = default;
-  lbann_callback_checknan& operator=(
-    const lbann_callback_checknan&) = default;
-  lbann_callback_checknan* copy() const override {
-    return new lbann_callback_checknan(*this);
+  check_nan() : callback_base() {}
+  check_nan(const check_nan&) = default;
+  check_nan& operator=(
+    const check_nan&) = default;
+  check_nan* copy() const override {
+    return new check_nan(*this);
   }
   /** Check that activations are good. */
   void on_forward_prop_end(model *m, Layer *l) override;
@@ -57,14 +58,15 @@ class lbann_callback_checknan : public lbann_callback {
   void on_backward_prop_end(model *m) override;
   /** Check that weights are good. */
   void on_batch_end(model *m) override;
-  std::string name() const override { return "checknan"; }
+  std::string name() const override { return "check_nan"; }
 
 };
 
 // Builder function
 ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_checknan, build_callback_check_nan_from_pbuf)
+  check_nan, build_check_nan_callback_from_pbuf)
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECKNAN_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED

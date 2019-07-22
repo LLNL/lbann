@@ -33,6 +33,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  *  Weights/parameters replacement on k-batch end
@@ -40,25 +41,25 @@ namespace lbann {
  *  Can easily be extended to support replacement by weights name
  *  Given two layers specified in prototext, weights are copied from source layer to destination layer.
  */
-class lbann_callback_replace_weights : public lbann_callback {
+class replace_weights : public callback_base {
  public:
-  lbann_callback_replace_weights(
+  replace_weights(
     std::vector<std::string> src,
     std::vector<std::string> dst,
     int batch_interval=1)
-    : lbann_callback(batch_interval),
+    : callback_base(batch_interval),
       m_src_layer_names(std::move(src)),
       m_dst_layer_names(std::move(dst)) {
     if(m_src_layer_names.size() != m_dst_layer_names.size())
       LBANN_ERROR("In replace weights callback: number of src and dest layers does not match.");
   }
 
-  lbann_callback_replace_weights(
-    const lbann_callback_replace_weights&) = default;
-  lbann_callback_replace_weights& operator=(
-    const lbann_callback_replace_weights&) = default;
-  lbann_callback_replace_weights* copy() const override {
-    return new lbann_callback_replace_weights(*this);
+  replace_weights(
+    const replace_weights&) = default;
+  replace_weights& operator=(
+    const replace_weights&) = default;
+  replace_weights* copy() const override {
+    return new replace_weights(*this);
   }
   void setup(model *m) override;
   void on_batch_end(model *m) override;
@@ -70,10 +71,11 @@ class lbann_callback_replace_weights : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_replace_weights_from_pbuf(
+std::unique_ptr<callback_base>
+build_replace_weights_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_REPLACE_WEIGHTS_HPP_INCLUDED

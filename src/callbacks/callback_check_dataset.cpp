@@ -31,8 +31,9 @@
 #include <iomanip>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
+void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
   if (!dynamic_cast<io_layer*>(l)) {
     return;
   }
@@ -57,11 +58,11 @@ void lbann_callback_check_dataset::add_to_set(model *m, Layer *l, int64_t step, 
   }
 }
 
-void lbann_callback_check_dataset::on_forward_prop_end(model *m, Layer *l) {
+void check_dataset::on_forward_prop_end(model *m, Layer *l) {
   add_to_set(m, l, m->get_step(), training_set);
 }
 
-void lbann_callback_check_dataset::on_evaluate_forward_prop_end(model *m, Layer *l) {
+void check_dataset::on_evaluate_forward_prop_end(model *m, Layer *l) {
   switch(m->get_execution_mode()) {
   case execution_mode::validation:
     add_to_set(m, l, m->get_step(), validation_set);
@@ -70,11 +71,11 @@ void lbann_callback_check_dataset::on_evaluate_forward_prop_end(model *m, Layer 
     add_to_set(m, l, m->get_step(), testing_set);
     break;
   default:
-    throw lbann_exception("lbann_callback_check_dataset: invalid execution phase");
+    LBANN_ERROR("check_dataset: invalid execution phase");
   }
 }
 
-void lbann_callback_check_dataset::on_epoch_end(model *m) {
+void check_dataset::on_epoch_end(model *m) {
   lbann_comm* comm = m->get_comm();
   std::cout << "Training [" << comm->get_rank_in_trainer() <<
     "] : I have processed " << training_set.size() << " elements" << std::endl;
@@ -142,7 +143,7 @@ void lbann_callback_check_dataset::on_epoch_end(model *m) {
   training_set.clear();
 }
 
-void lbann_callback_check_dataset::on_validation_end(model *m) {
+void check_dataset::on_validation_end(model *m) {
   std::cout << "Validation [" << m->get_comm()->get_rank_in_trainer() << "] : I have processed " << validation_set.size() << " elements" << std::endl;
 #if 0
   std::cout << "Validation [" << m->get_comm()->get_rank_in_trainer() << "] ";
@@ -154,9 +155,10 @@ void lbann_callback_check_dataset::on_validation_end(model *m) {
   validation_set.clear();
 }
 
-void lbann_callback_check_dataset::on_test_end(model *m) {
+void check_dataset::on_test_end(model *m) {
   std::cout << "Testing [" << m->get_comm()->get_rank_in_trainer() << "] : I have processed " << testing_set.size() << " elements" << std::endl;
   testing_set.clear();
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

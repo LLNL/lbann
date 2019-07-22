@@ -30,6 +30,7 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * @brief Phase specific "printf debugging"
@@ -41,7 +42,7 @@ namespace lbann {
  * if \<empty\> will print messages for all phases
  *
  */
-class lbann_callback_debug : public lbann_callback {
+class debug : public callback_base {
  public:
 
   /** @brief Constructor.
@@ -49,12 +50,12 @@ class lbann_callback_debug : public lbann_callback {
    *  If modes is empty, status updates will be printed for all
    *  execution modes.
    */
-  lbann_callback_debug(std::set<execution_mode> modes,
+  debug(std::set<execution_mode> modes,
                        lbann_summary *summarizer = nullptr) :
-    lbann_callback(1, summarizer), m_modes(std::move(modes)) {}
-  lbann_callback_debug(const lbann_callback_debug&) = default;
-  lbann_callback_debug& operator=(const lbann_callback_debug&) = default;
-  lbann_callback_debug* copy() const override { return new lbann_callback_debug(*this); }
+    callback_base(1, summarizer), m_modes(std::move(modes)) {}
+  debug(const debug&) = default;
+  debug& operator=(const debug&) = default;
+  debug* copy() const override { return new debug(*this); }
   std::string name() const override { return "debug"; }
 
   /** @brief Print that a batch is beginning. */
@@ -66,14 +67,14 @@ class lbann_callback_debug : public lbann_callback {
   /** @brief Print that a layer's forward prop is ending. */
   void on_batch_evaluate_end(model *m) override;
 
-  using lbann_callback::on_forward_prop_begin;
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_backward_prop_begin;
-  using lbann_callback::on_backward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_begin;
-  using lbann_callback::on_evaluate_forward_prop_end;
-  using lbann_callback::on_optimize_begin;
-  using lbann_callback::on_optimize_end;
+  using callback_base::on_forward_prop_begin;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_backward_prop_begin;
+  using callback_base::on_backward_prop_end;
+  using callback_base::on_evaluate_forward_prop_begin;
+  using callback_base::on_evaluate_forward_prop_end;
+  using callback_base::on_optimize_begin;
+  using callback_base::on_optimize_end;
 
   /** @brief Print that a layer's forward prop is beginning. */
   void on_forward_prop_begin(model *m, Layer *l) override;
@@ -104,10 +105,11 @@ class lbann_callback_debug : public lbann_callback {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_debug_from_pbuf(
+std::unique_ptr<callback_base>
+build_debug_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED

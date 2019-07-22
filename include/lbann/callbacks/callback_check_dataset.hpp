@@ -31,24 +31,25 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Save the sample indices for each mini-batch to ordered set.
  * Check to make sure that all samples were properly processed.
  */
-class lbann_callback_check_dataset : public lbann_callback {
+class check_dataset : public callback_base {
  public:
-  using lbann_callback::on_forward_prop_end;
-  using lbann_callback::on_evaluate_forward_prop_end;
+  using callback_base::on_forward_prop_end;
+  using callback_base::on_evaluate_forward_prop_end;
 
-  lbann_callback_check_dataset() :
-    lbann_callback() {}
-  lbann_callback_check_dataset(
-    const lbann_callback_check_dataset&) = default;
-  lbann_callback_check_dataset& operator=(
-    const lbann_callback_check_dataset&) = default;
-  lbann_callback_check_dataset* copy() const override {
-    return new lbann_callback_check_dataset(*this);
+  check_dataset() :
+    callback_base() {}
+  check_dataset(
+    const check_dataset&) = default;
+  check_dataset& operator=(
+    const check_dataset&) = default;
+  check_dataset* copy() const override {
+    return new check_dataset(*this);
   }
   void on_forward_prop_end(model *m, Layer *l) override;
   void on_evaluate_forward_prop_end(model *m, Layer *l) override;
@@ -70,8 +71,9 @@ class lbann_callback_check_dataset : public lbann_callback {
 
 // Builder function
 ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_check_dataset, build_callback_check_dataset_from_pbuf);
+  check_dataset, build_check_dataset_callback_from_pbuf);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECK_DATASET_HPP_INCLUDED

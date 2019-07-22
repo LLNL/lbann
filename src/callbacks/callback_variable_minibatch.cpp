@@ -32,12 +32,13 @@
 #include "lbann/layers/io/input/input_layer.hpp"
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_variable_minibatch::lbann_callback_variable_minibatch(
+variable_minibatch::variable_minibatch(
   int starting_mbsize) : m_starting_mbsize(starting_mbsize),
                          m_current_mini_batch_size(starting_mbsize) {}
 
-void lbann_callback_variable_minibatch::on_train_begin(model *m) {
+void variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
   if (m->get_epoch() != 0) { return; }
 
@@ -63,7 +64,7 @@ void lbann_callback_variable_minibatch::on_train_begin(model *m) {
     m_starting_mbsize);
 }
 
-void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
+void variable_minibatch::on_epoch_end(model *m) {
 
   // Get first input layer in model
   generic_input_layer* input = nullptr;
@@ -124,7 +125,7 @@ void lbann_callback_variable_minibatch::on_epoch_end(model *m) {
   }
 }
 
-void lbann_callback_variable_minibatch::change_learning_rate(
+void variable_minibatch::change_learning_rate(
   model *m, float new_lr) const {
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
@@ -134,7 +135,7 @@ void lbann_callback_variable_minibatch::change_learning_rate(
   }
 }
 
-float lbann_callback_variable_minibatch::get_current_learning_rate(
+float variable_minibatch::get_current_learning_rate(
   model *m) const {
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
@@ -145,12 +146,12 @@ float lbann_callback_variable_minibatch::get_current_learning_rate(
   return 0.0f;
 }
 
-lbann_callback_step_minibatch::lbann_callback_step_minibatch(
+step_minibatch::step_minibatch(
   int starting_mbsize, int step, int ramp_time) :
-  lbann_callback_variable_minibatch(starting_mbsize), m_step(step),
+  variable_minibatch(starting_mbsize), m_step(step),
   m_ramp_time(ramp_time) {}
 
-bool lbann_callback_step_minibatch::schedule(
+bool step_minibatch::schedule(
   model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
   if (m->get_epoch() % m_step == 0) {
     new_mbsize = m_current_mini_batch_size * 2;
@@ -162,16 +163,16 @@ bool lbann_callback_step_minibatch::schedule(
   }
 }
 
-lbann_callback_minibatch_schedule::lbann_callback_minibatch_schedule(
+minibatch_schedule::minibatch_schedule(
   int starting_mbsize, std::vector<minibatch_step> steps) :
-  lbann_callback_variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
+  variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
   std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
               return a.epoch < b.epoch;
             });
 }
 
-bool lbann_callback_minibatch_schedule::schedule(
+bool minibatch_schedule::schedule(
   model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
   if (!m_steps.empty() && m->get_epoch() == m_steps.back().epoch) {
     new_mbsize = m_steps.back().mbsize;
@@ -183,22 +184,22 @@ bool lbann_callback_minibatch_schedule::schedule(
   return false;
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_step_minibatch_from_pbuf(
+std::unique_ptr<callback_base>
+build_step_minibatch_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackStepMinibatch&>(proto_msg);
-  return make_unique<lbann_callback_step_minibatch>(params.starting_mbsize(),
+  return make_unique<step_minibatch>(params.starting_mbsize(),
                                                     params.step(),
                                                     params.ramp_time());
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_minibatch_schedule_from_pbuf(
+std::unique_ptr<callback_base>
+build_minibatch_schedule_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackMinibatchSchedule&>(proto_msg);
-  std::vector<lbann_callback_minibatch_schedule::minibatch_step> steps;
+  std::vector<minibatch_schedule::minibatch_step> steps;
   for (int i = 0; i < params.step_size(); ++i) {
     const auto& proto_step = params.step(i);
     steps.emplace_back(proto_step.epoch(),
@@ -206,8 +207,9 @@ build_callback_minibatch_schedule_from_pbuf(
                        proto_step.lr(),
                        proto_step.ramp_time());
   }
-  return make_unique<lbann_callback_minibatch_schedule>(params.starting_mbsize(),
+  return make_unique<minibatch_schedule>(params.starting_mbsize(),
                                                         steps);
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

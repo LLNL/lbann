@@ -23,45 +23,46 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_checkpoint .hpp .cpp - Callback hooks to checkpoint model
+// checkpoint .hpp .cpp - Callback hooks to checkpoint model
 ////////////////////////////////////////////////////////////////////////////////
 
 
 #include "lbann/callbacks/callback_checkpoint.hpp"
 
 namespace lbann {
+namespace callback {
 // Load from checkpoint occurs during setup callbacks
-void lbann_callback_checkpoint::setup(model *m) {
+void checkpoint::setup(model *m) {
   p.set_cb_type(callback_type::invalid);
   restart(m);
 }
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
-void lbann_callback_checkpoint::on_epoch_end(model *m) {
+void checkpoint::on_epoch_end(model *m) {
   p.set_cb_type(callback_type::epoch);
   if(need_checkpoint(m)){
-    checkpoint(m);
+    do_checkpoint(m);
   }
   p.set_cb_type(callback_type::invalid);
 }
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
-void lbann_callback_checkpoint::on_validation_end(model *m) {
+void checkpoint::on_validation_end(model *m) {
   p.set_cb_type(callback_type::validation);
   if(need_checkpoint(m)){
-    checkpoint(m);
+    do_checkpoint(m);
   }
   p.set_cb_type(callback_type::invalid);
 }
  // Interval defined with checkpoint_steps or ckpt_dist_steps
-void lbann_callback_checkpoint::on_batch_end(model *m) {
+void checkpoint::on_batch_end(model *m) {
   p.set_cb_type(callback_type::batch);
   if(need_checkpoint(m)){
-    checkpoint(m);
+    do_checkpoint(m);
   }
   p.set_cb_type(callback_type::invalid);
 }
 
 // Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
-bool lbann_callback_checkpoint::need_checkpoint(model *m) {
+bool checkpoint::need_checkpoint(model *m) {
   /* TODO: since we're using clocks, this requires a bcast for each call,
    * we could use number of samples processed to make a local decision */
   // if none of our checkpoint conditions are set, assume we're not checkpointing
@@ -114,7 +115,7 @@ bool lbann_callback_checkpoint::need_checkpoint(model *m) {
 }
 
 // Checkpoint Shared/Distributed
-bool lbann_callback_checkpoint::checkpoint(model *m) {
+bool checkpoint::do_checkpoint(model *m) {
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0 && m_per_rank_dir.length() == 0) {
     return false;
@@ -204,7 +205,7 @@ bool lbann_callback_checkpoint::checkpoint(model *m) {
 }
 
 // Restart Shared/Distributed
-bool lbann_callback_checkpoint::restart(model *m) {
+bool checkpoint::restart(model *m) {
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
@@ -322,12 +323,12 @@ bool lbann_callback_checkpoint::restart(model *m) {
   return true;
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_checkpoint_from_pbuf(
+std::unique_ptr<callback_base>
+build_checkpoint_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackCheckpoint&>(proto_msg);
-  return make_unique<lbann_callback_checkpoint>(params.checkpoint_dir(),
+  return make_unique<checkpoint>(params.checkpoint_dir(),
                                                 params.checkpoint_epochs(),
                                                 params.checkpoint_steps(),
                                                 params.checkpoint_secs(),
@@ -336,4 +337,5 @@ build_callback_checkpoint_from_pbuf(
                                                 params.ckpt_dist_steps());
 }
 
-}
+} // namespace callback
+} // namespace lbann

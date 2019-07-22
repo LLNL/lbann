@@ -23,23 +23,24 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_save_topk_models .hpp .cpp - Callback hooks to save_topk_models information
+// save_topk_models .hpp .cpp - Callback hooks to save_topk_models information
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
 #include "lbann/callbacks/callback_save_topk_models.hpp"
 
 namespace lbann {
-void lbann_callback_save_topk_models::on_test_end(model *m) {
+namespace callback {
+void save_topk_models::on_test_end(model *m) {
   bool in_topk = false;
   if(m->get_comm()->am_trainer_master()) {
     in_topk = am_in_topk(m);
   }
   m->get_comm()->trainer_broadcast(0, in_topk);
-  if(in_topk) save_model(m);
+  if(in_topk) do_save_model(m);
 }
 
-bool lbann_callback_save_topk_models::am_in_topk(model *m) {
+bool save_topk_models::am_in_topk(model *m) {
   lbann_comm *comm = m->get_comm();
   const int num_trainers = comm->get_num_trainers();
   std::string mode_string = "test";
@@ -88,16 +89,17 @@ bool lbann_callback_save_topk_models::am_in_topk(model *m) {
   return false;
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_save_topk_models_from_pbuf(
+std::unique_ptr<callback_base>
+build_save_topk_models_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSaveTopKModels&>(proto_msg);
-  return make_unique<lbann_callback_save_topk_models>(
+  return make_unique<save_topk_models>(
     params.dir(),
     params.k(),
     params.metric(),
     params.ascending_ordering());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

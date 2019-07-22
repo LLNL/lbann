@@ -41,16 +41,17 @@
 #include <vector>
 
 namespace lbann {
+namespace callback {
 
-float lbann_callback_learning_rate::m_cur_global_lr = 0.0f;
+float learning_rate::m_cur_global_lr = 0.0f;
 
-lbann_callback_learning_rate::lbann_callback_learning_rate() {}
+learning_rate::learning_rate() {}
 
-lbann_callback_learning_rate::lbann_callback_learning_rate(
+learning_rate::learning_rate(
   std::vector<std::string> weights_names)
   : m_weights_names(std::move(weights_names)) {}
 
-void lbann_callback_learning_rate::setup(model *m) {
+void learning_rate::setup(model *m) {
 
   // Add all weights if list of weights is not initialized
   std::vector<weights *> weights_list =
@@ -74,7 +75,7 @@ void lbann_callback_learning_rate::setup(model *m) {
 
 }
 
-void lbann_callback_learning_rate::on_epoch_end(model *m) {
+void learning_rate::on_epoch_end(model *m) {
   const float new_lr = global_schedule(m);
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
@@ -93,7 +94,7 @@ void lbann_callback_learning_rate::on_epoch_end(model *m) {
   }
 }
 
-void lbann_callback_learning_rate::on_backward_prop_end(model *m) {
+void learning_rate::on_backward_prop_end(model *m) {
   for (weights *w : this->get_weights()) {
     optimizer& opt = *w->get_optimizer();
     const float old_lr = opt.get_learning_rate();
@@ -104,16 +105,16 @@ void lbann_callback_learning_rate::on_backward_prop_end(model *m) {
   }
 }
 
-lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
+step_learning_rate::step_learning_rate(
   int step, float amt) :
-  lbann_callback_learning_rate(), m_step(step), m_amt(amt) {}
+  learning_rate(), m_step(step), m_amt(amt) {}
 
-lbann_callback_step_learning_rate::lbann_callback_step_learning_rate(
+step_learning_rate::step_learning_rate(
   int step, float amt, std::vector<std::string> weights_names) :
-  lbann_callback_learning_rate(std::move(weights_names)),
+  learning_rate(std::move(weights_names)),
   m_step(step), m_amt(amt) {}
 
-float lbann_callback_step_learning_rate::global_schedule(model *m) {
+float step_learning_rate::global_schedule(model *m) {
   if (m->get_epoch() % m_step == 0) {
     return get_current_global_learning_rate() * m_amt;
   } else {
@@ -121,17 +122,17 @@ float lbann_callback_step_learning_rate::global_schedule(model *m) {
   }
 }
 
-lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
+adaptive_learning_rate::adaptive_learning_rate(
   int64_t patience, float amt) :
-  lbann_callback_adaptive_learning_rate(patience, amt,
+  adaptive_learning_rate(patience, amt,
                                         std::vector<std::string>()) {}
 
-lbann_callback_adaptive_learning_rate::lbann_callback_adaptive_learning_rate(
+adaptive_learning_rate::adaptive_learning_rate(
   int64_t patience, float amt, std::vector<std::string> weights_list) :
-  lbann_callback_learning_rate(std::move(weights_list)),
+  learning_rate(std::move(weights_list)),
   m_patience(patience), m_amt(amt) {}
 
-float lbann_callback_adaptive_learning_rate::global_schedule(model *m) {
+float adaptive_learning_rate::global_schedule(model *m) {
   // Determine behavior the first time this is called in an epoch
   if (m_cur_epoch != m->get_epoch()) {
     m_cur_epoch = m->get_epoch();
@@ -162,20 +163,20 @@ float lbann_callback_adaptive_learning_rate::global_schedule(model *m) {
   }
 }
 
-lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
+drop_fixed_learning_rate::drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt) :
-  lbann_callback_drop_fixed_learning_rate(std::move(drop_epochs), amt,
+  drop_fixed_learning_rate(std::move(drop_epochs), amt,
                                           std::vector<std::string>()) {}
 
-lbann_callback_drop_fixed_learning_rate::lbann_callback_drop_fixed_learning_rate(
+drop_fixed_learning_rate::drop_fixed_learning_rate(
   std::vector<int64_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
-  lbann_callback_learning_rate(std::move(weights_names)),
+  learning_rate(std::move(weights_names)),
   m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
   // Sort in reverse order.
   std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
 }
 
-float lbann_callback_drop_fixed_learning_rate::global_schedule(model* m) {
+float drop_fixed_learning_rate::global_schedule(model* m) {
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
          && m->get_epoch() > m_drop_epochs.back()) {
@@ -190,25 +191,25 @@ float lbann_callback_drop_fixed_learning_rate::global_schedule(model* m) {
   }
 }
 
-lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
+linear_growth_learning_rate::linear_growth_learning_rate(
   float target, int64_t num_epochs) :
-  lbann_callback_linear_growth_learning_rate(target, num_epochs, 0,
+  linear_growth_learning_rate(target, num_epochs, 0,
                                              std::vector<std::string>()) {}
 
-lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
+linear_growth_learning_rate::linear_growth_learning_rate(
   float target, int64_t num_epochs, int64_t delay) :
-  lbann_callback_linear_growth_learning_rate(target, num_epochs, delay,
+  linear_growth_learning_rate(target, num_epochs, delay,
                                              std::vector<std::string>()) {}
 
-lbann_callback_linear_growth_learning_rate::lbann_callback_linear_growth_learning_rate(
+linear_growth_learning_rate::linear_growth_learning_rate(
   float target, int64_t num_epochs, int64_t delay,
   std::vector<std::string> weights_names) :
-  lbann_callback_learning_rate(std::move(weights_names)),
+  learning_rate(std::move(weights_names)),
   m_target(target), m_inc(0),
   m_num_epochs(num_epochs), m_delay(delay) {}
 
-void lbann_callback_linear_growth_learning_rate::setup(model *m) {
-  lbann_callback_learning_rate::setup(m);
+void linear_growth_learning_rate::setup(model *m) {
+  learning_rate::setup(m);
   // Compute the learning rate increase.
   if (!this->get_weights().empty()) {
     // Assumes all optimizers have the same initial learning rate.
@@ -217,7 +218,7 @@ void lbann_callback_linear_growth_learning_rate::setup(model *m) {
   }
 }
 
-float lbann_callback_linear_growth_learning_rate::global_schedule(model *m) {
+float linear_growth_learning_rate::global_schedule(model *m) {
   if (m->get_epoch() < m_delay) {
     return get_current_global_learning_rate();
   } else if (m->get_epoch() <= m_num_epochs + m_delay) {
@@ -234,16 +235,16 @@ float lbann_callback_linear_growth_learning_rate::global_schedule(model *m) {
  * In case that max_iter is set to 0, it is calculated from the number of
  * epochs (n_epochs). n_epochs is not used otherwise.
  */
-lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
+poly_learning_rate::poly_learning_rate(
   double p, uint64_t n_epochs, uint64_t max_iter)
-  : lbann_callback_learning_rate(std::vector<std::string>()),
+  : learning_rate(std::vector<std::string>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(0.0f),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
-lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
+poly_learning_rate::poly_learning_rate(
   double p, uint64_t n_epochs, uint64_t max_iter, double end_lr,  std::vector<std::string> weights_names)
-  : lbann_callback_learning_rate(std::move(weights_names)),
+  : learning_rate(std::move(weights_names)),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(end_lr),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
@@ -252,8 +253,8 @@ lbann_callback_poly_learning_rate::lbann_callback_poly_learning_rate(
  * Check if the maximum number of iterations is set. If not, compute it by the
  * number of epochs and the number of iterations per epoch.
  */
-void lbann_callback_poly_learning_rate::setup(model *m) {
-  lbann_callback_learning_rate::setup(m);
+void poly_learning_rate::setup(model *m) {
+  learning_rate::setup(m);
   if (m_max_iter == 0ull) {
     m_max_iter = m_num_epochs * m->get_num_iterations_per_epoch(execution_mode::training);
   }
@@ -262,7 +263,7 @@ void lbann_callback_poly_learning_rate::setup(model *m) {
 /**
  * Keep the record of the learning rate at the end of the current epoch.
  */
-float lbann_callback_poly_learning_rate::global_schedule(model *m) {
+float poly_learning_rate::global_schedule(model *m) {
   const float scale = m_lr / m_last_epoch_lr;
   m_last_epoch_lr = m_lr;
   return (get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
@@ -271,7 +272,7 @@ float lbann_callback_poly_learning_rate::global_schedule(model *m) {
 /**
  * Compute the learning rate for the next iteration.
  */
-float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
+float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
   const uint64_t cur_iter = static_cast<uint64_t>(m->get_step(execution_mode::training));
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
@@ -280,19 +281,19 @@ float lbann_callback_poly_learning_rate::optimizer_schedule(model *m, optimizer 
   return (get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
 }
 
-lbann_callback_optimizerwise_adaptive_learning_rate::
-lbann_callback_optimizerwise_adaptive_learning_rate(
+optimizerwise_adaptive_learning_rate::
+optimizerwise_adaptive_learning_rate(
   float scale) :
-  lbann_callback_optimizerwise_adaptive_learning_rate(
+  optimizerwise_adaptive_learning_rate(
     scale,
     std::vector<std::string>()) {}
 
-lbann_callback_optimizerwise_adaptive_learning_rate::
-lbann_callback_optimizerwise_adaptive_learning_rate(
+optimizerwise_adaptive_learning_rate::
+optimizerwise_adaptive_learning_rate(
   float scale, std::vector<std::string> weights_names) :
-  lbann_callback_learning_rate(std::move(weights_names)), m_scale(scale) {}
+  learning_rate(std::move(weights_names)), m_scale(scale) {}
 
-float lbann_callback_optimizerwise_adaptive_learning_rate::optimizer_schedule(
+float optimizerwise_adaptive_learning_rate::optimizer_schedule(
   model *m, optimizer &opt) {
   DataType param_norm = El::Nrm2(opt.get_weights().get_values());
   DataType param_grad_norm = El::Nrm2(opt.get_gradient());
@@ -305,32 +306,32 @@ float lbann_callback_optimizerwise_adaptive_learning_rate::optimizer_schedule(
 }
 
 // FIXME TRB
-std::unique_ptr<lbann_callback>
-build_callback_step_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackStepLearningRate&>(proto_msg);
-  return make_unique<lbann_callback_step_learning_rate>(
+  return make_unique<step_learning_rate>(
     params.step(),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
 // FIXME TRB
-std::unique_ptr<lbann_callback>
-build_callback_adaptive_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackAdaptiveLearningRate&>(proto_msg);
-  return make_unique<lbann_callback_adaptive_learning_rate>(
+  return make_unique<adaptive_learning_rate>(
     params.patience(),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
 // FIXME TRB
-std::unique_ptr<lbann_callback>
-build_callback_drop_fixed_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDropFixedLearningRate&>(proto_msg);
@@ -338,18 +339,18 @@ build_callback_drop_fixed_learning_rate_from_pbuf(
   for (int i = 0; i < params.drop_epoch_size(); ++i) {
     drop_epochs.push_back(params.drop_epoch(i));
   }
-  return make_unique<lbann_callback_drop_fixed_learning_rate>(
+  return make_unique<drop_fixed_learning_rate>(
     std::move(drop_epochs),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
 // FIXME TRB
-std::unique_ptr<lbann_callback>
-build_callback_linear_growth_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_linear_growth_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,lbann_summary*) {
   using MsgType = lbann_data::CallbackLinearGrowthLearningRate;
-  using CallbackType = lbann_callback_linear_growth_learning_rate;
+  using CallbackType = linear_growth_learning_rate;
   const auto& params =
     dynamic_cast<const MsgType&>(proto_msg);
   return make_unique<CallbackType>(params.target(),
@@ -359,23 +360,23 @@ build_callback_linear_growth_learning_rate_from_pbuf(
 }
 
 // FIXME TRB
-std::unique_ptr<lbann_callback>
-build_callback_optimizerwise_adaptive_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,lbann_summary*) {
   using MsgType = lbann_data::CallbackOptimizerwiseAdaptiveLearningRate;
-  using CallbackType = lbann_callback_optimizerwise_adaptive_learning_rate;
+  using CallbackType = optimizerwise_adaptive_learning_rate;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
   return make_unique<CallbackType>(params.scale(),
                                    parse_list<std::string>(params.weights()));
 }
 
 // FIXME TRB
-std::unique_ptr<lbann_callback>
-build_callback_poly_learning_rate_from_pbuf(
+std::unique_ptr<callback_base>
+build_poly_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackPolyLearningRate&>(proto_msg);
-  return make_unique<lbann_callback_poly_learning_rate>(
+  return make_unique<poly_learning_rate>(
     params.power(),
     params.num_epochs(),
     params.max_iter(),
@@ -383,4 +384,5 @@ build_callback_poly_learning_rate_from_pbuf(
     parse_list<std::string>(params.weights()));
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_imcomm .hpp .cpp - Send gradient updates between models
+// imcomm .hpp .cpp - Send gradient updates between models
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED
@@ -35,14 +35,15 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Support inter-model communication after each mini-batch to synchronize
  * gradient updates.
  */
-class lbann_callback_imcomm : public lbann_callback {
+class imcomm : public callback_base {
  public:
-  using lbann_callback::on_backward_prop_end;
+  using callback_base::on_backward_prop_end;
 
   enum comm_type {
     NONE,  /** Do no gradient updates. */
@@ -52,18 +53,18 @@ class lbann_callback_imcomm : public lbann_callback {
   /**
    * Initialize with ct being used for all weights.
    */
-  lbann_callback_imcomm(comm_type ct = NORMAL,
+  imcomm(comm_type ct = NORMAL,
                         lbann_summary *summarizer = nullptr);
-  lbann_callback_imcomm(const lbann_callback_imcomm&) = default;
-  lbann_callback_imcomm& operator=(const lbann_callback_imcomm&) = default;
-  lbann_callback_imcomm* copy() const override {
-    return new lbann_callback_imcomm(*this);
+  imcomm(const imcomm&) = default;
+  imcomm& operator=(const imcomm&) = default;
+  imcomm* copy() const override {
+    return new imcomm(*this);
   }
   /**
    * Convenience initialization to do one update type for specific weights.
    * Implies no inter-model updates for other weights.
    */
-  lbann_callback_imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
+  imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
                         lbann_summary *summarizer = nullptr);
 
   /** Choose comm type ct for weights. */
@@ -95,13 +96,14 @@ class lbann_callback_imcomm : public lbann_callback {
 
 
 /** returns a string representation of the weight_initialization */
-std::string get_comm_type_name(lbann_callback_imcomm::comm_type m);
+std::string get_comm_type_name(imcomm::comm_type m);
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_imcomm_from_pbuf(
+std::unique_ptr<callback_base>
+build_imcomm_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED

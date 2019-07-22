@@ -29,8 +29,9 @@
 #include <callbacks.pb.h>
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_hang::setup(model* m)
+void hang::setup(model* m)
 {
   if (m->get_comm()->am_world_master()) {
     if (m_rank_to_hang == -1) {
@@ -43,12 +44,13 @@ void lbann_callback_hang::setup(model* m)
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_hang_from_pbuf(
+std::unique_ptr<callback_base>
+build_hang_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackHang&>(proto_msg);
-  return make_unique<lbann_callback_hang>(params.rank());
+  return make_unique<hang>(params.rank());
 }
 
-}// namespace lbann
+} // namespace callback
+} // namespace lbann

@@ -32,6 +32,7 @@
 #include "callbacks.pb.h"
 
 namespace lbann {
+namespace callback {
 
 namespace {
 
@@ -74,7 +75,7 @@ std::string batch_step_string(const model& m) {
 } // namespace
 
 // Status updates for batch beginnings/endings
-void lbann_callback_debug::on_batch_begin(model *m) {
+void debug::on_batch_begin(model *m) {
   if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
@@ -82,7 +83,7 @@ void lbann_callback_debug::on_batch_begin(model *m) {
     std::cerr << msg.str();
   }
 }
-void lbann_callback_debug::on_batch_end(model *m) {
+void debug::on_batch_end(model *m) {
   if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
@@ -90,15 +91,15 @@ void lbann_callback_debug::on_batch_end(model *m) {
     std::cerr << msg.str();
   }
 }
-void lbann_callback_debug::on_batch_evaluate_begin(model *m) {
+void debug::on_batch_evaluate_begin(model *m) {
   on_batch_begin(m);
 }
-void lbann_callback_debug::on_batch_evaluate_end(model *m) {
+void debug::on_batch_evaluate_end(model *m) {
   on_batch_end(m);
 }
 
 // Status updates for beginning/ending of layer forward/backward prop
-void lbann_callback_debug::on_forward_prop_begin(model *m, Layer *l) {
+void debug::on_forward_prop_begin(model *m, Layer *l) {
   if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -107,7 +108,7 @@ void lbann_callback_debug::on_forward_prop_begin(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void lbann_callback_debug::on_forward_prop_end(model *m, Layer *l) {
+void debug::on_forward_prop_end(model *m, Layer *l) {
   if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -116,7 +117,7 @@ void lbann_callback_debug::on_forward_prop_end(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void lbann_callback_debug::on_backward_prop_begin(model *m, Layer *l) {
+void debug::on_backward_prop_begin(model *m, Layer *l) {
   if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -125,7 +126,7 @@ void lbann_callback_debug::on_backward_prop_begin(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void lbann_callback_debug::on_backward_prop_end(model *m, Layer *l) {
+void debug::on_backward_prop_end(model *m, Layer *l) {
   if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -134,22 +135,22 @@ void lbann_callback_debug::on_backward_prop_end(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-void lbann_callback_debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+void debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   on_forward_prop_begin(m, l);
 }
-void lbann_callback_debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
+void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
   on_backward_prop_end(m, l);
 }
 
 // Status updates for optimization step
-void lbann_callback_debug::on_optimize_begin(model *m, weights *w) {
+void debug::on_optimize_begin(model *m, weights *w) {
   std::stringstream msg;
   msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
       << " is starting optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
 }
-void lbann_callback_debug::on_optimize_end(model *m, weights *w) {
+void debug::on_optimize_end(model *m, weights *w) {
   std::stringstream msg;
   msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
       << " is   ending optimization step for " << batch_step_string(*m)
@@ -157,14 +158,15 @@ void lbann_callback_debug::on_optimize_end(model *m, weights *w) {
   std::cerr << msg.str();
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_debug_from_pbuf(const google::protobuf::Message& proto_msg,
+std::unique_ptr<callback_base>
+build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
                                lbann_summary* summarizer) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackDebug&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.phase());
-  return make_unique<lbann_callback_debug>(modes, summarizer);
+  return make_unique<debug>(modes, summarizer);
 }
 
+} // namespace callback
 } // namespace lbann

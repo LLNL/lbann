@@ -23,29 +23,30 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summary .hpp .cpp - Callback hooks to summarize to Tensorboard
+// summary .hpp .cpp - Callback hooks to summarize to Tensorboard
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_summary.hpp"
 #include "lbann/utils/profiling.hpp"
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_summary::lbann_callback_summary(lbann_summary *summarizer,
+summary::summary(lbann_summary *summarizer,
                                                int batch_interval,
                                                int mat_interval) :
-  lbann_callback(batch_interval, summarizer),
+  callback_base(batch_interval, summarizer),
   m_mat_interval(mat_interval) {}
 
-lbann_callback_summary::~lbann_callback_summary() {
+summary::~summary() {
   delete m_summarizer;
 }
 
-void lbann_callback_summary::on_train_begin(model *m) {
+void summary::on_train_begin(model *m) {
   save_histograms(m);
 }
 
-void lbann_callback_summary::on_batch_end(model *m) {
+void summary::on_batch_end(model *m) {
   prof_region_begin("summary-batch", prof_colors[0], false);
   m->summarize_stats(*m_summarizer);
   if (m_mat_interval > 0 && m->get_step(execution_mode::training) % m_mat_interval == 0) {
@@ -70,7 +71,7 @@ void lbann_callback_summary::on_batch_end(model *m) {
   prof_region_end("summary-batch", false);
 }
 
-void lbann_callback_summary::on_epoch_end(model *m) {
+void summary::on_epoch_end(model *m) {
   prof_region_begin("summary-epoch", prof_colors[0], false);
   for (const auto& met : m->get_metrics()) {
     EvalType train_score = met->get_mean_value(m->get_execution_mode());
@@ -86,7 +87,7 @@ void lbann_callback_summary::on_epoch_end(model *m) {
   prof_region_end("summary-epoch", false);
 }
 
-void lbann_callback_summary::on_test_end(model *m) {
+void summary::on_test_end(model *m) {
   prof_region_begin("summary-test", prof_colors[0], false);
   lbann_comm *comm = m->get_comm();
   for (auto&& met : m->get_metrics()) {
@@ -106,7 +107,7 @@ void lbann_callback_summary::on_test_end(model *m) {
   prof_region_end("summary-test", false);
 }
 
-void lbann_callback_summary::save_histograms(model *m) {
+void summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
     for (int i = 0; i < layer->get_num_children(); ++i) {
@@ -132,15 +133,16 @@ void lbann_callback_summary::save_histograms(model *m) {
   }
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_summary_from_pbuf(
+std::unique_ptr<callback_base>
+build_summary_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   lbann_summary* summarizer) {
   const auto& params =
     dynamic_cast<const lbann_data::CallbackSummary&>(proto_msg);
-  return make_unique<lbann_callback_summary>(summarizer,
+  return make_unique<summary>(summarizer,
                                              params.batch_interval(),
                                              params.mat_interval());
 }
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

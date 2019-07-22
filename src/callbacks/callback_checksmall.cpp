@@ -28,8 +28,9 @@
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
+namespace callback {
 
-void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
+void check_small::on_forward_prop_end(model *m, Layer *l) {
   const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
     std::stringstream ss;
@@ -41,7 +42,7 @@ void lbann_callback_checksmall::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 
-void lbann_callback_checksmall::on_backward_prop_end(model *m) {
+void check_small::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
@@ -55,7 +56,7 @@ void lbann_callback_checksmall::on_backward_prop_end(model *m) {
   }
 }
 
-void lbann_callback_checksmall::on_batch_end(model *m) {
+void check_small::on_batch_end(model *m) {
   for (weights *w : m->get_weights()) {
     if (!is_good(w->get_values())) {
       std::stringstream ss;
@@ -68,7 +69,7 @@ void lbann_callback_checksmall::on_batch_end(model *m) {
   }
 }
 
-bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
+bool check_small::is_good(const AbsDistMat& m) {
   const AbsMat& local_mat = m.LockedMatrix();
   const El::Int height = local_mat.Height();
   const El::Int width = local_mat.Width();
@@ -85,7 +86,8 @@ bool lbann_callback_checksmall::is_good(const AbsDistMat& m) {
   return true;
 }
 
-const DataType lbann_callback_checksmall::m_threshold
+const DataType check_small::m_threshold
   = std::sqrt(std::numeric_limits<DataType>::min());
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann

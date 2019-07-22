@@ -32,19 +32,20 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  * Support changing the mini-batch size on different schedules.
  * Implementations should override implement the abstract methods to define
  * concrete schedules.
  */
-class lbann_callback_variable_minibatch : public lbann_callback {
+class variable_minibatch : public callback_base {
  public:
-  lbann_callback_variable_minibatch(int starting_mbsize);
-  lbann_callback_variable_minibatch(
-    const lbann_callback_variable_minibatch&) = default;
-  lbann_callback_variable_minibatch& operator=(
-    const lbann_callback_variable_minibatch&) = default;
+  variable_minibatch(int starting_mbsize);
+  variable_minibatch(
+    const variable_minibatch&) = default;
+  variable_minibatch& operator=(
+    const variable_minibatch&) = default;
   /// Set the initial mini-batch size.
   void on_train_begin(model *m) override;
   /// Potentially change the mini-batch size.
@@ -89,15 +90,15 @@ class lbann_callback_variable_minibatch : public lbann_callback {
  * Double the mini-batch size every set number of epochs.
  * Also doubles the learning rate.
  */
-class lbann_callback_step_minibatch : public lbann_callback_variable_minibatch {
+class step_minibatch : public variable_minibatch {
  public:
-  lbann_callback_step_minibatch(int starting_mbsize, int step,
+  step_minibatch(int starting_mbsize, int step,
                                 int ramp_time = 0);
-  lbann_callback_step_minibatch(const lbann_callback_step_minibatch&) = default;
-  lbann_callback_step_minibatch& operator=(
-    const lbann_callback_step_minibatch&) = delete;
-  lbann_callback_step_minibatch* copy() const override {
-    return new lbann_callback_step_minibatch(*this);
+  step_minibatch(const step_minibatch&) = default;
+  step_minibatch& operator=(
+    const step_minibatch&) = delete;
+  step_minibatch* copy() const override {
+    return new step_minibatch(*this);
   }
   std::string name() const override { return "step minibatch"; }
  protected:
@@ -111,11 +112,11 @@ class lbann_callback_step_minibatch : public lbann_callback_variable_minibatch {
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_step_minibatch_from_pbuf(
+std::unique_ptr<callback_base>
+build_step_minibatch_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibatch {
+class minibatch_schedule : public variable_minibatch {
  public:
   /// Represents a step in a schedule of mini-batch sizes.
   struct minibatch_step {
@@ -131,14 +132,14 @@ class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibat
       epoch(_epoch), mbsize(_mbsize), lr(_lr), ramp_time(_ramp_time) {}
   };
 
-  lbann_callback_minibatch_schedule(
+  minibatch_schedule(
     int starting_mbsize, std::vector<minibatch_step> steps);
-  lbann_callback_minibatch_schedule(
-    const lbann_callback_minibatch_schedule&) = default;
-  lbann_callback_minibatch_schedule& operator=(
-    const lbann_callback_minibatch_schedule&) = delete;
-  lbann_callback_minibatch_schedule* copy() const override {
-    return new lbann_callback_minibatch_schedule(*this);
+  minibatch_schedule(
+    const minibatch_schedule&) = default;
+  minibatch_schedule& operator=(
+    const minibatch_schedule&) = delete;
+  minibatch_schedule* copy() const override {
+    return new minibatch_schedule(*this);
   }
   std::string name() const override { return "minibatch schedule"; }
  protected:
@@ -149,10 +150,11 @@ class lbann_callback_minibatch_schedule : public lbann_callback_variable_minibat
 };
 
 // Builder function
-std::unique_ptr<lbann_callback>
-build_callback_minibatch_schedule_from_pbuf(
+std::unique_ptr<callback_base>
+build_minibatch_schedule_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
-}  // namespace lbann
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_VARIABLE_MINIBATCH_HPP_INCLUDED
