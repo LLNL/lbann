@@ -24,46 +24,39 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/proto_helpers.hpp"
-#include "lbann/utils/exception.hpp"
+#ifndef LBANN_PROTO_HELPERS_HPP_INCLUDED
+#define LBANN_PROTO_HELPERS_HPP_INCLUDED
 
 #include <google/protobuf/message.h>
-#include <google/protobuf/text_format.h>
 
+#include <functional>
+#include <memory>
 #include <string>
 
-namespace lbann {
-namespace proto {
-namespace proto_helpers {
+namespace lbann
+{
+namespace proto
+{
 
+template <typename OutT, typename... Args>
+struct GenerateBuilderType_struct
+{
+  using type = std::function<std::unique_ptr<OutT>(Args...)>;
+};
+
+template <typename OutT, typename... Args>
+using generate_builder_type =
+  typename GenerateBuilderType_struct<OutT, Args...>::type;
+
+namespace helpers
+{
+
+/** @brief Get a "derived type" message from the given message. */
 google::protobuf::Message const&
 get_oneof_message(
-  google::protobuf::Message const& msg_in, std::string const& oneof_name)
-{
-  auto&& desc = msg_in.GetDescriptor();
-  auto&& reflex = msg_in.GetReflection();
-  auto&& oneof_handle = desc->FindOneofByName(oneof_name);
-  if (!oneof_handle)
-  {
-      std::string msg_string;
-      google::protobuf::TextFormat::PrintToString(msg_in, &msg_string);
-    LBANN_ERROR(std::string("Message has no oneof field named \"")
-                + oneof_name + "\"\n\nMessage("
-                + desc->DebugString() +"):\n\n"
-                + msg_string);
-  }
+  google::protobuf::Message const& msg_in, std::string const& oneof_name);
 
-  auto&& oneof_field = reflex->GetOneofFieldDescriptor(msg_in, oneof_handle);
-
-  if (!oneof_field)
-    LBANN_ERROR("Oneof field in message has not been set.");
-
-  if (oneof_field->type() != google::protobuf::FieldDescriptor::TYPE_MESSAGE)
-    LBANN_ERROR("Oneof field is not of message type.");
-
-  return reflex->GetMessage(msg_in, oneof_field);
-}
-
-}// namespace proto_helpers
+}// namespace helpers
 }// namespace proto
 }// namespace lbann
+#endif /* LBANN_PROTO_HELPERS_HPP_INCLUDED */

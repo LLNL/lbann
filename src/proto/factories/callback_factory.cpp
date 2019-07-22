@@ -64,7 +64,7 @@
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 
 #include "lbann/proto/factories.hpp"
-#include "lbann/proto/proto_helpers.hpp"
+#include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -204,7 +204,7 @@ construct_callback(
 
   auto const& factory = get_callback_factory();
   auto const& msg =
-    proto_helpers::get_oneof_message(proto_msg, "callback_type");
+    helpers::get_oneof_message(proto_msg, "callback_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg, summarizer);
 }
 
