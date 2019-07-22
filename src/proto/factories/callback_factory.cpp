@@ -180,11 +180,6 @@ void register_default_builders(factory_type& factory)
                            build_callback_timer_from_pbuf);
 }
 
-bool is_initialized(factory_type const& factory)
-{
-  return (factory.get_num_registered_builders() > 0);
-}
-
 // Manage a global factory
 struct factory_manager
 {
