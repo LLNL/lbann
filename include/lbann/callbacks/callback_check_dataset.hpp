@@ -69,7 +69,7 @@ class lbann_callback_check_dataset : public lbann_callback {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   lbann_callback_check_dataset, build_callback_check_dataset_from_pbuf);
 
 }  // namespace lbann

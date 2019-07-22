@@ -54,7 +54,7 @@ class lbann_callback_check_init : public lbann_callback {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   lbann_callback_check_init, build_callback_check_init_from_pbuf)
 
 }  // namespace lbann

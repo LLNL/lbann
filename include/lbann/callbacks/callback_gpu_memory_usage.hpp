@@ -47,7 +47,7 @@ class lbann_callback_gpu_memory_usage : public lbann_callback {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   lbann_callback_gpu_memory_usage, build_callback_gpu_memory_usage_from_pbuf);
 
 }  // namespace lbann

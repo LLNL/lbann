@@ -62,7 +62,7 @@ class lbann_callback_checknan : public lbann_callback {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   lbann_callback_checknan, build_callback_check_nan_from_pbuf)
 
 }  // namespace lbann
