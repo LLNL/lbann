@@ -157,7 +157,7 @@ std::unique_ptr<callback_base>
 build_debug_io_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackDebugIO&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackDebugIO&>(proto_msg);
   const auto& phase = exe_mode_from_string(params.phase());
   const auto& lvl = params.lvl();
   switch (phase) {

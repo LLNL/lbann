@@ -163,7 +163,7 @@ std::unique_ptr<callback_base>
 build_imcomm_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   lbann_summary* summarizer) {
-  const auto& params = dynamic_cast<const lbann_data::CallbackImComm&>(proto_msg);
+  const auto& params = dynamic_cast<const lbann_data::Callback::CallbackImComm&>(proto_msg);
   const auto& type_str = params.intertrainer_comm_method();
   imcomm::comm_type type = imcomm::comm_type::NONE;
   if (type_str == "none") {

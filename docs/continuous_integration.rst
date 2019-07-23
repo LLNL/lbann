@@ -165,7 +165,7 @@ Bamboo agent properties are used to specify requirements for each job.
 +--------------------------------+-------------+--------------+----------+------------------+------------------------+
 | Pascal Agents (x86_gpu_pascal) | lbannusr    | x86_64       | pascal   | pascal           | chaos_6_x86_64_ib      |
 +--------------------------------+-------------+--------------+----------+------------------+------------------------+
-| Ray Agents (ppc64le_gpu)       | lbannusr    | ppc64_le     | ray      | pascal           | blueos_3_ppc64le_ib    |
+| Ray Agents (ppc64le_gpu)       | lbannusr    | ppc64le      | ray      | pascal           | blueos_3_ppc64le_ib    |
 +--------------------------------+-------------+--------------+----------+------------------+------------------------+
 
 Currently, "agent_owner", "architecture", and "gpu_architecture" are used to

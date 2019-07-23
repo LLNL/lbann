@@ -530,7 +530,7 @@ build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   lbann_summary* summarizer) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackLTFB&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackLTFB&>(proto_msg);
   return make_unique<ltfb>(
     params.batch_interval(),
     params.metric(),

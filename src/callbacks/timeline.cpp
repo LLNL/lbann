@@ -103,7 +103,7 @@ std::unique_ptr<callback_base>
 build_timeline_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackTimeline&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackTimeline&>(proto_msg);
   return make_unique<timeline>(params.directory());
 }
 

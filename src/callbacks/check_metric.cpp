@@ -93,7 +93,7 @@ std::unique_ptr<callback_base>
 build_check_metric_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackCheckMetric&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackCheckMetric&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
   return make_unique<check_metric>(params.metric(),

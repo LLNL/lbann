@@ -49,7 +49,7 @@ class gpu_memory_usage : public callback_base {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   gpu_memory_usage, build_gpu_memory_usage_callback_from_pbuf);
 
 } // namespace callback

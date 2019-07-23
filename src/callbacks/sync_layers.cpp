@@ -66,7 +66,7 @@ std::unique_ptr<callback_base>
 build_sync_layers_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackSyncLayers&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackSyncLayers&>(proto_msg);
   return make_unique<sync_layers>(params.sync_gpus(),
                                                  params.sync_mpi(),
                                                  params.only_input());

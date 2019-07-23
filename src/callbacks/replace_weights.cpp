@@ -55,7 +55,7 @@ std::unique_ptr<callback_base>
 build_replace_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackReplaceWeights&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackReplaceWeights&>(proto_msg);
   return make_unique<replace_weights>(
     parse_list<std::string>(params.source_layers()),
     parse_list<std::string>(params.destination_layers()),

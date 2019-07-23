@@ -69,7 +69,7 @@ class check_small : public callback_base {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   check_small, build_check_small_callback_from_pbuf)
 
 } // namespace callback

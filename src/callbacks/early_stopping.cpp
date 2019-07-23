@@ -65,7 +65,7 @@ std::unique_ptr<callback_base>
 build_early_stopping_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackEarlyStopping&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackEarlyStopping&>(proto_msg);
   return make_unique<early_stopping>(params.patience());
 }
 

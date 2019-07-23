@@ -166,7 +166,7 @@ std::unique_ptr<callback_base>
 build_perturb_adam_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackPerturbAdam&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackPerturbAdam&>(proto_msg);
   return make_unique<perturb_adam>(
     params.learning_rate_factor(),
     params.beta1_factor(),

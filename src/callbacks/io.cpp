@@ -71,7 +71,7 @@ std::unique_ptr<callback_base>
 build_disp_io_stats_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackDispIOStats&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackDispIOStats&>(proto_msg);
   return make_unique<io>(
     parse_list<std::string>(params.layers()));
 }

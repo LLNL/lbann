@@ -70,7 +70,7 @@ class check_dataset : public callback_base {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   check_dataset, build_check_dataset_callback_from_pbuf);
 
 } // namespace callback

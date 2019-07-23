@@ -138,7 +138,7 @@ build_summary_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   lbann_summary* summarizer) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackSummary&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackSummary&>(proto_msg);
   return make_unique<summary>(summarizer,
                                              params.batch_interval(),
                                              params.mat_interval());

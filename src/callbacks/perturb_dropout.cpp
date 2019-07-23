@@ -122,7 +122,7 @@ std::unique_ptr<callback_base>
 build_perturb_dropout_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
-    dynamic_cast<const lbann_data::CallbackPerturbDropout&>(proto_msg);
+    dynamic_cast<const lbann_data::Callback::CallbackPerturbDropout&>(proto_msg);
   return make_unique<perturb_dropout>(
     params.keep_dropout_factor(),
     parse_set<std::string>(params.layers()));

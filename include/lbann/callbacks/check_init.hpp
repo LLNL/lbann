@@ -55,7 +55,7 @@ class check_init : public callback_base {
 };
 
 // Builder function
-ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
   check_init, build_check_init_callback_from_pbuf)
 
 } // namespace callback
