@@ -67,6 +67,10 @@ class lbann_callback_checksmall : public lbann_callback {
   bool is_good(const AbsDistMat& m);
 };
 
+// Builder function
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
+  lbann_callback_checksmall, build_callback_check_small_from_pbuf)
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECKSMALL_HPP_INCLUDED

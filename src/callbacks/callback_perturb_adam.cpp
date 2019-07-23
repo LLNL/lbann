@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_perturb_adam.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -158,6 +159,21 @@ void lbann_callback_perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
   opt.m_beta2 = hyperparameters[2];
   opt.m_eps = hyperparameters[3];
 
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_perturb_adam_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackPerturbAdam&>(proto_msg);
+  return make_unique<lbann_callback_perturb_adam>(
+    params.learning_rate_factor(),
+    params.beta1_factor(),
+    params.beta2_factor(),
+    params.eps_factor(),
+    params.perturb_during_training(),
+    params.batch_interval(),
+    parse_set<std::string>(params.weights()));
 }
 
 } // namespace lbann

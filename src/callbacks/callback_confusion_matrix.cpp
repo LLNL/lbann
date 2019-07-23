@@ -232,4 +232,14 @@ void lbann_callback_confusion_matrix::save_confusion_matrix(const model& m) {
 
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_confusion_matrix_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
+  return make_unique<lbann_callback_confusion_matrix>(params.prediction(),
+                                                      params.label(),
+                                                      params.prefix());
+}
+
 }  // namespace lbann

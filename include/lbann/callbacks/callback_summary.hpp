@@ -66,6 +66,11 @@ class lbann_callback_summary : public lbann_callback {
   int m_mat_interval;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_summary_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SUMMARY_HPP_INCLUDED

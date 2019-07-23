@@ -73,6 +73,11 @@ class lbann_callback_dump_minibatch_sample_indices : public lbann_callback {
   std::string m_basename;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_dump_mb_indices_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_MINIBATCH_SAMPLE_INDICES_HPP_INCLUDED

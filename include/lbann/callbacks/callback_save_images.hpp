@@ -71,6 +71,11 @@ private:
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_save_images_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_IMAGES_HPP_INCLUDED

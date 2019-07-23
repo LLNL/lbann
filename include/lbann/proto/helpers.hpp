@@ -22,41 +22,41 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_check_init .hpp .cpp - Check multi-model init
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
+#ifndef LBANN_PROTO_HELPERS_HPP_INCLUDED
+#define LBANN_PROTO_HELPERS_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
+#include <google/protobuf/message.h>
 
-namespace lbann {
+#include <functional>
+#include <memory>
+#include <string>
 
-/**
- * Verify that every model uses the same initialization.
- */
-class lbann_callback_check_init : public lbann_callback {
- public:
-  lbann_callback_check_init() : lbann_callback() {}
-  lbann_callback_check_init(const lbann_callback_check_init&) = default;
-  lbann_callback_check_init& operator=(
-    const lbann_callback_check_init&) = default;
-  lbann_callback_check_init* copy() const override {
-    return new lbann_callback_check_init(*this);
-  }
-  /** Check initializations. */
-  void on_train_begin(model *m) override;
-  std::string name() const override { return "check init"; }
- private:
-  /** Return true if x == y. */
-  bool check_equal(const AbsMat& x, const AbsMat& y) const;
+namespace lbann
+{
+namespace proto
+{
+
+template <typename OutT, typename... Args>
+struct GenerateBuilderType_struct
+{
+  using type = std::function<std::unique_ptr<OutT>(Args...)>;
 };
 
-// Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  lbann_callback_check_init, build_callback_check_init_from_pbuf)
+template <typename OutT, typename... Args>
+using generate_builder_type =
+  typename GenerateBuilderType_struct<OutT, Args...>::type;
 
-}  // namespace lbann
+namespace helpers
+{
 
-#endif  // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
+/** @brief Get a "derived type" message from the given message. */
+google::protobuf::Message const&
+get_oneof_message(
+  google::protobuf::Message const& msg_in, std::string const& oneof_name);
+
+}// namespace helpers
+}// namespace proto
+}// namespace lbann
+#endif /* LBANN_PROTO_HELPERS_HPP_INCLUDED */

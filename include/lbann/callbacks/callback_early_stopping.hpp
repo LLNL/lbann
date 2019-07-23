@@ -62,6 +62,11 @@ class lbann_callback_early_stopping : public lbann_callback {
   int64_t m_wait = 0;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_early_stopping_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_EARLY_STOPPING_HPP_INCLUDED

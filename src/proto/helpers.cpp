@@ -22,51 +22,48 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
-#define LBANN_CALLBACKS_IO_HPP_INCLUDED
-
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include <google/protobuf/message.h>
+#include <google/protobuf/text_format.h>
 
 #include <string>
-#include <vector>
 
 namespace lbann {
+namespace proto {
+namespace helpers {
 
-/**
- * Print information on the amount of IO that layers do.
- */
-class lbann_callback_io : public lbann_callback {
- public:
-  lbann_callback_io() = default;
-  /** Only apply to specific layers. */
-  lbann_callback_io(std::vector<std::string> const& layers)
-    : m_layers(layers.begin(), layers.end()) {}
-
-  lbann_callback_io(const lbann_callback_io&) = default;
-  lbann_callback_io& operator=(const lbann_callback_io&) = default;
-  lbann_callback_io* copy() const override {
-    return new lbann_callback_io(*this);
+google::protobuf::Message const&
+get_oneof_message(
+  google::protobuf::Message const& msg_in, std::string const& oneof_name)
+{
+  auto&& desc = msg_in.GetDescriptor();
+  auto&& reflex = msg_in.GetReflection();
+  auto&& oneof_handle = desc->FindOneofByName(oneof_name);
+  if (!oneof_handle)
+  {
+      std::string msg_string;
+      google::protobuf::TextFormat::PrintToString(msg_in, &msg_string);
+    LBANN_ERROR(std::string("Message has no oneof field named \"")
+                + oneof_name + "\"\n\nMessage("
+                + desc->DebugString() +"):\n\n"
+                + msg_string);
   }
-  /** Report how much I/O has occured per data reader */
-  void on_epoch_end(model *m) override;
-  void on_test_end(model *m) override;
-  std::string name() const override { return "io"; }
- private:
-  /** Indicies of layers to monitor. */
-  std::unordered_set<std::string> m_layers;
-};
 
-// Builder function
-std::unique_ptr<lbann_callback>
-build_callback_disp_io_stats_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  auto&& oneof_field = reflex->GetOneofFieldDescriptor(msg_in, oneof_handle);
 
-}  // namespace lbann
+  if (!oneof_field)
+    LBANN_ERROR("Oneof field in message has not been set.");
 
-#endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED
+  if (oneof_field->type() != google::protobuf::FieldDescriptor::TYPE_MESSAGE)
+    LBANN_ERROR("Oneof field is not of message type.");
+
+  return reflex->GetMessage(msg_in, oneof_field);
+}
+
+}// namespace helpers
+}// namespace proto
+}// namespace lbann

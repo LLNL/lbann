@@ -42,7 +42,7 @@ namespace lbann {
  */
 class lbann_callback_save_topk_models : public lbann_callback_save_model {
  public:
-  lbann_callback_save_topk_models(std::string dir, int k, std::string metric_name, bool ascending_ordering=false) : 
+  lbann_callback_save_topk_models(std::string dir, int k, std::string metric_name, bool ascending_ordering=false) :
   lbann_callback_save_model(dir,true), m_k(k),m_metric_name(metric_name),m_ascending_ordering(ascending_ordering) {}
   lbann_callback_save_topk_models(const lbann_callback_save_topk_models&) = default;
   lbann_callback_save_topk_models& operator=(const lbann_callback_save_topk_models&) = default;
@@ -53,11 +53,16 @@ class lbann_callback_save_topk_models : public lbann_callback_save_model {
  private:
   /*determine if a trainer's model is in top k, computation done by trainer master processes*/
   bool am_in_topk(model *m);
-  int m_k ;  
-  std::string m_metric_name; 
-  bool m_ascending_ordering; 
+  int m_k ;
+  std::string m_metric_name;
+  bool m_ascending_ordering;
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_save_topk_models_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 }  // namespace lbann
 

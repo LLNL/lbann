@@ -158,4 +158,24 @@ std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
   return comm_type_names[(int)m];
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_imcomm_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  lbann_summary* summarizer) {
+  const auto& params = dynamic_cast<const lbann_data::Callback::CallbackImComm&>(proto_msg);
+  const auto& type_str = params.intertrainer_comm_method();
+  lbann_callback_imcomm::comm_type type = lbann_callback_imcomm::comm_type::NONE;
+  if (type_str == "none") {
+    type = lbann_callback_imcomm::comm_type::NONE;
+  } else if (type_str == "normal") {
+    type = lbann_callback_imcomm::comm_type::NORMAL;
+  } else {
+    std::ostringstream err;
+    err << "invalid inter-model communication type (" << type_str << ")";
+    LBANN_ERROR(err.str());
+  }
+  std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
+  return make_unique<lbann_callback_imcomm>(type, selected_weights, summarizer);
+}
+
 }  // namespace lbann

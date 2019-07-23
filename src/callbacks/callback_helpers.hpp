@@ -22,51 +22,32 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// lbann_callback_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
-#define LBANN_CALLBACKS_IO_HPP_INCLUDED
-
-#include "lbann/callbacks/callback.hpp"
-
-#include <google/protobuf/message.h>
+#include "lbann/utils/exception.hpp"
 
 #include <string>
 #include <vector>
 
 namespace lbann {
+namespace {
+template <typename T>
+std::vector<T*> select_things_by_name(
+  std::vector<T*> const& things,
+  std::vector<std::string> const& thing_names) {
 
-/**
- * Print information on the amount of IO that layers do.
- */
-class lbann_callback_io : public lbann_callback {
- public:
-  lbann_callback_io() = default;
-  /** Only apply to specific layers. */
-  lbann_callback_io(std::vector<std::string> const& layers)
-    : m_layers(layers.begin(), layers.end()) {}
-
-  lbann_callback_io(const lbann_callback_io&) = default;
-  lbann_callback_io& operator=(const lbann_callback_io&) = default;
-  lbann_callback_io* copy() const override {
-    return new lbann_callback_io(*this);
+  std::vector<T*> out_things;
+  for (auto const& name : thing_names) {
+    auto it = std::find_if(
+      things.begin(), things.end(),
+      [&name](const T* t) { return t->get_name() == name; });
+    if (it != things.end())
+      out_things.push_back(*it);
+    else
+      LBANN_ERROR(std::string("Requested thing \"") + name
+                  + "\" does not exist in the list of things.");
   }
-  /** Report how much I/O has occured per data reader */
-  void on_epoch_end(model *m) override;
-  void on_test_end(model *m) override;
-  std::string name() const override { return "io"; }
- private:
-  /** Indicies of layers to monitor. */
-  std::unordered_set<std::string> m_layers;
-};
-
-// Builder function
-std::unique_ptr<lbann_callback>
-build_callback_disp_io_stats_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
-
-}  // namespace lbann
-
-#endif  // LBANN_CALLBACKS_IO_HPP_INCLUDED
+  return out_things;
+}
+}// namespace
+}// namespace lbann

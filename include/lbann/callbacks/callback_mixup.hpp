@@ -36,20 +36,20 @@ namespace lbann {
 
 /**
  * Apply mixup to named input layers.
- * 
+ *
  * See:
- * 
+ *
  *     Zhang, H. et al. "mixup: Beyond Empirical Risk Minimization." ICLR, 2018.
  *
  * This implementation does mixup within a single batch, per the recommendation
  * within the paper.
- * 
+ *
  * This approach may create duplicate images, and so uses
- * 
+ *
  *     lambda = max(lambda, 1 - lambda)
- * 
+ *
  * for the mixing value.
- * 
+ *
  * This recommendation comes from https://docs.fast.ai/callbacks.mixup.html
  *
  * The recommended default alpha (from the paper) is 0.4.
@@ -75,6 +75,11 @@ private:
   /** mixup parameter. */
   float m_alpha;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_mixup_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 }  // namespace lbann
 
