@@ -33,9 +33,13 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::fp_compute() {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
-  const auto& local_weights = m_weights[0]->get_values().LockedMatrix();
+  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
+  auto& local_output = dynamic_cast<CPUMat&>(get_local_activations());
+  const auto& local_weights = dynamic_cast<const CPUMat&>(m_weights[0]->get_values().LockedMatrix());
+  const auto local_scale = El::LockedView(local_weights,
+                                          El::ALL, El::IR(0));
+  const auto local_bias = El::LockedView(local_weights,
+                                         El::ALL, El::IR(1));
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
@@ -48,15 +52,19 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
   const El::Int local_width = local_input.Width();
 
   // Apply channel-wise scale and bias
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-  for (El::Int col = 0; col < local_width; ++col) {
-    for (El::Int channel = 0; channel < num_channels; ++channel) {
-      const auto s = local_weights(channel, 0);
-      const auto b = local_weights(channel, 1);
-      const auto* x = local_input.LockedBuffer(channel * channel_size, col);
-      auto* y = local_output.Buffer(channel * channel_size, col);
-      for (El::Int i = 0; i < channel_size; ++i) {
-        y[i] = s * x[i] + b;
+  LBANN_OMP_PARALLEL_FOR
+  for (El::Int channel = 0; channel < num_channels; ++channel) {
+    const auto a = local_scale(channel, 0);
+    const auto b = local_bias(channel, 0);
+    const El::Int row_start = channel * channel_size;
+    const El::Int row_end = (channel + 1) * channel_size;
+    const El::Int col_start = 0;
+    const El::Int col_end = local_width;
+    for (El::Int col = col_start; col < col_end; ++col) {
+      for (El::Int row = row_start; row < row_end; ++row) {
+        const auto& x = local_input(row, col);
+        auto& y = local_output(row, col);
+        y = a * x + b;
       }
     }
   }
@@ -68,11 +76,18 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::bp_compute() {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  const auto& local_weights = m_weights[0]->get_values().LockedMatrix();
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  auto& local_gradient_wrt_weights = m_weights_gradient->Matrix();
+  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(get_local_error_signals());
+  const auto& local_weights = dynamic_cast<const CPUMat&>(m_weights[0]->get_values().LockedMatrix());
+  auto& local_gradient_wrt_weights = dynamic_cast<CPUMat&>(m_weights_gradient->Matrix());
+  const auto local_scale = El::LockedView(local_weights,
+                                          El::ALL, El::IR(0));
+  auto local_gradient_wrt_scale = El::View(local_gradient_wrt_weights,
+                                           El::ALL, El::IR(0));
+  auto local_gradient_wrt_bias = El::View(local_gradient_wrt_weights,
+                                          El::ALL, El::IR(1));
+
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
@@ -87,22 +102,24 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
   // Compute gradients
   LBANN_OMP_PARALLEL_FOR
   for (El::Int channel = 0; channel < num_channels; ++channel) {
-    const auto s = local_weights(channel, 0);
-    auto& ds = local_gradient_wrt_weights(channel, 0);
-    auto& db = local_gradient_wrt_weights(channel, 1);
-    ds = DataType{0};
-    db = DataType{0};
-    for (El::Int col = 0; col < local_width; ++col) {
-      const El::Int offset = channel * channel_size;
-      const auto* x = local_input.LockedBuffer(offset, col);
-      const auto* dy = local_gradient_wrt_output.LockedBuffer(offset, col);
-      auto* dx = local_gradient_wrt_input.Buffer(offset, col);
-      for (El::Int i = 0; i < channel_size; ++i) {
-        ds += x[i] * dy[i];
-        db += dy[i];
-        dx[i] = s * dy[i];
+    const auto a = local_scale(channel, 0);
+    DataType da{0}, db{0};
+    const El::Int row_start = channel * channel_size;
+    const El::Int row_end = (channel + 1) * channel_size;
+    const El::Int col_start = 0;
+    const El::Int col_end = local_width;
+    for (El::Int col = col_start; col < col_end; ++col) {
+      for (El::Int row = row_start; row < row_end; ++row) {
+        const auto& x = local_input(row, col);
+        const auto& dy = local_gradient_wrt_output(row, col);
+        auto& dx = local_gradient_wrt_input(row, col);
+        da += x * dy;
+        db += dy;
+        dx = a * dy;
       }
     }
+    local_gradient_wrt_scale(channel, 0) = da;
+    local_gradient_wrt_bias(channel, 0) = db;
   }
 
   // Update optimizer with gradient

@@ -33,6 +33,25 @@
 
 namespace lbann {
 
+/** @brief Apply scale and bias to tensor channels.
+ *
+ *  The input tensor is sliced along the first tensor dimension (the
+ *  "channel" dimension, assuming image data in CHW format) and scale
+ *  and bias terms are applied independently to each slice. More
+ *  precisely, given input and output tensors
+ *  @f$ X,Y\in\mathbb{R}^{d_1\times\cdots\times d_n} @f$
+ *  and scale and bias vectors @f$ a,b\in\mathbb{R}^{d_1} @f$:
+ *  @f[
+ *    Y_{i,j,\cdots} = a_i X_{i,j,\cdots} + b_i
+ *  @f]
+ *
+ *  The scale and bias vectors are fused into a single weights tensor
+ *  to reduce the number of gradient allreduces during backprop. In
+ *  particular, the weights tensor is a
+ *  @f$ \text{num_channels} \times 2 @f$ matrix, where the first
+ *  column correspond to scale terms and the second column to bias
+ *  terms.
+ */
 template <data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
 class channelwise_scale_bias_layer : public Layer {
@@ -104,6 +123,7 @@ public:
     m_weights[0]->set_matrix_distribution(matrix_dist);
 
     // Setup gradient w.r.t. weights
+    m_weights_gradient->AlignWith(matrix_dist);
     m_weights_gradient->Resize(num_channels, 2);
 
   }
@@ -114,6 +134,7 @@ protected:
 
 private:
 
+  /** Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMat> m_weights_gradient;
 
 };
