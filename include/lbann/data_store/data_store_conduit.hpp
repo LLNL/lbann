@@ -288,8 +288,8 @@ protected :
   void get_image_sizes(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 
   /// offset at which the raw image will be stored in a shared memory segment;
-  /// for use in local cache mode
-  std::unordered_map<int,int> m_image_offsets;
+  /// for use in local cache mode; maps data_id to offset
+  std::unordered_map<int,size_t> m_image_offsets;
   /// fills in m_image_offsets for use in local cache mode
   void compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
 

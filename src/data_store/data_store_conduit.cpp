@@ -1117,7 +1117,7 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
 }
 
 void data_store_conduit::compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices) {
-  int offset = 0;
+  size_t offset = 0;
   for (size_t p=0; p<indices.size(); p++) {
     for (auto idx : indices[p]) {
       if (sizes.find(idx) == sizes.end()) {
@@ -1147,12 +1147,12 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
 
   //in case a previous run was aborted, attempt to remove the file, which
   //may or may not exist
+  shm_unlink(m_seg_name.c_str());
   int node_id = m_comm->get_rank_in_node();
   if (node_id == 0) {
-    std::stringstream s;
-    s << "rm -rf /dev/shm/" << m_seg_name;
-    system(s.str().c_str());
+    std::remove(m_seg_name.c_str());
   }
+  m_comm->trainer_barrier();
 
   #if 0
   debug block; may go away
@@ -1279,15 +1279,22 @@ void data_store_conduit::preload_local_cache() {
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices) {
-  int n = 0;
+  if (m_world_master) {
+    std::cout << "data_store_conduit: reading files for local_cache\n";
+  }
+  size_t n = 0;
   for (auto t : indices) {
     n += sizes[t];
   }
   work.resize(n);
 
+  if (m_output) {
+    m_output << "data_store_conduit::read_files; requested work size: " << n << std::endl;
+  }
+
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
-  int offset = 0;
+  size_t offset = 0;
   for (auto h : indices) {
     int s = sizes[h];
     const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
@@ -1303,7 +1310,7 @@ void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes)
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   for (size_t idx=0; idx<image_list.size(); idx++) {
     int label = image_list[idx].second;
-    int offset = m_image_offsets[idx];
+    size_t offset = m_image_offsets[idx];
     size_t sz = sizes[idx];
     conduit::Node &node = m_data[idx];
     node[LBANN_DATA_ID_STR(idx) + "/label"].set(label);
