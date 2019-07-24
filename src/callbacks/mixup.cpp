@@ -38,7 +38,7 @@
 namespace lbann {
 namespace callback {
 
-void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
+void mixup::on_forward_prop_end(model *m, Layer *l) {
   if (!m_layers.count(l->get_name())) {
     return;
   }
@@ -106,7 +106,7 @@ build_mixup_callback_from_pbuf(
   const auto& layers_list = parse_list<std::string>(params.layers());
   std::unordered_set<std::string> layers(layers_list.begin(),
                                          layers_list.end());
-  return make_unique<callback_mixup>(layers, params.alpha());
+  return make_unique<mixup>(layers, params.alpha());
 }
 
 } // namespace callback

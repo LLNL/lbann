@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// io .hpp .cpp - Callback hooks for I/O monitoring
+// monitor_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
@@ -42,22 +42,22 @@ namespace callback {
 /**
  * Print information on the amount of IO that layers do.
  */
-class io : public callback_base {
+class monitor_io : public callback_base {
  public:
-  io() = default;
+  monitor_io() = default;
   /** Only apply to specific layers. */
-  io(std::vector<std::string> const& layers)
+  monitor_io(std::vector<std::string> const& layers)
     : m_layers(layers.begin(), layers.end()) {}
 
-  io(const io&) = default;
-  io& operator=(const io&) = default;
-  io* copy() const override {
-    return new io(*this);
+  monitor_io(const monitor_io&) = default;
+  monitor_io& operator=(const monitor_io&) = default;
+  monitor_io* copy() const override {
+    return new monitor_io(*this);
   }
   /** Report how much I/O has occured per data reader */
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
-  std::string name() const override { return "io"; }
+  std::string name() const override { return "monitor_io"; }
  private:
   /** Indicies of layers to monitor. */
   std::unordered_set<std::string> m_layers;
@@ -65,7 +65,7 @@ class io : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_disp_io_stats_callback_from_pbuf(
+build_monitor_io_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
 } // namespace callback

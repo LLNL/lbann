@@ -20,13 +20,13 @@ set_full_path(THIS_DIR_HEADERS
   gpu_memory_usage.hpp
   hang.hpp
   imcomm.hpp
-  io.hpp
   learning_rate.hpp
   ltfb.hpp
   mixup.hpp
+  monitor_io.hpp
   perturb_adam.hpp
   perturb_dropout.hpp
-  print.hpp
+  print_statistics.hpp
   profiler.hpp
   replace_weights.hpp
   save_images.hpp

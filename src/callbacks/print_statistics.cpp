@@ -23,18 +23,18 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// print .hpp .cpp - Callback hooks to print information
+// print_statistics .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <vector>
-#include "lbann/callbacks/print.hpp"
+#include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include <iomanip>
 
 namespace lbann {
 namespace callback {
 
-void print::setup(model *m) {
+void print_statistics::setup(model *m) {
 #ifdef LBANN_VERSION
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
@@ -44,7 +44,7 @@ void print::setup(model *m) {
 #endif
 }
 
-void print::on_epoch_begin(model *m) {
+void print_statistics::on_epoch_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
 
@@ -116,19 +116,19 @@ void print::on_epoch_begin(model *m) {
   }
 }
 
-void print::on_epoch_end(model *m) {
+void print_statistics::on_epoch_end(model *m) {
   report_results(m);
 }
 
-void print::on_validation_end(model *m) {
+void print_statistics::on_validation_end(model *m) {
   report_results(m);
 }
 
-void print::on_test_end(model *m) {
+void print_statistics::on_test_end(model *m) {
   report_results(m);
 }
 
-void print::report_results(model *m) {
+void print_statistics::report_results(model *m) {
   lbann_comm *comm = m->get_comm();
 
   // Get string for execution mode
@@ -248,11 +248,11 @@ void print::report_results(model *m) {
 }
 
 std::unique_ptr<callback_base>
-build_print_callback_from_pbuf(
+build_print_statistics_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPrint&>(proto_msg);
-  return make_unique<print>(params.interval(),
+  return make_unique<print_statistics>(params.interval(),
                                            params.print_global_stat_only());
 }
 

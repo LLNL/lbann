@@ -55,17 +55,17 @@ namespace callback {
  *
  * The recommended default alpha (from the paper) is 0.4.
  */
-class callback_mixup : public callback_base {
+class mixup : public callback_base {
 public:
   /** Apply mixup to layers named in layers with mixup parameter alpha. */
-  callback_mixup(std::unordered_set<std::string> layers, float alpha) :
+  mixup(std::unordered_set<std::string> layers, float alpha) :
     callback_base(), m_layers(layers), m_alpha(alpha) {
     if (alpha < 0.0f) {
       LBANN_ERROR("Mixup alpha must be non-negative.");
     }
   }
 
-  callback_mixup* copy() const override { return new callback_mixup(*this); }
+  mixup* copy() const override { return new mixup(*this); }
   std::string name() const override { return "mixup"; }
 
   void on_forward_prop_end(model *m, Layer *l) override;

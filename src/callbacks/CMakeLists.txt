@@ -19,13 +19,13 @@ set_full_path(THIS_DIR_SOURCES
   gpu_memory_usage.cpp
   hang.cpp
   imcomm.cpp
-  io.cpp
   learning_rate.cpp
   ltfb.cpp
   mixup.cpp
+  monitor_io.cpp
   perturb_adam.cpp
   perturb_dropout.cpp
-  print.cpp
+  print_statistics.cpp
   profiler.cpp
   replace_weights.cpp
   save_images.cpp

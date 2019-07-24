@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// print .hpp .cpp - Callback hooks to print information
+// print_statistics .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_PRINT_STATISTICS_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_PRINT_STATISTICS_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
@@ -38,19 +38,20 @@ namespace callback {
  *  Prints average objective function value and metric scores after
  *  each training epoch and evaluation.
  */
-class print : public callback_base {
+class print_statistics : public callback_base {
  public:
-  print(int batch_interval = 1, bool print_global_stat_only=false) :
-  callback_base(batch_interval), m_print_global_stat_only(print_global_stat_only) {}
-  print(const print&) = default;
-  print& operator=(const print&) = default;
-  print* copy() const override { return new print(*this); }
+  print_statistics(int batch_interval = 1, bool print_global_stat_only=false) :
+    callback_base(batch_interval),
+    m_print_global_stat_only(print_global_stat_only) {}
+  print_statistics(const print_statistics&) = default;
+  print_statistics& operator=(const print_statistics&) = default;
+  print_statistics* copy() const override { return new print_statistics(*this); }
   void setup(model *m) override;
   void on_epoch_begin(model *m) override;
   void on_epoch_end(model *m) override;
   void on_validation_end(model *m) override;
   void on_test_end(model *m) override;
-  std::string name() const override { return "print"; }
+  std::string name() const override { return "print_statistics"; }
 
  private:
   /** Print objective function and metrics to standard output. */
@@ -61,10 +62,10 @@ class print : public callback_base {
 
 // Builder function
 std::unique_ptr<callback_base>
-build_print_callback_from_pbuf(
+build_print_statistics_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_PRINT_STATISTICS_HPP_INCLUDED

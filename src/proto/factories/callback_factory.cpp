@@ -45,13 +45,13 @@
 #include "lbann/callbacks/gpu_memory_usage.hpp"
 #include "lbann/callbacks/hang.hpp"
 #include "lbann/callbacks/imcomm.hpp"
-#include "lbann/callbacks/io.hpp"
 #include "lbann/callbacks/learning_rate.hpp"
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/callbacks/mixup.hpp"
+#include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
-#include "lbann/callbacks/print.hpp"
+#include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
@@ -114,7 +114,7 @@ void register_default_builders(factory_type& factory)
   factory.register_builder("CallbackDebugIO",
                            build_debug_io_callback_from_pbuf);
   factory.register_builder("CallbackDispIOStats",
-                           build_disp_io_stats_callback_from_pbuf);
+                           build_monitor_io_callback_from_pbuf);
   factory.register_builder("CallbackDropFixedLearningRate",
                            build_drop_fixed_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackDumpErrorSignals",
@@ -154,7 +154,7 @@ void register_default_builders(factory_type& factory)
   factory.register_builder("CallbackPolyLearningRate",
                            build_poly_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPrint",
-                           build_print_callback_from_pbuf);
+                           build_print_statistics_callback_from_pbuf);
   factory.register_builder("CallbackProfiler",
                            build_profiler_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",

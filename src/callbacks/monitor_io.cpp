@@ -23,26 +23,27 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// io .hpp .cpp - Callback hooks for I/O monitoring
+// monitor_io .hpp .cpp - Callback hooks for I/O monitoring
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <utility>
 
-#include "lbann/callbacks/io.hpp"
+#include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/proto/proto_common.hpp"
 
 namespace lbann {
 namespace callback {
 
-void io::on_epoch_end(model *m) {
+void monitor_io::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
        || m_layers.find(layer->get_name()) != m_layers.end()) {
-      auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
+      auto *input = dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
-        std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
+        std::cout << "Rank " << comm->get_trainer_rank() << "."
+                  << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_trained() << " training samples of "
                   << input->get_total_num_training_samples() << " ("
                   << input->get_num_samples_trained() / m->get_epoch() << " per epoch)" << std::endl;
@@ -51,28 +52,30 @@ void io::on_epoch_end(model *m) {
   }
 }
 
-void io::on_test_end(model *m) {
+void monitor_io::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
        || m_layers.find(layer->get_name()) != m_layers.end()) {
-      auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
+      auto *input = dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
-        std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
+        std::cout << "Rank " << comm->get_trainer_rank() << "."
+                  << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_tested() << " test samples of "
                   << input->get_total_num_testing_samples() << " ("
-                  << input->get_num_samples_tested() / m->get_epoch() << " per epoch)" << std::endl;
+                  << input->get_num_samples_tested() / m->get_epoch()
+                  << " per epoch)" << std::endl;
       }
     }
   }
 }
 
 std::unique_ptr<callback_base>
-build_disp_io_stats_callback_from_pbuf(
+build_monitor_io_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary*) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDispIOStats&>(proto_msg);
-  return make_unique<io>(
+  return make_unique<monitor_io>(
     parse_list<std::string>(params.layers()));
 }
 
