@@ -339,29 +339,27 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
           local_mean.Buffer(), local_var.Buffer());
     }
     El::Int num_per_sum;
-    switch (m_stats_aggregation) {
-    case batch_normalization_stats_aggregation::global:
-      // Allreduce on fused buffer.
+    if (m_statistics_group_size == 0) {
+      // Global statistics aggregation; allreduce on fused buffer.
       m_comm->allreduce(*m_mean_and_var, m_mean_and_var->RedundantComm(),
                         El::mpi::SUM);
       num_per_sum = channel_size * width;
-      break;
-    case batch_normalization_stats_aggregation::node_local:
-      // Allreduce on fused buffer.
-      m_comm->allreduce(*m_mean_and_var, m_comm->get_node_comm(), El::mpi::SUM);
+    } else if (m_statistics_group_size == 1) {
+      // Local aggregation, no allreduce needed.
+      num_per_sum = channel_size * local_width;
+    } else {
+      // Grouped batchnorm. Allreduce on fused buffer.
+      m_comm->allreduce(*m_mean_and_var,
+                        m_comm->get_packed_group_comm(m_statistics_group_size),
+                        El::mpi::SUM);
       if (m_num_per_sum_cache.count(width) == 0) {
         num_per_sum = channel_size * local_width;
-        num_per_sum = m_comm->allreduce(num_per_sum, m_comm->get_node_comm());
+        num_per_sum = m_comm->allreduce(
+          num_per_sum, m_comm->get_packed_group_comm(m_statistics_group_size));
         m_num_per_sum_cache[width] = num_per_sum;
       } else {
         num_per_sum = m_num_per_sum_cache[width];
       }
-      break;
-    case batch_normalization_stats_aggregation::local:
-      num_per_sum = channel_size * local_width;
-      break;
-    default:
-      LBANN_ERROR("Unknown batch normalization stats aggregation");
     }
 
     // Compute minibatch statistics
@@ -464,15 +462,15 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 
   // Accumulate gradients
   if (is_training) {
-    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
-      // Allreduce on fused buffer.
+    if (m_statistics_group_size == 0) {
+      // Global aggregation; allreduce on fused buffer.
       m_comm->allreduce(*m_mean_and_var_gradient,
                         m_mean_and_var_gradient->RedundantComm(),
                         El::mpi::SUM);
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
-      // Allreduce on fused buffer.
+    } else if (m_statistics_group_size > 1) {
+      // Grouped batchnorm; allreduce on fused buffer.
       m_comm->allreduce(*m_mean_and_var_gradient,
-                        m_comm->get_node_comm(),
+                        m_comm->get_packed_group_comm(m_statistics_group_size),
                         El::mpi::SUM);
     }
   } else {
@@ -494,18 +492,15 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 
   // Compute error signal
   El::Int num_per_sum;
-  switch (m_stats_aggregation) {
-  case batch_normalization_stats_aggregation::global:
+  if (m_statistics_group_size == 0) {
+    // Global statistics aggregation.
     num_per_sum = channel_size * width;
-    break;
-  case batch_normalization_stats_aggregation::node_local:
-    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
-    break;
-  case batch_normalization_stats_aggregation::local:
+  } else if (m_statistics_group_size == 1) {
+    // Local aggregation.
     num_per_sum = channel_size * local_width;
-    break;
-  default:
-    LBANN_ERROR("Unknown batch normalization stats aggregation");
+  } else {
+    // Grouped batchnorm.
+    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
   }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
