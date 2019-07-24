@@ -211,6 +211,16 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
 
+  // Channel-wise scale/bias layer
+  if (proto_layer.has_channelwise_scale_bias()) {
+    if (Layout == data_layout::DATA_PARALLEL) {
+      return lbann::make_unique<channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,Device>>(comm);
+    } else {
+      LBANN_ERROR("channel-wise scale/bias layer is only supported "
+                  "with data-parallel data layout");
+    }
+  }
+
   // Transform layers
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
