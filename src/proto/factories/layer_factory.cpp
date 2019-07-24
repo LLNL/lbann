@@ -422,8 +422,8 @@ std::unique_ptr<Layer> construct_layer(
     const auto& params = proto_layer.batch_normalization();
     if (Layout == data_layout::DATA_PARALLEL) {
       int statistics_group_size = params.statistics_group_size();
-      if (params.global_statistics()) {
-        statistics_group_size = 0;
+      if (statistics_group_size < 0) {
+        statistics_group_size = 0;  // Global statistics.
       } else if (statistics_group_size == 0) {
         statistics_group_size = 1;  // Default to local.
       }

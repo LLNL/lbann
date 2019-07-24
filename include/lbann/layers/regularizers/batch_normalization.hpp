@@ -224,7 +224,8 @@ protected:
             << "may be too small to get good statistics";
         std::cerr << err.str() << std::endl;
       }
-    } else if (m_statistics_group_size*local_mini_batch_size <= 4) {
+    } else if (m_statistics_group_size != 0 &&
+               m_statistics_group_size*local_mini_batch_size <= 4) {
       // This possibly underestimates the aggregation size for processors with
       // smaller local mini-batch sizes.
       if (output.DistRank() == 0) {

@@ -61,8 +61,8 @@ class ConvBNRelu(lbann.modules.Module):
         conv = self.conv(x)
         bn = lbann.BatchNormalization(
             conv, weights=self.bn_weights,
-            statistics_group_size=self.bn_statistics_group_size,
-            global_statistics=True if self.bn_statistics_group_size == 0 else None,
+            statistics_group_size=(-1 if self.bn_statistics_group_size == 0
+                                   else self.bn_statistics_group_size),
             name='{0}_bn_instance{1}'.format(self.name,self.instance))
         if self.relu:
             return lbann.Relu(
