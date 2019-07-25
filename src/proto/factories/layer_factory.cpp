@@ -198,7 +198,7 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
 
-  // Embedding layer
+  // Learning layers
   if (proto_layer.has_embedding()) {
     const auto& params = proto_layer.embedding();
     if (Layout == data_layout::DATA_PARALLEL
@@ -210,8 +210,6 @@ std::unique_ptr<Layer> construct_layer(
                   "data-parallel data layout and on CPU");
     }
   }
-
-  // Channel-wise scale/bias layer
   if (proto_layer.has_channelwise_scale_bias()) {
     if (Layout == data_layout::DATA_PARALLEL) {
       return lbann::make_unique<channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,Device>>(comm);
@@ -219,6 +217,9 @@ std::unique_ptr<Layer> construct_layer(
       LBANN_ERROR("channel-wise scale/bias layer is only supported "
                   "with data-parallel data layout");
     }
+  }
+  if (proto_layer.has_entrywise_scale_bias()) {
+    return lbann::make_unique<entrywise_scale_bias_layer<Layout,Device>>(comm);
   }
 
   // Transform layers

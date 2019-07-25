@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
-#define LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
+#ifndef LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
+#define LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
@@ -33,42 +33,35 @@
 
 namespace lbann {
 
-/** @brief Apply scale and bias to tensor channels.
+/** @brief Apply scale and bias to tensor entries.
  *
- *  The input tensor is sliced along the first tensor dimension (the
- *  "channel" dimension, assuming image data in CHW format) and scale
- *  and bias terms are applied independently to each slice. More
- *  precisely, given input and output tensors
- *  @f$ X,Y\in\mathbb{R}^{d_1\times\cdots\times d_n} @f$
- *  and scale and bias vectors @f$ a,b\in\mathbb{R}^{d_1} @f$:
+ *  Scale and bias terms are applied independently to each tensor
+ *  entry. More precisely, given input, output, scale, and bias
+ *  tensors @f$ X,Y,A,B\in\mathbb{R}^{d_1\times\cdots\times d_n} @f$:
  *  @f[
- *    Y_{i,j,\cdots} = a_i X_{i,j,\cdots} + b_i
+ *    Y = A \circ X + B
  *  @f]
  *
- *  The scale and bias vectors are fused into a single weights tensor
- *  to reduce the number of gradient allreduces during backprop. In
+ *  The scale and bias terms are fused into a single weights tensor to
+ *  reduce the number of gradient allreduces during backprop. In
  *  particular, the weights tensor is a
- *  @f$ \text{num_channels} \times 2 @f$ matrix, where the first
+ *  @f$ \text{size} \times 2 @f$ matrix, where the first
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
 template <data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_scale_bias_layer : public Layer {
+class entrywise_scale_bias_layer : public Layer {
 public:
 
-  channelwise_scale_bias_layer(lbann_comm *comm)
-    : Layer(comm) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "channelwise_mean_layer only supports "
-                  "data-parallel data layout");
-  }
+  entrywise_scale_bias_layer(lbann_comm *comm)
+    : Layer(comm) {}
 
-  channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
+  entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
     : Layer(other),
       m_weights_gradient(other.m_weights_gradient ?
                          other.m_weights_gradient->Copy() : nullptr) {}
-  channelwise_scale_bias_layer& operator=(const channelwise_scale_bias_layer& other) {
+  entrywise_scale_bias_layer& operator=(const entrywise_scale_bias_layer& other) {
     Layer::operator=(other);
     m_weights_gradient.reset(other.m_weights_gradient ?
                              other.m_weights_gradient->Copy() :
@@ -76,27 +69,30 @@ public:
     return *this;
   }
 
-  channelwise_scale_bias_layer* copy() const override {
-    return new channelwise_scale_bias_layer(*this);
+  entrywise_scale_bias_layer* copy() const override {
+    return new entrywise_scale_bias_layer(*this);
   }
-  std::string get_type() const override { return "channel-wise scale/bias"; }
+  std::string get_type() const override { return "entry-wise scale/bias"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_matrices(const El::Grid& grid) override {
     Layer::setup_matrices(grid);
-    m_weights_gradient.reset(new StarMat<Device>(grid));
+    auto dist = get_prev_activations().DistData();
+    dist.rowDist = El::STAR;
+    m_weights_gradient.reset(AbsDistMat::Instantiate(dist));
   }
 
   void setup_data() override {
     Layer::setup_data();
-    const El::Int num_channels = get_output_dims()[0];
+    const auto dims = get_output_dims();
+    const El::Int size = get_output_size();
 
     // Construct default weights if needed
     if (this->m_weights.size() < 1) {
       this->m_weights.push_back(new weights(get_comm()));
-      std::vector<DataType> vals(2*num_channels, DataType{0});
-      std::fill(vals.begin(), vals.begin()+num_channels, DataType{1});
+      std::vector<DataType> vals(2*size, DataType{0});
+      std::fill(vals.begin(), vals.begin()+size, DataType{1});
       std::unique_ptr<weights_initializer> init(new value_initializer(vals));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       this->m_weights[0]->set_name(get_name() + "_weights");
@@ -116,16 +112,52 @@ public:
 
     // Setup weights
     auto dist = get_prev_activations().DistData();
-    dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    m_weights[0]->set_dims({static_cast<int>(num_channels)},
+    m_weights[0]->set_dims(dims,
                            {static_cast<int>(2)});
     m_weights[0]->set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
-    m_weights_gradient->Resize(num_channels, 2);
+    m_weights_gradient->Resize(size, 2);
 
+  }
+
+  void fp_setup_outputs(El::Int mini_batch_size) override {
+    Layer::fp_setup_outputs(mini_batch_size);
+
+#if 0 /// @todo See https://github.com/LLNL/lbann/issues/1123
+
+    // Check that input and weights tensors are aligned
+    /// @todo Realign weights tensor if misaligned
+    bool aligned = true;
+    try {
+      const auto& x = get_prev_activations();
+      const auto& w = m_weights[0]->get_values();
+      aligned = (x.ColAlign() == w.ColAlign()
+                 && x.RowAlign() == w.RowAlign());
+    }
+    catch (const exception& e) {
+      // An exception is thrown if you try accessing weights values
+      // before they are initialized. We don't care if this case is
+      // aligned, so it's safe to ignore.
+    }
+    if (!aligned) {
+      std::ostringstream err;
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
+          << "has misaligned input and weights matrices";
+      LBANN_ERROR(err.str());
+    }
+
+#endif // 0
+
+  }
+
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+    Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
+    m_weights_gradient->Empty(false);
+    m_weights_gradient->AlignWith(get_prev_activations());
+    m_weights_gradient->Resize(get_input_size(), mini_batch_size);
   }
 
 protected:
@@ -141,4 +173,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
+#endif // LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED

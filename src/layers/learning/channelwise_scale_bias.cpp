@@ -88,7 +88,6 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
   auto local_gradient_wrt_bias = El::View(local_gradient_wrt_weights,
                                           El::ALL, El::IR(1));
 
-
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
@@ -103,7 +102,10 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
   LBANN_OMP_PARALLEL_FOR
   for (El::Int channel = 0; channel < num_channels; ++channel) {
     const auto a = local_scale(channel, 0);
-    DataType da{0}, db{0};
+    auto& da = local_gradient_wrt_scale(channel, 0);
+    auto& db = local_gradient_wrt_bias(channel, 0);
+    da = 0;
+    db = 0;
     const El::Int row_start = channel * channel_size;
     const El::Int row_end = (channel + 1) * channel_size;
     const El::Int col_start = 0;
@@ -118,8 +120,6 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
         dx = a * dy;
       }
     }
-    local_gradient_wrt_scale(channel, 0) = da;
-    local_gradient_wrt_bias(channel, 0) = db;
   }
 
   // Update optimizer with gradient
