@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/layers/learning/elementwise_scale_bias.hpp"
+#include "lbann/layers/learning/entrywise_scale_bias.hpp"
 
 namespace lbann {
 
@@ -42,7 +42,7 @@ void fp_impl(const CPUMat& local_input,
   const auto local_bias = El::LockedView(local_scale_bias,
                                          El::ALL, El::IR(1));
 
-  // Apply element-wise scale and bias
+  // Apply entry-wise scale and bias
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -123,21 +123,21 @@ void bp_impl(const CPUMat& local_input,
 
 // Template instantiation
 template <>
-void elementwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
+void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::fp_compute() {
   fp_impl(get_local_prev_activations(),
           get_local_activations(),
           *m_weights[0]);
 }
 template <>
-void elementwise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
+void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
      ::fp_compute() {
   fp_impl(get_local_prev_activations(),
           get_local_activations(),
           *m_weights[0]);
 }
 template <>
-void elementwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
+void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::bp_compute() {
   bp_impl(get_local_prev_activations(),
           get_local_prev_error_signals(),
@@ -147,7 +147,7 @@ void elementwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
           this->m_model->get_effective_mini_batch_size());
 }
 template <>
-void elementwise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
+void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
      ::bp_compute() {
   bp_impl(get_local_prev_activations(),
           get_local_prev_error_signals(),

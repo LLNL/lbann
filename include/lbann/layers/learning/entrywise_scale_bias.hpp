@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_LEARNING_ELEMENTWISE_SCALE_BIAS_HPP_INCLUDED
-#define LBANN_LAYER_LEARNING_ELEMENTWISE_SCALE_BIAS_HPP_INCLUDED
+#ifndef LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
+#define LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
@@ -51,17 +51,17 @@ namespace lbann {
  */
 template <data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class elementwise_scale_bias_layer : public Layer {
+class entrywise_scale_bias_layer : public Layer {
 public:
 
-  elementwise_scale_bias_layer(lbann_comm *comm)
+  entrywise_scale_bias_layer(lbann_comm *comm)
     : Layer(comm) {}
 
-  elementwise_scale_bias_layer(const elementwise_scale_bias_layer& other)
+  entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
     : Layer(other),
       m_weights_gradient(other.m_weights_gradient ?
                          other.m_weights_gradient->Copy() : nullptr) {}
-  elementwise_scale_bias_layer& operator=(const elementwise_scale_bias_layer& other) {
+  entrywise_scale_bias_layer& operator=(const entrywise_scale_bias_layer& other) {
     Layer::operator=(other);
     m_weights_gradient.reset(other.m_weights_gradient ?
                              other.m_weights_gradient->Copy() :
@@ -69,10 +69,10 @@ public:
     return *this;
   }
 
-  elementwise_scale_bias_layer* copy() const override {
-    return new elementwise_scale_bias_layer(*this);
+  entrywise_scale_bias_layer* copy() const override {
+    return new entrywise_scale_bias_layer(*this);
   }
-  std::string get_type() const override { return "element-wise scale/bias"; }
+  std::string get_type() const override { return "entry-wise scale/bias"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
@@ -173,4 +173,4 @@ private:
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_LEARNING_ELEMENTWISE_SCALE_BIAS_HPP_INCLUDED
+#endif // LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED

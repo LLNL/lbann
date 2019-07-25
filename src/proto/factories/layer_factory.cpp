@@ -218,8 +218,8 @@ std::unique_ptr<Layer> construct_layer(
                   "with data-parallel data layout");
     }
   }
-  if (proto_layer.has_elementwise_scale_bias()) {
-    return lbann::make_unique<elementwise_scale_bias_layer<Layout,Device>>(comm);
+  if (proto_layer.has_entrywise_scale_bias()) {
+    return lbann::make_unique<entrywise_scale_bias_layer<Layout,Device>>(comm);
   }
 
   // Transform layers
