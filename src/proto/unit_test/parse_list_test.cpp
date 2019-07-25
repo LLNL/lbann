@@ -42,7 +42,7 @@ TEST_CASE("Testing parse_list", "[proto][utilities]")
 
   SECTION("int")
   {
-    const std::vector<int> expected = { 1, 2, 3, 4, 5};
+    const std::vector<int> expected = { 1, 2, 3, 4, 5 };
     auto const answer =
       lbann::parse_list<int>("1 2 3 4 5");
     CHECK(answer == expected);
