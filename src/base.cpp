@@ -163,7 +163,7 @@ execution_mode exe_mode_from_string(std::string const& str) {
 std::istream& operator>>(std::istream& is, execution_mode& m) {
   std::string tmp;
   is >> tmp;
-  m = is ? exe_mode_from_string(tmp) : execution_mode::invalid;
+  m = exe_mode_from_string(tmp);
   return is;
 }
 
