@@ -30,9 +30,12 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
 
+#include "lbann/callbacks/callback.hpp"
+
+#include <google/protobuf/message.h>
+
 #include <string>
 #include <vector>
-#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 
@@ -124,6 +127,10 @@ private:
   /** Number of images to track */
   size_t const m_num_images;
 };
+
+std::unique_ptr<lbann_callback>
+build_callback_summarize_autoencoder_images_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 

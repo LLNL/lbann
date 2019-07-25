@@ -30,6 +30,9 @@
 #include <vector>
 #include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
+
+#include <callbacks.pb.h>
+
 #include <iomanip>
 #include <cstdlib>
 
@@ -55,7 +58,7 @@ void lbann_callback_dump_minibatch_sample_indices::dump_to_file(model *m, Layer 
 
     const std::string file
       = (m_basename
-         + _to_string(m->get_execution_mode())
+         + to_string(m->get_execution_mode())
          + "-model" + std::to_string(m->get_comm()->get_trainer_rank())
          + "-rank" + std::to_string(m->get_comm()->get_rank_in_trainer())
          + "-epoch" + std::to_string(m->get_epoch())
@@ -74,4 +77,13 @@ void lbann_callback_dump_minibatch_sample_indices::on_evaluate_forward_prop_end(
   dump_to_file(m, l, m->get_step());
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_dump_mb_indices_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackDumpMBIndices&>(proto_msg);
+  return make_unique<lbann_callback_dump_minibatch_sample_indices>(
+    params.basename(),
+    params.interval());
+}
 }  // namespace lbann

@@ -97,6 +97,11 @@ class lbann_callback_imcomm : public lbann_callback {
 /** returns a string representation of the weight_initialization */
 std::string get_comm_type_name(lbann_callback_imcomm::comm_type m);
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_imcomm_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_IMCOMM_HPP_INCLUDED

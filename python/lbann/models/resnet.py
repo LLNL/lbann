@@ -13,7 +13,7 @@ class ConvBNRelu(lbann.modules.Module):
     """
 
     def __init__(self, out_channels, kernel_size, stride, padding,
-                 bn_zero_init, bn_stats_aggregation,
+                 bn_zero_init, bn_statistics_group_size,
                  relu, name):
         """Initialize ConvBNRelu module.
 
@@ -25,8 +25,8 @@ class ConvBNRelu(lbann.modules.Module):
             padding (int): Convolution padding.
             bn_zero_init (bool): Zero-initialize batch normalization
                 scale.
-            bn_stats_aggregation (str): Aggregation mode for batch
-                normalization statistics.
+            bn_statistics_group_size (int): Group size for aggregating
+                batch normalization statistics.
             relu (bool): Apply ReLU activation.
             name (str): Module name.
 
@@ -51,7 +51,7 @@ class ConvBNRelu(lbann.modules.Module):
             initializer=lbann.ConstantInitializer(value=0.0),
             name=self.name + '_bn_bias')
         self.bn_weights = [bn_scale, bn_bias]
-        self.bn_stats_aggregation = bn_stats_aggregation
+        self.bn_statistics_group_size = bn_statistics_group_size
 
         # Initialize ReLU
         self.relu = relu
@@ -61,7 +61,8 @@ class ConvBNRelu(lbann.modules.Module):
         conv = self.conv(x)
         bn = lbann.BatchNormalization(
             conv, weights=self.bn_weights,
-            stats_aggregation=self.bn_stats_aggregation,
+            statistics_group_size=(-1 if self.bn_statistics_group_size == 0
+                                   else self.bn_statistics_group_size),
             name='{0}_bn_instance{1}'.format(self.name,self.instance))
         if self.relu:
             return lbann.Relu(
@@ -80,7 +81,7 @@ class BasicBlock(lbann.modules.Module):
 
     def __init__(self, in_channels, mid_channels,
                  downsample, zero_init_residual,
-                 bn_stats_aggregation, name, width=1):
+                 bn_statistics_group_size, name, width=1):
         """Initialize residual block.
 
         Args:
@@ -90,8 +91,8 @@ class BasicBlock(lbann.modules.Module):
                 factor of 2 in each spatial dimension).
             zero_init_residual (bool): Zero-initialize the scale in
                 the final batch normalization in the residual branch.
-            bn_stats_aggregation (str): Aggregation mode for batch
-                normalization statistics.
+            bn_statistics_group_size (int): Group size for aggregating
+                batch normalization statistics.
             name (str): Module name.
             width (float, optional): Width growth factor for 3x3
                 convolutions.
@@ -106,11 +107,11 @@ class BasicBlock(lbann.modules.Module):
         # Skip connection
         if downsample:
             self.branch1 = ConvBNRelu(self.out_channels, 1, 2, 0,
-                                      False, bn_stats_aggregation,
+                                      False, bn_statistics_group_size,
                                       False, self.name + '_branch1')
         elif in_channels != self.out_channels:
             self.branch1 = ConvBNRelu(self.out_channels, 1, 1, 0,
-                                      False, bn_stats_aggregation,
+                                      False, bn_statistics_group_size,
                                       False, self.name + '_branch1')
         else:
             self.branch1 = None
@@ -118,11 +119,11 @@ class BasicBlock(lbann.modules.Module):
         # Residual branch
         self.branch2a = ConvBNRelu(mid_channels, 3,
                                    (2 if downsample else 1), 1,
-                                   False, bn_stats_aggregation,
+                                   False, bn_statistics_group_size,
                                    True, self.name + '_branch2a')
         self.branch2b = ConvBNRelu(self.out_channels, 3, 1, 1,
                                    zero_init_residual,
-                                   bn_stats_aggregation,
+                                   bn_statistics_group_size,
                                    False, self.name + '_branch2b')
 
     def forward(self, x):
@@ -144,7 +145,7 @@ class BottleneckBlock(lbann.modules.Module):
 
     def __init__(self, in_channels, mid_channels,
                  downsample, zero_init_residual,
-                 bn_stats_aggregation, name, width=1):
+                 bn_statistics_group_size, name, width=1):
         """Initialize residual block.
 
         Args:
@@ -154,8 +155,8 @@ class BottleneckBlock(lbann.modules.Module):
                 factor of 2 in each spatial dimension).
             zero_init_residual (bool): Zero-initialize the scale in
                 the final batch normalization in the residual branch.
-            bn_stats_aggregation (str): Aggregation mode for batch
-                normalization statistics.
+            bn_statistics_group_size (int): Group size for aggregating
+                batch normalization statistics.
             name (str): Module name.
             width (float, optional): Width growth factor for 3x3
                 convolutions.
@@ -171,26 +172,26 @@ class BottleneckBlock(lbann.modules.Module):
         # Skip connection
         if downsample:
             self.branch1 = ConvBNRelu(self.out_channels, 1, 2, 0,
-                                      False, bn_stats_aggregation,
+                                      False, bn_statistics_group_size,
                                       False, self.name + '_branch1')
         elif in_channels != self.out_channels:
             self.branch1 = ConvBNRelu(self.out_channels, 1, 1, 0,
-                                      False, bn_stats_aggregation,
+                                      False, bn_statistics_group_size,
                                       False, self.name + '_branch1')
         else:
             self.branch1 = None
 
         # Residual branch
         self.branch2a = ConvBNRelu(mid_channels, 1, 1, 0,
-                                   False, bn_stats_aggregation,
+                                   False, bn_statistics_group_size,
                                    True, self.name + '_branch2a')
         self.branch2b = ConvBNRelu(mid_channels, 3,
                                    (2 if downsample else 1), 1,
-                                   False, bn_stats_aggregation,
+                                   False, bn_statistics_group_size,
                                    True, self.name + '_branch2b')
         self.branch2c = ConvBNRelu(self.out_channels, 1, 1, 0,
                                    zero_init_residual,
-                                   bn_stats_aggregation,
+                                   bn_statistics_group_size,
                                    False, self.name + '_branch2c')
 
     def forward(self, x):
@@ -228,7 +229,7 @@ class ResNet(lbann.modules.Module):
 
     def __init__(self, block, output_size,
                  layer_sizes, layer_channels,
-                 zero_init_residual, bn_stats_aggregation,
+                 zero_init_residual, bn_statistics_group_size,
                  name, width=1):
         """Initialize ResNet.
 
@@ -242,8 +243,8 @@ class ResNet(lbann.modules.Module):
                 internal channels in each ResNet layer.
             zero_init_residual (bool): Whether to initialize the final
                 batch normalization in residual branches with zeros.
-            bn_stats_aggregation (str): Aggregation mode for batch
-                normalization statistics.
+            bn_statistics_group_size (int): Group size for aggregating
+                batch normalization statistics.
             name (str): Module name.
             width (float, optional): Width growth factor.
 
@@ -252,7 +253,7 @@ class ResNet(lbann.modules.Module):
         self.name = name
         self.instance = 0
         self.conv1 = ConvBNRelu(layer_channels[0], 7, 2, 3,
-                                False, bn_stats_aggregation,
+                                False, bn_statistics_group_size,
                                 True, self.name + '_conv1')
         self.blocks = []
         for layer in range(len(layer_sizes)):
@@ -264,7 +265,7 @@ class ResNet(lbann.modules.Module):
                 downsample = (i == 0 and layer > 0)
                 b = block(in_channels, mid_channels,
                           downsample, zero_init_residual,
-                          bn_stats_aggregation,
+                          bn_statistics_group_size,
                           '{0}_layer{1}_block{2}'.format(self.name, layer, i),
                           width=width)
                 self.blocks.append(b)
@@ -300,7 +301,7 @@ class ResNet18(ResNet):
 
     def __init__(self, output_size,
                  zero_init_residual=True,
-                 bn_stats_aggregation='local',
+                 bn_statistics_group_size=1,
                  name=None, width=1):
         """Initialize ResNet-18.
 
@@ -309,8 +310,8 @@ class ResNet18(ResNet):
             zero_init_residual (bool, optional): Whether to initialize
                 the final batch normalization in residual branches
                 with zeros.
-            bn_stats_aggregation (str, optional): Aggregation mode for
-                batch normalization statistics.
+            bn_statistics_group_size (str, optional): Group size for
+                aggregating batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet18_module<index>')
             width (float, optional): Width growth factor.
@@ -321,7 +322,7 @@ class ResNet18(ResNet):
             name = 'resnet18_module{0}'.format(ResNet18.global_count)
         super().__init__(BasicBlock, output_size,
                          (2,2,2,2), (64,128,256,512),
-                         zero_init_residual, bn_stats_aggregation,
+                         zero_init_residual, bn_statistics_group_size,
                          name, width=width)
 
 class ResNet34(ResNet):
@@ -341,7 +342,7 @@ class ResNet34(ResNet):
 
     def __init__(self, output_size,
                  zero_init_residual=True,
-                 bn_stats_aggregation='local',
+                 bn_statistics_group_size=1,
                  name=None, width=1):
         """Initialize ResNet-34.
 
@@ -350,8 +351,8 @@ class ResNet34(ResNet):
             zero_init_residual (bool, optional): Whether to initialize
                 the final batch normalization in residual branches
                 with zeros.
-            bn_stats_aggregation (str, optional): Aggregation mode for
-                batch normalization statistics.
+            bn_statistics_group_size (str, optional): Group size for
+                aggregating batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet34_module<index>')
             width (float, optional): Width growth factor.
@@ -362,7 +363,7 @@ class ResNet34(ResNet):
             name = 'resnet34_module{0}'.format(ResNet34.global_count)
         super().__init__(BasicBlock, output_size,
                          (3,4,6,3), (64,128,256,512),
-                         zero_init_residual, bn_stats_aggregation,
+                         zero_init_residual, bn_statistics_group_size,
                          name, width=width)
 
 class ResNet50(ResNet):
@@ -382,7 +383,7 @@ class ResNet50(ResNet):
 
     def __init__(self, output_size,
                  zero_init_residual=True,
-                 bn_stats_aggregation='local',
+                 bn_statistics_group_size=1,
                  name=None, width=1):
         """Initialize ResNet-50.
 
@@ -391,8 +392,8 @@ class ResNet50(ResNet):
             zero_init_residual (bool, optional): Whether to initialize
                 the final batch normalization in residual branches
                 with zeros.
-            bn_stats_aggregation (str, optional): Aggregation mode for
-                batch normalization statistics.
+            bn_statistics_group_size (str, optional): Group size for
+                aggregating batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet50_module<index>')
             width (float, optional): Width growth factor.
@@ -403,7 +404,7 @@ class ResNet50(ResNet):
             name = 'resnet50_module{0}'.format(ResNet50.global_count)
         super().__init__(BottleneckBlock, output_size,
                          (3,4,6,3), (64,128,256,512),
-                         zero_init_residual, bn_stats_aggregation,
+                         zero_init_residual, bn_statistics_group_size,
                          name, width=width)
 
 class ResNet101(ResNet):
@@ -423,7 +424,7 @@ class ResNet101(ResNet):
 
     def __init__(self, output_size,
                  zero_init_residual=True,
-                 bn_stats_aggregation='local',
+                 bn_statistics_group_size=1,
                  name=None, width=1):
         """Initialize ResNet-101.
 
@@ -432,8 +433,8 @@ class ResNet101(ResNet):
             zero_init_residual (bool, optional): Whether to initialize
                 the final batch normalization in residual branches
                 with zeros.
-            bn_stats_aggregation (str, optional): Aggregation mode for
-                batch normalization statistics.
+            bn_statistics_group_size (str, optional): Group size for
+                aggregating batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet101_module<index>')
             width (float, optional): Width growth factor.
@@ -444,7 +445,7 @@ class ResNet101(ResNet):
             name = 'resnet101_module{0}'.format(ResNet101.global_count)
         super().__init__(BottleneckBlock, output_size,
                          (3,4,23,3), (64,128,256,512),
-                         zero_init_residual, bn_stats_aggregation,
+                         zero_init_residual, bn_statistics_group_size,
                          name, width=width)
 
 class ResNet152(ResNet):
@@ -464,7 +465,7 @@ class ResNet152(ResNet):
 
     def __init__(self, output_size,
                  zero_init_residual=True,
-                 bn_stats_aggregation='local',
+                 bn_statistics_group_size=1,
                  name=None, width=1):
         """Initialize ResNet-152.
 
@@ -473,8 +474,8 @@ class ResNet152(ResNet):
             zero_init_residual (bool, optional): Whether to initialize
                 the final batch normalization in residual branches
                 with zeros.
-            bn_stats_aggregation (str, optional): Aggregation mode for
-                batch normalization statistics.
+            bn_statistics_group_size (str, optional): Group size for
+                aggregating batch normalization statistics.
             name (str, optional): Module name
                 (default: 'resnet152_module<index>')
             width (float, optional): Width growth factor.
@@ -485,5 +486,5 @@ class ResNet152(ResNet):
             name = 'resnet152_module{0}'.format(ResNet152.global_count)
         super().__init__(BottleneckBlock, output_size,
                          (3,8,36,3), (64,128,256,512),
-                         zero_init_residual, bn_stats_aggregation,
+                         zero_init_residual, bn_statistics_group_size,
                          name, width=width)

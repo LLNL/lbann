@@ -26,9 +26,14 @@
 
 #include <algorithm>
 #include "lbann/callbacks/callback_mixup.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/image.hpp"
+
+#include <callbacks.pb.h>
+
+#include <unordered_set>
 
 namespace lbann {
 
@@ -92,4 +97,14 @@ void callback_mixup::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_mixup_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackMixup&>(proto_msg);
+  const auto& layers_list = parse_list<std::string>(params.layers());
+  std::unordered_set<std::string> layers(layers_list.begin(),
+                                         layers_list.end());
+  return make_unique<callback_mixup>(layers, params.alpha());
+}
 }  // namespace lbann

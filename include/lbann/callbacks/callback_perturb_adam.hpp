@@ -122,6 +122,11 @@ private:
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_perturb_adam_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_PERTURB_ADAM_HPP_INCLUDED

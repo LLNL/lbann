@@ -125,7 +125,7 @@ def test_unit_lbann2_reload_clang6(cluster, exes, dirname):
 
 
 def test_unit_lbann2_reload_gcc7(cluster, exes, dirname):
-    if cluster in ['catalyst', 'lassen', 'pascal']:  # STILL ERRORS
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:  # STILL ERRORS
         pytest.skip('FIXME')
     skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7')
 

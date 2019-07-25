@@ -193,4 +193,13 @@ void lbann_callback_profiler::on_optimize_end(model *m, weights *w) {
   prof_region_end(("opt " + w->get_name()).c_str(), m_sync);
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_profiler_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackProfiler&>(proto_msg);
+  return make_unique<lbann_callback_profiler>(params.sync(),
+                                              params.skip_init());
+}
+
 }  // namespace lbann

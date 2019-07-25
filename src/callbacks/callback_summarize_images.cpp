@@ -31,6 +31,9 @@
 #include <lbann/utils/image.hpp>
 #include <lbann/utils/summary.hpp>
 #include "lbann/callbacks/callback_summarize_images.hpp"
+
+#include <callbacks.pb.h>
+
 #include <iostream>
 
 namespace lbann {
@@ -175,6 +178,27 @@ void lbann_callback_summarize_images::on_batch_evaluate_end(model* m) {
   std::vector<El::Int> img_indices = get_image_indices();
 
   dump_image_to_summary(img_indices, m->get_step(), m->get_epoch());
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_summarize_images_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary* summarizer){
+
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackSummarizeImages&>(proto_msg);
+
+  /* Add criterion->MatchType function */
+  auto ConvertToLbannType = [](lbann_data::Callback_CallbackSummarizeImages_MatchType a)
+    {
+      return static_cast<lbann_callback_summarize_images::MatchType>(a);
+    };
+
+  return make_unique<lbann_callback_summarize_images>(
+    summarizer,
+    params.cat_accuracy_layer(),
+    params.image_layer(),
+    ConvertToLbannType(params.criterion()),
+    params.interval());
 }
 
 } // namespace lbann

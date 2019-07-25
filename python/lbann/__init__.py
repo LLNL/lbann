@@ -19,7 +19,7 @@ if os.path.isfile(_config_file):
         _lbann_exe = _config['Paths']['lbann_exe']
     except:
         pass
-import lbann_pb2
+import lbann_pb2, callbacks_pb2
 def lbann_exe():
     """LBANN executable."""
     return _lbann_exe if _lbann_exe else 'lbann'

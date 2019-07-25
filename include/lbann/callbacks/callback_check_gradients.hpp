@@ -73,6 +73,11 @@ private:
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_check_gradients_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED

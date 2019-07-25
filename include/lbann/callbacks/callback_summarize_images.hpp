@@ -34,6 +34,8 @@
 #include <vector>
 #include "lbann/callbacks/callback.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 
 /** @class lbann_callback_summarize_images
@@ -116,6 +118,10 @@ private:
    */
   std::string m_img_format;
 };
+
+std::unique_ptr<lbann_callback>
+build_callback_summarize_images_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 

@@ -227,4 +227,18 @@ void lbann_callback_summarize_autoencoder_images::on_batch_evaluate_end(model* m
   }
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_summarize_autoencoder_images_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
+
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackSummarizeAutoencoderImages&>(proto_msg);
+
+  return make_unique<lbann_callback_summarize_autoencoder_images>(
+    summarizer,
+    params.reconstruction_layer(),
+    params.image_layer(),
+    params.interval());
+}
+
 } // namespace lbann

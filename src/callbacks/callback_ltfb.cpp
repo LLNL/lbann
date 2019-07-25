@@ -30,6 +30,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
+#include "lbann/proto/factories.hpp"
 
 namespace lbann {
 
@@ -521,6 +522,22 @@ lbann_callback_ltfb::string_to_comm_algo(const std::string& str) {
   LBANN_ERROR(err.str());
   return communication_algorithm::sendrecv_weights;
 
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_ltfb_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  lbann_summary* summarizer) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackLTFB&>(proto_msg);
+  return make_unique<lbann_callback_ltfb>(
+    params.batch_interval(),
+    params.metric(),
+    parse_set<std::string>(params.weights()),
+    params.low_score_wins(),
+    lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
+    params.exchange_hyperparameters(),
+    summarizer);
 }
 
 } // namespace lbann
