@@ -37,7 +37,7 @@ TEST_CASE("Testing parse_set", "[proto][utilities]")
 
   SECTION("int")
   {
-    const std::set<int> expected = { 1, 2, 3, 4, 5};
+    const std::set<int> expected = { 1, 2, 3, 4, 5 };
     auto const answer =
       lbann::parse_set<int>("1 1 2 1 3 4 3 3 5 2");
     CHECK(answer == expected);
