@@ -219,7 +219,7 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
   if (proto_layer.has_elementwise_scale_bias()) {
-    return lbann::make_unique<elementwise_scale_bias_layer<Layout,El::Device::CPU>>(comm);
+    return lbann::make_unique<elementwise_scale_bias_layer<Layout,Device>>(comm);
   }
 
   // Transform layers
