@@ -106,7 +106,7 @@ std::vector<El::Int> lbann_callback_summarize_images::get_image_indices() {
       if (meets_criteria(correctness_value))
         img_indices.push_back(sample);
 //FIXME: Add parameter to control number of images per epoch
-      if(img_indices.size() > 200)
+      if(img_indices.size() > 2)
         break;
     }
   }
@@ -140,15 +140,15 @@ void lbann_callback_summarize_images::dump_image_to_summary(
     auto dims = m_img_layer->get_output_dims();
 
     for (const El::Int& col_index : img_indices) {
-      if (col_index > local_images.Width())
+      if (col_index >= local_images.Width())
         LBANN_ERROR("Bad col index.");
 
       auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
-      auto sample_index = sample_indices->Get(col_index,0);
+      auto sample_index = sample_indices->Get(0, col_index);
       auto const local_image = local_images(El::ALL, El::IR(col_index));
-      std::string image_tag( "epoch-" + std::to_string(epoch) +
-                             "/ sample_index-" + std::to_string(sample_index) +
-                             "/ image-" + std::to_string(img_number++));
+      std::string image_tag("epoch-" + std::to_string(epoch) +
+                            "/ sample_index-" + std::to_string(sample_index) +
+                            "/ image-" + std::to_string(img_number++));
       this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
     }
   }

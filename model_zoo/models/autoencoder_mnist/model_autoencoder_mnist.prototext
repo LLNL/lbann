@@ -22,6 +22,22 @@ model {
       interval: 1
     }
   }
+  callback { timer {}}
+
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 2
+      mat_interval: 3
+    }
+  }
+  callback {
+    summarize_autoencoder_images {
+      reconstruction_layer: "reconstruction"
+      image_layer: "image"
+      interval: 1
+    }
+  }
 
   ###################################################
   # start of layers

@@ -25,6 +25,7 @@ set_full_path(THIS_DIR_SOURCES
   callback_print.cpp
   callback_save_images.cpp
   callback_save_model.cpp
+  callback_summarize_autoencoder_images.cpp
   callback_summarize_images.cpp
   callback_summary.cpp
   callback_sync_layers.cpp

@@ -27,6 +27,10 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/peek_map.hpp"
 
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/callback_summarize_images.hpp"
+#include "lbann/callbacks/callback_summarize_autoencoder_images.hpp"
+
 namespace lbann {
 namespace proto {
 
@@ -52,6 +56,38 @@ std::vector<T*> select_from_list(std::string names,
 
 
 } // namespace
+
+//Builder functions for summarize_image callbacks
+lbann_callback* build_callback_summarize_images_from_pbuf(const lbann_data::Callback& proto_cb,
+                                                          lbann_summary* summarizer){
+    const auto& params = proto_cb.summarize_images();
+    /* Add criterion->MatchType function */
+    auto ConvertToLbannType = [](lbann_data::CallbackSummarizeImages_MatchType a)
+    {
+      return static_cast<lbann_callback_summarize_images::MatchType>(a);
+    };
+
+    return new lbann_callback_summarize_images(
+      summarizer,
+      params.cat_accuracy_layer(),
+      params.image_layer(),
+      ConvertToLbannType(params.criterion()),
+      params.interval());
+
+}
+
+lbann_callback* build_callback_summarize_autoencoder_images_from_pbuf(
+    const lbann_data::Callback& proto_cb,
+    lbann_summary* summarizer){
+    const auto& params = proto_cb.summarize_autoencoder_images();
+
+    return new lbann_callback_summarize_autoencoder_images(
+      summarizer,
+      params.reconstruction_layer(),
+      params.image_layer(),
+      params.interval());
+
+}
 
 lbann_callback* construct_callback(lbann_comm* comm,
                                    const lbann_data::Callback& proto_cb,
@@ -365,19 +401,10 @@ lbann_callback* construct_callback(lbann_comm* comm,
                                              params.interval());
   }
   if (proto_cb.has_summarize_images()) {
-    const auto& params = proto_cb.summarize_images();
-    /* Add criterion->MatchType function */
-    auto ConvertToLbannType = [](lbann_data::CallbackSummarizeImages_MatchType a)
-    {
-      return static_cast<lbann_callback_summarize_images::MatchType>(a);
-    };
-
-    return new lbann_callback_summarize_images(
-      summarizer,
-      params.cat_accuracy_layer(),
-      params.image_layer(),
-      ConvertToLbannType(params.criterion()),
-      params.interval());
+      return build_callback_summarize_images_from_pbuf(proto_cb, summarizer);
+  }
+  if (proto_cb.has_summarize_autoencoder_images()) {
+      return build_callback_summarize_autoencoder_images_from_pbuf(proto_cb, summarizer);
   }
   if (proto_cb.has_dump_mb_indices()) {
     const auto& params = proto_cb.dump_mb_indices();

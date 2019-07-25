@@ -138,10 +138,10 @@ obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
            lbann.Metric(top5, name='top-3 accuracy', unit='%')]
 
-img_dump_cb = lbann.CallbackDumpImageResults(
+img_dump_cb = lbann.CallbackSummarizeImages(
     cat_accuracy_layer="louise",
     image_layer="images",
-    criterion=lbann.lbann_pb2.CallbackDumpImageResults.NOMATCH,
+    criterion=lbann.lbann_pb2.CallbackSummarizeImages.NOMATCH,
     interval=5)
 
 callbacks = [lbann.CallbackPrint(),

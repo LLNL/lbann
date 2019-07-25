@@ -447,6 +447,7 @@ message Callback {
    CallbackSaveTopKModels save_topk_models = 40;
    CallbackMixup mixup = 41;
    CallbackSummarizeImages summarize_images = 42;
+   CallbackSummarizeAutoencoderImages summarize_autoencoder_images = 43;
 }
 
 message CallbackLTFB {
@@ -713,10 +714,16 @@ message CallbackSummarizeImages {
   ALL = 2;//ALL = dump all
   }
 
-  //string dir = 1; //directory for the lbann_summary
   string cat_accuracy_layer = 1; //name of categorical accuracy layer
   string image_layer = 2; //name of image layer
   MatchType criterion = 3; //criterion for dumping image
+  uint64 interval = 4; // interval for dumping images
+}
+
+message CallbackSummarizeAutoencoderImages {
+
+  string reconstruction_layer = 1; //name of categorical accuracy layer
+  string image_layer = 2; //name of image layer
   uint64 interval = 4; // interval for dumping images
 }
 

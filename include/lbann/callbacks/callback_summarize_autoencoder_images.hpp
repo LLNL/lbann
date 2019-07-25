@@ -23,12 +23,12 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summarize_images .hpp .cpp - Callback hooks to dump
+// lbann_callback_summarize_autoencoder_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
 
 #include <string>
 #include <vector>
@@ -36,10 +36,10 @@
 
 namespace lbann {
 
-/** @class lbann_callback_summarize_images
+/** @class lbann_callback_summarize_autoencoder_images
  *  @brief Dump images with testing results to event files
  */
-class lbann_callback_summarize_images : public lbann_callback{
+class lbann_callback_summarize_autoencoder_images : public lbann_callback{
  public:
 
   enum class MatchType
@@ -51,22 +51,24 @@ class lbann_callback_summarize_images : public lbann_callback{
 
 public:
   /** @brief Constructor.
-   *  @param cat_accuracy_layer Categorical accuracy layer object
+   *  @param reconstruction_layer Reconstruction layer object
    *  @param img_layer Image layer object
    *  @param summarizer lbann_summary object
    *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
    */
-  lbann_callback_summarize_images(lbann_summary *summarizer,
-                                    std::string const& cat_accuracy_layer_name,
+  lbann_callback_summarize_autoencoder_images(lbann_summary *summarizer,
+                                    std::string const& reconstruction_layer_name,
                                     std::string const& img_layer_name,
-                                    MatchType match_type,
                                     uint64_t interval,
-                                    std::string img_format = ".jpg");
+                                    std::string const& img_format = ".jpg",
+                                    size_t const& num_images = 2);
   /** @brief Destructor */
-  ~lbann_callback_summarize_images() {}
+  ~lbann_callback_summarize_autoencoder_images() {}
 
-  lbann_callback* copy() const override { return new lbann_callback_summarize_images(*this); }
-  std::string name() const override { return "callback_summarize_images"; }
+  lbann_callback* copy() const override { return new lbann_callback_summarize_autoencoder_images(*this); }
+  std::string name() const override { return "callback_summarize_autoencoder_images"; }
+
+  void setup(model* m) override;
 
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
@@ -85,27 +87,27 @@ private:
    */
   bool meets_criteria( const DataType& match );
 
-  /** @brief Add image to event file */
-  void dump_image_to_summary(const std::vector<El::Int>& img_indices,
-                             const uint64_t& step,
-                             const El::Int& epoch);
+  /** @brief Add reconstruction images to event file */
+  void dump_reconstruction_images_to_summary(const std::vector<El::Int>& img_indices,
+                                             const uint64_t& step,
+                                             const El::Int& epoch);
 
+  /** @brief Add reconstruction images to event file */
+  void dump_original_images_to_summary(const std::vector<El::Int>& img_indices,
+                                    const uint64_t& step);
 
 private:
-  /* Name of categorical accuracy layer */
-  std::string m_cat_accuracy_layer_name;
+  /* Names layers */
+  std::string m_reconstruction_layer_name;
   std::string m_img_layer_name;
   std::string m_label_layer_name;
-//FIXME: What is this layer??
-  std::string m_classifier_layer_name;
 
   /* Criterion for selecting images to dump */
   MatchType m_match_type;
   /** lbann::Layer objects */
-  Layer const* m_cat_accuracy_layer = nullptr;
+  Layer const* m_reconstruction_layer = nullptr;
   Layer const* m_img_layer = nullptr;
   Layer const* m_label_layer = nullptr;
-  Layer const* m_classifier_layer = nullptr;
   Layer const* m_input_layer = nullptr;
 
   /* Interval for dumping images */
@@ -115,8 +117,14 @@ private:
    *  Valid options: jpg, png, pgm.
    */
   std::string m_img_format;
+
+  /** Sample indices of images to track */
+    std::unordered_set<El::Int> m_tracked_images;
+
+  /** Number of images to track */
+  size_t const m_num_images;
 };
 
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
