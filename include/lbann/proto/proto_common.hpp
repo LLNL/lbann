@@ -95,26 +95,61 @@ bool write_prototext_file(
   const std::string& fn,
   lbann_data::LbannPB& pb);
 
-/** @brief Parse a space-separated list. */
-template <typename T = std::string>
-std::vector<T> parse_list(std::string str) {
+/** @brief Trim leading and trailing whitespace from a string. */
+std::string trim(std::string const& str);
+
+// These functions work on trimmed, nonempty strings
+namespace details {
+
+template <typename T>
+std::vector<T> parse_list_impl(std::string const& str) {
+  T entry;
   std::vector<T> list;
-  std::istringstream ss(str);
-  for (T entry; ss >> entry;) {
-    list.push_back(entry);
+  std::istringstream iss(str);
+  while (iss.good()) {
+    iss >> entry;
+    list.emplace_back(std::move(entry));
   }
   return list;
 }
 
-/** @brief Parse a space-separated set. */
-template <typename T = std::string>
-std::set<T> parse_set(std::string str) {
+template <typename T>
+std::set<T> parse_set_impl(std::string const& str) {
+  T entry;
   std::set<T> set;
   std::istringstream iss(str);
-  for (T entry; iss >> entry;) {
-    set.insert(entry);
+  while(iss.good()) {
+    iss >> entry;
+    set.emplace(std::move(entry));
   }
   return set;
+}
+
+// TODO (trb 07/25/19): we should think about what to do about bad
+// input. That is, if a user calls parse_list<int>("one two three"),
+// the result is undefined (one test I did gave [0,0,0] and another
+// gave [INT_MAX,INT_MAX,INT_MAX]). In most cases in LBANN, I would
+// guess that this will result in a logic error further down the
+// codepath, but we shouldn't count on it.
+
+}// namespace details
+
+/** @brief Parse a space-separated list. */
+template <typename T = std::string>
+std::vector<T> parse_list(std::string const& str) {
+  auto trim_str = trim(str);
+  if (trim_str.size())
+    return details::parse_list_impl<T>(trim_str);
+  return {};
+}
+
+/** @brief Parse a space-separated set. */
+template <typename T = std::string>
+std::set<T> parse_set(std::string const& str) {
+  auto trim_str = trim(str);
+  if (trim_str.size())
+    return details::parse_set_impl<T>(trim_str);
+  return {};
 }
 } // namespace lbann
 

@@ -1025,4 +1025,19 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
   out.close();
 }
 
+std::string trim(std::string const& str)
+{
+  // Short-circuit on the empty string
+  if (str.size() == 0) return std::string();
+
+  const std::string whitespace = "\f\n\r\t\v ";
+  auto first = str.find_first_not_of(whitespace);
+
+  // All characters are whitespace; short-circuit.
+  if (first == std::string::npos) return std::string();
+
+  auto last = str.find_last_not_of(whitespace);
+  return str.substr(first, (last-first)+1);
+}
+
 } // namespace lbann

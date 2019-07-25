@@ -452,6 +452,7 @@ if (LBANN_WITH_UNIT_TESTING)
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
+  add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/transforms/unit_test)
   add_subdirectory(src/transforms/vision/unit_test)
