@@ -306,7 +306,7 @@ protected :
   void exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices); 
 
   /// for use in local cache mode
-  void fillin_shared_images(const std::vector<char> &images, int offset);
+  void fillin_shared_images(const std::vector<char> &images, size_t offset);
 
   /// for use in local cache mode
   char *m_mem_seg = 0;

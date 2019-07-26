@@ -237,8 +237,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
-  double tm1 = get_time();
-
   if (m_world_master) {
     std::cerr << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
     if (m_is_local_cache) {
@@ -250,8 +248,11 @@ void data_store_conduit::setup(int mini_batch_size) {
     }
   }
 
+  double tm1 = get_time();
   if (!m_preload) {
+    if (m_world_master) std::cout << "calling build_owner_map\n";
     build_owner_map(mini_batch_size);
+    if (m_world_master) std::cout << "  build_owner_map time: " << (get_time()-tm1) << "\n";
   } else {
     m_owner_map_mb_size = mini_batch_size;
   }
@@ -1174,24 +1175,6 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
   }
   m_comm->trainer_barrier();
 
-  #if 0
-  debug block; may go away
-  for (int i=0; i<m_np_in_trainer; i++) {
-    if (m_rank_in_trainer == i) {
-      if (node_id == 0) {
-        std::stringstream s;
-        std::cout << "\nls -l /dev/shm; then calling rm -rf " << m_seg_name << "; role: " << m_reader->get_role() << "; m_rank_in_trainer: " << m_rank_in_trainer << std::endl;
-        system("ls -l /dev/shm");
-        s << "rm -rf /dev/shm/" << m_seg_name;
-        system(s.str().c_str());
-        std::cerr << "\nls -l /dev/shm; AFTER rm -rf; role: " << m_reader->get_role() << "; m_rank_in_trainer: " << m_rank_in_trainer << std::endl;
-        system("ls -l /dev/shm");
-      }
-    }
-    m_comm->trainer_barrier();
-  }
-  #endif
-
   int shm_fd;
 
   if (node_id == 0) {
@@ -1243,90 +1226,73 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
 void data_store_conduit::preload_local_cache() {
   std::unordered_map<int,int> file_sizes; 
   std::vector<std::vector<int>> indices;
-  get_image_sizes(file_sizes, indices);
 
-  if (m_world_master) {
-    //verify that file_sizes map is correct
-    //verify that indices is correct
-  }
+  double tm1 = get_time();
+  if (m_world_master) std::cout << "calling get_image_sizes" << std::endl;
+  get_image_sizes(file_sizes, indices);
+  if (m_world_master) std::cout << "  get_image_sizes time: " << (get_time()-tm1) << std::endl;
+  tm1 = get_time();
+  //indices[j] contains the indices (wrt m_reader->get_image_list())
+  //that P_j will read from disk, and subsequently bcast to all others
+  //
+  //file_sizes maps an index to its file size
   
+  if (m_world_master) std::cout << "calling allocate_shared_segment" << std::endl;
+  allocate_shared_segment(file_sizes, indices);
+  if (m_world_master) std::cout << "  allocate_shared_segment time: " << (get_time()-tm1) << std::endl;
+  tm1 = get_time();
+
+  if (m_world_master) std::cout << "calling read_files" << std::endl;
   std::vector<char> work;
   read_files(work, file_sizes, indices[m_rank_in_trainer]);
-  allocate_shared_segment(file_sizes, indices);
+  if (m_world_master) std::cout << "  read_files time: " << (get_time()- tm1) << std::endl;
+  tm1 = get_time();
+
+  if (m_world_master) std::cout << "calling compute_image_offsets" << std::endl;
   compute_image_offsets(file_sizes, indices);
+  if (m_world_master) std::cout << "  compute_image_offsets time: " << (get_time()-tm1) << std::endl;
+  tm1 = get_time();
+
+  if (m_world_master) std::cout << "calling exchange_images" << std::endl;
   exchange_images(work, file_sizes, indices);
+  if (m_world_master) std::cout << "  exchange_images time: " << (get_time()-tm1) << std::endl;
+  tm1 = get_time();
 
-#if 0
-  if (m_world_master) {
-    //verify that images in shared segment are correct
-    image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-    const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
-    for (size_t h=0; h<image_list.size(); h++) {
-      errno = 0;
-      const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
-      std::cerr << "\nXX checking data_id " << h << " file: " << fn << "\n";
-      std::ifstream in(fn, std::ios::in | std::ios::binary);
-      in.seekg(0, std::ios::end);
-      int n = in.tellg();
-      in.seekg(0, std::ios::beg);
-      std::cerr << "  XX file size: " << n << " from sizes map: " << file_sizes[h] << "\n";
-      if (n != file_sizes[h]) {
-        LBANN_ERROR("n != sizes[h]");
-      }
-      char *c = m_mem_seg + m_image_offsets[h];
-      std::vector<char> w(n);
-      in.read(w.data(), n);
-      in.close();
-      for (int i=0; i<n; i++) {
-        if (c[i] != w[i]) {
-          std::cerr << "  XX file sizes: ";
-          for (size_t g=0; g<image_list.size(); g++) {
-            if (file_sizes.find(g) == file_sizes.end()) {
-              LBANN_ERROR("file_sizes.find(g) == file_sizes.end()");
-            }
-            std::cerr << "("<<g<<", "<< file_sizes[g] << ") ";
-          }
-          std::cerr << "\n\n";
-          LBANN_ERROR("mismatch at i= " + std::to_string(i));
-        }
-      }
-      std::cerr << "  XX PASSED!\n";
-    }
-  }
-#endif
-
+  if (m_world_master) std::cerr << "calling build_conduit_nodes" << std::endl;
   build_conduit_nodes(file_sizes);
+  if (m_world_master) std::cerr << "  build_conduit_nodes time: " << (get_time()-tm1) << std::endl;
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices) {
-  if (m_world_master) {
-    std::cout << "data_store_conduit: reading files for local_cache\n";
-  }
+
+  //reserve space for reading this proc's files into a contiguous memory space
   size_t n = 0;
-  for (auto t : indices) {
-    n += sizes[t];
+  for (size_t j=0; j<indices.size(); ++j) {
+    n += sizes[indices[j]];
   }
   work.resize(n);
 
   if (m_output) {
     m_output << "data_store_conduit::read_files; requested work size: " << n << std::endl;
   }
-  if (m_world_master) {
-    std::cout << "data_store_conduit::read_files; requested work size: " << n << std::endl;
-  }  
 
+  //get the list of images from the data reader
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
-  size_t offset = 0;
 
-  for (auto h : indices) {
-    int s = sizes[h];
-    const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
+  //read the images
+  size_t offset = 0;
+  if (m_world_master) std::cerr << "  my num files: " << indices.size() << std::endl;
+  for (size_t j=0; j<indices.size(); ++j) {
+    int idx = indices[j];
+    int s = sizes[idx];
+    const std::string fn = m_reader->get_file_dir() + '/' + image_list[idx].first;
     std::ifstream in(fn, std::ios::in | std::ios::binary);
     in.read(work.data()+offset, s);
     in.close();
     offset += s;
   }
+  if (m_world_master) std::cout << "  finished reading files\n";
 }
 
 void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes) {
@@ -1344,14 +1310,14 @@ void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes)
   }
 }
 
-void data_store_conduit::fillin_shared_images(const std::vector<char> &images, int offset) {
+void data_store_conduit::fillin_shared_images(const std::vector<char> &images, size_t offset) {
   memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size()); 
 }
 
 void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices) {
   std::vector<char> work2;
   int node_rank = m_comm->get_rank_in_node();
-  int offset = 0;
+  size_t offset = 0;
   for (int p=0; p<m_np_in_trainer; p++) {
     if (m_rank_in_trainer == p) {
       m_comm->trainer_broadcast<char>(p, work.data(), work.size());
@@ -1359,7 +1325,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
         fillin_shared_images(work, offset);
       }
     } else {
-      int sz = 0;
+      size_t sz = 0;
       for (auto idx : indices[p]) {
         sz += image_sizes[idx];
       }
@@ -1369,9 +1335,11 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
         fillin_shared_images(work2, offset);
       }
     }
+
     for (size_t r=0; r<indices[p].size(); r++) {
       offset += image_sizes[indices[p][r]];
     }
+
   }
 
   m_comm->barrier(m_comm->get_node_comm());
