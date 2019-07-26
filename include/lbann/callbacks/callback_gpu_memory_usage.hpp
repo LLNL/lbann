@@ -46,6 +46,10 @@ class lbann_callback_gpu_memory_usage : public lbann_callback {
   std::string name() const override { return "GPU memory usage"; }
 };
 
+// Builder function
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
+  lbann_callback_gpu_memory_usage, build_callback_gpu_memory_usage_from_pbuf);
+
 }  // namespace lbann
 
 #endif  // __LBANN_CALLBACKS_CALLBACK_GPU_MEMORY_USAGE_HPP_INCLUDED

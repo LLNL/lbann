@@ -60,4 +60,12 @@ void lbann_callback_early_stopping::on_validation_end(model *m) {
   }
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_early_stopping_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackEarlyStopping&>(proto_msg);
+  return make_unique<lbann_callback_early_stopping>(params.patience());
+}
+
 }  // namespace lbann

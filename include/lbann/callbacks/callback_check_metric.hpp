@@ -43,7 +43,9 @@ public:
                               EvalType lower_bound,
                               EvalType upper_bound,
                               bool error_on_failure);
-  lbann_callback_check_metric* copy() const override { return new lbann_callback_check_metric(*this); }
+  lbann_callback_check_metric* copy() const override {
+    return new lbann_callback_check_metric(*this);
+  }
   std::string name() const override { return "check metric"; }
 
   void on_epoch_end(model* m) override      { check_metric(*m); }
@@ -72,6 +74,11 @@ private:
   void check_metric(const model& m) const;
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_check_metric_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 

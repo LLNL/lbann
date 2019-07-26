@@ -75,6 +75,11 @@ class lbann_callback_sync_layers : public lbann_callback {
   virtual void do_sync(Layer *l);
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_sync_layers_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SYNC_LAYERS_HPP_INCLUDED

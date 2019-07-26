@@ -62,7 +62,7 @@ adam& adam::operator=(const adam& other) {
 }
 
 description adam::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);

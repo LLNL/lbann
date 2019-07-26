@@ -45,7 +45,7 @@ adagrad& adagrad::operator=(const adagrad& other) {
 }
 
 description adagrad::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("eps", m_eps);
   return desc;
 }

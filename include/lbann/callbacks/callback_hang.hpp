@@ -49,6 +49,9 @@ class lbann_callback_hang : public lbann_callback {
   lbann_callback_hang(const lbann_callback_hang&) = default;
   lbann_callback_hang& operator=(const lbann_callback_hang&) = default;
   lbann_callback_hang* copy() const override { return new lbann_callback_hang(*this); }
+
+  void setup(model* m) override;
+
   /// Hang on train begin.
   void on_train_begin(model* m) override {
     if (m_rank_to_hang == -1 ||
@@ -59,10 +62,15 @@ class lbann_callback_hang : public lbann_callback {
     }
   }
   std::string name() const override { return "hang"; }
- protected:
+ private:
   /// The rank that will hang; -1 for every rank.
   int m_rank_to_hang;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_hang_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 }  // namespace lbann
 

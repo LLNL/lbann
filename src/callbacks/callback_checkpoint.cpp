@@ -322,4 +322,18 @@ bool lbann_callback_checkpoint::restart(model *m) {
   return true;
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_checkpoint_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackCheckpoint&>(proto_msg);
+  return make_unique<lbann_callback_checkpoint>(params.checkpoint_dir(),
+                                                params.checkpoint_epochs(),
+                                                params.checkpoint_steps(),
+                                                params.checkpoint_secs(),
+                                                params.per_rank_dir(),
+                                                params.ckpt_dist_epochs(),
+                                                params.ckpt_dist_steps());
+}
+
 }

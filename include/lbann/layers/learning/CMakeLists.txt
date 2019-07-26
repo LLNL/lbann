@@ -7,6 +7,8 @@ set_full_path(THIS_DIR_HEADERS
   fully_connected.hpp
   fully_connected_cuda.hpp
   learning.hpp
+  channelwise_scale_bias.hpp
+  entrywise_scale_bias.hpp
   )
 
 # Propagate the files up the tree

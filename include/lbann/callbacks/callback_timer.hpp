@@ -98,6 +98,11 @@ private:
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_timer_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_TIMER_HPP_INCLUDED

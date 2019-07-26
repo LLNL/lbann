@@ -103,6 +103,11 @@ class lbann_callback_debug : public lbann_callback {
 
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_debug_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 } // namespace lbann
 
 #endif // LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
