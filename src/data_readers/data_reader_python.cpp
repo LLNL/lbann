@@ -290,8 +290,8 @@ def @init_func@():
 
     """
 
-    # Disable LBANN signal handler for SIGTERM
-    #import signal
+    # Disable LBANN signal handler
+    import signal
     for sig in range(signal.NSIG):
         try:
             signal.signal(sig, signal.SIG_DFL)
