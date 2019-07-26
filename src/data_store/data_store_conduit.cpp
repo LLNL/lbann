@@ -38,6 +38,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <unistd.h>
+#include <sys/statvfs.h>
 
 namespace lbann {
 
@@ -239,7 +241,9 @@ void data_store_conduit::setup(int mini_batch_size) {
 
   if (m_world_master) {
     std::cerr << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
-    if (m_super_node) {
+    if (m_is_local_cache) {
+      std::cerr << "data store mode: local cache\n";
+    } else if (m_super_node) {
       std::cerr << "data store mode: exchange_data via super nodes\n";
     } else {
       std::cerr << "data store mode: exchange_data via individual samples\n";
@@ -1077,7 +1081,7 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
       const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
       std::ifstream in(fn.c_str());
       if (!in) {
-        LBANN_ERROR("failed to open " + fn + " for reading");
+        LBANN_ERROR("failed to open " + fn + " for reading; file_dir: " + m_reader->get_file_dir() + "  fn: " + image_list[h].first + "; role: " + m_reader->get_role());
       }
       in.seekg(0, std::ios::end);
       my_image_sizes.push_back(h);
@@ -1138,8 +1142,24 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
     size += t.second;
   }
   m_mem_seg_length = size;
+
+  struct statvfs stat;
+  int x = statvfs("/dev/shm", &stat);
+  if (x != 0) {
+    LBANN_ERROR("statvfs failed\n");
+  }
+  size_t avail_mem = stat.f_bsize*stat.f_bavail;
+  double percent = 100.0 * m_mem_seg_length / avail_mem;
+  std::stringstream msg;
+  msg << "  size of required shared memory segment: " << m_mem_seg_length  << "\n"
+      << "  available mem: " << avail_mem << "\n"
+      << "  required size is " << percent << " percent of available\n";
   if (m_world_master) {
-    std::cout << "size of shared memory segment: " << m_mem_seg_length << std::endl;
+    std::cout << "\nShared memory segment statistics:\n"
+              << msg.str() << "\n";
+  }
+  if (m_mem_seg_length >= avail_mem) {
+    LBANN_ERROR("insufficient available memory:\n" + msg.str());
   }
 
   //need to ensure name is unique across all data readers
@@ -1291,10 +1311,14 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
   if (m_output) {
     m_output << "data_store_conduit::read_files; requested work size: " << n << std::endl;
   }
+  if (m_world_master) {
+    std::cout << "data_store_conduit::read_files; requested work size: " << n << std::endl;
+  }  
 
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   size_t offset = 0;
+
   for (auto h : indices) {
     int s = sizes[h];
     const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
