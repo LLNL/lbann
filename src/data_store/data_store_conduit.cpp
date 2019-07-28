@@ -1078,14 +1078,14 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
 
     // get sizes of files for which I'm responsible
     std::vector<int> my_image_sizes;
-    for (size_t h=m_rank_in_trainer; h<image_list.size(); h += m_np_in_trainer) {
-      const std::string fn = m_reader->get_file_dir() + '/' + image_list[h].first;
+    for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
+      const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
       std::ifstream in(fn.c_str());
       if (!in) {
         LBANN_ERROR("failed to open " + fn + " for reading; file_dir: " + m_reader->get_file_dir() + "  fn: " + image_list[h].first + "; role: " + m_reader->get_role());
       }
       in.seekg(0, std::ios::end);
-      my_image_sizes.push_back(h);
+      my_image_sizes.push_back((*m_shuffled_indices)[h]);
       my_image_sizes.push_back(in.tellg());
       in.close();
     }
