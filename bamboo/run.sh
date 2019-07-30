@@ -5,13 +5,7 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 echo "run.sh CLUSTER="
 echo $CLUSTER
 
-if [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'lassen' ]; then
-    PYTHON=python
-fi
-
-if [ "${CLUSTER}" = 'pascal' ]; then
-    PYTHON=$bamboo_PYTHON_x86_gpu/python
-fi
+PYTHON=python3
 
 WEEKLY=0
 while :; do

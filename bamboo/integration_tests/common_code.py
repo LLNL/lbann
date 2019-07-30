@@ -226,7 +226,7 @@ def skeleton(cluster, dir_name, executable, model_folder, model_name,
 def csv_to_dict(csv_path):
     with open(csv_path, 'r') as csv_file:
         reader = csv.reader(csv_file, skipinitialspace=True)
-        column_headers = reader.next()
+        column_headers = next(reader)
         values = {}
         for row in reader:
             row_header = row[0]
