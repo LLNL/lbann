@@ -10,7 +10,12 @@ if (LBANN_HAS_PROTOBUF)
     lbann.proto
     callbacks.proto
     layers.proto
+    metrics.proto
+    model.proto
+    objective_functions.proto
     optimizers.proto
+    reader.proto
+    transforms.proto
     weights.proto
     )
 

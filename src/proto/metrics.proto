@@ -28,13 +28,13 @@ syntax = "proto3";
 
 package lbann_data;
 
-import "reader.proto";
-import "model.proto";
-import "optimizers.proto";
+message Metric {
 
-message LbannPB {
-  DataReader data_reader = 1;
-  Model model = 2;
-  Optimizer optimizer = 3;
-  DataSetMetaData data_set_metadata = 5;
+  message LayerMetric {
+    string layer = 1;
+    string name = 2;
+    string unit = 3;
+  }
+
+  LayerMetric layer_metric = 11;
 }
