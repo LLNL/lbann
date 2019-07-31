@@ -99,49 +99,65 @@ bool sync_selected::check_if_cuda_profiler_initialized() {
  * @param comm global world communicator.
  * The profile output will be wrttien to out_dir/layer_name.prop.rank.prof
  */
-void sync_selected::init_cuda_profiler(
-  const std::string cfg_file, const std::string out_dir, int out_mode, lbann_comm* comm) const {
+void sync_selected::init_cuda_profiler_params(
+  const std::string& cfg_file, const std::string& out_dir,
+  int out_mode)
+{
+  m_cuda_prof_params = make_unique<cuda_profiler_parameters>(cfg_file,
+                                                             out_dir,
+                                                             out_mode);
+}
+
+
+void sync_selected::init_cuda_profiler(lbann_comm& comm) const {
 #ifdef LBANN_NVPROF
+  if (!m_cuda_prof_params)
+    return;
+
+  auto const& cfg_file = m_cuda_prof_params->m_cfg_file;
+  auto const& out_mode = m_cuda_prof_params->m_out_mode;
+  auto out_dir = m_cuda_prof_params->m_out_dir;
+
+
   if (check_if_cuda_profiler_initialized()) {
     return;
   }
   turn_off_init_cuda_profiler();
 
-  std::string o_dir = out_dir;
-  if (comm->am_world_master()) {
-    if (!lbann::create_dir(o_dir)) {
-      throw lbann_exception("sync_selected failed to create output directory: " + out_dir);
+  if (comm.am_world_master()) {
+    if (!lbann::create_dir(out_dir)) {
+      LBANN_ERROR("sync_selected failed to create output directory: " + out_dir);
     }
   }
-  o_dir = add_delimiter(o_dir);
+  out_dir = add_delimiter(out_dir);
 
   El::GPUManager::SynchronizeDevice();
-  comm->global_barrier();
+  comm.global_barrier();
 
   std::string selection;
   for (const auto& l: m_layers) {
     std::map<prop_t, std::string>::const_iterator it = m_prop_str.find(l.second);
     selection += l.first + '.' + it->second + '.';
   }
-  const std::string o_prefix = o_dir + selection;
-  const int my_rank = comm->get_rank_in_world();
+  const std::string o_prefix = out_dir + selection;
+  const int my_rank = comm.get_rank_in_world();
   const std::string o_file = o_prefix + std::to_string(my_rank) + ".prof";
   const cudaOutputMode_t o_mode = (out_mode == 0)? cudaKeyValuePair : cudaCSV;
 
   const auto ret = cudaProfilerInitialize(cfg_file.c_str(), o_file.c_str(), o_mode);
 
   if (ret == cudaErrorInvalidValue) {
-    throw lbann_exception("sync_selected is unabled to initialze cuda profiler: invalid inputs.");
+    LBANN_ERROR("sync_selected is unabled to initialze cuda profiler: invalid inputs.");
   } else if (ret == cudaErrorProfilerDisabled) {
     std::stringstream err;
     err << "sync_selected is unable to initialize cuda profiler: " << std::endl
         << "  An external profiling tool (nvprof/nvvp) may already be running." << std::endl
         << "  To use this callback with such a tool, set 'cuda_profiler::no_init'." << std::endl;
-    throw lbann_exception(err.str());
+    LBANN_ERROR(err.str());
   } else {
     cudaProfilerStop(); // suppress profiling until reaching the region of interest
 
-    if (comm->am_world_master()) {
+    if (comm.am_world_master()) {
       std::string msg = "Preparing callback sync_selected";
       if (!o_prefix.empty()) {
         msg += " with cudaProfiler writing to " + o_prefix + ".rank.prof";
@@ -153,13 +169,14 @@ void sync_selected::init_cuda_profiler(
 }
 
 void sync_selected::setup(model *m) {
+  init_cuda_profiler(*(m->get_comm()));
   const std::vector<Layer *>& layers = m->get_layers();
   for (auto l: layers) {
     populate_layer_ptrs(l, Forward);
     populate_layer_ptrs(l, Backward);
   }
   if (!m_all_set) {
-    throw lbann_exception("sync_selected cannot recognize all the layer names");
+    LBANN_ERROR("sync_selected cannot recognize all the layer names");
   }
 }
 
@@ -303,18 +320,17 @@ build_sync_selected_callback_from_pbuf(
 
   auto cb_ptr
     = make_unique<sync_selected>(selected_layers,
-                                                params.async_gpus(),
-                                                params.async_mpi());
+                                 params.async_gpus(),
+                                 params.async_mpi());
 
 #ifdef LBANN_NVPROF
   const auto& cp_setup = params.cuda_profiler_setup();
   if (cp_setup.no_init()) {
     sync_selected::turn_off_init_cuda_profiler();
   } else {
-    cb_ptr->init_cuda_profiler(cp_setup.config_file(),
-                               cp_setup.output_dir(),
-                               cp_setup.output_mode(),
-                               comm);
+    cb_ptr->init_cuda_profiler_params(cp_setup.config_file(),
+                                      cp_setup.output_dir(),
+                                      cp_setup.output_mode());
   }
 #endif // LBANN_NVPROF
   return cb_ptr;

@@ -63,12 +63,35 @@ class sync_selected : public sync_layers {
    * @param async_mpi sets not to synchronize mpi. The default is false.
    */
   sync_selected(const layers_t& layers,
-                               bool async_gpus = false, bool async_mpi = false);
+                bool async_gpus = false, bool async_mpi = false);
 
-  sync_selected(const sync_selected&) = default;
+  sync_selected(const sync_selected& other)
+    : sync_layers(other),
+      m_cuda_prof_params(
+        other.m_cuda_prof_params
+        ? make_unique<cuda_profiler_parameters>(*m_cuda_prof_params)
+        : nullptr),
+      m_layers(other.m_layers),
+      m_fwd_ptrs(other.m_fwd_ptrs),
+      m_bwd_ptrs(other.m_bwd_ptrs),
+      m_both_ptrs(other.m_both_ptrs),
+      m_all_set(other.m_all_set)
+  {}
 
-  sync_selected& operator=(
-    const sync_selected&) = default;
+  sync_selected& operator=(const sync_selected& other) {
+    static_cast<sync_layers&>(*this) = sync_layers::operator=(other);
+    m_cuda_prof_params = (
+        other.m_cuda_prof_params
+        ? make_unique<cuda_profiler_parameters>(*m_cuda_prof_params)
+        : nullptr);
+    m_layers = other.m_layers;
+    m_fwd_ptrs = other.m_fwd_ptrs;
+    m_bwd_ptrs = other.m_bwd_ptrs;
+    m_both_ptrs = other.m_both_ptrs;
+    m_all_set = other.m_all_set;
+
+    return *this;
+  }
 
   sync_selected* copy() const override {
     return new sync_selected(*this);
@@ -85,8 +108,10 @@ class sync_selected : public sync_layers {
   /// Tells if cuda_profiler has been initialized
   static bool check_if_cuda_profiler_initialized();
 
-  void init_cuda_profiler(const std::string cfg_file, const std::string out_dir,
-                          int out_mode, lbann_comm* comm) const;
+  /** @brief Setup the parameters for the cuda profiler. */
+  void init_cuda_profiler_params(const std::string& cfg_file,
+                                 const std::string& out_dir,
+                                 int out_mode);
 
   /** Called once to set up the callback (after all layers are set up).
    * Then, populate the layer pointers */
@@ -107,6 +132,8 @@ class sync_selected : public sync_layers {
   void on_backward_prop_end(model* m, Layer* l) override;
 
  protected:
+  void init_cuda_profiler(lbann_comm& comm) const;
+
   bool check_if_all_accounted_for() const;
 
   layer_ptrs_t::iterator populate_layer_ptrs(Layer* l, const prop_t current_prop);
@@ -115,6 +142,29 @@ class sync_selected : public sync_layers {
   void do_pre_sync(Layer* l);
   /// Synchronize and disble cuda profiler
   void do_sync(Layer* l) override;
+
+ private:
+
+  /** @class cuda_profiler_parameters
+   *  @brief Storage for parameters for the cuda profiler
+   */
+  struct cuda_profiler_parameters
+  {
+    std::string m_cfg_file;
+    std::string m_out_dir;
+    int m_out_mode;
+
+    cuda_profiler_parameters(const std::string& cfg_file,
+                             const std::string& out_dir,
+                             int out_mode)
+      : m_cfg_file(cfg_file),
+        m_out_dir(out_dir),
+        m_out_mode(out_mode)
+    {}
+  };// cuda_profiler_parameters
+
+  /** @brief The parameters for the CUDA profiler */
+  std::unique_ptr<cuda_profiler_parameters> m_cuda_prof_params;
 
   /// The layers to synchronize.
   layers_t m_layers;
