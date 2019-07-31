@@ -38,14 +38,16 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+
+#include <model.pb.h>
+
+#include <mpi.h>
+
 #include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-#include <lbann.pb.h>
-
-#include "mpi.h"
 
 namespace lbann {
 

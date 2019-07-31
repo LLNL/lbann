@@ -25,10 +25,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_check_gradients.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/memory.hpp"
 
-#include "callbacks.pb.h"
+#include <callbacks.pb.h>
+
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <memory>
 
 namespace lbann {
 

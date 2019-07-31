@@ -26,10 +26,14 @@
 // lbann_variable_minibatch .hpp .cpp - Callback for variable-size mini-batches
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <utility>
-
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/utils/exception.hpp"
+
+#include <callbacks.pb.h>
+
+#include <iostream>
+#include <utility>
 
 namespace lbann {
 

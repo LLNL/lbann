@@ -26,10 +26,18 @@
 // lbann_callback_print .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/callback_print.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
 #include <iomanip>
+#include <iostream>
+#include <numeric>
+#include <vector>
 
 namespace lbann {
 

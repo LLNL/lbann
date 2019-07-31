@@ -26,15 +26,20 @@
 // lbann_callback_timer .hpp .cpp - Callback hooks to time training
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/utils/profiling.hpp"
+
+#include <callbacks.pb.h>
+
 #ifdef LBANN_NVPROF
 #include "nvToolsExt.h"
 #include "nvToolsExtCuda.h"
 #include "nvToolsExtCudaRt.h"
 #include "cuda_runtime.h"
 #endif
+
+#include <algorithm>
+#include <string>
 
 namespace lbann {
 

@@ -31,6 +31,8 @@
 
 #include "callback_helpers.hpp"
 
+#include <callbacks.pb.h>
+
 #include <algorithm>
 #include <cmath> // std::pow
 #include <iostream>

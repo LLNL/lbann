@@ -27,12 +27,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_sync_selected.hpp"
+
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+
+#include <callbacks.pb.h>
+
 #ifdef LBANN_NVPROF
-#include <cuda_profiler_api.h>
 #include "lbann/utils/file_utils.hpp"
+#include <cuda_profiler_api.h>
 #include <sstream>
 #endif // LBANN_NVPROF
+
+#include <map>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 

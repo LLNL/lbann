@@ -29,10 +29,15 @@
 #ifndef __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
-#include "lbann/base.hpp"
-#include "lbann/utils/summary.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/memory.hpp"
+#include "lbann/utils/summary.hpp"
+
+#include <google/protobuf/message.h>
+
+#include <algorithm>
+#include <string>
 
 // A utility macro for easily adding default-constructed sub-class
 // builders.

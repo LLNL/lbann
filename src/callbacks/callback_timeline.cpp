@@ -26,9 +26,17 @@
 // callback_timeline .hpp .cpp - Callback hooks to record a timeline of runtime
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <fstream>
 #include "lbann/callbacks/callback_timeline.hpp"
+
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+
+#include <callbacks.pb.h>
+
+#include <fstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 

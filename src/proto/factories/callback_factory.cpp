@@ -62,15 +62,17 @@
 #include "lbann/callbacks/callback_timeline.hpp"
 #include "lbann/callbacks/callback_timer.hpp"
 #include "lbann/callbacks/callback_variable_minibatch.hpp"
+#include "lbann/callbacks/profiler.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include <callbacks.pb.h>
+#include <model.pb.h>
 #include <google/protobuf/message.h>
 
-#include <functional>
 #include <memory>
 #include <string>
 

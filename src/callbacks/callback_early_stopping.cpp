@@ -28,6 +28,10 @@
 
 #include "lbann/callbacks/callback_early_stopping.hpp"
 
+#include <callbacks.pb.h>
+
+#include <iostream>
+
 namespace lbann {
 
 lbann_callback_early_stopping::lbann_callback_early_stopping(int64_t patience) :

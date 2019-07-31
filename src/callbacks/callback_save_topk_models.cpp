@@ -26,8 +26,15 @@
 // lbann_callback_save_topk_models .hpp .cpp - Callback hooks to save_topk_models information
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/callback_save_topk_models.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
+#include <functional>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace lbann {
 void lbann_callback_save_topk_models::on_test_end(model *m) {

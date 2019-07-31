@@ -27,8 +27,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_sync_layers.hpp"
+
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+
+#include <callbacks.pb.h>
 
 namespace lbann {
 

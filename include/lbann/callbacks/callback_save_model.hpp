@@ -32,8 +32,13 @@
 #include <utility>
 
 #include "lbann/callbacks/callback.hpp"
-#include <lbann.pb.h>
+
 #include <google/protobuf/message.h>
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Model;
+}
 
 namespace lbann {
 

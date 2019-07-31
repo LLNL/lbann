@@ -39,10 +39,15 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <lbann.pb.h>
+
 #include <vector>
 #include <string>
 #include <unordered_map>
+
+// Forward-declare protobuf class
+namespace lbann_data {
+class Model;
+}
 
 namespace lbann {
 

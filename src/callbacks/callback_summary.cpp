@@ -27,7 +27,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_summary.hpp"
+
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
+#include <string>
 
 namespace lbann {
 

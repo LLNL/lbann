@@ -25,7 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
 
 namespace lbann {
 

@@ -28,6 +28,13 @@
 
 #include "lbann/callbacks/callback_debug_io.hpp"
 
+#include "lbann/base.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+#include <iostream>
+#include <memory>
+
 namespace lbann {
 
 /// BVE FIXME @todo The use of execution_mode invalid needs to be reconsidered

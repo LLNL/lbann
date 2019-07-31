@@ -26,11 +26,15 @@
 // lbann_callback_imcomm .hpp .cpp - Send gradient updates between models
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "lbann/callbacks/callback_imcomm.hpp"
+
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/timer.hpp"
+
+#include <callbacks.pb.h>
+
 #include <typeinfo>
 #include <typeindex>
-#include "lbann/callbacks/callback_imcomm.hpp"
-#include "lbann/utils/timer.hpp"
-#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -71,10 +75,9 @@ void lbann_callback_imcomm::setup(model *m) {
       optimizer *opt = w->get_optimizer();
       if (opt == nullptr) {
         std::stringstream err;
-        err << __FILE__ << " " << __LINE__ << " :: "
-            << "imcomm: trying to do inter-model gradient communication on "
+        err << "imcomm: trying to do inter-model gradient communication on "
             << w->get_name() << ", which has no optimizer";
-        throw(err.str());
+        LBANN_ERROR(err.str());
       }
     }
 
@@ -87,10 +90,9 @@ void lbann_callback_imcomm::on_train_begin(model *m) {
     return;  // No point with only one model.
   }
   for (weights *w : m->get_weights()) {
-    AbsDistMat *values = w->get_values().Copy();
+    auto values = std::unique_ptr<AbsDistMat>{w->get_values().Copy()};
     comm->intertrainer_broadcast_matrix(*values, 0);
     w->set_values(*values);
-    delete values;
   }
 }
 
@@ -107,19 +109,17 @@ void lbann_callback_imcomm::on_backward_prop_end(model *m) {
       continue;
     }
     optimizer *opt = w->get_optimizer();
-    auto gradient = opt->get_gradient().Copy();
+    auto gradient = std::unique_ptr<AbsDistMat>{opt->get_gradient().Copy()};
     Mat* local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
     switch (params.ct) {
     case NORMAL:
       comm->intertrainer_sum_matrix(*local_gradients);
       break;
     default:
-      throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
-         + "imcomm: unknown comm type");
+      LBANN_ERROR("imcomm: unknown comm type");
     }
     opt->clear_gradient();
     opt->add_to_gradient(*gradient);
-    delete gradient;
     EvalType im_time = get_time() - start_time;
     do_summary(m, w, im_time);
   }
@@ -146,14 +146,12 @@ void lbann_callback_imcomm::do_summary(model *m, weights *w,
                               bytes_received, m->get_step(execution_mode::training));
 }
 
-static std::vector<std::string> comm_type_names  =
-    { "none", "normal" };
+static std::vector<std::string> comm_type_names  = { "none", "normal" };
 
 /** returns a string representation of the weight_initialization */
 std::string get_comm_type_name(lbann_callback_imcomm::comm_type m) {
   if ((int)m < 0 or (int)m >= (int)comm_type_names.size()) {
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: "
-           + " Invalid comm_type");
+    LBANN_ERROR(" Invalid comm_type");
   }
   return comm_type_names[(int)m];
 }

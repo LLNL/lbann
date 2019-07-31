@@ -29,6 +29,13 @@
 
 #include "lbann/callbacks/callback_checkpoint.hpp"
 
+#include "lbann/models/model.hpp"
+
+#include <callbacks.pb.h>
+
+#include <memory>
+#include <string>
+
 namespace lbann {
 // Load from checkpoint occurs during setup callbacks
 void lbann_callback_checkpoint::setup(model *m) {

@@ -26,6 +26,11 @@
 
 #include "lbann/proto/factories.hpp"
 
+#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+
+#include <objective_functions.pb.h>
+
 namespace lbann {
 namespace proto {
 
