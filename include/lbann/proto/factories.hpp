@@ -66,9 +66,10 @@ std::unique_ptr<Layer> construct_layer(
   const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
-weights* construct_weights(lbann_comm* comm,
-                           const lbann_data::Optimizer& proto_opt,
-                           const lbann_data::Weights& proto_weights);
+std::unique_ptr<weights> construct_weights(
+  lbann_comm* comm,
+  const lbann_data::Optimizer& proto_opt,
+  const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
 std::unique_ptr<callback_base>
