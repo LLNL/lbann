@@ -62,9 +62,10 @@ public:
   lbann_callback_summarize_autoencoder_images(lbann_summary *summarizer,
                                     std::string const& reconstruction_layer_name,
                                     std::string const& img_layer_name,
+                                    std::string const& input_layer_name,
                                     uint64_t interval,
                                     std::string const& img_format = ".jpg",
-                                    size_t const& num_images = 2);
+                                    size_t const& num_images = 15);
   /** @brief Destructor */
   ~lbann_callback_summarize_autoencoder_images() {}
 
@@ -90,23 +91,21 @@ private:
    */
   bool meets_criteria( const DataType& match );
 
-  /** @brief Add reconstruction images to event file */
-  void dump_reconstruction_images_to_summary(const std::vector<El::Int>& img_indices,
-                                             const uint64_t& step,
-                                             const El::Int& epoch);
+  /** @brief Add images to event file */
+  void dump_images_to_summary(const Layer& layer,
+                              const uint64_t& step,
+                              const El::Int& epoch = -1);
+  /** @brief Construct tag for image */
+  std::string get_tag(El::Int index, El::Int epoch);
 
-  /** @brief Add reconstruction images to event file */
-  void dump_original_images_to_summary(const std::vector<El::Int>& img_indices,
-                                    const uint64_t& step);
 
 private:
   /* Names layers */
   std::string m_reconstruction_layer_name;
   std::string m_img_layer_name;
   std::string m_label_layer_name;
+  std::string m_input_layer_name;
 
-  /* Criterion for selecting images to dump */
-  MatchType m_match_type;
   /** lbann::Layer objects */
   Layer const* m_reconstruction_layer = nullptr;
   Layer const* m_img_layer = nullptr;
@@ -125,7 +124,10 @@ private:
     std::unordered_set<El::Int> m_tracked_images;
 
   /** Number of images to track */
-  size_t const m_num_images;
+  size_t m_num_images;
+
+  /** Number of images in mini-batch **/
+  size_t m_mini_batch_size;
 };
 
 std::unique_ptr<lbann_callback>

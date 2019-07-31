@@ -305,7 +305,7 @@ build_callback_sync_selected_from_pbuf(
                                                 params.async_gpus(),
                                                 params.async_mpi());
 
-#ifdef LBANN_NVPROF
+#ifdef LBANN_NVPROF_FIXME
   const auto& cp_setup = params.cuda_profiler_setup();
   if (cp_setup.no_init()) {
     lbann_callback_sync_selected::turn_off_init_cuda_profiler();

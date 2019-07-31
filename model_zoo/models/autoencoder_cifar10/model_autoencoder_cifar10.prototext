@@ -2,7 +2,7 @@ model {
   data_layout: "model_parallel"
   mini_batch_size: 32
   block_size: 256
-  num_epochs: 100
+  num_epochs: 200
   num_parallel_readers: 0
   procs_per_trainer: 0
 
@@ -33,7 +33,22 @@ model {
       interval: 1
     }
   }
+  callback { timer {}}
 
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 2
+      mat_interval: 3
+    }
+  }
+  callback {
+    summarize_autoencoder_images {
+      reconstruction_layer: "dropout2"
+      image_layer: "image"
+      interval: 20
+    }
+  }
   ###################################################
   # start of layers
   ###################################################
@@ -112,7 +127,7 @@ model {
   #########
   layer {
     parents: "decode1"
-    name: "sigmoid1"
+    name: "reconstruction"
     data_layout: "model_parallel"
     sigmoid {
     }
@@ -121,7 +136,7 @@ model {
   # DROPOUT
   #########
   layer {
-    parents: "sigmoid1"
+    parents: "reconstruction"
     name: "dropout2"
     data_layout: "model_parallel"
     dropout {

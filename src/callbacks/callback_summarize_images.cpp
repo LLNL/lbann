@@ -109,7 +109,7 @@ std::vector<El::Int> lbann_callback_summarize_images::get_image_indices() {
       if (meets_criteria(correctness_value))
         img_indices.push_back(sample);
 //FIXME: Add parameter to control number of images per epoch
-      if(img_indices.size() > 2)
+      if(img_indices.size() > 10)
         break;
     }
   }

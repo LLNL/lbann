@@ -54,7 +54,8 @@ lbann_summary::~lbann_summary() {
 void lbann_summary::reduce_mean(const std::string tag,
                                 const AbsDistMat& mat,
                                 int step) {
-  // Local sum
+#if 0
+// Local sum
   DataType sum = 0.0;
 
   // Check distributed matrix format
@@ -74,25 +75,31 @@ void lbann_summary::reduce_mean(const std::string tag,
 
   // Add local sum to list of pending means
   m_pending_means.emplace_back(tag, step, sum, 0.0f, mat.Height() * mat.Width());
+  #endif
 }
 
 void lbann_summary::reduce_min(const std::string tag,
                                const AbsDistMat& mat,
                                int step) {
+#if 0
   DataType mat_local_min = local_min(mat.LockedMatrix());
   m_pending_mins.emplace_back(tag, step, mat_local_min);
+#endif
 }
 
 void lbann_summary::reduce_max(const std::string tag,
                                const AbsDistMat& mat,
                                int step) {
+#if 0
   DataType mat_local_max = local_max(mat.LockedMatrix());
   m_pending_maxes.emplace_back(tag, step, mat_local_max);
+#endif
 }
 
 void lbann_summary::reduce_stdev(const std::string tag,
                                  const AbsDistMat& mat,
                                  int step) {
+#if 0
   // Local sum and squared sum
   DataType sum = 0.0;
   DataType sqsum = 0.0;
@@ -114,31 +121,39 @@ void lbann_summary::reduce_stdev(const std::string tag,
 
   // Add local sums to list of pending stdevs.
   m_pending_stdevs.emplace_back(tag, step, sum, sqsum, mat.Height() * mat.Width());
+#endif
 }
 
 void lbann_summary::reduce_scalar(const std::string tag,
                                   DataType s,
                                   int step) {
+#if 0
   if (m_comm->am_trainer_master()) {
     m_pending_scalars.emplace_back(tag, step, s);
   }
+#endif
 }
 
 void lbann_summary::sum_reduce_scalar(const std::string tag,
                                       DataType s,
                                       int step) {
+#if 0
   m_pending_sum_scalars.emplace_back(tag, step, s);
+#endif
 }
 
 void lbann_summary::reduce_scalar_all(const std::string tag,
                                       DataType s,
                                       int step) {
+#if 0
   m_pending_scalar_alls.emplace_back(tag, step, s);
+#endif
 }
 
 void lbann_summary::reduce_histogram(const std::string tag,
                                      const AbsDistMat& mat,
                                      int step) {
+#if 0
   DataType mat_local_min = local_min(mat.LockedMatrix());
   DataType mat_local_max = local_max(mat.LockedMatrix());
   // Local sum and squared sum
@@ -178,13 +193,16 @@ void lbann_summary::reduce_histogram(const std::string tag,
     tag, step, buckets, mat_local_min, mat_local_max, mat.Height() * mat.Width(),
     sum, sqsum);
   // TODO: Support histograms on multiple models.
+#endif
 }
 
 void lbann_summary::reduce_2norm(const std::string tag, const AbsDistMat& mat,
                                  int step) {
-  // Using a squared 2-norm so that we can just sum this.
+#if 0
+// Using a squared 2-norm so that we can just sum this.
   DataType local_norm = local_2norm(mat.LockedMatrix());
   sum_reduce_scalar(tag, local_norm * local_norm, step);
+#endif
 }
 
 void lbann_summary::report_image(std::string const& tag,
@@ -480,6 +498,7 @@ void lbann_summary::flush_histograms() {
 }
 
 DataType lbann_summary::local_sum(const Mat& mat) const {
+#if 0
   // Note there are more numerically stable ways to compute a sum.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
@@ -501,11 +520,14 @@ DataType lbann_summary::local_sum(const Mat& mat) const {
     }
   }
   return sum;
+#endif
+  return 0;
 }
 
 void lbann_summary::local_sum_sqsum(
   const Mat& mat, DataType& sum, DataType& sqsum) const {
-  // Note there are more numerically stable ways to compute a sum.
+#if 0
+// Note there are more numerically stable ways to compute a sum.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
@@ -530,9 +552,11 @@ void lbann_summary::local_sum_sqsum(
       }
     }
   }
+#endif
 }
 
 DataType lbann_summary::local_min(const Mat& mat) const {
+#if 0
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
@@ -552,10 +576,13 @@ DataType lbann_summary::local_min(const Mat& mat) const {
       }
     }
   }
+  #endif
+  auto min = 0;
   return min;
 }
 
 DataType lbann_summary::local_max(const Mat& mat) const {
+#if 0
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
@@ -575,11 +602,14 @@ DataType lbann_summary::local_max(const Mat& mat) const {
       }
     }
   }
+#endif
+  auto max = 1;
   return max;
 }
 
 DataType lbann_summary::local_2norm(const Mat& mat) const {
-  // Note there are more numerically stable ways to compute this.
+#if 0
+// Note there are more numerically stable ways to compute this.
   const El::Int height = mat.Height();
   const El::Int width = mat.Width();
   const El::Int ldim = mat.LDim();
@@ -599,6 +629,8 @@ DataType lbann_summary::local_2norm(const Mat& mat) const {
       }
     }
   }
+#endif
+  auto norm = DataType(0);
   return std::sqrt(norm);
 }
 
@@ -609,6 +641,7 @@ std::string lbann_summary::prepend_model(const std::string tag,
 
 void lbann_summary::gather_scalar_summary(
   const std::vector<pending_op>& ops, std::vector<DataType>& scalars) {
+#if 0
   if (m_comm->am_world_master()) {
     std::vector<DataType> data(m_comm->get_num_trainers() * scalars.size());
     m_comm->intertrainer_gather(scalars.data(), scalars.size(), data.data());
@@ -622,11 +655,13 @@ void lbann_summary::gather_scalar_summary(
     m_comm->intertrainer_gather(scalars.data(), scalars.size(),
                               m_comm->get_intertrainer_master());
   }
+#endif
 }
 
 void lbann_summary::gather_scalar_summary(const std::string tag,
                                           DataType s,
                                           int step) {
+#if 0
   if (m_comm->am_world_master()) {
     std::vector<DataType> data(m_comm->get_num_trainers());
     m_comm->intertrainer_gather(s, data);
@@ -636,6 +671,7 @@ void lbann_summary::gather_scalar_summary(const std::string tag,
   } else {
     m_comm->intertrainer_gather(s, m_comm->get_intertrainer_master());
   }
+#endif
 }
 
 #endif  // LBANN_HAS_TBINF

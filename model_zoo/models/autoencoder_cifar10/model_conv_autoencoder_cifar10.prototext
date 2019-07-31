@@ -1,8 +1,8 @@
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 128
+  mini_batch_size: 32
   block_size: 256
-  num_epochs: 10
+  num_epochs: 150
   num_parallel_readers: 1
   #procs_per_trainer: 12
   procs_per_trainer: 0
@@ -40,6 +40,21 @@ model {
   }
   callback {
     timer {
+    }
+  }
+  callback {
+    summary {
+      dir: "."
+      batch_interval: 2
+      mat_interval: 3
+    }
+  }
+  callback {
+    summarize_autoencoder_images {
+      reconstruction_layer: "reconstruction"
+      image_layer: "image"
+      input_layer: "data"
+      interval: 6
     }
   }
 

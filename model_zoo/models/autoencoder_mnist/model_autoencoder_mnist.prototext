@@ -2,7 +2,7 @@ model {
   data_layout: "model_parallel"
   mini_batch_size: 10
   block_size: 256
-  num_epochs: 10
+  num_epochs: 2
   num_parallel_readers: 0
   procs_per_trainer: 0
 
@@ -35,6 +35,7 @@ model {
     summarize_autoencoder_images {
       reconstruction_layer: "reconstruction"
       image_layer: "image"
+      input_layer: "data"
       interval: 1
     }
   }

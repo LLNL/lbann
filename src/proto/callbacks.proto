@@ -366,6 +366,7 @@ message Callback {
 
     string reconstruction_layer = 1; //name of categorical accuracy layer
     string image_layer = 2; //name of image layer
+    string input_layer = 3; //name of input layer
     uint64 interval = 4; // interval for dumping images
   }
 
