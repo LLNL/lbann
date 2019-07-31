@@ -30,6 +30,8 @@ package lbann_data;
 
 import "callbacks.proto";
 import "layers.proto";
+import "optimizers.proto";
+import "weights.proto";
 
 message LbannPB {
   DataReader data_reader = 1;
@@ -381,92 +383,3 @@ message LayerMetric {
   string name = 2;
   string unit = 3;
 }
-
-//========================================================================
-// Optimizers
-//========================================================================
-message Optimizer {
-  oneof optimizer_type {
-    AdaGrad adagrad = 1;
-    Adam adam = 2;
-    HypergradientAdam hypergradient_adam = 3;
-    RMSprop rmsprop = 4;
-    SGD sgd = 5;
-  }
-}
-
-message AdaGrad {
-  double learn_rate = 1;
-  double eps = 2;           // Suggested: 1e-8
-}
-
-message Adam {
-  double learn_rate = 1;
-  double beta1 = 6;         // Suggested: 0.9
-  double beta2 = 7;         // Suggested: 0.99
-  double eps = 8;           // Suggested: 1e-8
-}
-
-message HypergradientAdam {
-  double init_learning_rate = 1;
-  double hyper_learning_rate = 2;   // Suggested: 1e-7
-  double beta1 = 6;                 // Suggested: 0.9
-  double beta2 = 7;                 // Suggested: 0.99
-  double eps = 8;                   // Suggested: 1e-8
-}
-
-message RMSprop {
-  double learn_rate = 1;
-  double decay_rate = 2;
-  double eps = 3;           // Suggested: 1e-8
-}
-
-message SGD {
-  double learn_rate = 1;
-  double momentum = 2;      // Set to zero for vanilla SGD
-  bool nesterov = 4;
-}
-
-//========================================================================
-// Weights
-//========================================================================
-
-message Weights {
-
-  string name = 1;
-  Optimizer optimizer = 2;
-
-  ConstantInitializer constant_initializer = 20;
-  ValueInitializer value_initializer = 21;
-  UniformInitializer uniform_initializer = 22;
-  NormalInitializer normal_initializer = 23;
-  GlorotNormalInitializer glorot_normal_initializer = 24;
-  GlorotUniformInitializer glorot_uniform_initializer = 25;
-  HeNormalInitializer he_normal_initializer = 26;
-  HeUniformInitializer he_uniform_initializer = 27;
-  LeCunNormalInitializer lecun_normal_initializer = 28;
-  LeCunUniformInitializer lecun_uniform_initializer = 29;
-
-}
-
-// Weight initializers
-message ConstantInitializer {
-  double value = 1;
-}
-message ValueInitializer {
-  string values = 1;
-}
-message UniformInitializer {
-  double min = 1;
-  double max = 2;
-}
-message NormalInitializer {
-  double mean = 1;
-  double standard_deviation = 2;
-}
-message GlorotNormalInitializer {}
-message GlorotUniformInitializer {}
-message HeNormalInitializer {}
-message HeUniformInitializer {}
-message LeCunNormalInitializer {}
-message LeCunUniformInitializer {}
