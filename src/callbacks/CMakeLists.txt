@@ -32,6 +32,8 @@ set_full_path(THIS_DIR_SOURCES
   save_model.cpp
   save_topk_models.cpp
   summary.cpp
+  summarize_images.cpp
+  summarize_autoencoder_images.cpp
   sync_layers.cpp
   sync_selected.cpp
   timeline.cpp

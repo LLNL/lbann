@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summarize_autoencoder_images .hpp .cpp - Callback hooks to dump
+// summarize_autoencoder_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -38,11 +38,12 @@
 #include <vector>
 
 namespace lbann {
+namespace callback {
 
 /** @class lbann_callback_summarize_autoencoder_images
  *  @brief Dump images with testing results to event files
  */
-class lbann_callback_summarize_autoencoder_images : public lbann_callback{
+class summarize_autoencoder_images : public callback_base {
  public:
 
   enum class MatchType
@@ -59,7 +60,7 @@ public:
    *  @param summarizer lbann_summary object
    *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
    */
-  lbann_callback_summarize_autoencoder_images(lbann_summary *summarizer,
+  summarize_autoencoder_images(lbann_summary *summarizer,
                                     std::string const& reconstruction_layer_name,
                                     std::string const& img_layer_name,
                                     std::string const& input_layer_name,
@@ -67,10 +68,10 @@ public:
                                     std::string const& img_format = ".jpg",
                                     size_t const& num_images = 15);
   /** @brief Destructor */
-  ~lbann_callback_summarize_autoencoder_images() {}
+  ~summarize_autoencoder_images() {}
 
-  lbann_callback* copy() const override { return new lbann_callback_summarize_autoencoder_images(*this); }
-  std::string name() const override { return "callback_summarize_autoencoder_images"; }
+  callback_base* copy() const override { return new summarize_autoencoder_images(*this); }
+  std::string name() const override { return "summarize_autoencoder_images"; }
 
   void setup(model* m) override;
 
@@ -130,10 +131,11 @@ private:
   size_t m_mini_batch_size;
 };
 
-std::unique_ptr<lbann_callback>
-build_callback_summarize_autoencoder_images_from_pbuf(
+std::unique_ptr<callback_base>
+build_summarize_autoencoder_images_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED

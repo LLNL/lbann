@@ -23,20 +23,21 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summarize_autoencoder_images .hpp .cpp - Callback hooks to dump
+// summarize_autoencoder_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann_config.hpp>
 #include <lbann/utils/image.hpp>
 #include <lbann/utils/summary.hpp>
-#include "lbann/callbacks/callback_summarize_autoencoder_images.hpp"
+#include "lbann/callbacks/summarize_autoencoder_images.hpp"
 #include <lbann/layers/io/input/generic_input_layer.hpp>
 #include <iostream>
 
 namespace lbann {
+namespace callback {
 
-lbann_callback_summarize_autoencoder_images::lbann_callback_summarize_autoencoder_images(
+summarize_autoencoder_images::summarize_autoencoder_images(
   lbann_summary *summarizer,
   std::string const& reconstruction_layer_name,
   std::string const& img_layer_name,
@@ -44,7 +45,7 @@ lbann_callback_summarize_autoencoder_images::lbann_callback_summarize_autoencode
   uint64_t interval,
   std::string const& img_format,
   size_t const& num_images)
-  : lbann_callback(1, summarizer),
+  : callback_base(1, summarizer),
     m_reconstruction_layer_name(reconstruction_layer_name),
     m_img_layer_name(img_layer_name),
     m_input_layer_name(input_layer_name),
@@ -69,7 +70,7 @@ std::string BuildErrorMessage(Ts... args)
 }
 }
 
-void lbann_callback_summarize_autoencoder_images::setup(model* m)
+void summarize_autoencoder_images::setup(model* m)
 {
   auto layers = m->get_layers();
   /* find layers in model based on string */
@@ -102,7 +103,7 @@ void lbann_callback_summarize_autoencoder_images::setup(model* m)
   }
 }
 
-Layer const* lbann_callback_summarize_autoencoder_images::get_layer_by_name(
+Layer const* summarize_autoencoder_images::get_layer_by_name(
   const std::vector<Layer*>& layers,
   const std::string& layer_name)
 {
@@ -114,7 +115,7 @@ Layer const* lbann_callback_summarize_autoencoder_images::get_layer_by_name(
   return nullptr;
 }
 
-std::vector<El::Int> lbann_callback_summarize_autoencoder_images::get_image_indices() {
+std::vector<El::Int> summarize_autoencoder_images::get_image_indices() {
   std::vector<El::Int> img_indices;
 
   auto* sample_indices =
@@ -146,7 +147,7 @@ std::vector<El::Int> lbann_callback_summarize_autoencoder_images::get_image_indi
   return img_indices;
 }
 
-void lbann_callback_summarize_autoencoder_images::dump_images_to_summary(
+void summarize_autoencoder_images::dump_images_to_summary(
   const Layer& layer, const uint64_t& step, const El::Int& epoch) {
 
   std::vector<El::Int> img_indices = get_image_indices();
@@ -178,7 +179,7 @@ void lbann_callback_summarize_autoencoder_images::dump_images_to_summary(
   }
 }
 
-std::string lbann_callback_summarize_autoencoder_images::get_tag(El::Int index, El::Int epoch){
+std::string summarize_autoencoder_images::get_tag(El::Int index, El::Int epoch){
   std::string image_tag;
 
   if(epoch == -1)
@@ -189,7 +190,7 @@ std::string lbann_callback_summarize_autoencoder_images::get_tag(El::Int index, 
   return image_tag;
 }
 
-void lbann_callback_summarize_autoencoder_images::on_batch_evaluate_end(model* m) {
+void summarize_autoencoder_images::on_batch_evaluate_end(model* m) {
 
 
   if (m->get_epoch() % m_interval != 0)
@@ -205,14 +206,14 @@ void lbann_callback_summarize_autoencoder_images::on_batch_evaluate_end(model* m
     dump_images_to_summary(*m_img_layer, m->get_step());
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_summarize_autoencoder_images_from_pbuf(
+std::unique_ptr<callback_base>
+build_summarize_autoencoder_images_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
 
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummarizeAutoencoderImages&>(proto_msg);
 
-  return make_unique<lbann_callback_summarize_autoencoder_images>(
+  return make_unique<summarize_autoencoder_images>(
     summarizer,
     params.reconstruction_layer(),
     params.image_layer(),
@@ -220,4 +221,5 @@ build_callback_summarize_autoencoder_images_from_pbuf(
     params.interval());
 }
 
+} // namespace callback
 } // namespace lbann

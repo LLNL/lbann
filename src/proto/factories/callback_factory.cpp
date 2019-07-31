@@ -26,44 +26,44 @@
 
 // Get the declarations of all the builders for registration
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/callback_check_dataset.hpp"
-#include "lbann/callbacks/callback_check_gradients.hpp"
-#include "lbann/callbacks/callback_check_init.hpp"
-#include "lbann/callbacks/callback_check_metric.hpp"
-#include "lbann/callbacks/callback_checknan.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
-#include "lbann/callbacks/callback_checksmall.hpp"
-#include "lbann/callbacks/callback_confusion_matrix.hpp"
-#include "lbann/callbacks/callback_debug.hpp"
-#include "lbann/callbacks/callback_debug_io.hpp"
-#include "lbann/callbacks/callback_dump_error_signals.hpp"
-#include "lbann/callbacks/callback_dump_gradients.hpp"
-#include "lbann/callbacks/callback_dump_minibatch_sample_indices.hpp"
-#include "lbann/callbacks/callback_dump_outputs.hpp"
-#include "lbann/callbacks/callback_dump_weights.hpp"
-#include "lbann/callbacks/callback_early_stopping.hpp"
-#include "lbann/callbacks/callback_gpu_memory_usage.hpp"
-#include "lbann/callbacks/callback_hang.hpp"
-#include "lbann/callbacks/callback_imcomm.hpp"
-#include "lbann/callbacks/callback_io.hpp"
-#include "lbann/callbacks/callback_learning_rate.hpp"
-#include "lbann/callbacks/callback_ltfb.hpp"
-#include "lbann/callbacks/callback_mixup.hpp"
-#include "lbann/callbacks/callback_perturb_adam.hpp"
-#include "lbann/callbacks/callback_perturb_dropout.hpp"
-#include "lbann/callbacks/callback_print.hpp"
-#include "lbann/callbacks/callback_replace_weights.hpp"
-#include "lbann/callbacks/callback_save_images.hpp"
-#include "lbann/callbacks/callback_save_model.hpp"
-#include "lbann/callbacks/callback_save_topk_models.hpp"
-#include "lbann/callbacks/callback_summarize_autoencoder_images.hpp"
-#include "lbann/callbacks/callback_summarize_images.hpp"
-#include "lbann/callbacks/callback_summary.hpp"
-#include "lbann/callbacks/callback_sync_layers.hpp"
-#include "lbann/callbacks/callback_sync_selected.hpp"
-#include "lbann/callbacks/callback_timeline.hpp"
-#include "lbann/callbacks/callback_timer.hpp"
-#include "lbann/callbacks/callback_variable_minibatch.hpp"
+#include "lbann/callbacks/check_dataset.hpp"
+#include "lbann/callbacks/check_gradients.hpp"
+#include "lbann/callbacks/check_init.hpp"
+#include "lbann/callbacks/check_metric.hpp"
+#include "lbann/callbacks/check_nan.hpp"
+#include "lbann/callbacks/check_small.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/callbacks/debug.hpp"
+#include "lbann/callbacks/debug_io.hpp"
+#include "lbann/callbacks/dump_error_signals.hpp"
+#include "lbann/callbacks/dump_gradients.hpp"
+#include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
+#include "lbann/callbacks/dump_outputs.hpp"
+#include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/callbacks/early_stopping.hpp"
+#include "lbann/callbacks/gpu_memory_usage.hpp"
+#include "lbann/callbacks/hang.hpp"
+#include "lbann/callbacks/imcomm.hpp"
+#include "lbann/callbacks/learning_rate.hpp"
+#include "lbann/callbacks/ltfb.hpp"
+#include "lbann/callbacks/mixup.hpp"
+#include "lbann/callbacks/monitor_io.hpp"
+#include "lbann/callbacks/perturb_adam.hpp"
+#include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/callbacks/print_statistics.hpp"
+#include "lbann/callbacks/replace_weights.hpp"
+#include "lbann/callbacks/save_images.hpp"
+#include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/callbacks/summarize_autoencoder_images.hpp"
+#include "lbann/callbacks/summarize_images.hpp"
+#include "lbann/callbacks/summary.hpp"
+#include "lbann/callbacks/sync_layers.hpp"
+#include "lbann/callbacks/sync_selected.hpp"
+#include "lbann/callbacks/timeline.hpp"
+#include "lbann/callbacks/timer.hpp"
+#include "lbann/callbacks/variable_minibatch.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -75,10 +75,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-
-#include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/callback_summarize_images.hpp"
-#include "lbann/callbacks/callback_summarize_autoencoder_images.hpp"
 
 namespace lbann {
 namespace proto {
@@ -95,7 +91,7 @@ using factory_type = lbann::generic_factory<
 
 void register_default_builders(factory_type& factory)
 {
-  using namespace callback;
+  using namespace ::lbann::callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
                            build_adaptive_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
@@ -175,9 +171,9 @@ void register_default_builders(factory_type& factory)
   factory.register_builder("CallbackStepMinibatch",
                            build_step_minibatch_callback_from_pbuf);
   factory.register_builder("CallbackSummarizeAutoencoderImages",
-                           build_callback_summarize_autoencoder_images_from_pbuf);
+                           build_summarize_autoencoder_images_callback_from_pbuf);
   factory.register_builder("CallbackSummarizeImages",
-                           build_callback_summarize_images_from_pbuf);
+                           build_summarize_images_callback_from_pbuf);
   factory.register_builder("CallbackSummary",
                            build_summary_callback_from_pbuf);
   factory.register_builder("CallbackSyncLayers",

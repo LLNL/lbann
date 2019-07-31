@@ -23,30 +23,31 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summarize_images .hpp .cpp - Callback hooks to dump
+// summarize_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann_config.hpp>
 #include <lbann/utils/image.hpp>
 #include <lbann/utils/summary.hpp>
-#include "lbann/callbacks/callback_summarize_images.hpp"
+#include "lbann/callbacks/summarize_images.hpp"
 
 #include <callbacks.pb.h>
 
 #include <iostream>
 
 namespace lbann {
+namespace callback {
 
 //FIXME: Should any of these params be const?
-lbann_callback_summarize_images::lbann_callback_summarize_images(
+summarize_images::summarize_images(
   lbann_summary *summarizer,
   std::string const& cat_accuracy_layer_name,
   std::string const& img_layer_name,
   MatchType match_type,
   uint64_t interval,
   std::string img_format)
-  : lbann_callback(1, summarizer),
+  : callback_base(1, summarizer),
     m_cat_accuracy_layer_name(cat_accuracy_layer_name),
     m_img_layer_name(img_layer_name),
     m_match_type(match_type),
@@ -70,7 +71,7 @@ void ThrowLBANNError(Ts... args)
 }
 }
 
-Layer const* lbann_callback_summarize_images::get_layer_by_name(
+Layer const* summarize_images::get_layer_by_name(
   const std::vector<Layer*>& layers,
   const std::string& layer_name)
 {
@@ -82,7 +83,7 @@ Layer const* lbann_callback_summarize_images::get_layer_by_name(
   return nullptr;
 }
 
-std::vector<El::Int> lbann_callback_summarize_images::get_image_indices() {
+std::vector<El::Int> summarize_images::get_image_indices() {
   const AbsDistMat& categorized_correctly_dist = m_cat_accuracy_layer->get_activations();
   CircMat<El::Device::CPU> categorized_correctly(
     categorized_correctly_dist.Grid(), categorized_correctly_dist.Root());
@@ -117,7 +118,7 @@ std::vector<El::Int> lbann_callback_summarize_images::get_image_indices() {
   return img_indices;
 }
 
-bool lbann_callback_summarize_images::meets_criteria( const DataType& match ) {
+bool summarize_images::meets_criteria( const DataType& match ) {
   if( (match && (m_match_type == MatchType::MATCH)) ||
       (!match && (m_match_type == MatchType::NOMATCH)) ||
       (m_match_type == MatchType::ALL))
@@ -127,7 +128,7 @@ bool lbann_callback_summarize_images::meets_criteria( const DataType& match ) {
 
 }
 
-void lbann_callback_summarize_images::dump_image_to_summary(
+void summarize_images::dump_image_to_summary(
   const std::vector<El::Int>& img_indices, const uint64_t& step, const El::Int& epoch) {
 
   static size_t img_number = 0;
@@ -157,7 +158,7 @@ void lbann_callback_summarize_images::dump_image_to_summary(
   }
 }
 
-void lbann_callback_summarize_images::on_batch_evaluate_end(model* m) {
+void summarize_images::on_batch_evaluate_end(model* m) {
   if (m->get_step() % m_interval != 0)
     return;
 
@@ -180,8 +181,8 @@ void lbann_callback_summarize_images::on_batch_evaluate_end(model* m) {
   dump_image_to_summary(img_indices, m->get_step(), m->get_epoch());
 }
 
-std::unique_ptr<lbann_callback>
-build_callback_summarize_images_from_pbuf(
+std::unique_ptr<callback_base>
+build_summarize_images_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, lbann_summary* summarizer){
 
   const auto& params =
@@ -190,10 +191,10 @@ build_callback_summarize_images_from_pbuf(
   /* Add criterion->MatchType function */
   auto ConvertToLbannType = [](lbann_data::Callback_CallbackSummarizeImages_MatchType a)
     {
-      return static_cast<lbann_callback_summarize_images::MatchType>(a);
+      return static_cast<summarize_images::MatchType>(a);
     };
 
-  return make_unique<lbann_callback_summarize_images>(
+  return make_unique<summarize_images>(
     summarizer,
     params.cat_accuracy_layer(),
     params.image_layer(),
@@ -201,4 +202,5 @@ build_callback_summarize_images_from_pbuf(
     params.interval());
 }
 
+} // namespace callback
 } // namespace lbann

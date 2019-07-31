@@ -37,11 +37,12 @@
 #include <google/protobuf/message.h>
 
 namespace lbann {
+namespace callback {
 
 /** @class lbann_callback_summarize_images
  *  @brief Dump images with testing results to event files
  */
-class lbann_callback_summarize_images : public lbann_callback{
+class summarize_images : public callback_base {
  public:
 
   enum class MatchType
@@ -58,17 +59,17 @@ public:
    *  @param summarizer lbann_summary object
    *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
    */
-  lbann_callback_summarize_images(lbann_summary *summarizer,
-                                    std::string const& cat_accuracy_layer_name,
-                                    std::string const& img_layer_name,
-                                    MatchType match_type,
-                                    uint64_t interval,
-                                    std::string img_format = ".jpg");
+  summarize_images(lbann_summary *summarizer,
+                   std::string const& cat_accuracy_layer_name,
+                   std::string const& img_layer_name,
+                   MatchType match_type,
+                   uint64_t interval,
+                   std::string img_format = ".jpg");
   /** @brief Destructor */
-  ~lbann_callback_summarize_images() {}
+  ~summarize_images() {}
 
-  lbann_callback* copy() const override { return new lbann_callback_summarize_images(*this); }
-  std::string name() const override { return "callback_summarize_images"; }
+  callback_base* copy() const override { return new summarize_images(*this); }
+  std::string name() const override { return "summarize_images"; }
 
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
@@ -119,10 +120,11 @@ private:
   std::string m_img_format;
 };
 
-std::unique_ptr<lbann_callback>
-build_callback_summarize_images_from_pbuf(
+std::unique_ptr<callback_base>
+build_summarize_images_callback_from_pbuf(
   const google::protobuf::Message&, lbann_summary*);
 
+} // namespace callback
 } // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
