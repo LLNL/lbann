@@ -1,6 +1,6 @@
 """Trainable model parameters."""
 import abc
-from lbann import lbann_pb2
+from lbann import weights_pb2
 import lbann.util.class_generator
 
 class Initializer(abc.ABC):
@@ -12,7 +12,7 @@ class Initializer(abc.ABC):
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Weights message in lbann.proto
 classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
-    lbann_pb2.Weights,
+    weights_pb2.Weights,
     skip_fields = set(['name', 'optimizer']),
     base_class = Initializer)
 for c in classes:
@@ -31,14 +31,14 @@ class Weights:
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann_pb2.Weights()
+        proto = weights_pb2.Weights()
         proto.name = self.name
 
         # Set initializer if needed
         if self.initializer:
             type_name = type(self.initializer).__name__
             field_name = None
-            for field in lbann_pb2.Weights.DESCRIPTOR.fields:
+            for field in weights_pb2.Weights.DESCRIPTOR.fields:
                 if field.message_type and field.message_type.name == type_name:
                     field_name = field.name
                     break
