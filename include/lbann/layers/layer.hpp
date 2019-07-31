@@ -44,7 +44,10 @@ namespace lbann {
 // Forward declarations
 class model;
 class weights;
-class lbann_callback_sync_layers;
+namespace callback {
+class sync_layers;
+class sync_selected;
+} // namespace callback
 
 /**
  * @brief Neural network tensor operation.
@@ -64,8 +67,8 @@ class lbann_callback_sync_layers;
  * the weights.
  */
 class Layer {
-  friend class lbann_callback_sync_layers;
-  friend class lbann_callback_sync_selected;
+  friend class callback::sync_layers;
+  friend class callback::sync_selected;
 
 public:
 

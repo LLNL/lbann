@@ -61,7 +61,7 @@ weights* construct_weights(lbann_comm* comm,
                            const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
-std::unique_ptr<lbann_callback>
+std::unique_ptr<callback_base>
 construct_callback(const google::protobuf::Message& proto_cb,
                    lbann_summary* summarizer);
 

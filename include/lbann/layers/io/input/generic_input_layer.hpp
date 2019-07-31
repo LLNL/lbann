@@ -32,7 +32,7 @@
 #include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/callbacks/callback_imcomm.hpp"
+#include "lbann/callbacks/imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 
 #include <future>
@@ -208,7 +208,7 @@ class generic_input_layer : public io_layer {
     mini_batch_size = get_current_mini_batch_size();
     int effective_mini_batch_size = mini_batch_size;
     for (auto&& cb : this->m_model->get_callbacks()) {
-      if (dynamic_cast<lbann_callback_imcomm*>(cb) != nullptr) {
+      if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
         effective_mini_batch_size = get_current_global_mini_batch_size();
         break;
       }
