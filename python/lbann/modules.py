@@ -18,32 +18,32 @@ def _str_list(l):
 class Module:
     """Base class for neural network modules.
 
-    A module is a pattern of operations that may be applied to a set
-    of input layers, obtaining a set of output layers.
+    A module is a pattern of layers that can be added to a layer
+    graph, possibly multiple times. The pattern typically takes a set
+    of input layers and obtains a set of output layers.
 
     """
 
     def __init__(self):
         pass
 
-    def forward(self, input):
-        """Apply module pattern to `input`.
+    def forward(self, *args, **kwargs):
+        """Apply module pattern.
 
-        `input` is a `Layer` or a sequence of `Layer`s. The module
-        pattern is added to the layer graph and the output layer(s)
-        are returned.
+        A module pattern typically takes a set of `Layer`s as input
+        and returns a set of `Layer`s.
 
         """
         # Should be overridden in all sub-classes
         raise NotImplementedError
 
-    def __call__(self, input):
+    def __call__(self, *args, **kwargs):
         """Apply module mattern to `input`.
 
         Syntatic sugar around `forward` function.
 
         """
-        return self.forward(input)
+        return self.forward(*args, **kwargs)
 
 class FullyConnectedModule(Module):
     """Basic block for fully-connected neural networks.
@@ -275,14 +275,6 @@ class LSTMCell(Module):
                      else 'lstmcell{0}'.format(LSTMCell.global_count))
         self.data_layout = data_layout
 
-        # Initial state
-        self.last_output = lbann.Constant(value=0.0, num_neurons=str(size),
-                                          name=self.name + '_init_output',
-                                          data_layout=self.data_layout)
-        self.last_cell = lbann.Constant(value=0.0, num_neurons=str(size),
-                                        name=self.name + '_init_cell',
-                                        data_layout=self.data_layout)
-
         # Weights
         self.weights = list(make_iterable(weights))
         if len(self.weights) > 2:
@@ -291,13 +283,13 @@ class LSTMCell(Module):
         if len(self.weights) == 0:
             self.weights.append(
                 lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
-                                                                   max=-1/sqrt(self.size)),
+                                                                   max=1/sqrt(self.size)),
                               name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
-                                                                   max=-1/sqrt(self.size)),
-                           name=self.name+'_bias'))
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_bias'))
 
         # Linearity
         self.fc = FullyConnectedModule(4*size, bias=bias,
@@ -305,17 +297,28 @@ class LSTMCell(Module):
                                        name=self.name + '_fc',
                                        data_layout=self.data_layout)
 
-    def forward(self, x):
-        """Perform LSTM step.
+    def forward(self, x, prev_state):
+        """Apply LSTM step.
 
-        State from previous steps is used to compute output.
+        Args:
+            x (Layer): Input.
+            prev_state (tuple with two `Layer`s): State from previous
+                LSTM step. Comprised of LSTM output and cell state.
+
+        Returns:
+            (Layer, (Layer, Layer)): The output and state (the output
+                and cell state). The state can be passed directly into
+                the next LSTM step.
 
         """
         self.step += 1
         name = '{0}_step{1}'.format(self.name, self.step)
 
+        # Get output and cell state from previous step
+        prev_output, prev_cell = prev_state
+
         # Apply linearity
-        input_concat = lbann.Concatenation([x, self.last_output],
+        input_concat = lbann.Concatenation([x, prev_output],
                                            name=name + '_input',
                                            data_layout=self.data_layout)
         fc = self.fc(input_concat)
@@ -343,7 +346,7 @@ class LSTMCell(Module):
                            data_layout=self.data_layout)
 
         # Cell state
-        cell_forget = lbann.Multiply([f, self.last_cell],
+        cell_forget = lbann.Multiply([f, prev_cell],
                                      name=name + '_cell_forget',
                                      data_layout=self.data_layout)
         cell_input = lbann.Multiply([i, cell_update],
@@ -358,7 +361,5 @@ class LSTMCell(Module):
         output = lbann.Multiply([o, cell_act], name=name,
                                 data_layout=self.data_layout)
 
-        # Update state and return output
-        self.last_cell = cell
-        self.last_output = output
-        return output
+        # Return output and state
+        return output, (output, cell)

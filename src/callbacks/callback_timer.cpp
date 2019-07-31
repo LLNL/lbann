@@ -167,4 +167,10 @@ void lbann_callback_timer::timing_end(model& m) {
 
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_timer_from_pbuf(
+  const google::protobuf::Message&, lbann_summary* summarizer) {
+  return make_unique<lbann_callback_timer>(summarizer);
+}
+
 }  // namespace lbann

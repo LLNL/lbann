@@ -87,6 +87,11 @@ class lbann_callback_timeline : public lbann_callback {
   std::unordered_map<std::string, std::vector<std::pair<EvalType, EvalType>>> m_opt_times;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_timeline_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_TIMELINE_HPP_INCLUDED

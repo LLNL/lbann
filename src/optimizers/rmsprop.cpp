@@ -52,7 +52,7 @@ rmsprop& rmsprop::operator=(const rmsprop& other) {
 }
 
 description rmsprop::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("Decay rate", m_decay_rate);
   desc.add("eps", m_eps);
   return desc;

@@ -45,7 +45,7 @@ variance_scaling_initializer::variance_scaling_initializer(probability_distribut
 }
 
 description variance_scaling_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   std::string dist_str;
   switch (m_prob_dist) {
   case probability_distribution::gaussian:

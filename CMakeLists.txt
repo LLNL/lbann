@@ -430,7 +430,7 @@ if (LBANN_WITH_CONDUIT)
     PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES
     "${_conduit_include_dirs}")
-    
+
   set_target_properties(conduit::conduit
     PROPERTIES
     INTERFACE_LINK_LIBRARIES
@@ -452,6 +452,7 @@ if (LBANN_WITH_UNIT_TESTING)
   # Now that Catch2 has been found, start adding the unit tests
   include(CTest)
   include(Catch)
+  add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/utils/unit_test)
   add_subdirectory(src/transforms/unit_test)
   add_subdirectory(src/transforms/vision/unit_test)

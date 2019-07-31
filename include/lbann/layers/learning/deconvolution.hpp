@@ -142,7 +142,7 @@ public:
 
 protected:
 
-  std::vector<int> get_kernel_dims() const {
+  std::vector<int> get_kernel_dims() const override {
     std::vector<int> dims;
     dims.push_back(this->get_input_dims()[0]);
     dims.push_back(this->m_output_channels);

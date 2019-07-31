@@ -62,10 +62,14 @@ class lbann_callback_checksmall : public lbann_callback {
   std::string name() const override { return "checksmall"; }
  private:
   /** Smallest allowable value. */
-  const DataType m_threshold = std::sqrt(std::numeric_limits<DataType>::min());
+  static const DataType m_threshold;
   /** Return true if there are no problems with m. */
   bool is_good(const AbsDistMat& m);
 };
+
+// Builder function
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
+  lbann_callback_checksmall, build_callback_check_small_from_pbuf)
 
 }  // namespace lbann
 

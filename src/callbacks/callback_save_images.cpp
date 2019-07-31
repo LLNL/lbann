@@ -25,6 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_save_images.hpp"
+#include "lbann/proto/factories.hpp"
+
+#include <callbacks.pb.h>
+
 #ifdef LBANN_HAS_OPENCV
 #include <opencv2/imgcodecs.hpp>
 #endif // LBANN_HAS_OPENCV
@@ -150,6 +154,17 @@ void lbann_callback_save_images::on_test_end(model *m) {
              m_image_format,
              m->get_layers(),
              m_layer_names);
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_save_images_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
+  return make_unique<lbann_callback_save_images>(
+    parse_list<>(params.layers()),
+    params.image_format(),
+    params.image_prefix());
 }
 
 } // namespace lbann

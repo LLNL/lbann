@@ -118,14 +118,14 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     assert diff_result == 0
 
 
-def test_unit_lbann2_reload_clang4(cluster, exes, dirname):
+def test_unit_lbann2_reload_clang6(cluster, exes, dirname):
     if cluster == 'catalyst':  # STILL ERRORS
         pytest.skip('FIXME')
-    skeleton_lbann2_reload(cluster, exes, dirname, 'clang4')
+    skeleton_lbann2_reload(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_lbann2_reload_gcc7(cluster, exes, dirname):
-    if cluster in ['catalyst', 'pascal']:  # STILL ERRORS
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:  # STILL ERRORS
         pytest.skip('FIXME')
     skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7')
 

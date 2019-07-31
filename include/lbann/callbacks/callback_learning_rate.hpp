@@ -48,7 +48,7 @@ class lbann_callback_learning_rate : public lbann_callback {
   lbann_callback_learning_rate& operator=(
     const lbann_callback_learning_rate&) = default;
   /** Only apply to specific weights. */
-  lbann_callback_learning_rate(std::unordered_set<weights *> weights_list);
+  lbann_callback_learning_rate(std::vector<std::string> weights_names);
   /** Do some initialization. */
   void setup(model *m) override;
   /** Apply global learning rate schedules. */
@@ -65,7 +65,10 @@ class lbann_callback_learning_rate : public lbann_callback {
    * The returned learning rate will be used to automatically update
    * the current global learning rate.
    */
-  virtual float global_schedule(model *m) { return m_cur_global_lr; }
+  virtual float global_schedule(model *m) {
+    return get_current_global_learning_rate();
+  }
+
   /**
    * This is called at the end of every training mini-batch to update the
    * learning rate for optimizer opt. The current global learning rate is *not*
@@ -75,16 +78,32 @@ class lbann_callback_learning_rate : public lbann_callback {
     return opt.get_learning_rate();
   }
 
-  /** Weights to update. */
-  std::unordered_set<weights *> m_weights;
+  const std::unordered_set<weights*>& get_weights() const noexcept {
+    return m_weights;
+  }
 
-  /**
+  static float get_current_global_learning_rate() noexcept {
+    return m_cur_global_lr;
+  }
+
+  static void update_global_learning_rate(float rate) noexcept {
+    m_cur_global_lr = rate;
+  }
+
+ private:
+    /**
    * This should be maintained by all learning rate schedule
    * implementations as the current global learning rate. This enables
    * coordination among different schedules, particularly ones that
    * work on a per-optimizer basis.
    */
   static float m_cur_global_lr;
+
+  /** Names of the weights being updated. */
+  std::vector<std::string> m_weights_names;
+
+  /** Weights to update. */
+  std::unordered_set<weights *> m_weights;
 };
 
 /**
@@ -95,7 +114,7 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   /** Decrease the learning rate by amt every step epochs. */
   lbann_callback_step_learning_rate(int step, float amt);
   lbann_callback_step_learning_rate(int step, float amt,
-                                    std::unordered_set<weights *> weights_list);
+                                    std::vector<std::string> weights_names);
   lbann_callback_step_learning_rate(
     const lbann_callback_step_learning_rate&) = default;
   lbann_callback_step_learning_rate& operator=(
@@ -113,6 +132,11 @@ class lbann_callback_step_learning_rate : public lbann_callback_learning_rate {
   float m_amt;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_step_learning_rate_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 /**
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
@@ -125,7 +149,7 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
    */
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt);
   lbann_callback_adaptive_learning_rate(int64_t patience, float amt,
-                                        std::unordered_set<weights *> weights_list);
+                                        std::vector<std::string> weights_names);
   lbann_callback_adaptive_learning_rate(
     const lbann_callback_adaptive_learning_rate&) = default;
   lbann_callback_adaptive_learning_rate& operator=(
@@ -151,6 +175,11 @@ class lbann_callback_adaptive_learning_rate : public lbann_callback_learning_rat
   bool m_adjust_learning_rate = false;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_adaptive_learning_rate_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 /**
  * Decrease learning rate by a fixed amount at fixed times.
  */
@@ -165,7 +194,7 @@ class lbann_callback_drop_fixed_learning_rate :
     std::vector<int64_t> drop_epochs, float amt);
   lbann_callback_drop_fixed_learning_rate(
     std::vector<int64_t> drop_epochs, float amt,
-    std::unordered_set<weights *> weights_list);
+    std::vector<std::string> weights_names);
   lbann_callback_drop_fixed_learning_rate(
     const lbann_callback_drop_fixed_learning_rate&) = default;
   lbann_callback_drop_fixed_learning_rate& operator=(
@@ -186,6 +215,11 @@ class lbann_callback_drop_fixed_learning_rate :
   std::vector<int64_t> m_drop_epochs;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_drop_fixed_learning_rate_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 /**
  * Linearly increase the learning rate to reach a target value over a
  * fixed number of epochs.
@@ -205,7 +239,7 @@ class lbann_callback_linear_growth_learning_rate :
     float target, int64_t num_epochs, int64_t delay);
   lbann_callback_linear_growth_learning_rate(
     float target, int64_t num_epochs, int64_t delay,
-    std::unordered_set<weights *> weights_list);
+    std::vector<std::string> weights_names);
   lbann_callback_linear_growth_learning_rate(
     const lbann_callback_linear_growth_learning_rate&) = default;
   lbann_callback_linear_growth_learning_rate& operator=(
@@ -229,6 +263,11 @@ class lbann_callback_linear_growth_learning_rate :
   int64_t m_delay;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_linear_growth_learning_rate_from_pbuf(
+  const google::protobuf::Message&,lbann_summary*);
+
 /**
  * Decrease the learning rate by polynomial policy
  * base_lr*(1 - i_cur/i_max)^p, where
@@ -239,7 +278,7 @@ class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
  public:
   lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter);
   lbann_callback_poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter, double endl_r,
-    std::unordered_set<weights *> weights_list);
+    std::vector<std::string> weights_names);
   lbann_callback_poly_learning_rate(
     const lbann_callback_poly_learning_rate&) = default;
   lbann_callback_poly_learning_rate& operator=(
@@ -267,6 +306,11 @@ class lbann_callback_poly_learning_rate : public lbann_callback_learning_rate {
   float m_last_epoch_lr;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_poly_learning_rate_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*);
+
 /**
  * This implements an adaptive scheme for adjust each optimizer's
  * learning rate based on the ratio of the norms of its weights and
@@ -278,7 +322,7 @@ class lbann_callback_optimizerwise_adaptive_learning_rate : public lbann_callbac
  public:
   lbann_callback_optimizerwise_adaptive_learning_rate(float scale);
   lbann_callback_optimizerwise_adaptive_learning_rate(
-    float scale, std::unordered_set<weights *> weights_list);
+    float scale, std::vector<std::string> weights_names);
   lbann_callback_optimizerwise_adaptive_learning_rate(
     const lbann_callback_optimizerwise_adaptive_learning_rate&) = default;
   lbann_callback_optimizerwise_adaptive_learning_rate& operator=(
@@ -291,6 +335,11 @@ class lbann_callback_optimizerwise_adaptive_learning_rate : public lbann_callbac
  private:
   float m_scale;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_optimizerwise_adaptive_learning_rate_from_pbuf(
+  const google::protobuf::Message&,lbann_summary*);
 
 }  // namespace lbann
 

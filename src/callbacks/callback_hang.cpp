@@ -24,28 +24,31 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
+#include "lbann/callbacks/callback_hang.hpp"
+
+#include <callbacks.pb.h>
 
 namespace lbann {
-namespace proto {
 
-/** Parse a space-separated list of execution modes. */
-template <>
-std::vector<execution_mode> parse_list<execution_mode>(std::string str) {
-  std::vector<execution_mode> list;
-  for (const auto& mode : parse_list<std::string>(str)) {
-    if (mode == "train" || mode == "training") {
-      list.push_back(execution_mode::training);
-    } else if (mode == "validate" || mode == "validation") {
-      list.push_back(execution_mode::validation);
-    } else if (mode == "test" || mode == "testing") {
-      list.push_back(execution_mode::testing);
+void lbann_callback_hang::setup(model* m)
+{
+  if (m->get_comm()->am_world_master()) {
+    if (m_rank_to_hang == -1) {
+      std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***"
+                << std::endl;
     } else {
-      LBANN_ERROR("invalid execution mode (\"" + mode + "\")");
+      std::cout << "*** HANGING RANK " << m_rank_to_hang
+                << " IN HANG CALLBACK ***" << std::endl;
     }
   }
-  return list;
 }
 
-} // namespace proto
-} // namespace lbann
+std::unique_ptr<lbann_callback>
+build_callback_hang_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackHang&>(proto_msg);
+  return make_unique<lbann_callback_hang>(params.rank());
+}
+
+}// namespace lbann

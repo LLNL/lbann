@@ -148,11 +148,11 @@ int main(int argc, char *argv[]) {
 
     extract_samples(comm.get(), rank, np, conduit_filenames, samples);
 
-  } catch (exception& e) {
+  } catch (const exception& e) {
     std::cerr << "\n\n" << rank << " ::::: caught exception, outer try/catch: " << e.what() << "\n\n";
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (std::exception& e) {
+  } catch (const std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -413,7 +413,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
 
     try {
       conduit::relay::io::hdf5_close_file( hdf5_file_hnd );
-    } catch (exception e) {
+    } catch (const exception& e) {
        throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception hdf5_close_file; " + filenames[j] + "; " + e.what());
     }
 
@@ -432,7 +432,7 @@ std::cerr << rank << " samples.size: " << samples.size() << " np: " << np << "\n
               << "_" << file_id++ << ".bundle";
     try {
       conduit::relay::io::save(save_me, fn.str(), "hdf5");
-    } catch (exception e) {
+    } catch (const exception& e) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: exception conduit::relay::save(); what: " + e.what());
     }
   }

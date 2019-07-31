@@ -118,8 +118,8 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
     assert num_defective == 0
 
 
-def test_unit_models_clang4(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'clang4')
+def test_unit_models_clang6(cluster, dirname, exes):
+    skeleton_models(cluster, dirname, exes, 'clang6')
 
 
 def test_unit_models_gcc7(cluster, dirname, exes):

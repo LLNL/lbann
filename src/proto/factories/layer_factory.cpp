@@ -198,6 +198,30 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
 
+  // Learning layers
+  if (proto_layer.has_embedding()) {
+    const auto& params = proto_layer.embedding();
+    if (Layout == data_layout::DATA_PARALLEL
+        && Device == El::Device::CPU) {
+      return lbann::make_unique<embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(
+               comm, params.dictionary_size(), params.embedding_size());
+    } else {
+      LBANN_ERROR("embedding layer is only supported with "
+                  "data-parallel data layout and on CPU");
+    }
+  }
+  if (proto_layer.has_channelwise_scale_bias()) {
+    if (Layout == data_layout::DATA_PARALLEL) {
+      return lbann::make_unique<channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,Device>>(comm);
+    } else {
+      LBANN_ERROR("channel-wise scale/bias layer is only supported "
+                  "with data-parallel data layout");
+    }
+  }
+  if (proto_layer.has_entrywise_scale_bias()) {
+    return lbann::make_unique<entrywise_scale_bias_layer<Layout,Device>>(comm);
+  }
+
   // Transform layers
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
@@ -408,19 +432,26 @@ std::unique_ptr<Layer> construct_layer(
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
     if (Layout == data_layout::DATA_PARALLEL) {
+      int statistics_group_size = params.statistics_group_size();
+      if (statistics_group_size < 0) {
+        statistics_group_size = 0;  // Global statistics.
+      } else if (statistics_group_size == 0) {
+        statistics_group_size = 1;  // Default to local.
+      }
       const auto& aggr_str = params.stats_aggregation();
-      batch_normalization_stats_aggregation aggr =
-        batch_normalization_stats_aggregation::local;
-      if (aggr_str == "local" || aggr_str.empty()) {
-        aggr = batch_normalization_stats_aggregation::local;
-      } else if (aggr_str == "node_local") {
-        aggr = batch_normalization_stats_aggregation::node_local;
-      } else if (aggr_str == "global") {
-        aggr = batch_normalization_stats_aggregation::global;
-      } else {
-        err << "Invalid batch normalization stats aggregation " << aggr_str;
-        LBANN_ERROR(err.str());
-        return nullptr;
+      if (!aggr_str.empty()) {
+        LBANN_WARNING("stats_aggregation field for BatchNormalization is deprecated");
+        if (aggr_str == "local") {
+          statistics_group_size = 1;
+        } else if (aggr_str == "node_local") {
+          statistics_group_size = comm->get_procs_per_node();
+        } else if (aggr_str == "global") {
+          statistics_group_size = 0;
+        } else {
+          err << "Invalid batch normalization stats aggregation " << aggr_str;
+          LBANN_ERROR(err.str());
+          return nullptr;
+        }
       }
       // Set defaults if not given.
       auto decay = params.decay();
@@ -435,7 +466,7 @@ std::unique_ptr<Layer> construct_layer(
         comm,
         decay,
         epsilon,
-        aggr);
+        statistics_group_size);
     } else {
       LBANN_ERROR("batch normalization layer is only supported with "
                   "a data-parallel layout");

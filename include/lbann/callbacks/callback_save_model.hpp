@@ -79,6 +79,11 @@ class lbann_callback_save_model : public lbann_callback {
   void write_proto_text(const lbann_data::Model& proto, const std::string filename);
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_save_model_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SAVE_MODEL_HPP_INCLUDED

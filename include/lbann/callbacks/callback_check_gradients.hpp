@@ -31,10 +31,11 @@
 
 namespace lbann {
 
-/** Gradient checking callback.
- *  Gradient checking is performed at the beginning of the test
- *  phase. Using a fourth-order finite difference scheme, a numerical
- *  partial derivative is computed for every weight parameter. If the
+/** @brief Gradient checking callback.
+ *
+ *  Gradient checking is performed at the end of the test phase. Using
+ *  a fourth-order finite difference scheme, a numerical partial
+ *  derivative is computed for every weight parameter. If the
  *  numerical derivative differs signifcantly from the analytical
  *  derivative computed during backprop, the gradient check has
  *  failed.
@@ -42,10 +43,10 @@ namespace lbann {
 class lbann_callback_check_gradients : public lbann_callback {
 public:
 
-  /** Constructor.
+  /**
    *  @param step_size          Step size for numerical
    *                            differentiation (with a step size of
-   *                            zero, the step size is chosen to
+   *                            zero, the step size is estimated to
    *                            minimize the numerical error).
    *  @param verbose            Whether to print results for each
    *                            parameter.
@@ -58,14 +59,8 @@ public:
   lbann_callback_check_gradients* copy() const override {
     return new lbann_callback_check_gradients(*this);
   }
-  void on_test_begin(model *m) override;
+  void on_test_end(model *m) override;
   std::string name() const override { return "check gradients"; }
-
-  /** Compute objective function value.
-   *  It is assumed that input data has already been loaded into the
-   *  activations of the first layer.
-   */
-  DataType compute_objective_function(model *m);
 
 private:
 
@@ -77,6 +72,11 @@ private:
   bool m_error_on_failure;
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_check_gradients_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*);
 
 }  // namespace lbann
 

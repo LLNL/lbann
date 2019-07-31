@@ -187,7 +187,7 @@ public:
   }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = Layer::get_description();
     std::ostringstream ss;
 
     // Convolution dimensions

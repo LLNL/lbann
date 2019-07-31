@@ -77,8 +77,8 @@ public:
   lbann_callback_perturb_adam* copy() const override { return new lbann_callback_perturb_adam(*this); }
   std::string name() const override { return "perturb Adam"; }
 
-  void setup(model* m);
-  void on_batch_begin(model* m);
+  void setup(model* m) override;
+  void on_batch_begin(model* m) override;
 
 private:
 
@@ -121,6 +121,11 @@ private:
   void perturb(lbann_comm& comm, adam& m) const;
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_perturb_adam_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 

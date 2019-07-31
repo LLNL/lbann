@@ -32,7 +32,7 @@
 namespace lbann {
 
 /**
- * Load an image from filename.
+ * @brief Load an image from filename.
  * @param filename The path to the image to load.
  * @param dst Image will be loaded into this matrix, in OpenCV format.
  * @param dims Will contain the dimensions of the image as {channels, height,
@@ -42,7 +42,7 @@ void load_image(const std::string& filename, El::Matrix<uint8_t>& dst,
                 std::vector<size_t>& dims);
 
 /**
- * Decode an image from buf.
+ * @brief Decode an image from buf.
  * @param src A buffer containing image data to be decoded.
  * @param dst Image will be loaded into this matrix, in OpenCV format.
  * @param dims Will contain the dimensions of the image as {channels, height,
@@ -52,7 +52,7 @@ void decode_image(El::Matrix<uint8_t>& src, El::Matrix<uint8_t>& dst,
                   std::vector<size_t>& dims);
 
 /**
- * Save an image to filename.
+ * @brief Save an image to filename.
  * @param filename The path to the image to write.
  * @param src The image to save. This is in OpenCV format.
  * @param dims The dimensions of the image.
@@ -60,7 +60,7 @@ void decode_image(El::Matrix<uint8_t>& src, El::Matrix<uint8_t>& dst,
 void save_image(const std::string& filename, El::Matrix<uint8_t>& src,
                 const std::vector<size_t>& dims);
 /**
- * Save an image to filename.
+ * @brief Save an image to filename.
  * @param filename The path to the image to write.
  * @param src The image to save. This is in standard LBANN format, and will be
  * converted to a uint8_t matrix, interpolating between the min and max values
@@ -69,6 +69,22 @@ void save_image(const std::string& filename, El::Matrix<uint8_t>& src,
  */
 void save_image(const std::string& filename, const CPUMat& src,
                 const std::vector<size_t>& dims);
+/**
+ * @brief Convert image from El::Matrix<DataType> to El::Matrix<uint8_t>
+ * @param image The image to convert.
+ * @param dims The dimensions of the image.
+ * @returns El::Matrix<uint8_t> Returns image in El::Matrix<uint8_t> format
+ */
+El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
+                                      const std::vector<size_t>& dims);
+/**
+ * @brief Encodes image to std:string format
+ * @param image The image to convert
+ * @param dims The dimensions of the image.
+ * @returns std::string Returns image in std::string format
+ */
+std::string encode_image(const El::Matrix<uint8_t>& image,
+                         const std::vector<size_t>& dims);
 
 }  // namespace lbann
 

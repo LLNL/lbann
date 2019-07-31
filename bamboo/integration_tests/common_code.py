@@ -8,25 +8,41 @@ import collections, csv, os, pprint, re, time
 def get_command(cluster, dir_name, model_folder, model_name, executable,
                 output_file_name, error_file_name, compiler_name, weekly=False):
     if model_name in ['alexnet', 'conv_autoencoder_imagenet']:
-        data_reader_percent = 0.01
-        # If doing weekly testing, increase data_reader_percent
         if weekly:
             data_reader_percent = 0.10
-        command = tools.get_command(
-            cluster=cluster, executable=executable, num_nodes=16,
-            partition='pbatch', time_limit=600, num_processes=32,
-            dir_name=dir_name,
-            data_filedir_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/',
-            data_filename_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt',
-            data_filedir_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/',
-            data_filename_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt',
-            data_reader_name='imagenet', data_reader_percent=data_reader_percent,
-            model_folder=model_folder, model_name=model_name, num_epochs=20,
-            optimizer_name='adagrad', output_file_name=output_file_name,
-            error_file_name=error_file_name)
+            time_limit = 600
+        else:
+            data_reader_percent = 0.01
+            time_limit = 60
+        if cluster == 'lassen':
+            command = tools.get_command(
+                cluster=cluster, executable=executable, num_nodes=16,
+                partition='pbatch', time_limit=time_limit, num_processes=32,
+                dir_name=dir_name,
+                data_filedir_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/',
+                data_filename_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt',
+                data_filedir_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/',
+                data_filename_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt',
+                data_reader_name='imagenet_lassen', data_reader_percent=data_reader_percent,
+                model_folder=model_folder, model_name=model_name, num_epochs=20,
+                optimizer_name='adagrad', output_file_name=output_file_name,
+                error_file_name=error_file_name)
+        else:
+            command = tools.get_command(
+                cluster=cluster, executable=executable, num_nodes=16,
+                partition='pbatch', time_limit=time_limit, num_processes=32,
+                dir_name=dir_name,
+                data_filedir_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/',
+                data_filename_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt',
+                data_filedir_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/',
+                data_filename_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt',
+                data_reader_name='imagenet', data_reader_percent=data_reader_percent,
+                model_folder=model_folder, model_name=model_name, num_epochs=20,
+                optimizer_name='adagrad', output_file_name=output_file_name,
+                error_file_name=error_file_name)
     elif model_name in ['conv_autoencoder_mnist', 'lenet_mnist']:
         if (model_name == 'lenet_mnist') and \
-                (compiler_name in ['clang4', 'intel19']):
+                (compiler_name in ['clang6', 'intel19']):
             partition = 'pbatch'
             time_limit = 600
         else:
@@ -210,7 +226,7 @@ def skeleton(cluster, dir_name, executable, model_folder, model_name,
 def csv_to_dict(csv_path):
     with open(csv_path, 'r') as csv_file:
         reader = csv.reader(csv_file, skipinitialspace=True)
-        column_headers = reader.next()
+        column_headers = next(reader)
         values = {}
         for row in reader:
             row_header = row[0]

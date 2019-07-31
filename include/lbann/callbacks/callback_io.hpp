@@ -29,9 +29,12 @@
 #ifndef LBANN_CALLBACKS_IO_HPP_INCLUDED
 #define LBANN_CALLBACKS_IO_HPP_INCLUDED
 
-#include <unordered_set>
-#include <unordered_map>
 #include "lbann/callbacks/callback.hpp"
+
+#include <google/protobuf/message.h>
+
+#include <string>
+#include <vector>
 
 namespace lbann {
 
@@ -40,20 +43,29 @@ namespace lbann {
  */
 class lbann_callback_io : public lbann_callback {
  public:
-  lbann_callback_io();
+  lbann_callback_io() = default;
+  /** Only apply to specific layers. */
+  lbann_callback_io(std::vector<std::string> const& layers)
+    : m_layers(layers.begin(), layers.end()) {}
+
   lbann_callback_io(const lbann_callback_io&) = default;
   lbann_callback_io& operator=(const lbann_callback_io&) = default;
-  lbann_callback_io* copy() const override { return new lbann_callback_io(*this); }
-  /** Only apply to specific layers. */
-  lbann_callback_io(std::unordered_set<Layer *> layers);
+  lbann_callback_io* copy() const override {
+    return new lbann_callback_io(*this);
+  }
   /** Report how much I/O has occured per data reader */
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "io"; }
  private:
   /** Indicies of layers to monitor. */
-  std::unordered_set<Layer *> m_layer_indices;
+  std::unordered_set<std::string> m_layers;
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_disp_io_stats_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 }  // namespace lbann
 

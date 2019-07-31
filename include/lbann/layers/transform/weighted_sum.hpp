@@ -55,7 +55,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = transform_layer::get_description();
+    auto desc = transform_layer::get_description();
     std::stringstream ss;
     for (size_t i = 0; i < m_scaling_factors.size(); ++i) {
       ss << (i > 0 ? ", " : "") << m_scaling_factors[i];

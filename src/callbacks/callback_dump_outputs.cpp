@@ -25,7 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_dump_outputs.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/file_utils.hpp"
+
+#include <callbacks.pb.h>
 
 #ifdef LBANN_HAS_CNPY
 #include <cnpy.h>
@@ -152,7 +155,7 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
       const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
       const std::string file_name = (m_directory
                                      + m.get_name()
-                                     + "-" + _to_string(mode)
+                                     + "-" + to_string(mode)
                                      + "-epoch" + std::to_string(epoch)
                                      + "-step" + std::to_string(step)
                                      + "-" + l.get_name()
@@ -173,6 +176,21 @@ void lbann_callback_dump_outputs::dump_outputs(const model& m, const Layer& l) {
     }
   }
 
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_dump_outputs_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackDumpOutputs&>(proto_msg);
+  const auto& layer_names = parse_set<std::string>(params.layers());
+  const auto& modes =
+    parse_set<execution_mode>(params.execution_modes());
+  return make_unique<lbann_callback_dump_outputs>(layer_names,
+                                                  modes,
+                                                  params.batch_interval(),
+                                                  params.directory(),
+                                                  params.format());
 }
 
 } // namespace lbann
