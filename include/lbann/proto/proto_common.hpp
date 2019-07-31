@@ -33,11 +33,6 @@
 
 namespace lbann {
 
-/** @brief Returns true if the Model contains at least one MotifLayer */
-bool has_motifs(const lbann_comm& comm, const lbann_data::LbannPB& p);
-
-void expand_motifs(const lbann_comm& comm, lbann_data::LbannPB& pb);
-
 /** @brief Customize the name of the index list
  *
  *  The following options are available

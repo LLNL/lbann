@@ -6,7 +6,7 @@ if (LBANN_HAS_PROTOBUF)
   # implementation of "protobuf_generate_cpp" but it gives us a custom
   # command on which we can depend. Using this, when lbann.proto is
   # touched, CMake will rebuild the LbannProto library.
-  set_full_path(PROTO_INPUTS lbann.proto callbacks.proto)
+  set_full_path(PROTO_INPUTS lbann.proto callbacks.proto layers.proto)
 
   foreach (proto IN LISTS PROTO_INPUTS)
     get_filename_component(name "${proto}" NAME_WE)
