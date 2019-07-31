@@ -32,6 +32,11 @@
 
 namespace lbann {
 
+// Forward declaration.
+namespace callback {
+class imcomm;
+}
+
 /** @brief Standard deep learning convolution.
  *
  *  Applies convolution (more precisely, cross-correlation) to input
@@ -42,7 +47,7 @@ template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = E
 class convolution_layer : public base_convolution_layer<Device> {
 private:
 
-  friend class lbann_callback_imcomm;
+  friend class callback::imcomm;
 
 public:
 
