@@ -150,13 +150,13 @@ def build_skeleton(dir_name, compiler, debug, should_log):
     error_file_name = '%s/bamboo/compiler_tests/error/%s_%s_build_error.txt' % (dir_name, compiler_underscored, build_type)
     compiler = compiler.replace('@', '-')
     #mpi_lib = mpi_lib.replace('@', '-')
-    cluster = re.sub('[0-9]+', '', subprocess.check_output('hostname'.split()).strip())
+    cluster = re.sub('[0-9]+', '', subprocess.check_output('hostname'.split()).decode('utf-8').strip())
     # For reference:
     # Commenting out for now. These additions to path name will likely return
     # one day, so I am not removing them entirely.
     # x86_64 <=> catalyst, pascal
     # ppc64le <=> ray
-    #architecture = subprocess.check_output('uname -m'.split()).strip()
+    #architecture = subprocess.check_output('uname -m'.split()).decode('utf-8').strip()
     #if cluster == 'ray':
     #    architecture += '_gpu_cuda-9.2.64_cudnn-7.0'
     #elif cluster == 'pascal':
