@@ -30,6 +30,7 @@
 #define IMAGE_DATA_READER_HPP
 
 #include "data_reader.hpp"
+#include "sample_list.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
 namespace lbann {
@@ -38,6 +39,9 @@ class image_data_reader : public generic_data_reader {
   using img_src_t = std::string;
   using label_t = int;
   using sample_t = std::pair<img_src_t, label_t>;
+  //using sample_name_t = std::string;
+  using sample_name_t = size_t;
+  using sample_list_t = sample_list<sample_name_t>;
 
   image_data_reader(bool shuffle = true);
   image_data_reader(const image_data_reader&);
@@ -106,6 +110,11 @@ class image_data_reader : public generic_data_reader {
   bool fetch_label(Mat& Y, int data_id, int mb_idx) override;
   void set_linearized_image_size();
 
+  /// Rely on pre-determined list of samples.
+  void load_list_of_samples(const std::string filename, size_t stride=1, size_t offset=0);
+  /// Load the sample list from a serialized archive from another rank
+  void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+
   std::string m_image_dir; ///< where images are stored
   std::vector<sample_t> m_image_list; ///< list of image files and labels
   int m_image_width; ///< image width
@@ -114,7 +123,9 @@ class image_data_reader : public generic_data_reader {
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
 
-  bool  load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
+  sample_list_t m_sample_list;
+
+  bool load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
 
 };
 
