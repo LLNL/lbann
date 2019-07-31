@@ -23,11 +23,11 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback .hpp - Base class for LBANN callbacks
+// callback .hpp - Base class for LBANN callbacks
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
-#define __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/utils/summary.hpp"
@@ -37,14 +37,14 @@
 // A utility macro for easily adding default-constructed sub-class
 // builders.
 #define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
-  inline std::unique_ptr<lbann_callback> FunctionName(           \
+  inline std::unique_ptr<callback_base> FunctionName(           \
     const google::protobuf::Message&, lbann_summary*) {          \
     return lbann::make_unique<Class>();                          \
   }
 
 namespace lbann {
 
-/** @class lbann_callback
+/** @class callback_base
  *  @brief Base class for callbacks during training/testing.
  *
  *  The method of each callback is called at a given point during
@@ -52,7 +52,7 @@ namespace lbann {
  *  care about.  Callbacks may be passed a lbann_summary instance,
  *  which they can use to log any relevant information.
  */
-class lbann_callback {
+class callback_base {
 public:
 
   /** @name Constructors and destructor */
@@ -61,17 +61,17 @@ public:
   /** @brief Initialize a callback with an optional batch interval and
    *         summarizer.
    */
-  lbann_callback(int batch_interval = 1,
+  callback_base(int batch_interval = 1,
                  lbann_summary *summarizer = nullptr) :
     m_batch_interval(std::max(batch_interval, 1)), m_summarizer(summarizer) {}
-  lbann_callback(const lbann_callback&) = default;
-  virtual ~lbann_callback() {}
+  callback_base(const callback_base&) = default;
+  virtual ~callback_base() {}
 
   ///@}
   /** @name Polymorphic copy */
   ///@{
 
-  virtual lbann_callback* copy() const = 0;
+  virtual callback_base* copy() const = 0;
 
   ///@}
   /** @name Modifiers */
@@ -182,10 +182,10 @@ protected:
    *
    *  Performs a shallow (pointer) copy of the summarizer.
    */
-  lbann_callback& operator=(const lbann_callback&) = default;
+  callback_base& operator=(const callback_base&) = default;
 
 protected:
-  /** @todo Make lbann_callback data private */
+  /** @todo Make callback data private */
 
   /** @brief Batch methods should once every this many steps. */
   int m_batch_interval;
@@ -195,4 +195,4 @@ protected:
 
 }  // namespace lbann
 
-#endif  // __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED

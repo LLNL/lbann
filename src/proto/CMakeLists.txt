@@ -21,8 +21,8 @@ if (LBANN_HAS_PROTOBUF)
     "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
     "${PROTO_INPUTS}"
     OUTPUT ${PROTO_SRCS} ${PROTO_HDRS} ${PROTO_PY}
-    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto" protobuf::protoc
-    COMMENT "Running protoc on lbann.proto"
+    DEPENDS ${PROTO_INPUTS} protobuf::protoc
+    COMMENT "Running protoc on LBANN protobuf sources."
     COMMAND_EXPAND_LISTS
     VERBATIM)
 

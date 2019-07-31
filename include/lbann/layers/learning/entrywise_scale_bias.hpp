@@ -153,7 +153,7 @@ public:
 
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_weights_gradient->Empty(false);
     m_weights_gradient->AlignWith(get_prev_activations());

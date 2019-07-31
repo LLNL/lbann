@@ -86,107 +86,108 @@ namespace {
 
 // Define the factory type.
 using factory_type = lbann::generic_factory<
-  lbann_callback,
+  lbann::callback_base,
   std::string,
-  generate_builder_type<lbann_callback,
+  generate_builder_type<lbann::callback_base,
                         google::protobuf::Message const&,
                         lbann_summary*>,
   default_key_error_policy>;
 
 void register_default_builders(factory_type& factory)
 {
+  using namespace callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
-                           build_callback_adaptive_learning_rate_from_pbuf);
+                           build_adaptive_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
-                           build_callback_check_dataset_from_pbuf);
+                           build_check_dataset_callback_from_pbuf);
   factory.register_builder("CallbackCheckGradients",
-                           build_callback_check_gradients_from_pbuf);
+                           build_check_gradients_callback_from_pbuf);
   factory.register_builder("CallbackCheckInit",
-                           build_callback_check_init_from_pbuf);
+                           build_check_init_callback_from_pbuf);
   factory.register_builder("CallbackCheckMetric",
-                           build_callback_check_metric_from_pbuf);
+                           build_check_metric_callback_from_pbuf);
   factory.register_builder("CallbackCheckNaN",
-                           build_callback_check_nan_from_pbuf);
+                           build_check_nan_callback_from_pbuf);
   factory.register_builder("CallbackCheckpoint",
-                           build_callback_checkpoint_from_pbuf);
+                           build_checkpoint_callback_from_pbuf);
   factory.register_builder("CallbackCheckSmall",
-                           build_callback_check_small_from_pbuf);
+                           build_check_small_callback_from_pbuf);
   factory.register_builder("CallbackConfusionMatrix",
-                           build_callback_confusion_matrix_from_pbuf);
+                           build_confusion_matrix_callback_from_pbuf);
   factory.register_builder("CallbackDebug",
-                           build_callback_debug_from_pbuf);
+                           build_debug_callback_from_pbuf);
   factory.register_builder("CallbackDebugIO",
-                           build_callback_debug_io_from_pbuf);
+                           build_debug_io_callback_from_pbuf);
   factory.register_builder("CallbackDispIOStats",
-                           build_callback_disp_io_stats_from_pbuf);
+                           build_monitor_io_callback_from_pbuf);
   factory.register_builder("CallbackDropFixedLearningRate",
-                           build_callback_drop_fixed_learning_rate_from_pbuf);
+                           build_drop_fixed_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackDumpErrorSignals",
-                           build_callback_dump_error_signals_from_pbuf);
+                           build_dump_error_signals_callback_from_pbuf);
   factory.register_builder("CallbackDumpGradients",
-                           build_callback_dump_gradients_from_pbuf);
+                           build_dump_gradients_callback_from_pbuf);
   factory.register_builder("CallbackDumpMBIndices",
-                           build_callback_dump_mb_indices_from_pbuf);
+                           build_dump_mb_indices_callback_from_pbuf);
   factory.register_builder("CallbackDumpOutputs",
-                           build_callback_dump_outputs_from_pbuf);
+                           build_dump_outputs_callback_from_pbuf);
   factory.register_builder("CallbackDumpWeights",
-                           build_callback_dump_weights_from_pbuf);
+                           build_dump_weights_callback_from_pbuf);
   factory.register_builder("CallbackEarlyStopping",
-                           build_callback_early_stopping_from_pbuf);
+                           build_early_stopping_callback_from_pbuf);
   factory.register_builder("CallbackGPUMemoryUsage",
-                           build_callback_gpu_memory_usage_from_pbuf);
+                           build_gpu_memory_usage_callback_from_pbuf);
   factory.register_builder("CallbackHang",
-                           build_callback_hang_from_pbuf);
+                           build_hang_callback_from_pbuf);
   factory.register_builder("CallbackImComm",
-                           build_callback_imcomm_from_pbuf);
+                           build_imcomm_callback_from_pbuf);
   factory.register_builder(
     "CallbackLinearGrowthLearningRate",
-    build_callback_linear_growth_learning_rate_from_pbuf);
+    build_linear_growth_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackLTFB",
-                           build_callback_ltfb_from_pbuf);
+                           build_ltfb_callback_from_pbuf);
   factory.register_builder("CallbackMinibatchSchedule",
-                           build_callback_minibatch_schedule_from_pbuf);
+                           build_minibatch_schedule_callback_from_pbuf);
   factory.register_builder("CallbackMixup",
-                           build_callback_mixup_from_pbuf);
+                           build_mixup_callback_from_pbuf);
   factory.register_builder(
     "CallbackOptimizerwiseAdaptiveLearningRate",
-    build_callback_optimizerwise_adaptive_learning_rate_from_pbuf);
+    build_optimizerwise_adaptive_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPerturbAdam",
-                           build_callback_perturb_adam_from_pbuf);
+                           build_perturb_adam_callback_from_pbuf);
   factory.register_builder("CallbackPerturbDropout",
-                           build_callback_perturb_dropout_from_pbuf);
+                           build_perturb_dropout_callback_from_pbuf);
   factory.register_builder("CallbackPolyLearningRate",
-                           build_callback_poly_learning_rate_from_pbuf);
+                           build_poly_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackPrint",
-                           build_callback_print_from_pbuf);
+                           build_print_statistics_callback_from_pbuf);
   factory.register_builder("CallbackProfiler",
-                           build_callback_profiler_from_pbuf);
+                           build_profiler_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",
-                           build_callback_replace_weights_from_pbuf);
+                           build_replace_weights_callback_from_pbuf);
   factory.register_builder("CallbackSaveImages",
-                           build_callback_save_images_from_pbuf);
+                           build_save_images_callback_from_pbuf);
   factory.register_builder("CallbackSaveModel",
-                           build_callback_save_model_from_pbuf);
+                           build_save_model_callback_from_pbuf);
   factory.register_builder("CallbackSaveTopKModels",
-                           build_callback_save_topk_models_from_pbuf);
+                           build_save_topk_models_callback_from_pbuf);
   factory.register_builder("CallbackStepLearningRate",
-                           build_callback_step_learning_rate_from_pbuf);
+                           build_step_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackStepMinibatch",
-                           build_callback_step_minibatch_from_pbuf);
+                           build_step_minibatch_callback_from_pbuf);
   factory.register_builder("CallbackSummarizeAutoencoderImages",
                            build_callback_summarize_autoencoder_images_from_pbuf);
   factory.register_builder("CallbackSummarizeImages",
                            build_callback_summarize_images_from_pbuf);
   factory.register_builder("CallbackSummary",
-                           build_callback_summary_from_pbuf);
+                           build_summary_callback_from_pbuf);
   factory.register_builder("CallbackSyncLayers",
-                           build_callback_sync_layers_from_pbuf);
+                           build_sync_layers_callback_from_pbuf);
   factory.register_builder("CallbackSyncSelected",
-                           build_callback_sync_selected_from_pbuf);
+                           build_sync_selected_callback_from_pbuf);
   factory.register_builder("CallbackTimeline",
-                           build_callback_timeline_from_pbuf);
+                           build_timeline_callback_from_pbuf);
   factory.register_builder("CallbackTimer",
-                           build_callback_timer_from_pbuf);
+                           build_timer_callback_from_pbuf);
 }
 
 // Manage a global factory
@@ -207,7 +208,7 @@ factory_type const& get_callback_factory() noexcept
 
 } // namespace
 
-std::unique_ptr<lbann_callback>
+std::unique_ptr<callback_base>
 construct_callback(
   const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
 

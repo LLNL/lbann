@@ -30,6 +30,9 @@
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
+namespace callback {
+class perturb_adam;
+} // namespace callback
 
 /** @brief Adam optimizer.
  *
@@ -141,7 +144,7 @@ private:
   std::unique_ptr<AbsDistMat> m_moment2;
 
   /** Hyperparameter exploration. */
-  friend class lbann_callback_perturb_adam;
+  friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);

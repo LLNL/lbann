@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 
 namespace lbann {
 
@@ -209,7 +209,7 @@ std::unique_ptr<model> build_model_from_prototext(
     std::cout << "\n"
               << ret_model->get_description()
               << "Callbacks:" << std::endl;
-    for (lbann_callback *cb : ret_model->get_callbacks()) {
+    for (callback_base *cb : ret_model->get_callbacks()) {
       std::cout << cb->name() << std::endl;
     }
   }
