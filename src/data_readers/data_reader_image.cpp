@@ -49,6 +49,9 @@ image_data_reader::image_data_reader(const image_data_reader& rhs)
 }
 
 image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
+  if (this == &rhs) {
+    return (*this);
+  }
   generic_data_reader::operator=(rhs);
   m_image_dir = rhs.m_image_dir;
   m_image_list = rhs.m_image_list;
@@ -57,11 +60,15 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   m_image_num_channels = rhs.m_image_num_channels;
   m_image_linearized_size = rhs.m_image_linearized_size;
   m_num_labels = rhs.m_num_labels;
+  m_sample_list.copy(rhs.m_sample_list);
 
   return (*this);
 }
 
 void image_data_reader::copy_members(const image_data_reader &rhs) {
+  if (this == &rhs) {
+    return;
+  }
 
   if(rhs.m_data_store != nullptr) {
     m_data_store = new data_store_conduit(rhs.get_data_store());
@@ -75,6 +82,7 @@ void image_data_reader::copy_members(const image_data_reader &rhs) {
   m_image_num_channels = rhs.m_image_num_channels;
   m_image_linearized_size = rhs.m_image_linearized_size;
   m_num_labels = rhs.m_num_labels;
+  m_sample_list.copy(rhs.m_sample_list);
   //m_thread_cv_buffer = rhs.m_thread_cv_buffer
 }
 
@@ -131,6 +139,36 @@ bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 
 void image_data_reader::load() {
   options *opts = options::get();
+
+  // Load sample list
+  // TODO: use other ways to obtain the name of the directory that contains
+  // sample lists. Currently, the function get_file_dir() is used for both
+  // the directory of actual data files and for that of the sample list.
+  const std::string data_dir = add_delimiter(get_file_dir());
+  const std::string sample_list_file = data_dir + get_data_index_list();
+
+  load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+  if(is_master()) {
+    std::cout << "Finished sample list, check data" << std::endl;
+  }
+
+  /// Merge all of the sample lists
+  m_sample_list.all_gather_packed_lists(*m_comm);
+  if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+    {
+      const std::string msg = " writing sample list " + sample_list_file;
+      LBANN_WARNING(msg);
+    }
+    std::stringstream s;
+    std::string basename = get_basename_without_ext(sample_list_file);
+    std::string ext = get_ext_name(sample_list_file);
+    s << basename << "." << ext;
+    m_sample_list.write(s.str());
+  }
+
+  if(is_master()) {
+    std::cout << "Sample lists have been gathered" << std::endl;
+  }
 
   const std::string imageListFile = get_data_filename();
 
@@ -266,5 +304,30 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 
+void image_data_reader::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
+  // load the sample list
+  double tm1 = get_time();
+  m_sample_list.load(sample_list_file, stride, offset);
+  double tm2 = get_time();
+
+  if (is_master()) {
+    std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+  }
+}
+
+void image_data_reader::load_list_of_samples_from_archive(const std::string& sample_list_archive) {
+  // load the sample list
+  double tm1 = get_time();
+  std::stringstream ss(sample_list_archive); // any stream can be used
+
+  cereal::BinaryInputArchive iarchive(ss); // Create an input archive
+
+  iarchive(m_sample_list); // Read the data from the archive
+  double tm2 = get_time();
+
+  if (is_master()) {
+    std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
+  }
+}
 
 }  // namespace lbann
