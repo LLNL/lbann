@@ -18,7 +18,7 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         num_nodes=16,
         num_processes=32,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K4trainers',
         data_reader_name='jag',
         metadata='model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext',
         model_folder='tests',
