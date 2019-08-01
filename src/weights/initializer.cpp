@@ -129,21 +129,21 @@ void normal_initializer::fill(AbsDistMat& matrix) {
 std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
-    dynamic_cast<lbann_data::Weights::ConstantInitializer const&>(msg);
+    dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
   return make_unique<constant_initializer>(params.value());
 }
 
 std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
-    dynamic_cast<lbann_data::Weights::ValueInitializer const&>(msg);
+    dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
   return make_unique<value_initializer>(parse_list<DataType>(params.values()));
 }
 
 std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
-    dynamic_cast<lbann_data::Weights::UniformInitializer const&>(msg);
+    dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
   const auto& min = params.min();
   const auto& max = params.max();
   if (min != 0.0 || max != 0.0) {
@@ -156,7 +156,7 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
-    dynamic_cast<lbann_data::Weights::NormalInitializer const&>(msg);
+    dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
   const auto& mean = params.mean();
   const auto& standard_deviation = params.standard_deviation();
   if (mean != 0.0 || standard_deviation != 0.0) {
