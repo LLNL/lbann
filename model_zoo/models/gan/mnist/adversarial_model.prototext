@@ -146,7 +146,9 @@ model {
   weights {
      name: "gen_fc_weights"
      optimizer { }
-     glorot_normal_initializer {}
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   #############
   # FC 1
@@ -302,7 +304,9 @@ model {
   weights {
      name: "dis_flatten_weights"
      optimizer { }
-     he_normal_initializer {}
+     initializer {
+       he_normal_initializer {}
+     }
   }
  # FULLY_CONNECTED dis_flatten
   layer {
@@ -319,7 +323,9 @@ model {
   weights {
      name: "dis_fc1_weights"
      optimizer { }
-     glorot_normal_initializer {}
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "dis_fc1_proxy"
@@ -343,7 +349,9 @@ model {
   weights {
      name: "dis_fc2_weights"
      optimizer { }
-     glorot_normal_initializer {}
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     parents: "dis_fc1_relu"
@@ -368,7 +376,9 @@ model {
   weights {
      name: "dis_fc3_weights"
      optimizer { }
-     glorot_normal_initializer {}
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     parents: "dis_fc2_relu"
