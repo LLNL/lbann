@@ -64,11 +64,11 @@ void register_default_builders(factory_type& factory)
 // Manage a global factory
 struct factory_manager
 {
-    factory_type factory_;
+  factory_type factory_;
 
-    factory_manager() {
-        register_default_builders(factory_);
-    }
+  factory_manager() {
+    register_default_builders(factory_);
+  }
 };
 
 factory_manager factory_mgr_;
