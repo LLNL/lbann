@@ -1,6 +1,6 @@
 model {
   data_layout: "data_parallel"
-  mini_batch_size: 128
+  mini_batch_size: 64
   block_size: 256
   num_epochs: 4
   num_parallel_readers: 1
@@ -30,9 +30,11 @@ model {
     }
   }
   callback {
-    save_images {
-      layers: "image reconstruction"
-      image_format: "pgm"
+    summarize_autoencoder_images {
+      reconstruction_layer: "reconstruction"
+      image_layer: "image"
+      input_layer: "data"
+      interval: 1
     }
   }
 
@@ -98,6 +100,7 @@ model {
     parents: "relu1"
     name: "pool1"
     data_layout: "data_parallel"
+    device_allocation: "CPU"
     pooling {
       num_dims: 2
       pool_dims: "2 2"
@@ -117,6 +120,7 @@ model {
     parents: "pool1"
     name: "unpool1"
     data_layout: "data_parallel"
+    device_allocation: "CPU"
     unpooling {
       num_dims: 2
       pooling_layer: "pool1"

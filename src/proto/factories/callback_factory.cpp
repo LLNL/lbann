@@ -89,6 +89,18 @@ using factory_type = lbann::generic_factory<
                         lbann_summary*>,
   default_key_error_policy>;
 
+namespace
+{
+template <typename... Ts>
+std::string BuildErrorMessage(Ts... args)
+{
+  std::ostringstream oss;
+  int dummy[] = { (oss << args, 0)... };
+  (void) dummy;
+  LBANN_ERROR(oss.str());
+}
+}
+
 void register_default_builders(factory_type& factory)
 {
   using namespace ::lbann::callback;

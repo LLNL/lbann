@@ -62,21 +62,27 @@ public:
   summarize_images(lbann_summary *summarizer,
                    std::string const& cat_accuracy_layer_name,
                    std::string const& img_layer_name,
+                   std::string const& input_layer_name,
                    MatchType match_type,
-                   uint64_t interval,
-                   std::string img_format = ".jpg");
+                   size_t num_images = 10,
+                   uint64_t interval = 1,
+                   std::string const& img_format = ".jpg");
   /** @brief Destructor */
   ~summarize_images() {}
 
   callback_base* copy() const override { return new summarize_images(*this); }
   std::string name() const override { return "summarize_images"; }
 
-  /** @brief Hook to pull data from lbann run */
+/** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
 
 private:
+  /** @brief setup layers */
+  void setup(model* m);
+
   /** @brief Gets layers from model based on name */
-  Layer const* get_layer_by_name(const std::vector<Layer*>& layers, const std::string& layer_name);
+  Layer const* get_layer_by_name(const std::vector<Layer*>& layers,
+                                 const std::string& layer_name);
 
   /** @brief Get vector containing indices of images to be dumped.
    *  @returns std::vector<int> Vector with indices of images to dump.
@@ -95,12 +101,10 @@ private:
 
 
 private:
-  /* Name of categorical accuracy layer */
+  /* Names of layers */
   std::string m_cat_accuracy_layer_name;
   std::string m_img_layer_name;
-  std::string m_label_layer_name;
-//FIXME: What is this layer??
-  std::string m_classifier_layer_name;
+  std::string m_input_layer_name;
 
   /* Criterion for selecting images to dump */
   MatchType m_match_type;
@@ -110,6 +114,12 @@ private:
   Layer const* m_label_layer = nullptr;
   Layer const* m_classifier_layer = nullptr;
   Layer const* m_input_layer = nullptr;
+
+  /* Size of mini-batch */
+  //size_t mini_batch_size;
+
+  /* Number of images to be dumped per epoch */
+  size_t m_num_images;
 
   /* Interval for dumping images */
   uint64_t m_interval;

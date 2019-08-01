@@ -358,8 +358,9 @@ message Callback {
 
     string cat_accuracy_layer = 1; //name of categorical accuracy layer
     string image_layer = 2; //name of image layer
-    MatchType criterion = 3; //criterion for dumping image
-    uint64 interval = 4; // interval for dumping images
+    string input_layer =3; //name of input layer
+    MatchType criterion = 4; //criterion for dumping image
+    uint64 interval = 5; //interval for dumping images
   }
 
   message CallbackSummarizeAutoencoderImages {

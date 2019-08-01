@@ -8,6 +8,7 @@ import lbann.models.resnet
 import lbann.proto
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
+from lbann import callbacks_pb2
 
 # Default data reader
 model_zoo_dir = dirname(dirname(abspath(__file__)))
@@ -65,6 +66,10 @@ parser.add_argument(
     default=data_reader_prototext, type=str,
     help='data reader prototext file (default: ' + data_reader_prototext + ')',
     metavar='FILE')
+parser.add_argument(
+    '--data-reader-percent', action='store',
+    default=1.0, type=float,
+    help='the percent of the data to use (default: 1.0)', metavar='NUM')
 parser.add_argument(
     '--prototext', action='store', type=str,
     help='exported prototext file (do not run experiment)', metavar='FILE')
@@ -131,12 +136,13 @@ else:
         width=args.width)
 
 # Construct layer graph
-input = lbann.Input()
-images = lbann.Identity(input)
-labels = lbann.Identity(input)
+input = lbann.Input(name='input')
+images = lbann.Identity(input,name='images')
+labels = lbann.Identity(input,name='labels')
 preds = resnet(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy([probs, labels])
+top1 = lbann.CategoricalAccuracy([probs, labels],name='cat_accuracy')
 top1 = lbann.CategoricalAccuracy([probs, labels])
 top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
 layers = list(lbann.traverse_layer_graph(input))
@@ -152,10 +158,19 @@ obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 # Setup model
 metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
            lbann.Metric(top5, name='top-5 accuracy', unit='%')]
+img_dump_cb = lbann.CallbackSummarizeImages(
+    cat_accuracy_layer="cat_accuracy",
+    image_layer="images",
+    criterion=callbacks_pb2.Callback.CallbackSummarizeImages.NOMATCH,
+    interval=5)
+
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
+             lbann.CallbackSummary(dir = ".", batch_interval = 2,
+                                   mat_interval = 3),
              lbann.CallbackDropFixedLearningRate(
-                 drop_epoch=[30, 60, 80], amt=0.1)]
+                 drop_epoch=[30, 60, 80], amt=0.1),
+             img_dump_cb]
 if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
@@ -189,8 +204,8 @@ if not args.prototext:
     import lbann.contrib.lc.launcher
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     classes = args.num_labels
-    kwargs['lbann_args'] = (
-        '--data_filedir_train={} --data_filename_train={} '
+    kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)
+    ('--data_filedir_train={} --data_filename_train={} '
         '--data_filedir_test={} --data_filename_test={}'
         .format(imagenet_dir(data_set='train', num_classes=classes),
                 imagenet_labels(data_set='train', num_classes=classes),

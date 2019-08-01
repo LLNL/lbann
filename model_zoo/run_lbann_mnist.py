@@ -3,7 +3,7 @@ import argparse
 import os.path
 import google.protobuf.text_format as txtf
 import lbann
-from lbann import lbann_pb2
+from lbann import callbacks_pb2
 
 # ----------------------------------
 # Command-line arguments
@@ -25,7 +25,7 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Input data
-input = lbann.Input()
+input = lbann.Input(name='input')
 images = lbann.Identity(input,name='images')
 labels = lbann.Identity(input)
 
@@ -75,12 +75,14 @@ prob = lbann.Softmax(ip2)
 # Loss function and accuracy
 loss = lbann.CrossEntropy([prob, labels])
 
-top1_accuracy = lbann.CategoricalAccuracy([prob, labels],name="bob")
+top1_accuracy = lbann.CategoricalAccuracy([prob, labels],name="cat_accuracy")
 
-img_dump_cb = lbann.CallbackDumpImageResults(cat_accuracy_layer="bob",
-                                  image_layer="images",
-                                  criterion=lbann_pb2.CallbackDumpImageResults.NOMATCH,
-                                  interval=10)
+summarize_img_cb = lbann.CallbackSummarizeImages(
+    cat_accuracy_layer="cat_accuracy",
+    image_layer="images",
+    input_layer="input",
+    criterion=callbacks_pb2.Callback.CallbackSummarizeImages.NOMATCH,
+    interval=1)
 
 # Setup model
 mini_batch_size = 64
@@ -93,7 +95,7 @@ model = lbann.Model(mini_batch_size,
                     callbacks=[lbann.CallbackPrint(), lbann.CallbackTimer(),
                                lbann.CallbackSummary( dir = ".", batch_interval = 2,
                                                       mat_interval = 3),
-                               img_dump_cb])
+                               summarize_img_cb])
 
 # Setup optimizer
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
