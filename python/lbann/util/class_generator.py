@@ -96,6 +96,13 @@ def _generate_class(message_descriptor,
             message = getattr(proto, base_field_name)
             message.SetInParent()
         else:
+            # TODO (trb 08/01/2019): This list would have to be
+            # updated any time another _pb2 file is created. It might
+            # be better to have this as a global `frozenset`
+            # (ndryden's suggestion) that gets maintained
+            # elsewhere. But this code either works or doesn't get
+            # executed now, so I vote delaying this fix until a need
+            # arises.
             proto_modules = set([callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2])
             proto_type = None
             while proto_type is None:
