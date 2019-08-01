@@ -31,10 +31,12 @@ import "optimizers.proto";
 package lbann_data;
 
 message Weights {
-
   string name = 1;
   Optimizer optimizer = 2;
+  Initializer initializer = 3;
+}
 
+message Initializer {
   oneof initializer_type {
     ConstantInitializer constant_initializer = 20;
     ValueInitializer value_initializer = 21;
