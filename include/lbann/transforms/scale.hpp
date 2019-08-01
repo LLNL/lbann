@@ -29,6 +29,10 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
+#include <memory>
+
 namespace lbann {
 namespace transform {
 
@@ -47,6 +51,10 @@ private:
   /** Amount to scale data by. */
   float m_scale;
 };
+
+// Builder function
+std::unique_ptr<transform>
+build_scale_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

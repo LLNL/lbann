@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -48,6 +50,9 @@ private:
   /** Probability that that the image is flipped. */
   float m_p;
 };
+
+std::unique_ptr<transform>
+build_horizontal_flip_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

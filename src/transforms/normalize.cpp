@@ -26,6 +26,10 @@
 
 #include "lbann/transforms/normalize.hpp"
 
+#include "lbann/proto/proto_common.hpp"
+
+#include <transforms.pb.h>
+
 namespace lbann {
 namespace transform {
 
@@ -99,6 +103,15 @@ void normalize::apply(utils::type_erased_matrix& data, CPUMat& out,
       }
     }
   }
+}
+
+std::unique_ptr<transform>
+build_normalize_transform_from_pbuf(google::protobuf::Message const& msg)
+{
+  auto& pb_trans = dynamic_cast<lbann_data::Transform::Normalize const&>(msg);
+  return make_unique<normalize>(
+    parse_list<float>(pb_trans.means()),
+    parse_list<float>(pb_trans.stddevs()));
 }
 
 }  // namespace transform

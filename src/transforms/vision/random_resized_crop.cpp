@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/random_resized_crop.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
@@ -87,6 +91,21 @@ void random_resized_crop::apply(utils::type_erased_matrix& data,
   }
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
+}
+
+std::unique_ptr<transform>
+build_random_resized_crop_transform_from_pbuf(
+  google::protobuf::Message const& msg) {
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::RandomResizedCrop const&>(msg);
+  if (params.scale_min() != 0.0f) {
+    return make_unique<random_resized_crop>(
+      params.height(), params.width(),
+      params.scale_min(), params.scale_max(),
+      params.ar_min(), params.ar_max());
+  } else {
+    return make_unique<random_resized_crop>(params.height(), params.width());
+  }
 }
 
 }  // namespace transform
