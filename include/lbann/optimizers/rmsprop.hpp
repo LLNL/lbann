@@ -112,6 +112,10 @@ private:
 
 };
 
+std::unique_ptr<optimizer>
+build_rmsprop_optimizer_from_pbuf(
+  google::protobuf::Message const&, lbann_comm*);
+
 } // namespace lbann
 
 #endif // LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
