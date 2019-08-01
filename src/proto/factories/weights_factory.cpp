@@ -72,7 +72,7 @@ struct factory_manager
 };
 
 factory_manager factory_mgr_;
-factory_type const& get_callback_factory() noexcept
+factory_type const& get_weight_initializer_factory() noexcept
 {
   return factory_mgr_.factory_;
 }
@@ -80,7 +80,7 @@ factory_type const& get_callback_factory() noexcept
 /* Construct a weights initialization specified with prototext. */
 std::unique_ptr<weights_initializer>
 construct_initializer(const lbann_data::Weights& proto_weights) {
-  auto const& factory = get_callback_factory();
+  auto const& factory = get_weight_initializer_factory();
   auto const& msg =
     helpers::get_oneof_message(proto_weights, "initializer_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
