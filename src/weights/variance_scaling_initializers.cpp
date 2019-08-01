@@ -118,9 +118,9 @@ DataType lecun_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
 // are only 2 probability distributions
 std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
-  if (dynamic_cast<lbann_data::Weights::GlorotNormalInitializer const*>(&msg))
+  if (dynamic_cast<lbann_data::Initializer::GlorotNormalInitializer const*>(&msg))
     return make_unique<glorot_initializer>(probability_distribution::gaussian);
-  else if (dynamic_cast<lbann_data::Weights::GlorotUniformInitializer const*>(&msg))
+  else if (dynamic_cast<lbann_data::Initializer::GlorotUniformInitializer const*>(&msg))
     return make_unique<glorot_initializer>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_glorot_initializer_from_pbuf: Bad message.");
@@ -130,9 +130,9 @@ build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
 
 std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
-  if (dynamic_cast<lbann_data::Weights::HeNormalInitializer const*>(&msg))
+  if (dynamic_cast<lbann_data::Initializer::HeNormalInitializer const*>(&msg))
     return make_unique<he_initializer>(probability_distribution::gaussian);
-  else if (dynamic_cast<lbann_data::Weights::HeUniformInitializer const*>(&msg))
+  else if (dynamic_cast<lbann_data::Initializer::HeUniformInitializer const*>(&msg))
     return make_unique<he_initializer>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_he_initializer_from_pbuf: Bad message.");
@@ -142,9 +142,9 @@ build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
 
 std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
-  if (dynamic_cast<lbann_data::Weights::LeCunNormalInitializer const*>(&msg))
+  if (dynamic_cast<lbann_data::Initializer::LeCunNormalInitializer const*>(&msg))
     return make_unique<lecun_initializer>(probability_distribution::gaussian);
-  else if (dynamic_cast<lbann_data::Weights::LeCunUniformInitializer const*>(&msg))
+  else if (dynamic_cast<lbann_data::Initializer::LeCunUniformInitializer const*>(&msg))
     return make_unique<lecun_initializer>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_lecun_initializer_from_pbuf: Bad message.");

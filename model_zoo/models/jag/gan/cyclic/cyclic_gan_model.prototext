@@ -611,27 +611,37 @@ model {
   }
   weights {
     name: "gen1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "d1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -639,7 +649,9 @@ model {
   }
   weights {
     name: "d1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -647,7 +659,9 @@ model {
   }
   weights {
     name: "d1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -655,27 +669,37 @@ model {
   }
   weights {
     name: "gen2fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "d1_invfc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -683,7 +707,9 @@ model {
   }
   weights {
     name: "d1_invfc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -691,7 +717,9 @@ model {
   }
   weights {
     name: "d1_invfc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {

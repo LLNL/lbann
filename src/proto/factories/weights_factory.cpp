@@ -82,7 +82,7 @@ std::unique_ptr<weights_initializer>
 construct_initializer(const lbann_data::Weights& proto_weights) {
   auto const& factory = get_weight_initializer_factory();
   auto const& msg =
-    helpers::get_oneof_message(proto_weights, "initializer_type");
+    helpers::get_oneof_message(proto_weights.initializer(), "initializer_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
