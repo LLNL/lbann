@@ -1,6 +1,6 @@
 """Utility functions to generate classes from Protobuf messages."""
 import google.protobuf.descriptor
-from lbann import lbann_pb2
+from lbann import lbann_pb2, callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
 
 # Map from Protobuf label enums to strings
 _proto_label_to_str = {
@@ -96,7 +96,11 @@ def _generate_class(message_descriptor,
             message = getattr(proto, base_field_name)
             message.SetInParent()
         else:
-            proto = getattr(lbann_pb2, message_name)()
+            proto_modules = set([callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2])
+            proto_type = None
+            while proto_type is None:
+                proto_type = getattr(proto_modules.pop(), message_name, None)
+            proto = proto_type()
             message = proto
 
         # Set message

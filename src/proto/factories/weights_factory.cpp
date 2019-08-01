@@ -40,21 +40,23 @@ namespace {
 /** Construct a weights initialization specified with prototext. */
 weights_initializer* construct_initializer(const lbann_data::Weights& proto_weights) {
 
+  auto const& proto_init = proto_weights.initializer();
+
   // Constant initialization
-  if (proto_weights.has_constant_initializer()) {
-    const auto& params = proto_weights.constant_initializer();
+  if (proto_init.has_constant_initializer()) {
+    const auto& params = proto_init.constant_initializer();
     return new constant_initializer(params.value());
   }
 
   // Value initialization
-  if (proto_weights.has_value_initializer()) {
-    const auto& params = proto_weights.value_initializer();
+  if (proto_init.has_value_initializer()) {
+    const auto& params = proto_init.value_initializer();
     return new value_initializer(parse_list<DataType>(params.values()));
   }
 
   // Random initialization
-  if (proto_weights.has_uniform_initializer()) {
-    const auto& params = proto_weights.uniform_initializer();
+  if (proto_init.has_uniform_initializer()) {
+    const auto& params = proto_init.uniform_initializer();
     const auto& min = params.min();
     const auto& max = params.max();
     if (min != 0.0 || max != 0.0) {
@@ -63,8 +65,8 @@ weights_initializer* construct_initializer(const lbann_data::Weights& proto_weig
       return new uniform_initializer();
     }
   }
-  if (proto_weights.has_normal_initializer()) {
-    const auto& params = proto_weights.normal_initializer();
+  if (proto_init.has_normal_initializer()) {
+    const auto& params = proto_init.normal_initializer();
     const auto& mean = params.mean();
     const auto& standard_deviation = params.standard_deviation();
     if (mean != 0.0 || standard_deviation != 0.0) {
@@ -75,16 +77,16 @@ weights_initializer* construct_initializer(const lbann_data::Weights& proto_weig
   }
 
   // Variance scaling initialization
-  if (proto_weights.has_glorot_normal_initializer()) {
+  if (proto_init.has_glorot_normal_initializer()) {
     return new glorot_initializer(probability_distribution::gaussian);
   }
-  if (proto_weights.has_glorot_uniform_initializer()) {
+  if (proto_init.has_glorot_uniform_initializer()) {
     return new glorot_initializer(probability_distribution::uniform);
   }
-  if (proto_weights.has_he_normal_initializer()) {
+  if (proto_init.has_he_normal_initializer()) {
     return new he_initializer(probability_distribution::gaussian);
   }
-  if (proto_weights.has_he_uniform_initializer()) {
+  if (proto_init.has_he_uniform_initializer()) {
     return new he_initializer(probability_distribution::uniform);
   }
 
