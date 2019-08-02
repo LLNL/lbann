@@ -170,7 +170,7 @@ void timer::timing_end(model& m) {
 
 std::unique_ptr<callback_base>
 build_timer_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary* summarizer) {
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const& summarizer) {
   return make_unique<timer>(summarizer);
 }
 

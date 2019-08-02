@@ -249,7 +249,7 @@ void print_statistics::report_results(model *m) {
 
 std::unique_ptr<callback_base>
 build_print_statistics_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPrint&>(proto_msg);
   return make_unique<print_statistics>(params.interval(),

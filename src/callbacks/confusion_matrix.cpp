@@ -235,7 +235,7 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
 
 std::unique_ptr<callback_base>
 build_confusion_matrix_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
   return make_unique<confusion_matrix>(params.prediction(),

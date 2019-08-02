@@ -91,7 +91,7 @@ bool save_topk_models::am_in_topk(model *m) {
 
 std::unique_ptr<callback_base>
 build_save_topk_models_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveTopKModels&>(proto_msg);
   return make_unique<save_topk_models>(

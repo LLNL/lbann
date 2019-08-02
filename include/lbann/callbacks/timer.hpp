@@ -43,7 +43,7 @@ namespace callback {
 class timer : public callback_base {
 public:
 
-  timer(lbann_summary *summarizer = nullptr)
+  timer(const std::shared_ptr<lbann_summary>& summarizer = nullptr)
     : callback_base(1, summarizer) {}
   timer(const timer&) = default;
   timer& operator=(const timer&) = default;

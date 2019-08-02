@@ -32,15 +32,11 @@
 namespace lbann {
 namespace callback {
 
-summary::summary(lbann_summary *summarizer,
+summary::summary(const std::shared_ptr<lbann_summary>& summarizer,
                                                int batch_interval,
                                                int mat_interval) :
   callback_base(batch_interval, summarizer),
   m_mat_interval(mat_interval) {}
-
-summary::~summary() {
-  delete m_summarizer;
-}
 
 void summary::on_train_begin(model *m) {
   save_histograms(m);
@@ -136,7 +132,7 @@ void summary::save_histograms(model *m) {
 std::unique_ptr<callback_base>
 build_summary_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  lbann_summary* summarizer) {
+  const std::shared_ptr<lbann_summary>& summarizer) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummary&>(proto_msg);
   return make_unique<summary>(summarizer,

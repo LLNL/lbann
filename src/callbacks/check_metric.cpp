@@ -91,7 +91,7 @@ void check_metric::do_check_metric(const model& m) const {
 
 std::unique_ptr<callback_base>
 build_check_metric_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckMetric&>(proto_msg);
   const auto& modes =

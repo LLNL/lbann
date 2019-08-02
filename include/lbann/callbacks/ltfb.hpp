@@ -122,7 +122,7 @@ public:
     bool low_score_wins = false,
     communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
     bool exchange_hyperparameters = false,
-    lbann_summary *summarizer = nullptr);
+    const std::shared_ptr<lbann_summary>& summarizer = nullptr);
   ltfb(const ltfb& other);
   ltfb& operator=(const ltfb& other);
   ltfb* copy() const override { return new ltfb(*this); }

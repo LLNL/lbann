@@ -54,7 +54,7 @@ class debug_io : public callback_base {
    */
   debug_io(execution_mode phase = execution_mode::invalid,
                           int debug_lvl = 0,
-                          lbann_summary *summarizer = nullptr) :
+                          const std::shared_ptr<lbann_summary>& summarizer = nullptr) :
     callback_base(1, summarizer), m_debug_phase(phase), m_debug_lvl(debug_lvl) {}
   debug_io(const debug_io&) = default;
   debug_io& operator=(

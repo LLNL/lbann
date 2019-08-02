@@ -54,7 +54,7 @@ class imcomm : public callback_base {
    * Initialize with ct being used for all weights.
    */
   imcomm(comm_type ct = NORMAL,
-                        lbann_summary *summarizer = nullptr);
+                        const std::shared_ptr<lbann_summary>& summarizer = nullptr);
   imcomm(const imcomm&) = default;
   imcomm& operator=(const imcomm&) = default;
   imcomm* copy() const override {
@@ -65,7 +65,7 @@ class imcomm : public callback_base {
    * Implies no inter-model updates for other weights.
    */
   imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
-                        lbann_summary *summarizer = nullptr);
+                        const std::shared_ptr<lbann_summary>& summarizer = nullptr);
 
   /** Choose comm type ct for weights. */
   void set_weights_comm(weights *w, comm_type ct);

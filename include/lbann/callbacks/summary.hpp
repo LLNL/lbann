@@ -47,9 +47,8 @@ class summary : public callback_base {
    * @param mat_interval FIXME
    * @todo Document mat_interval parameter.
    */
-  summary(lbann_summary *summarizer, int batch_interval = 1,
+  summary(const std::shared_ptr<lbann_summary>& summarizer, int batch_interval = 1,
     int mat_interval = 25);
-  ~summary() override;
   summary(const summary&) = default;
   summary& operator=(const summary&) = default;
   summary* copy() const override {

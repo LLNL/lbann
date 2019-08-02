@@ -88,6 +88,18 @@ using factory_type = lbann::generic_factory<
                         lbann_summary*>,
   default_key_error_policy>;
 
+namespace
+{
+template <typename... Ts>
+std::string BuildErrorMessage(Ts... args)
+{
+  std::ostringstream oss;
+  int dummy[] = { (oss << args, 0)... };
+  (void) dummy;
+  LBANN_ERROR(oss.str());
+}
+}
+
 void register_default_builders(factory_type& factory)
 {
   using namespace callback;
@@ -201,7 +213,7 @@ factory_type const& get_callback_factory() noexcept
 
 std::unique_ptr<callback_base>
 construct_callback(
-  const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const& summarizer) {
 
   auto const& factory = get_callback_factory();
   auto const& msg =
@@ -226,9 +238,9 @@ lbann_summary* construct_summarizer(lbann_comm* comm,
       struct stat sb;
       if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
         if (master) {
-          throw lbann_exception(
-            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-            "summary directory " + c.dir() + " does not exist");
+          LBANN_ERROR(BuildErrorMessage( std::string {}, __File__, " ",
+                                         std::to_string(__LINE__),"summary directory ",
+                                         c.dir(), " does not exist."));
         }
       }
       summary = new lbann_summary(c.dir(), comm);

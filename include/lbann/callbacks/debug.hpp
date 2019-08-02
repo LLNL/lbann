@@ -51,7 +51,7 @@ class debug : public callback_base {
    *  execution modes.
    */
   debug(std::set<execution_mode> modes,
-                       lbann_summary *summarizer = nullptr) :
+                       const std::shared_ptr<lbann_summary>& summarizer = nullptr) :
     callback_base(1, summarizer), m_modes(std::move(modes)) {}
   debug(const debug&) = default;
   debug& operator=(const debug&) = default;
