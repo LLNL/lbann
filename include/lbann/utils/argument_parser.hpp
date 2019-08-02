@@ -27,7 +27,7 @@
 #ifndef LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 #define LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 
-#include "any.hpp"
+#include "lbann/utils/any.hpp"
 
 #include <clara.hpp>
 
@@ -35,7 +35,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#inlcude <string>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -271,6 +271,7 @@ public:
 
   /** @brief Assert that all required components are set properly.
    *
+
    *  This should be called sometime after parse_no_finalize() and
    *  before using the values. This is implicitly called by parse().
    *
@@ -325,7 +326,7 @@ public:
 
 private:
   /** @brief Dictionary of arguments to their values */
-  std::unordered_map<std::string, any> params_;
+  std::unordered_map<std::string, utils::any> params_;
   /** @brief Patch around in-progress clara limitation */
   std::unordered_set<std::string> required_;
   /** @brief The underlying clara object */
@@ -344,7 +345,7 @@ argument_parser::option_is_defined(std::string const& option_name) const
 template <typename T>
 inline T const& argument_parser::get(std::string const& option_name) const
 {
-  return any_cast<T const&>(params_.at(option_name));
+  return utils::any_cast<T const&>(params_.at(option_name));
 }
 
 template <typename T>
@@ -355,7 +356,7 @@ inline void argument_parser::add_option(
   T default_value)
 {
   params_[name] = std::move(default_value);
-  clara::Opt option(any_cast<T&>(params_[name]), name);
+  clara::Opt option(utils::any_cast<T&>(params_[name]), name);
   for (auto const& f : cli_flags)
     option[f];
   parser_ |= option(description).optional();
@@ -369,7 +370,7 @@ inline size_t argument_parser::add_argument(
 {
   params_[name] = std::move(default_value);
   parser_ |= clara::Arg
-    (any_cast<T&>(params_[name]), name)
+    (utils::any_cast<T&>(params_[name]), name)
     (description).optional();
   return parser_.m_args.size() - 1;
 }
@@ -396,7 +397,7 @@ inline size_t argument_parser::add_required_argument(
     [name,&param_ref,this](std::string const& value)
     {
       auto result = clara::detail::convertInto(
-        value, any_cast<T&>(param_ref));
+        value, utils::any_cast<T&>(param_ref));
       if (result)
         required_.erase(name);
       return result;

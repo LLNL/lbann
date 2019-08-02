@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/any.hpp"
 
 #include <clara.hpp>
 
@@ -38,7 +39,7 @@ argument_parser::argument_parser()
 {
   params_["print help"] = false;
   parser_ |= clara::ExeName(exe_name_);
-  parser_ |= clara::Help(any_cast<bool&>(params_["print help"]));
+  parser_ |= clara::Help(utils::any_cast<bool&>(params_["print help"]));
 
   // Work around a bug in Clara logic
   parser_.m_exeName.set(exe_name_);
@@ -73,7 +74,7 @@ void argument_parser::add_flag(
   std::string const& description)
 {
   params_[name] = false;
-  clara::Opt option(any_cast<bool&>(params_[name]));
+  clara::Opt option(utils::any_cast<bool&>(params_[name]));
   for (auto const& f : cli_flags)
     option[f];
   parser_ |= option(description).optional();
@@ -86,7 +87,7 @@ std::string const& argument_parser::get_exe_name() const noexcept
 
 bool argument_parser::help_requested() const
 {
-  return any_cast<bool>(params_.at("print help"));
+  return utils::any_cast<bool>(params_.at("print help"));
 }
 
 void argument_parser::print_help(std::ostream& out) const

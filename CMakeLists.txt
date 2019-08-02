@@ -162,6 +162,7 @@ include(SetupCXX)
 
 # Required dependencies
 find_package(Threads REQUIRED)
+find_package(Clara REQUIRED)
 
 find_package(CEREAL NO_MODULE
   HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
