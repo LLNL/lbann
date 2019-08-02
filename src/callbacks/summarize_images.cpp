@@ -31,6 +31,7 @@
 #include <lbann/utils/image.hpp>
 #include <lbann/utils/summary.hpp>
 #include "lbann/callbacks/summarize_images.hpp"
+#include <lbann/layers/io/input/generic_input_layer.hpp>
 
 #include <callbacks.pb.h>
 
@@ -82,7 +83,7 @@ void summarize_images::on_batch_evaluate_end(model* m) {
     setup(m);
   }
 
-  dump_image_to_summary(img_indices, m->get_step(), m->get_epoch());
+  dump_image_to_summary(m->get_step(), m->get_epoch());
 }
 
 void summarize_images::setup(model* m){
@@ -103,6 +104,7 @@ void summarize_images::setup(model* m){
                             gil->get_dataset(execution_mode::validation).get_total_samples());
 //FIXME: Use if m_num_images exceeds mini-batch size
   //m_mini_batch_size = gil->get_current_mini_batch_size();
+  }
 }
 
 Layer const* summarize_images::get_layer_by_name(
@@ -162,8 +164,8 @@ bool summarize_images::meets_criteria( const DataType& match ) {
 
 }
 
-void summarize_images::dump_image_to_summary(
-  const std::vector<El::Int>& img_indices, const uint64_t& step, const El::Int& epoch) {
+void summarize_images::dump_image_to_summary( const uint64_t& step,
+                                              const El::Int& epoch) {
 
   static size_t img_number = 0;
 
@@ -177,6 +179,7 @@ void summarize_images::dump_image_to_summary(
     auto const& local_images = all_images.LockedMatrix();
     auto dims = m_img_layer->get_output_dims();
 
+    std::vector<El::Int> img_indices = get_image_indices();
 
     for (const El::Int& col_index : img_indices) {
       if (col_index >= local_images.Width())
@@ -187,7 +190,7 @@ void summarize_images::dump_image_to_summary(
       auto const local_image = local_images(El::ALL, El::IR(col_index));
       std::string image_tag("epoch-" + std::to_string(epoch) +
                             "/ sample_index-" + std::to_string(sample_index) +
-                            "/ image-" + std::to_string(ig_number++));
+                            "/ image-" + std::to_string(img_number++));
       this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
     }
   }

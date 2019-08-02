@@ -95,8 +95,7 @@ private:
   bool meets_criteria( const DataType& match );
 
   /** @brief Add image to event file */
-  void dump_image_to_summary(const std::vector<El::Int>& img_indices,
-                             const uint64_t& step,
+  void dump_image_to_summary(const uint64_t& step,
                              const El::Int& epoch);
 
 
