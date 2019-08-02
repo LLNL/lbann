@@ -1,6 +1,7 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   any.hpp
+  argument_parser.hpp
   compiler_control.hpp
   cublas.hpp
   cuda.hpp
