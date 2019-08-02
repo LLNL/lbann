@@ -1,5 +1,6 @@
 set_full_path(_DIR_LBANN_CATCH2_TEST_FILES
   any_test.cpp
+  argument_parser_test.cpp
   beta_distribution_test.cpp
   factory_test.cpp
   image_test.cpp
