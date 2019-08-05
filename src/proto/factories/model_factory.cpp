@@ -127,7 +127,7 @@ void assign_layers_to_objective_function(
 }
 
 void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
-                              std::vector<metric*>& metric_list,
+                              std::vector<std::unique_ptr<metric>>& metric_list,
                               const lbann_data::Model& proto_model) {
 
   // Construct map from layer names to layers
@@ -144,7 +144,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
 
   // Assign layers to layer metrics
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    auto&& m = dynamic_cast<layer_metric*>(metric_list[i]);
+    auto&& m = dynamic_cast<layer_metric*>(metric_list[i].get());
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
       auto* l = names_to_layers[params.layer()];
@@ -163,7 +163,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
 
 /** Setup pointers from layers to weights. */
 void assign_weights_to_layers(std::vector<Layer*>& layer_list,
-                              std::vector<weights*>& weights_list,
+                              std::vector<std::unique_ptr<weights>>& weights_list,
                               const lbann_data::Model& proto_model) {
   std::stringstream err;
 
@@ -175,7 +175,7 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
       err << "weights name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_weights[name] = w;
+    names_to_weights[name] = w.get();
   }
 
   // Find weights assigned to each layer
@@ -185,7 +185,7 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
     const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
-      if (w == nullptr) {
+      if (!w) {
         err << "could not find weights named \"" << name << "\", "
             << "which are expected by layer " << layer_list[i]->get_name();
         LBANN_ERROR(err.str());
@@ -205,9 +205,11 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
  *
  *  L2 weight regularization requires pointers to weights.
  */
-void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
-                                          objective_function& obj,
-                                          const lbann_data::ObjectiveFunction& proto_obj) {
+void assign_weights_to_objective_function(
+  std::vector<std::unique_ptr<weights>>& weights_list,
+  objective_function& obj,
+  const lbann_data::ObjectiveFunction& proto_obj) {
+
   std::stringstream err;
 
   // Construct map from weights names to weights
@@ -218,7 +220,7 @@ void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
       err << "weights name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_weights[name] = w;
+    names_to_weights[name] = w.get();
   }
 
   // Setup weights with L2 regularization
@@ -270,23 +272,23 @@ std::unique_ptr<model> construct_model(
   assign_layers_to_objective_function(layer_pointers, *obj, proto_obj);
 
   // Construct weights
-  std::vector<weights*> weights_list;
+  std::vector<std::unique_ptr<weights>> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
     weights_list.push_back(
       construct_weights(comm,
                         proto_opt,
-                        proto_model.weights(i)).release());
+                        proto_model.weights(i)));
   }
   assign_weights_to_layers(layer_pointers, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);
 
   // Construct metrics
-  std::vector<metric*> metric_list;
+  std::vector<std::unique_ptr<metric>> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
     const auto& params = proto_model.metric(i).layer_metric();
-    metric_list.push_back(new layer_metric(comm,
-                                           params.name(),
-                                           params.unit()));
+    metric_list.push_back(make_unique<layer_metric>(comm,
+                                                    params.name(),
+                                                    params.unit()));
   }
   assign_layers_to_metrics(layer_pointers, metric_list, proto_model);
 
@@ -301,8 +303,8 @@ std::unique_ptr<model> construct_model(
   // Instantiate model
   auto m = instantiate_model(comm, std::move(obj), proto_opt, proto_model);
   for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
-  for (auto&& w   : weights_list ) { m->add_weights(w);   }
-  for (auto&& met : metric_list  ) { m->add_metric(met);  }
+  for (auto&& w   : weights_list ) { m->add_weights(w.release());   }
+  for (auto&& met : metric_list  ) { m->add_metric(met.release());  }
   for (auto&& cb  : callback_list) { m->add_callback(cb.release()); }
   const auto& name = proto_model.name();
   if (!name.empty()) {
