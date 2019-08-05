@@ -59,7 +59,6 @@
 #include "lbann/callbacks/save_topk_models.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
-#include "lbann/callbacks/sync_selected.hpp"
 #include "lbann/callbacks/timeline.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
@@ -176,8 +175,6 @@ void register_default_builders(factory_type& factory)
                            build_summary_callback_from_pbuf);
   factory.register_builder("CallbackSyncLayers",
                            build_sync_layers_callback_from_pbuf);
-  factory.register_builder("CallbackSyncSelected",
-                           build_sync_selected_callback_from_pbuf);
   factory.register_builder("CallbackTimeline",
                            build_timeline_callback_from_pbuf);
   factory.register_builder("CallbackTimer",

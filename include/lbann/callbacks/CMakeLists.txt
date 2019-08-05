@@ -34,7 +34,6 @@ set_full_path(THIS_DIR_HEADERS
   save_topk_models.hpp
   summary.hpp
   sync_layers.hpp
-  sync_selected.hpp
   timeline.hpp
   timer.hpp
   variable_minibatch.hpp

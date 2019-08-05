@@ -237,10 +237,8 @@ protected :
   std::vector<El::mpi::Request<El::byte>> m_send_requests;
   std::vector<El::mpi::Request<El::byte>> m_recv_requests;
   std::vector<conduit::Node> m_recv_buffer;
-  std::vector<int> m_recv_buffer_sample_sizes;
-  std::vector<int> m_send_buffer_sample_sizes;
-  std::vector<int> m_outgoing_msg_sizes;
-  std::vector<int> m_incoming_msg_sizes;
+  std::vector<size_t> m_outgoing_msg_sizes;
+  std::vector<size_t> m_incoming_msg_sizes;
 
   /// used in exchange_data_by_super_node(); contains the super_nodes,
   /// after they have been converted from compacted format
@@ -278,32 +276,32 @@ protected :
   void error_check_compacted_node(const conduit::Node &nd, int data_id);
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet
-  std::unordered_map<int, int> m_sample_sizes;
+  std::unordered_map<int, size_t> m_sample_sizes;
 
   /// used in set_conduit_node(...)
   std::mutex m_mutex;
 
   /// Currently only used for imagenet. On return, 'sizes' maps a sample_id to image size, and indices[p] contains the sample_ids that P_p owns
   /// for use in local cache mode
-  void get_image_sizes(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
+  void get_image_sizes(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
 
   /// offset at which the raw image will be stored in a shared memory segment;
   /// for use in local cache mode; maps data_id to offset
   std::unordered_map<int,size_t> m_image_offsets;
   /// fills in m_image_offsets for use in local cache mode
-  void compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
+  void compute_image_offsets(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
 
   /// for use in local cache mode
-  void allocate_shared_segment(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices);
+  void allocate_shared_segment(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
 
   /// for use in local cache mode
-  void read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices);
+  void read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices);
 
   /// for use in local cache mode
-  void build_conduit_nodes(std::unordered_map<int,int> &sizes);
+  void build_conduit_nodes(std::unordered_map<int,size_t> &sizes);
 
   /// for use in local cache mode
-  void exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices); 
+  void exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices); 
 
   /// for use in local cache mode
   void fillin_shared_images(const std::vector<char> &images, size_t offset);

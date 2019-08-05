@@ -201,7 +201,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
 
         if (!m_super_node) {
           /// Repack the nodes because they don't seem to copy correctly
-          build_node_for_sending(rhs.m_data[i]["data"], m_data[i]);
+          compact_nodes();
         } else {
           m_data[i] = rhs.m_data[i];
         }
@@ -629,7 +629,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
         LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid contiguous data pointer");
       }
 
-      int sz = m_compacted_sample_size;
+      size_t sz = m_compacted_sample_size;
 
       if (m_node_sizes_vary) {
         if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
@@ -1031,20 +1031,20 @@ void data_store_conduit::exchange_sample_sizes() {
     }
   }
 
-  std::vector<int> my_sizes(m_sample_sizes.size()*2);
+  std::vector<size_t> my_sizes(m_sample_sizes.size()*2);
   size_t j = 0;
   for (auto t : m_sample_sizes) {
     my_sizes[j++] = t.first;
     my_sizes[j++] = t.second;
   }
 
-  std::vector<int> other_sizes;
+  std::vector<size_t> other_sizes;
   for (int k=0; k<m_np_in_trainer; k++) {
     other_sizes.resize(all_counts[k]*2);
     if (m_rank_in_trainer == k) {
-      m_comm->broadcast<int>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
+      m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
     } else {
-      m_comm->broadcast<int>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
+      m_comm->broadcast<size_t>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
       for (size_t i=0; i<other_sizes.size(); i += 2) {
         if (m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end()) {
           LBANN_ERROR("duplicate data_id: " + std::to_string(other_sizes[i]));
@@ -1061,7 +1061,7 @@ void data_store_conduit::set_preload() {
   m_preload = true;
 }
 
-void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_sizes, std::vector<std::vector<int>> &indices) {
   /// this block fires if image sizes have been precomputed
   if (options::get()->has_string("image_sizes_filename")) {
     LBANN_ERROR("not yet implemented");
@@ -1077,7 +1077,7 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
     const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
 
     // get sizes of files for which I'm responsible
-    std::vector<int> my_image_sizes;
+    std::vector<size_t> my_image_sizes;
     for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
       const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
       std::ifstream in(fn.c_str());
@@ -1094,8 +1094,8 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
     std::vector<int> counts(m_np_in_trainer);
     m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
 
-    //counts[h*2] contains the image index
-    //counts[h*2+1] contains the image sizee
+    //my_image_sizes[h*2] contains the image index
+    //my_image_sizes[h*2+1] contains the image sizee
 
     //fill in displacement vector for gathering the actual image sizes
     std::vector<int> disp(m_np_in_trainer + 1);
@@ -1104,16 +1104,16 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
       disp[h+1] = disp[h] + counts[h];
     }
 
-    std::vector<int> work(image_list.size()*2);
-    m_comm->trainer_all_gather<int>(my_image_sizes, work, counts, disp);
+    std::vector<size_t> work(image_list.size()*2);
+    m_comm->trainer_all_gather<size_t>(my_image_sizes, work, counts, disp);
     indices.resize(m_np_in_trainer);
     for (int h=0; h<m_np_in_trainer; h++) {
       indices[h].reserve(counts[h]);
       size_t start = disp[h];
       size_t end = disp[h+1];
       for (size_t k=start; k<end; k+= 2) {
-        int idx = work[k];
-        int size = work[k+1];
+        size_t idx = work[k];
+        size_t size = work[k+1];
         indices[h].push_back(idx);
         file_sizes[idx] = size;
       }
@@ -1121,14 +1121,14 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,int> &file_sizes
   }
 }
 
-void data_store_conduit::compute_image_offsets(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::compute_image_offsets(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices) {
   size_t offset = 0;
   for (size_t p=0; p<indices.size(); p++) {
     for (auto idx : indices[p]) {
       if (sizes.find(idx) == sizes.end()) {
         LBANN_ERROR("sizes.find(idx) == sizes.end() for idx: " + std::to_string(idx));
       }
-      int sz = sizes[idx];
+      size_t sz = sizes[idx];
       m_image_offsets[idx] = offset;
       offset += sz;
     }
@@ -1136,9 +1136,8 @@ void data_store_conduit::compute_image_offsets(std::unordered_map<int,int> &size
 }
 
 
-void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices) {
   off_t size = 0;
-
   for (auto &&t : sizes) {
     size += t.second;
   }
@@ -1224,7 +1223,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,int> &si
 }
 
 void data_store_conduit::preload_local_cache() {
-  std::unordered_map<int,int> file_sizes; 
+  std::unordered_map<int,size_t> file_sizes; 
   std::vector<std::vector<int>> indices;
 
   double tm1 = get_time();
@@ -1263,7 +1262,7 @@ void data_store_conduit::preload_local_cache() {
   if (m_world_master) std::cerr << "  build_conduit_nodes time: " << (get_time()-tm1) << std::endl;
 }
 
-void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,int> &sizes, std::vector<int> &indices) {
+void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
 
   //reserve space for reading this proc's files into a contiguous memory space
   size_t n = 0;
@@ -1285,7 +1284,7 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
   if (m_world_master) std::cerr << "  my num files: " << indices.size() << std::endl;
   for (size_t j=0; j<indices.size(); ++j) {
     int idx = indices[j];
-    int s = sizes[idx];
+    size_t s = sizes[idx];
     const std::string fn = m_reader->get_file_dir() + '/' + image_list[idx].first;
     std::ifstream in(fn, std::ios::in | std::ios::binary);
     in.read(work.data()+offset, s);
@@ -1295,7 +1294,7 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
   if (m_world_master) std::cout << "  finished reading files\n";
 }
 
-void data_store_conduit::build_conduit_nodes(std::unordered_map<int,int> &sizes) {
+void data_store_conduit::build_conduit_nodes(std::unordered_map<int,size_t> &sizes) {
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   for (size_t idx=0; idx<image_list.size(); idx++) {
@@ -1314,7 +1313,7 @@ void data_store_conduit::fillin_shared_images(const std::vector<char> &images, s
   memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size()); 
 }
 
-void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,int> &image_sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices) {
   std::vector<char> work2;
   int node_rank = m_comm->get_rank_in_node();
   size_t offset = 0;
@@ -1339,7 +1338,6 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
     for (size_t r=0; r<indices[p].size(); r++) {
       offset += image_sizes[indices[p][r]];
     }
-
   }
 
   m_comm->barrier(m_comm->get_node_comm());

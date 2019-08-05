@@ -31,7 +31,7 @@ else ()
 endif ()
 
 # ... then the tag.
-set(PROTOBUF_TAG "v3.6.1"
+set(PROTOBUF_TAG "master"
   CACHE STRING "The git tag or hash to checkout for PROTOBUF")
 
 # Where to install PROTOBUF
