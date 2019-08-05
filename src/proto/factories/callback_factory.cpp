@@ -52,6 +52,7 @@
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
+#include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
@@ -67,9 +68,11 @@
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include <callbacks.pb.h>
+#include <model.pb.h>
+
 #include <google/protobuf/message.h>
 
-#include <functional>
 #include <memory>
 #include <string>
 

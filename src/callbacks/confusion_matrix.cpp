@@ -26,6 +26,14 @@
 
 #include "lbann/callbacks/confusion_matrix.hpp"
 
+#include <callbacks.pb.h>
+
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
+
 namespace lbann {
 namespace callback {
 

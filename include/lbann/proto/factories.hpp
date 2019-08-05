@@ -27,10 +27,20 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+
+namespace lbann_data {
+class Model;
+class ObjectiveFunction;
+class Optimizer;
+class Reader;
+class Transform;
+class Weights;
+}// namespace lbann_data
 
 namespace lbann {
 namespace proto {

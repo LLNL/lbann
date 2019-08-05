@@ -1,20 +1,19 @@
 """Trainable model parameters."""
 import abc
-from lbann import lbann_pb2
+from lbann import weights_pb2
 import lbann.util.class_generator
 
 class Initializer(abc.ABC):
     """Initialization scheme for `Weights`."""
     def export_proto(self):
-        pass
+        """Construct and return a protobuf message."""
+        return weights_pb2.Initializer()
 
-# Generate Initializer sub-classes from lbann.proto.
-# Note: The list of skip fields must be updated if any new fields are
-# added to the Weights message in lbann.proto
+# Generate Initializer sub-classes from weights.proto.
 classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
-    lbann_pb2.Weights,
-    skip_fields = set(['name', 'optimizer']),
-    base_class = Initializer)
+    weights_pb2.Initializer,
+    base_class = Initializer,
+    base_has_export_proto = True)
 for c in classes:
     globals()[c.__name__] = c
 
@@ -31,20 +30,13 @@ class Weights:
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann_pb2.Weights()
+        proto = weights_pb2.Weights()
         proto.name = self.name
 
         # Set initializer if needed
         if self.initializer:
-            type_name = type(self.initializer).__name__
-            field_name = None
-            for field in lbann_pb2.Weights.DESCRIPTOR.fields:
-                if field.message_type and field.message_type.name == type_name:
-                    field_name = field.name
-                    break
-            init_message = getattr(proto, field_name)
-            init_message.CopyFrom(self.initializer.export_proto())
-            init_message.SetInParent()
+            proto.initializer.CopyFrom(self.initializer.export_proto())
+            proto.initializer.SetInParent()
 
         # Set optimizer if needed
         if self.optimizer:

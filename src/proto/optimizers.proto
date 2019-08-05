@@ -24,37 +24,48 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
+syntax = "proto3";
 
-#include "lbann/objective_functions/layer_term.hpp"
-#include "lbann/objective_functions/weight_regularization/l2.hpp"
+package lbann_data;
 
-#include <objective_functions.pb.h>
-
-namespace lbann {
-namespace proto {
-
-objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
-
-  // Instantiate objective function
-  objective_function* obj = new objective_function();
-
-  // Weight regularization terms
-  for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {
-    const auto& params = proto_obj.l2_weight_regularization(i);
-    obj->add_term(new l2_weight_regularization(params.scale_factor()));
+message Optimizer {
+  oneof optimizer_type {
+    AdaGrad adagrad = 1;
+    Adam adam = 2;
+    HypergradientAdam hypergradient_adam = 3;
+    RMSprop rmsprop = 4;
+    SGD sgd = 5;
   }
 
-  // Layer terms
-  for (int i=0; i<proto_obj.layer_term_size(); ++i) {
-    const auto& params = proto_obj.layer_term(i);
-    obj->add_term(new layer_term(params.scale_factor()));
+  message AdaGrad {
+    double learn_rate = 1;
+    double eps = 2;           // Suggested: 1e-8
   }
 
-  // Return objective function
-  return obj;
+  message Adam {
+    double learn_rate = 1;
+    double beta1 = 6;         // Suggested: 0.9
+    double beta2 = 7;         // Suggested: 0.99
+    double eps = 8;           // Suggested: 1e-8
+  }
 
+  message HypergradientAdam {
+    double init_learning_rate = 1;
+    double hyper_learning_rate = 2;   // Suggested: 1e-7
+    double beta1 = 6;                 // Suggested: 0.9
+    double beta2 = 7;                 // Suggested: 0.99
+    double eps = 8;                   // Suggested: 1e-8
+  }
+
+  message RMSprop {
+    double learn_rate = 1;
+    double decay_rate = 2;
+    double eps = 3;           // Suggested: 1e-8
+  }
+
+  message SGD {
+    double learn_rate = 1;
+    double momentum = 2;      // Set to zero for vanilla SGD
+    bool nesterov = 4;
+  }
 }
-
-} // namespace proto
-} // namespace lbann

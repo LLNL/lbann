@@ -29,6 +29,10 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
+
 #include <cstdlib>
 
 using namespace lbann;

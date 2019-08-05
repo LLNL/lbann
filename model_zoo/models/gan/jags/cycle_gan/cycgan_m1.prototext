@@ -460,72 +460,100 @@ model {
   }
   weights {
     name: "gen1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "disc1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "disc1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "disc1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "disc2fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "disc2fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "disc2fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   mini_batch_size: 64

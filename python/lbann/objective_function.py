@@ -1,5 +1,5 @@
 import abc
-from lbann import lbann_pb2
+from lbann import objective_functions_pb2
 from lbann.util import make_iterable
 import lbann.layer
 
@@ -19,7 +19,7 @@ class LayerTerm(ObjectiveFunctionTerm):
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann_pb2.LayerTerm()
+        proto = objective_functions_pb2.ObjectiveFunction.LayerTerm()
         proto.layer = self.layer.name
         proto.scale_factor = self.scale
         return proto
@@ -33,7 +33,7 @@ class L2WeightRegularization(ObjectiveFunctionTerm):
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann_pb2.L2WeightRegularization()
+        proto = objective_functions_pb2.ObjectiveFunction.L2WeightRegularization()
         proto.scale_factor = self.scale
         proto.weights = ' '.join([w.name for w in self.weights])
         return proto
@@ -65,7 +65,7 @@ class ObjectiveFunction:
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann_pb2.ObjectiveFunction()
+        proto = objective_functions_pb2.ObjectiveFunction()
         for term in self.terms:
             term_message = term.export_proto()
             if type(term) is LayerTerm:

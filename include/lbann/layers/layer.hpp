@@ -35,9 +35,13 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
-#include <lbann.pb.h>
 #include <string>
 #include <vector>
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Layer;
+}
 
 namespace lbann {
 

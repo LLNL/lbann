@@ -64,9 +64,11 @@ model {
 
   weights {
     name: "conv1_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -80,8 +82,10 @@ model {
 
   weights {
     name: "conv1_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -95,9 +99,11 @@ model {
 
   weights {
     name: "conv2_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -111,8 +117,10 @@ model {
 
   weights {
     name: "conv2_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -126,9 +134,11 @@ model {
 
   weights {
     name: "conv3_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -142,8 +152,10 @@ model {
 
   weights {
     name: "conv3_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -157,9 +169,11 @@ model {
 
   weights {
     name: "conv4_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -173,8 +187,10 @@ model {
 
   weights {
     name: "conv4_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -188,9 +204,11 @@ model {
 
   weights {
     name: "conv5_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -204,8 +222,10 @@ model {
 
   weights {
     name: "conv5_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -219,9 +239,11 @@ model {
 
   weights {
     name: "conv6_new_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -235,8 +257,10 @@ model {
 
   weights {
     name: "conv6_new_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -250,9 +274,11 @@ model {
 
   weights {
     name: "conv6b_new_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -266,8 +292,10 @@ model {
 
   weights {
     name: "conv6b_new_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -281,9 +309,11 @@ model {
 
   weights {
     name: "fc7_new_linearity"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.005
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.005
+      }
     }
     optimizer {
       sgd {
@@ -297,8 +327,10 @@ model {
 
   weights {
     name: "fc7_new_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -312,9 +344,11 @@ model {
 
   weights {
     name: "fc8_new_linearity"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -328,8 +362,10 @@ model {
 
   weights {
     name: "fc8_new_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {

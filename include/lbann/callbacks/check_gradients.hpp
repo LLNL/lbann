@@ -29,6 +29,8 @@
 
 #include "lbann/callbacks/callback.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace callback {
 
