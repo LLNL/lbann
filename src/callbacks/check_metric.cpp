@@ -26,7 +26,16 @@
 
 #include "lbann/callbacks/check_metric.hpp"
 
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+
+#include <set>
+#include <string>
+#include <sstream>
+#include <utility>
 
 namespace lbann {
 namespace callback {

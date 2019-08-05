@@ -26,8 +26,12 @@
 // dump_weights .hpp .cpp - Callbacks to dump weight matrices
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+
+#include <string>
 
 namespace lbann {
 namespace callback {

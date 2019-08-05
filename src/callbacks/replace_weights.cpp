@@ -29,6 +29,11 @@
 
 #include "callback_helpers.hpp"
 
+#include <callbacks.pb.h>
+
+#include <string>
+#include <vector>
+
 namespace lbann {
 namespace callback {
 

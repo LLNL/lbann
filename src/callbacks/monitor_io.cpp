@@ -32,6 +32,8 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/proto/proto_common.hpp"
 
+#include <callbacks.pb.h>
+
 namespace lbann {
 namespace callback {
 

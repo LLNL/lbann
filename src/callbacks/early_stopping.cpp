@@ -28,6 +28,10 @@
 
 #include "lbann/callbacks/early_stopping.hpp"
 
+#include <callbacks.pb.h>
+
+#include <iostream>
+
 namespace lbann {
 namespace callback {
 

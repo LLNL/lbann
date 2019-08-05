@@ -25,8 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/perturb_dropout.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random.hpp"
+
+#include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {

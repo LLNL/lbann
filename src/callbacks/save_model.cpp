@@ -26,16 +26,22 @@
 // save_model .hpp .cpp - Callbacks to save a models description and weights
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string>
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
+
+#include <callbacks.pb.h>
+#include <model.pb.h>
+
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
-#include <fstream>
+
 #include <unistd.h>
 #include <dirent.h>
+
 #include <cstdlib>
+#include <fstream>
+#include <string>
 
 namespace lbann {
 namespace callback {

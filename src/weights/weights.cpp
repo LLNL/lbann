@@ -24,12 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <utility>
-
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
+
+#include <layers.pb.h>
+
+#include <algorithm>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 

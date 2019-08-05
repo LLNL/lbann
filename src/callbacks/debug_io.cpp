@@ -28,6 +28,13 @@
 
 #include "lbann/callbacks/debug_io.hpp"
 
+#include "lbann/base.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+#include <iostream>
+#include <memory>
+
 namespace lbann {
 namespace callback {
 

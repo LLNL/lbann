@@ -24,13 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <tuple>
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/factories.hpp"
+
+#include <callbacks.pb.h>
+
+#include <sstream>
+#include <string>
+#include <tuple>
 
 namespace lbann {
 namespace callback {

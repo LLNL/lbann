@@ -27,17 +27,20 @@
 #ifndef LBANN_WEIGHTS_HPP
 #define LBANN_WEIGHTS_HPP
 
-#include <string>
-#include <vector>
-#include <memory>
-
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
-#include <lbann.pb.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace lbann_data {
+class WeightsData;
+}
 
 namespace lbann {
 
