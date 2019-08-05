@@ -191,10 +191,21 @@ def extract_data(output_file_name, data_fields, should_log):
                     print('extract_data: stdev={sv}'.format(sv=stdev_value))
                     data_dict[data_field][model_id][epoch_id] = stdev_value
 
+            # This will re-populate the value for 'test_accuracy'
+            # on each epoch, thus keeping the final value.
+            # Just keep the data_field as 'test_accuracy' so we don't have
+            # to update code and csv files to include 'validation_accuracy'.
+            regex = 'validation categorical accuracy : ([0-9.]+)'
+            data_field = 'test_accuracy'
+            populate_data_dict_overall(regex, line, data_field, data_fields,
+                                       data_dict, model_id)
+
+            # Overwrite accuracy from validation if we have test accuracy.
             regex = 'test categorical accuracy : ([0-9.]+)'
             data_field = 'test_accuracy'
             populate_data_dict_overall(regex, line, data_field, data_fields,
                                        data_dict, model_id)
+
     output_file.close()
     if should_log:
         print('extract_data: Extracted Data below:')
