@@ -26,15 +26,23 @@
 
 #include "lbann/proto/factories.hpp"
 
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
-
-#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
+#include "lbann/utils/memory.hpp"
 
 #include <model.pb.h>
 #include <objective_functions.pb.h>
+
+#include <iostream>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace lbann {
 namespace proto {
@@ -42,11 +50,11 @@ namespace proto {
 namespace {
 
 /** Instantiate a model based on prototext. */
-model* instantiate_model(lbann_comm* comm,
-                         objective_function* obj,
-                         const lbann_data::Optimizer& proto_opt,
-                         const lbann_data::Model& proto_model) {
-  std::stringstream err;
+std::unique_ptr<model>
+instantiate_model(lbann_comm* comm,
+                  std::unique_ptr<objective_function> obj,
+                  const lbann_data::Optimizer& proto_opt,
+                  const lbann_data::Model& proto_model) {
 
   // Default optimizer
   auto opt = construct_optimizer(comm, proto_opt);
@@ -55,24 +63,26 @@ model* instantiate_model(lbann_comm* comm,
   const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
-    return new directed_acyclic_graph_model(
-      comm, mini_batch_size, obj, opt.release());
+    return make_unique<directed_acyclic_graph_model>(
+      comm, mini_batch_size, obj.release(), opt.release());
   }
 
   // Throw error if model type is not supported
+  std::stringstream err;
   err << "unknown model type (" << type << ")";
   LBANN_ERROR(err.str());
   return nullptr;
-
 }
 
 /** Setup pointers from objective function to layers.
  *
  *  Layer terms require pointers to layers.
  */
-void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
-                                         objective_function& obj,
-                                         const lbann_data::ObjectiveFunction& proto_obj) {
+void assign_layers_to_objective_function(
+  std::vector<Layer*>& layer_list,
+  objective_function& obj,
+  const lbann_data::ObjectiveFunction& proto_obj) {
+
   std::stringstream err;
 
   // Construct map from layer names to layers
@@ -238,10 +248,11 @@ void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
 
 } // namespace
 
-model* construct_model(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       const lbann_data::Optimizer& proto_opt,
-                       const lbann_data::Model& proto_model) {
+std::unique_ptr<model> construct_model(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  const lbann_data::Optimizer& proto_opt,
+  const lbann_data::Model& proto_model) {
 
   // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
@@ -255,7 +266,7 @@ model* construct_model(lbann_comm* comm,
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();
-  auto&& obj = construct_objective_function(proto_obj);
+  auto obj = construct_objective_function(proto_obj);
   assign_layers_to_objective_function(layer_pointers, *obj, proto_obj);
 
   // Construct weights
@@ -288,7 +299,7 @@ model* construct_model(lbann_comm* comm,
   }
 
   // Instantiate model
-  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
+  auto m = instantiate_model(comm, std::move(obj), proto_opt, proto_model);
   for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
@@ -298,7 +309,7 @@ model* construct_model(lbann_comm* comm,
     m->set_name(name);
   }
   for (auto t : data_readers) {
-    t.second->set_model(m);
+    t.second->set_model(m.get());
   }
   return m;
 
