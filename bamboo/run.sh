@@ -44,7 +44,8 @@ cd integration_tests
 if [ ${WEEKLY} -ne 0 ]; then
     $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
 else
-    $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+    # $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+    echo "Skipping integration tests"
 fi
 
 cd ..
@@ -52,7 +53,10 @@ cd ..
 echo "Task: Unit Tests"
 cd unit_tests
 module load python/3.6.4
-$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+# $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 cd ..
+
+echo "Sequential Catch Tests"
+./sequential_catch_tests --build-dir "../build/gnu.Release.${CLUSTER}.llnl.gov/lbann/build" --compiler "gcc7"
 
 echo "Task: Finished"
