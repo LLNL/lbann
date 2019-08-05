@@ -25,8 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/perturb_adam.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
+#include <cmath>
+#include <random>
+#include <set>
+#include <sstream>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 namespace callback {

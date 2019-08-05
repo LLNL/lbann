@@ -33,6 +33,9 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"
 
+#include <lbann.pb.h>
+#include <reader.pb.h>
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
@@ -44,33 +47,6 @@
 #include <sys/stat.h>
 
 namespace lbann {
-
-bool has_motifs(const lbann_comm& comm, const lbann_data::LbannPB& p) {
-  const bool master = comm.am_world_master();
-  if (master) {
-    std::cout << "starting has_motifs\n";
-  }
-  const lbann_data::Model& m = p.model();
-  const int num_layers = m.layer_size();
-  for (int j=0; j<num_layers; j++) {
-    const lbann_data::Layer& layer = m.layer(j);
-    if (layer.has_motif_layer()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void expand_motifs(const lbann_comm& comm, lbann_data::LbannPB& pb) {
-  const bool master = comm.am_world_master();
-  if (master) {
-    std::cout << "starting expand_motifs\n";
-  }
-  const lbann_data::MotifDefinitions& m = pb.motif_definitions();
-  const int num_motifs = m.motif_size();
-  for (int j=0; j<num_motifs; j++) {
-  }
-}
 
 int get_requested_num_parallel_readers(
   const lbann_comm& comm, const lbann_data::LbannPB& p);
