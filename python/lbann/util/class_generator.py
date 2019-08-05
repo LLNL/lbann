@@ -103,7 +103,7 @@ def _generate_class(message_descriptor,
             # elsewhere. But this code either works or doesn't get
             # executed now, so I vote delaying this fix until a need
             # arises.
-            proto_modules = set([callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2])
+            proto_modules = [callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2]
             proto_type = None
             while proto_type is None:
                 proto_type = getattr(proto_modules.pop(), message_name, None)
