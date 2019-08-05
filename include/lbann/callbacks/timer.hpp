@@ -44,7 +44,7 @@ class timer : public callback_base {
 public:
 
   timer(const std::shared_ptr<lbann_summary>& summarizer = nullptr)
-    : callback_base(1, summarizer) {}
+    : callback_base(1) {}
   timer(const timer&) = default;
   timer& operator=(const timer&) = default;
   timer* copy() const override {
@@ -97,12 +97,15 @@ private:
    */
   void batch_timing_end(const model& m);
 
+  /**@brief lbann_summary */
+  std::shared_ptr<lbann_summary> m_summarizer = nullptr;
+
 };
 
 // Builder function
 std::unique_ptr<callback_base>
 build_timer_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

@@ -50,9 +50,8 @@ class debug : public callback_base {
    *  If modes is empty, status updates will be printed for all
    *  execution modes.
    */
-  debug(std::set<execution_mode> modes,
-                       const std::shared_ptr<lbann_summary>& summarizer = nullptr) :
-    callback_base(1, summarizer), m_modes(std::move(modes)) {}
+  debug(std::set<execution_mode> modes) :
+    m_modes(std::move(modes)) {}
   debug(const debug&) = default;
   debug& operator=(const debug&) = default;
   debug* copy() const override { return new debug(*this); }
@@ -107,7 +106,7 @@ class debug : public callback_base {
 // Builder function
 std::unique_ptr<callback_base>
 build_debug_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

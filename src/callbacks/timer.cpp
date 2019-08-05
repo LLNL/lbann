@@ -40,7 +40,7 @@ void timer::batch_timing_end(const model& m) {
   const auto& mode = m.get_execution_mode();
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
-  if (m_summarizer != nullptr) {
+  if (m_summarizer) {
     m_summarizer->reduce_scalar("minibatch_time", batch_time, m.get_step(execution_mode::training)-1);
     m_summarizer->reduce_scalar_all("minibatch_time", batch_time, m.get_step(execution_mode::training)-1);
   }

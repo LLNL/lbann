@@ -44,7 +44,7 @@ namespace callback {
 confusion_matrix::confusion_matrix(std::string prediction_layer,
                                                                  std::string label_layer,
                                                                  std::string prefix)
-  : callback_base(1, nullptr),
+  : callback_base(1),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
     m_prefix(std::move(prefix)) {}

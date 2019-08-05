@@ -41,7 +41,7 @@ namespace callback {
 
 imcomm::imcomm(imcomm::comm_type ct,
     const std::shared_ptr<lbann_summary>& summarizer) :
-  callback_base(1, summarizer), m_default_ct(ct) {}
+  m_default_ct(ct), m_summarizer(summarizer) {}
 
 imcomm::imcomm(imcomm::comm_type ct,
     std::unordered_set<weights *> weights_list,

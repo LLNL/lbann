@@ -92,6 +92,9 @@ class imcomm : public callback_base {
 
   /** Summarize relevant statistics. */
   void do_summary(model *m, weights *w, EvalType im_time);
+
+  /**@brief lbann_summary */
+  std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 };
 
 
@@ -101,7 +104,7 @@ std::string get_comm_type_name(imcomm::comm_type m);
 // Builder function
 std::unique_ptr<callback_base>
 build_imcomm_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

@@ -160,12 +160,12 @@ void debug::on_optimize_end(model *m, weights *w) {
 
 std::unique_ptr<callback_base>
 build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
-                               const std::shared_ptr<lbann_summary>& summarizer) {
+                               const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDebug&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.phase());
-  return make_unique<debug>(modes, summarizer);
+  return make_unique<debug>(modes);
 }
 
 } // namespace callback
