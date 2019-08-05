@@ -50,7 +50,6 @@ class model;
 class weights;
 namespace callback {
 class sync_layers;
-class sync_selected;
 } // namespace callback
 
 /**
@@ -72,7 +71,6 @@ class sync_selected;
  */
 class Layer {
   friend class callback::sync_layers;
-  friend class callback::sync_selected;
 
 public:
 
