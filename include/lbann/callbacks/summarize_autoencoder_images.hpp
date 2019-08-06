@@ -27,13 +27,14 @@
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
+#define LBANN_CALLBACKS_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
 
 #include "lbann/callbacks/callback.hpp"
 
 #include <google/protobuf/message.h>
 
+#include <callbacks.pb.h>
 #include <string>
 #include <vector>
 
@@ -109,6 +110,10 @@ private:
 
 
 private:
+
+  /* lbann_summary object */
+  std::shared_ptr<lbann_summary> m_summarizer;
+
   /* Names layers */
   std::string m_reconstruction_layer_name;
   std::string m_img_layer_name;
@@ -120,9 +125,6 @@ private:
   Layer const* m_img_layer = nullptr;
   Layer const* m_label_layer = nullptr;
   Layer const* m_input_layer = nullptr;
-
-  /* lbann_summary object */
-  std::shared_ptr<lbann_summary> m_summarizer;
 
   /* Interval for dumping images */
   uint64_t m_interval;
@@ -144,9 +146,10 @@ private:
 
 std::unique_ptr<callback_base>
 build_summarize_autoencoder_images_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&,
+  const std::shared_ptr<lbann_summary>& summarizer);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_SUMMARIZE_AUTOENCODER_IMAGES_HPP_INCLUDED

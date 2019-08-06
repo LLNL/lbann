@@ -209,7 +209,8 @@ void summarize_autoencoder_images::on_batch_evaluate_end(model* m) {
 
 std::unique_ptr<callback_base>
 build_summarize_autoencoder_images_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>& summarizer) {
 
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummarizeAutoencoderImages&>(proto_msg);

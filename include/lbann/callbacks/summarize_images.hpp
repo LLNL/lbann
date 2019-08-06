@@ -23,19 +23,21 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_summarize_images .hpp .cpp - Callback hooks to dump
+// summarize_images .hpp .cpp - Callback hooks to dump
 // results of image testing to event files
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
-#define LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED
+#define LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED
 
-#include <string>
-#include <vector>
+
 #include "lbann/callbacks/callback.hpp"
 
 #include <google/protobuf/message.h>
+#include <callbacks.pb.h>
 
+#include <string>
+#include <vector>
 namespace lbann {
 namespace callback {
 
@@ -73,7 +75,7 @@ public:
                    std::string const& img_format = ".jpg");
 
   /** @brief Copy constructor */
-  callback_base* copy() const override { return new summarize_images(*this); }
+callback_base* copy() const override { return new summarize_images(*this); }
 
   /** @brief Return name of callback */
   std::string name() const override { return "summarize_images"; }
@@ -108,6 +110,10 @@ private:
 
 
 private:
+
+  /* lbann_summary object */
+  std::shared_ptr<lbann_summary> m_summarizer;
+
   /* Names of layers */
   std::string m_cat_accuracy_layer_name;
   std::string m_img_layer_name;
@@ -125,9 +131,6 @@ private:
   /* Size of mini-batch */
   //size_t mini_batch_size;
 
-  /* lbann_summary object */
-  std::shared_ptr<lbann_summary> m_summarizer;
-
   /* Number of images to be dumped per epoch */
   size_t m_num_images;
 
@@ -142,9 +145,10 @@ private:
 
 std::unique_ptr<callback_base>
 build_summarize_images_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&,
+  const std::shared_ptr<lbann_summary>& summarizer);
 
 } // namespace callback
 } // namespace lbann
 
-#endif  // LBANN_CALLBACKS_CALLBACK_SUMMARIZE_IMAGES_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_SUMMARIZE_IMAGES_HPP_INCLUDED

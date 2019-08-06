@@ -41,7 +41,7 @@ namespace lbann {
 namespace callback {
 
 summarize_images::summarize_images(
-  lbann_summary *summarizer,
+  std::shared_ptr<lbann_summary> const& summarizer,
   std::string const& cat_accuracy_layer_name,
   std::string const& img_layer_name,
   std::string const& input_layer_name,
@@ -199,7 +199,8 @@ void summarize_images::dump_image_to_summary( const uint64_t& step,
 
 std::unique_ptr<callback_base>
 build_summarize_images_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary* summarizer){
+  const google::protobuf::Message& proto_msg,
+  std::shared_ptr<lbann_summary> const& summarizer){
 
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummarizeImages&>(proto_msg);
