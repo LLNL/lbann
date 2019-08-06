@@ -49,13 +49,14 @@ model* instantiate_model(lbann_comm* comm,
   std::stringstream err;
 
   // Default optimizer
-  auto&& opt = construct_optimizer(comm, proto_opt);
+  auto opt = construct_optimizer(comm, proto_opt);
 
   // Construct model
   const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
-    return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
+    return new directed_acyclic_graph_model(
+      comm, mini_batch_size, obj, opt.release());
   }
 
   // Throw error if model type is not supported

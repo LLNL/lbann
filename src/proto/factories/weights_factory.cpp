@@ -113,9 +113,9 @@ std::unique_ptr<weights> construct_weights(
   auto init = construct_initializer(proto_weights);
   std::unique_ptr<optimizer> opt;
   if (proto_weights.has_optimizer()) {
-    opt.reset(construct_optimizer(comm, proto_weights.optimizer()));
+    opt = construct_optimizer(comm, proto_weights.optimizer());
   } else {
-    opt.reset(construct_optimizer(comm, proto_opt));
+    opt = construct_optimizer(comm, proto_opt);
   }
   w->set_initializer(std::move(init));
   w->set_optimizer(std::move(opt));
