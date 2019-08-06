@@ -26,9 +26,17 @@
 // callback_timeline .hpp .cpp - Callback hooks to record a timeline of runtime
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <fstream>
 #include "lbann/callbacks/timeline.hpp"
+
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+
+#include <callbacks.pb.h>
+
+#include <fstream>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 namespace callback {
@@ -101,7 +109,7 @@ void timeline::on_optimize_end(model *m, weights *w) {
 
 std::unique_ptr<callback_base>
 build_timeline_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackTimeline&>(proto_msg);
   return make_unique<timeline>(params.directory());

@@ -25,10 +25,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_gradients.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/memory.hpp"
 
-#include "callbacks.pb.h"
+#include <callbacks.pb.h>
+
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <memory>
 
 namespace lbann {
 namespace callback {
@@ -232,7 +238,7 @@ void check_gradients::on_test_end(model *m) {
 // Builder function
 std::unique_ptr<callback_base>
 build_check_gradients_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
   return make_unique<check_gradients>(params.step_size(),

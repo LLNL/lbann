@@ -35,7 +35,6 @@ set_full_path(THIS_DIR_SOURCES
   summarize_images.cpp
   summarize_autoencoder_images.cpp
   sync_layers.cpp
-  sync_selected.cpp
   timeline.cpp
   timer.cpp
   variable_minibatch.cpp

@@ -27,8 +27,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/sync_layers.hpp"
+
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
+
+#include <callbacks.pb.h>
 
 namespace lbann {
 namespace callback {
@@ -64,7 +68,7 @@ void sync_layers::do_sync(Layer *l) {
 
 std::unique_ptr<callback_base>
 build_sync_layers_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSyncLayers&>(proto_msg);
   return make_unique<sync_layers>(params.sync_gpus(),

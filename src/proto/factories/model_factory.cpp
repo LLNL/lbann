@@ -25,7 +25,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/models/model.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
+
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+
+#include <model.pb.h>
+#include <objective_functions.pb.h>
 
 namespace lbann {
 namespace proto {
@@ -270,7 +279,7 @@ model* construct_model(lbann_comm* comm,
 
   // Construct callbacks
   std::vector<std::unique_ptr<callback_base>> callback_list;
-  auto&& summarizer = construct_summarizer(comm, proto_model);
+  auto summarizer = std::shared_ptr<lbann_summary>(construct_summarizer(comm, proto_model));
   for (int i=0; i<proto_model.callback_size(); i++) {
     callback_list.push_back(construct_callback(proto_model.callback(i),
                                                summarizer));

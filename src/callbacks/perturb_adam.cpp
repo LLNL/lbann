@@ -25,8 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/perturb_adam.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/random.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
+#include <cmath>
+#include <random>
+#include <set>
+#include <sstream>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 namespace callback {
@@ -164,7 +174,7 @@ void perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
 
 std::unique_ptr<callback_base>
 build_perturb_adam_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbAdam&>(proto_msg);
   return make_unique<perturb_adam>(

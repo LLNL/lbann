@@ -26,8 +26,12 @@
 // dump_weights .hpp .cpp - Callbacks to dump weight matrices
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+
+#include <string>
 
 namespace lbann {
 namespace callback {
@@ -58,7 +62,7 @@ void dump_weights::do_dump_weights(model *m, std::string s) {
 
 std::unique_ptr<callback_base>
 build_dump_weights_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDumpWeights&>(proto_msg);
   return make_unique<dump_weights>(params.basename());

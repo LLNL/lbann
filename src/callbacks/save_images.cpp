@@ -159,7 +159,7 @@ void save_images::on_test_end(model *m) {
 
 std::unique_ptr<callback_base>
 build_save_images_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
   return make_unique<save_images>(

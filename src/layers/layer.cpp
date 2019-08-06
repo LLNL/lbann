@@ -29,10 +29,14 @@
 #include "lbann/models/model.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include <string>
+
+#include <layers.pb.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <string>
 
 // Asynchronous memory transfers for input data
 // Note: This introduces a race condition. It is possible for the

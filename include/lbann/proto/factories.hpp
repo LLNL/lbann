@@ -27,10 +27,20 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+
+namespace lbann_data {
+class Model;
+class ObjectiveFunction;
+class Optimizer;
+class Reader;
+class Transform;
+class Weights;
+}// namespace lbann_data
 
 namespace lbann {
 namespace proto {
@@ -63,14 +73,14 @@ weights* construct_weights(lbann_comm* comm,
 /** Construct a callback specified with prototext. */
 std::unique_ptr<callback_base>
 construct_callback(const google::protobuf::Message& proto_cb,
-                   lbann_summary* summarizer);
+                   std::shared_ptr<lbann_summary> const& summarizer);
 
 /** Construct a summarizer specified with prototext.
  *  The summarizer is only constructed if the summarizer callback is
  *  enabled.
  */
-lbann_summary* construct_summarizer(lbann_comm* comm,
-                                    const lbann_data::Model& m);
+std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
+                                                    const lbann_data::Model& m);
 
 /** Construct an optimizer specified with prototext. */
 optimizer* construct_optimizer(lbann_comm* comm,

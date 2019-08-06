@@ -52,6 +52,7 @@
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
+#include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
@@ -60,7 +61,6 @@
 #include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
-#include "lbann/callbacks/sync_selected.hpp"
 #include "lbann/callbacks/timeline.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
@@ -70,9 +70,11 @@
 #include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include <callbacks.pb.h>
+#include <model.pb.h>
+
 #include <google/protobuf/message.h>
 
-#include <functional>
 #include <memory>
 #include <string>
 
@@ -86,11 +88,9 @@ using factory_type = lbann::generic_factory<
   std::string,
   generate_builder_type<lbann::callback_base,
                         google::protobuf::Message const&,
-                        lbann_summary*>,
+                        std::shared_ptr<lbann_summary> const&>,
   default_key_error_policy>;
 
-namespace
-{
 template <typename... Ts>
 std::string BuildErrorMessage(Ts... args)
 {
@@ -98,7 +98,6 @@ std::string BuildErrorMessage(Ts... args)
   int dummy[] = { (oss << args, 0)... };
   (void) dummy;
   LBANN_ERROR(oss.str());
-}
 }
 
 void register_default_builders(factory_type& factory)
@@ -190,8 +189,6 @@ void register_default_builders(factory_type& factory)
                            build_summary_callback_from_pbuf);
   factory.register_builder("CallbackSyncLayers",
                            build_sync_layers_callback_from_pbuf);
-  factory.register_builder("CallbackSyncSelected",
-                           build_sync_selected_callback_from_pbuf);
   factory.register_builder("CallbackTimeline",
                            build_timeline_callback_from_pbuf);
   factory.register_builder("CallbackTimer",
@@ -218,7 +215,7 @@ factory_type const& get_callback_factory() noexcept
 
 std::unique_ptr<callback_base>
 construct_callback(
-  const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const& summarizer) {
 
   auto const& factory = get_callback_factory();
   auto const& msg =
@@ -226,32 +223,26 @@ construct_callback(
   return factory.create_object(msg.GetDescriptor()->name(), msg, summarizer);
 }
 
-lbann_summary* construct_summarizer(lbann_comm* comm,
-                                    const lbann_data::Model& m) {
-  lbann_summary *summary = nullptr;
-  bool master = comm->am_world_master();
-  int size = m.callback_size();
-  for (int j=0; j<size; j++) {
-    const lbann_data::Callback& callback = m.callback(j);
-    if (callback.has_summary()) {
-      const lbann_data::Callback::CallbackSummary& c = callback.summary();
-      if (master) {
-        std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
-      }
+std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
+                                                    const lbann_data::Model& m) {
+  const bool master = comm->am_world_master();
+  if (m.has_summarizer()) {
+    auto dir = m.summarizer().dir();
 
-      //check to see if directory exists
-      struct stat sb;
-      if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
-        if (master) {
-          throw lbann_exception(
-            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-            "summary directory " + c.dir() + " does not exist");
-        }
-      }
-      summary = new lbann_summary(c.dir(), comm);
+    if (master) {
+      std::cout << "constructing summarizer with dir: " << dir << std::endl;
     }
+
+    //check to see if directory exists
+    struct stat sb;
+    if (! ( stat(dir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
+      LBANN_ERROR(BuildErrorMessage("summary directory ",
+                                    dir, " does not exist."));
+    }
+
+    return make_unique<lbann_summary>(dir, comm);
   }
-  return summary;
+  return nullptr;
 }
 
 } // namespace proto

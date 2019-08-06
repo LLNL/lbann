@@ -32,8 +32,13 @@
 #include <utility>
 
 #include "lbann/callbacks/callback.hpp"
-#include <lbann.pb.h>
+
 #include <google/protobuf/message.h>
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Model;
+}
 
 namespace lbann {
 namespace callback {
@@ -92,7 +97,7 @@ class save_model : public callback_base {
 // Builder function
 std::unique_ptr<callback_base>
 build_save_model_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

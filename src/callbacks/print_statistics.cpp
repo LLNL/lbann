@@ -26,10 +26,18 @@
 // print_statistics .hpp .cpp - Callback hooks to print information
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/print_statistics.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
 #include <iomanip>
+#include <iostream>
+#include <numeric>
+#include <vector>
 
 namespace lbann {
 namespace callback {
@@ -249,7 +257,7 @@ void print_statistics::report_results(model *m) {
 
 std::unique_ptr<callback_base>
 build_print_statistics_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPrint&>(proto_msg);
   return make_unique<print_statistics>(params.interval(),

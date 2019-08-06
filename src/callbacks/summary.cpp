@@ -27,19 +27,35 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/summary.hpp"
+
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
+
+#include <callbacks.pb.h>
+
+#include <algorithm>
+#include <string>
 
 namespace lbann {
 namespace callback {
 
-summary::summary(lbann_summary *summarizer,
-                                               int batch_interval,
-                                               int mat_interval) :
-  callback_base(batch_interval, summarizer),
+summary::summary(const std::shared_ptr<lbann_summary>& summarizer,
+                 int batch_interval,
+                 int mat_interval) :
+  callback_base(batch_interval),
+  m_summarizer(summarizer),
   m_mat_interval(mat_interval) {}
 
-summary::~summary() {
-  delete m_summarizer;
+namespace
+{
+template <typename... Ts>
+std::string BuildErrorMessage(Ts... args)
+{
+  std::ostringstream oss;
+  int dummy[] = { (oss << args, 0)... };
+  (void) dummy;
+  LBANN_ERROR(oss.str());
+}
 }
 
 void summary::on_train_begin(model *m) {
@@ -47,6 +63,11 @@ void summary::on_train_begin(model *m) {
 }
 
 void summary::on_batch_end(model *m) {
+
+  if(!m_summarizer){
+    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+  }
+
   prof_region_begin("summary-batch", prof_colors[0], false);
   m->summarize_stats(*m_summarizer);
   if (m_mat_interval > 0 && m->get_step(execution_mode::training) % m_mat_interval == 0) {
@@ -72,6 +93,10 @@ void summary::on_batch_end(model *m) {
 }
 
 void summary::on_epoch_end(model *m) {
+  if(!m_summarizer){
+    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+  }
+
   prof_region_begin("summary-epoch", prof_colors[0], false);
   for (const auto& met : m->get_metrics()) {
     EvalType train_score = met->get_mean_value(m->get_execution_mode());
@@ -88,6 +113,10 @@ void summary::on_epoch_end(model *m) {
 }
 
 void summary::on_test_end(model *m) {
+
+  if(!m_summarizer){
+    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+  }
   prof_region_begin("summary-test", prof_colors[0], false);
   lbann_comm *comm = m->get_comm();
   for (auto&& met : m->get_metrics()) {
@@ -108,6 +137,9 @@ void summary::on_test_end(model *m) {
 }
 
 void summary::save_histograms(model *m) {
+  if(!m_summarizer){
+    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+  }
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
     for (int i = 0; i < layer->get_num_children(); ++i) {
@@ -136,12 +168,12 @@ void summary::save_histograms(model *m) {
 std::unique_ptr<callback_base>
 build_summary_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  lbann_summary* summarizer) {
+  const std::shared_ptr<lbann_summary>& summarizer) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummary&>(proto_msg);
   return make_unique<summary>(summarizer,
-                                             params.batch_interval(),
-                                             params.mat_interval());
+                              params.batch_interval(),
+                              params.mat_interval());
 }
 
 } // namespace callback

@@ -65,7 +65,6 @@ message Callback {
     CallbackReplaceWeights replace_weights = 31;
     CallbackGPUMemoryUsage gpu_memory_usage = 32;
     CallbackSyncLayers sync_layers = 33;
-    CallbackSyncSelected sync_selected = 34;
     CallbackConfusionMatrix confusion_matrix = 36;
     CallbackCheckMetric check_metric = 37;
     CallbackPerturbAdam perturb_adam = 38;
@@ -126,7 +125,6 @@ message Callback {
   }
 
   message CallbackSummary {
-    string dir = 1; //directory for the lbann_summary
     int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
     int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
   }
@@ -275,34 +273,6 @@ message Callback {
     bool sync_gpus = 1;
     bool sync_mpi = 2;
     bool only_input = 3;
-  }
-
-  message CallbackSyncSelected {
-    message LayerToSync {
-      enum PropDirection {
-        Both = 0;
-        Forward = 1;
-        Backward = 2;
-      }
-      string name = 1; // name of the layer to synchronize
-      PropDirection prop = 2; // propagation setep to synchronize
-    }
-
-    message CudaProfilerSetup {
-      enum OutputMode {
-        KeyValuePair = 0;
-        CSV = 1;
-      }
-      bool no_init = 1;
-      string config_file = 2;
-      string output_dir = 3;
-      OutputMode output_mode = 4;
-    }
-
-    bool async_gpus = 1;
-    bool async_mpi = 2;
-    repeated LayerToSync layer_to_sync = 3;
-    CudaProfilerSetup cuda_profiler_setup = 4;
   }
 
   message CallbackConfusionMatrix {

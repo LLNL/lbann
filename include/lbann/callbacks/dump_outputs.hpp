@@ -118,7 +118,7 @@ private:
 // Builder function
 std::unique_ptr<callback_base>
 build_dump_outputs_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

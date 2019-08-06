@@ -26,7 +26,16 @@
 
 #include "lbann/callbacks/check_metric.hpp"
 
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+
+#include <set>
+#include <string>
+#include <sstream>
+#include <utility>
 
 namespace lbann {
 namespace callback {
@@ -91,7 +100,7 @@ void check_metric::do_check_metric(const model& m) const {
 
 std::unique_ptr<callback_base>
 build_check_metric_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckMetric&>(proto_msg);
   const auto& modes =

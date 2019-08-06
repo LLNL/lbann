@@ -26,6 +26,14 @@
 
 #include "lbann/callbacks/confusion_matrix.hpp"
 
+#include <callbacks.pb.h>
+
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <utility>
+
 namespace lbann {
 namespace callback {
 
@@ -36,7 +44,7 @@ namespace callback {
 confusion_matrix::confusion_matrix(std::string prediction_layer,
                                                                  std::string label_layer,
                                                                  std::string prefix)
-  : callback_base(1, nullptr),
+  : callback_base(1),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
     m_prefix(std::move(prefix)) {}
@@ -235,7 +243,7 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
 
 std::unique_ptr<callback_base>
 build_confusion_matrix_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
   return make_unique<confusion_matrix>(params.prediction(),

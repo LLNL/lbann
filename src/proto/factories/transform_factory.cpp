@@ -24,7 +24,6 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
 #include "lbann/transforms/normalize.hpp"
 #include "lbann/transforms/sample_normalize.hpp"
 #include "lbann/transforms/scale.hpp"
@@ -46,7 +45,13 @@
 #include "lbann/transforms/vision/resized_center_crop.hpp"
 #include "lbann/transforms/vision/to_lbann_layout.hpp"
 #include "lbann/transforms/vision/vertical_flip.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
+
+#include <reader.pb.h>
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace proto {
