@@ -76,6 +76,10 @@ public:
 
   virtual callback_base* copy() const = 0;
 
+  ///@}
+  /** @name Modifiers */
+  ///@{
+
   /** @brief Called once to set up the callback (after all layers are
    *         set up).
    */

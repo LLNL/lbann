@@ -90,8 +90,6 @@ using factory_type = lbann::generic_factory<
                         std::shared_ptr<lbann_summary> const&>,
   default_key_error_policy>;
 
-namespace
-{
 template <typename... Ts>
 std::string BuildErrorMessage(Ts... args)
 {
@@ -99,7 +97,6 @@ std::string BuildErrorMessage(Ts... args)
   int dummy[] = { (oss << args, 0)... };
   (void) dummy;
   LBANN_ERROR(oss.str());
-}
 }
 
 void register_default_builders(factory_type& factory)
