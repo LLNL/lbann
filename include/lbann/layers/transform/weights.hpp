@@ -125,11 +125,11 @@ class weights_layer : public transform_layer {
     auto& w = this->m_weights[0];
     if (w == nullptr) {
       w = new weights(get_comm());
-      std::unique_ptr<weights_initializer> init(new constant_initializer(DataType(0)));
+      auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_weights");
-      w->set_initializer(init);
-      w->set_optimizer(opt);
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
       this->m_model->add_weights(w);
     }
 

@@ -260,9 +260,10 @@ model* construct_model(lbann_comm* comm,
   // Construct weights
   std::vector<weights*> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
-    weights_list.push_back(construct_weights(comm,
-                                             proto_opt,
-                                             proto_model.weights(i)));
+    weights_list.push_back(
+      construct_weights(comm,
+                        proto_opt,
+                        proto_model.weights(i)).release());
   }
   assign_weights_to_layers(layer_pointers, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);

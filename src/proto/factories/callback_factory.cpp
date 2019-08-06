@@ -80,7 +80,6 @@ namespace lbann {
 namespace proto {
 namespace {
 
-
 // Define the factory type.
 using factory_type = lbann::generic_factory<
   lbann::callback_base,

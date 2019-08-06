@@ -221,7 +221,7 @@ weights_initializer* weights::get_initializer() {
 const weights_initializer* weights::get_initializer() const {
   return m_initializer.get();
 }
-void weights::set_initializer(std::unique_ptr<weights_initializer>& init) {
+void weights::set_initializer(std::unique_ptr<weights_initializer>&& init) {
   m_initializer = std::move(init);
 }
 
@@ -239,7 +239,7 @@ const optimizer* weights::get_optimizer() const {
     return m_optimizer.get();
   }
 }
-void weights::set_optimizer(std::unique_ptr<optimizer>& opt) {
+void weights::set_optimizer(std::unique_ptr<optimizer>&& opt) {
   m_optimizer = std::move(opt);
 }
 

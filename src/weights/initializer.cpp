@@ -25,8 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/initializer.hpp"
+
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/random.hpp"
+
+#include <weights.pb.h>
+
+#include <sstream>
 
 namespace lbann {
 
@@ -113,6 +120,50 @@ description normal_initializer::get_description() const {
 void normal_initializer::fill(AbsDistMat& matrix) {
   gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
+}
+
+//
+// Builder functions
+//
+
+std::unique_ptr<weights_initializer>
+build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
+  return make_unique<constant_initializer>(params.value());
+}
+
+std::unique_ptr<weights_initializer>
+build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
+  return make_unique<value_initializer>(parse_list<DataType>(params.values()));
+}
+
+std::unique_ptr<weights_initializer>
+build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
+  const auto& min = params.min();
+  const auto& max = params.max();
+  if (min != 0.0 || max != 0.0) {
+    return make_unique<uniform_initializer>(min, max);
+  } else {
+    return make_unique<uniform_initializer>();
+  }
+}
+
+std::unique_ptr<weights_initializer>
+build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
+  const auto& mean = params.mean();
+  const auto& standard_deviation = params.standard_deviation();
+  if (mean != 0.0 || standard_deviation != 0.0) {
+    return make_unique<normal_initializer>(mean, standard_deviation);
+  } else {
+    return make_unique<normal_initializer>();
+  }
 }
 
 } // namespace lbann
