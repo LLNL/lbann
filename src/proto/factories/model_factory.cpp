@@ -79,7 +79,7 @@ instantiate_model(lbann_comm* comm,
  *  Layer terms require pointers to layers.
  */
 void assign_layers_to_objective_function(
-  std::vector<Layer*>& layer_list,
+  const std::vector<std::unique_ptr<Layer>>& layer_list,
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
@@ -93,7 +93,7 @@ void assign_layers_to_objective_function(
       err << "layer name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_layers[name] = l;
+    names_to_layers[name] = l.get();
   }
 
   // Assign layers to layer terms in objective function
@@ -123,12 +123,12 @@ void assign_layers_to_objective_function(
         << "in the prototext";
     LBANN_ERROR(err.str());
   }
-
 }
 
-void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
-                              std::vector<std::unique_ptr<metric>>& metric_list,
-                              const lbann_data::Model& proto_model) {
+void assign_layers_to_metrics(
+  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  std::vector<std::unique_ptr<metric>>& metric_list,
+  const lbann_data::Model& proto_model) {
 
   // Construct map from layer names to layers
   std::unordered_map<std::string, Layer*> names_to_layers;
@@ -139,7 +139,7 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
       err << "layer name \"" << name << "\" is not unique";
       LBANN_ERROR(err.str());
     }
-    names_to_layers[name] = l;
+    names_to_layers[name] = l.get();
   }
 
   // Assign layers to layer metrics
@@ -162,10 +162,10 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
 }
 
 /** Setup pointers from layers to weights. */
-void assign_weights_to_layers(std::vector<Layer*>& layer_list,
-                              std::vector<std::unique_ptr<weights>>& weights_list,
-                              const lbann_data::Model& proto_model) {
-  std::stringstream err;
+void assign_weights_to_layers(
+  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  std::vector<std::unique_ptr<weights>>& weights_list,
+  const lbann_data::Model& proto_model) {
 
   // Construct map from weights names to weights
   std::unordered_map<std::string, weights*> names_to_weights;
@@ -206,7 +206,7 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
  *  L2 weight regularization requires pointers to weights.
  */
 void assign_weights_to_objective_function(
-  std::vector<std::unique_ptr<weights>>& weights_list,
+  const std::vector<std::unique_ptr<weights>>& weights_list,
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
@@ -260,16 +260,11 @@ std::unique_ptr<model> construct_model(
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
                                             proto_model);
-  std::vector<Layer*> layer_pointers;
-  layer_pointers.reserve(layer_list.size());
-  for (auto&& ptr : layer_list) {
-    layer_pointers.push_back(ptr.get());
-  }
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();
   auto obj = construct_objective_function(proto_obj);
-  assign_layers_to_objective_function(layer_pointers, *obj, proto_obj);
+  assign_layers_to_objective_function(layer_list, *obj, proto_obj);
 
   // Construct weights
   std::vector<std::unique_ptr<weights>> weights_list;
@@ -279,7 +274,7 @@ std::unique_ptr<model> construct_model(
                         proto_opt,
                         proto_model.weights(i)));
   }
-  assign_weights_to_layers(layer_pointers, weights_list, proto_model);
+  assign_weights_to_layers(layer_list, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);
 
   // Construct metrics
@@ -290,7 +285,7 @@ std::unique_ptr<model> construct_model(
                                                     params.name(),
                                                     params.unit()));
   }
-  assign_layers_to_metrics(layer_pointers, metric_list, proto_model);
+  assign_layers_to_metrics(layer_list, metric_list, proto_model);
 
   // Construct callbacks
   std::vector<std::unique_ptr<callback_base>> callback_list;
