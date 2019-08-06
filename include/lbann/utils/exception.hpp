@@ -104,8 +104,7 @@ using lbann_exception = exception;
  *  @param[in] args The things to be stringified.
  */
 template <typename... Args>
-std::string build_string(Args&&... args)
-{
+std::string build_string(Args&&... args) {
   std::ostringstream oss;
   int dummy[] = { (oss << args, 0)... };
   (void) dummy; // silence compiler warnings
