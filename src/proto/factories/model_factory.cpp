@@ -68,9 +68,7 @@ instantiate_model(lbann_comm* comm,
   }
 
   // Throw error if model type is not supported
-  std::stringstream err;
-  err << "unknown model type (" << type << ")";
-  LBANN_ERROR(err.str());
+  LBANN_ERROR_STR("unknown model type (", type, ")");
   return nullptr;
 }
 
@@ -83,15 +81,12 @@ void assign_layers_to_objective_function(
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
-  std::stringstream err;
-
   // Construct map from layer names to layers
   std::unordered_map<std::string, Layer*> names_to_layers;
   for (auto&& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
-      err << "layer name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR_STR("layer name \"", name, "\" is not unique");
     }
     names_to_layers[name] = l.get();
   }
@@ -106,10 +101,9 @@ void assign_layers_to_objective_function(
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
       auto* l = names_to_layers[params.layer()];
       if (l == nullptr) {
-        err << "attempted to set objective function layer term "
-            << "to correspond to layer \"" << params.layer() << "\", "
-            << "but no such layer exists";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR_STR("attempted to set objective function layer term ",
+                        "to correspond to layer \"", params.layer(), "\", ",
+                        "but no such layer exists");
       }
       term->set_layer(*l);
     }
@@ -117,11 +111,9 @@ void assign_layers_to_objective_function(
 
   // Check that layer terms in objective function match prototext
   if (num_layer_terms != proto_obj.layer_term_size()) {
-    err << "recieved " << num_layer_terms << " "
-        << "objective function layer terms, "
-        << "but there are " << proto_obj.layer_term_size() << " "
-        << "in the prototext";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR_STR("recieved ", num_layer_terms,
+                    " objective function layer terms, but there are ",
+                    proto_obj.layer_term_size(), " in the prototext");
   }
 }
 
@@ -135,9 +127,7 @@ void assign_layers_to_metrics(
   for (auto&& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
-      std::stringstream err;
-      err << "layer name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR_STR("layer name \"", name, "\" is not unique");
     }
     names_to_layers[name] = l.get();
   }
@@ -149,11 +139,10 @@ void assign_layers_to_metrics(
       const auto& params = proto_model.metric(i).layer_metric();
       auto* l = names_to_layers[params.layer()];
       if (l == nullptr) {
-        std::stringstream err;
-        err << "attempted to set layer metric \"" << m->name() << "\" "
-            << "to correspond to layer \"" << params.layer() << "\", "
-            << "but no such layer exists";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR_STR("attempted to set layer metric "
+                        "\"", m->name(), "\" "
+                        "to correspond to layer \"", params.layer(), "\", "
+                        "but no such layer exists");
       }
       m->set_layer(*l);
     }
@@ -172,8 +161,7 @@ void assign_weights_to_layers(
   for (auto&& w : weights_list) {
     const auto& name = w->get_name();
     if (names_to_weights.count(name) > 0) {
-      err << "weights name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR_STR("weights name \"", name, "\" is not unique");
     }
     names_to_weights[name] = w.get();
   }
@@ -186,9 +174,10 @@ void assign_weights_to_layers(
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
       if (!w) {
-        err << "could not find weights named \"" << name << "\", "
-            << "which are expected by layer " << layer_list[i]->get_name();
-        LBANN_ERROR(err.str());
+        LBANN_ERROR_STR("could not find weights named "
+                        "\"", name, "\", "
+                        "which are expected by layer ",
+                        layer_list[i]->get_name());
       }
       if (is_frozen) {
         w->freeze();
@@ -210,15 +199,12 @@ void assign_weights_to_objective_function(
   objective_function& obj,
   const lbann_data::ObjectiveFunction& proto_obj) {
 
-  std::stringstream err;
-
   // Construct map from weights names to weights
   std::unordered_map<std::string, weights*> names_to_weights;
   for (auto&& w : weights_list) {
     const auto& name = w->get_name();
     if (names_to_weights.count(name) > 0) {
-      err << "weights name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR_STR("weights name \"", name, "\" is not unique");
     }
     names_to_weights[name] = w.get();
   }
@@ -234,11 +220,10 @@ void assign_weights_to_objective_function(
       std::vector<weights*> term_weights;
       for (auto&& weights_name : parse_list<std::string>(params.weights())) {
         auto&& w = names_to_weights[weights_name];
-        if (w == nullptr) {
-          err << "attempted to apply L2 weight regularization to "
-              << "weights \"" << weights_name << "\", "
-              << "but no such weights exists";
-          LBANN_ERROR(err.str());
+        if (!w) {
+          LBANN_ERROR_STR("attempted to apply L2 weight regularization to "
+                          "weights \"", weights_name, "\", "
+                          "but no such weights exists");
         }
         term_weights.push_back(w);
       }
