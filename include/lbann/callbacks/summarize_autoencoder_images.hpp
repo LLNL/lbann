@@ -55,31 +55,39 @@ class summarize_autoencoder_images : public callback_base {
 
 public:
   /** @brief Constructor.
-   *  @param reconstruction_layer Reconstruction layer object
-   *  @param img_layer Image layer object
-   *  @param summarizer lbann_summary object
+   *  @param summarizer Pointer to lbann_summary object
+   *  @param reconstruction_layer_name Name of reconstruction layer
+   *  @param img_layer_name Name of image layer
+   *  @param input_layer_name Name of input layer
+   *  @param interval Interval of epochs to dump images
    *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
+   *  @param num_images Number of images to track
    */
-  summarize_autoencoder_images(lbann_summary *summarizer,
-                                    std::string const& reconstruction_layer_name,
-                                    std::string const& img_layer_name,
-                                    std::string const& input_layer_name,
-                                    uint64_t interval,
-                                    std::string const& img_format = ".jpg",
-                                    size_t const& num_images = 15);
-  /** @brief Destructor */
-  ~summarize_autoencoder_images() {}
+  summarize_autoencoder_images(std::shared_ptr<lbann_summary> const& summarizer,
+                               std::string const& reconstruction_layer_name,
+                               std::string const& img_layer_name,
+                               std::string const& input_layer_name,
+                               uint64_t interval,
+                               std::string const& img_format = ".jpg",
+                               size_t const& num_images = 15);
 
+  /** @brief Copy constructor */
   callback_base* copy() const override { return new summarize_autoencoder_images(*this); }
-  std::string name() const override { return "summarize_autoencoder_images"; }
 
-  void setup(model* m) override;
+  /** @brief Return name of callback */
+  std::string name() const override { return "summarize_autoencoder_images"; }
 
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
 
 private:
-  /** @brief Gets layers from model based on name */
+  /** @brief setup layers */
+  void setup(model* m) override;
+
+  /** @brief Gets layers from model based on name
+   *  @param layers Vector with pointers to the Layers
+   *  @param layer_name Name of layer
+   */
   Layer const* get_layer_by_name(const std::vector<Layer*>& layers, const std::string& layer_name);
 
   /** @brief Get vector containing indices of images to be dumped.
@@ -113,6 +121,9 @@ private:
   Layer const* m_label_layer = nullptr;
   Layer const* m_input_layer = nullptr;
 
+  /* lbann_summary object */
+  std::shared_ptr<lbann_summary> m_summarizer;
+
   /* Interval for dumping images */
   uint64_t m_interval;
 
@@ -122,7 +133,7 @@ private:
   std::string m_img_format;
 
   /** Sample indices of images to track */
-    std::unordered_set<El::Int> m_tracked_images;
+  std::unordered_set<El::Int> m_tracked_images;
 
   /** Number of images to track */
   size_t m_num_images;

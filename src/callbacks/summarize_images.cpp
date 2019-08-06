@@ -49,7 +49,8 @@ summarize_images::summarize_images(
   size_t num_images,
   uint64_t interval,
   std::string const& img_format)
-  : callback_base(1, summarizer),
+  : callback_base(1),
+    m_summarizer(summarizer),
     m_cat_accuracy_layer_name(cat_accuracy_layer_name),
     m_img_layer_name(img_layer_name),
     m_input_layer_name(input_layer_name),

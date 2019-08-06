@@ -40,7 +40,7 @@ namespace lbann {
 namespace callback {
 
 /** @class lbann_callback_summarize_images
- *  @brief Dump images with testing results to event files
+ *  @brief Dump images to event files based on criteria
  */
 class summarize_images : public callback_base {
  public:
@@ -54,12 +54,16 @@ class summarize_images : public callback_base {
 
 public:
   /** @brief Constructor.
-   *  @param cat_accuracy_layer Categorical accuracy layer object
-   *  @param img_layer Image layer object
-   *  @param summarizer lbann_summary object
-   *  @param image_format Image file format (e.g. .jpg, .png, .pgm)
+   *  @param summarizer Pointer to lbann_summary object
+   *  @param cat_accuracy_layer_name Name of categorical accuracy layer
+   *  @param img_layer_name Name of image layer
+   *  @param input_layer_name Name of input layer
+   *  @param match_type Criteria for dumping images (MATCH, NOMATCH, or ALL)
+   *  @param num_images Max number of images to dump per epoch
+   *  @param interval Interval of epochs to dump images
+   *  @param img_format Image file format (e.g. .jpg, .png, .pgm)
    */
-  summarize_images(lbann_summary *summarizer,
+  summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
                    std::string const& cat_accuracy_layer_name,
                    std::string const& img_layer_name,
                    std::string const& input_layer_name,
@@ -67,20 +71,24 @@ public:
                    size_t num_images = 10,
                    uint64_t interval = 1,
                    std::string const& img_format = ".jpg");
-  /** @brief Destructor */
-  ~summarize_images() {}
 
+  /** @brief Copy constructor */
   callback_base* copy() const override { return new summarize_images(*this); }
+
+  /** @brief Return name of callback */
   std::string name() const override { return "summarize_images"; }
 
-/** @brief Hook to pull data from lbann run */
+  /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
 
 private:
   /** @brief setup layers */
   void setup(model* m);
 
-  /** @brief Gets layers from model based on name */
+  /** @brief Gets layers from model based on name
+   *  @param layers Vector with pointers to the Layers
+   *  @param layer_name Name of layer
+   */
   Layer const* get_layer_by_name(const std::vector<Layer*>& layers,
                                  const std::string& layer_name);
 
@@ -116,6 +124,9 @@ private:
 
   /* Size of mini-batch */
   //size_t mini_batch_size;
+
+  /* lbann_summary object */
+  std::shared_ptr<lbann_summary> m_summarizer;
 
   /* Number of images to be dumped per epoch */
   size_t m_num_images;

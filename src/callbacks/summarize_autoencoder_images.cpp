@@ -38,14 +38,15 @@ namespace lbann {
 namespace callback {
 
 summarize_autoencoder_images::summarize_autoencoder_images(
-  lbann_summary *summarizer,
+  std::shared_ptr<lbann_summary> const& summarizer,
   std::string const& reconstruction_layer_name,
   std::string const& img_layer_name,
   std::string const& input_layer_name,
   uint64_t interval,
   std::string const& img_format,
   size_t const& num_images)
-  : callback_base(1, summarizer),
+  : callback_base(1),
+    m_summarizer(summarizer),
     m_reconstruction_layer_name(reconstruction_layer_name),
     m_img_layer_name(img_layer_name),
     m_input_layer_name(input_layer_name),
