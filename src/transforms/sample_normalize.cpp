@@ -47,8 +47,7 @@ void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t
 }
 
 std::unique_ptr<transform>
-build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&)
-{
+build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&) {
   return make_unique<sample_normalize>();
 }
 

@@ -66,8 +66,7 @@ using factory_type = lbann::generic_factory<
                         google::protobuf::Message const&>,
   default_key_error_policy>;
 
-void register_default_builders(factory_type& factory)
-{
+void register_default_builders(factory_type& factory) {
   using namespace transform;
   factory.register_builder("AdjustBrightness", build_adjust_brightness_transform_from_pbuf);
   factory.register_builder("AdjustContrast", build_adjust_contrast_transform_from_pbuf);
@@ -93,8 +92,7 @@ void register_default_builders(factory_type& factory)
 }
 
 // Manage a global factory
-struct factory_manager
-{
+struct factory_manager {
   factory_type factory_;
 
   factory_manager() {
@@ -103,8 +101,7 @@ struct factory_manager
 };
 
 factory_manager factory_mgr_;
-factory_type const& get_transform_factory() noexcept
-{
+factory_type const& get_transform_factory() noexcept {
   return factory_mgr_.factory_;
 }
 
