@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/sample_normalize.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/statistics.hpp"
 
 namespace lbann {
@@ -43,6 +44,11 @@ void sample_normalize::apply(utils::type_erased_matrix& data, std::vector<size_t
   for (El::Int i = 0; i < size; ++i) {
     buf[i] = (buf[i] - mean) / stdev;
   }
+}
+
+std::unique_ptr<transform>
+build_sample_normalize_transform_from_pbuf(google::protobuf::Message const&) {
+  return make_unique<sample_normalize>();
 }
 
 }  // namespace transform

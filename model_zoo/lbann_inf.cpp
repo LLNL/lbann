@@ -29,8 +29,14 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
+
 #include <dirent.h>
+
 #include <cstdlib>
+
 using namespace lbann;
 
 int main(int argc, char *argv[]) {

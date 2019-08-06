@@ -29,12 +29,14 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
 /**
  * Adjust the contrast of an image.
- * 
+ *
  * This operates similarly to the contrast control on a television.
  */
 class adjust_contrast : public transform {
@@ -49,7 +51,7 @@ public:
       LBANN_ERROR("Contrast factor must be non-negative.");
     }
   }
-  
+
   transform* copy() const override { return new adjust_contrast(*this); }
 
   std::string get_type() const override { return "adjust_contrast"; }
@@ -60,6 +62,10 @@ private:
   /** Factor to adjust contrast by. */
   float m_factor;
 };
+
+// Builder function
+std::unique_ptr<transform>
+build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -44,7 +46,7 @@ public:
       LBANN_ERROR("Brightness factor must be non-negative.");
     }
   }
-  
+
   transform* copy() const override { return new adjust_brightness(*this); }
 
   std::string get_type() const override { return "adjust_brightness"; }
@@ -55,6 +57,10 @@ private:
   /** Factor to adjust brightness by. */
   float m_factor;
 };
+
+// Builder function
+std::unique_ptr<transform>
+build_adjust_brightness_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

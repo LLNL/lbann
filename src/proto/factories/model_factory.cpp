@@ -25,7 +25,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/models/model.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
+
+#include "lbann/metrics/layer_metric.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+
+#include <model.pb.h>
+#include <objective_functions.pb.h>
 
 namespace lbann {
 namespace proto {
@@ -40,13 +49,14 @@ model* instantiate_model(lbann_comm* comm,
   std::stringstream err;
 
   // Default optimizer
-  auto&& opt = construct_optimizer(comm, proto_opt);
+  auto opt = construct_optimizer(comm, proto_opt);
 
   // Construct model
   const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
-    return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
+    return new directed_acyclic_graph_model(
+      comm, mini_batch_size, obj, opt.release());
   }
 
   // Throw error if model type is not supported
@@ -251,9 +261,10 @@ model* construct_model(lbann_comm* comm,
   // Construct weights
   std::vector<weights*> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
-    weights_list.push_back(construct_weights(comm,
-                                             proto_opt,
-                                             proto_model.weights(i)));
+    weights_list.push_back(
+      construct_weights(comm,
+                        proto_opt,
+                        proto_model.weights(i)).release());
   }
   assign_weights_to_layers(layer_pointers, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);

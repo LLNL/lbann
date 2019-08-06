@@ -29,14 +29,16 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
 /**
  * Cutout data augmentation which randomly masks out square regions of input.
- * 
+ *
  * See:
- * 
+ *
  *     DeVries and Taylor. "Improved Regularization of Convolutional Neural
  *     Networks with Cutout". arXiv preprint arXiv:1708.04552 (2017).
  *
@@ -75,6 +77,9 @@ private:
   /** Length of a side of each square that will be masked out. */
   size_t m_length;
 };
+
+std::unique_ptr<transform>
+build_cutout_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann
