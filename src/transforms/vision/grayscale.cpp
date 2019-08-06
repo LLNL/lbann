@@ -26,6 +26,7 @@
 
 #include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/grayscale.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
 namespace lbann {
@@ -42,6 +43,11 @@ void grayscale::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims
   cv::cvtColor(src, dst, cv::COLOR_BGR2GRAY);
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
+}
+
+std::unique_ptr<transform>
+build_grayscale_transform_from_pbuf(google::protobuf::Message const&) {
+  return make_unique<grayscale>();
 }
 
 }  // namespace transform

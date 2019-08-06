@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/resized_center_crop.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
@@ -61,6 +65,14 @@ void resized_center_crop::apply(utils::type_erased_matrix& data, std::vector<siz
   cv::resize(tmp, dst, dst.size(), 0, 0, cv::INTER_LINEAR);
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
+}
+
+std::unique_ptr<transform>
+build_resized_center_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::ResizedCenterCrop const&>(msg);
+  return make_unique<resized_center_crop>(
+    params.height(), params.width(),
+    params.crop_height(), params.crop_width());
 }
 
 }  // namespace transform

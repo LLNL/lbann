@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -70,6 +72,9 @@ private:
   /** Range for degrees to shear. */
   float m_shear_min, m_shear_max;
 };
+
+std::unique_ptr<transform>
+build_random_affine_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann
