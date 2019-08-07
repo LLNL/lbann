@@ -35,9 +35,13 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
-#include <lbann.pb.h>
 #include <string>
 #include <vector>
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Layer;
+}
 
 namespace lbann {
 
@@ -46,7 +50,6 @@ class model;
 class weights;
 namespace callback {
 class sync_layers;
-class sync_selected;
 } // namespace callback
 
 /**
@@ -68,7 +71,6 @@ class sync_selected;
  */
 class Layer {
   friend class callback::sync_layers;
-  friend class callback::sync_selected;
 
 public:
 

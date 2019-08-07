@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -68,6 +70,9 @@ private:
   /** Range for the aspect ratio of the random crop. */
   float m_ar_min, m_ar_max;
 };
+
+std::unique_ptr<transform>
+build_random_resized_crop_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

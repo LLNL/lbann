@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/to_lbann_layout.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 
 namespace lbann {
@@ -74,6 +75,11 @@ void to_lbann_layout::apply(utils::type_erased_matrix& data, CPUMat& out,
       }
     }
   }
+}
+
+std::unique_ptr<transform>
+build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&) {
+  return make_unique<to_lbann_layout>();
 }
 
 }  // namespace transform

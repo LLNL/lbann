@@ -25,7 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/checkpoint.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
 
 namespace lbann {
 
@@ -179,12 +185,8 @@ std::unique_ptr<model> build_model_from_prototext(
   print_parameters(*comm, pb);
 
   // Initalize model
-  std::unique_ptr<model> ret_model{
-    proto::construct_model(comm,
-                           data_readers,
-                           pb.optimizer(),
-                           pb.model())
-  };
+  auto ret_model =
+    proto::construct_model(comm, data_readers, pb.optimizer(), pb.model());
   ret_model->setup(std::move(io_thread_pool));
 
   if(opts->get_bool("disable_background_io_activity")) {

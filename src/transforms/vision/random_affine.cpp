@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/random_affine.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
@@ -97,6 +101,16 @@ void random_affine::apply(utils::type_erased_matrix& data, std::vector<size_t>& 
                  cv::INTER_LINEAR | cv::WARP_INVERSE_MAP,
                  cv::BORDER_REPLICATE);
   data.emplace<uint8_t>(std::move(dst_real));
+}
+
+std::unique_ptr<transform>
+build_random_affine_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::RandomAffine const&>(msg);
+  return make_unique<random_affine>(
+    params.rotate_min(), params.rotate_max(),
+    params.translate_h(), params.translate_w(),
+    params.scale_min(), params.scale_max(),
+    params.shear_min(), params.shear_max());
 }
 
 }  // namespace transform

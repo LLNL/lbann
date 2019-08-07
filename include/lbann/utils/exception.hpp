@@ -46,6 +46,9 @@
     throw lbann::exception(ss_LBANN_ERROR.str());               \
   } while (0)
 
+#define LBANN_ERROR_STR(...)                    \
+  LBANN_ERROR(build_string(__VA_ARGS__))
+
 // Macro to print a warning to standard error stream.
 #define LBANN_WARNING(message)                                          \
   do {                                                                  \
@@ -90,6 +93,23 @@ private:
 
 };
 using lbann_exception = exception;
+
+/** @brief Build a string from the arguments.
+ *
+ *  The arguments must be stream-outputable (have operator<<(ostream&,
+ *  T) defined). It will be a static error if this fails.
+ *
+ *  @tparam Args (Inferred) The types of the arguments.
+ *
+ *  @param[in] args The things to be stringified.
+ */
+template <typename... Args>
+std::string build_string(Args&&... args) {
+  std::ostringstream oss;
+  int dummy[] = { (oss << args, 0)... };
+  (void) dummy; // silence compiler warnings
+  return oss.str();
+}
 
 } // namespace lbann
 

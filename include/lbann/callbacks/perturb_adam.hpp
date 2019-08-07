@@ -29,6 +29,7 @@
 
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/optimizers/adam.hpp"
+
 #include <set>
 
 namespace lbann {

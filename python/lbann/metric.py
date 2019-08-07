@@ -1,6 +1,6 @@
 """Neural network tensor operations."""
 import abc
-from lbann import lbann_pb2
+from lbann import metrics_pb2
 
 class Metric:
     """Metric that takes value from a layer.
@@ -18,7 +18,7 @@ class Metric:
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann_pb2.Metric()
+        proto = metrics_pb2.Metric()
         proto.layer_metric.layer = self.layer.name
         proto.layer_metric.name = self.name
         proto.layer_metric.unit = self.unit

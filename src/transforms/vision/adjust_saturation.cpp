@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/adjust_saturation.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
@@ -66,6 +70,12 @@ void adjust_saturation::apply(utils::type_erased_matrix& data, std::vector<size_
         src_buf[src_base+2]*m_factor + gray_buf[i]*one_minus_factor);
     }
   }
+}
+
+std::unique_ptr<transform>
+build_adjust_saturation_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::AdjustSaturation const&>(msg);
+  return make_unique<adjust_saturation>(params.factor());
 }
 
 }  // namespace transform

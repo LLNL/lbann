@@ -33,7 +33,6 @@ set_full_path(THIS_DIR_SOURCES
   save_topk_models.cpp
   summary.cpp
   sync_layers.cpp
-  sync_selected.cpp
   timeline.cpp
   timer.cpp
   variable_minibatch.cpp

@@ -166,7 +166,6 @@
 #include "lbann/callbacks/save_topk_models.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
-#include "lbann/callbacks/sync_selected.hpp"
 #include "lbann/callbacks/timeline.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"

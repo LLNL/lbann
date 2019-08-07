@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -50,6 +52,9 @@ public:
   void apply(utils::type_erased_matrix& data, CPUMat& out,
              std::vector<size_t>& dims) override;
 };
+
+std::unique_ptr<transform>
+build_to_lbann_layout_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

@@ -28,10 +28,24 @@
 
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/data_readers/data_reader_cifar10.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_readers/data_reader_moving_mnist.hpp"
+#include "lbann/data_readers/data_reader_multihead_siamese.hpp"
+
+#include <reader.pb.h>
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
-#include <memory> // for dynamic_pointer_cast
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 
