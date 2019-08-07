@@ -102,6 +102,7 @@ void init_data_readers(
     } else if ((name == "imagenet") ||
                (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      reader->set_data_index_list(readme.index_list());
       set_transform_pipeline = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
