@@ -470,15 +470,15 @@ add_subdirectory(docs)
 # Build LBANN
 ################################################################
 
+# Add LBANN source files
+add_subdirectory(include)
+add_subdirectory(src)
+
 # Write the configure file
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_config.hpp.in"
   "${CMAKE_BINARY_DIR}/lbann_config.hpp"
   @ONLY)
-
-# Add LBANN source files
-add_subdirectory(include)
-add_subdirectory(src)
 
 # Create the LBANN library
 add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})

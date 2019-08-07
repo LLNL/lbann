@@ -24,7 +24,8 @@ check_cxx_source_compiles(
 set(CMAKE_REQUIRED_LIBRARIES)
 
 if (LBANN_HAS_PTHREAD_SETAFFINITY_NP AND LBANN_HAS_PTHREAD_GETAFFINITY_NP)
-  set(LBANN_HAS_PTHREAD_AFFINITY_SUPPORT TRUE)
+  set(LBANN_HAS_PTHREAD_AFFINITY_SUPPORT TRUE CACHE INTERNAL
+    "LBANN has pthread affinity support")
 endif ()
 
 # Add the source files for this directory
