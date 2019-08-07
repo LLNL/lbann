@@ -101,6 +101,7 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      reader->set_data_index_list(readme.index_list());
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);

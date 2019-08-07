@@ -145,7 +145,7 @@ void image_data_reader::load() {
   // sample lists. Currently, the function get_file_dir() is used for both
   // the directory of actual data files and for that of the sample list.
   const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_index_list();
+  const std::string sample_list_file = get_data_index_list();
 
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
   if(is_master()) {
