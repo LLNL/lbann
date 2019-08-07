@@ -159,14 +159,17 @@ void image_data_reader::load() {
   }
   fclose(fplist);
 
-  // TODO: this will probably need to change after sample_list class
-  //       is modified
-  
+  // reset indices
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_image_list.size());
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
+
   std::vector<int> local_list_sizes;
   if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
     int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_image_list.size() / np;
-    int extra = m_image_list.size() - (base_files_per_rank*np);
+    int base_files_per_rank = m_shuffled_indices.size() / np;
+    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
     if (extra > np) {
       LBANN_ERROR("extra > np");
     }
@@ -179,18 +182,12 @@ void image_data_reader::load() {
     }
   }
 
-  // reset indices
-  m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_image_list.size());
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-
   opts->set_option("node_sizes_vary", 1);
   instantiate_data_store(local_list_sizes);
 
   select_subset_of_data();
 }
 
-//void read_raw_data(const std::string &filename, std::vector<conduit::uint8> &data) {
 void read_raw_data(const std::string &filename, std::vector<char> &data) {
   data.clear();
   std::ifstream in(filename.c_str());
@@ -210,6 +207,7 @@ void image_data_reader::preload_data_store() {
   m_data_store->set_preload();
 
   conduit::Node node;
+  if (is_master()) std::cerr << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
   int rank = m_comm->get_rank_in_trainer();
   for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
     if (m_data_store->get_index_owner(data_id) != rank) {
