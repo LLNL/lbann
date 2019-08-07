@@ -14,6 +14,7 @@ def skeleton_layer_squared_difference(cluster, executables, dir_name, compiler_n
     error_file_name  = '%s/bamboo/unit_tests/error/layer_squared_difference_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1,
+        time_limit=10,
         num_processes=2, dir_name=dir_name,
         data_reader_name='synthetic',
         model_folder='tests/layer_tests', model_name='squared_difference',

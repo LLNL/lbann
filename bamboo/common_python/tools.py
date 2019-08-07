@@ -70,10 +70,9 @@ def get_command(cluster,
         raise Exception('Invalid character(s): %s' % ' , '.join(
             invalid_character_errors))
 
-    # Never give lbannusr an allocation for over 12 hours though.
-    strict_time_limit = 60*6  # 6 hours.
-    if (time_limit is None) or (time_limit > strict_time_limit):
-        time_limit = strict_time_limit
+    MAX_TIME = 360  # 6 hours.
+    if (time_limit is None) or (time_limit > MAX_TIME):
+        time_limit = MAX_TIME
 
     # Check executable existence
     if check_executable_existence:
@@ -87,7 +86,6 @@ def get_command(cluster,
     else:
         raise Exception('Unsupported Cluster: %s' % cluster)
 
-    MAX_TIME = 600
     # Description of command line options are from the appropriate command's
     # man pages
     if scheduler == 'slurm':
@@ -128,10 +126,6 @@ def get_command(cluster,
         # Create run command
         if command_allocate == '':
             space = ''
-            # If nodes have already been allocated,
-            # then an individual test should not take longer than MAX_TIME.
-            if time_limit > MAX_TIME:
-                time_limit = MAX_TIME
         else:
             space = ' '
         command_run = '{s}srun --mpibind=off --time={t}'.format(
@@ -197,10 +191,6 @@ def get_command(cluster,
         # Create run command
         if command_allocate == '':
             space = ''
-            # If nodes have already been allocated,
-            # then an individual test should not take longer than MAX_TIME.
-            if time_limit > MAX_TIME:
-                time_limit = MAX_TIME
         else:
             space = ' '
         if cluster == 'lassen':

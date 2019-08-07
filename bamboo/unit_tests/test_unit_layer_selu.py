@@ -14,7 +14,9 @@ def skeleton_layer_selu(cluster, executables, dir_name, compiler_name):
     error_file_name  = '%s/bamboo/unit_tests/error/layer_selu_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name],
-        num_nodes=1, num_processes=2, dir_name=dir_name,
+        num_nodes=1,
+        time_limit=10,
+        num_processes=2, dir_name=dir_name,
         data_reader_name='synthetic',
         model_folder='tests/layer_tests', model_name='selu',
         optimizer_name='sgd',
