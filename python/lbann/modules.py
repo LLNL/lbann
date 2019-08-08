@@ -379,7 +379,7 @@ class GRU(lbann.modules.Module):
             bias (bool): Whether to apply biases after linearity.
             weights (`Weights` or iterator of `Weights`): Weights in
                 fully-connected layer. There are at most four - two
-                matrices ((3*size) x (input_size+size) dimensions) each and two
+                matrices ((3*size) x (input_size) and (3*size) x (size) dimensions) each and two
                 biases (3*size entries) each. If weights are not provided,
                 the matrix and bias will be initialized in a similar
                 manner as PyTorch (uniform random values from
@@ -480,24 +480,24 @@ class GRU(lbann.modules.Module):
         Whn_prev = lbann.Identity(fc2_slice, name=name + '_Wnh',
                            data_layout=self.data_layout)
         
-        rt = lbann.Sigmoid(lbann.Add([Wir_x,Whr_prev]), name=name + '_reset_gate',
+        rt = lbann.Sigmoid(lbann.Add([Wir_x,Whr_prev], data_layout=self.data_layout), name=name + '_reset_gate',
                            data_layout=self.data_layout)
 
-        zt = lbann.Sigmoid(lbann.Add([Wiz_x,Whz_prev]), name=name + '_update_gate',
+        zt = lbann.Sigmoid(lbann.Add([Wiz_x,Whz_prev], data_layout=self.data_layout), name=name + '_update_gate',
                            data_layout=self.data_layout)
         
         nt = lbann.Tanh(lbann.Add([Win_x,
-                        lbann.Multiply([rt,Whn_prev])]),name=name + '_new_gate',
-                        data_layout=self.data_layout)
+                        lbann.Multiply([rt,Whn_prev], data_layout=self.data_layout)], data_layout=self.data_layout),
+                        name=name + '_new_gate', data_layout=self.data_layout)
 
         ht = lbann.Add([
                        lbann.Multiply([
                              lbann.WeightedSum([
-                                 lbann.Constant(value=1.0, hint_layer=zt),
+                                 lbann.Constant(value=1.0, hint_layer=zt, data_layout=self.data_layout),
                                  zt],
-                                 scaling_factors='1 -1'),
-                             nt]),
-                       lbann.Multiply([zt,prev_state])], name=name+ '_output', 
+                                 scaling_factors='1 -1', data_layout=self.data_layout),
+                             nt], data_layout=self.data_layout),
+                       lbann.Multiply([zt,prev_state], data_layout=self.data_layout)], name=name+ '_output', 
                        data_layout=self.data_layout)
         
         # Return output
