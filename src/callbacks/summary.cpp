@@ -65,7 +65,7 @@ void summary::on_train_begin(model *m) {
 void summary::on_batch_end(model *m) {
 
   if(!m_summarizer){
-    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+    LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
 
   prof_region_begin("summary-batch", prof_colors[0], false);
