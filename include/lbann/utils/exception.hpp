@@ -28,39 +28,35 @@
 #define LBANN_UTILS_EXCEPTION_HPP_INCLUDED
 
 #include "lbann/comm.hpp"
+
+#include <exception>
 #include <iostream>
 #include <sstream>
-#include <exception>
 
 // Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                    \
+#define LBANN_ERROR(...)                                        \
   do {                                                          \
-    std::stringstream ss_LBANN_ERROR;                           \
-    ss_LBANN_ERROR << "LBANN error ";                           \
     const int rank_LBANN_ERROR = lbann::get_rank_in_world();    \
-    if (rank_LBANN_ERROR >= 0) {                                \
-      ss_LBANN_ERROR << "on rank " << rank_LBANN_ERROR << " ";  \
-    }                                                           \
-    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
-                     << ": " << (message);                      \
-    throw lbann::exception(ss_LBANN_ERROR.str());               \
+    throw lbann::exception(                                     \
+      lbann::build_string(                                      \
+        "LBANN error",                                          \
+        (rank_LBANN_ERROR >= 0                                  \
+         ? " on rank " + std::to_string(rank_LBANN_ERROR)       \
+         : std::string()),                                      \
+        " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__));    \
   } while (0)
 
-#define LBANN_ERROR_STR(...)                    \
-  LBANN_ERROR(build_string(__VA_ARGS__))
-
 // Macro to print a warning to standard error stream.
-#define LBANN_WARNING(message)                                          \
-  do {                                                                  \
-    std::stringstream ss_LBANN_WARNING;                                 \
-    ss_LBANN_WARNING << "LBANN warning ";                               \
-    const int rank_LBANN_WARNING = lbann::get_rank_in_world();          \
-    if (rank_LBANN_WARNING >= 0) {                                      \
-      ss_LBANN_WARNING << "on rank " << rank_LBANN_WARNING << " ";      \
-    }                                                                   \
-    ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"       \
-                     << ": " << (message) << std::endl;                 \
-    std::cerr << ss_LBANN_WARNING.str();                                \
+#define LBANN_WARNING(...)                                      \
+  do {                                                          \
+    const int rank_LBANN_WARNING = lbann::get_rank_in_world();  \
+    std::cerr << lbann::build_string(                           \
+      "LBANN warning",                                          \
+      (rank_LBANN_WARNING >= 0                                  \
+       ? " on rank " + std::to_string(rank_LBANN_WARNING)       \
+       : std::string()),                                        \
+      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__)        \
+              << std::endl;                                     \
   } while (0)
 
 namespace lbann {
