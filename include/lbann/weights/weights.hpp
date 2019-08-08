@@ -141,7 +141,7 @@ public:
   /** Set weights initializer.
    *  The contents of 'init' are moved to a class member.
    */
-  void set_initializer(std::unique_ptr<weights_initializer>& init);
+  void set_initializer(std::unique_ptr<weights_initializer>&& init);
 
   // -----------------------------------------------
   // Optimizer accessors
@@ -157,7 +157,7 @@ public:
   /** Set weights optimizer.
    *  The contents of opt are moved to a class member.
    */
-  void set_optimizer(std::unique_ptr<optimizer>& opt);
+  void set_optimizer(std::unique_ptr<optimizer>&& opt);
 
   // -----------------------------------------------
   // Matrix distribution accessors

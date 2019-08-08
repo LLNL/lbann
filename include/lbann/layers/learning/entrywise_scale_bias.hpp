@@ -93,11 +93,11 @@ public:
       this->m_weights.push_back(new weights(get_comm()));
       std::vector<DataType> vals(2*size, DataType{0});
       std::fill(vals.begin(), vals.begin()+size, DataType{1});
-      std::unique_ptr<weights_initializer> init(new value_initializer(vals));
+      auto init = make_unique<value_initializer>(vals);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       this->m_weights[0]->set_name(get_name() + "_weights");
-      this->m_weights[0]->set_initializer(init);
-      this->m_weights[0]->set_optimizer(opt);
+      this->m_weights[0]->set_initializer(std::move(init));
+      this->m_weights[0]->set_optimizer(std::move(opt));
       this->m_model->add_weights(this->m_weights[0]);
     }
     if (this->m_weights.size() != 1) {

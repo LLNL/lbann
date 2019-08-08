@@ -24,13 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
 #include "lbann/transforms/vision/color_jitter.hpp"
 #include "lbann/transforms/vision/adjust_brightness.hpp"
 #include "lbann/transforms/vision/adjust_contrast.hpp"
 #include "lbann/transforms/vision/adjust_saturation.hpp"
 #include "lbann/utils/random.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <algorithm>
 
 namespace lbann {
 namespace transform {
@@ -109,6 +113,15 @@ void color_jitter::apply(utils::type_erased_matrix& data, std::vector<size_t>& d
       LBANN_ERROR("Unexpected transform number");
     }
   }
+}
+
+std::unique_ptr<transform>
+build_color_jitter_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::ColorJitter const&>(msg);
+  return make_unique<color_jitter>(
+    params.min_brightness_factor(), params.max_brightness_factor(),
+    params.min_contrast_factor(), params.max_contrast_factor(),
+    params.min_saturation_factor(), params.max_saturation_factor());
 }
 
 }  // namespace transform

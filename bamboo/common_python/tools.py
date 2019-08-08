@@ -5,7 +5,7 @@ def check_list(substrings, strings):
     errors = []
     for string in strings:
         for substring in substrings:
-            if (string is not None) and (substring in string):
+            if (string is not None) and (isinstance(string, str)) and (substring in string):
                 errors.append('%s contains %s' % (string, substring))
     return errors
 
@@ -35,6 +35,7 @@ def get_command(cluster,
                 optimizer_name=None,
                 optimizer_path=None,
                 processes_per_model=None,
+                extra_lbann_flags=None,
                 ckpt_dir=None,
                 output_file_name=None,
                 error_file_name=None,
@@ -44,21 +45,34 @@ def get_command(cluster,
     # Check parameters for black-listed characters like semi-colons that
     # would terminate the command and allow for an extra command
     blacklist = [';', '--']
-    strings = [partition, dir_name, data_filedir_default,
-               data_filedir_train_default,
-               data_filename_train_default, data_filedir_test_default,
-               data_filename_test_default, data_reader_name, data_reader_path,
-               model_folder, model_name, model_path, optimizer_name,
-               optimizer_path, output_file_name, error_file_name]
+    strings = [
+        cluster, executable, num_nodes, partition, time_limit, num_processes,
+        dir_name, data_filedir_default, data_filedir_train_default,
+        data_filename_train_default, data_filedir_test_default,
+        data_filename_test_default, data_reader_name, data_reader_path,
+        data_reader_percent, exit_after_setup, metadata, mini_batch_size,
+        model_folder, model_name, model_path, num_epochs, optimizer_name,
+        optimizer_path, processes_per_model, ckpt_dir, output_file_name,
+        error_file_name, return_tuple, check_executable_existence, skip_no_exe
+    ]
+    lbann_errors = []
+    if extra_lbann_flags is not None:
+        if not isinstance(extra_lbann_flags, dict):
+            lbann_errors.append(
+                ('extra_lbann_flags must be a dict e.g. `{flag :'
+                 ' None, flag: 4}`. Use `None` if a flag has no value attached '
+                 'to it.'))
+        else:
+            strings += list(extra_lbann_flags.keys())
+            strings += list(extra_lbann_flags.values())
     invalid_character_errors = check_list(blacklist, strings)
     if invalid_character_errors != []:
         raise Exception('Invalid character(s): %s' % ' , '.join(
             invalid_character_errors))
 
-    # Never give lbannusr an allocation for over 12 hours though.
-    strict_time_limit = 60*6  # 6 hours.
-    if (time_limit is None) or (time_limit > strict_time_limit):
-        time_limit = strict_time_limit
+    MAX_TIME = 360  # 6 hours.
+    if (time_limit is None) or (time_limit > MAX_TIME):
+        time_limit = MAX_TIME
 
     # Check executable existence
     if check_executable_existence:
@@ -72,7 +86,6 @@ def get_command(cluster,
     else:
         raise Exception('Unsupported Cluster: %s' % cluster)
 
-    MAX_TIME = 600
     # Description of command line options are from the appropriate command's
     # man pages
     if scheduler == 'slurm':
@@ -113,10 +126,6 @@ def get_command(cluster,
         # Create run command
         if command_allocate == '':
             space = ''
-            # If nodes have already been allocated,
-            # then an individual test should not take longer than MAX_TIME.
-            if time_limit > MAX_TIME:
-                time_limit = MAX_TIME
         else:
             space = ' '
         command_run = '{s}srun --mpibind=off --time={t}'.format(
@@ -182,10 +191,6 @@ def get_command(cluster,
         # Create run command
         if command_allocate == '':
             space = ''
-            # If nodes have already been allocated,
-            # then an individual test should not take longer than MAX_TIME.
-            if time_limit > MAX_TIME:
-                time_limit = MAX_TIME
         else:
             space = ' '
         if cluster == 'lassen':
@@ -245,7 +250,6 @@ def get_command(cluster,
     option_num_epochs = ''
     option_optimizer = ''
     option_processes_per_model = ''
-    lbann_errors = []
     if model_path is not None:
         # If model_folder and/or model_name are set, an exception will be
         # raised later.
@@ -387,17 +391,83 @@ def get_command(cluster,
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
     if ckpt_dir is not None:
         option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
+    extra_options = ''
+    if extra_lbann_flags is not None:
+        # If extra_lbann_flags is not a dict, then we have already appended
+        # this error to lbann_errors.
+        if isinstance(extra_lbann_flags, dict):
+            # See `lbann --help` or src/proto/proto_common.cpp
+            allowed_flags = [
+                # 'model',
+                # 'optimizer',
+                # 'reader',
+                # 'metadata',
+
+                # General:
+                # 'mini_batch_size',
+                # 'num_epochs',
+                'block_size',
+                'procs_per_trainer',
+                'num_gpus',
+                'num_parallel_readers',
+                'num_io_threads',
+                'serialize_io',
+                'disable_background_io_activity',
+                'disable_cuda',
+                'random_seed',
+                'objective_function',
+                'data_layout',
+                'print_affinity',
+                'use_data_store',
+                'preload_data_store',
+                'super_node',
+                'write_sample_list',
+                'ltfb_verbose',
+
+                # DataReaders:
+                # 'data_filedir',
+                # 'data_filedir_train',
+                # 'data_filedir_test',
+                # 'data_filename_train',
+                # 'data_filename_test',
+                'index_list_train',
+                'index_list_test',
+                'label_filename_train',
+                'label_filename_test',
+                # 'data_reader_percent',
+                'share_testing_data_readers',
+
+                # Callbacks:
+                'image_dir',
+                'no_im_comm',
+
+                # Not listed by `lbann --help`:
+                # 'ckpt_dir',
+                # 'exit_after_setup',
+                # 'procs_per_model'
+            ]
+            for flag, value in sorted(extra_lbann_flags.items()):
+                if flag in allowed_flags:
+                    if value is not None:
+                        extra_options += ' --{f}={v}'.format(f=flag, v=value)
+                    else:
+                        extra_options += ' --{f}'.format(f=flag)
+                else:
+                    s = ('extra_lbann_flags includes invalid flag={f}.'
+                         ' Flags must be in {flags}.').format(
+                        f=flag, flags=allowed_flags)
+                    lbann_errors.append(s)
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
         executable, option_ckpt_dir, option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
         option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
-        option_processes_per_model)
+        option_processes_per_model, extra_options)
 
     # Create redirect command
     command_output = ''

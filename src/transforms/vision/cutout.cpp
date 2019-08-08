@@ -25,7 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/cutout.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace transform {
@@ -59,6 +62,12 @@ void cutout::apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) {
     cv::Mat hole = src(cv::Rect(x1, y1, w, h));
     hole = 0;
   }
+}
+
+std::unique_ptr<transform>
+build_cutout_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::Cutout const&>(msg);
+  return make_unique<cutout>(params.num_holes(), params.length());
 }
 
 }  // namespace transform
