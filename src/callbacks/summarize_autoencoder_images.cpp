@@ -58,20 +58,8 @@ summarize_autoencoder_images::summarize_autoencoder_images(
     m_num_images(num_images)
 {
 #ifndef LBANN_HAS_OPENCV
-  LBANN_ERROR("OpenCV not detected");
+  LBANN_ERROR_STR("OpenCV not detected");
 #endif // LBANN_HAS_OPENCV
-}
-
-namespace
-{
-template <typename... Ts>
-std::string BuildErrorMessage(Ts... args)
-{
-  std::ostringstream oss;
-  int dummy[] = { (oss << args, 0)... };
-  (void) dummy;
-  LBANN_ERROR(oss.str());
-}
 }
 
 void summarize_autoencoder_images::on_batch_evaluate_end(model* m) {
@@ -96,25 +84,24 @@ void summarize_autoencoder_images::setup(model* m)
   /* find layers in model based on string */
   m_reconstruction_layer = get_layer_by_name(layers, m_reconstruction_layer_name);
   if (m_reconstruction_layer == nullptr)
-    LBANN_ERROR(BuildErrorMessage("get_layer_by_name() failed on layer ",
-                                  m_reconstruction_layer_name));
+    LBANN_ERROR_STR("get_layer_by_name() failed on layer ",
+                                  m_reconstruction_layer_name);
 
   m_img_layer = get_layer_by_name(layers, m_img_layer_name);
   if (m_img_layer == nullptr)
-    LBANN_ERROR(BuildErrorMessage("get_layer_by_name() failed on layer ", m_img_layer_name));
+    LBANN_ERROR_STR("get_layer_by_name() failed on layer ", m_img_layer_name);
 
   m_input_layer = get_layer_by_name(layers, m_input_layer_name);
   if (m_input_layer == nullptr)
-    LBANN_ERROR(BuildErrorMessage("get_layer_by_name() failed on layer ", m_input_layer_name));
+    LBANN_ERROR_STR("get_layer_by_name() failed on layer ", m_input_layer_name);
 
   // Check widths of img_layer.activations and reconstruction_layer are equal
   const AbsDistMat& reconstruction_activations = m_reconstruction_layer->get_activations();
   const AbsDistMat& img_layer_activations = m_img_layer->get_activations();
   if( reconstruction_activations.Width() != img_layer_activations.Width() )
-    LBANN_ERROR(
-      BuildErrorMessage(
+    LBANN_ERROR_STR(
         "Invalid data. Reconstruction layer activations and image activations widths "
-        "do not match."));
+        "do not match.");
 
   if (auto gil = dynamic_cast<generic_input_layer const*>(m_input_layer)){
     m_num_images = std::min(static_cast<long>(m_num_images),
@@ -131,7 +118,7 @@ Layer const* summarize_autoencoder_images::get_layer_by_name(
     if( l->get_name() == layer_name)
       return l;
 
-  LBANN_ERROR(BuildErrorMessage("Layer named ", layer_name, " not found."));
+  LBANN_ERROR_STR("Layer named ", layer_name, " not found.");
   return nullptr;
 }
 
@@ -141,14 +128,13 @@ std::vector<El::Int> summarize_autoencoder_images::get_image_indices() {
   auto* sample_indices =
     const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
   if (sample_indices == nullptr)
-    LBANN_ERROR(BuildErrorMessage("NULL SAMPLE INDICES"));
+    LBANN_ERROR_STR("NULL SAMPLE INDICES");
 
   for(El::Int ii = 0; ii < sample_indices->Height(); ii++){
     if (ii >= sample_indices->Height())
-      LBANN_ERROR(
-        BuildErrorMessage(
+      LBANN_ERROR_STR(
           "col_index: ", ii, " is greater than Matrix height: ",
-          sample_indices->Height()));
+          sample_indices->Height());
 
       if (m_tracked_images.find(sample_indices->Get(ii,0)) != m_tracked_images.end()){
         std::cout << "I found a tracked index! Idx = " << sample_indices->Get(ii,0)
@@ -184,10 +170,9 @@ void summarize_autoencoder_images::dump_images_to_summary(
 
     for (const El::Int& col_index : img_indices) {
       if (col_index >= local_images.Height())
-        LBANN_ERROR(
-          BuildErrorMessage(
+        LBANN_ERROR_STR(
             "col_index: ", col_index, " is greater than Matrix height: ",
-            local_images.Height()));
+            local_images.Height());
 
       auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
       auto sample_index = sample_indices->Get(col_index, 0);

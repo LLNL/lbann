@@ -43,7 +43,7 @@ namespace callback {
 class ImageOutputStrategy {
 
 public:
-  virtual std::vector<El::Int> get_image_indices();
+  virtual std::vector<El::Int> get_image_indices() = 0;
   virtual ~ImageOutputStrategy() = default;
 
 }; //class OutputStrategy
@@ -76,13 +76,12 @@ public:
       m_match_type(match_type),
       m_num_images(num_images) {}
 
-private:
-
   /** @brief Get vector containing indices of images to be dumped.
   *  @returns std::vector<int> Vector with indices of images to dump.
   */
-  std::vector<El::Int> get_image_indices();
+  std::vector<El::Int> get_image_indices() final;
 
+private:
    /** @brief Tests whether image should be dumped based on criteria
    *  @returns bool Value is true if matches criteria and false otherwise
    */
@@ -120,12 +119,12 @@ public:
     : m_sample_indices(sample_indices),
       m_num_images(num_images) {}
 
-private:
-
   /** @brief Get vector containing indices of images to be dumped.
-  *  @returns std::vector<int> Vector with indices of images to dump.
-  */
-  std::vector<El::Int> get_image_indices();
+   *  @returns std::vector<int> Vector with indices of images to dump.
+   */
+  std::vector<El::Int> get_image_indices() final;
+
+private:
 
   /** Sample indices of images to track */
   std::unordered_set<El::Int> m_tracked_images;
@@ -153,12 +152,12 @@ public:
    *  @param interval Interval of epochs to dump images
    *  @param img_format Image file format (e.g. .jpg, .png, .pgm)
    */
-  summarize_images(std::shared_ptr<ImageOutputStrategy> const& strategy,
-                   std::shared_ptr<lbann_summary> const& summarizer,
+  summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
+                   std::shared_ptr<ImageOutputStrategy> const& strategy,
                    std::string const& img_source_layer_name,
                    std::string const& input_layer_name,
                    uint64_t interval = 1,
-                   size_t num_images = 10,
+                   uint64_t num_images = 10,
                    std::string const& img_format = ".jpg");
 
   /** @brief Copy constructor */
@@ -175,20 +174,21 @@ private:
   void setup(model* m);
 
   /** @brief Add image to event file */
-  void dump_image_to_summary(const uint64_t& step,
+  void dump_images_to_summary(const Layer& layer,
+                             const uint64_t& step,
                              const El::Int& epoch);
 
   /** @brief Construct tag for image */
-  std::string get_tag(El::Int index, El::Int epoch, size_t img_number);
+  std::string get_tag(El::Int index, El::Int epoch, size_t img_number = 0);
 
 
 private:
 
-  /* ImageOutputStrategy object */
-  std::shared_ptr<ImageOutputStrategy> m_strategy;
-
   /* lbann_summary object */
   std::shared_ptr<lbann_summary> m_summarizer;
+
+  /* ImageOutputStrategy object */
+  std::shared_ptr<ImageOutputStrategy> m_strategy;
 
   /* Names of layers */
   std::string const m_img_source_layer_name;
@@ -201,11 +201,11 @@ private:
   /* Size of mini-batch */
   size_t m_mini_batch_size;
 
-  /* Number of images to be dumped */
-  size_t m_num_images;
-
   /* Interval for dumping images */
   uint64_t m_interval;
+
+  /* Number of images to be dumped */
+  size_t m_num_images;
 
   /** Image file format. Valid options: .jpg, .png, .pgm. */
   std::string m_img_format;

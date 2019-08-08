@@ -336,12 +336,12 @@ build_checkpoint_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckpoint&>(proto_msg);
   return make_unique<checkpoint>(params.checkpoint_dir(),
-                                                params.checkpoint_epochs(),
-                                                params.checkpoint_steps(),
-                                                params.checkpoint_secs(),
-                                                params.per_rank_dir(),
-                                                params.ckpt_dist_epochs(),
-                                                params.ckpt_dist_steps());
+                                 params.checkpoint_epochs(),
+                                 params.checkpoint_steps(),
+                                 params.checkpoint_secs(),
+                                 params.per_rank_dir(),
+                                 params.ckpt_dist_epochs(),
+                                 params.ckpt_dist_steps());
 }
 
 } // namespace callback

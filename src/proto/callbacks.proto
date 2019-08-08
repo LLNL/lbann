@@ -325,8 +325,7 @@ message Callback {
       MATCH = 1;//MATCH = dump successful categorization
       ALL = 2;//ALL = dump all
     }
-
-    string cat_accuracy_layer = 1; //name of categorical accuracy layer
+    string strategy = 1; // name of strategy
     string image_layer = 2; //name of image layer
     string input_layer =3; //name of input layer
     MatchType criterion = 4; //criterion for dumping image
