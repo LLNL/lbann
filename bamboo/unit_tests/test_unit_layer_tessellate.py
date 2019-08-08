@@ -36,7 +36,7 @@ def test_unit_layer_tessellate_intel19(cluster, exes, dirname):
     skeleton_layer_tessellate(cluster, exes, dirname, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_layer_tessellate.py -k 'test_unit_layer_tessellate_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_layer_tessellate.py -k 'test_unit_layer_tessellate_exe' --exe=<executable>
 def test_unit_layer_tessellate_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_layer_tessellate_exe: Non-local testing'
