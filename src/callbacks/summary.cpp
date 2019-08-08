@@ -46,18 +46,6 @@ summary::summary(const std::shared_ptr<lbann_summary>& summarizer,
   m_summarizer(summarizer),
   m_mat_interval(mat_interval) {}
 
-namespace
-{
-template <typename... Ts>
-std::string BuildErrorMessage(Ts... args)
-{
-  std::ostringstream oss;
-  int dummy[] = { (oss << args, 0)... };
-  (void) dummy;
-  LBANN_ERROR(oss.str());
-}
-}
-
 void summary::on_train_begin(model *m) {
   save_histograms(m);
 }
@@ -94,7 +82,7 @@ void summary::on_batch_end(model *m) {
 
 void summary::on_epoch_end(model *m) {
   if(!m_summarizer){
-    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+    LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
 
   prof_region_begin("summary-epoch", prof_colors[0], false);
@@ -115,7 +103,7 @@ void summary::on_epoch_end(model *m) {
 void summary::on_test_end(model *m) {
 
   if(!m_summarizer){
-    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+    LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
   prof_region_begin("summary-test", prof_colors[0], false);
   lbann_comm *comm = m->get_comm();
@@ -138,7 +126,7 @@ void summary::on_test_end(model *m) {
 
 void summary::save_histograms(model *m) {
   if(!m_summarizer){
-    LBANN_ERROR(BuildErrorMessage("Summary callback failed: m_summarizer does not exist."));
+    LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";

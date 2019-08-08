@@ -65,7 +65,7 @@ protected:
   void save_histograms(model *m);
 
 private:
-  /**@brief lbann_summary */
+  /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 
   /** Interval for doing matrix summarization. */

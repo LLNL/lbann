@@ -93,7 +93,7 @@ class imcomm : public callback_base {
   /** Summarize relevant statistics. */
   void do_summary(model *m, weights *w, EvalType im_time);
 
-  /**@brief lbann_summary */
+  /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 };
 

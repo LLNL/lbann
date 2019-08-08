@@ -66,6 +66,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/memory.hpp"
 
 #include <callbacks.pb.h>
@@ -88,15 +89,6 @@ using factory_type = lbann::generic_factory<
                         google::protobuf::Message const&,
                         std::shared_ptr<lbann_summary> const&>,
   default_key_error_policy>;
-
-template <typename... Ts>
-std::string BuildErrorMessage(Ts... args)
-{
-  std::ostringstream oss;
-  int dummy[] = { (oss << args, 0)... };
-  (void) dummy;
-  LBANN_ERROR(oss.str());
-}
 
 void register_default_builders(factory_type& factory)
 {
@@ -228,10 +220,8 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
     }
 
     //check to see if directory exists
-    struct stat sb;
-    if (! ( stat(dir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
-      LBANN_ERROR(BuildErrorMessage("summary directory ",
-                                    dir, " does not exist."));
+    if (!file::directory_exists(dir)) {
+      LBANN_ERROR("summary directory ", dir, " does not exist.");
     }
 
     return make_unique<lbann_summary>(dir, comm);
