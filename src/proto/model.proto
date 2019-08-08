@@ -35,6 +35,10 @@ import "objective_functions.proto";
 import "weights.proto";
 
 message Model {
+  message Summarizer {
+    string dir = 1;
+  }
+
   string type = 1;
   string name = 3;
   ObjectiveFunction objective_function = 2;
@@ -66,4 +70,6 @@ message Model {
   int64 random_seed = 30;
   // If true, models will have their model rank mixed into their random seed.
   bool random_init_models_differently = 31;
+
+  Summarizer summarizer = 32;
 }

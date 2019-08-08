@@ -309,7 +309,7 @@ float optimizerwise_adaptive_learning_rate::optimizer_schedule(
 
 std::unique_ptr<callback_base>
 build_step_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackStepLearningRate&>(proto_msg);
   return make_unique<step_learning_rate>(
@@ -320,7 +320,7 @@ build_step_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackAdaptiveLearningRate&>(proto_msg);
   return make_unique<adaptive_learning_rate>(
@@ -331,7 +331,7 @@ build_adaptive_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDropFixedLearningRate&>(proto_msg);
   std::vector<int64_t> drop_epochs;
@@ -346,7 +346,7 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg,lbann_summary*) {
+  const google::protobuf::Message& proto_msg,const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackLinearGrowthLearningRate;
   using CallbackType = linear_growth_learning_rate;
   const auto& params =
@@ -359,7 +359,7 @@ build_linear_growth_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg,lbann_summary*) {
+  const google::protobuf::Message& proto_msg,const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackOptimizerwiseAdaptiveLearningRate;
   using CallbackType = optimizerwise_adaptive_learning_rate;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
@@ -369,7 +369,7 @@ build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
 
 std::unique_ptr<callback_base>
 build_poly_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPolyLearningRate&>(proto_msg);
   return make_unique<poly_learning_rate>(

@@ -162,7 +162,7 @@ void debug_io::on_test_begin(model *m) {
 
 std::unique_ptr<callback_base>
 build_debug_io_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDebugIO&>(proto_msg);
   const auto& phase = exe_mode_from_string(params.phase());

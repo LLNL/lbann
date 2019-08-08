@@ -1,8 +1,8 @@
 model {
   name: "cycgan_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_io: true
-  procs_per_trainer:0 
+  procs_per_trainer:0
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -48,7 +48,7 @@ model {
       layer: "L_cyc_x"
     }
   }
-  num_epochs: 40 
+  num_epochs: 40
   super_steps: 10
   metric {
     layer_metric {
@@ -1001,9 +1001,12 @@ model {
   }
   callback { gpu_memory_usage {} }
   #callback { debug {} }
+
+  #summarizer {
+  #  dir: "."
+  #}
   #callback {
   #  summary {
-  #    dir: "."
   #    mat_interval: 25
   #  }
   #}

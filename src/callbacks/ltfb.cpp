@@ -328,13 +328,12 @@ EvalType evaluate(model& m, const std::string& metric_name) {
 } // namespace
 
 ltfb::ltfb(El::Int batch_interval,
-                                         std::string metric_name,
-                                         std::set<std::string> weights_names,
-                                         bool low_score_wins,
-                                         communication_algorithm comm_algo,
-                                         bool exchange_hyperparameters,
-                                         lbann_summary *summarizer)
-  : callback_base(batch_interval, summarizer),
+           std::string metric_name,
+           std::set<std::string> weights_names,
+           bool low_score_wins,
+           communication_algorithm comm_algo,
+           bool exchange_hyperparameters)
+  : callback_base(batch_interval),
     m_metric_name(std::move(metric_name)),
     m_weights_names(std::move(weights_names)),
     m_low_score_wins(low_score_wins),
@@ -533,7 +532,7 @@ ltfb::string_to_comm_algo(const std::string& str) {
 std::unique_ptr<callback_base>
 build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  lbann_summary* summarizer) {
+  const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackLTFB&>(proto_msg);
   return make_unique<ltfb>(
@@ -542,8 +541,7 @@ build_ltfb_callback_from_pbuf(
     parse_set<std::string>(params.weights()),
     params.low_score_wins(),
     ltfb::string_to_comm_algo(params.communication_algorithm()),
-    params.exchange_hyperparameters(),
-    summarizer);
+    params.exchange_hyperparameters());
 }
 
 } // namespace callback

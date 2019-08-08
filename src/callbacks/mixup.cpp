@@ -100,7 +100,7 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
 
 std::unique_ptr<callback_base>
 build_mixup_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackMixup&>(proto_msg);
   const auto& layers_list = parse_list<std::string>(params.layers());

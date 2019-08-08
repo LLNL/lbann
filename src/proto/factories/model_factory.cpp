@@ -274,7 +274,7 @@ std::unique_ptr<model> construct_model(
 
   // Construct callbacks
   std::vector<std::unique_ptr<callback_base>> callback_list;
-  auto&& summarizer = construct_summarizer(comm, proto_model);
+  auto summarizer = std::shared_ptr<lbann_summary>(construct_summarizer(comm, proto_model));
   for (int i=0; i<proto_model.callback_size(); i++) {
     callback_list.push_back(construct_callback(proto_model.callback(i),
                                                summarizer));

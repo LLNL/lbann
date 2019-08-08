@@ -121,7 +121,6 @@ message Callback {
   }
 
   message CallbackSummary {
-    string dir = 1; //directory for the lbann_summary
     int64 batch_interval = 2; //default in lbann_callback_summary.hpp is 1
     int64 mat_interval = 3; //default in lbann_callback_summary.hpp is 25
   }

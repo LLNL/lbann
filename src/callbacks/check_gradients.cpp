@@ -238,7 +238,7 @@ void check_gradients::on_test_end(model *m) {
 // Builder function
 std::unique_ptr<callback_base>
 build_check_gradients_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
   return make_unique<check_gradients>(params.step_size(),
