@@ -27,6 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_image.hpp"
+#include "lbann/utils/image.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
@@ -138,21 +139,16 @@ bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
 }
 
 void image_data_reader::load() {
-  //const std::string imageDir = get_file_dir();
-  const std::string imageListFile = get_data_filename();
-
   options *opts = options::get();
 
-  m_image_list.clear();
+  const std::string imageListFile = get_data_filename();
 
   // load image list
+  m_image_list.clear();
   FILE *fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: failed to open: " + imageListFile);
+    LBANN_ERROR("failed to open: " + imageListFile + " for reading");
   }
-
   while (!feof(fplist)) {
     char imagepath[512];
     label_t imagelabel;
@@ -167,7 +163,7 @@ void image_data_reader::load() {
   //       is modified
   
   std::vector<int> local_list_sizes;
-  if (opts->get_bool("preload_data_store")) {
+  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
     int np = m_comm->get_procs_per_trainer();
     int base_files_per_rank = m_image_list.size() / np;
     int extra = m_image_list.size() - (base_files_per_rank*np);
@@ -230,13 +226,10 @@ void image_data_reader::preload_data_store() {
 
 void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
-
-  using InputBuf_T = lbann::cv_image_type<uint8_t>;
-  auto cvMat = cv::Mat(1, get_linearized_data_size(), InputBuf_T::T(1));
-  m_thread_cv_buffer.resize(num_io_threads);
-  for(int tid = 0; tid < num_io_threads; ++tid) {
-    m_thread_cv_buffer[tid] = cvMat.clone();
-  }
+   m_transform_pipeline.set_expected_out_dims(
+    {static_cast<size_t>(m_image_num_channels),
+     static_cast<size_t>(m_image_height),
+     static_cast<size_t>(m_image_width)});
 }
 
 std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
@@ -249,12 +242,10 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node.reset();
   const std::string filename = get_file_dir() + m_image_list[data_id].first;
   int label = m_image_list[data_id].second;
-  //std::vector<conduit::uint8> data;
   std::vector<char> data;
   read_raw_data(filename, data);
   node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);
   node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set(data);
-  node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set_char_ptr(data.data(), data.size());
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 

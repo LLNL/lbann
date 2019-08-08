@@ -26,6 +26,9 @@
 
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -62,7 +65,7 @@ adam& adam::operator=(const adam& other) {
 }
 
 description adam::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);
@@ -243,6 +246,18 @@ bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix)
   p.read_rank_distmat(persist_type::train, l_name, *m_moment2);
 
   return true;
+}
+
+std::unique_ptr<optimizer>
+build_adam_optimizer_from_pbuf(
+  google::protobuf::Message const& msg, lbann_comm* comm) {
+  const auto& params =
+    dynamic_cast<lbann_data::Optimizer::Adam const&>(msg);
+  return make_unique<adam>(comm,
+                           params.learn_rate(),
+                           params.beta1(),
+                           params.beta2(),
+                           params.eps());
 }
 
 } // namespace lbann

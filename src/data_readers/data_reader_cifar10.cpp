@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_data_reader_cifar10 .hpp .cpp - generic_data_reader class for CIFAR10 dataset
+// data_reader_cifar10 .hpp .cpp - Data reader for CIFAR-10/100
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_cifar10.hpp"
@@ -46,66 +46,96 @@ void cifar10_reader::set_defaults() {
 }
 
 void cifar10_reader::load() {
-  //open data file
-  std::string image_dir = get_file_dir();
-  std::string filename = get_data_filename();
-  std::string path = image_dir + "/" + filename;
-  std::ifstream in(path, std::ios::binary);
-  if (!in.good()) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: failed to open " + path + " for reading");
+  // These are all specified by the CIFAR10/100 description.
+  constexpr size_t num_channels = 3;
+  constexpr size_t channel_size = 32*32;
+  constexpr size_t image_size = num_channels*channel_size;
+  constexpr size_t cifar10_label_size = 1;
+  constexpr size_t cifar100_label_size = 2;
+
+  if (m_num_labels != 10 && m_num_labels != 100) {
+    LBANN_ERROR("Unsupported number of labels for CIFAR10/100.");
   }
 
-  //get number of images, with error checking
-  int len = get_linearized_data_size() + 1;  //should be 3073
-  in.seekg(0, in.end);
-  std::streampos fs = in.tellg();
-  in.seekg(0, in.beg);
-  if (fs % len != 0) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " ::  fs % len != 0; fs: " + std::to_string(fs) + " len: " +
-      std::to_string(len));
+  const bool cifar100 = m_num_labels == 100;
+
+  std::string path = get_file_dir();
+  // These filenames are specified by the CIFAR-10/100 dataset description.
+  std::vector<std::string> filenames;
+  size_t images_per_file = 10000;
+  if (this->get_role() == "train") {
+    if (cifar100) {
+      filenames = {"train.bin"};
+      images_per_file = 50000;
+    } else {
+      filenames = {
+        "data_batch_1.bin",
+        "data_batch_2.bin",
+        "data_batch_3.bin",
+        "data_batch_4.bin",
+        "data_batch_5.bin"
+      };
+    }
+  } else if (this->get_role() == "test") {
+    if (cifar100) {
+      filenames = {"test.bin"};
+    } else {
+      filenames = {"test_batch.bin"};
+    }
+  } else {
+    LBANN_ERROR("Unsupported training mode for CIFAR loading.");
   }
 
-  //reserve space for string images
-  int num_images = fs / len;
-  m_data.resize(num_images);
-  for (auto & h : m_data) {
-    h.resize(len);
+  for (const auto& filename : filenames) {
+    std::ifstream f(path + "/" + filename,
+                    std::ios::in | std::ios::binary);
+    if (!f.good()) {
+      LBANN_ERROR("Could not open " + path + "/" + filename);
+    }
+    // Temporary buffer to hold an image.
+    std::vector<uint8_t> buf(image_size + (cifar100 ?
+                                           cifar100_label_size :
+                                           cifar10_label_size), 0);
+    for (size_t i = 0; i < images_per_file; ++i) {
+      f.read(reinterpret_cast<char*>(buf.data()), buf.size());
+      if (static_cast<size_t>(f.gcount()) != buf.size()) {
+        LBANN_ERROR("Could not read from " + path + "/" + filename);
+      }
+      // CIFAR-10 has only one label; for CIFAR-100, the second byte is the
+      // fine label.
+      m_labels.push_back(buf[cifar100 ? 1 : 0]);
+      // Convert to OpenCV layout.
+      std::vector<uint8_t> image(image_size);
+      for (size_t channel = 0; channel < num_channels; ++channel) {
+        const size_t src_start = channel*channel_size;
+        for (size_t j = 0; j < channel_size; ++j) {
+          image[j*num_channels + channel] = buf[src_start + j];
+        }
+      }
+      m_images.push_back(std::move(image));
+    }
+    f.close();
   }
 
-  //read in the images; each image is 1 byte, which is the
-  //label (0-9), and 3072 pixels
-  for (auto & h : m_data) {
-    in.read((char *)&(h[0]), len);
-  }
-  in.close();
-
-  m_shuffled_indices.resize(m_data.size());
-  for (size_t n = 0; n < m_data.size(); n++) {
-    m_shuffled_indices[n] = n;
-  }
-
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_images.size());
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   select_subset_of_data();
 }
 
 bool cifar10_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
-  for (size_t p = 1; p<m_data[data_id].size(); p++) {
-    X.Set(p-1, mb_idx, m_data[data_id][p]);
-  }
-
-  auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
-  augment(pixel_col, m_image_height, m_image_width, m_image_num_channels);
-  normalize(pixel_col, m_image_num_channels);
-  pixel_noise(pixel_col); //add noise to image, disable by default
+  // Copy to a matrix so we can do data augmentation.
+  // Sizes per CIFAR-10/100 dataset description.
+  El::Matrix<uint8_t> image(3*32*32, 1);
+  std::vector<size_t> dims = {size_t(3), size_t(32), size_t(32)};
+  std::copy_n(m_images[data_id].data(), 3*32*32, image.Buffer());
+  auto X_v = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
+  m_transform_pipeline.apply(image, X_v, dims);
   return true;
 }
 
 bool cifar10_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
-  auto label = (int)m_data[data_id][0];
-  Y.Set(label, mb_idx, 1);
+  Y.Set(m_labels[data_id], mb_idx, 1);
   return true;
 }
 

@@ -9,9 +9,9 @@ config_file = '@_PYTHON_CONFIG_INI@'
 
 # Get relative paths
 # Note: setuptools does not accept absolute paths
-current_dir = os.path.dirname(os.path.abspath(__file__))
-src_dir = os.path.relpath(os.path.abspath(src_dir), current_dir)
-config_file = os.path.relpath(os.path.abspath(config_file), current_dir)
+current_dir = os.path.dirname(os.path.realpath(__file__))
+src_dir = os.path.relpath(os.path.realpath(src_dir), current_dir)
+config_file = os.path.relpath(os.path.realpath(config_file), current_dir)
 
 # Setup package
 setuptools.setup(

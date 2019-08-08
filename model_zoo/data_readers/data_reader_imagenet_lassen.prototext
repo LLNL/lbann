@@ -1,0 +1,65 @@
+data_reader {
+  reader {
+    name: "imagenet"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/train/"
+    data_filename: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
+    label_filename: ""
+    validation_percent: 0.0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 1000
+
+    transforms {
+      random_resized_crop {
+        height: 224
+        width: 224
+      }
+    }
+    transforms {
+      horizontal_flip {
+        p: 0.5
+      }
+    }
+    transforms {
+      colorize {}
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.406 0.456 0.485"
+        stddevs: "0.225 0.224 0.229"
+      }
+    }
+  }
+
+  reader {
+    name: "imagenet"
+    role: "validate"
+    shuffle: true
+    data_filedir: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/val/"
+    data_filename: "/p/gpfs1/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
+    label_filename: ""
+    absolute_sample_count: 0
+    percent_of_data_to_use: 1.0
+    num_labels: 1000
+
+    transforms {
+      resized_center_crop {
+        height: 256
+        width: 256
+        crop_height: 224
+        crop_width: 224
+      }
+    }
+    transforms {
+      colorize {}
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.406 0.456 0.485"
+        stddevs: "0.225 0.224 0.229"
+      }
+    }
+  }
+}

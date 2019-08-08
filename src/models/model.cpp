@@ -26,7 +26,7 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
@@ -38,14 +38,16 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+
+#include <model.pb.h>
+
+#include <mpi.h>
+
 #include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-#include <lbann.pb.h>
-
-#include "mpi.h"
 
 namespace lbann {
 
@@ -422,7 +424,7 @@ void model::add_weights(weights* w) {
 
 }
 
-void model::add_callback(lbann_callback *cb) {
+void model::add_callback(callback_base *cb) {
   if (cb == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a callback.");
   }
@@ -735,6 +737,14 @@ void model::setup_weights() {
     m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
                     m_weights.end());
   }
+
+  // For run-to-run reproducibility, make sure the weights are
+  // initialized in the same order no matter how they are ordered in
+  // the prototext file.
+  std::sort(m_weights.begin(), m_weights.end(),
+            [](weights* const &x, weights* const &y) {
+              return x->get_name().compare(y->get_name()) < 0;
+            });
 
   // Setup weights
   for (auto* w : m_weights) { w->setup(); }
@@ -1720,12 +1730,11 @@ bool model::reload_weights(const std::string latest, const std::vector<std::stri
 
 bool model::save_model() {
   for (auto* c : m_callbacks) {
-    auto *cb = dynamic_cast<lbann_callback_save_model*>(c);
-    if(cb != nullptr) {
-      return cb->save_model(this);
+    if (auto *cb = dynamic_cast<callback::save_model*>(c)) {
+      return cb->do_save_model(this);
     }
   }
-  if(m_comm->am_trainer_master()) {
+  if (m_comm->am_trainer_master()) {
     LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
   }
   return false;

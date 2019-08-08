@@ -998,6 +998,16 @@ class lbann_comm {
     return node_comm;
   }
 
+  /**
+   * Return a communicator containing num_per_group processors.
+   *
+   * This will attempt to pack processes so that the processes in each group
+   * are physically close together on the system.
+   *
+   * num_per_group must evenly divide the number of processors in the world.
+   */
+  const El::mpi::Comm& get_packed_group_comm(int num_per_group) const;
+
   /** Return true if rank (in comm) is on the local node. */
   bool is_rank_node_local(int rank, const El::mpi::Comm& comm) const {
     // Translating to COMM_WORLD is typically constant time.
@@ -1017,6 +1027,8 @@ class lbann_comm {
   El::mpi::Comm intertrainer_comm;
   /** Communicator for every process in the same compute node. */
   El::mpi::Comm node_comm;
+  /** Packed group communicators. */
+  mutable std::unordered_map<int, El::mpi::Comm> group_communicators;
   /** Grid for this trainer. */
   Grid *grid;
   /** Number of trainers. */

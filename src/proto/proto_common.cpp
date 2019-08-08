@@ -1,10 +1,40 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
 #include "lbann/proto/proto_common.hpp"
 
 #include "lbann/lbann.hpp"
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/proto/init_image_data_readers.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/file_utils.hpp"
+
+#include <lbann.pb.h>
+#include <reader.pb.h>
 
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
@@ -17,33 +47,6 @@
 #include <sys/stat.h>
 
 namespace lbann {
-
-bool has_motifs(const lbann_comm& comm, const lbann_data::LbannPB& p) {
-  const bool master = comm.am_world_master();
-  if (master) {
-    std::cout << "starting has_motifs\n";
-  }
-  const lbann_data::Model& m = p.model();
-  const int num_layers = m.layer_size();
-  for (int j=0; j<num_layers; j++) {
-    const lbann_data::Layer& layer = m.layer(j);
-    if (layer.has_motif_layer()) {
-      return true;
-    }
-  }
-  return false;
-}
-
-void expand_motifs(const lbann_comm& comm, lbann_data::LbannPB& pb) {
-  const bool master = comm.am_world_master();
-  if (master) {
-    std::cout << "starting expand_motifs\n";
-  }
-  const lbann_data::MotifDefinitions& m = pb.motif_definitions();
-  const int num_motifs = m.motif_size();
-  for (int j=0; j<num_motifs; j++) {
-  }
-}
 
 int get_requested_num_parallel_readers(
   const lbann_comm& comm, const lbann_data::LbannPB& p);
@@ -82,8 +85,6 @@ void init_data_readers(
 
   for (int j=0; j<size; j++) {
     const lbann_data::Reader& readme = d_reader.reader(j);
-    // This is a temporary measure until we individually setup data reader specific preprocessors
-    bool set_up_generic_preprocessor = true;
 
     const std::string& name = readme.name();
 
@@ -92,13 +93,16 @@ void init_data_readers(
     generic_data_reader *reader = nullptr;
     generic_data_reader *reader_validation = nullptr;
 
+    // This is a hack that should be fixed when we clean up data reader setup.
+    bool set_transform_pipeline = true;
+
     if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
       init_org_image_data_reader(readme, master, reader);
-      set_up_generic_preprocessor = false;
-    } else if ((name == "imagenet") || (name == "imagenet_patches") ||
-               (name == "multihead_siamese") || (name == "mnist_siamese") || (name == "multi_images")) {
+      set_transform_pipeline = false;
+    } else if ((name == "imagenet") ||
+               (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      set_up_generic_preprocessor = false;
+      set_transform_pipeline = false;
     } else if (name == "jag") {
       auto* reader_jag = new data_reader_jag(shuffle);
 
@@ -133,14 +137,10 @@ void init_data_readers(
       }
 
       reader_jag->set_dependent_variable_type(dependent_type);
-
-      const lbann_data::ImagePreprocessor& pb_preproc = readme.image_preprocessor();
-      reader_jag->set_image_dims(pb_preproc.raw_width(), pb_preproc.raw_height());
-      reader_jag->set_normalization_mode(pb_preproc.early_normalization());
       reader = reader_jag;
-      set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
+      set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
       reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
@@ -174,10 +174,9 @@ void init_data_readers(
           break;
         }
       }
-      set_up_generic_preprocessor = false;
     } else if (name == "jag_conduit_hdf5") {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      set_up_generic_preprocessor = false;
+      set_transform_pipeline = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "csv") {
@@ -240,7 +239,6 @@ void init_data_readers(
           npy_readers.push_back(reader_numpy_npz);
         } else if (readme.format() == "jag_conduit") {
           init_image_data_reader(readme, pb_metadata, master, reader);
-          set_up_generic_preprocessor = false;
           npy_readers.push_back(reader);
         } else if (readme.format() == "pilot2_molecular_reader") {
           pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
@@ -314,14 +312,14 @@ void init_data_readers(
       if (readme.num_labels() != 0) {
         reader = new data_reader_synthetic(
           readme.num_samples(),
-          proto::parse_list<int>(readme.synth_dimensions()),
+          parse_list<int>(readme.synth_dimensions()),
           readme.num_labels(),
           shuffle);
       } else {
         reader = new data_reader_synthetic(
           readme.num_samples(),
-          proto::parse_list<int>(readme.synth_dimensions()),
-          proto::parse_list<int>(readme.synth_response_dimensions()),
+          parse_list<int>(readme.synth_dimensions()),
+          parse_list<int>(readme.synth_response_dimensions()),
           shuffle);
       }
     } else if (name == "mesh") {
@@ -346,6 +344,11 @@ void init_data_readers(
         throw lbann_exception(err.str());
     }
     reader->set_comm(comm);
+
+    if (set_transform_pipeline) {
+      reader->set_transform_pipeline(
+        proto::construct_transform_pipeline(readme));
+    }
 
     if (readme.data_filename() != "") {
       reader->set_data_filename( readme.data_filename() );
@@ -380,10 +383,6 @@ void init_data_readers(
       reader->set_gan_label_value(readme.gan_label_value());
 
       reader->set_partitioned(readme.is_partitioned(), readme.partition_overlap(), readme.partition_mode());
-
-      if (set_up_generic_preprocessor) {
-        init_generic_preprocessor(readme, master, reader);
-      }
     }
 
     if (readme.role() == "train") {
@@ -426,14 +425,8 @@ void init_data_readers(
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader), reader->get_unused_indices());
-      } else if (name == "imagenet_patches") {
-        reader_validation = new imagenet_reader_patches(*dynamic_cast<const imagenet_reader_patches*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
-      } else if (name == "mnist_siamese") {
-        reader_validation = new data_reader_mnist_siamese(*dynamic_cast<const data_reader_mnist_siamese*>(reader));
-      } else if (name == "multi_images") {
-        reader_validation = new data_reader_multi_images(*dynamic_cast<const data_reader_multi_images*>(reader));
       } else if (name == "jag") {
         reader_validation = new data_reader_jag(shuffle);
         *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
@@ -1006,6 +999,21 @@ void save_session(const lbann_comm& comm, const int argc, char * const* argv, lb
   google::protobuf::TextFormat::PrintToString(p, &s);
   out << s;
   out.close();
+}
+
+std::string trim(std::string const& str)
+{
+  // Short-circuit on the empty string
+  if (str.size() == 0) return std::string();
+
+  const std::string whitespace = "\f\n\r\t\v ";
+  auto first = str.find_first_not_of(whitespace);
+
+  // All characters are whitespace; short-circuit.
+  if (first == std::string::npos) return std::string();
+
+  auto last = str.find_last_not_of(whitespace);
+  return str.substr(first, (last-first)+1);
 }
 
 } // namespace lbann

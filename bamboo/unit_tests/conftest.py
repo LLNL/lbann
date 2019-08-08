@@ -5,9 +5,9 @@ import pytest, re, subprocess
 
 def pytest_addoption(parser):
     cluster = re.sub('[0-9]+', '', subprocess.check_output(
-        'hostname'.split()).strip())
+        'hostname'.split()).decode('utf-8').strip())
     default_dirname = subprocess.check_output(
-        'git rev-parse --show-toplevel'.split()).strip()
+        'git rev-parse --show-toplevel'.split()).decode('utf-8').strip()
     default_exes = tools.get_default_exes(default_dirname, cluster)
 
     parser.addoption('--cluster', action='store', default=cluster,
@@ -19,17 +19,21 @@ def pytest_addoption(parser):
     # For local testing only
     parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
 
+
 @pytest.fixture
 def cluster(request):
     return request.config.getoption('--cluster')
+
 
 @pytest.fixture
 def dirname(request):
     return request.config.getoption('--dirname')
 
+
 @pytest.fixture
 def exes(request):
     return request.config.getoption('--exes')
+
 
 @pytest.fixture
 def exe(request):

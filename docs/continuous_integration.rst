@@ -97,9 +97,15 @@ your fork for commits.
 They do not run nightly.
 If you push new commits to your fork, a new build should start automatically.
 You can also manually start a build by navigating to your individual plan and
-clicking Run > Run Plan.
+clicking Run > Run plan
+(this will say "Run branch" if you have plan branches set up).
 Once again, keep in mind that the tests will run off what has been pushed to
 your GitHub fork of LBANN and not your local copy of the LBANN repository.
+
+Plan branches allow you to test multiple branches simultaneously instead
+of simply testing "<fork-name>/develop".
+You can create plan branches by navigating to your individual plan,
+clicking Actions > Configure plan > Branches > Create plan branch.
 
 Navigating Bamboo
 ----------------------------------------
@@ -148,19 +154,19 @@ Bamboo Agent Properties
 
 Bamboo agent properties are used to specify requirements for each job.
 
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Agents (jobs)                  | agent_owner | architecture | cluster  | gpu_architecture | sys_type            |
-+================================+=============+==============+==========+==================+=====================+
-| Catalyst Agents (x86_cpu)      | lbannusr    | x86_64       | catalyst | none             | toss_3_x86_64_ib    |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Pascal Agents (x86_gpu_pascal) | lbannusr    | x86_64       | pascal   | pascal           | chaos_6_x86_64_ib   |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Quartz Agents (x86_cpu)        | lbannusr    | x86_64       | quartz   | none	            | toss_3_x86_64_ib    |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Ray Agents (ppc64le_gpu)       | lbannusr    | ppc64_le     | ray      | pascal           | blueos_3_ppc64le_ib |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Surface Agents (x86_gpu)       | lbannusr    | x86_64       | surface  | kepler           | chaos_5_x86_64_ib   |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Agents (jobs)                  | agent_owner | architecture | cluster  | gpu_architecture | sys_type               |
++================================+=============+==============+==========+==================+========================+
+| Catalyst Agents (x86_cpu)      | lbannusr    | x86_64       | catalyst | none             | toss_3_x86_64_ib       |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Corona Agents (x86_cpu_corona) | lbannusr    | x86_64       | corona   | none             | toss_3_x86_64_ib       |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Lassen Agents (ppc64le_gpu)    | lbannusr    | ppc64le      | lassen   | volta            | blueos_3_ppc64le_ib_p9 |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Pascal Agents (x86_gpu_pascal) | lbannusr    | x86_64       | pascal   | pascal           | chaos_6_x86_64_ib      |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Ray Agents (ppc64le_gpu)       | lbannusr    | ppc64le      | ray      | pascal           | blueos_3_ppc64le_ib    |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
 
 Currently, "agent_owner", "architecture", and "gpu_architecture" are used to
 determine agents to run a job.

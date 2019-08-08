@@ -118,27 +118,23 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     assert diff_result == 0
 
 
-def test_unit_lbann2_reload_clang4(cluster, exes, dirname):
+def test_unit_lbann2_reload_clang6(cluster, exes, dirname):
     if cluster == 'catalyst':  # STILL ERRORS
         pytest.skip('FIXME')
-    skeleton_lbann2_reload(cluster, exes, dirname, 'clang4')
-
-
-def test_unit_lbann2_reload_gcc4(cluster, exes, dirname):
-  skeleton_lbann2_reload(cluster, exes, dirname, 'gcc4')
+    skeleton_lbann2_reload(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_lbann2_reload_gcc7(cluster, exes, dirname):
-    if cluster in ['catalyst', 'pascal']:  # STILL ERRORS
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:  # STILL ERRORS
         pytest.skip('FIXME')
     skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7')
 
 
-def test_unit_lbann2_reload_intel18(cluster, exes, dirname):
-    skeleton_lbann2_reload(cluster, exes, dirname, 'intel18')
+def test_unit_lbann2_reload_intel19(cluster, exes, dirname):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_lbann2_reload.py -k 'test_unit_lbann2_reload_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_lbann2_reload.py -k 'test_unit_lbann2_reload_exe' --exe=<executable>
 def test_unit_lbann2_reload_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_lbann2_reload_exe: Non-local testing'

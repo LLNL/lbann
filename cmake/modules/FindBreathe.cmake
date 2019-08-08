@@ -10,7 +10,7 @@ find_program(BREATHE_EXECUTABLE breathe-apidoc
   PATH_SUFFIXES bin
   DOC "The breathe documentation tool."
   NO_DEFAULT_PATH)
-find_program(BREATHE_EXECUTABLE breathe-build)
+find_program(BREATHE_EXECUTABLE breathe-apidoc)
 
 # Standard handling of the package arguments
 include(FindPackageHandleStandardArgs)

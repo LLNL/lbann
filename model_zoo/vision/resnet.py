@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from os.path import dirname, join
+from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann
 import lbann.models
@@ -10,7 +10,7 @@ import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 
 # Default data reader
-model_zoo_dir = dirname(dirname(__file__))
+model_zoo_dir = dirname(dirname(abspath(__file__)))
 data_reader_prototext = join(model_zoo_dir,
                              'data_readers',
                              'data_reader_imagenet.prototext')
@@ -38,9 +38,13 @@ parser.add_argument(
     '--block-channels', action='store', default=None, type=str,
     help='Internal channels in each ResNet block (comma-separated list)')
 parser.add_argument(
-    '--bn-stats-aggregation', action='store', default='local', type=str,
+    '--bn-stats-aggregation', action='store', type=str,
     help=('aggregation mode for batch normalization statistics '
-          '(default: "local")'))
+          '(default: "local") (DEPRECATED)'))
+parser.add_argument(
+    '--bn-statistics-group-size', action='store', default=1, type=int,
+    help=('Group size for aggregating batch normalization statistics '
+          '(default: 1)'))
 parser.add_argument(
     '--warmup', action='store_true', help='use a linear warmup')
 parser.add_argument(
@@ -70,6 +74,19 @@ args = parser.parse_args()
 # hardcoded to 1000 labels for ImageNet.
 imagenet_labels = 1000
 
+# Handle old-style batchnorm aggregation.
+if args.bn_stats_aggregation is not None:
+    print('--bn-stats-aggregation is deprected, use --bn-statistics-group-size')
+    if args.bn_stats_aggregation == 'local':
+        args.bn_statistics_group_size = 1
+    elif args.bn_stats_aggregation == 'node_local':
+        raise RuntimeError('Cannot translate node_local stats aggregation')
+    elif args.bn_stats_aggregation == 'global':
+        args.bn_statistics_group_size = 0
+    else:
+        raise RuntimeError('Unknown stats aggregation '
+                           + args.bn_stats_aggregation)
+
 # Choose ResNet variant
 resnet_variant_dict = {18: lbann.models.ResNet18,
                        34: lbann.models.ResNet34,
@@ -93,24 +110,24 @@ if args.block_type and args.blocks and args.block_channels:
         list(map(int, args.blocks.split(','))),
         list(map(int, args.block_channels.split(','))),
         zero_init_residual=True,
-        bn_stats_aggregation=args.bn_stats_aggregation,
+        bn_statistics_group_size=args.bn_statistics_group_size,
         name='custom_resnet',
         width=args.width)
 elif args.width == 1:
     # Vanilla ResNet.
     resnet = resnet_variant_dict[args.resnet](
         imagenet_labels,
-        bn_stats_aggregation=args.bn_stats_aggregation)
+        bn_statistics_group_size=args.bn_statistics_group_size)
 elif args.width == 2 and args.resnet == 50:
     # Use pre-defined WRN-50-2.
     resnet = wide_resnet_variant_dict[args.resnet](
         imagenet_labels,
-        bn_stats_aggregation=args.bn_stats_aggregation)
+        bn_statistics_group_size=args.bn_statistics_group_size)
 else:
     # Some other Wide ResNet.
     resnet = resnet_variant_dict[args.resnet](
         imagenet_labels,
-        bn_stats_aggregation=args.bn_stats_aggregation,
+        bn_statistics_group_size=args.bn_statistics_group_size,
         width=args.width)
 
 # Construct layer graph

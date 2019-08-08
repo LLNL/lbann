@@ -45,7 +45,7 @@ namespace lbann {
 class variance_scaling_initializer : public weights_initializer {
 public:
   variance_scaling_initializer(probability_distribution dist);
-  description get_description() const;
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
   /** Set fan-in parameter. */
@@ -78,7 +78,7 @@ public:
   glorot_initializer* copy() const override {
     return new glorot_initializer(*this);
   }
-  std::string get_type() const { return "Glorot"; }
+  std::string get_type() const override { return "Glorot"; }
 protected:
   DataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
@@ -91,7 +91,7 @@ public:
   he_initializer* copy() const override {
     return new he_initializer(*this);
   }
-  std::string get_type() const { return "He"; }
+  std::string get_type() const override { return "He"; }
 protected:
   DataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
@@ -104,10 +104,17 @@ public:
   lecun_initializer* copy() const override {
     return new lecun_initializer(*this);
   }
-  std::string get_type() const { return "LeCun"; }
+  std::string get_type() const override { return "LeCun"; }
 protected:
   DataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
+
+std::unique_ptr<weights_initializer>
+build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_he_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 } // namespace lbann
 

@@ -6,52 +6,36 @@ data_reader {
     data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/"
     data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
     label_filename: ""
-    validation_percent: 0.01
+    validation_percent: 0.0
     absolute_sample_count: 0
     percent_of_data_to_use: 1.0
     num_labels: 1000
 
-    image_preprocessor {
-      subtractor {
-        disable: true
-        image_to_sub: "mean-256x256x3-6.bin"
+    transforms {
+      random_resized_crop {
+        height: 224
+        width: 224
       }
-
-      cropper {
-        disable: false
-        crop_width: 224
-        crop_height: 224
-        crop_randomly: true
-        resized_width: 256
-        resized_height: 256
+    }
+    transforms {
+      horizontal_flip {
+        p: 0.5
       }
-
-      colorizer {
-        disable: false
-      }
-
-      augmenter {
-        disable: false
-        horizontal_flip: true
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-
-      normalizer {
-        scale: false
-        subtract_mean: false
-        unit_variance: false
-        z_score: true
+    }
+    transforms {
+      colorize {}
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.406 0.456 0.485"
+        stddevs: "0.225 0.224 0.229"
       }
     }
   }
 
   reader {
     name: "imagenet"
-    role: "test"
+    role: "validate"
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/"
     data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
@@ -60,40 +44,21 @@ data_reader {
     percent_of_data_to_use: 1.0
     num_labels: 1000
 
-    image_preprocessor {
-      subtractor {
-        disable: true
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
-
-      cropper {
-        disable: false
-        crop_width: 224
+    transforms {
+      resized_center_crop {
+        height: 256
+        width: 256
         crop_height: 224
-        crop_randomly: false
-        resized_width: 256
-        resized_height: 256
+        crop_width: 224
       }
-
-      colorizer {
-        disable: false
-      }
-
-      augmenter {
-        disable: true
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-
-      normalizer {
-        scale: false
-        subtract_mean: false
-        unit_variance: false
-        z_score: true
+    }
+    transforms {
+      colorize {}
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.406 0.456 0.485"
+        stddevs: "0.225 0.224 0.229"
       }
     }
   }

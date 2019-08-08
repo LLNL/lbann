@@ -128,7 +128,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer::get_description();
     desc.add("alpha", m_alpha);
     desc.add("beta", m_beta);
     desc.add("k", m_k);

@@ -26,6 +26,9 @@
 
 #include "lbann/optimizers/hypergradient_adam.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -72,7 +75,7 @@ hypergradient_adam& hypergradient_adam::operator=(const hypergradient_adam& othe
 }
 
 description hypergradient_adam::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("Hypergradient learning rate", m_hyper_learning_rate);
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
@@ -219,6 +222,19 @@ bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::strin
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_old_gradient);
   return true;
+}
+
+std::unique_ptr<optimizer>
+build_hypergradient_adam_optimizer_from_pbuf(
+  google::protobuf::Message const& msg, lbann_comm* comm) {
+  const auto& params =
+    dynamic_cast<lbann_data::Optimizer::HypergradientAdam const&>(msg);
+  return make_unique<hypergradient_adam>(comm,
+                                         params.init_learning_rate(),
+                                         params.hyper_learning_rate(),
+                                         params.beta1(),
+                                         params.beta2(),
+                                         params.eps());
 }
 
 }  // namespace lbann

@@ -26,13 +26,18 @@
 
 #ifndef LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED
 #define LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED
+
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/comm.hpp"
+
+namespace lbann_data {
+class Reader;
+class DataSetMetaData;
+}
 
 namespace lbann {
 
 extern void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_data::DataSetMetaData& pb_metadata, const bool master, generic_data_reader* &reader);
-extern void init_generic_preprocessor(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* reader);
 extern void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool master, generic_data_reader* &reader);
 
 } // namespace lbann

@@ -50,8 +50,8 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
   if (is_training) {
 
     // Local matrices
-    auto& local_mean = m_mean->Matrix();
-    auto& local_var = m_var->Matrix();
+    auto& local_mean = m_mean_v->Matrix();
+    auto& local_var = m_var_v->Matrix();
     auto& local_running_mean = this->m_weights[2]->get_values().Matrix();
     auto& local_running_var = this->m_weights[3]->get_values().Matrix();
 
@@ -73,28 +73,27 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
       local_var(channel, 0) = sqsum;
     }
     El::Int num_per_sum;
-    switch (m_stats_aggregation) {
-    case batch_normalization_stats_aggregation::global:
-      m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+    if (m_statistics_group_size == 0) {
+      // Global statistics aggregation; allreduce on fused buffer.
+      m_comm->allreduce(*m_mean_and_var, m_mean_and_var->RedundantComm(),
+                        El::mpi::SUM);
       num_per_sum = channel_size * width;
-      break;
-    case batch_normalization_stats_aggregation::node_local:
-      m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
+    } else if (m_statistics_group_size == 1) {
+      // Local aggregation, no allreduce needed.
+      num_per_sum = channel_size * local_width;
+    } else {
+      // Grouped batchnorm. Allreduce on fused buffer.
+      m_comm->allreduce(*m_mean_and_var,
+                        m_comm->get_packed_group_comm(m_statistics_group_size),
+                        El::mpi::SUM);
       if (m_num_per_sum_cache.count(width) == 0) {
         num_per_sum = channel_size * local_width;
-        num_per_sum = m_comm->allreduce(num_per_sum, m_comm->get_node_comm());
+        num_per_sum = m_comm->allreduce(
+          num_per_sum, m_comm->get_packed_group_comm(m_statistics_group_size));
         m_num_per_sum_cache[width] = num_per_sum;
       } else {
         num_per_sum = m_num_per_sum_cache[width];
       }
-      break;
-    case batch_normalization_stats_aggregation::local:
-      num_per_sum = channel_size * local_width;
-      break;
-    default:
-      LBANN_ERROR("Unknown batch normalization stats aggregation");
     }
 
     // Compute minibatch statistics
@@ -122,10 +121,10 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
   const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
   const auto& local_bias = this->m_weights[1]->get_values().LockedMatrix();
   const auto& local_mean = (is_training ?
-                            m_mean->LockedMatrix() :
+                            m_mean_v->LockedMatrix() :
                             this->m_weights[2]->get_values().LockedMatrix());
   const auto& local_var = (is_training ?
-                           m_var->LockedMatrix() :
+                           m_var_v->LockedMatrix() :
                            this->m_weights[3]->get_values().LockedMatrix());
 
   // Iterate through channels
@@ -163,17 +162,17 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   // Matrices
   const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
   const auto& local_mean = (is_training ?
-                            m_mean->LockedMatrix() :
+                            m_mean_v->LockedMatrix() :
                             this->m_weights[2]->get_values().LockedMatrix());
   const auto& local_var = (is_training ?
-                           m_var->LockedMatrix() :
+                           m_var_v->LockedMatrix() :
                            this->m_weights[3]->get_values().LockedMatrix());
   const auto& input = get_prev_activations();
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
-  auto& local_mean_gradient = m_mean_gradient->Matrix();
-  auto& local_var_gradient = m_var_gradient->Matrix();
+  auto& local_mean_gradient = m_mean_gradient_v->Matrix();
+  auto& local_var_gradient = m_var_gradient_v->Matrix();
   auto& local_scale_gradient = m_scale_gradient->Matrix();
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
@@ -224,24 +223,20 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
   // Accumulate gradients
   if (is_training) {
-    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_mean_gradient->RedundantComm(),
+    if (m_statistics_group_size == 0) {
+      // Global aggregation; allreduce on fused buffer.
+      m_comm->allreduce(*m_mean_and_var_gradient,
+                        m_mean_and_var_gradient->RedundantComm(),
                         El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_var_gradient->RedundantComm(),
-                        El::mpi::SUM);
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_comm->get_node_comm(),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_comm->get_node_comm(),
+    } else if (m_statistics_group_size > 1) {
+      // Grouped batchnorm; allreduce on fused buffer.
+      m_comm->allreduce(*m_mean_and_var_gradient,
+                        m_comm->get_packed_group_comm(m_statistics_group_size),
                         El::mpi::SUM);
     }
   } else {
-    El::Zero(*m_mean_gradient);
-    El::Zero(*m_var_gradient);
+    // Zero fused buffer.
+    El::Zero(*m_mean_and_var_gradient);
   }
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
@@ -258,18 +253,15 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
   // Compute error signal
   El::Int num_per_sum;
-  switch (m_stats_aggregation) {
-  case batch_normalization_stats_aggregation::global:
+  if (m_statistics_group_size == 0) {
+    // Global statistics aggregation.
     num_per_sum = channel_size * width;
-    break;
-  case batch_normalization_stats_aggregation::node_local:
-    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
-    break;
-  case batch_normalization_stats_aggregation::local:
+  } else if (m_statistics_group_size == 1) {
+    // Local aggregation.
     num_per_sum = channel_size * local_width;
-    break;
-  default:
-    LBANN_ERROR("Unknown batch normalization stats aggregation");
+  } else {
+    // Grouped batchnorm.
+    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
   }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);

@@ -39,15 +39,20 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <lbann.pb.h>
+
 #include <vector>
 #include <string>
 #include <unordered_map>
 
+// Forward-declare protobuf class
+namespace lbann_data {
+class Model;
+}
+
 namespace lbann {
 
 // Forward declarations
-class lbann_callback;
+class callback_base;
 
 /** @brief Abstract base class for neural network models. */
 class model {
@@ -120,7 +125,7 @@ public:
   std::vector<weights*> get_weights();
 
   /** @brief Get the list of callbacks for the model. */
-  virtual std::vector<lbann_callback*>& get_callbacks() {
+  virtual std::vector<callback_base*>& get_callbacks() {
     return m_callbacks;
   }
 
@@ -190,7 +195,7 @@ public:
   void add_weights(weights *w);
 
   /** @brief Register a new callback for the model. */
-  void add_callback(lbann_callback *cb);
+  void add_callback(callback_base *cb);
 
   /** @brief Register a new metric for the model. */
   void add_metric(metric *m);
@@ -489,7 +494,7 @@ private:
   std::vector<metric*> m_metrics;
 
   /** @brief Current callbacks to process. */
-  std::vector<lbann_callback*> m_callbacks;
+  std::vector<callback_base*> m_callbacks;
 
   /** @brief Threads available for I/O */
   std::shared_ptr<thread_pool> m_io_thread_pool;

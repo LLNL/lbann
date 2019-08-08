@@ -8,11 +8,13 @@ set_full_path(THIS_DIR_SOURCES
   file_utils.cpp
   graph.cpp
   im2col.cpp
+  image.cpp
   number_theory.cpp
   omp_diagnostics.cpp
   options.cpp
   profiling.cpp
   protobuf_utils.cpp
+  python.cpp
   random.cpp
   stack_profiler.cpp
   stack_trace.cpp

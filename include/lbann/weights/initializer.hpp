@@ -30,6 +30,8 @@
 #include "lbann/base.hpp"
 #include "lbann/utils/description.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 
 /** @brief Scheme for initializing weight values. */
@@ -60,8 +62,8 @@ public:
   constant_initializer* copy() const override {
     return new constant_initializer(*this);
   }
-  std::string get_type() const { return "constant"; }
-  description get_description() const;
+  std::string get_type() const override { return "constant"; }
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -83,7 +85,7 @@ public:
   value_initializer* copy() const override {
     return new value_initializer(*this);
   }
-  std::string get_type() const { return "value"; }
+  std::string get_type() const override { return "value"; }
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -102,8 +104,8 @@ class uniform_initializer : public weights_initializer {
   uniform_initializer* copy() const override {
     return new uniform_initializer(*this);
   }
-  std::string get_type() const { return "uniform"; }
-  description get_description() const;
+  std::string get_type() const override{ return "uniform"; }
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -126,8 +128,8 @@ public:
   normal_initializer* copy() const override {
     return new normal_initializer(*this);
   }
-  std::string get_type() const { return "normal"; }
-  description get_description() const;
+  std::string get_type() const override { return "normal"; }
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -138,6 +140,15 @@ private:
   DataType m_standard_deviation;
 
 };
+
+std::unique_ptr<weights_initializer>
+build_constant_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_value_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 } // namespace lbann
 

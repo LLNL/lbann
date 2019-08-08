@@ -85,6 +85,10 @@ private:
 
 };
 
+std::unique_ptr<optimizer>
+build_adagrad_optimizer_from_pbuf(
+  google::protobuf::Message const&, lbann_comm*);
+
 } // namespace lbann
 
 #endif // LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED

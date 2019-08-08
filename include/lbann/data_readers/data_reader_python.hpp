@@ -29,105 +29,9 @@
 
 #include "data_reader.hpp"
 #ifdef LBANN_HAS_PYTHON
-#include <Python.h>
+#include "lbann/utils/python.hpp"
 
 namespace lbann {
-
-namespace python {
-
-/** @brief Singleton class to manage embedded Python session.
- *
- *  This is very experimental. Be warned.
- */
-class manager {
-public:
-
-  /** @brief Get singleton instance. */
-  static manager& get_instance();
-  /** @brief Construct singleton instance.
-   *  @details If there is already an instance, it is destroyed.
-   */
-  static void create();
-  /** Destroy singleton instance. */
-  static void destroy();
-
-  /** @brief Check if a Python error has occurred.
-   *
-   *  Throw an exception if an error is detected.
-   *
-   *  @param force_error Whether to force an exception to be thrown.
-   */
-  void check_error(bool force_error = false) const;
-
-  ~manager();
-
-private:
-
-  /** @brief Singleton instance. */
-  static std::unique_ptr<manager> m_instance;
-
-  /** @brief State on main Python thread. */
-  PyThreadState* m_thread_state = nullptr;
-
-  // Lifetime functions
-  manager();
-  manager(const manager&) = delete;
-  manager& operator=(const manager&) = delete;
-
-};
-
-/** @brief RAII wrapper for Python GIL.
- *
- *  The Python interpreter is not thread-safe, so it uses the "global
- *  interpreter lock" to ensure only one thread is executing at a
- *  time. Multithreading is achieved by periodically transferring
- *  control of the GIL between threads. This makes it hard to get
- *  meaningful speedups from simple multithreading. Certain
- *  operations, e.g. I/O and numerical kernels in NumPy, can be
- *  efficiently parallelized because they yield control of the GIL
- *  while working.
- *
- *  This is very experimental. Be warned.
- */
-class global_interpreter_lock {
-public:
-
-  global_interpreter_lock(const manager&);
-  ~global_interpreter_lock();
-
-private:
-
-  global_interpreter_lock(const global_interpreter_lock&) = delete;
-  global_interpreter_lock& operator=(const global_interpreter_lock&) = delete;
-
-  PyGILState_STATE m_gil_state;
-
-};
-
-/** @brief Convenience wrapper around @c PyObject pointer.
- *
- *  This is very experimental. Be warned.
- */
-class object {
-public:
-  object(PyObject* obj = nullptr);
-  object(std::string val);
-  object(El::Int val);
-  object(DataType val);
-  object(const object& other);
-  object& operator=(const object& other);
-  object(object&& other);
-  object& operator=(object&& other);
-  ~object();
-  inline PyObject* get()                  { return m_ptr; }
-  inline const PyObject* get() const      { return m_ptr; }
-  inline operator PyObject*()             { return get(); }
-  inline operator const PyObject*() const { return get(); }
-private:
-  PyObject* m_ptr;
-};
-
-} // namespace python
 
 class python_reader : public generic_data_reader {
 public:
@@ -161,10 +65,45 @@ protected:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:
+
+  /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
+  /** @brief Number of data samples in data set. */
   El::Int m_num_samples;
+
+  /** @brief User-provided Python function to access data samples.
+   *
+   *  The function is expected to take one integer argument for the
+   *  sample index. It must return an iterator that defines the
+   *  entries in a data sample.
+   */
   python::object m_sample_function;
+
+  /** @brief Wrapper function around sample access function.
+   *
+   *  This function will be executed on worker processes (see @c
+   *  m_process_pool). It will obtain a data sample from @c
+   *  m_sample_function and copy it into a @c m_shared_memory_array.
+   */
+  python::object m_sample_function_wrapper;
+
+  /** @brief Pool of worker processes.
+   *
+   *  From the Python @c multiprocessing module.
+   */
   python::object m_process_pool;
+
+  /** @brief Shared memory array.
+   *
+   *  @c RawArray from the Python @c multiprocessing module.
+   */
+  python::object m_shared_memory_array;
+
+  /** @brief Pointer into shared memory array.
+   *
+   *  Points to buffer for @c m_shared_memory_array.
+   */
+  DataType* m_shared_memory_array_ptr = nullptr;
 
 };
 

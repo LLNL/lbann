@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from os.path import dirname, join
+from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann
 import lbann.models
@@ -8,7 +8,7 @@ import lbann.proto
 import lbann.contrib.args
 
 # Default data reader
-model_zoo_dir = dirname(dirname(__file__))
+model_zoo_dir = dirname(dirname(abspath(__file__)))
 data_reader_prototext = join(model_zoo_dir,
                              'data_readers',
                              'data_reader_imagenet.prototext')

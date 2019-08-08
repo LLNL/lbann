@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/exception.hpp"
 #include <random>
 
 namespace lbann {
@@ -84,6 +85,11 @@ fast_rng_gen& get_fast_io_generator();
  */
 template <typename Generator, typename T>
 inline T fast_rand_int(Generator& g, T max) {
+#ifdef LBANN_DEBUG
+  if (max == 0) {
+    LBANN_ERROR("fast_rand_int called with max=0");
+  }
+#endif
   typename Generator::result_type x;
   do {
     x = g();
@@ -105,6 +111,68 @@ inline T fast_rand_int_pow2(Generator& g, T max) {
     x = g();
   } while (x >= upper);
   return x & ((typename Generator::result_type) max);
+}
+
+// Methods for quickly generating uniformly random values in [0, 1).
+
+namespace details {
+
+// See section on converting uint64_ts to doubles in:
+// http://xoshiro.di.unimi.it/
+
+template <typename Generator>
+inline float random_float(Generator& g) {
+  const uint32_t r = uint32_t(g()) >> 9;  // Truncate if needed.
+  return r * (1.0f / 8388608.0f);
+}
+
+template <typename Generator>
+inline double random_double_32(Generator& g) {
+  const uint32_t r1 = g() >> 5;
+  const uint32_t r2 = g() >> 6;
+  return (r1 * 67108864.0 + r2) * (1.0 / 9007199254740992.0);
+}
+
+template <typename Generator>
+inline double random_double_64(Generator& g) {
+  const uint64_t r = g() >> 11;
+  return r * (1.0 / 9007199254740992.0);
+}
+
+template <typename Generator>
+inline double random_double(Generator& g) {
+  // TODO: Replace with if constexpr when possible.
+  if (sizeof(typename Generator::result_type) == 4) {
+    return random_double_32(g);
+  } else if (sizeof(typename Generator::result_type) == 8) {
+    return random_double_64(g);
+  } else {
+    LBANN_ERROR("Unsupported generator type");
+  }
+}
+
+template <typename Generator, typename T>
+struct random_uniform_impl {
+  static T generate(Generator&);
+};
+template <typename Generator>
+struct random_uniform_impl<Generator, float> {
+  static float generate(Generator& g) { return random_float(g); }
+};
+template <typename Generator>
+struct random_uniform_impl<Generator, double> {
+  static float generate(Generator& g) { return random_double(g); }
+};
+
+}  // namespace details
+
+/** Generate uniformly random values in the range [0, 1). */
+template <typename T, typename Generator>
+inline T fast_random_uniform(Generator& g) {
+  static_assert(sizeof(typename Generator::result_type) == 4 ||
+                sizeof(typename Generator::result_type) == 8,
+                "Invalid generator result_type.");
+  return details::random_uniform_impl<Generator, T>::generate(g);
 }
 
 /** @brief Initialize the random number generator (with optional seed).
