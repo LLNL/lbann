@@ -40,30 +40,6 @@
 namespace lbann {
 namespace callback {
 
-summarize_images::summarize_images(
-  std::shared_ptr<lbann_summary> const& summarizer,
-  std::string const& cat_accuracy_layer_name,
-  std::string const& img_layer_name,
-  std::string const& input_layer_name,
-  MatchType match_type,
-  size_t num_images,
-  uint64_t interval,
-  std::string const& img_format)
-  : callback_base(1),
-    m_summarizer(summarizer),
-    m_cat_accuracy_layer_name(cat_accuracy_layer_name),
-    m_img_layer_name(img_layer_name),
-    m_input_layer_name(input_layer_name),
-    m_match_type(match_type),
-    m_num_images(num_images),
-    m_interval(interval),
-    m_img_format(img_format)
-{
-#ifndef LBANN_HAS_OPENCV
-  LBANN_ERROR("OpenCV not detected");
-#endif // LBANN_HAS_OPENCV
-}
-
 namespace
 {
 template <typename... Ts>
@@ -76,60 +52,21 @@ void ThrowLBANNError(Ts... args)
 }
 }
 
-void summarize_images::on_batch_evaluate_end(model* m) {
-  if (m->get_step() % m_interval != 0)
-    return;
+std::vector<El::Int> CategoricalAccuracy::get_image_indices() {
 
-  if (m_cat_accuracy_layer == nullptr) {
-    setup(m);
-  }
-
-  dump_image_to_summary(m->get_step(), m->get_epoch());
-}
-
-void summarize_images::setup(model* m){
-  auto layers = m->get_layers();
-  /* find layers in model based on string */
+  auto layers = m_model->get_layers();
   m_cat_accuracy_layer = get_layer_by_name(layers, m_cat_accuracy_layer_name);
-  m_img_layer = get_layer_by_name(layers, m_img_layer_name);
-  m_input_layer = get_layer_by_name(layers, m_input_layer_name);
 
-  // Check widths of img_layer.activations and cat_accuracy_layer are equal
-  const AbsDistMat& cat_accuracy_activations = m_cat_accuracy_layer->get_activations();
-  const AbsDistMat& img_layer_activations = m_img_layer->get_activations();
-  if( cat_accuracy_activations.Width() != img_layer_activations.Width() )
-    ThrowLBANNError("Invalid data. Categorical accuracy activations and image activations widths do not match.");
-
-  if (auto gil = dynamic_cast<generic_input_layer const*>(m_input_layer)){
-    m_num_images = std::min(static_cast<long>(m_num_images),
-                            gil->get_dataset(execution_mode::validation).get_total_samples());
-//FIXME: Use if m_num_images exceeds mini-batch size
-  //m_mini_batch_size = gil->get_current_mini_batch_size();
-  }
-}
-
-Layer const* summarize_images::get_layer_by_name(
-  const std::vector<Layer*>& layers,
-  const std::string& layer_name)
-{
-  for(auto const* l : layers)
-      if( l->get_name() == layer_name)
-        return l;
-
-  ThrowLBANNError("Layer ", layer_name, " not found.");
-  return nullptr;
-}
-
-std::vector<El::Int> summarize_images::get_image_indices() {
   const AbsDistMat& categorized_correctly_dist = m_cat_accuracy_layer->get_activations();
   CircMat<El::Device::CPU> categorized_correctly(
     categorized_correctly_dist.Grid(), categorized_correctly_dist.Root());
   categorized_correctly = categorized_correctly_dist;
 
+//FIXME: Should width of img_layer abd accuracy_layer activations be tested here?
+
   if (categorized_correctly.Height() != El::Int(1))
     LBANN_ERROR("Tom was wrong about this matrix. Oops.");
 
-  // Create return value
   std::vector<El::Int> img_indices;
 
   // Fill return value if root process
@@ -153,9 +90,10 @@ std::vector<El::Int> summarize_images::get_image_indices() {
   }
 
   return img_indices;
+
 }
 
-bool summarize_images::meets_criteria( const DataType& match ) {
+bool CategoricalAccuracy::meets_criteria( const DataType& match ) {
   if( (match && (m_match_type == MatchType::MATCH)) ||
       (!match && (m_match_type == MatchType::NOMATCH)) ||
       (m_match_type == MatchType::ALL))
@@ -165,60 +103,176 @@ bool summarize_images::meets_criteria( const DataType& match ) {
 
 }
 
-void summarize_images::dump_image_to_summary( const uint64_t& step,
-                                              const El::Int& epoch) {
+std::vector<El::Int> Autoencoder::get_image_indices() {
 
-  static size_t img_number = 0;
+  for(El::Int ii = 0; ii < m_sample_indices->Height(); ii++){
+    if (ii >= m_sample_indices->Height())
+      LBANN_ERROR(
+        BuildErrorMessage(
+          "col_index: ", ii, " is greater than Matrix height: ",
+          m_sample_indices->Height()));
 
-  const AbsDistMat& img_layer_activations = m_img_layer->get_activations();
+    std::vector<El::Int> img_indices;
+    if (m_tracked_images.find(m_sample_indices->Get(ii,0)) != m_tracked_images.end()){
+      std::cout << "I found a tracked index! Idx = " << m_sample_indices->Get(ii,0)
+                << "\n";
+      img_indices.push_back(ii);
+    }
+    else if(m_tracked_images.size() < m_num_images){
+      m_tracked_images.insert(m_sample_indices->Get(ii,0));
+      std::cout << "Adding to tracked indices Idx = " << m_sample_indices->Get(ii,0)
+                << "\n";
+      img_indices.push_back(ii);
+    }
+
+    flush(std::cout);
+  }
+  return img_indices;
+
+}
+
+summarize_images::summarize_images(
+  std::shared_ptr<lbann_summary> const& summarizer,
+  std::string const& img_layer_name,
+  std::string const& input_layer_name,
+  uint64_t interval,
+  size_t num_images,
+  std::string const& img_format)
+: callback_base(1),
+    m_summarizer(summarizer),
+    m_img_layer_name(img_layer_name),
+    m_input_layer_name(input_layer_name),
+    m_interval(interval),
+    m_num_images(num_images),
+    m_img_format(img_format)
+
+{
+#ifndef LBANN_HAS_OPENCV
+  LBANN_ERROR("OpenCV not detected");
+#endif // LBANN_HAS_OPENCV
+}
+
+void summarize__images::on_batch_evaluate_end(model* m) {
+
+
+  if (m->get_epoch() % m_interval != 0)
+    return;
+
+  if (m_img_source_layer == nullptr) {
+    setup(m);
+  }
+
+  dump_images_to_summary(*m_img_source_layer, m->get_step(), m->get_epoch());
+// FIXME: Dump original image for Autoencoder Strategy
+//  if(m->get_epoch() > 1)
+//    dump_images_to_summary(*m_img_layer, m->get_step());
+}
+
+void summarize_autoencoder_images::setup(model* m)
+{
+  auto layers = m->get_layers();
+  /* find layers in model based on string */
+  m_img_source_layer = get_layer_by_name(layers, m_img_source_layer_name);
+  if (m_img_source_layer == nullptr)
+    LBANN_ERROR(BuildErrorMessage("get_layer_by_name() failed on layer ",
+                                  m_img_source_layer_name));
+
+  m_input_layer = get_layer_by_name(layers, m_input_layer_name);
+  if (m_input_layer == nullptr)
+    LBANN_ERROR(BuildErrorMessage("get_layer_by_name() failed on layer ", m_input_layer_name));
+
+//FIXME: Does this make sense? Error is supposed to catch reconstruction/img layer.
+//       Should this be moved somewhere else for autoencoder strategy?
+  // Check widths of img_layer.activations and reconstruction_layer are equal
+  const AbsDistMat& img_source_activations = m_img_source_layer->get_activations();
+  const AbsDistMat& input_layer_activations = m_input_layer->get_activations();
+  if( img_source_activations.Width() != img_layer_activations.Width() )
+    LBANN_ERROR(
+      BuildErrorMessage(
+        "Invalid data. Reconstruction layer activations and image activations widths "
+        "do not match."));
+
+  if (auto gil = dynamic_cast<generic_input_layer const*>(m_input_layer)){
+    m_num_images = std::min(static_cast<long>(m_num_images),
+                            gil->get_dataset(execution_mode::validation).get_total_samples());
+//FIXME: Need to use this to conrol for more images than minibatch size in cat_accuracy
+    m_mini_batch_size = gil->get_current_mini_batch_size();
+  }
+}
+
+void summarize_autoencoder_images::dump_images_to_summary(
+  const Layer& layer, const uint64_t& step, const El::Int& epoch) {
+
+  auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
+  if (sample_indices == nullptr)
+    LBANN_ERROR(BuildErrorMessage("NULL SAMPLE INDICES"));
+
+
+//FIXME: Is this right?
+  std::vector<El::Int> img_indices = m_strategy->get_image_indices();
+
+  const AbsDistMat& layer_activations = layer.get_activations();
 
   CircMat<El::Device::CPU> all_images(
-      img_layer_activations.Grid(), img_layer_activations.Root());
-  all_images = img_layer_activations;
+    layer_activations.Grid(), layer_activations.Root());
+  all_images = layer_activations;
 
   if (all_images.CrossRank() == all_images.Root()) {
     auto const& local_images = all_images.LockedMatrix();
-    auto dims = m_img_layer->get_output_dims();
-
-    std::vector<El::Int> img_indices = get_image_indices();
+    auto dims = layer.get_output_dims();
 
     for (const El::Int& col_index : img_indices) {
-      if (col_index >= local_images.Width())
-        LBANN_ERROR("Bad col index.");
-
-      auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
-      auto sample_index = sample_indices->Get(0, col_index);
+      if (col_index >= local_images.Height())
+        LBANN_ERROR(
+          BuildErrorMessage(
+            "col_index: ", col_index, " is greater than Matrix height: ",
+            local_images.Height()));
+      auto sample_index = sample_indices->Get(col_index, 0);
+      auto image_tag =  get_tag(sample_index,epoch);
       auto const local_image = local_images(El::ALL, El::IR(col_index));
-      std::string image_tag("epoch-" + std::to_string(epoch) +
-                            "/ sample_index-" + std::to_string(sample_index) +
-                            "/ image-" + std::to_string(img_number++));
+
       this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
     }
   }
 }
 
+std::string summarize_images::get_tag(El::Int index, El::Int epoch, size_t img_number){
+  std::string image_tag;
+
+  image_tag = "epoch: " + std::to_string(epoch) +
+              "/ sample_index-" + std::to_string(index) +
+              "/ image number: " + std::to_string(img_number);
+
+  return image_tag;
+}
+
+Layer const* summarize_autoencoder_images::get_layer_by_name(
+  const std::vector<Layer*>& layers,
+  const std::string& layer_name)
+{
+  for(auto const* l : layers)
+    if( l->get_name() == layer_name)
+      return l;
+
+  LBANN_ERROR(BuildErrorMessage("Layer named ", layer_name, " not found."));
+  return nullptr;
+}
+
 std::unique_ptr<callback_base>
-build_summarize_images_callback_from_pbuf(
+build_summarize_autoencoder_images_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  std::shared_ptr<lbann_summary> const& summarizer){
+  const std::shared_ptr<lbann_summary>& summarizer) {
 
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummarizeImages&>(proto_msg);
 
-  /* Add criterion->MatchType function */
-  auto ConvertToLbannType = [](lbann_data::Callback_CallbackSummarizeImages_MatchType a)
-    {
-      return static_cast<summarize_images::MatchType>(a);
-    };
-
-  return make_unique<summarize_images>(
+  return make_unique<summarize__images>(
+    strategy,
     summarizer,
-    params.cat_accuracy_layer(),
-    params.image_layer(),
+    params.img_layer(),
     params.input_layer(),
-    ConvertToLbannType(params.criterion()),
     params.interval());
 }
 
-} // namespace callback
-} // namespace lbann
+}// namespace callback
+}// namespace lbann

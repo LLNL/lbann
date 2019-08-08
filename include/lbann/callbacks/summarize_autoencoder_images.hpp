@@ -34,7 +34,6 @@
 
 #include <google/protobuf/message.h>
 
-#include <callbacks.pb.h>
 #include <string>
 #include <vector>
 
@@ -46,13 +45,6 @@ namespace callback {
  */
 class summarize_autoencoder_images : public callback_base {
  public:
-
-  enum class MatchType
-  {
-    NOMATCH=0,
-    MATCH=1,
-    ALL=2
-  };// enum class MatchType
 
 public:
   /** @brief Constructor.
@@ -95,11 +87,6 @@ private:
    *  @returns std::vector<int> Vector with indices of images to dump.
    */
   std::vector<El::Int> get_image_indices();
-
-  /** @brief Tests whether image should be dumped based on criteria
-   *  @returns bool Value is true if matches criteria and false otherwise
-   */
-  bool meets_criteria( const DataType& match );
 
   /** @brief Add images to event file */
   void dump_images_to_summary(const Layer& layer,

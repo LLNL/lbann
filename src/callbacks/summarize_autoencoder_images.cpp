@@ -32,6 +32,9 @@
 #include <lbann/utils/summary.hpp>
 #include "lbann/callbacks/summarize_autoencoder_images.hpp"
 #include <lbann/layers/io/input/generic_input_layer.hpp>
+
+#include <callbacks.pb.h>
+
 #include <iostream>
 
 namespace lbann {
@@ -69,6 +72,22 @@ std::string BuildErrorMessage(Ts... args)
   (void) dummy;
   LBANN_ERROR(oss.str());
 }
+}
+
+void summarize_autoencoder_images::on_batch_evaluate_end(model* m) {
+
+
+  if (m->get_epoch() % m_interval != 0)
+    return;
+
+  if (m_reconstruction_layer == nullptr) {
+    setup(m);
+  }
+
+  dump_images_to_summary(*m_reconstruction_layer, m->get_step(), m->get_epoch());
+
+  if(m->get_epoch() > 1)
+    dump_images_to_summary(*m_img_layer, m->get_step());
 }
 
 void summarize_autoencoder_images::setup(model* m)
@@ -189,22 +208,6 @@ std::string summarize_autoencoder_images::get_tag(El::Int index, El::Int epoch){
     image_tag = "sample_index-" + std::to_string(index) + "/ epoch-" + std::to_string(epoch);
 
   return image_tag;
-}
-
-void summarize_autoencoder_images::on_batch_evaluate_end(model* m) {
-
-
-  if (m->get_epoch() % m_interval != 0)
-    return;
-
-  if (m_reconstruction_layer == nullptr) {
-    setup(m);
-  }
-
-  dump_images_to_summary(*m_reconstruction_layer, m->get_step(), m->get_epoch());
-
-  if(m->get_epoch() > 1)
-    dump_images_to_summary(*m_img_layer, m->get_step());
 }
 
 std::unique_ptr<callback_base>
