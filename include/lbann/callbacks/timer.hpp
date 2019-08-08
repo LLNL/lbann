@@ -97,7 +97,7 @@ private:
    */
   void batch_timing_end(const model& m);
 
-  /**@brief lbann_summary */
+  /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 
 };

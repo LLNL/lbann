@@ -37,7 +37,7 @@ def test_unit_layer_relu_intel19(cluster, exes, dirname):
     skeleton_layer_relu(cluster, exes, dirname, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_layer_relu.py -k 'test_unit_layer_relu_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_layer_relu.py -k 'test_unit_layer_relu_exe' --exe=<executable>
 def test_unit_layer_relu_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_layer_relu_exe: Non-local testing'

@@ -391,11 +391,11 @@ def get_command(cluster,
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
     if ckpt_dir is not None:
         option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
+    extra_options = ''
     if extra_lbann_flags is not None:
         # If extra_lbann_flags is not a dict, then we have already appended
         # this error to lbann_errors.
         if isinstance(extra_lbann_flags, dict):
-            extra_options = ''
             # See `lbann --help` or src/proto/proto_common.cpp
             allowed_flags = [
                 # 'model',

@@ -60,15 +60,15 @@ class summary : public callback_base {
   void on_test_end(model *m) override;
   std::string name() const override { return "summary"; }
 
-private:
-  /**@brief lbann_summary */
-  std::shared_ptr<lbann_summary> m_summarizer = nullptr;
-
 protected:
   /** Write out histograms from the model's layers. */
   void save_histograms(model *m);
 
-/** Interval for doing matrix summarization. */
+private:
+  /** @brief lbann_summary */
+  std::shared_ptr<lbann_summary> m_summarizer = nullptr;
+
+  /** Interval for doing matrix summarization. */
   int m_mat_interval;
 };
 
