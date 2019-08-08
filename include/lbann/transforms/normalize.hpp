@@ -27,9 +27,12 @@
 #ifndef LBANN_TRANSFORMS_NORMALIZE_HPP_INCLUDED
 #define LBANN_TRANSFORMS_NORMALIZE_HPP_INCLUDED
 
-#include <vector>
-#include "lbann/utils/exception.hpp"
 #include "lbann/transforms/transform.hpp"
+#include "lbann/utils/exception.hpp"
+
+#include <google/protobuf/message.h>
+
+#include <vector>
 
 namespace lbann {
 namespace transform {
@@ -65,6 +68,10 @@ private:
   /** Channel-wise standard deviations. */
   std::vector<float> m_stds;
 };
+
+// Builder function
+std::unique_ptr<transform>
+build_normalize_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

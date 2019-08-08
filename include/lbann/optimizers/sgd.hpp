@@ -154,6 +154,10 @@ private:
 
 };
 
+std::unique_ptr<optimizer>
+build_sgd_optimizer_from_pbuf(
+  google::protobuf::Message const&, lbann_comm*);
+
 } // namespace lbann
 
 #endif // LBANN_OPTIMIZERS_SGD_HPP_INCLUDED

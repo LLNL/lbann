@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -52,7 +54,7 @@ public:
   color_jitter(float min_brightness_factor, float max_brightness_factor,
                float min_contrast_factor, float max_contrast_factor,
                float min_saturation_factor, float max_saturation_factor);
-  
+
   transform* copy() const override { return new color_jitter(*this); }
 
   std::string get_type() const override { return "color_jitter"; }
@@ -73,6 +75,9 @@ private:
   /** Maximum saturation factor. */
   float m_max_saturation_factor;
 };
+
+std::unique_ptr<transform>
+build_color_jitter_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

@@ -25,7 +25,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace transform {
@@ -88,6 +92,16 @@ void normalize_to_lbann_layout::apply(utils::type_erased_matrix& data,
       }
     }
   }
+}
+
+std::unique_ptr<transform>
+build_normalize_to_lbann_layout_transform_from_pbuf(
+  google::protobuf::Message const& msg) {
+  auto const& params =
+    dynamic_cast<lbann_data::Transform::NormalizeToLBANNLayout const&>(msg);
+  return make_unique<normalize_to_lbann_layout>(
+    parse_list<float>(params.means()),
+    parse_list<float>(params.stddevs()));
 }
 
 }  // namespace transform
