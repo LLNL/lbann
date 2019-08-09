@@ -121,8 +121,7 @@ public:
     std::set<std::string> weights_names = std::set<std::string>(),
     bool low_score_wins = false,
     communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
-    bool exchange_hyperparameters = false,
-    lbann_summary *summarizer = nullptr);
+    bool exchange_hyperparameters = false);
   ltfb(const ltfb& other);
   ltfb& operator=(const ltfb& other);
   ltfb* copy() const override { return new ltfb(*this); }
@@ -166,13 +165,12 @@ private:
    *  Used to temporarily store local weights during a tournament.
    */
   std::vector<std::unique_ptr<weights>> m_workspace_weights;
-
 };
 
 // Builder function
 std::unique_ptr<callback_base>
 build_ltfb_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

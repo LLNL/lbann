@@ -53,9 +53,10 @@ class debug_io : public callback_base {
    * Debug a particular phase; use invalid to debug every phase.
    */
   debug_io(execution_mode phase = execution_mode::invalid,
-                          int debug_lvl = 0,
-                          lbann_summary *summarizer = nullptr) :
-    callback_base(1, summarizer), m_debug_phase(phase), m_debug_lvl(debug_lvl) {}
+                          int debug_lvl = 0) :
+    callback_base(1),
+    m_debug_phase(phase),
+    m_debug_lvl(debug_lvl) {}
   debug_io(const debug_io&) = default;
   debug_io& operator=(
     const debug_io&) = default;
@@ -88,7 +89,7 @@ class debug_io : public callback_base {
 // Builder function
 std::unique_ptr<callback_base>
 build_debug_io_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

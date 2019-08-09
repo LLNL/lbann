@@ -46,7 +46,7 @@ void hang::setup(model* m)
 
 std::unique_ptr<callback_base>
 build_hang_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackHang&>(proto_msg);
   return make_unique<hang>(params.rank());

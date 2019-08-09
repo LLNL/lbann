@@ -14,6 +14,7 @@ def skeleton_layer_covariance(cluster, executables, dir_name, compiler_name):
     error_file_name  = '%s/bamboo/unit_tests/error/layer_covariance_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1,
+        time_limit=10,
         num_processes=2, dir_name=dir_name,
         data_reader_name='synthetic',
         model_folder='tests/layer_tests', model_name='covariance',
@@ -35,7 +36,7 @@ def test_unit_layer_covariance_intel19(cluster, exes, dirname):
     skeleton_layer_covariance(cluster, exes, dirname, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_covariance_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_covariance_exe' --exe=<executable>
 def test_unit_layer_covariance_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_layer_covariance_exe: Non-local testing'

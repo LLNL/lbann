@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/scale.hpp"
+#include "lbann/utils/memory.hpp"
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace transform {
@@ -42,6 +44,12 @@ void scale::apply(utils::type_erased_matrix& data, std::vector<size_t>&) {
   for (El::Int i = 0; i < size; ++i) {
     buf[i] *= m_scale;
   }
+}
+
+std::unique_ptr<transform>
+build_scale_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::Scale const&>(msg);
+  return make_unique<scale>(params.scale());
 }
 
 }  // namespace transform

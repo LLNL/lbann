@@ -208,6 +208,10 @@ private:
 
 };
 
+std::unique_ptr<optimizer>
+build_adam_optimizer_from_pbuf(
+  google::protobuf::Message const&, lbann_comm*);
+
 } // namespace lbann
 
 #endif // LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED

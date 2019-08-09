@@ -130,7 +130,7 @@ def test_unit_models_intel19(cluster, dirname, exes):
     skeleton_models(cluster, dirname, exes, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
 def test_unit_models_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_models_exe: Non-local testing'

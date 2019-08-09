@@ -136,7 +136,7 @@ class step_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_step_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 /**
  * Decrease the learning rate by a fixed proportion when validation error stops
@@ -179,7 +179,7 @@ class adaptive_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 /**
  * Decrease learning rate by a fixed amount at fixed times.
@@ -219,7 +219,7 @@ class drop_fixed_learning_rate :
 // Builder function
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 /**
  * Linearly increase the learning rate to reach a target value over a
@@ -267,7 +267,7 @@ class linear_growth_learning_rate :
 // Builder function
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&,lbann_summary*);
+  const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
 
 /**
  * Decrease the learning rate by polynomial policy
@@ -310,7 +310,7 @@ class poly_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_poly_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 /**
  * This implements an adaptive scheme for adjust each optimizer's
@@ -340,7 +340,7 @@ class optimizerwise_adaptive_learning_rate : public learning_rate {
 // Builder function
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
-  const google::protobuf::Message&,lbann_summary*);
+  const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

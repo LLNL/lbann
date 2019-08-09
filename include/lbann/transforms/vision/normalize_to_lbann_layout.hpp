@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -66,6 +68,10 @@ private:
   /** Channel-wise standard deviations. */
   std::vector<float> m_stds;
 };
+
+std::unique_ptr<transform>
+build_normalize_to_lbann_layout_transform_from_pbuf(
+  google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

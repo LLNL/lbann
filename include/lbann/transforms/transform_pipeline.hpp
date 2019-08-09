@@ -51,7 +51,7 @@ public:
   /**
    * Add trans as the next transform to apply.
    */
-  void add_transform(std::unique_ptr<transform> trans) {
+  void add_transform(std::unique_ptr<transform>&& trans) {
     m_transforms.push_back(std::move(trans));
   }
 
