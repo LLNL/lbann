@@ -2,7 +2,7 @@
 
 import google.protobuf.text_format
 import google.protobuf.message
-from lbann import lbann_pb2
+from lbann import lbann_pb2, NoOptimizer
 
 def save_prototext(filename, **kwargs):
     """Save a prototext file.
@@ -36,7 +36,7 @@ def save_prototext(filename, **kwargs):
     # provided.
     if not message.HasField('optimizer'):
         from lbann import Optimizer
-        message.optimizer.CopyFrom(Optimizer().export_proto())
+        message.optimizer.CopyFrom(NoOptimizer().export_proto())
         message.optimizer.SetInParent()
 
     # Write to file
