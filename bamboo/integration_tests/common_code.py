@@ -47,7 +47,7 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
             time_limit = 600
         else:
             partition = 'pdebug'
-            time_limit = 30
+            time_limit = 60
         if (cluster == 'ray') and (model_name == 'conv_autoencoder_mnist'):
             num_processes = 20
         else:
