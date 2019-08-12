@@ -364,7 +364,7 @@ class LSTMCell(Module):
         # Return output and state
         return output, (output, cell)
 
-class GRU(lbann.modules.Module):
+class GRU(Module):
     """Gated-recurrent unit.
        Implementation mostly taken from:
        https://pytorch.org/docs/stable/nn.html#gru"""
