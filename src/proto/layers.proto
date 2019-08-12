@@ -151,6 +151,7 @@ message Layer {
     LocalResponseNormalization local_response_normalization = 20;
     Dropout dropout = 21;
     SeluDropout selu_dropout = 229;
+    EntrywiseBatchNormalization entrywise_batch_normalization = 230;
 
     // Activation layers
     Elu elu = 200;
@@ -279,6 +280,11 @@ message Layer {
     string stats_aggregation = 5; // default: local; deprecated
     // default: 1 (local aggregation); set to a negative value for global stats.
     int64 statistics_group_size = 6;
+  }
+
+  message EntrywiseBatchNormalization {
+    double decay = 1;
+    double epsilon = 2;
   }
 
   message SeluDropout {
