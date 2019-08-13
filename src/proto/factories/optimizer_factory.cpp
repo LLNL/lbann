@@ -46,7 +46,7 @@ namespace {
 std::unique_ptr<optimizer>
 build_no_optimizer_from_pbuf(
   google::protobuf::Message const& msg, lbann_comm* comm) {
-  return std::unique_ptr<optimizer>();
+  return nullptr;
 }
 
 using factory_type = lbann::generic_factory<
