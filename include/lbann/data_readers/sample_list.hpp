@@ -67,6 +67,11 @@ class sample_list {
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
 
+  /** Load a sample list file using the stride as the number of processes per
+   *  trainer and the offset as the current rank within the trainer.
+   */
+  void load(const std::string& samplelist_file, const lbann_comm& comm);
+
   /// Load the header of a sample list file
   sample_list_header load_header(const std::string& samplelist_file) const;
 
@@ -135,9 +140,15 @@ class sample_list {
 
   virtual void set_samples_filename(sample_file_id_t id, const std::string& filename);
 
+  /// Reorder the sample list to its initial order
+  virtual void reorder();
+
  protected:
   /// header info of sample list
   sample_list_header m_header;
+
+  /// The stride used in loading sample list file
+  size_t m_stride;
 
  private:
   /// List of all samples with a file identifier and sample name for each sample

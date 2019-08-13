@@ -561,7 +561,31 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     }
   }
 
+  // data_reader_jag_conduit does use any label. Thus, the information in
+  // sample list is self-contained requiring no reordering.
+  //reorder();
+
   return;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
+::reorder() {
+  if (this->m_stride > 1ul) {
+    // undo interleaving
+    const size_t sz = m_sample_list.size();
+    samples_t tmp_sample_list;
+    tmp_sample_list.reserve(sz);
+
+    const size_t s = (sz + this->m_stride - 1ul)/this->m_stride;
+    for (size_t i = 0ul; i < s; ++i) {
+      for (size_t j = i; j < sz; j += s) {
+        tmp_sample_list.push_back(m_sample_list[j]);
+      }
+    }
+    std::swap(m_sample_list, tmp_sample_list);
+    this->m_stride = 1ul;
+  }
 }
 
 template <typename sample_name_t, typename file_handle_t>

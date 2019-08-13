@@ -107,6 +107,9 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void assign_samples_name() override {}
 
+  /// Reorder the sample list to its initial order
+  void reorder() override;
+
   /// Get the number of total/included/excluded samples
   void get_num_samples(size_t& total, size_t& included, size_t& excluded) const override;
 
