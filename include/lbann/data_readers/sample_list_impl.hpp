@@ -106,7 +106,8 @@ inline const std::string& sample_list_header::get_file_dir() const {
 //------------------
 
 template <typename sample_name_t>
-inline sample_list<sample_name_t>::sample_list() {
+inline sample_list<sample_name_t>::sample_list()
+: m_stride(1ul) {
 }
 
 template <typename sample_name_t>
@@ -149,6 +150,7 @@ template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::copy_members(const sample_list& rhs) {
   m_header = rhs.m_header;
+  m_stride = rhs.m_stride;
   m_sample_list = rhs.m_sample_list;
 
   /// Keep track of existing filenames
@@ -160,8 +162,18 @@ inline void sample_list<sample_name_t>
 ::load(const std::string& samplelist_file,
        size_t stride, size_t offset) {
   std::ifstream istr(samplelist_file);
+  m_stride = stride;
   get_samples_per_file(istr, samplelist_file, stride, offset);
   istr.close();
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::load(const std::string& samplelist_file,
+       const lbann_comm& comm) {
+  const size_t stride = comm.get_procs_per_trainer();
+  const size_t offset = comm.get_rank_in_trainer();
+  load(samplelist_file, stride, offset);
 }
 
 template <typename sample_name_t>
@@ -226,13 +238,13 @@ inline sample_list_header sample_list<sample_name_t>
 
   hdr.m_sample_list_filename = filename;
 
-  std::string line1 = read_header_line(istrm, filename, "the exclusiveness");
+  std::string line1 = read_header_line(istrm, filename, "the exclusiveness\n");
   std::stringstream header1(line1);
 
-  std::string line2 = read_header_line(istrm, filename, "the number of samples and the number of files");
+  std::string line2 = read_header_line(istrm, filename, "the number of samples and the number of files\n");
   std::stringstream header2(line2);
 
-  std::string line3 = read_header_line(istrm, filename, "the data file directory");
+  std::string line3 = read_header_line(istrm, filename, "the data file directory\n");
   std::stringstream header3(line3);
 
   std::string sample_list_type;
@@ -739,9 +751,31 @@ inline void sample_list<sample_name_t>
     }
   }
 
+  reorder();
+
   assign_samples_name();
 
   return;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::reorder() {
+  if (m_stride > 1ul) {
+    // undo interleaving
+    const size_t sz = m_sample_list.size();
+    samples_t tmp_sample_list;
+    tmp_sample_list.reserve(sz);
+
+    const size_t s = (sz + m_stride - 1ul)/m_stride;
+    for (size_t i = 0ul; i < s; ++i) {
+      for (size_t j = i; j < sz; j += s) {
+        tmp_sample_list.push_back(m_sample_list[j]);
+      }
+    }
+    std::swap(m_sample_list, tmp_sample_list);
+    m_stride = 1ul;
+  }
 }
 
 } // end of namespace lbann
