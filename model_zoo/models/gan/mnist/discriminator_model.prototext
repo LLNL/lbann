@@ -137,7 +137,7 @@ model {
   }
   weights {
      name: "gen_fc1_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
@@ -180,7 +180,7 @@ model {
 
   weights {
      name: "gen_fc2_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
@@ -220,7 +220,7 @@ model {
 
   weights {
      name: "gen_fc3_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
@@ -260,7 +260,7 @@ model {
 
   weights {
      name: "gen_fc4_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
