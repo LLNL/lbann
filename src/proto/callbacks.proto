@@ -76,7 +76,6 @@ message Callback {
     CallbackTimeline timeline = 44;
 
     CallbackSummarizeImages summarize_images = 413;
-    CallbackSummarizeAutoencoderImages summarize_autoencoder_images = 414;
 
   }
 
@@ -320,24 +319,43 @@ message Callback {
   }
 
   message CallbackSummarizeImages {
-    enum MatchType{
-      NOMATCH = 0;//NOMATCH = dump failed categorization
-      MATCH = 1;//MATCH = dump successful categorization
-      ALL = 2;//ALL = dump all
-    }
-    string strategy = 1; // name of strategy
-    string image_layer = 2; //name of image layer
-    string input_layer =3; //name of input layer
-    MatchType criterion = 4; //criterion for dumping image
-    uint64 interval = 5; //interval for dumping images
-  }
 
-  message CallbackSummarizeAutoencoderImages {
+    message SelectionStrategy {
 
-    string reconstruction_layer = 1; //name of categorical accuracy layer
-    string image_layer = 2; //name of image layer
-    string input_layer = 3; //name of input layer
-    uint64 interval = 4; // interval for dumping images
-  }
+      oneof strategy_type {
+        CategoricalAccuracyStrategy categorical_accuracy = 1;
+        AutoencoderStrategy autoencoder = 2;
+      }
+
+      message CategoricalAccuracyStrategy {
+        enum MatchType{
+          NOMATCH = 0;//NOMATCH = dump failed categorization
+          MATCH = 1;//MATCH = dump successful categorization
+          ALL = 2;//ALL = dump all
+        }
+        string accuracy_layer_name = 1;
+        MatchType match_type = 2;
+        uint64 num_images_per_epoch = 3;
+      }
+
+      message AutoencoderStrategy {
+        string input_layer_name = 1;
+        uint64 num_tracked_images = 2;
+      }
+
+    }// message SelectionStrategy
+
+    SelectionStrategy selection_strategy = 1;
+    string image_layer_name = 2;
+    uint64 epoch_interval = 3;
+  }// message CallbackSummarizeImages
+
+//  message CallbackSummarizeAutoencoderImages {
+//
+//    string reconstruction_layer = 1; //name of categorical accuracy layer
+//    string image_layer = 2; //name of image layer
+//    string input_layer = 3; //name of input layer
+//    uint64 interval = 4; // interval for dumping images
+//  }
 
 }

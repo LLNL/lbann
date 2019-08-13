@@ -40,24 +40,23 @@
 namespace lbann {
 namespace callback {
 
-class ImageOutputStrategy {
+class image_output_strategy {
 
 public:
-  virtual std::vector<El::Int> get_image_indices() = 0;
-  virtual ~ImageOutputStrategy() = default;
+  virtual std::vector<El::Int> get_image_indices(model const&) = 0;
+  virtual ~image_output_strategy() = default;
 
-}; //class OutputStrategy
+}; //class image_output_strategy
 
 
-/** @class CategoricalAccuracy Subclass of ImageOutputStrategy to dump categorized images
- *  @brief Dump images to event files based on categorization criteria
+/** @class CategoricalAccuracy
+ *  @brief Subclass of image_output_strategy to dump categorized images
+ *  Dump images to event files based on categorization criteria
  */
-class CategoricalAccuracy : ImageOutputStrategy {
-
+class categorical_accuracy_strategy : public image_output_strategy {
 public:
 
-  enum class MatchType
-  {
+  enum class MatchType {
     NOMATCH=0,
     MATCH=1,
     ALL=2
@@ -67,75 +66,76 @@ public:
    *  @param cat_accuracy_layer_name Name of categorical accuracy layer
    *  @param match_type Criteria for dumping images (MATCH, NOMATCH, or ALL)
    */
-  CategoricalAccuracy(model* m,
-                      std::string const& cat_accuracy_layer_name,
-                      MatchType match_type,
-                      size_t num_images)
-    : m_model(m),
-      m_cat_accuracy_layer_name(cat_accuracy_layer_name),
+  categorical_accuracy_strategy(std::string const& cat_accuracy_layer_name,
+                                MatchType match_type,
+                                size_t num_images)
+    : m_cat_accuracy_layer_name(cat_accuracy_layer_name),
       m_match_type(match_type),
-      m_num_images(num_images) {}
-
-  /** @brief Get vector containing indices of images to be dumped.
-  *  @returns std::vector<int> Vector with indices of images to dump.
-  */
-  std::vector<El::Int> get_image_indices() final;
-
-private:
-   /** @brief Tests whether image should be dumped based on criteria
-   *  @returns bool Value is true if matches criteria and false otherwise
-   */
-  bool meets_criteria( const DataType& match );
-
-  /** Model */
-  model* m_model;
-
-  /** Name of categorical accuracy layer*/
-  std::string const m_cat_accuracy_layer_name;
-
-  /** lbann::Layer object */
-  Layer const* m_cat_accuracy_layer = nullptr;
-
-  /** Criterion to dump images */
-  MatchType m_match_type;
-
-  /* Number of images to be dumped per epoch */
-  size_t m_num_images;
-
-}; // class CategoricalAccuracy : ImageOutputStrategy
-
-
-/** @class Autoencoder Subclass of ImageOutputStrategy to dump autoencoder images
- *  @brief Dump images to event files based on strategy
- */
-class Autoencoder : ImageOutputStrategy {
-
-public:
-
-  /** @brief Autoencoder : ImageOutputStrategy Constructor.
-   *  @param sample_indices Vector of sample indices for images
-   */
-  Autoencoder(El::Matrix<El::Int>* sample_indices, size_t num_images = 10)
-    : m_sample_indices(sample_indices),
       m_num_images(num_images) {}
 
   /** @brief Get vector containing indices of images to be dumped.
    *  @returns std::vector<int> Vector with indices of images to dump.
    */
-  std::vector<El::Int> get_image_indices() final;
+  std::vector<El::Int> get_image_indices(model const& m) final;
+
+private:
+   /** @brief Tests whether image should be dumped based on criteria
+    *  @returns bool Value is true if matches criteria and false otherwise
+    */
+  bool meets_criteria(const DataType& match);
+
+  /** @brief Name of categorical accuracy layer*/
+  std::string const m_cat_accuracy_layer_name;
+
+  /* @brief Name of categorical accuracy layer */
+  Layer const* m_cat_accuracy_layer = nullptr;
+
+  /** @brief Criterion to dump images */
+  MatchType m_match_type;
+
+  /** @brief Number of images to be dumped per epoch */
+  size_t m_num_images;
+
+}; // class categorical_accuracy_strategy : image_output_strategy
+
+std::unique_ptr<image_output_strategy>
+build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const&);
+
+/** @class Autoencoder Subclass of image_output_strategy to dump autoencoder images
+ *  @brief Dump images to event files based on strategy
+ */
+class autoencoder_strategy : public image_output_strategy {
+
+public:
+
+  /** @brief autoencoder_strategy : image_output_strategy Constructor.
+   *  @param sample_indices Vector of sample indices for images
+   */
+  autoencoder_strategy(std::string const& input_layer_name,
+                       size_t num_images = 10)
+    : m_input_layer_name{input_layer_name},
+      m_num_images{num_images} {}
+
+  /** @brief Get vector containing indices of images to be dumped.
+   *  @returns std::vector<int> Vector with indices of images to dump.
+   */
+  std::vector<El::Int> get_image_indices(model const& m) final;
 
 private:
 
-  /** Sample indices of images to track */
+  /** @brief Sample indices of images to track */
   std::unordered_set<El::Int> m_tracked_images;
 
-  /** Sample indices of images */
-  El::Matrix<El::Int>* m_sample_indices;
+  /** @brief Name of input layer */
+  std::string m_input_layer_name;
 
-  /* Number of images to be tracked */
+  /** @brief Number of images to be tracked */
   size_t m_num_images;
 
-}; // class Autoencoder : ImageOutputStrategy
+}; // class Autoencoder : image_output_strategy
+
+std::unique_ptr<image_output_strategy>
+build_autoencoder_strategy_from_pbuf(google::protobuf::Message const&);
 
 /** @class summarize_images
  *  @brief Callback to dump images to event files based on strategy
@@ -144,7 +144,7 @@ class summarize_images : public callback_base {
 
 public:
   /** @brief summarize_images Constructor.
-   *  @param strategy Pointer to image ImageOutputStrategy
+   *  @param strategy Pointer to image image_output_strategy
    *  @param summarizer Pointer to lbann_summary object
    *  @param img_source_layer_name Name of image layer
    *  @param input_layer_name Name of input layer
@@ -153,30 +153,33 @@ public:
    *  @param img_format Image file format (e.g. .jpg, .png, .pgm)
    */
   summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
-                   std::shared_ptr<ImageOutputStrategy> const& strategy,
+                   std::shared_ptr<image_output_strategy> const& strategy,
                    std::string const& img_source_layer_name,
                    std::string const& input_layer_name,
                    uint64_t interval = 1,
+                   //This can go away
                    uint64_t num_images = 10,
                    std::string const& img_format = ".jpg");
 
   /** @brief Copy constructor */
-callback_base* copy() const override { return new summarize_images(*this); }
+  callback_base* copy() const override { return new summarize_images(*this); }
 
   /** @brief Return name of callback */
   std::string name() const override { return "summarize_images"; }
+
+  /** @brief setup layers */
+  void setup(model* m) override;
 
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
 
 private:
-  /** @brief setup layers */
-  void setup(model* m);
 
   /** @brief Add image to event file */
-  void dump_images_to_summary(const Layer& layer,
-                             const uint64_t& step,
-                             const El::Int& epoch);
+  void dump_images_to_summary(Layer const& layer,
+                              uint64_t const& step,
+                              El::Int const& epoch,
+                              model const& m);
 
   /** @brief Construct tag for image */
   std::string get_tag(El::Int index, El::Int epoch, size_t img_number = 0);
@@ -184,39 +187,37 @@ private:
 
 private:
 
-  /* lbann_summary object */
+  /* @brief lbann_summary object */
   std::shared_ptr<lbann_summary> m_summarizer;
 
-  /* ImageOutputStrategy object */
-  std::shared_ptr<ImageOutputStrategy> m_strategy;
+  /* @brief image_output_strategy object */
+  std::shared_ptr<image_output_strategy> m_strategy;
 
-  /* Names of layers */
+  /* @brief Names of layers */
   std::string const m_img_source_layer_name;
   std::string const m_input_layer_name;
 
-  /** lbann::Layer objects */
+  /** @brief lbann::Layer objects */
   Layer const* m_img_source_layer = nullptr;
   Layer const* m_input_layer = nullptr;
 
-  /* Size of mini-batch */
-  size_t m_mini_batch_size;
-
-  /* Interval for dumping images */
+  /* @brief Interval for dumping images */
   uint64_t m_interval;
 
-  /* Number of images to be dumped */
+  /* @brief Number of images to be dumped */
   size_t m_num_images;
 
-  /** Image file format. Valid options: .jpg, .png, .pgm. */
+  /** @brief Image file format. Valid options: .jpg, .png, .pgm. */
   std::string m_img_format;
+
 }; // class summarize_images
 
-/** @brief Free function - gets layers from model based on name
- *  @param layers Vector with pointers to the Layers
+/** @brief Get a layer from model based on name
+ *  @param m The model
  *  @param layer_name Name of layer
  */
-Layer const* get_layer_by_name(const std::vector<Layer*>& layers,
-                                 const std::string& layer_name);
+Layer const* get_layer_by_name(model const& m,
+                               std::string const& layer_name);
 
 std::unique_ptr<callback_base>
 build_summarize_images_callback_from_pbuf(

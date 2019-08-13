@@ -57,7 +57,6 @@
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
-#include "lbann/callbacks/summarize_autoencoder_images.hpp"
 #include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
@@ -173,8 +172,6 @@ void register_default_builders(factory_type& factory)
                            build_step_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackStepMinibatch",
                            build_step_minibatch_callback_from_pbuf);
-  factory.register_builder("CallbackSummarizeAutoencoderImages",
-                           build_summarize_autoencoder_images_callback_from_pbuf);
   factory.register_builder("CallbackSummarizeImages",
                            build_summarize_images_callback_from_pbuf);
   factory.register_builder("CallbackSummary",
