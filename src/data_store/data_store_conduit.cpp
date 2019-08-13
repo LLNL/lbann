@@ -183,15 +183,9 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   }
 
   if(ds_sample_move_list.size() == 0) {
-    if (m_trainer_master) {
-      std::cout << "data_store_conduit::copy_members; ds_sample_move_list.size = 0; copying all entries in m_data\n";
-    }
     m_data = rhs.m_data;
   } else {
     /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
-    if (m_trainer_master) {
-      std::cout << "data_store_conduit::copy_members; ds_sample_move_list.size != 0; copying ONLY SOME entries in m_data\n";
-    }
     for(auto&& i : ds_sample_move_list) {
 
       if(rhs.m_data.find(i) != rhs.m_data.end()){
@@ -201,7 +195,18 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
 
         if (!m_super_node) {
           /// Repack the nodes because they don't seem to copy correctly
-          compact_nodes();
+          //
+          //dah - previously this code block only contained the line:
+          //  build_node_for_sending(rhs.m_data[i]["data"], m_data[i]);
+          //However, this resulted in errors in the schema; not sure why,
+          //as it used to work; some change in the conduit library?
+          conduit::Node n2;
+          const std::vector<std::string> &names = rhs.m_data[i]["data"].child_names();
+          const std::vector<std::string> &names2 = rhs.m_data[i]["data"][names[0]].child_names();
+          for (auto t : names2) {
+            n2[names[0]][t] = rhs.m_data[i]["data"][names[0]][t];
+          }  
+          build_node_for_sending(n2, m_data[i]);
         } else {
           m_data[i] = rhs.m_data[i];
         }
@@ -263,7 +268,7 @@ void data_store_conduit::setup(int mini_batch_size) {
     preload_local_cache();
   }
 
-  if (m_world_master && !m_preload) {
+  if (m_world_master) {
     std::cerr << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
   }
 }
@@ -825,18 +830,11 @@ void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
 
 void data_store_conduit::compact_nodes() {
   if (m_super_node) {
-    if (m_output) {
-      m_output << "RETURNING from data_store_conduit::compact_nodes; m_data.size(): " << m_data.size() << "\n";
-    }
     return;
-  } else {
-    if (m_output) {
-      m_output << ">> NOT RETURNING from data_store_conduit::compact_nodes\n";
-    }
-  }
+  } 
   for(auto&& j : *m_shuffled_indices) {
     if(m_data.find(j) != m_data.end()){
-      if(!m_data[j].is_contiguous()) {
+      if(! (m_data[j].is_contiguous() && m_data[j].is_compact()) ) {
         /// Repack the nodes because they don't seem to copy correctly
         conduit::Node node = m_data[j]["data"];
         m_data.erase(j);

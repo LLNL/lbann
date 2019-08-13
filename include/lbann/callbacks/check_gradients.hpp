@@ -36,9 +36,9 @@ namespace callback {
 
 /** @brief Gradient checking callback.
  *
- *  Gradient checking is performed at the end of the test phase. Using
- *  a fourth-order finite difference scheme, a numerical partial
- *  derivative is computed for every weight parameter. If the
+ *  Gradient checking is performed at the end of each execution mode
+ *  phase. Using a fourth-order finite difference scheme, a numerical
+ *  partial derivative is computed for every weight parameter. If the
  *  numerical derivative differs signifcantly from the analytical
  *  derivative computed during backprop, the gradient check has
  *  failed.
@@ -47,6 +47,9 @@ class check_gradients : public callback_base {
 public:
 
   /**
+   *  @param modes              Execution modes with gradient checks. If
+   *                            none are provided, gradient checking is
+   *                            performed for every execution mode.
    *  @param step_size          Step size for numerical
    *                            differentiation (with a step size of
    *                            zero, the step size is estimated to
@@ -56,23 +59,31 @@ public:
    *  @param error_on_failure   Whether to throw an exception for
    *                            large gradient errors.
    */
-  check_gradients(DataType step_size = DataType(0),
-                                 bool verbose = false,
-                                 bool error_on_failure = false);
+  check_gradients(std::set<execution_mode> modes = {},
+                  DataType step_size = DataType(0),
+                  bool verbose = false,
+                  bool error_on_failure = false);
   check_gradients* copy() const override {
     return new check_gradients(*this);
   }
-  void on_test_end(model *m) override;
   std::string name() const override { return "check gradients"; }
+  void on_train_end(model *m) override      { do_check_gradients(*m); }
+  void on_validation_end(model *m) override { do_check_gradients(*m); }
+  void on_test_end(model *m) override       { do_check_gradients(*m); }
 
 private:
 
+  /** Execution modes with gradient checks. */
+  std::set<execution_mode> m_modes;
   /** Step size for numerical differentiation. */
   DataType m_step_size;
   /** Whether to print results for each parameter. */
   bool m_verbose;
   /** Whether to throw an exception for large gradient errors. */
   bool m_error_on_failure;
+
+  /** Does nothing if current execution mode is not in m_modes. */
+  void do_check_gradients(model& m) const;
 
 };
 

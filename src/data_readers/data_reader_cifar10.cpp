@@ -120,6 +120,7 @@ void cifar10_reader::load() {
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_images.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
   select_subset_of_data();
 }
 

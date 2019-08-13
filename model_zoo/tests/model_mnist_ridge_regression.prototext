@@ -30,6 +30,7 @@ model {
   callback { timer {} }
   callback {
     check_gradients {
+      execution_modes: "test"
       verbose: false
       error_on_failure: true
     }
