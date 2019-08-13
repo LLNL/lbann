@@ -229,7 +229,7 @@ void bp_training_impl(lbann_comm& comm,
     return;
   }
 
-  // Compute gradient contributions from local entries
+  // Compute local gradient w.r.t. batch statistics
   //   dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
   //   dL/dvar = - sum(dL/dy_i * (x_i-mean)) * (var+epsilon)^(-3/2) / 2
   El::Zero(gradient_wrt_statistics);
@@ -257,7 +257,7 @@ void bp_training_impl(lbann_comm& comm,
     }
   }
 
-  // Accumulate gradients across processes
+  // Accumulate gradient w.r.t. statistics across processes
   /// @todo Local statistics
   /// @todo Arbitrary group sizes
   comm.allreduce(gradient_wrt_statistics,

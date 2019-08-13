@@ -575,7 +575,7 @@ std::unique_ptr<Layer> construct_layer(
   if (proto_layer.has_entrywise_batch_normalization()) {
     const auto& params = proto_layer.entrywise_batch_normalization();
     /// @todo Support GPU implementation
-    return lbann::make_unique<entrywise_batch_normalization_layer<Layout, El::Device::CPU>>(comm, params.decay(), params.epsilon());
+    return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
   }
 
   // Math layers
