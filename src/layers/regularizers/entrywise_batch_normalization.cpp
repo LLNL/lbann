@@ -42,15 +42,18 @@ constexpr El::Int bsize = _bsize > 1 ? _bsize : 1;
  */
 void compute_batch_statistics(lbann_comm& comm,
                               DataType decay,
-                              const CPUMat& local_input,
+                              const AbsDistMat& input,
                               AbsDistMat& batch_statistics,
-                              CPUMat& local_running_mean,
-                              CPUMat& local_running_var) {
+                              AbsDistMat& running_mean,
+                              AbsDistMat& running_var) {
 
   // Local matrices
+  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
   auto& local_batch_statistics = dynamic_cast<CPUMat&>(batch_statistics.Matrix());
   auto local_batch_mean = El::View(local_batch_statistics, El::ALL, El::IR(0));
   auto local_batch_var = El::View(local_batch_statistics, El::ALL, El::IR(1));
+  auto& local_running_mean = dynamic_cast<CPUMat&>(running_mean.Matrix());
+  auto& local_running_var = dynamic_cast<CPUMat&>(running_var.Matrix());
 
   // Dimensions
   const El::Int local_height = local_input.Height();
@@ -78,7 +81,7 @@ void compute_batch_statistics(lbann_comm& comm,
   comm.allreduce(batch_statistics,
                  batch_statistics.RedundantComm(),
                  El::mpi::SUM);
-  const size_t statistics_count = local_input.Width();
+  const size_t statistics_count = input.Width();
 
   // Compute mini-batch statistics from sums
   if (statistics_count <= 1) {
@@ -148,25 +151,23 @@ void fp_impl(lbann_comm& comm,
   // Local matrices
   const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<CPUMat&>(output.Matrix());
-  auto& local_running_mean = dynamic_cast<CPUMat&>(running_mean.Matrix());
-  auto& local_running_var = dynamic_cast<CPUMat&>(running_var.Matrix());
 
   // Batchnorm has different behavior for training and inference
   if (is_training) {
 
     // For training, normalize with batch statistics
+    compute_batch_statistics(comm,
+                             decay,
+                             input,
+                             batch_statistics,
+                             running_mean,
+                             running_var);
     const auto& local_batch_statistics
       = dynamic_cast<const CPUMat&>(batch_statistics.LockedMatrix());
     const auto local_batch_mean = El::LockedView(local_batch_statistics,
                                                  El::ALL, El::IR(0));
     const auto local_batch_var = El::LockedView(local_batch_statistics,
                                                 El::ALL, El::IR(1));
-    compute_batch_statistics(comm,
-                             decay,
-                             local_input,
-                             batch_statistics,
-                             local_running_mean,
-                             local_running_var);
     apply_batchnorm(epsilon,
                     local_input,
                     local_output,
@@ -177,6 +178,8 @@ void fp_impl(lbann_comm& comm,
   else {
 
     // For inference, normalize with running statistics
+    const auto& local_running_mean = dynamic_cast<const CPUMat&>(running_mean.LockedMatrix());
+    const auto& local_running_var = dynamic_cast<const CPUMat&>(running_var.LockedMatrix());
     apply_batchnorm(epsilon,
                     local_input,
                     local_output,
@@ -194,13 +197,16 @@ void fp_impl(lbann_comm& comm,
  */
 void bp_training_impl(lbann_comm& comm,
                       DataType epsilon,
-                      const CPUMat& local_input,
-                      const CPUMat& local_gradient_wrt_output,
-                      CPUMat& local_gradient_wrt_input,
+                      const AbsDistMat& input,
+                      const AbsDistMat& gradient_wrt_output,
+                      AbsDistMat& gradient_wrt_input,
                       const AbsDistMat& statistics,
                       AbsDistMat& gradient_wrt_statistics) {
 
   // Local matrices
+  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
   const auto& local_statistics = dynamic_cast<const CPUMat&>(statistics.LockedMatrix());
   const auto local_mean = El::LockedView(local_statistics, El::ALL, El::IR(0));
   const auto local_var = El::LockedView(local_statistics, El::ALL, El::IR(1));
@@ -217,7 +223,7 @@ void bp_training_impl(lbann_comm& comm,
   // signal is zero.
   /// @todo Local statistics
   /// @todo Arbitrary group sizes
-  const size_t statistics_count = local_input.Width();
+  const size_t statistics_count = input.Width();
   if (statistics_count <= 1) {
     El::Zero(local_gradient_wrt_input);
     return;
@@ -246,7 +252,7 @@ void bp_training_impl(lbann_comm& comm,
         auto& dmean = local_gradient_wrt_mean(row, 0);
         auto& dvar = local_gradient_wrt_var(row, 0);
         dmean += - dy * inv_stdev;
-        dvar += - dy * (x - mean) * inv_stdev * inv_stdev * inv_stdev / 2;
+        dvar += - dy * (x - mean) * inv_stdev*inv_stdev*inv_stdev / 2;
       }
     }
   }
@@ -298,9 +304,14 @@ void bp_training_impl(lbann_comm& comm,
  *  statistics are independent of input.
  */
 void bp_inference_impl(DataType epsilon,
-                       const CPUMat& local_gradient_wrt_output,
-                       CPUMat& local_gradient_wrt_input,
-                       const CPUMat& local_var) {
+                       const AbsDistMat& gradient_wrt_output,
+                       AbsDistMat& gradient_wrt_input,
+                       const AbsDistMat& running_var) {
+
+  // Local matrices
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
+  const auto& local_running_var = dynamic_cast<const CPUMat&>(running_var.LockedMatrix());
 
   // Compute gradient w.r.t. input
   //   dL/dx_i = dL/dy_i / sqrt(var+epsilon)
@@ -313,7 +324,7 @@ void bp_inference_impl(DataType epsilon,
     const El::Int col_end = local_width;
     DataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
-      const auto& var = local_var(row, 0);
+      const auto& var = local_running_var(row, 0);
       _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
@@ -338,27 +349,21 @@ void bp_impl(lbann_comm& comm,
              AbsDistMat& gradient_wrt_batch_statistics,
              const AbsDistMat& running_var) {
 
-  // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_running_var = dynamic_cast<const CPUMat&>(running_var.LockedMatrix());
-
   // Batchnorm has different behavior for training and inference
   if (is_training) {
     bp_training_impl(comm,
                      epsilon,
-                     local_input,
-                     local_gradient_wrt_output,
-                     local_gradient_wrt_input,
+                     input,
+                     gradient_wrt_output,
+                     gradient_wrt_input,
                      batch_statistics,
                      gradient_wrt_batch_statistics);
   }
   else {
     bp_inference_impl(epsilon,
-                      local_gradient_wrt_output,
-                      local_gradient_wrt_input,
-                      local_running_var);
+                      gradient_wrt_output,
+                      gradient_wrt_input,
+                      running_var);
   }
 
 }
