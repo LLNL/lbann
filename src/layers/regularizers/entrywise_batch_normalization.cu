@@ -169,6 +169,7 @@ void compute_batch_statistics(lbann_comm& comm,
  */
 __global__ void batchnorm_kernel(size_t height,
                                  size_t width,
+                                 DataType epsilon,
                                  const DataType* __restrict__ input,
                                  size_t input_ldim,
                                  DataType* __restrict__ output,
@@ -213,6 +214,7 @@ void apply_batchnorm(DataType epsilon,
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
+        epsilon,
         local_input.LockedBuffer(),
         local_input.LDim(),
         local_output.Buffer(),
@@ -327,6 +329,8 @@ __global__ void bp_training_error_signal_kernel(size_t height,
                                                 size_t width,
                                                 DataType epsilon,
                                                 size_t statistics_count,
+                                                const DataType* __restrict__ input,
+                                                size_t input_ldim,
                                                 const DataType* __restrict__ gradient_wrt_output,
                                                 size_t gradient_wrt_output_ldim,
                                                 DataType* __restrict__ gradient_wrt_input,
@@ -346,6 +350,7 @@ __global__ void bp_training_error_signal_kernel(size_t height,
     const auto& dvar = gradient_wrt_var[row];
     const auto inv_stdev = cuda::rsqrt(_var + epsilon);
     for (size_t col = gidy; col < width; col += nthreadsy) {
+      const auto& x = input[row + col * input_ldim];
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
       dx = (dy * inv_stdev
@@ -434,12 +439,14 @@ void bp_training_impl(lbann_comm& comm,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    bp_training_err_signal_kernel
+    bp_training_error_signal_kernel
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
         epsilon,
         statistics_count,
+        local_input.LockedBuffer(),
+        local_input.LDim(),
         local_gradient_wrt_output.LockedBuffer(),
         local_gradient_wrt_output.LDim(),
         local_gradient_wrt_input.Buffer(),
@@ -461,6 +468,7 @@ void bp_training_impl(lbann_comm& comm,
  */
 __global__ void bp_inference_kernel(size_t height,
                                     size_t width,
+                                    DataType epsilon,
                                     const DataType* __restrict__ gradient_wrt_output,
                                     size_t gradient_wrt_output_ldim,
                                     DataType* __restrict__ gradient_wrt_input,
@@ -497,9 +505,9 @@ void bp_inference_impl(DataType epsilon,
   const auto& local_running_var = dynamic_cast<const GPUMat&>(running_var.LockedMatrix());
 
   // Compute gradient w.r.t. input
-  if (!local_input.IsEmpty()) {
-    const size_t local_height = local_input.Height();
-    const size_t local_width = local_input.Width();
+  if (!local_gradient_wrt_output.IsEmpty()) {
+    const size_t local_height = local_gradient_wrt_output.Height();
+    const size_t local_width = local_gradient_wrt_output.Width();
     constexpr size_t block_size_x = 256;
     constexpr size_t block_size_y = 1;
     dim3 block_dims, grid_dims;
@@ -511,6 +519,7 @@ void bp_inference_impl(DataType epsilon,
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
+        epsilon,
         local_gradient_wrt_output.LockedBuffer(),
         local_gradient_wrt_output.LDim(),
         local_gradient_wrt_input.Buffer(),
