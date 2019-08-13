@@ -687,12 +687,18 @@ void customize_data_readers_index_list(const lbann_comm& comm, lbann_data::Lbann
     std::ostringstream s;
     std::string basename = get_basename_without_ext(r->index_list());
     std::string ext = get_ext_name(r->index_list());
+    std::string dir = lbann::file::extract_parent_directory(r->index_list());
+    if (dir.empty()) {
+      dir = ".";
+    }
+
     if(r->index_list_per_model()) {
       s << pb_model.name() << "_";
     }
     if(r->index_list_per_trainer()) {
       s << "t" << comm.get_trainer_rank() << "_";
     }
+    s << dir << '/';
     s << basename;
     s << "." << ext;
     r->set_index_list(s.str());
