@@ -197,7 +197,7 @@ def get_command(cluster,
             # Cannot specify time limit for jsrun.
             command_run = '{s}jsrun'.format(s=space)
         else:
-            command_run = '{s}mpirun --timeout={t}'.format(s=space, t=time_limit)
+            command_run = '{s}mpirun --timeout {t}'.format(s=space, t=time_limit)
         option_bind = ''
         option_cpu_per_resource = ''
         option_gpu_per_resource = ''
@@ -533,11 +533,12 @@ def get_default_exes(default_dirname, cluster):
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal', 'ray']:
         # Define all compilers.
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
         # ppc64le_gpu_lassen - lassen
+        # ppc64le_gpu - ray
         default_exes['clang6'] = exes['clang6']
         default_exes['gcc7'] = exes['gcc7']
         default_exes['intel19'] = exes['intel19']

@@ -32,7 +32,7 @@ if [ "${CLUSTER}" = 'pascal' ]; then
     export MV2_USE_CUDA=1
 fi
 
-if [ "${CLUSTER}" = 'lassen' ]; then
+if [ "${CLUSTER}" = 'lassen' ] || [ "${CLUSTER}" = 'ray' ]; then
     ALLOCATION_TIME_LIMIT=600
     if [ ${WEEKLY} -ne 0 ]; then
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh --weekly

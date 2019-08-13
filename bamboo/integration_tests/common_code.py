@@ -14,10 +14,15 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
         else:
             data_reader_percent = 0.01
             time_limit = 60
-        if cluster == 'lassen':
+        if cluster in ['lassen', 'ray']:
+            if cluster == 'ray':
+                num_processes = 64
+            else:
+                num_processes = 32
             command = tools.get_command(
                 cluster=cluster, executable=executable, num_nodes=16,
-                partition='pbatch', time_limit=time_limit, num_processes=32,
+                partition='pbatch', time_limit=time_limit,
+                num_processes=num_processes,
                 dir_name=dir_name,
                 data_filedir_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/',
                 data_filename_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt',

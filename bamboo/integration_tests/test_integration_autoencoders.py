@@ -50,7 +50,7 @@ DATA_FIELDS = [
 
 def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
                                   weekly):
-  if cluster in ['lassen', 'pascal']:
+  if cluster in ['lassen', 'pascal', 'ray']:
       e = 'skeleton_autoencoder_imagenet: does not run on GPU'
       print('Skip - ' + e)
       pytest.skip(e)
