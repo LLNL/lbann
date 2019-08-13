@@ -81,7 +81,7 @@ void check_gradients::do_check_gradients(model& m) const {
   const auto mode = m.get_execution_mode();
   const auto& layers = m.get_layers();
 
-  // Return immediately if execution mode is invalid
+  // Return immediately if gradient check isn't currently needed
   if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }
 
   // Reset statistics and gradients

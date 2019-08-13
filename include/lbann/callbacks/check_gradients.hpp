@@ -47,7 +47,9 @@ class check_gradients : public callback_base {
 public:
 
   /**
-   *  @param modes              Execution modes with gradient checks.
+   *  @param modes              Execution modes with gradient checks. If
+   *                            none are provided, gradient checking is
+   *                            performed for every execution mode.
    *  @param step_size          Step size for numerical
    *                            differentiation (with a step size of
    *                            zero, the step size is estimated to
