@@ -66,6 +66,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/memory.hpp"
 
 #include <callbacks.pb.h>
@@ -86,7 +87,7 @@ using factory_type = lbann::generic_factory<
   std::string,
   generate_builder_type<lbann::callback_base,
                         google::protobuf::Message const&,
-                        lbann_summary*>,
+                        std::shared_ptr<lbann_summary> const&>,
   default_key_error_policy>;
 
 void register_default_builders(factory_type& factory)
@@ -200,7 +201,7 @@ factory_type const& get_callback_factory() noexcept
 
 std::unique_ptr<callback_base>
 construct_callback(
-  const google::protobuf::Message& proto_msg, lbann_summary* summarizer) {
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const& summarizer) {
 
   auto const& factory = get_callback_factory();
   auto const& msg =
@@ -208,32 +209,24 @@ construct_callback(
   return factory.create_object(msg.GetDescriptor()->name(), msg, summarizer);
 }
 
-lbann_summary* construct_summarizer(lbann_comm* comm,
-                                    const lbann_data::Model& m) {
-  lbann_summary *summary = nullptr;
-  bool master = comm->am_world_master();
-  int size = m.callback_size();
-  for (int j=0; j<size; j++) {
-    const lbann_data::Callback& callback = m.callback(j);
-    if (callback.has_summary()) {
-      const lbann_data::Callback::CallbackSummary& c = callback.summary();
-      if (master) {
-        std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
-      }
+std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
+                                                    const lbann_data::Model& m) {
+  const bool master = comm->am_world_master();
+  if (m.has_summarizer()) {
+    auto dir = m.summarizer().dir();
 
-      //check to see if directory exists
-      struct stat sb;
-      if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
-        if (master) {
-          throw lbann_exception(
-            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-            "summary directory " + c.dir() + " does not exist");
-        }
-      }
-      summary = new lbann_summary(c.dir(), comm);
+    if (master) {
+      std::cout << "constructing summarizer with dir: " << dir << std::endl;
     }
+
+    //check to see if directory exists
+    if (!file::directory_exists(dir)) {
+      LBANN_ERROR("summary directory ", dir, " does not exist.");
+    }
+
+    return make_unique<lbann_summary>(dir, comm);
   }
-  return summary;
+  return nullptr;
 }
 
 } // namespace proto

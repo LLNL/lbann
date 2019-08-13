@@ -145,7 +145,7 @@ model {
 
   weights {
      name: "gen_fc_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
@@ -303,7 +303,7 @@ model {
 
   weights {
      name: "dis_flatten_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        he_normal_initializer {}
      }
@@ -322,7 +322,7 @@ model {
 
   weights {
      name: "dis_fc1_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
@@ -348,7 +348,7 @@ model {
 
   weights {
      name: "dis_fc2_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }
@@ -375,7 +375,7 @@ model {
  # FULLY_CONNECTED fc1
   weights {
      name: "dis_fc3_weights"
-     optimizer { }
+     optimizer { no_optimizer {} }
      initializer {
        glorot_normal_initializer {}
      }

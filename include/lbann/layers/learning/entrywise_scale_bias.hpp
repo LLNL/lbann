@@ -85,14 +85,17 @@ public:
 
   void setup_data() override {
     Layer::setup_data();
-    const auto dims = get_output_dims();
-    const El::Int size = get_output_size();
+
+    // Initialize output dimensions
+    set_output_dims(get_input_dims());
+    const auto output_dims = get_output_dims();
+    const El::Int output_size = get_output_size();
 
     // Construct default weights if needed
     if (this->m_weights.size() < 1) {
       this->m_weights.push_back(new weights(get_comm()));
-      std::vector<DataType> vals(2*size, DataType{0});
-      std::fill(vals.begin(), vals.begin()+size, DataType{1});
+      std::vector<DataType> vals(2*output_size, DataType{0});
+      std::fill(vals.begin(), vals.begin()+output_size, DataType{1});
       auto init = make_unique<value_initializer>(vals);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       this->m_weights[0]->set_name(get_name() + "_weights");
@@ -113,13 +116,13 @@ public:
     // Setup weights
     auto dist = get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    m_weights[0]->set_dims(dims,
+    m_weights[0]->set_dims(output_dims,
                            {static_cast<int>(2)});
     m_weights[0]->set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
-    m_weights_gradient->Resize(size, 2);
+    m_weights_gradient->Resize(output_size, 2);
 
   }
 
@@ -157,7 +160,7 @@ public:
     Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_weights_gradient->Empty(false);
     m_weights_gradient->AlignWith(get_prev_activations());
-    m_weights_gradient->Resize(get_input_size(), mini_batch_size);
+    m_weights_gradient->Resize(get_input_size(), 2);
   }
 
 protected:

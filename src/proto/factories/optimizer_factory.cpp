@@ -43,6 +43,12 @@ namespace lbann {
 namespace proto {
 namespace {
 
+std::unique_ptr<optimizer>
+build_no_optimizer_from_pbuf(
+  google::protobuf::Message const& msg, lbann_comm* comm) {
+  return nullptr;
+}
+
 using factory_type = lbann::generic_factory<
   lbann::optimizer,
   std::string,
@@ -52,6 +58,7 @@ using factory_type = lbann::generic_factory<
   default_key_error_policy>;
 
 void register_default_builders(factory_type& factory) {
+  factory.register_builder("NoOptimizer", build_no_optimizer_from_pbuf);
   factory.register_builder("AdaGrad", build_adagrad_optimizer_from_pbuf);
   factory.register_builder("Adam", build_adam_optimizer_from_pbuf);
   factory.register_builder("HypergradientAdam",

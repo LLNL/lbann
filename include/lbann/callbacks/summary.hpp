@@ -47,9 +47,8 @@ class summary : public callback_base {
    * @param mat_interval FIXME
    * @todo Document mat_interval parameter.
    */
-  summary(lbann_summary *summarizer, int batch_interval = 1,
+  summary(const std::shared_ptr<lbann_summary>& summarizer, int batch_interval = 1,
     int mat_interval = 25);
-  ~summary() override;
   summary(const summary&) = default;
   summary& operator=(const summary&) = default;
   summary* copy() const override {
@@ -60,9 +59,15 @@ class summary : public callback_base {
   void on_epoch_end(model *m) override;
   void on_test_end(model *m) override;
   std::string name() const override { return "summary"; }
- protected:
+
+protected:
   /** Write out histograms from the model's layers. */
   void save_histograms(model *m);
+
+private:
+  /** @brief lbann_summary */
+  std::shared_ptr<lbann_summary> m_summarizer = nullptr;
+
   /** Interval for doing matrix summarization. */
   int m_mat_interval;
 };
@@ -70,7 +75,7 @@ class summary : public callback_base {
 // Builder function
 std::unique_ptr<callback_base>
 build_summary_callback_from_pbuf(
-  const google::protobuf::Message&, lbann_summary*);
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

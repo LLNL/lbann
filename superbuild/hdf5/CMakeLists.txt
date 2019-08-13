@@ -46,6 +46,7 @@ option(HDF5_USE_18_API_DEFAULT "Use 1.8 API by default" ON)
 option(HDF5_USE_110_API_DEFAULT "Use 1.10 API by default" OFF)
 option(HDF5_USE_112_API_DEFAULT "Use 1.12 API by default" OFF)
 option(HDF5_BUILD_FORTRAN "Build HDF5 with fortran support" OFF)
+set(HDF5_DEFAULT_API_VERSION "v18")
 
 # At present, this is required for LBANN/JAG use.
 option(HDF5_ENABLE_Z_LIB_SUPPORT "Build HDF5 with ZLIB support" ON)
@@ -108,6 +109,7 @@ ExternalProject_Add(HDF5
   -DBUILD_SHARED_LIBS=${HDF5_BUILD_SHARED_LIBS}
   -DBUILD_TESTING=${BUILD_HDF5_TESTING}
   -DHDF5_GENERATE_HEADERS=ON
+  -DDEFAULT_API_VERSION=${HDF5_DEFAULT_API_VERSION}
   ${HDF5_CMAKE_ARGS}
   )
 
