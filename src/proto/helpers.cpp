@@ -35,33 +35,47 @@
 namespace lbann {
 namespace proto {
 namespace helpers {
+namespace {
+google::protobuf::FieldDescriptor const* get_oneof_field_descriptor(
+  google::protobuf::Message const& msg_in, std::string const& oneof_name) {
+  auto desc = msg_in.GetDescriptor();
+  auto reflex = msg_in.GetReflection();
+  auto oneof_handle = desc->FindOneofByName(oneof_name);
+  if (!oneof_handle)
+  {
+    std::string msg_string;
+    google::protobuf::TextFormat::PrintToString(msg_in, &msg_string);
+    LBANN_ERROR("Message has no oneof field named \"",
+                oneof_name, "\"\n\nMessage(",
+                desc->DebugString(), "):\n\n",
+                msg_string);
+  }
+
+  return reflex->GetOneofFieldDescriptor(msg_in, oneof_handle);
+}
+}// namespace
+
+bool has_oneof(
+  google::protobuf::Message const& msg, std::string const& oneof_name)
+{
+  return (bool) get_oneof_field_descriptor(msg, oneof_name);
+}
 
 google::protobuf::Message const&
 get_oneof_message(
-  google::protobuf::Message const& msg_in, std::string const& oneof_name)
-{
-  auto&& desc = msg_in.GetDescriptor();
-  auto&& reflex = msg_in.GetReflection();
-  auto&& oneof_handle = desc->FindOneofByName(oneof_name);
-  if (!oneof_handle)
-  {
-      std::string msg_string;
-      google::protobuf::TextFormat::PrintToString(msg_in, &msg_string);
-    LBANN_ERROR(std::string("Message has no oneof field named \"")
-                + oneof_name + "\"\n\nMessage("
-                + desc->DebugString() +"):\n\n"
-                + msg_string);
+  google::protobuf::Message const& msg_in, std::string const& oneof_name) {
+  auto oneof_field = get_oneof_field_descriptor(msg_in, oneof_name);
+  if (!oneof_field) {
+    LBANN_ERROR("Oneof field \"", oneof_name,
+                "\" in message has not been set. Message:\n{",
+                msg_in.DebugString(),"\n}\n");
   }
 
-  auto&& oneof_field = reflex->GetOneofFieldDescriptor(msg_in, oneof_handle);
-
-  if (!oneof_field)
-    LBANN_ERROR("Oneof field in message has not been set.");
-
-  if (oneof_field->type() != google::protobuf::FieldDescriptor::TYPE_MESSAGE)
+  if (oneof_field->type() != google::protobuf::FieldDescriptor::TYPE_MESSAGE) {
     LBANN_ERROR("Oneof field is not of message type.");
+  }
 
-  return reflex->GetMessage(msg_in, oneof_field);
+  return msg_in.GetReflection()->GetMessage(msg_in, oneof_field);
 }
 
 }// namespace helpers

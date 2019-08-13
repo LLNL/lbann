@@ -111,12 +111,15 @@ std::unique_ptr<weights> construct_weights(
 
   // Set weights initializer and optimizer
   auto init = construct_initializer(proto_weights);
-  std::unique_ptr<optimizer> opt;
-  if (proto_weights.has_optimizer()) {
-    opt = construct_optimizer(comm, proto_weights.optimizer());
-  } else {
-    opt = construct_optimizer(comm, proto_opt);
-  }
+  const lbann_data::Optimizer& opt_msg =
+    (proto_weights.has_optimizer()
+     ? proto_weights.optimizer()
+     : proto_opt);
+
+  std::unique_ptr<optimizer> opt =
+    (helpers::has_oneof(opt_msg, "optimizer_type")
+     ? construct_optimizer(comm, opt_msg)
+     : nullptr);
   w->set_initializer(std::move(init));
   w->set_optimizer(std::move(opt));
 

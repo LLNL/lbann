@@ -233,6 +233,7 @@ message Callback {
     double step_size = 1;
     bool verbose = 2;
     bool error_on_failure = 3; // Throw error if gradient check fails
+    string execution_modes = 4; // Default: all modes
   }
 
   message CallbackCheckMetric {

@@ -125,23 +125,23 @@ void bp_impl(const CPUMat& local_input,
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::fp_compute() {
-  fp_impl(get_local_prev_activations(),
-          get_local_activations(),
+  fp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
+          dynamic_cast<CPUMat&>(get_local_activations()),
           *m_weights[0]);
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
      ::fp_compute() {
-  fp_impl(get_local_prev_activations(),
-          get_local_activations(),
+  fp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
+          dynamic_cast<CPUMat&>(get_local_activations()),
           *m_weights[0]);
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::bp_compute() {
-  bp_impl(get_local_prev_activations(),
-          get_local_prev_error_signals(),
-          get_local_error_signals(),
+  bp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
+          dynamic_cast<const CPUMat&>(get_local_prev_error_signals()),
+          dynamic_cast<CPUMat&>(get_local_error_signals()),
           *this->m_weights[0],
           *m_weights_gradient,
           this->m_model->get_effective_mini_batch_size());
@@ -149,9 +149,9 @@ void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
      ::bp_compute() {
-  bp_impl(get_local_prev_activations(),
-          get_local_prev_error_signals(),
-          get_local_error_signals(),
+  bp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
+          dynamic_cast<const CPUMat&>(get_local_prev_error_signals()),
+          dynamic_cast<CPUMat&>(get_local_error_signals()),
           *this->m_weights[0],
           *m_weights_gradient,
           this->m_model->get_effective_mini_batch_size());
