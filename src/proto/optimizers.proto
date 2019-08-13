@@ -30,12 +30,15 @@ package lbann_data;
 
 message Optimizer {
   oneof optimizer_type {
-    AdaGrad adagrad = 1;
-    Adam adam = 2;
-    HypergradientAdam hypergradient_adam = 3;
-    RMSprop rmsprop = 4;
-    SGD sgd = 5;
+    NoOptimizer no_optimizer = 1;
+    AdaGrad adagrad = 2;
+    Adam adam = 3;
+    HypergradientAdam hypergradient_adam = 4;
+    RMSprop rmsprop = 5;
+    SGD sgd = 6;
   }
+
+  message NoOptimizer {}
 
   message AdaGrad {
     double learn_rate = 1;
