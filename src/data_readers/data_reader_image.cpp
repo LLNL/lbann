@@ -141,13 +141,10 @@ void image_data_reader::load() {
   options *opts = options::get();
 
   // Load sample list
-  // TODO: use other ways to obtain the name of the directory that contains
-  // sample lists. Currently, the function get_file_dir() is used for both
-  // the directory of actual data files and for that of the sample list.
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = get_data_index_list();
 
-  load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+  load_list_of_samples(sample_list_file, true);
   if(is_master()) {
     std::cout << "Finished sample list, check data" << std::endl;
   }
@@ -304,10 +301,14 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 
-void image_data_reader::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
+void image_data_reader::load_list_of_samples(const std::string sample_list_file, bool load_interleave) {
   // load the sample list
   double tm1 = get_time();
-  m_sample_list.load(sample_list_file, stride, offset);
+  if (load_interleave) {
+    m_sample_list.load(sample_list_file, *m_comm);
+  } else {
+    m_sample_list.load(sample_list_file);
+  }
   double tm2 = get_time();
 
   if (is_master()) {

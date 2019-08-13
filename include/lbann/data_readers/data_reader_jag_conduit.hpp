@@ -317,7 +317,7 @@ class data_reader_jag_conduit : public generic_data_reader {
    */
   bool check_num_parallel_readers(long data_set_size);
   /// Rely on pre-determined list of samples.
-  void load_list_of_samples(const std::string filename, size_t stride=1, size_t offset=0);
+  void load_list_of_samples(const std::string filename, bool load_interleave = false);
   /// Load the sample list from a serialized archive from another rank
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
 

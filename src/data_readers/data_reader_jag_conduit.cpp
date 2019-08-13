@@ -795,10 +795,8 @@ void data_reader_jag_conduit::load() {
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
-  double tm2 = get_time();
-  load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
+  load_list_of_samples(sample_list_file, true);
   if(is_master()) {
-      std::cout << "Finished loading sample list; time: " << get_time() - tm2 << std::endl;
     if (!check_data) {
       std::cout << "Skipping check data" << std::endl;
     }
@@ -926,14 +924,18 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 }
 
-void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
+void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, bool load_interleave) {
   // load the sample list
   double tm1 = get_time();
-  m_sample_list.load(sample_list_file, stride, offset);
+  if (load_interleave) {
+    m_sample_list.load(sample_list_file, *(this->m_comm));
+  } else {
+    m_sample_list.load(sample_list_file);
+  }
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+    std::cout << "Finished loading sample list; time: " << tm2 - tm1 << std::endl;
   }
 }
 
