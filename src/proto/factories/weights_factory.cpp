@@ -39,26 +39,40 @@ namespace lbann {
 namespace proto {
 namespace {
 
+using MessageT = google::protobuf::Message;
+
 // Define the factory type.
 using factory_type = lbann::generic_factory<
   lbann::weights_initializer,
   std::string,
   generate_builder_type<lbann::weights_initializer,
-                        google::protobuf::Message const&>,
+                        MessageT const&>,
   default_key_error_policy>;
 
 void register_default_builders(factory_type& factory)
 {
-  factory.register_builder("ConstantInitializer", build_constant_initializer_from_pbuf);
-  factory.register_builder("ValueInitializer", build_value_initializer_from_pbuf);
-  factory.register_builder("UniformInitializer", build_uniform_initializer_from_pbuf);
-  factory.register_builder("NormalInitializer", build_normal_initializer_from_pbuf);
-  factory.register_builder("GlorotNormalInitializer", build_glorot_initializer_from_pbuf);
-  factory.register_builder("GlorotUniformInitializer", build_glorot_initializer_from_pbuf);
-  factory.register_builder("HeNormalInitializer", build_he_initializer_from_pbuf);
-  factory.register_builder("HeUniformInitializer", build_he_initializer_from_pbuf);
-  factory.register_builder("LeCunNormalInitializer", build_lecun_initializer_from_pbuf);
-  factory.register_builder("LeCunUniformInitializer", build_lecun_initializer_from_pbuf);
+  factory.register_builder("LayerDefault",
+                           [](MessageT const&) { return nullptr; });
+  factory.register_builder("ConstantInitializer",
+                           build_constant_initializer_from_pbuf);
+  factory.register_builder("ValueInitializer",
+                           build_value_initializer_from_pbuf);
+  factory.register_builder("UniformInitializer",
+                           build_uniform_initializer_from_pbuf);
+  factory.register_builder("NormalInitializer",
+                           build_normal_initializer_from_pbuf);
+  factory.register_builder("GlorotNormalInitializer",
+                           build_glorot_initializer_from_pbuf);
+  factory.register_builder("GlorotUniformInitializer",
+                           build_glorot_initializer_from_pbuf);
+  factory.register_builder("HeNormalInitializer",
+                           build_he_initializer_from_pbuf);
+  factory.register_builder("HeUniformInitializer",
+                           build_he_initializer_from_pbuf);
+  factory.register_builder("LeCunNormalInitializer",
+                           build_lecun_initializer_from_pbuf);
+  factory.register_builder("LeCunUniformInitializer",
+                           build_lecun_initializer_from_pbuf);
 }
 
 // Manage a global factory
@@ -110,7 +124,11 @@ std::unique_ptr<weights> construct_weights(
   }
 
   // Set weights initializer and optimizer
-  auto init = construct_initializer(proto_weights);
+  std::unique_ptr<weights_initializer> init =
+    (proto_weights.has_initializer()
+     ? construct_initializer(proto_weights)
+     : nullptr);
+
   const lbann_data::Optimizer& opt_msg =
     (proto_weights.has_optimizer()
      ? proto_weights.optimizer()

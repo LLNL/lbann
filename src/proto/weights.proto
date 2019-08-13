@@ -38,6 +38,7 @@ message Weights {
 
 message Initializer {
   oneof initializer_type {
+    LayerDefault layer_default = 1;
     ConstantInitializer constant_initializer = 20;
     ValueInitializer value_initializer = 21;
     UniformInitializer uniform_initializer = 22;
@@ -51,6 +52,8 @@ message Initializer {
   }
 
   // Weight initializers
+  message LayerDefault {}
+    
   message ConstantInitializer {
     double value = 1;
   }
