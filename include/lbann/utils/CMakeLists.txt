@@ -8,6 +8,7 @@ set_full_path(THIS_DIR_HEADERS
   dataset.hpp
   description.hpp
   entrywise_operator.hpp
+  eti_macros.hpp
   exception.hpp
   factory.hpp
   factory_error_policies.hpp

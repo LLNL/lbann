@@ -28,6 +28,7 @@
 #define LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
+#include "lbann/utils/eti_macros.hpp"
 
 namespace lbann {
 
@@ -58,6 +59,19 @@ protected:
   void fp_compute() override {}
   void bp_compute() override {}
 };
+
+#ifndef LBANN_IDENTITY_LAYER_INSTANTIATE
+LBANN_CLASS_ETI_DECL(
+  identity_layer, lbann::data_layout::DATA_PARALLEL, El::Device::CPU);
+LBANN_CLASS_ETI_DECL(
+  identity_layer, lbann::data_layout::MODEL_PARALLEL, El::Device::CPU);
+#ifdef LBANN_HAS_GPU
+LBANN_CLASS_ETI_DECL(
+  identity_layer, lbann::data_layout::DATA_PARALLEL, El::Device::GPU);
+LBANN_CLASS_ETI_DECL(
+  identity_layer, lbann::data_layout::MODEL_PARALLEL, El::Device::GPU);
+#endif // LBANN_HAS_GPU
+#endif // LBANN_IDENTITY_LAYER_INSTANTIATE
 
 } // namespace lbann
 
